@@ -399,8 +399,31 @@ class MPVController: NSObject {
 
   func mpvUninitRendering() {
     guard let mpvRenderContext = mpvRenderContext else { return }
+    lockAndSetOpenGLContext()
+    defer { unlockOpenGLContext() }
     mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
     mpv_render_context_free(mpvRenderContext)
+  }
+
+  /// Lock the OpenGL context associated with the mpv renderer and set it to be the current context for this thread.
+  ///
+  /// This method is needed to meet this requirement from `mpv/render.h`:
+  ///
+  /// If the OpenGL backend is used, for all functions the OpenGL context must be "current" in the calling thread, and it must be the
+  /// same OpenGL context as the `mpv_render_context` was created with. Otherwise, undefined behavior will occur.
+  ///
+  /// - Reference: [mpv render.h](https://github.com/mpv-player/mpv/blob/master/libmpv/render.h)
+  /// - Reference: [Concurrency and OpenGL](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_threading/opengl_threading.html)
+  /// - Reference: [OpenGL Context](https://www.khronos.org/opengl/wiki/OpenGL_Context)
+  /// - Attention: Do not forget to unlock the OpenGL context by calling `unlockOpenGLContext`
+  func lockAndSetOpenGLContext() {
+    CGLLockContext(openGLContext)
+    CGLSetCurrentContext(openGLContext)
+  }
+
+  /// Unlock the OpenGL context associated with the mpv renderer.
+  func unlockOpenGLContext() {
+    CGLUnlockContext(openGLContext)
   }
 
   func mpvReportSwap() {
