@@ -469,7 +469,6 @@ class Utility {
       options: .skipsSubdirectoryDescendants) else { return nil }
 
     var latestDate = Date.distantPast
-    var latestFile: URL = contents[0]
 
     for file in contents {
       if let date = try? file.resourceValues(forKeys: [.creationDateKey]).creationDate, date > latestDate {
