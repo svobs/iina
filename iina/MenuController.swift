@@ -6,6 +6,7 @@
 //  Copyright © 2016 lhc. All rights reserved.
 //
 
+import Algorithms
 import Cocoa
 
 class MenuController: NSObject, NSMenuDelegate {
@@ -661,31 +662,39 @@ class MenuController: NSObject, NSMenuDelegate {
       uiActions.append((pictureInPicture, true, ["toggle-pip"], false, nil, nil))
     }
 
+    // The key bindings in the keyBindings array represent all of the bindings contained in the
+    // binding set. Neither mpv nor IINA require the set to contain unique key to input command
+    // mappings. Multiple entries for a particular key are allowed. If the binding set contains
+    // more than one binding for a specific key then mpv uses the last binding and ignores all
+    // others. Searching keyBindings to find a key that is bound to the same action as a menu item
+    // might match a binding that has been overridden by another binding and should be ignored. If
+    // the overridden binding is matched and then assigned as the shortcut for a menu item, then
+    // when that key is pressed the menu item will be invoked, preventing the input commands in the
+    // overriding binding from being run. This defect was reported in issue #3692.
+    //
+    // Form an array of only the active bindings, eliminating any duplicates. The uniqued method
+    // preserves the entries encountered first. As the bindings at the end of the set override
+    // earlier, bindings reverse the array so that uniqued finds them first. After uniqued
+    // eliminates duplicates reverse the list again to not change the key selected as the shortcut
+    // when the the binding set maps multiple keys to the same input command associated with the
+    // menu item.
+    let activeBindings = keyBindings.reversed().uniqued(on: \.key).reversed()
+
     uiActions.forEach { (menuItem, isIINACmd, cmdTokens, normalizeLastNum, numRange, l10nKey) in
       Logger.log("Setting bindings for uiAction=\(cmdTokens)", level: .verbose, subsystem: .inputConf)
-      attachBindings(keyBindings, menuItem, isIINACmd, cmdTokens, normalizeLastNum, numRange, l10nKey)
-    }
-  }
-
-  /*
-   Attempts to match the given "UI action" (keybinding & menu item) with one of the user-defined bindings using the matching rules.
-   All of the user bindings wil be evaluated for each UI action, in order given. Thus if a given UI action matches to multiple user bindings,
-   only the last matching user binding will be used because it will overwrite the previous.
-   */
-  private func attachBindings(_ userBindings: [KeyMapping], _ menuItem: NSMenuItem, _ isIINACmd: Bool, _ cmdTokens: [String], _ normalizeLastNum: Bool, _ numRange: ClosedRange<Double>?, _ l10nKey: String?) {
-
-    var matchCount: Int = 0
-    for userBinding in userBindings {
-      if attachMatchingKeyBinding(userBinding, menuItem, isIINACmd, cmdTokens, normalizeLastNum, numRange, l10nKey) {
-        Logger.log("MatchFound: userBinding=\(userBinding.action) uiAction=\(cmdTokens)", level: .verbose, subsystem: .inputConf)
-        matchCount += 1
+      var matchCount: Int = 0
+      for userBinding in activeBindings {
+        if attachMatchingKeyBinding(userBinding, menuItem, isIINACmd, cmdTokens, normalizeLastNum, numRange, l10nKey) {
+          Logger.log("MatchFound: userBinding=\(userBinding.action) uiAction=\(cmdTokens)", level: .verbose, subsystem: .inputConf)
+          matchCount += 1
+        }
       }
-    }
-    if matchCount == 0 {
+      if matchCount == 0 {
         menuItem.keyEquivalent = ""
         menuItem.keyEquivalentModifierMask = []
-    } else if matchCount > 1 {
-      Logger.log("Multiple matches (\(matchCount)) found for cmd (\(cmdTokens)); only the last will be bound", subsystem: .inputConf)
+      } else if matchCount > 1 {
+        Logger.log("Multiple matches (\(matchCount)) found for cmd (\(cmdTokens)); only the last will be bound", subsystem: .inputConf)
+      }
     }
   }
 
