@@ -1703,8 +1703,7 @@ class PlayerCore: NSObject {
   }
 
   // Returns true ONLY IF current media is audio & audio-only
-  func ig() -> Bool {
-//    guard !info.isNetworkResource else { return .notAudio }
+  func isCurrentMediaAudioOnly() -> Bool {
     let noVideoTrack = info.videoTracks.isEmpty
     let noAudioTrack = info.audioTracks.isEmpty
     if noVideoTrack && noAudioTrack {
