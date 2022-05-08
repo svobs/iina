@@ -1045,7 +1045,6 @@ class PlayerCore: NSObject {
     Logger.log("File started", subsystem: subsystem)
     info.justStartedFile = true
     info.disableOSDForFileLoading = true
-    currentMediaIsAudio = .unknown
 
     info.currentURL = path.contains("://") ?
       URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
@@ -1174,12 +1173,10 @@ class PlayerCore: NSObject {
     Logger.log("Track list changed", subsystem: subsystem)
     getTrackInfo()
     getSelectedTracks()
-    let audioStatusWasUnkownBefore = currentMediaIsAudio == .unknown
-    currentMediaIsAudio = checkCurrentMediaIsAudio()
-    let audioStatusIsAvailableNow = currentMediaIsAudio != .unknown && audioStatusWasUnkownBefore
+
     // if need to switch to music mode
-    if audioStatusIsAvailableNow && Preference.bool(for: .autoSwitchToMusicMode) {
-      if currentMediaIsAudio == .isAudio {
+    if Preference.bool(for: .autoSwitchToMusicMode) {
+      if isCurrentMediaAudioOnly() {
         if !isInMiniPlayer && !mainWindow.fsState.isFullscreen && !switchedBackFromMiniPlayerManually {
           Logger.log("Current media is audio, switch to mini player", subsystem: subsystem)
           DispatchQueue.main.sync {
@@ -1705,23 +1702,17 @@ class PlayerCore: NSObject {
     self.info.setCachedMetadata(path, result)
   }
 
-  enum CurrentMediaIsAudioStatus {
-    case unknown
-    case isAudio
-    case notAudio
-  }
-
-  var currentMediaIsAudio = CurrentMediaIsAudioStatus.unknown
-
-  func checkCurrentMediaIsAudio() -> CurrentMediaIsAudioStatus {
-    guard !info.isNetworkResource else { return .notAudio }
+  // Returns true ONLY IF current media is audio & audio-only
+  func ig() -> Bool {
+//    guard !info.isNetworkResource else { return .notAudio }
     let noVideoTrack = info.videoTracks.isEmpty
     let noAudioTrack = info.audioTracks.isEmpty
     if noVideoTrack && noAudioTrack {
-      return .unknown
+      return false
     }
     let allVideoTracksAreAlbumCover = !info.videoTracks.contains { !$0.isAlbumart }
-    return (noVideoTrack || allVideoTracksAreAlbumCover) ? .isAudio : .notAudio
+    let isAudioOnly = noVideoTrack || allVideoTracksAreAlbumCover
+    return isAudioOnly
   }
 
   static func checkStatusForSleep() {
@@ -1782,7 +1773,7 @@ class NowPlayingInfoManager {
     let activePlayer = PlayerCore.lastActive
 
     if withTitle {
-      if activePlayer.currentMediaIsAudio == .isAudio {
+      if activePlayer.isCurrentMediaAudioOnly() {
         info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
         let (title, album, artist) = activePlayer.getMusicMetadata()
         info[MPMediaItemPropertyTitle] = title
