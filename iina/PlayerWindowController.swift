@@ -259,9 +259,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   override func keyDown(with event: NSEvent) {
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     if keyCode != "" {
-      #if DEBUG
       Logger.log("KeyDown: \(keyCode)", level: .verbose)
-      #endif
       if matchAndHandle(keyCode) {
         return
       }
@@ -276,9 +274,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         }
 
         keyCodeSequence = "\(prevKeyCode)-\(keyCodeSequence)"
-        #if DEBUG
         Logger.log("KeyDown: trying match for seq\(i+1): \(keyCodeSequence)", level: .verbose)
-        #endif
 
         if matchAndHandle(keyCodeSequence) {
           return
@@ -290,9 +286,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     lastKeyPressedIndex = (lastKeyPressedIndex+1)%4
     lastKeysPressed[lastKeyPressedIndex] = keyCode
 
-    #if DEBUG
-    Logger.log("KeyDown: no action for: \(keyCode)", level: .verbose)
-    #endif
     super.keyDown(with: event)
   }
 
