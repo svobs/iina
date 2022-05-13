@@ -62,6 +62,7 @@ class MPVController: NSObject {
   private var hookCounter: UInt64 = 1
 
   let observeProperties: [String: mpv_format] = [
+    MPVProperty.inputBindings: MPV_FORMAT_NODE,
     MPVProperty.trackList: MPV_FORMAT_NONE,
     MPVProperty.vf: MPV_FORMAT_NONE,
     MPVProperty.af: MPV_FORMAT_NONE,
@@ -583,6 +584,40 @@ class MPVController: NSObject {
     return parsed
   }
 
+  private func getFromMap(_ key: String, _ map: [String: Any?]) -> String {
+    if let keyOpt = map[key] as? Optional<String> {
+      return keyOpt!
+    }
+    return ""
+  }
+
+  private func asString(_ keyMappingList: [KeyMapping]) -> String {
+    return keyMappingList.map { mapping in
+      return "BINDING: \(mapping.key) \(mapping.action.joined(separator: " "))   \(mapping.comment == nil ? "" : "#\(mapping.comment!))")"
+    }.joined(separator: "\n")
+  }
+
+  func getKeyBindingsFromMPV(filterCommandsBy filter: (Substring) -> Bool) -> [KeyMapping] {
+    var keyMappingList: [KeyMapping] = []
+    let parsed = getNode(MPVProperty.inputBindings)
+    if let mapList = parsed as? [Any?] {
+      for mapRaw in mapList {
+        if let map = mapRaw as? [String: Any?] {
+          let key = getFromMap("key", map)
+          let cmd = getFromMap("cmd", map)
+          let comment = getFromMap("comment", map)
+          let cmdTokens = cmd.split(separator: " ")
+          if filter(cmdTokens[0]) {
+            keyMappingList.append(KeyMapping(key: key, rawAction: cmd, comment: comment))
+          }
+        }
+      }
+    } else {
+      Logger.log("Failed to parse bindings!", level: .error)
+    }
+    return keyMappingList
+  }
+
   // MARK: - Hooks
 
   func addHook(_ name: MPVHook, priority: Int32 = 0, hook: @escaping () -> Void) {
@@ -609,9 +644,14 @@ class MPVController: NSObject {
 
   // Handle the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
-    let eventId = event.pointee.event_id
+    let eventId: mpv_event_id = event.pointee.event_id
+    Logger.log("Received MPV event: \(eventId.rawValue)")
 
     switch eventId {
+      case MPV_EVENT_CLIENT_MESSAGE:
+        let scriptBindings = getKeyBindingsFromMPV(filterCommandsBy: { s in return s == "script-binding" })
+        Logger.log("Got MPV_EVENT_CLIENT_MESSAGE!\n\(asString(scriptBindings))")
+
     case MPV_EVENT_SHUTDOWN:
       let quitByMPV = !player.isMpvTerminated
       if quitByMPV {
@@ -644,6 +684,7 @@ class MPVController: NSObject {
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
         let propertyName = String(cString: property.name)
+        Logger.log("MPV property changed: \(propertyName)")
         handlePropertyChange(propertyName, property)
       }
 
@@ -1003,6 +1044,10 @@ class MPVController: NSObject {
         }
         receivedEndFileWhileLoading = false
       }
+
+    case MPVProperty.inputBindings:
+        let bindings = getKeyBindingsFromMPV( filterCommandsBy: { s in return true} )
+        Logger.log("Bindings CHANGED: \(asString(bindings)))")
 
     default:
       // Utility.log("MPV property changed (unhandled): \(name)")
