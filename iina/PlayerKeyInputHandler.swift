@@ -7,3 +7,14 @@
 //
 
 import Foundation
+
+unowned var player: PlayerCore
+
+class PlayerKeyInputHandler {
+
+init(playerCore: PlayerCore) {
+  self.player = playerCore
+}
+
+
+}
