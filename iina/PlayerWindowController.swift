@@ -12,9 +12,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   unowned var player: PlayerCore
 
-  internal var lastKeysPressed = ["", "", "", ""]
-  internal var lastKeyPressedIndex = 0
-  
   var videoView: VideoView {
     fatalError("Subclass must implement")
   }
@@ -257,45 +254,17 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    if keyCode != "" {
-      Logger.log("KeyDown: \(keyCode)", level: .verbose)
-      if matchAndHandle(keyCode) {
-        return
-      }
-
-      // try to match key sequences, up to 4 values. shortest match wins
-      var keyCodeSequence = keyCode
-      for i in 0..<3 {
-        let prevKeyCode = lastKeysPressed[(lastKeyPressedIndex+4-i)%4]
-        if prevKeyCode == "" {
-          // no prev keyCode
-          break
-        }
-
-        keyCodeSequence = "\(prevKeyCode)-\(keyCodeSequence)"
-        Logger.log("KeyDown: trying match for seq\(i+1): \(keyCodeSequence)", level: .verbose)
-
-        if matchAndHandle(keyCodeSequence) {
-          return
+    if let keyBinding = PlayerCore.getKeyInputController().resolveKeyEvent(event) {
+      if keyBinding.action.count > 0 && keyBinding.action[0] != MPVCommand.ignore.rawValue {  // if "ignore", do nothing. No beep, no send
+        if !handleKeyBinding(keyBinding) {
+          // beep if cmd failed
+          super.keyDown(with: event)
         }
       }
+    } else {
+      // invalid key
+      super.keyDown(with: event)
     }
-    // no match, but may be part of a key sequence.
-    // store prev key in circular buffer for later key sequence matching
-    lastKeyPressedIndex = (lastKeyPressedIndex+1)%4
-    lastKeysPressed[lastKeyPressedIndex] = keyCode
-
-    super.keyDown(with: event)
-  }
-
-  private func matchAndHandle(_ keyCode: String) -> Bool {
-    if let kb = PlayerCore.keyBindings[keyCode], kb.rawAction != MPVCommand.ignore.rawValue {
-      lastKeysPressed[lastKeyPressedIndex] = ""  // clear sequence on match
-      handleKeyBinding(kb)
-      return true
-    }
-    return false
   }
 
   override func mouseUp(with event: NSEvent) {

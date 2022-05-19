@@ -141,6 +141,8 @@ class PlayerCore: NSObject {
 
   static var keyBindings: [String: KeyMapping] = [:]
 
+  static let keyInputController = KeyInputController()
+
   override init() {
     super.init()
     self.mpv = MPVController(playerCore: self)
@@ -268,7 +270,16 @@ class PlayerCore: NSObject {
     mpv.command(.loadfile, args: [path])
   }
 
-  static func loadKeyBindings() {
+  static func initSharedState() {
+    loadKeyBindings()
+    keyInputController.start()
+  }
+
+  static func getKeyInputController() -> KeyInputController {
+    return keyInputController
+  }
+
+  private static func loadKeyBindings() {
     Logger.log("Loading key bindings")
     let userConfigs = Preference.dictionary(for: .inputConfigs)
     let iinaDefaultConfPath = PrefKeyBindingViewController.defaultConfigs["IINA Default"]!
