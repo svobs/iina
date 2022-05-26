@@ -41,8 +41,8 @@ class KeyInputController {
 
   static private let sharedSubsystem = Logger.Subsystem(rawValue: "keyinput")
 
-  // Derived from IINA's currently active key bindings. We need to track valid "partial key sequences" so that the user doesn't hear a beep
-  // while they are typing the sequence. For example, if there is currently a binding for "x-y-z", this will contain "x" and "x-y", among others.
+  // Derived from IINA's currently active key bindings. We need to account for partial key sequences so that the user doesn't hear a beep
+  // while they are typing the beginning of the sequence. For example, if there is currently a binding for "x-y-z", then "x" and "x-y".
   // This needs to be rebuilt each time the keybindings change.
   static private var partialValidSequences = Set<String>()
 
@@ -145,16 +145,16 @@ class KeyInputController {
   // Try to match key sequences, up to 4 values. shortest match wins
   private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
     var keySequence = lastKeyStroke
-    var hasPartialSequence = false
+    var hasPartialValidSequence = false
 
     if let singleKeyBinding = PlayerCore.keyBindings[lastKeyStroke] {
       // Resolved successfully! Clear prev key buffer.
       log("Found active binding for keystroke \"\(lastKeyStroke)\" -> \(singleKeyBinding.action)", level: .debug)
       lastKeysPressed.clear()
       return singleKeyBinding
-    } else if !hasPartialSequence && KeyInputController.partialValidSequences.contains(lastKeyStroke) {
+    } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(lastKeyStroke) {
       // No exact match, but at least is part of a key sequence.
-      hasPartialSequence = true
+      hasPartialValidSequence = true
     }
 
     for prevKey in lastKeysPressed.reversed() {
@@ -165,13 +165,13 @@ class KeyInputController {
       if let keyBinding = PlayerCore.keyBindings[keySequence] {
         log("Found active binding for sequence \"\(keySequence)\" -> \(keyBinding.action)", level: .debug)
         return keyBinding
-      } else if !hasPartialSequence && KeyInputController.partialValidSequences.contains(keySequence) {
+      } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
         // No exact match, but at least is part of a key sequence.
-        hasPartialSequence = true
+        hasPartialValidSequence = true
       }
     }
 
-    if hasPartialSequence {
+    if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
       log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
       return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
