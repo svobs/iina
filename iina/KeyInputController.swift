@@ -8,99 +8,175 @@
 
 import Foundation
 
+/*
+ A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
+ PlayerWindowController is expected to direct key presses to this class's [resolveKeyEvent() method](x-source-tag://ResolveKeyEvent)
+ to match the user's key stroke(s) into recognized commands.
+
+ A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or MPV command.
+ This can include mouse events (though not handled by this class), single keystroke (which may include modifiers), or a sequence of keystrokes.
+ See [the MPV manual](https://mpv.io/manual/master/#key-names) for information on MPV's valid "key names".
+
+ // MARK: - Note on key sequences
+
+ From the MPV manual:
+
+ > It's also possible to bind a command to a sequence of keys:
+ >
+ > a-b-c show-text "command run after a, b, c have been pressed"
+ > (This is not shown in the general command syntax.)
+ >
+ > If a or a-b or b are already bound, this will run the first command that matches, and the multi-key command will never be called.
+ > Intermediate keys can be remapped to ignore in order to avoid this issue.
+ > The maximum number of (non-modifier) keys for combinations is currently 4.
+
+ Although IINA's active key bindings (as set in IINA's Preferences window) take effect immediately and apply to all player windows, each player
+ window maintains independent state, and in keeping with this, each player's KeyInputController maintains a separate buffer of pressed keystrokes
+ (going back as many as 4 keystrokes).
+
+ */
 class KeyInputController {
 
-  private var lastKeysPressed = ["", "", "", ""]
-  private var lastKeyPressedIndex = 0
-  private var partialKeySequences = Set<String>()
-  private var observer: NSObjectProtocol? = nil
+  // MARK: - Shared state for all players
 
-  init() {
-  }
+  static private let sharedSubsystem = Logger.Subsystem(rawValue: "keyinput")
 
-  deinit {
-    if let observer = observer {
-      NotificationCenter.default.removeObserver(observer)
+  // Derived from IINA's currently active key bindings. We need to track valid "partial key sequences" so that the user doesn't hear a beep
+  // while they are typing the sequence. For example, if there is currently a binding for "x-y-z", this will contain "x" and "x-y", among others.
+  // This needs to be rebuilt each time the keybindings change.
+  static private var partialValidSequences = Set<String>()
+
+  // Reacts when there is a change to the global key bindings
+  static private var keyBindingsChangedObserver: NSObjectProtocol? = nil
+
+  static func initSharedState() {
+    if let existingObserver = keyBindingsChangedObserver {
+      NotificationCenter.default.removeObserver(existingObserver)
     }
-  }
-
-  func start() {
-    observer = NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: onKeyBindingsChanged)
-    rebuildKeySequences()
-  }
-
-  func resolveKeyEvent(_ keyEvent: NSEvent) -> KeyMapping? {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: keyEvent)
-    if keyCode == "" {
-      return nil
-    }
-    Logger.log("KeyDown: \(keyCode)", level: .verbose)
-    if let kb = resolve(keyCode) {
-      return kb
+    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main) { _ in
+      KeyInputController.rebuildPartialValidSequences()
     }
 
-    // try to match key sequences, up to 4 values. shortest match wins
-    var keyCodeSequence = keyCode
-    for i in 0..<3 {
-      let prevKeyCode = lastKeysPressed[(lastKeyPressedIndex+4-i)%4]
-      if prevKeyCode == "" {
-        // no prev keyCode
-        break
-      }
-
-      keyCodeSequence = "\(prevKeyCode)-\(keyCodeSequence)"
-      Logger.log("KeyDown: trying match for seq\(i+1): \(keyCodeSequence)", level: .verbose)
-
-      if let kb = resolve(keyCodeSequence) {
-        return kb
-      }
-    }
-    // no match, but may be part of a key sequence.
-    // store prev key in circular buffer for later key sequence matching
-    lastKeyPressedIndex = (lastKeyPressedIndex+1)%4
-    lastKeysPressed[lastKeyPressedIndex] = keyCode
-
-    return nil
+    // initial build
+    KeyInputController.rebuildPartialValidSequences()
   }
 
-  private func resolve(_ keyCode: String) -> KeyMapping? {
-    if let kb = PlayerCore.keyBindings[keyCode] {
-      // reset key sequence if match, unless explicit "ignore":
-      if kb.rawAction != MPVCommand.ignore.rawValue {
-        lastKeysPressed[lastKeyPressedIndex] = ""
-      }
-      return kb
-    }
-
-    if partialKeySequences.contains(keyCode) {
-      // send an explicit "ignore" for a partial sequence match, so player window doesn't beep
-      return KeyMapping(key: keyCode, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
-    }
-    return nil
+  static private func onKeyBindingsChanged(_ sender: Notification) {
+    Logger.log("Key bindings changed. Rebuilding partial valid key sequences", level: .verbose, subsystem: sharedSubsystem)
+    KeyInputController.rebuildPartialValidSequences()
   }
 
-  private func onKeyBindingsChanged(_ sender: Notification) {
-    rebuildKeySequences()
-  }
-
-  private func rebuildKeySequences() {
-    Logger.log("Rebuilding key sequences", level: .verbose)
+  static private func rebuildPartialValidSequences() {
     var partialSet = Set<String>()
     for (keyCode, _) in PlayerCore.keyBindings {
-      if keyCode.contains("-") {
-        let keyCodeSequence = keyCode.split(separator: "-")
-        var partial = ""
-        for keyCode in keyCodeSequence {
-          if partial != "" {
-            partial = String(keyCode)
-          } else {
-            partial = "\(partial)-\(keyCode)"
+      if keyCode.contains("-") && keyCode != "default-bindings" {
+        let keySequence = keyCode.split(separator: "-")
+        if keySequence.count >= 2 {
+          var partial = ""
+          for key in keySequence {
+            if partial == "" {
+              partial = String(key)
+            } else {
+              partial = "\(partial)-\(key)"
+            }
+            if partial != keyCode {
+              partialSet.insert(partial)
+            }
           }
-          partialSet.insert(partial)
         }
       }
     }
-    partialKeySequences = partialSet
+    Logger.log("Generated partialValidKeySequences: \(partialSet)", level: .verbose)
+    partialValidSequences = partialSet
   }
 
+  // MARK: - Single player instance
+
+  private var lastKeysPressed = RingBuffer<String>(capacity: 3)
+
+  private var playerCore: PlayerCore!
+  private lazy var subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
+
+  init(playerCore: PlayerCore) {
+    self.playerCore = playerCore
+  }
+
+  func log(_ msg: String, level: Logger.Level) {
+    Logger.log(msg, level: level, subsystem: subsystem)
+  }
+
+  /*
+   Parses the user's most recent keystroke from the given keyDown event and determines if it (a) matches a key binding for a single keystroke,
+   or (b) when combined with the user's previous keystrokes, matches a key binding for a key sequence.
+
+   Returns:
+   - nil if keystroke is invalid (e.g., it does not resolve to an actively bound keystroke or key sequence, and could not be interpreted as starting
+     or continuing such a key sequence)
+   - (a non-null) KeyMapping whose action is "ignore" if it should be ignored by MPV and IINA
+   - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
+     in a key sequence.
+   */
+  func resolveKeyEvent(_ keyDownEvent: NSEvent) -> KeyMapping? {
+    assert (keyDownEvent.type == NSEvent.EventType.keyDown, "Expected a KeyDown event but got: \(keyDownEvent)")
+
+    let keyStroke: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
+    if keyStroke == "" {
+      log("Event could not be translated; ignoring: \(keyDownEvent)", level: .debug)
+      return nil
+    }
+
+    if let sequenceKeyBinding = resolveKeySequence(keyStroke) {
+      if sequenceKeyBinding.isIgnored {
+        // Partial sequence or explicit ignore are treated the same: continue building sequence and return
+        lastKeysPressed.appendHead(keyStroke)
+      } else {
+        // Resolved successfully! Clear prev key buffer.
+        lastKeysPressed.clear()
+      }
+      return sequenceKeyBinding
+    }
+
+    // Key was not the end of a sequence; however, it still may be part of another sequence
+    log("No active binding for keystroke \"\(keyStroke)\"", level: .debug)
+    lastKeysPressed.appendHead(keyStroke)
+    return nil
+  }
+
+  // Try to match key sequences, up to 4 values. shortest match wins
+  private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
+    var keySequence = lastKeyStroke
+    var hasPartialSequence = false
+
+    if let singleKeyBinding = PlayerCore.keyBindings[lastKeyStroke] {
+      // Resolved successfully! Clear prev key buffer.
+      log("Found active binding for keystroke \"\(lastKeyStroke)\" -> \(singleKeyBinding.action)", level: .debug)
+      lastKeysPressed.clear()
+      return singleKeyBinding
+    } else if !hasPartialSequence && KeyInputController.partialValidSequences.contains(lastKeyStroke) {
+      // No exact match, but at least is part of a key sequence.
+      hasPartialSequence = true
+    }
+
+    for prevKey in lastKeysPressed.reversed() {
+      keySequence = "\(prevKey)-\(keySequence)"
+
+      log("Checking sequence: \"\(keySequence)\"", level: .verbose)
+
+      if let keyBinding = PlayerCore.keyBindings[keySequence] {
+        log("Found active binding for sequence \"\(keySequence)\" -> \(keyBinding.action)", level: .debug)
+        return keyBinding
+      } else if !hasPartialSequence && KeyInputController.partialValidSequences.contains(keySequence) {
+        // No exact match, but at least is part of a key sequence.
+        hasPartialSequence = true
+      }
+    }
+
+    if hasPartialSequence {
+      // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
+      log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
+      return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
+    } else {
+      return nil
+    }
+  }
 }

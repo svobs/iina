@@ -141,11 +141,12 @@ class PlayerCore: NSObject {
 
   static var keyBindings: [String: KeyMapping] = [:]
 
-  static let keyInputController = KeyInputController()
+  var keyInputController: KeyInputController!
 
   override init() {
     super.init()
     self.mpv = MPVController(playerCore: self)
+    self.keyInputController = KeyInputController(playerCore: self)
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)
@@ -272,11 +273,7 @@ class PlayerCore: NSObject {
 
   static func initSharedState() {
     loadKeyBindings()
-    keyInputController.start()
-  }
-
-  static func getKeyInputController() -> KeyInputController {
-    return keyInputController
+    KeyInputController.initSharedState()
   }
 
   private static func loadKeyBindings() {
@@ -1301,7 +1298,7 @@ class PlayerCore: NSObject {
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
     guard mainWindow.loaded else { return }
-    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
+//    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
 
     switch option {
 

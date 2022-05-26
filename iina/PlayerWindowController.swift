@@ -254,8 +254,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
-    if let keyBinding = PlayerCore.getKeyInputController().resolveKeyEvent(event) {
-      if keyBinding.action.count > 0 && keyBinding.action[0] != MPVCommand.ignore.rawValue {  // if "ignore", do nothing. No beep, no send
+    if let keyBinding = player.keyInputController.resolveKeyEvent(event) {
+      if !keyBinding.isIgnored {  // if "ignore", do nothing. No beep, no send
         if !handleKeyBinding(keyBinding) {
           // beep if cmd failed
           super.keyDown(with: event)

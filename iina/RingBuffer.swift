@@ -1,104 +1,166 @@
+//
+//  RingBuffer.swift
+//  iina
+//
+//  Created by Matt Svoboda on 2022.05.17.
+//  Copyright © 2022 lhc. All rights reserved.
+//
+
 /*
-  Copyright (c) 2016 Matthijs Hollemans and contributors
+ Fixed-capacity ring buffer, backed by an data, which can append and pop from both the head and the tail.
+ If already at full capacity:
+ - Appending an element to the head will overwrite the element at the tail
+ - Appending elements to the tail will overwrite the elements at the head
+ */
+public struct RingBuffer<T>: CustomStringConvertible, Sequence {
+  private var data: [T?]
+  private var tailIndex = 0
+  private var headIndex = 0
+  private var elementCount = 0
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-  THE SOFTWARE.
-
-  RingBuffer
-  https://github.com/raywenderlich/swift-algorithm-club.git
-  Fixed-length ring buffer
-
-  In this implementation, the read and write pointers always increment and
-  never wrap around. On a 64-bit platform that should not get you into trouble
-  any time soon.
-
-  Not thread-safe, so don't read and write from different threads at the same
-  time! To make this thread-safe for one reader and one writer, it should be
-  enough to change read/writeIndex += 1 to OSAtomicIncrement64(), but I haven't
-  tested this...
-*/
-public struct RingBuffer<T> {
-  private var array: [T?]
-  private var readIndex = 0
-  private var writeIndex = 0
-
-  public init(count: Int) {
-    array = [T?](repeating: nil, count: count)
+  public var count: Int {
+    get {
+      return elementCount
+    }
   }
 
-  /* Returns false if out of space. */
+  public init(capacity: Int) {
+    data = [T?](repeating: nil, count: capacity)
+    resetCounters()
+  }
+
+  /*
+   Gets the element at the head, without removing it or changing state in any way.
+   */
+  public var head: T? {
+    get {
+      return data[headIndex]
+    }
+  }
+
+  /*
+   Gets the element at the tail, without removing it or changing state in any way.
+   */
+  public var tail: T? {
+    get {
+      return data[tailIndex]
+    }
+  }
+
+  /*
+   Sets all elements to zero & clears all internal variables to their initial state, except for `capacity`
+   */
+  public mutating func clear() {
+    for i in 0..<data.count {
+      data[i] = nil
+    }
+  }
+
+  /*
+   Adds the given element to the head and increments the pointer. If already full, then the tail is overwritten.
+   Returns true if the tail was overwritten; false if not.
+   */
   @discardableResult
-  public mutating func write(_ element: T) -> Bool {
-    guard !isFull else { return false }
-    defer {
-        writeIndex += 1
+  public mutating func appendHead(_ element: T) -> Bool {
+    data[headIndex] = element
+    headIndex = (headIndex + 1) % data.count
+    if isFull {
+      tailIndex = tailIndex + 1  // also advance tail since it is being overwritten
+      return true
+    } else {
+      elementCount = elementCount + 1
+      return false
     }
-    array[wrapped: writeIndex] = element
-    return true
   }
 
-  /* Returns nil if the buffer is empty. */
-  public mutating func read() -> T? {
-    guard !isEmpty else { return nil }
-    defer {
-        array[wrapped: readIndex] = nil
-        readIndex += 1
+  /*
+   Pops and returns the element at the tail, retreating the pointer to the tail.
+   Returns nil if already empty.
+   */
+  @discardableResult
+  public mutating func popTail() -> T? {
+    guard !isEmpty else {
+      return nil
     }
-    return array[wrapped: readIndex]
+    defer {
+      data[tailIndex] = nil
+      tailIndex = (tailIndex + 1) % data.count
+      elementCount = elementCount - 1
+    }
+    return data[tailIndex]
   }
 
-  private var availableSpaceForReading: Int {
-    return writeIndex - readIndex
+  /*
+   Adds the given element to the tail and advances the tail pointer.
+   If already full, then the head is overwritten and the head pointer retreats.
+   Returns true if the head was overwritten; false if not.
+   */
+  public mutating func appendTail(_ element: T) -> Bool {
+    data[tailIndex] = element
+    tailIndex = (tailIndex - 1) % data.count
+    if isFull {
+      headIndex = headIndex - 1  // also advance tail since it is being overwritten
+      return true
+    } else {
+      elementCount = elementCount + 1
+      return false
+    }
+  }
+
+  /*
+   Pops and returns the element at the head, retreating the pointer to the head.
+   Returns nil if already empty.
+   */
+  @discardableResult
+  public mutating func popHead() -> T? {
+    guard !isEmpty else {
+      return nil
+    }
+    defer {
+      data[headIndex] = nil
+      headIndex = (headIndex - 1) % data.count
+      elementCount = elementCount - 1
+    }
+    return data[headIndex]
   }
 
   public var isEmpty: Bool {
-    return availableSpaceForReading == 0
-  }
-
-  private var availableSpaceForWriting: Int {
-    return array.count - availableSpaceForReading
+    return elementCount == 0
   }
 
   public var isFull: Bool {
-    return availableSpaceForWriting == 0
+    return elementCount == data.count
   }
-}
 
-extension RingBuffer: Sequence {
-  public func makeIterator() -> AnyIterator<T> {
-    var index = readIndex
-    return AnyIterator {
-        guard index < self.writeIndex else { return nil }
-        defer {
-            index += 1
-        }
-        return self.array[wrapped: index]
-    }
-  }
-}
-
-private extension Array {
-  subscript (wrapped index: Int) -> Element {
+  public var description: String {
     get {
-      return self[index % count]
+      var string = ""
+      for elem in self {
+        if string.isEmpty {
+          string = "\(elem)"
+        } else {
+          string.append(", \(elem)")
+        }
+      }
+      return "[\(string)]"
     }
-    set {
-      self[index % count] = newValue
+  }
+
+  private mutating func resetCounters() {
+    headIndex = data.count - 1
+    tailIndex = data.count - 1
+    elementCount = 0
+  }
+
+  public func makeIterator() -> AnyIterator<T> {
+    var index = tailIndex
+    let endIndex = index + elementCount
+    return AnyIterator {
+      guard index < endIndex else { return nil }
+      defer {
+        index = index + 1
+      }
+      return data[index % data.count]
     }
   }
 }
