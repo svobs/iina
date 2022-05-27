@@ -92,7 +92,7 @@ class KeyInputController {
 
   // MARK: - Single player instance
 
-  private var lastKeysPressed = RingBuffer<String>(capacity: 3)
+  private var lastKeysPressed = RingBuffer<String>(capacity: 4)
 
   private var playerCore: PlayerCore!
   private lazy var subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
@@ -125,45 +125,40 @@ class KeyInputController {
       return nil
     }
 
+    lastKeysPressed.appendHead(keyStroke)
+    lastKeysPressed.appendTail("TAIL")
+    log("ARRAY: \(lastKeysPressed)", level: .verbose)
+
     if let sequenceKeyBinding = resolveKeySequence(keyStroke) {
-      if sequenceKeyBinding.isIgnored {
-        // Partial sequence or explicit ignore are treated the same: continue building sequence and return
-        lastKeysPressed.appendHead(keyStroke)
-      } else {
+      if !sequenceKeyBinding.isIgnored {
         // Resolved successfully! Clear prev key buffer.
         lastKeysPressed.clear()
+      } else {
+        log("Found active binding for \"\(sequenceKeyBinding.key)\" -> \(sequenceKeyBinding.action)", level: .debug)
       }
       return sequenceKeyBinding
     }
 
     // Key was not the end of a sequence; however, it still may be part of another sequence
     log("No active binding for keystroke \"\(keyStroke)\"", level: .debug)
-    lastKeysPressed.appendHead(keyStroke)
     return nil
   }
 
   // Try to match key sequences, up to 4 values. shortest match wins
   private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
-    var keySequence = lastKeyStroke
+    var keySequence = ""
     var hasPartialValidSequence = false
 
-    if let singleKeyBinding = PlayerCore.keyBindings[lastKeyStroke] {
-      // Resolved successfully! Clear prev key buffer.
-      log("Found active binding for keystroke \"\(lastKeyStroke)\" -> \(singleKeyBinding.action)", level: .debug)
-      lastKeysPressed.clear()
-      return singleKeyBinding
-    } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(lastKeyStroke) {
-      // No exact match, but at least is part of a key sequence.
-      hasPartialValidSequence = true
-    }
-
     for prevKey in lastKeysPressed.reversed() {
-      keySequence = "\(prevKey)-\(keySequence)"
+      if keySequence.isEmpty {
+        keySequence = prevKey
+      } else {
+        keySequence = "\(prevKey)-\(keySequence)"
+      }
 
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
       if let keyBinding = PlayerCore.keyBindings[keySequence] {
-        log("Found active binding for sequence \"\(keySequence)\" -> \(keyBinding.action)", level: .debug)
         return keyBinding
       } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
         // No exact match, but at least is part of a key sequence.
