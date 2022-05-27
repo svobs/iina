@@ -77,25 +77,20 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
    */
   @discardableResult
   public mutating func appendHead(_ element: T) -> Bool {
-    if data[headIndex] != nil && !isFull {
-      // tail did an insert first. move over and use the next available space:
-      headIndex = (headIndex + 1) % data.count
+    let overwrite = isFull
+    if overwrite {
+      headIndex = (headIndex + 1) %% data.count
+      tailIndex = (tailIndex + 1) %% data.count  // also advance tail since it is being overwritten
+    } else {
+      if data[headIndex] != nil {
+        // was empty, but then appendTail happened. move over and use the next available space:
+        headIndex = (headIndex + 1) %% data.count
+      }
+      elementCount = elementCount + 1
     }
     data[headIndex] = element
-    headIndex = (headIndex + 1) % data.count
-    if isFull {
-      tailIndex = (tailIndex + 1) % data.count  // also advance tail since it is being overwritten
-      return true
-    } else {
-      elementCount = elementCount + 1
-      return false
-    }
+    return overwrite
   }
-
-//  static  func %% (_ left: Int, _ right: Int) -> Int {
-//     let mod = left % right
-//     return mod >= 0 ? mod : mod + right
-//  }
 
   /*
    Adds the given element to the tail and advances the tail pointer.
@@ -104,19 +99,19 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
    */
   @discardableResult
   public mutating func appendTail(_ element: T) -> Bool {
-    if data[tailIndex] != nil && !isFull {
-      // head did an insert first. move over and use the next available space:
-      tailIndex = (tailIndex - 1) % data.count
+    let overwrite = isFull
+    if overwrite {
+      tailIndex = (tailIndex - 1) %% data.count
+      headIndex = (headIndex - 1) %% data.count  // also retreat tail since it is being overwritten
+    } else {
+      if data[tailIndex] != nil {
+        // was empty, but then appendHead happened. move over and use the next available space:
+        tailIndex = (tailIndex - 1) %% data.count
+      }
+      elementCount = elementCount + 1
     }
     data[tailIndex] = element
-    tailIndex = (tailIndex - 1) % data.count
-    if isFull {
-      headIndex = (headIndex - 1) % data.count // also advance tail since it is being overwritten
-      return true
-    } else {
-      elementCount = elementCount + 1
-      return false
-    }
+    return overwrite
   }
 
   /*
@@ -130,7 +125,7 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
     }
     defer {
       data[headIndex] = nil
-      headIndex = (headIndex - 1) % data.count
+      headIndex = (headIndex - 1) %% data.count
       elementCount = elementCount - 1
     }
     return data[headIndex]
@@ -147,7 +142,7 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
     }
     defer {
       data[tailIndex] = nil
-      tailIndex = (tailIndex + 1) % data.count
+      tailIndex = (tailIndex + 1) %% data.count
       elementCount = elementCount - 1
     }
     return data[tailIndex]
@@ -167,6 +162,9 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
     }
   }
 
+  /*
+   Returns an iterator which yields elements one at a time, in order of tail -> head
+   */
   public func makeIterator() -> AnyIterator<T> {
     var index = tailIndex
     let endIndex = index + elementCount
@@ -175,7 +173,7 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
       defer {
         index = index + 1
       }
-      return data[index % data.count]
+      return data[index %% data.count]
     }
   }
 }
