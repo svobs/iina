@@ -125,27 +125,14 @@ class KeyInputController {
       return nil
     }
 
-    lastKeysPressed.appendHead(keyStroke)
-    lastKeysPressed.appendTail("TAIL")
-    log("ARRAY: \(lastKeysPressed)", level: .verbose)
-
-    if let sequenceKeyBinding = resolveKeySequence(keyStroke) {
-      if !sequenceKeyBinding.isIgnored {
-        // Resolved successfully! Clear prev key buffer.
-        lastKeysPressed.clear()
-      } else {
-        log("Found active binding for \"\(sequenceKeyBinding.key)\" -> \(sequenceKeyBinding.action)", level: .debug)
-      }
-      return sequenceKeyBinding
-    }
-
-    // Key was not the end of a sequence; however, it still may be part of another sequence
-    log("No active binding for keystroke \"\(keyStroke)\"", level: .debug)
-    return nil
+    return resolveKeySequence(keyStroke)
   }
 
   // Try to match key sequences, up to 4 values. shortest match wins
   private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
+    lastKeysPressed.insertHead(lastKeyStroke)
+    log("ARRAY: \(lastKeysPressed)", level: .verbose)  // TODO remove
+
     var keySequence = ""
     var hasPartialValidSequence = false
 
@@ -159,6 +146,13 @@ class KeyInputController {
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
       if let keyBinding = PlayerCore.keyBindings[keySequence] {
+        if keyBinding.isIgnored {
+          log("Ignoring \"\(keyBinding.key)\"", level: .verbose)
+        } else {
+          log("Found active binding for \"\(keyBinding.key)\" -> \(keyBinding.action)", level: .debug)
+          // Non-ignored action! Clear prev key buffer as per MPV spec
+          lastKeysPressed.clear()
+        }
         return keyBinding
       } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
         // No exact match, but at least is part of a key sequence.
@@ -171,6 +165,8 @@ class KeyInputController {
       log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
       return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
+      // Not even part of a valid sequence = invalid keystroke
+      log("No active binding for keystroke \"\(lastKeyStroke)\"", level: .debug)
       return nil
     }
   }

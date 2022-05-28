@@ -76,14 +76,14 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
    Returns true if the tail was overwritten; false if not.
    */
   @discardableResult
-  public mutating func appendHead(_ element: T) -> Bool {
+  public mutating func insertHead(_ element: T) -> Bool {
     let overwrite = isFull
     if overwrite {
       headIndex = (headIndex + 1) %% data.count
       tailIndex = (tailIndex + 1) %% data.count  // also advance tail since it is being overwritten
     } else {
       if data[headIndex] != nil {
-        // was empty, but then appendTail happened. move over and use the next available space:
+        // was empty, but then insertTail happened. move over and use the next available space:
         headIndex = (headIndex + 1) %% data.count
       }
       elementCount = elementCount + 1
@@ -98,14 +98,14 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
    Returns true if the head was overwritten; false if not.
    */
   @discardableResult
-  public mutating func appendTail(_ element: T) -> Bool {
+  public mutating func insertTail(_ element: T) -> Bool {
     let overwrite = isFull
     if overwrite {
       tailIndex = (tailIndex - 1) %% data.count
       headIndex = (headIndex - 1) %% data.count  // also retreat tail since it is being overwritten
     } else {
       if data[tailIndex] != nil {
-        // was empty, but then appendHead happened. move over and use the next available space:
+        // was empty, but then insertHead happened. move over and use the next available space:
         tailIndex = (tailIndex - 1) %% data.count
       }
       elementCount = elementCount + 1
@@ -119,7 +119,7 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
    Returns nil if already empty.
    */
   @discardableResult
-  public mutating func popHead() -> T? {
+  public mutating func removeHead() -> T? {
     guard !isEmpty else {
       return nil
     }
@@ -132,11 +132,11 @@ public struct RingBuffer<T>: CustomStringConvertible, Sequence {
   }
 
   /*
-   Pops and returns the element at the tail, retreating the pointer to the tail.
+   Pops and returns the element at the tail, advancing the pointer to the tail.
    Returns nil if already empty.
    */
   @discardableResult
-  public mutating func popTail() -> T? {
+  public mutating func removeTail() -> T? {
     guard !isEmpty else {
       return nil
     }
