@@ -10,7 +10,7 @@ import Foundation
 
 /*
  A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
- PlayerWindowController is expected to direct key presses to this class's [resolveKeyEvent() method](x-source-tag://ResolveKeyEvent)
+ PlayerWindowController is expected to direct key presses to this class's `resolveKeyEvent` method.
  to match the user's key stroke(s) into recognized commands.
 
  A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or MPV command.
@@ -106,6 +106,7 @@ class KeyInputController {
   }
 
   /*
+   /// - Tag: resolveKeyEvent
    Parses the user's most recent keystroke from the given keyDown event and determines if it (a) matches a key binding for a single keystroke,
    or (b) when combined with the user's previous keystrokes, matches a key binding for a key sequence.
 
