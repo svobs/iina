@@ -131,7 +131,6 @@ class KeyInputController {
   // Try to match key sequences, up to 4 values. shortest match wins
   private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
     lastKeysPressed.insertHead(lastKeyStroke)
-    log("ARRAY: \(lastKeysPressed)", level: .verbose)  // TODO remove
 
     var keySequence = ""
     var hasPartialValidSequence = false
