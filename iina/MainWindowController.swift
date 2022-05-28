@@ -588,6 +588,12 @@ class MainWindowController: PlayerWindowController {
       // Update the cached value
       self.cachedScreenCount = screenCount
       self.videoView.updateDisplayLink()
+      // In normal full screen mode AppKit will automatically adjust the window frame if the window
+      // is moved to a new screen such as when the window is on an external display and that display
+      // is disconnected. In legacy full screen mode IINA is responsible for adjusting the window's
+      // frame.
+      guard self.fsState.isFullscreen, Preference.bool(for: .useLegacyFullScreen) else { return }
+      setWindowFrameForLegacyFullScreen()
     }
   }
 
@@ -1022,12 +1028,20 @@ class MainWindowController: PlayerWindowController {
       window!.title = "Window"
     }
 
-    var screen = window!.screen!
+    // As there have been issues in this area, log details about the screen selection process.
+    NSScreen.log("window!.screen", window!.screen)
+    NSScreen.log("NSScreen.main", NSScreen.main)
+    NSScreen.screens.enumerated().forEach { screen in
+      NSScreen.log("NSScreen.screens[\(screen.offset)]" , screen.element)
+    }
+
+    var screen = window!.selectDefaultScreen()
 
     if let rectString = UserDefaults.standard.value(forKey: "MainWindowLastPosition") as? String {
       let rect = NSRectFromString(rectString)
       if let lastScreen = NSScreen.screens.first(where: { NSPointInRect(rect.origin, $0.visibleFrame) }) {
         screen = lastScreen
+        NSScreen.log("MainWindowLastPosition \(rect.origin) matched", screen)
       }
     }
 
@@ -1337,6 +1351,20 @@ class MainWindowController: PlayerWindowController {
     windowDidExitFullScreen(Notification(name: .iinaLegacyFullScreen))
   }
 
+  /// Set the window frame and if needed the content view frame to appropriately use the full screen.
+  ///
+  /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
+  private func setWindowFrameForLegacyFullScreen() {
+    guard let window = self.window else { return }
+    let screen = window.screen ?? NSScreen.main!
+    window.setFrame(screen.frame, display: true, animate: !AccessibilityPreferences.motionReductionEnabled)
+    guard let unusable = screen.cameraHousingHeight else { return }
+    // This screen contains an embedded camera. Shorten the height of the window's content view's
+    // frame to avoid having part of the window obscured by the camera housing.
+    let view = window.contentView!
+    view.setFrameSize(NSMakeSize(view.frame.width, screen.frame.height - unusable))
+  }
+
   private func legacyAnimateToFullscreen() {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     // call delegate
@@ -1355,15 +1383,8 @@ class MainWindowController: PlayerWindowController {
     // auto hide menubar and dock
     NSApp.presentationOptions.insert(.autoHideMenuBar)
     NSApp.presentationOptions.insert(.autoHideDock)
-    // set frame
-    let screen = window.screen ?? NSScreen.main!
-    window.setFrame(screen.frame, display: true, animate: true)
-    if let unusable = screen.cameraHousingHeight {
-      // This screen contains an embedded camera. Shorten the height of the window's view's frame to
-      // avoid having part of the video obscured by the camera housing.
-      let view = window.contentView!
-      view.setFrameSize(NSMakeSize(view.frame.width, view.frame.height - unusable))
-    }
+    // set window frame and in some cases content view frame
+    setWindowFrameForLegacyFullScreen()
     // call delegate
     windowDidEnterFullScreen(Notification(name: .iinaLegacyFullScreen))
   }
