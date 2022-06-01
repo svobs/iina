@@ -160,6 +160,8 @@
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
 		D1A7A0ED28462D62007D5D37 /* InitialWindow_KeyNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7A0EC28462D62007D5D37 /* InitialWindow_KeyNavigationTests.swift */; };
 		D1A7A10228472F41007D5D37 /* TestExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7A10128472F41007D5D37 /* TestExtensions.swift */; };
+		D1A7A1072847725A007D5D37 /* ModuloTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7A1052847725A007D5D37 /* ModuloTests.swift */; };
+		D1A7A1082847725A007D5D37 /* RingBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A7A1062847725A007D5D37 /* RingBufferTests.swift */; };
 		E301EFDA21312AB300BC8588 /* KeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = E301EFD921312AB300BC8588 /* KeychainAccess.swift */; };
 		E322A4F820A8442E00C67D32 /* PlaylistPlaybackProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E322A4F720A8442E00C67D32 /* PlaylistPlaybackProgressView.swift */; };
 		E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E32712AE24EAA14500359DAB /* ScreenshootOSDView.swift */; };
@@ -1217,6 +1219,8 @@
 		D1A7A0EA28462D62007D5D37 /* IINA-UI-Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IINA-UI-Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1A7A0EC28462D62007D5D37 /* InitialWindow_KeyNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialWindow_KeyNavigationTests.swift; sourceTree = "<group>"; };
 		D1A7A10128472F41007D5D37 /* TestExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestExtensions.swift; sourceTree = "<group>"; };
+		D1A7A1052847725A007D5D37 /* ModuloTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ModuloTests.swift; path = "IINA-Tests/ModuloTests.swift"; sourceTree = SOURCE_ROOT; };
+		D1A7A1062847725A007D5D37 /* RingBufferTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RingBufferTests.swift; path = "IINA-Tests/RingBufferTests.swift"; sourceTree = SOURCE_ROOT; };
 		D27556FC1EC6E1C300CAB2A4 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/HistoryWindowController.strings"; sourceTree = "<group>"; };
 		D27E35CE1E379B6D0064BE57 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/MainMenu.strings"; sourceTree = "<group>"; };
 		D27E35CF1E379B6D0064BE57 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/MainWindowController.strings"; sourceTree = "<group>"; };
@@ -2187,6 +2191,8 @@
 		D1A7A0FC28463353007D5D37 /* Util */ = {
 			isa = PBXGroup;
 			children = (
+				D1A7A1052847725A007D5D37 /* ModuloTests.swift */,
+				D1A7A1062847725A007D5D37 /* RingBufferTests.swift */,
 			);
 			name = Util;
 			path = Unit;
@@ -2629,6 +2635,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D1A7A1072847725A007D5D37 /* ModuloTests.swift in Sources */,
+				D1A7A1082847725A007D5D37 /* RingBufferTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
