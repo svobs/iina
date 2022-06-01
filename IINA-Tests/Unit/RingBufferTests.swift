@@ -2,14 +2,14 @@
 //  IINA_Tests.swift
 //  IINA-Tests
 //
-//  Created by Matthew Svoboda on 2022.05.27.
+//  Created by Matt Svoboda on 2022.05.27.
 //  Copyright © 2022 lhc. All rights reserved.
 //
 
 import XCTest
 @testable import IINA
 
-class RingBuffer_Tests: XCTestCase {
+class RingBufferTests: XCTestCase {
 
   var rb_1: RingBuffer<String>!
   var rb_5: RingBuffer<String>!

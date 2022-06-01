@@ -10,7 +10,7 @@ import XCTest
 @testable import IINA
 
 // See Google's online calculator for correct answers to these (e.g., search for "1 mod 5")
-class ModuloTest: XCTestCase {
+class ModuloTests: XCTestCase {
   func testModulo() throws {
     // + %% +
     XCTAssertEqual(1 %% 5, 1)

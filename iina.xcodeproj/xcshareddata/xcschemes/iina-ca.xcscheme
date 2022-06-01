@@ -33,8 +33,18 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D10425E02840B54300C3C9AF"
-               BuildableName = "IINA-Tests.xctest"
+               BuildableName = "IINA-Tests-old.xctest"
                BlueprintName = "IINA-Tests"
+               ReferencedContainer = "container:iina.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D1A7A0E928462D62007D5D37"
+               BuildableName = "iina-UI-Tests.xctest"
+               BlueprintName = "IINA-UI-Tests"
                ReferencedContainer = "container:iina.xcodeproj">
             </BuildableReference>
          </TestableReference>
