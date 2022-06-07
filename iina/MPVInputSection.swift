@@ -1,5 +1,5 @@
 //
-//  LuaScriptBinding.swift
+//  MPVInputSection.swift
 //  iina
 //
 //  Created by Matthew Svoboda on 2022.06.10.
@@ -7,7 +7,6 @@
 //
 
 import Foundation
-
 
 class MPVInputSection {
   static let FLAG_DEFAULT = "default"
@@ -31,9 +30,4 @@ class MPVInputSection {
     self.flags = flags
     self.enabled = enabled
   }
-}
-
-
-class LuaScriptBinding {
-
 }
