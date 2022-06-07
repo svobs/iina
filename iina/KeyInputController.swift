@@ -71,7 +71,7 @@ class KeyInputController {
     for (keyCode, _) in PlayerCore.keyBindings {
       if keyCode.contains("-") && keyCode != "default-bindings" {
         let keySequence = keyCode.split(separator: "-")
-        if keySequence.count >= 2 {
+        if keySequence.count >= 2 && keySequence.count <= 4 {
           var partial = ""
           for key in keySequence {
             if partial == "" {
@@ -79,7 +79,7 @@ class KeyInputController {
             } else {
               partial = "\(partial)-\(key)"
             }
-            if partial != keyCode {
+            if partial != keyCode && !PlayerCore.keyBindings.keys.contains(partial) {
               partialSet.insert(partial)
             }
           }
@@ -154,12 +154,13 @@ class KeyInputController {
       if let keyBinding = PlayerCore.keyBindings[keySequence] {
         if keyBinding.isIgnored {
           log("Ignoring \"\(keyBinding.key)\"", level: .verbose)
+          hasPartialValidSequence = true
         } else {
           log("Found active binding for \"\(keyBinding.key)\" -> \(keyBinding.action)", level: .debug)
           // Non-ignored action! Clear prev key buffer as per MPV spec
           lastKeysPressed.clear()
+          return keyBinding
         }
-        return keyBinding
       } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
         // No exact match, but at least is part of a key sequence.
         hasPartialValidSequence = true
