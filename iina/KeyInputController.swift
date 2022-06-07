@@ -105,8 +105,14 @@ class KeyInputController {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
+  // Called when this window has keyboard focus but it was already handled by someone else (probably the main menu).
+  // But it's still important to know that it happened
+  func keyWasHandled(_ keyDownEvent: NSEvent) {
+    log("Clearing list of pressed keys", level: .verbose)
+    lastKeysPressed.clear()
+  }
+
   /*
-   /// - Tag: resolveKeyEvent
    Parses the user's most recent keystroke from the given keyDown event and determines if it (a) matches a key binding for a single keystroke,
    or (b) when combined with the user's previous keystrokes, matches a key binding for a key sequence.
 
