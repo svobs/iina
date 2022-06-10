@@ -12,11 +12,6 @@ import Foundation
 fileprivate let yes_str = "yes"
 fileprivate let no_str = "no"
 
-// Change this variable to adjust mpv log level
-// NOTE: Lua keybindings require at *least* level "debug"
-fileprivate let mpvLogLevel: MPVLogLevel = .debug
-fileprivate let iinaMpvLogLevel = MPVLogLevel(rawValue: Preference.integer(for: .iinaMpvLogLevel))!
-
 extension mpv_event_id: CustomStringConvertible {
   // Generated code from mpv is objc and does not have Swift's built-in enum name introspection.
   // We provide that here using mpv_event_name()
@@ -59,7 +54,7 @@ class MPVController: NSObject {
 
   var fileLoaded: Bool = false
 
-  let mpvLogParser = MPVLogParser()
+  let mpvLogHandler: MPVLogHandler!
 
   private var hooks: [UInt64: () -> Void] = [:]
   private var hookCounter: UInt64 = 1
@@ -101,6 +96,7 @@ class MPVController: NSObject {
 
   init(playerCore: PlayerCore) {
     self.player = playerCore
+    self.mpvLogHandler = MPVLogHandler(player: playerCore)
     super.init()
   }
 
@@ -329,7 +325,7 @@ class MPVController: NSObject {
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
 
     // Receive log messages at given level of verbosity.
-    chkErr(mpv_request_log_messages(mpv, mpvLogLevel.description))
+    chkErr(mpv_request_log_messages(mpv, mpvLogHandler.mpvLogSubscriptionLevel.description))
 
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))
@@ -777,11 +773,7 @@ class MPVController: NSObject {
         let level = String(cString: (dataPtr.pointee.level)!)
         let message = String(cString: (dataPtr.pointee.text)!)
 
-        if !mpvLogParser.handleLogMessage(prefix: prefix, severityLevel: level, msg: message) {
-          if iinaMpvLogLevel.shouldLog(severity: level) {
-            Logger.log("mpv log[\(level)]: [\(prefix)]: \(message)", level: .warning, subsystem: .general, appendNewlineAtTheEnd: false)
-          }
-        }
+        mpvLogHandler.handleLogMessage(prefix: prefix, level: level, msg: message)
       }
 
     case MPV_EVENT_HOOK:
