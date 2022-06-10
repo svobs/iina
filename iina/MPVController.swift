@@ -12,19 +12,20 @@ import Foundation
 fileprivate let yes_str = "yes"
 fileprivate let no_str = "no"
 
-/** Change this variable to adjust mpv log level */
-/*
- "no"    - disable absolutely all messages
- "fatal" - critical/aborting errors
- "error" - simple errors
- "warn"  - possible problems
- "info"  - informational message
- "v"     - noisy informational message
- "debug" - very noisy technical information
- "trace" - extremely noisy
- */
-fileprivate let MPVLogLevel = "warn"
+// Change this variable to adjust mpv log level
+// NOTE: Lua keybindings require at *least* level "debug"
+fileprivate let mpvLogLevel: MPVLogLevel = .debug
+fileprivate let iinaMpvLogLevel = MPVLogLevel(rawValue: Preference.integer(for: .iinaMpvLogLevel))!
 
+extension mpv_event_id: CustomStringConvertible {
+  // Generated code from mpv is objc and does not have Swift's built-in enum name introspection.
+  // We provide that here using mpv_event_name()
+  public var description: String {
+    get {
+      String(cString: mpv_event_name(self))
+    }
+  }
+}
 
 // Global functions
 
@@ -57,6 +58,8 @@ class MPVController: NSObject {
   var receivedEndFileWhileLoading: Bool = false
 
   var fileLoaded: Bool = false
+
+  let mpvLogParser = MPVLogParser()
 
   private var hooks: [UInt64: () -> Void] = [:]
   private var hookCounter: UInt64 = 1
@@ -325,8 +328,8 @@ class MPVController: NSObject {
     }
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
 
-    // Receive log messages at warn level.
-    chkErr(mpv_request_log_messages(mpv, MPVLogLevel))
+    // Receive log messages at given level of verbosity.
+    chkErr(mpv_request_log_messages(mpv, mpvLogLevel.description))
 
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))
@@ -543,6 +546,32 @@ class MPVController: NSObject {
     return image;
   }
 
+  func getInputBindings(filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
+    Logger.log("Requesting from mpv: \(MPVProperty.inputBindings)", level: .verbose)
+    let parsed = getNode(MPVProperty.inputBindings)
+    return toKeyMappings(parsed)
+  }
+
+  private func toKeyMappings(_ inputBindingArray: Any?, filterCommandsBy filter: ((Substring) -> Bool)? = nil) -> [KeyMapping] {
+    var keyMappingList: [KeyMapping] = []
+    if let mapList = inputBindingArray as? [Any?] {
+      for mapRaw in mapList {
+        if let map = mapRaw as? [String: Any?] {
+          let key = getFromMap("key", map)
+          let cmd = getFromMap("cmd", map)
+          let comment = getFromMap("comment", map)
+          let cmdTokens = cmd.split(separator: " ")
+          if filter == nil || filter!(cmdTokens[0]) {
+            keyMappingList.append(KeyMapping(key: key, rawAction: cmd, comment: comment))
+          }
+        }
+      }
+    } else {
+      Logger.log("Failed to parse mpv input bindings!", level: .error)
+    }
+    return keyMappingList
+  }
+
   /** Get filter. only "af" or "vf" is supported for name */
   func getFilters(_ name: String) -> [MPVFilter] {
     Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "getFilters() do not support \(name)!")
@@ -673,6 +702,7 @@ class MPVController: NSObject {
   }
 
   func getNode(_ name: String) -> Any? {
+//    Logger.log("Get mpv \(name)", level: .verbose)
     var node = mpv_node()
     mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
     let parsed = try? MPVNode.parse(node)
@@ -685,33 +715,6 @@ class MPVController: NSObject {
       return keyOpt!
     }
     return ""
-  }
-
-  private func asString(_ keyMappingList: [KeyMapping]) -> String {
-    return keyMappingList.map { mapping in
-      return "BINDING: \(mapping.key) \(mapping.action.joined(separator: " "))   \(mapping.comment == nil ? "" : "#\(mapping.comment!))")"
-    }.joined(separator: "\n")
-  }
-
-  func getKeyBindingsFromMPV(filterCommandsBy filter: (Substring) -> Bool) -> [KeyMapping] {
-    var keyMappingList: [KeyMapping] = []
-    let parsed = getNode(MPVProperty.inputBindings)
-    if let mapList = parsed as? [Any?] {
-      for mapRaw in mapList {
-        if let map = mapRaw as? [String: Any?] {
-          let key = getFromMap("key", map)
-          let cmd = getFromMap("cmd", map)
-          let comment = getFromMap("comment", map)
-          let cmdTokens = cmd.split(separator: " ")
-          if filter(cmdTokens[0]) {
-            keyMappingList.append(KeyMapping(key: key, rawAction: cmd, comment: comment))
-          }
-        }
-      }
-    } else {
-      Logger.log("Failed to parse bindings!", level: .error)
-    }
-    return keyMappingList
   }
 
   // MARK: - Hooks
@@ -741,12 +744,20 @@ class MPVController: NSObject {
   // Handle the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId: mpv_event_id = event.pointee.event_id
-    Logger.log("Received MPV event: \(eventId.rawValue)")
 
     switch eventId {
       case MPV_EVENT_CLIENT_MESSAGE:
-        let scriptBindings = getKeyBindingsFromMPV(filterCommandsBy: { s in return s == "script-binding" })
-        Logger.log("Got MPV_EVENT_CLIENT_MESSAGE!\n\(asString(scriptBindings))")
+        let dataOpaquePtr = OpaquePointer(event.pointee.data)
+        let msg = UnsafeMutablePointer<mpv_event_client_message>(dataOpaquePtr)
+        let numArgs: Int = Int((msg?.pointee.num_args)!)
+        var args: [String] = []
+        if numArgs > 0 {
+          let bufferPointer = UnsafeBufferPointer(start: msg?.pointee.args, count: numArgs)
+          for i in 0..<numArgs {
+            args.append(String(cString: (bufferPointer[i])!))
+          }
+        }
+        Logger.log("mpv \(eventId): \(numArgs >= 0 ? "\(args)": "numArgs=\(numArgs)")", level: .verbose)
 
     case MPV_EVENT_SHUTDOWN:
       let quitByMPV = !player.isMpvTerminated
@@ -761,11 +772,17 @@ class MPVController: NSObject {
 
     case MPV_EVENT_LOG_MESSAGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
-      let msg = UnsafeMutablePointer<mpv_event_log_message>(dataOpaquePtr)
-      let prefix = String(cString: (msg?.pointee.prefix)!)
-      let level = String(cString: (msg?.pointee.level)!)
-      let text = String(cString: (msg?.pointee.text)!)
-      Logger.log("mpv log: [\(prefix)] \(level): \(text)", level: .warning, subsystem: .general, appendNewlineAtTheEnd: false)
+      if let dataPtr = UnsafeMutablePointer<mpv_event_log_message>(dataOpaquePtr) {
+        let prefix = String(cString: (dataPtr.pointee.prefix)!)
+        let level = String(cString: (dataPtr.pointee.level)!)
+        let message = String(cString: (dataPtr.pointee.text)!)
+
+        if !mpvLogParser.handleLogMessage(prefix: prefix, severityLevel: level, msg: message) {
+          if iinaMpvLogLevel.shouldLog(severity: level) {
+            Logger.log("mpv log[\(level)]: [\(prefix)]: \(message)", level: .warning, subsystem: .general, appendNewlineAtTheEnd: false)
+          }
+        }
+      }
 
     case MPV_EVENT_HOOK:
       let userData = event.pointee.reply_userdata
@@ -779,9 +796,7 @@ class MPVController: NSObject {
     case MPV_EVENT_PROPERTY_CHANGE:
       let dataOpaquePtr = OpaquePointer(event.pointee.data)
       if let property = UnsafePointer<mpv_event_property>(dataOpaquePtr)?.pointee {
-        let propertyName = String(cString: property.name)
-        Logger.log("MPV property changed: \(propertyName)")
-        handlePropertyChange(propertyName, property)
+        handlePropertyChange(property)
       }
 
     case MPV_EVENT_AUDIO_RECONFIG: break
@@ -839,9 +854,9 @@ class MPVController: NSObject {
         player.screenshotCallback()
       }
 
-    default: break
-      // let eventName = String(cString: mpv_event_name(eventId))
-      // Utility.log("mpv event (unhandled): \(eventName)")
+    default:
+      Logger.log("Unhandled mpv event: \(eventId)", level: .warning)
+      break
     }
   }
 
@@ -900,7 +915,8 @@ class MPVController: NSObject {
 
   // MARK: - Property listeners
 
-  private func handlePropertyChange(_ name: String, _ property: mpv_event_property) {
+  private func handlePropertyChange(_ property: mpv_event_property) {
+    let name = String(cString: property.name)
 
     var needReloadQuickSettingsView = false
 
@@ -1152,12 +1168,24 @@ class MPVController: NSObject {
       }
 
     case MPVProperty.inputBindings:
-        let bindings = getKeyBindingsFromMPV( filterCommandsBy: { s in return true} )
-        Logger.log("Bindings CHANGED: \(asString(bindings)))")
+      do {
+        let dataNode = UnsafeMutablePointer<mpv_node>(OpaquePointer(property.data))?.pointee
+        let inputBindingArray = try MPVNode.parse(dataNode!)
+        let keyMappingList = toKeyMappings(inputBindingArray, filterCommandsBy: { s in return true} )
+
+        let mappingListStr = keyMappingList.enumerated().map { (index, mapping) in
+          return "\t\(String(format: "%03d", index))   \(mapping.confFileFormat)"
+        }.joined(separator: "\n")
+
+        Logger.log("mpv property changed: \(MPVProperty.inputBindings):\n\(mappingListStr)")
+      } catch {
+        Logger.log("Failed to parse!", level: .error)
+      }
 
     default:
-      // Utility.log("MPV property changed (unhandled): \(name)")
+      Logger.log("mpv property changed (unhandled): \(name)", level: .verbose)
       break
+
     }
 
     if needReloadQuickSettingsView {

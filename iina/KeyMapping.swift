@@ -85,6 +85,13 @@ class KeyMapping: NSObject {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
   }
 
+  var confFileFormat: String {
+    get {
+      let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+      return "\(key) \(action.joined(separator: " "))\(commentString)"
+    }
+  }
+
   init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
     // normalize different letter cases for modifier keys
     var normalizedKey = key
@@ -151,5 +158,9 @@ class KeyMapping: NSObject {
       }
     }
     return result
+  }
+
+  public override var description: String {
+    return "KeyMapping(\"\(key)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
   }
 }
