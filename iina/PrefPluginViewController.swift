@@ -24,6 +24,36 @@ fileprivate extension NSPasteboard.PasteboardType {
   static let iinaPluginID = NSPasteboard.PasteboardType(rawValue: "com.colliderli.iina.pluginID")
 }
 
+enum MacTheme: String {
+  case light = "LightTheme"
+  case dark = "DarkTheme"
+}
+
+fileprivate let themeInjectionDict: [MacTheme: String] = [
+  .light: buildThemeInjectionSource(MacTheme.light.rawValue),
+  .dark : buildThemeInjectionSource(MacTheme.dark.rawValue)
+]
+
+fileprivate func buildThemeInjectionSource(_ themeName: String) -> String {
+  guard let cssPath = Bundle.main.path(forResource: themeName, ofType: "css") else {
+    Logger.log("Failed to load theme: \(themeName).css", level: .error)
+    return ""
+  }
+
+  return """
+setTheme = function() {
+var themeLink = document.createElement('link');
+themeLink.href = '\(cssPath)';
+themeLink.rel = 'stylesheet';
+themeLink.type = 'text/css';
+themeLink.media = 'all';
+document.head.appendChild(themeLink);
+return 0
+};
+setTimeout(setTheme, 1)
+"""
+}
+
 class PrefPluginViewController: NSViewController, PreferenceWindowEmbeddable {
   override var nibName: NSNib.Name {
     return NSNib.Name("PrefPluginViewController")
@@ -81,6 +111,8 @@ class PrefPluginViewController: NSViewController, PreferenceWindowEmbeddable {
   var pluginPreferencesWebViewHeight: NSLayoutConstraint!
   var pluginPreferencesViewController: PrefPluginPreferencesViewController!
 
+  var currentTheme: MacTheme!
+
   private var defaultPluginsData: [[String: Any]] = []
   private var queue = DispatchQueue(label: "com.collider.iina.plugin-install", qos: .userInteractive)
 
@@ -96,7 +128,57 @@ class PrefPluginViewController: NSViewController, PreferenceWindowEmbeddable {
 
     newPluginSourceTextField.delegate = self
 
+    DistributedNotificationCenter.default().addObserver(self,
+     selector: #selector(self.themeDidChange(notification:)),
+     name: NSNotification.Name(rawValue: "AppleInterfaceThemeChangedNotification"),
+     object: nil
+    )
+    // Set theme AFTER listener starts listening:
+    currentTheme = getCurrentMacTheme()
+
     clearPluginPage()
+  }
+
+  func getCurrentMacTheme() -> MacTheme {
+    let appleInterfaceStyle: String? = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
+    if let theme = appleInterfaceStyle {
+      if theme == "Dark" {
+        Logger.log("MacOS theme is Dark Mode.", level: .debug)
+        return .dark
+      }
+    } else { // nil means "Light"
+      Logger.log("MacOS theme is Light Mode.", level: .debug)
+      return .light
+    }
+    Logger.log("Something went wrong while getting the theme. Falling back to Light theme.", level: .warning)
+    return .light
+  }
+
+  @objc func themeDidChange(notification: Notification) {
+    currentTheme = getCurrentMacTheme()
+
+    // TODO: change active elements
+  }
+
+  private func injectCurrentTheme(_ webView: WKWebView) {
+    webView.evaluateJavaScript(themeInjectionDict[currentTheme]!, completionHandler: { result, error in
+      if let error = error {
+        Logger.log("evaluateJavaScript() error: \(error)", level: .error)
+      }
+      if let result = result {
+        Logger.log("evaluateJavaScript() succeeded: \(result)")
+      }
+    })
+  }
+
+  // print page source to the log, for debugging
+  private func printPageSource(_ webView: WKWebView) {
+   webView.evaluateJavaScript("document.documentElement.outerHTML", completionHandler: { result, error in
+      if let datHtml = result as? String {
+        Logger.log("PAGE BEGIN:\n\(datHtml)\nPAGE END")
+         // parse datHtml here
+         }
+      })
   }
 
   private func createPreferenceView() {
@@ -176,7 +258,7 @@ class PrefPluginViewController: NSViewController, PreferenceWindowEmbeddable {
     """, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
 
     config.userContentController.add(self, name: "iina")
-    
+
     pluginPreferencesWebView = NonscrollableWebview(frame: .zero, configuration: config)
     pluginPreferencesViewController = PrefPluginPreferencesViewController()
     pluginPreferencesViewController.view = pluginPreferencesWebView
@@ -192,8 +274,9 @@ class PrefPluginViewController: NSViewController, PreferenceWindowEmbeddable {
   }
 
   private func createHelpView() {
-    pluginHelpWebView = NonscrollableWebview(frame: .zero)
+    let config = WKWebViewConfiguration()
 
+    pluginHelpWebView = NonscrollableWebview(frame: .zero, configuration: config)
     pluginHelpWebView.navigationDelegate = self
     pluginHelpWebView.translatesAutoresizingMaskIntoConstraints = false
     pluginHelpContainerView.addSubview(pluginHelpWebView, positioned: .below, relativeTo: nil)
@@ -633,6 +716,8 @@ extension PrefPluginViewController: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    injectCurrentTheme(webView)
+
     pluginHelpWebViewLoadingIndicator.stopAnimation(self)
 
     let currentConstraint = webView == pluginPreferencesWebView ?

@@ -1,0 +1,10 @@
+@media (prefers-color-scheme: dark) {
+  body {
+    color-scheme: dark;
+    color: #dfdede;
+    background-color: #282323;
+  }
+  .secondary {
+    color: #9d9c9c;
+  }
+}
