@@ -2,7 +2,7 @@
 //  KeyInputController.swift
 //  iina
 //
-//  Created by Matthew Svoboda on 2022.05.17.
+//  Created by Matt Svoboda on 2022.05.17.
 //  Copyright © 2022 lhc. All rights reserved.
 //
 
@@ -11,7 +11,13 @@ import Foundation
 /*
  A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
  PlayerWindowController is expected to direct key presses to this class's `resolveKeyEvent` method.
- to match the user's key stroke(s) into recognized commands.
+ to match the user's key stroke(s) into recognized commands..
+
+ This class also keeps track of any binidngs set by Lua scripts. It expects to be notified of new mpv "input sections" and updates to their
+ states, via `defineSection()`, `enableSection()`, and `disableSection()`. These are incorporated into key binding resolution via resolveKeyEvent(.
+
+ The data structures in this class should look similar to mpv's `struct input_ctx`, because they are based on it and attempt to mirror
+ its functionality.
 
  A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or MPV command.
  This can include mouse events (though not handled by this class), single keystroke (which may include modifiers), or a sequence of keystrokes.
@@ -92,16 +98,35 @@ class KeyInputController {
 
   // MARK: - Single player instance
 
-  private var lastKeysPressed = RingBuffer<String>(capacity: 4)
-
-  private var playerCore: PlayerCore!
+  private unowned let playerCore: PlayerCore!
   private lazy var subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
+
+  private let dq = DispatchQueue(label: "KeyInputSection", qos: .userInitiated)
+
+  /*
+   mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
+   Here, the the newest keypress is at the "head", with the "tail" being the oldest.
+   */
+  private var keyPressHistory = RingBuffer<String>(capacity: 4)
+
+  /* mpv euivalent:   `struct cmd_bind_section **sections` */
+  private var sectionsDefined: [String : MPVInputSection] = [:]
+
+  /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
+  private var sectionsEnabled = LinkedList<MPVInputSection>()
+
+  /* mpv includes this in its active_sections array but we break it out separately.
+   Sections which are enabled with "exclusive" = the new section shadows all previous sections
+   */
+  private var sectionsEnabledExclusive = LinkedList<MPVInputSection>()
+
+  private var currentKeyBindings: [String: KeyMapping] = [:]
 
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
   }
 
-  func log(_ msg: String, level: Logger.Level) {
+  private func log(_ msg: String, level: Logger.Level) {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
@@ -109,7 +134,7 @@ class KeyInputController {
   // But it's still important to know that it happened
   func keyWasHandled(_ keyDownEvent: NSEvent) {
     log("Clearing list of pressed keys", level: .verbose)
-    lastKeysPressed.clear()
+    keyPressHistory.clear()
   }
 
   /*
@@ -137,12 +162,12 @@ class KeyInputController {
 
   // Try to match key sequences, up to 4 values. shortest match wins
   private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
-    lastKeysPressed.insertHead(lastKeyStroke)
+    keyPressHistory.insertHead(lastKeyStroke)
 
     var keySequence = ""
     var hasPartialValidSequence = false
 
-    for prevKey in lastKeysPressed.reversed() {
+    for prevKey in keyPressHistory.reversed() {
       if keySequence.isEmpty {
         keySequence = prevKey
       } else {
@@ -158,7 +183,7 @@ class KeyInputController {
         } else {
           log("Found active binding for \"\(keyBinding.key)\" -> \(keyBinding.action)", level: .debug)
           // Non-ignored action! Clear prev key buffer as per MPV spec
-          lastKeysPressed.clear()
+          keyPressHistory.clear()
           return keyBinding
         }
       } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
@@ -175,6 +200,145 @@ class KeyInputController {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"", level: .debug)
       return nil
+    }
+  }
+
+  // Expected to be run inside the the private dispatch queue
+  private func rebuildCurrentBindings() {
+    // TODO
+
+  }
+
+  /*
+   From the mpv manual:
+     Input sections group a set of bindings, and enable or disable them at once.
+     In input.conf, each key binding is assigned to an input section, rather than actually having explicit text sections.
+   ...
+
+     define-section <name> <contents> [<flags>]
+     Possible flags:
+     * `default`: (also used if parameter omitted)
+       Use a key binding defined by this section only if the user hasn't already bound this key to a command.
+     * `force`: Always bind a key. (The input section that was made active most recently wins if there are ambiguities.)
+
+     This command can be used to dispatch arbitrary keys to a script or a client API user. If the input section defines script-binding commands,
+     it is also possible to get separate events on key up/down, and relatively detailed information about the key state. The special key name
+     `unmapped` can be used to match any unmapped key.
+
+   Contents will always contain a list of:
+     script-binding <name>
+     * Invoke a script-provided key binding. This can be used to remap key bindings provided by external Lua scripts.
+     * The argument is the name of the binding.
+
+       It can optionally be prefixed with the name of the script, using / as separator, e.g. script-binding scriptname/bindingname.
+       Note that script names only consist of alphanumeric characters and _.
+
+   Example script-binding log line from webm script:
+    `ESC script-binding webm/ESC`
+   Here, `ESC` is the key, `webm/ESC` is the name, which consists of the script name as prefix, then slash, then the binding name.
+
+   See: `mp_input_define_section` in mpv source
+   */
+  func defineSection(_ inputSection: MPVInputSection) {
+    dq.sync {
+      // mpv behavior is to remove a section from the enabled list if it is updated with no content
+      if inputSection.keyBindings.isEmpty && sectionsDefined[inputSection.name] != nil {
+        // remove existing enabled section with same name
+        disableSection_Unsafe(inputSection.name)
+      }
+      sectionsDefined[inputSection.name] = inputSection
+      rebuildCurrentBindings()
+    }
+  }
+
+  private func extractScriptNames(inputSection: MPVInputSection) -> Set<String> {
+    var scriptNameSet = Set<String>()
+    for kb in inputSection.keyBindings.values {
+      if kb.action.count == 2 && kb.action[0] == MPVCommand.scriptBinding.rawValue {
+        let scriptBindingName = kb.action[1]
+        if let scriptName = parseScriptName(from: scriptBindingName) {
+          scriptNameSet.insert(scriptName)
+        }
+      } else {
+        // indicates our code is wrong
+        log("Unexpected action for parsed key binding from 'define-section': \(kb.action)", level: .error)
+      }
+    }
+    return scriptNameSet
+  }
+
+  private func parseScriptName(from scriptBindingName: String) -> String? {
+    let splitName = scriptBindingName.split(separator: "/")
+    if splitName.count == 2 {
+      return String(splitName[0])
+    } else if splitName.count != 1 {
+      log("Unexpected script binding name from 'define-section': \(scriptBindingName)", level: .error)
+    }
+    return nil
+  }
+
+  /*
+   From the mpv manual (and also mpv code comments):
+     Enable all key bindings in the named input section.
+
+     The enabled input sections form a stack. Bindings in sections on the top of the stack are preferred to lower sections.
+     This command puts the section on top of the stack. If the section was already on the stack, it is implicitly removed beforehand.
+     (A section cannot be on the stack more than once.)
+
+     The flags parameter can be a combination (separated by +) of the following flags:
+     * `exclusive` (MP_INPUT_EXCLUSIVE):
+       All sections enabled before the newly enabled section are disabled. They will be re-enabled as soon as all exclusive sections
+       above them are removed. In other words, the new section shadows all previous sections.
+     * `allow-hide-cursor` (MP_INPUT_ALLOW_HIDE_CURSOR): Don't force mouse pointer visible, even if inside the mouse area.
+     * `allow-vo-dragging` (MP_INPUT_ALLOW_VO_DRAGGING): Let mp_input_test_dragging() return true, even if inside the mouse area.
+
+   */
+  func enableSection(_ sectionName: String, _ flags: [String]) {
+    var isExclusive = false
+    for flag in flags {
+      switch flag {
+        case "allow-hide-cursor", "allow-vo-dragging":
+          // Ignore
+          break
+        case "exclusive":
+          isExclusive = true
+          Logger.log("Enabling exclusive section: \"\(sectionName)\"", subsystem: subsystem)
+          break
+        default:
+          log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
+      }
+    }
+
+    dq.sync {
+      guard let section = sectionsDefined[sectionName] else {
+        log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
+        return
+      }
+      disableSection_Unsafe(sectionName)
+      if isExclusive {
+        sectionsEnabledExclusive.append(section)
+      } else {
+        sectionsEnabled.append(section)
+      }
+      rebuildCurrentBindings()
+    }
+  }
+
+  /*
+   Disable the named input section. Undoes enable-section.
+   */
+  func disableSection(_ sectionName: String) {
+    dq.sync {
+      disableSection_Unsafe(sectionName)
+      rebuildCurrentBindings()
+    }
+  }
+
+  private func disableSection_Unsafe(_ sectionName: String) {
+    if sectionsDefined[sectionName] != nil {
+      sectionsEnabled.remove({ (x: MPVInputSection) -> Bool in x.name == sectionName })
+      sectionsEnabledExclusive.remove({ (x: MPVInputSection) -> Bool in x.name == sectionName })
+      sectionsDefined.removeValue(forKey: sectionName)
     }
   }
 }

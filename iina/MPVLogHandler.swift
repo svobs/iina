@@ -92,7 +92,7 @@ class MPVLogHandler {
     }
   }
 
-  private func parseBindings(_ contentsUnparsed: String) -> [KeyMapping] {
+  private func parseBindingsFromDefineSectionContents(_ contentsUnparsed: String) -> [KeyMapping] {
     var mappings: [KeyMapping] = []
     if contentsUnparsed.isEmpty {
       return mappings
@@ -100,22 +100,23 @@ class MPVLogHandler {
 
     for line in contentsUnparsed.components(separatedBy: "\\n") {
       let tokens = line.split(separator: " ")
-      if tokens.count == 3 && tokens[1] == "script-binding" {
+      if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
         mappings.append(KeyMapping(key: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
       } else {
-        Logger.log("Cmd not recognized; skipping line: \"\(line)\"", level: .warning)
+        // "This command can be used to dispatch arbitrary keys to a script or a client API user".
+        // Need to figure out whether to add support for these as well.
+        Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning)
       }
     }
     return mappings
   }
 
-  let activeSections: [String : MPVInputSection] = [:]
-
   /*
    "define-section"
 
    Example log line:
-   [cplayer] debug: Run command: define-section, flags=64, args=[name="input_forced_webm", contents="e script-binding webm/e\np script-binding webm/p\n1 script-binding webm/1\n2 script-binding webm/2\nESC script-binding webm/ESC\nc script-binding webm/c\no script-binding webm/o\n", flags="force"]
+   [cplayer] debug: Run command: define-section, flags=64, args=[name="input_forced_webm",
+      contents="e script-binding webm/e\nESC script-binding webm/ESC\n", flags="force"]
    */
   private func handleDefineSection(_ msg: String) -> Bool {
     guard let match = matchRegex(DEFINE_SECTION_REGEX, msg) else {
@@ -133,10 +134,22 @@ class MPVLogHandler {
     let name = String(msg[nameRange])
     let content = String(msg[contentsRange])
     let flags = parseFlags(String(msg[flagsRange]))
+    var isForce = false  // defaults to false
+    for flag in flags {
+      switch flag {
+        case MPVInputSection.FLAG_FORCE:
+          isForce = true
+        case MPVInputSection.FLAG_DEFAULT:
+          isForce = false
+        default:
+          Logger.log("Unrecognized flag in 'define-section': \(flag)", level: .error)
+          Logger.log("Offending log line: `\(msg)`", level: .error)
+      }
+    }
 
-    let section = MPVInputSection(name: name, parseBindings(content), flags: flags)
-    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings), force=\(section.isForced) ")
-    // TODO: deal with section
+    let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce)
+    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings), force=\(section.isForce) ")
+    player.keyInputController.defineSection(section)
     return true
   }
 
@@ -159,7 +172,7 @@ class MPVLogHandler {
     let flags = parseFlags(String(msg[flagsRange]))
 
     Logger.log("enable-section: \"\(name)\", flags=\(flags) ")
-    // TODO: deal with section
+    player.keyInputController.enableSection(name, flags)
     return true
   }
 
@@ -179,7 +192,7 @@ class MPVLogHandler {
 
     let name = String(msg[nameRange])
     Logger.log("disable-section: \"\(name)\"")
-    // TODO: deal with section
+    player.keyInputController.disableSection(name)
     return true
   }
 }

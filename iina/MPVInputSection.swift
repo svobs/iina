@@ -11,23 +11,19 @@ import Foundation
 class MPVInputSection {
   static let FLAG_DEFAULT = "default"
   static let FLAG_FORCE = "force"
-
+  static let FLAG_EXCLUSIVE = "exclusive"
 
   let name: String
-  let keyBindings: [KeyMapping]
-  let flags: [String]
-  var enabled: Bool = false
+  let keyBindings: [String: KeyMapping]
+  let isForce: Bool
+  let isExclusive: Bool
 
-  var isForced: Bool {
-    get {
-      flags.contains(MPVInputSection.FLAG_FORCE)
-    }
-  }
-
-  init(name: String, _ keyBindings:  [KeyMapping], flags: [String], enabled: Bool = false) {
+  init(name: String, _ keyBindings:  [KeyMapping], isForce: Bool, isExclusive: Bool = false) {
     self.name = name
-    self.keyBindings = keyBindings
-    self.flags = flags
-    self.enabled = enabled
+    self.keyBindings = keyBindings.reduce(into: [String: KeyMapping]()) {
+      $0[$1.key] = $1
+    }
+    self.isForce = isForce
+    self.isExclusive = isExclusive
   }
 }
