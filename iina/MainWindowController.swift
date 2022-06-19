@@ -1091,6 +1091,7 @@ class MainWindowController: PlayerWindowController {
   }
 
   func windowWillClose(_ notification: Notification) {
+    Logger.log("Window closing", subsystem: player.subsystem)
     shouldApplyInitialWindowSize = true
     // Close PIP
     if pipStatus == .inPIP {

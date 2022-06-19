@@ -229,7 +229,7 @@ class KeyInputController {
     } else {
       for inputSection in sectionsEnabled {
         if inputSection.keyBindings.isEmpty {
-          log("RebuildBindings: no bindings in \(inputSection.name); skipping", level: .verbose)
+          log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
         } else {
           log("RebuildBindings: adding from \(inputSection)", level: .verbose)
           addBindings(from: inputSection, to: &rebuiltBindings)
@@ -326,7 +326,7 @@ class KeyInputController {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyBindings.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
-        log("Received a new definition of \"\(inputSection.name)\" containing no bindings. Disabling and removing it")
+        log("New definition of \"\(inputSection.name)\" contains no bindings: disabling & removing it")
         disableSection_Unsafe(inputSection.name)
       }
       sectionsDefined[inputSection.name] = inputSection

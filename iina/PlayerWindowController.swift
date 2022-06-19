@@ -26,6 +26,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   init(playerCore: PlayerCore) {
     self.player = playerCore
     super.init(window: nil)
+
+//    NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { (event) -> NSEvent? in
+//      if event.keyCode == 53 && (self.window?.isKeyWindow ?? false) {
+//        self.keyDown(with: event)
+//      }
+//      return event
+//    })
   }
 
   required init?(coder: NSCoder) {
@@ -246,6 +253,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
+    if event.keyCode == 53 {
+        NSLog("WARNING Escape key pressed!")
+    }
     if let keyBinding = player.keyInputController.resolveKeyEvent(event) {
       if !keyBinding.isIgnored {  // if "ignore", do nothing. No beep, no send
         if !handleKeyBinding(keyBinding) {
