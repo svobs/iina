@@ -29,7 +29,7 @@ public final class LinkedList<T> {
     case indexOutOfBounds(_ msg: String)
   }
 
-  fileprivate class LinkedListNode<T> {
+  public class LinkedListNode<T> {
     var value: T
     var next: LinkedListNode?
     weak var previous: LinkedListNode?
@@ -40,13 +40,13 @@ public final class LinkedList<T> {
   }
 
   /// Typealiasing the node class to increase readability of code
-  private typealias Node = LinkedListNode<T>
+  public typealias Node = LinkedListNode<T>
 
   /// The first element of the LinkedList
-  private var firstNode: Node?
+  public private(set) var firstNode: Node?
 
   // The last element of the LinkedList
-  private var lastNode: Node?
+  public private(set) var lastNode: Node?
 
   /// Computed property to check if the linked list is empty
   public var isEmpty: Bool {
@@ -127,6 +127,14 @@ public final class LinkedList<T> {
       }
     }
     return nil
+  }
+
+  /// Insert a value to the beginning of the list
+  ///
+  /// - Parameter value: The data value to be pre-pended
+  public func prepend(_ value: T) {
+    let newNode = Node(value: value)
+    try! insert(newNode, at: 0)
   }
 
   /// Append a value to the end of the list
@@ -229,9 +237,23 @@ public final class LinkedList<T> {
     }
   }
 
-  /// Function to remove all nodes/value from the list
+  // Removes all nodes/values from this list
   public func removeAll() {
+    var node = lastNode
+    while let nodeToRemove = node {
+      node = nodeToRemove.previous
+      nodeToRemove.previous = nil
+      nodeToRemove.next = nil
+      count -= 1
+    }
+
+    lastNode = nil
     firstNode = nil
+  }
+
+  // Removes all nodes/values from this list
+  public func clear() {
+    removeAll()
   }
 
   @discardableResult
@@ -294,6 +316,17 @@ public final class LinkedList<T> {
     let node = try self.node(at: index)
     return remove(node: node)
   }
+
+ public func makeIterator() -> AnyIterator<T> {
+   var node = firstNode
+   return AnyIterator {
+     if let thisExistingNode = node {
+       node = thisExistingNode.next
+       return thisExistingNode.value
+     }
+     return nil
+   }
+ }
 }
 
 //: End of the base class declarations & beginning of extensions' declarations:

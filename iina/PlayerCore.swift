@@ -273,7 +273,6 @@ class PlayerCore: NSObject {
 
   static func initSharedState() {
     loadKeyBindings()
-    KeyInputController.initSharedState()
   }
 
   private static func loadKeyBindings() {

@@ -1107,6 +1107,7 @@ class MainWindowController: PlayerWindowController {
       player.stop()
       videoView.stopDisplayLink()
     }
+    player.keyInputController.destroy()
     player.info.currentFolder = nil
     player.info.matchedSubs.removeAll()
     // stop tracking mouse event

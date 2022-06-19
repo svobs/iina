@@ -8,7 +8,7 @@
 
 import Foundation
 
-class MPVInputSection {
+class MPVInputSection: CustomStringConvertible {
   static let FLAG_DEFAULT = "default"
   static let FLAG_FORCE = "force"
   static let FLAG_EXCLUSIVE = "exclusive"
@@ -16,14 +16,24 @@ class MPVInputSection {
   let name: String
   let keyBindings: [String: KeyMapping]
   let isForce: Bool
-  let isExclusive: Bool
 
-  init(name: String, _ keyBindings:  [KeyMapping], isForce: Bool, isExclusive: Bool = false) {
+  init(name: String, _ keyBindingsDict: [String: KeyMapping], isForce: Bool) {
     self.name = name
-    self.keyBindings = keyBindings.reduce(into: [String: KeyMapping]()) {
+    self.keyBindings = keyBindingsDict
+    self.isForce = isForce
+  }
+
+  init(name: String, _ keyBindingsList:  [KeyMapping], isForce: Bool) {
+    self.name = name
+    self.keyBindings = keyBindingsList.reduce(into: [String: KeyMapping]()) {
       $0[$1.key] = $1
     }
     self.isForce = isForce
-    self.isExclusive = isExclusive
+  }
+
+  var description: String {
+    get {
+      "InputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyBindings.count) bindings)"
+    }
   }
 }

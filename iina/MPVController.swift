@@ -60,7 +60,6 @@ class MPVController: NSObject {
   private var hookCounter: UInt64 = 1
 
   let observeProperties: [String: mpv_format] = [
-    MPVProperty.inputBindings: MPV_FORMAT_NODE,
     MPVProperty.trackList: MPV_FORMAT_NONE,
     MPVProperty.vf: MPV_FORMAT_NONE,
     MPVProperty.af: MPV_FORMAT_NONE,
@@ -114,6 +113,7 @@ class MPVController: NSObject {
   func mpvInit() {
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
+
 
     // Get the name of this client handle.
     mpvClientName = mpv_client_name(mpv)
@@ -325,7 +325,7 @@ class MPVController: NSObject {
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
 
     // Receive log messages at given level of verbosity.
-    chkErr(mpv_request_log_messages(mpv, mpvLogHandler.mpvLogSubscriptionLevel.description))
+    chkErr(mpv_request_log_messages(mpv, MPVLogHandler.mpvLogSubscriptionLevel.description))
 
     // Request tick event.
     // chkErr(mpv_request_event(mpv, MPV_EVENT_TICK, 1))

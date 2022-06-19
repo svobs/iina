@@ -8,8 +8,6 @@
 
 import Foundation
 
-let mpLogSubsystem = Logger.Subsystem(rawValue: "mpv")
-
 private let DEFINE_SECTION_REGEX = try! NSRegularExpression(
   pattern: #"args=\[name=\"(.*)\", contents=\"(.*)\", flags=\"(.*)\"\]"#, options: []
 )
@@ -32,15 +30,16 @@ class MPVLogHandler {
    * Change this variable to adjust threshold for *receiving* MPV_EVENT_LOG_MESSAGE messages.
    * NOTE: Lua keybindings require at *least* level "debug", so don't set threshold to be stricter than this level
    */
-  let mpvLogSubscriptionLevel: MPVLogLevel = .debug
+  static let mpvLogSubscriptionLevel: MPVLogLevel = .debug
 
   /*
    * Change this variable to adjust threshold for writing MPV_EVENT_LOG_MESSAGE messages in IINA's log.
    * This is unrelated to any log files mpv writes to directly.
    */
-  let iinaMpvLogLevel = MPVLogLevel(rawValue: Preference.integer(for: .iinaMpvLogLevel))!
+  static let iinaMpvLogLevel = MPVLogLevel(rawValue: Preference.integer(for: .iinaMpvLogLevel))!
 
   private unowned let player: PlayerCore
+  lazy var subsystem = Logger.Subsystem(rawValue: "mpv\(player.label!)")
 
   init(player: PlayerCore) {
     self.player = player
@@ -50,8 +49,10 @@ class MPVLogHandler {
     if !extractSectionInfo(prefix: prefix, severity: level, msg: msg) {
       // log only if not already handled AND if within the configured mpv logging threshold
       // (and of course only if IINA logging threshold is .debug or above)
-      if iinaMpvLogLevel.shouldLog(severity: level) {
-        Logger.log("[\(prefix)] \(level): \(msg)", level: .debug, subsystem: mpLogSubsystem, appendNewlineAtTheEnd: false)
+      if MPVLogHandler.iinaMpvLogLevel.shouldLog(severity: level) {
+        // try to match IINA's log format
+        let lev = level[level.index(level.startIndex, offsetBy: 0)]  // Some log levels are spelled out. Others are only 1 char. Shorten all to 1 char
+        Logger.log("[\(prefix)][\(lev)] \(msg)", level: .debug, subsystem: subsystem, appendNewlineAtTheEnd: false)
       }
     }
   }
@@ -99,13 +100,15 @@ class MPVLogHandler {
     }
 
     for line in contentsUnparsed.components(separatedBy: "\\n") {
-      let tokens = line.split(separator: " ")
-      if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
-        mappings.append(KeyMapping(key: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
-      } else {
-        // "This command can be used to dispatch arbitrary keys to a script or a client API user".
-        // Need to figure out whether to add support for these as well.
-        Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning)
+      if !line.isEmpty {
+        let tokens = line.split(separator: " ")
+        if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
+          mappings.append(KeyMapping(key: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
+        } else {
+          // "This command can be used to dispatch arbitrary keys to a script or a client API user".
+          // Need to figure out whether to add support for these as well.
+          Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning)
+        }
       }
     }
     return mappings

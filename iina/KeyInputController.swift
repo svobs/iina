@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let DEFAULT_SECTION = "DEFAULT"
+
 /*
  A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
  PlayerWindowController is expected to direct key presses to this class's `resolveKeyEvent` method.
@@ -19,13 +21,29 @@ import Foundation
  The data structures in this class should look similar to mpv's `struct input_ctx`, because they are based on it and attempt to mirror
  its functionality.
 
- A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or MPV command.
+ A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or mpv command.
  This can include mouse events (though not handled by this class), single keystroke (which may include modifiers), or a sequence of keystrokes.
- See [the MPV manual](https://mpv.io/manual/master/#key-names) for information on MPV's valid "key names".
+ See [the mpv manual](https://mpv.io/manual/master/#key-names) for information on mpv's valid "key names".
 
- // MARK: - Note on key sequences
+ ** Input sections **
 
- From the MPV manual:
+ Internally, mpv organizes key bindings into blocks called "input sections", or just "sections", which are identified by name. Because IINA
+ doesn't currently support profiles, most IINA users (unless they are using Lua scripts) will only ever care about the implicit "default" section
+ whose contents are dictated via input.conf.
+
+ Confusingly, the input file can contain a label, "default-bindings start", which will put the bindings under it into a lower-priority group
+ which is referred to by different names at different places in the code: it is either "builtin", "weak", or implied by a "default" flag (or missing
+ the "force" flag) when defined. While the user-facing elements (mpv manual, config options) refers to these as "default bindings", it's not
+ particularly wise to think of them as defaults, because they can be added and removed just as easily as other bindings; they simply have lower
+ priority than their "force" counterparts. And in fact that is encouraged by mpv for authors who are writing Lua scripts.
+
+ Inside this class we'll refer to "strong" (or non-defaults) bindings as having force==true, and "weak" bindings as having force==false.
+ While mpv technically allows a mix of force and non-force bindings inside each section, for Lua scripts it is restricted to one type per section.
+ We'll just use that para
+
+ ** Key sequences **
+
+ From the mpv manual:
 
  > It's also possible to bind a command to a sequence of keys:
  >
@@ -42,59 +60,19 @@ import Foundation
 
  */
 class KeyInputController {
+  private struct KeyBindingMeta {
+    let binding: KeyMapping
+    let srcSectionName: String
+
+    init(_ kb: KeyMapping, from sectionName: String) {
+      binding = kb
+      srcSectionName = sectionName
+    }
+  }
 
   // MARK: - Shared state for all players
 
   static private let sharedSubsystem = Logger.Subsystem(rawValue: "keyinput")
-
-  // Derived from IINA's currently active key bindings. We need to account for partial key sequences so that the user doesn't hear a beep
-  // while they are typing the beginning of the sequence. For example, if there is currently a binding for "x-y-z", then "x" and "x-y".
-  // This needs to be rebuilt each time the keybindings change.
-  static private var partialValidSequences = Set<String>()
-
-  // Reacts when there is a change to the global key bindings
-  static private var keyBindingsChangedObserver: NSObjectProtocol? = nil
-
-  static func initSharedState() {
-    if let existingObserver = keyBindingsChangedObserver {
-      NotificationCenter.default.removeObserver(existingObserver)
-    }
-    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main) { _ in
-      KeyInputController.rebuildPartialValidSequences()
-    }
-
-    // initial build
-    KeyInputController.rebuildPartialValidSequences()
-  }
-
-  static private func onKeyBindingsChanged(_ sender: Notification) {
-    Logger.log("Key bindings changed. Rebuilding partial valid key sequences", level: .verbose, subsystem: sharedSubsystem)
-    KeyInputController.rebuildPartialValidSequences()
-  }
-
-  static private func rebuildPartialValidSequences() {
-    var partialSet = Set<String>()
-    for (keyCode, _) in PlayerCore.keyBindings {
-      if keyCode.contains("-") && keyCode != "default-bindings" {
-        let keySequence = keyCode.split(separator: "-")
-        if keySequence.count >= 2 && keySequence.count <= 4 {
-          var partial = ""
-          for key in keySequence {
-            if partial == "" {
-              partial = String(key)
-            } else {
-              partial = "\(partial)-\(key)"
-            }
-            if partial != keyCode && !PlayerCore.keyBindings.keys.contains(partial) {
-              partialSet.insert(partial)
-            }
-          }
-        }
-      }
-    }
-    Logger.log("Generated partialValidKeySequences: \(partialSet)", level: .verbose)
-    partialValidSequences = partialSet
-  }
 
   // MARK: - Single player instance
 
@@ -102,6 +80,9 @@ class KeyInputController {
   private lazy var subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
 
   private let dq = DispatchQueue(label: "KeyInputSection", qos: .userInitiated)
+
+  // Reacts when there is a change to the global key bindings
+  private var keyBindingsChangedObserver: NSObjectProtocol? = nil
 
   /*
    mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
@@ -116,17 +97,44 @@ class KeyInputController {
   private var sectionsEnabled = LinkedList<MPVInputSection>()
 
   /* mpv includes this in its active_sections array but we break it out separately.
-   Sections which are enabled with "exclusive" = the new section shadows all previous sections
+   Sections which are enabled with "exclusive" = the section is used and all previous sections are ignored
    */
   private var sectionsEnabledExclusive = LinkedList<MPVInputSection>()
 
-  private var currentKeyBindings: [String: KeyMapping] = [:]
+  private var currentKeyBindingDict: [String: KeyBindingMeta] = [:]
 
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
+
+    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main) { _ in
+      self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
+      self.dq.async {
+        self.rebuildCurrentBindings()
+      }
+    }
   }
 
-  private func log(_ msg: String, level: Logger.Level) {
+  deinit {
+    destroy()
+  }
+
+  func destroy() {
+    dq.async {
+      if let existingObserver = self.keyBindingsChangedObserver {
+        self.log("Removing keyBindingsChangedObserver", level: .verbose)
+        NotificationCenter.default.removeObserver(existingObserver)
+        self.keyBindingsChangedObserver = nil
+      }
+      // facilitate garbage collection
+      self.keyPressHistory.clear()
+      self.sectionsDefined = [:]
+      self.sectionsEnabled.clear()
+      self.sectionsEnabledExclusive.clear()
+      self.currentKeyBindingDict = [:]
+    }
+  }
+
+  private func log(_ msg: String, level: Logger.Level = .debug) {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
@@ -144,7 +152,7 @@ class KeyInputController {
    Returns:
    - nil if keystroke is invalid (e.g., it does not resolve to an actively bound keystroke or key sequence, and could not be interpreted as starting
      or continuing such a key sequence)
-   - (a non-null) KeyMapping whose action is "ignore" if it should be ignored by MPV and IINA
+   - (a non-null) KeyMapping whose action is "ignore" if it should be ignored by mpv and IINA
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
@@ -153,15 +161,15 @@ class KeyInputController {
 
     let keyStroke: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
     if keyStroke == "" {
-      log("Event could not be translated; ignoring: \(keyDownEvent)", level: .debug)
+      log("Event could not be translated; ignoring: \(keyDownEvent)")
       return nil
     }
 
-    return resolveKeySequence(keyStroke)
+    return resolveFirstMatchingKeySequence(endingWith: keyStroke)
   }
 
-  // Try to match key sequences, up to 4 values. shortest match wins
-  private func resolveKeySequence(_ lastKeyStroke: String) -> KeyMapping? {
+  // Try to match key sequences, up to 4 keystrokes. shortest match wins
+  private func resolveFirstMatchingKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
     keyPressHistory.insertHead(lastKeyStroke)
 
     var keySequence = ""
@@ -176,19 +184,16 @@ class KeyInputController {
 
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
-      if let keyBinding = PlayerCore.keyBindings[keySequence] {
-        if keyBinding.isIgnored {
-          log("Ignoring \"\(keyBinding.key)\"", level: .verbose)
+      if let meta = currentKeyBindingDict[keySequence] {
+        if meta.binding.isIgnored {
+          log("Ignoring \"\(meta.binding.key)\" (from: \"\(meta.srcSectionName)\")", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Found active binding for \"\(keyBinding.key)\" -> \(keyBinding.action)", level: .debug)
-          // Non-ignored action! Clear prev key buffer as per MPV spec
+          log("Resolved keySeq \"\(meta.binding.key)\" -> \(meta.binding.action) (from: \"\(meta.srcSectionName)\")")
+          // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
-          return keyBinding
+          return meta.binding
         }
-      } else if !hasPartialValidSequence && KeyInputController.partialValidSequences.contains(keySequence) {
-        // No exact match, but at least is part of a key sequence.
-        hasPartialValidSequence = true
       }
     }
 
@@ -198,15 +203,92 @@ class KeyInputController {
       return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
-      log("No active binding for keystroke \"\(lastKeyStroke)\"", level: .debug)
+      log("No active binding for keystroke \"\(lastKeyStroke)\"")
       return nil
     }
   }
 
-  // Expected to be run inside the the private dispatch queue
+  /*
+   This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c
+   Expected to be run inside the the private dispatch queue.
+   */
   private func rebuildCurrentBindings() {
-    // TODO
+    var rebuiltBindings: [String: KeyBindingMeta] = [:]
 
+    // PlayerCore.keyBindings: Treat this as `section=="default", weak==false`.
+    let defaultSection = MPVInputSection(name: DEFAULT_SECTION, PlayerCore.keyBindings, isForce: true)
+    // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
+    sectionsDefined[defaultSection.name] = defaultSection
+
+    if let topExclusiveSection = sectionsEnabledExclusive.first {
+      log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
+      for (keySequence, keyBinding) in topExclusiveSection.keyBindings {
+        rebuiltBindings[keySequence] = KeyBindingMeta(keyBinding, from: topExclusiveSection.name)
+      }
+
+    } else {
+      for inputSection in sectionsEnabled {
+        if inputSection.keyBindings.isEmpty {
+          log("RebuildBindings: no bindings in \(inputSection.name); skipping", level: .verbose)
+        } else {
+          log("RebuildBindings: adding from \(inputSection)", level: .verbose)
+          addBindings(from: inputSection, to: &rebuiltBindings)
+        }
+      }
+
+      log("RebuildBindings: adding from \(defaultSection)", level: .verbose)
+      addBindings(from: defaultSection, to: &rebuiltBindings)
+    }
+
+    // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
+    KeyInputController.fillInPartialSequences(&rebuiltBindings)
+
+    // hopefully this will be an atomic replacement
+    currentKeyBindingDict = rebuiltBindings
+    log("Finished rebuilding input bindings")
+  }
+
+  private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
+    for keyBinding in inputSection.keyBindings.values {
+      addBinding(keyBinding, from: inputSection, to: &bindingsDict)
+    }
+  }
+
+  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
+    if let prevBind = bindingsDict[keyBinding.key] {
+      guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
+        log("RebuildBindings: could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
+        return
+      }
+      // For each binding, use the first weak binding found, or the first strong ("force") binding found
+      if prevBindSrcSection.isForce || !inputSection.isForce {
+        return
+      }
+    }
+    bindingsDict[keyBinding.key] = KeyBindingMeta(keyBinding, from: inputSection.name)
+  }
+
+  private static func fillInPartialSequences(_ keyBindingsDict: inout [String: KeyBindingMeta]) {
+    for (keySequence, keyBindingMeta) in keyBindingsDict {
+      if keySequence.contains("-") && keySequence != "default-bindings" {
+        let keySequenceSplit = keySequence.split(separator: "-")
+        if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
+          var partial = ""
+          for key in keySequenceSplit {
+            if partial == "" {
+              partial = String(key)
+            } else {
+              partial = "\(partial)-\(key)"
+            }
+            if partial != keySequence && !keyBindingsDict.keys.contains(partial) {
+              // Set an explicit "ignore" for a partial sequence match. This is all done so that the player window doesn't beep.
+              let partialBinding = KeyMapping(key: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
+              keyBindingsDict[partial] = KeyBindingMeta(partialBinding, from: keyBindingMeta.srcSectionName)
+            }
+          }
+        }
+      }
+    }
   }
 
   /*
@@ -244,6 +326,7 @@ class KeyInputController {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyBindings.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
+        log("Received a new definition of \"\(inputSection.name)\" containing no bindings. Disabling and removing it")
         disableSection_Unsafe(inputSection.name)
       }
       sectionsDefined[inputSection.name] = inputSection
@@ -314,11 +397,14 @@ class KeyInputController {
         log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
         return
       }
+
       disableSection_Unsafe(sectionName)
+
+      sectionsDefined[sectionName] = section
       if isExclusive {
-        sectionsEnabledExclusive.append(section)
+        sectionsEnabledExclusive.prepend(section)
       } else {
-        sectionsEnabled.append(section)
+        sectionsEnabled.prepend(section)
       }
       rebuildCurrentBindings()
     }
