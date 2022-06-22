@@ -119,6 +119,10 @@ class MainWindowController: PlayerWindowController {
     }
   }
 
+  var hasKeyboardFocus: Bool {
+    window?.isKeyWindow ?? false
+  }
+
   /** For mpv's `geometry` option. We cache the parsed structure
    so never need to parse it every time. */
   var cachedGeometry: GeometryDef?
@@ -1087,6 +1091,7 @@ class MainWindowController: PlayerWindowController {
   }
 
   func windowWillClose(_ notification: Notification) {
+    Logger.log("Window closing", subsystem: player.subsystem)
     shouldApplyInitialWindowSize = true
     // Close PIP
     if pipStatus == .inPIP {
@@ -2617,7 +2622,7 @@ class MainWindowController: PlayerWindowController {
     case .toggleMusicMode:
       menuSwitchToMiniPlayer(.dummy)
     case .deleteCurrentFileHard:
-      menuActionHandler.menuDeleteCurrentFileHard(.dummy)
+      menuDeleteCurrentFileHard(.dummy)
     case .biggerWindow:
       let item = NSMenuItem()
       item.tag = 11

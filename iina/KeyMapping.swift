@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// - Tag: KeyMapping
 class KeyMapping: NSObject {
 
   static private let modifierOrder: [String: Int] = [
@@ -81,8 +82,19 @@ class KeyMapping: NSObject {
     }
   }
 
+  var isIgnored: Bool {
+    return privateRawAction == MPVCommand.ignore.rawValue
+  }
+
   @objc var prettyCommand: String {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
+  }
+
+  var confFileFormat: String {
+    get {
+      let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+      return "\(key) \(action.joined(separator: " "))\(commentString)"
+    }
   }
 
   init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
@@ -151,5 +163,9 @@ class KeyMapping: NSObject {
       }
     }
     return result
+  }
+
+  public override var description: String {
+    return "KeyMapping(\"\(key)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
   }
 }

@@ -61,11 +61,10 @@ class PlayerCore: NSObject {
   }
 
   static private func createPlayerCore() -> PlayerCore {
-    let pc = PlayerCore()
-    pc.label = "\(playerCoreCounter)"
+    let pc = PlayerCore("\(playerCoreCounter)")
+    playerCoreCounter += 1
     playerCores.append(pc)
     pc.startMPV()
-    playerCoreCounter += 1
     return pc
   }
 
@@ -76,9 +75,9 @@ class PlayerCore: NSObject {
 
   // MARK: - Fields
 
-  lazy var subsystem = Logger.Subsystem(rawValue: "player\(label!)")
+  let subsystem: Logger.Subsystem
 
-  var label: String!
+  let label: String
 
   @available(macOS 10.12.2, *)
   var touchBarSupport: TouchBarSupport {
@@ -141,9 +140,14 @@ class PlayerCore: NSObject {
 
   static var keyBindings: [String: KeyMapping] = [:]
 
-  override init() {
+  var keyInputController: KeyInputController!
+
+  init(_ label: String) {
+    self.label = label
+    self.subsystem = Logger.Subsystem(rawValue: "player\(label)")
     super.init()
     self.mpv = MPVController(playerCore: self)
+    self.keyInputController = KeyInputController(playerCore: self)
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)
@@ -1325,7 +1329,7 @@ class PlayerCore: NSObject {
       !info.isNetworkResource && info.subTracks.isEmpty &&
       (info.videoDuration?.second ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
       DispatchQueue.main.async {
-        self.mainWindow.menuActionHandler.menuFindOnlineSub(.dummy)
+        self.mainWindow.menuFindOnlineSub(.dummy)
       }
     }
   }
