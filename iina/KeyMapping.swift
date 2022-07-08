@@ -121,10 +121,13 @@ class KeyMapping: NSObject {
     self.comment = comment
   }
 
+  // Returns nil if cannot read file
   static func parseInputConf(at path: String) -> [KeyMapping]? {
-    let reader = StreamReader(path: path)
+    guard let reader = StreamReader(path: path) else {
+      return nil
+    }
     var mapping: [KeyMapping] = []
-    while var line: String = reader?.nextLine() {      // ignore empty lines
+    while var line: String = reader.nextLine() {      // ignore empty lines
       var isIINACommand = false
       if line.isEmpty { continue }
       if line.hasPrefix("#@iina") {

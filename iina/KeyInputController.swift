@@ -207,6 +207,7 @@ class KeyInputController {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
+      log("current key binding dict: \(currentKeyBindingDict)", level: .verbose)
       return nil
     }
   }
@@ -248,7 +249,15 @@ class KeyInputController {
 
     // hopefully this will be an atomic replacement
     currentKeyBindingDict = rebuiltBindings
-    log("Finished rebuilding input bindings")
+
+    log("Finished rebuilding input bindings (\(currentKeyBindingDict.count) total)")
+
+    if Logger.enabled && Logger.Level.preferred >= .verbose {
+      let mappingListStr = rebuiltBindings.map { key, meta in
+        return "\t[\(meta.srcSectionName)] \(key) -> \(meta.binding.rawAction)"
+      }
+      log("Bindings:\n\(mappingListStr)", level: .verbose)
+    }
   }
 
   private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
