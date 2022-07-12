@@ -14,20 +14,18 @@ class MPVInputSection: CustomStringConvertible {
   static let FLAG_EXCLUSIVE = "exclusive"
 
   let name: String
-  let keyBindings: [String: KeyMapping]
+  let keyBindings: [KeyMapping]
   let isForce: Bool
 
   init(name: String, _ keyBindingsDict: [String: KeyMapping], isForce: Bool) {
     self.name = name
-    self.keyBindings = keyBindingsDict
+    self.keyBindings = Array(keyBindingsDict.values)
     self.isForce = isForce
   }
 
-  init(name: String, _ keyBindingsList:  [KeyMapping], isForce: Bool) {
+  init(name: String, _ keyBindingsArray: [KeyMapping], isForce: Bool) {
     self.name = name
-    self.keyBindings = keyBindingsList.reduce(into: [String: KeyMapping]()) {
-      $0[$1.key] = $1
-    }
+    self.keyBindings = keyBindingsArray
     self.isForce = isForce
   }
 

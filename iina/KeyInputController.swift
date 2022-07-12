@@ -94,12 +94,12 @@ class KeyInputController {
   private var sectionsDefined: [String : MPVInputSection] = [:]
 
   /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
-  private var sectionsEnabled = LinkedList<MPVInputSection>()
+  private var sectionsEnabled = LinkedList<String>()
 
   /* mpv includes this in its active_sections array but we break it out separately.
    Sections which are enabled with "exclusive" = the section is used and all previous sections are ignored
    */
-  private var sectionsEnabledExclusive = LinkedList<MPVInputSection>()
+  private var sectionsEnabledExclusive = LinkedList<String>()
 
   private var currentKeyBindingDict: [String: KeyBindingMeta] = [:]
 
@@ -112,8 +112,9 @@ class KeyInputController {
     // initial load
     self.dq.async {
       self.setDefaultBindings(globalKeyBindings)
-      self.enableSection(DEFAULT_SECTION, [MPVInputSection.FLAG_FORCE])
-      self.rebuildCurrentBindings()
+      self.enableSection_Unsafe(DEFAULT_SECTION, [])
+      assert (self.sectionsEnabled.count == 1)
+      assert (self.sectionsDefined.count == 1)
     }
   }
 
@@ -209,18 +210,19 @@ class KeyInputController {
   }
 
   func onGlobalKeyBindingsChanged(_ notification: Notification) {
+    self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
     guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
-      Logger.log("onKeyBindingsChanged(): missing object!", level: .error)
+      Logger.log("onGlobalKeyBindingsChanged(): missing object!", level: .error)
       return
     }
-    self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
     self.dq.async {
       self.setDefaultBindings(globalDefaultBindings)
       self.rebuildCurrentBindings()
     }
   }
 
-  func setDefaultBindings(_ globalDefaultBindings: [KeyMapping]) {
+  private func setDefaultBindings(_ globalDefaultBindings: [KeyMapping]) {
+    self.log("Setting default section with \(globalDefaultBindings.count) bindings", level: .verbose)
     // PlayerCore.keyBindings: Treat this as `section=="default", weak==false`.
     let defaultSection = MPVInputSection(name: DEFAULT_SECTION, globalDefaultBindings, isForce: true)
     // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
@@ -236,19 +238,28 @@ class KeyInputController {
 
     assert (sectionsDefined[DEFAULT_SECTION] != nil, "Missing default bindings section!")
 
-    if let topExclusiveSection = sectionsEnabledExclusive.first {
-      log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
-      for (keySequence, keyBinding) in topExclusiveSection.keyBindings {
-        rebuiltBindings[keySequence] = KeyBindingMeta(keyBinding, from: topExclusiveSection.name)
+    if let topExclusiveSectionName = sectionsEnabledExclusive.first {
+      if let topExclusiveSection = sectionsDefined[topExclusiveSectionName] {
+        log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
+        for keyBinding in topExclusiveSection.keyBindings {
+          rebuiltBindings[keyBinding.normalizeMpvKey] = KeyBindingMeta(keyBinding, from: topExclusiveSection.name)
+        }
+      } else {
+        // indicates serious internal error
+        log("RebuildBindings: failed to find exclusive section: \"\(topExclusiveSectionName)\"", level: .error)
       }
-
     } else {
-      for inputSection in sectionsEnabled {
-        if inputSection.keyBindings.isEmpty {
-          log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
+      for inputSectionName in sectionsEnabled {
+        if let inputSection = sectionsDefined[inputSectionName] {
+          if inputSection.keyBindings.isEmpty {
+            log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
+          } else {
+            log("RebuildBindings: adding from \(inputSection)", level: .verbose)
+            addBindings(from: inputSection, to: &rebuiltBindings)
+          }
         } else {
-          log("RebuildBindings: adding from \(inputSection)", level: .verbose)
-          addBindings(from: inputSection, to: &rebuiltBindings)
+          // indicates serious internal error
+          log("RebuildBindings: failed to find section: \"\(inputSectionName)\"", level: .error)
         }
       }
     }
@@ -270,13 +281,14 @@ class KeyInputController {
   }
 
   private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
-    for keyBinding in inputSection.keyBindings.values {
+    for keyBinding in inputSection.keyBindings {
       addBinding(keyBinding, from: inputSection, to: &bindingsDict)
     }
   }
 
   private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
-    if let prevBind = bindingsDict[keyBinding.key] {
+    let mpvKey = keyBinding.normalizeMpvKey
+    if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
         log("RebuildBindings: could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
         return
@@ -286,7 +298,7 @@ class KeyInputController {
         return
       }
     }
-    bindingsDict[keyBinding.key] = KeyBindingMeta(keyBinding, from: inputSection.name)
+    bindingsDict[mpvKey] = KeyBindingMeta(keyBinding, from: inputSection.name)
   }
 
   private static func fillInPartialSequences(_ keyBindingsDict: inout [String: KeyBindingMeta]) {
@@ -372,38 +384,43 @@ class KeyInputController {
 
    */
   func enableSection(_ sectionName: String, _ flags: [String]) {
-    var isExclusive = false
-    for flag in flags {
-      switch flag {
-        case "allow-hide-cursor", "allow-vo-dragging":
-          // Ignore
-          break
-        case "exclusive":
-          isExclusive = true
-          Logger.log("Enabling exclusive section: \"\(sectionName)\"", subsystem: subsystem)
-          break
-        default:
-          log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
-      }
-    }
-
     dq.sync {
-      guard let section = sectionsDefined[sectionName] else {
-        log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
-        return
-      }
-
-      disableSection_Unsafe(sectionName)
-
-      sectionsDefined[sectionName] = section
-      if isExclusive {
-        sectionsEnabledExclusive.prepend(section)
-      } else {
-        sectionsEnabled.prepend(section)
-      }
-      rebuildCurrentBindings()
+      enableSection_Unsafe(sectionName, flags)
     }
   }
+
+ private func enableSection_Unsafe(_ sectionName: String, _ flags: [String]) {
+   var isExclusive = false
+   for flag in flags {
+     switch flag {
+       case "allow-hide-cursor", "allow-vo-dragging":
+         // Ignore
+         break
+       case "exclusive":
+         isExclusive = true
+         Logger.log("Enabling exclusive section: \"\(sectionName)\"", subsystem: subsystem)
+         break
+       default:
+         log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
+     }
+   }
+
+   guard let section = sectionsDefined[sectionName] else {
+     log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
+     return
+   }
+
+   disableSection_Unsafe(sectionName)
+
+   sectionsDefined[sectionName] = section
+   if isExclusive {
+     sectionsEnabledExclusive.prepend(sectionName)
+   } else {
+     sectionsEnabled.prepend(sectionName)
+   }
+   log("After enable_section(\"\(sectionName)\"): SectionsDefined=\(sectionsDefined.keys); SectionsEnabled=\(sectionsEnabled)")
+   rebuildCurrentBindings()
+ }
 
   /*
    Disable the named input section. Undoes enable-section.
@@ -417,15 +434,15 @@ class KeyInputController {
 
   private func disableSection_Unsafe(_ sectionName: String) {
     if sectionsDefined[sectionName] != nil {
-      sectionsEnabled.remove({ (x: MPVInputSection) -> Bool in x.name == sectionName })
-      sectionsEnabledExclusive.remove({ (x: MPVInputSection) -> Bool in x.name == sectionName })
+      sectionsEnabled.remove({ (x: String) -> Bool in x == sectionName })
+      sectionsEnabledExclusive.remove({ (x: String) -> Bool in x == sectionName })
       sectionsDefined.removeValue(forKey: sectionName)
     }
   }
 
   private func extractScriptNames(inputSection: MPVInputSection) -> Set<String> {
     var scriptNameSet = Set<String>()
-    for kb in inputSection.keyBindings.values {
+    for kb in inputSection.keyBindings {
       if kb.action.count == 2 && kb.action[0] == MPVCommand.scriptBinding.rawValue {
         let scriptBindingName = kb.action[1]
         if let scriptName = parseScriptName(from: scriptBindingName) {

@@ -286,7 +286,7 @@ class PlayerCore: NSObject {
   }
 
   static func setKeyBindings(_ keyMappings: [KeyMapping]) {
-    Logger.log("Set key bindings")
+    Logger.log("Set key bindings (\(keyMappings.count) mappings)")
     // If multiple bindings map to the same key, choose the last one
     var keyBindingsDict: [String: KeyMapping] = [:]
     var orderedKeyList: [String] = []

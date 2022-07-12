@@ -101,6 +101,8 @@ public final class LinkedList<T> {
 
     if index == 0 {
       return firstNode!
+    } else if index == count - 1 {
+      return lastNode!
     } else {
       var node = firstNode!.next
       for _ in 1..<index {
@@ -150,13 +152,7 @@ public final class LinkedList<T> {
   /// - Parameter node: The node containing the value to be appended
   private func append(_ node: Node) {
     let newNode = node
-    if let lastNode = lastNode {
-      newNode.previous = lastNode
-      lastNode.next = newNode
-    } else {
-      firstNode = newNode
-    }
-    lastNode = newNode
+    try! insert(newNode, at: count)
   }
 
   /// Append a copy of a LinkedList to the end of the list.
@@ -206,6 +202,8 @@ public final class LinkedList<T> {
       }
       prev.next = newNode
     }
+
+    count += 1
   }
 
   /// Insert a copy of a LinkedList at a specific index. Crashes if index is out of bounds (0...self.count)
@@ -215,6 +213,8 @@ public final class LinkedList<T> {
   ///   - index: Integer value of the index to be inserted at
   public func insert(_ list: LinkedList, at index: Int) throws {
     guard !list.isEmpty else { return }
+
+    let insertCount = list.count
 
     if index == 0 {
       list.lastNode?.next = firstNode
@@ -235,9 +235,14 @@ public final class LinkedList<T> {
         }
       }
     }
+
+    count += insertCount
   }
 
-  // Removes all nodes/values from this list
+  /*
+   Removes all nodes/values from this list.
+   This is an O(n) operation because all links are set to nil in each node.
+   */
   public func removeAll() {
     var node = lastNode
     while let nodeToRemove = node {
@@ -251,7 +256,10 @@ public final class LinkedList<T> {
     firstNode = nil
   }
 
-  // Removes all nodes/values from this list
+  /*
+   Removes all nodes/values from this list.
+   This is an O(n) operation because all links are set to nil in each node.
+   */
   public func clear() {
     removeAll()
   }
@@ -293,6 +301,8 @@ public final class LinkedList<T> {
 
     node.previous = nil
     node.next = nil
+
+    count -= 1
     return node.value
   }
 
