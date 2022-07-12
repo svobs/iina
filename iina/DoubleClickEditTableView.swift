@@ -79,7 +79,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 }
 
 class DoubleClickEditTableView: NSTableView {
-  static let ROW_ANIMATION: NSTableView.AnimationOptions = .slideLeft
+  static let ROW_ANIMATION: NSTableView.AnimationOptions = .slideDown
   var onTextDidEndEditing: ((String) -> Bool)?
   private var lastEditedTextField: DoubleClickEditTextField? = nil
 

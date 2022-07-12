@@ -144,6 +144,10 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
     // prompt
     Utility.quickPromptPanel("config.duplicate", sheetWindow: view.window) { newName in
+      guard !newName.isEmpty else {
+        Utility.showAlert("config.empty_name", sheetWindow: self.view.window)
+        return
+      }
       guard !self.configDS.tableRows.contains(newName) else {
         Utility.showAlert("config.name_existing", sheetWindow: self.view.window)
         return
@@ -255,8 +259,10 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
     let predicate = mappingController.filterPredicate
     mappingController.filterPredicate = nil
-    let keyMapping = mappingController.arrangedObjects as! [KeyMapping]
-    setKeybindingsForPlayerCore()
+    guard let keyMapping = mappingController.arrangedObjects as? [KeyMapping] else {
+      return
+    }
+    setKeybindingsForPlayerCore(keyMapping)
     mappingController.filterPredicate = predicate
     do {
       try KeyMapping.generateConfData(from: keyMapping).write(toFile: confFilePath, atomically: true, encoding: .utf8)
@@ -270,11 +276,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       return
     }
     Logger.log("Loading key bindings config from \"\(confFilePath)\"")
-    if let mapping = KeyMapping.parseInputConf(at: confFilePath) {
-      mappingController.content = nil
-      mappingController.add(contentsOf: mapping)
-      mappingController.setSelectionIndexes(IndexSet())
-    } else {
+    guard let mapping = KeyMapping.parseInputConf(at: confFilePath) else {
       // on error
       Logger.log("Error loading key bindings config from \"\(confFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: confFilePath).lastPathComponent
@@ -282,7 +284,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       configDS.changeCurrentConfig(0)
       return
     }
-    setKeybindingsForPlayerCore()
+
+    mappingController.content = nil
+    mappingController.add(contentsOf: mapping)
+    mappingController.setSelectionIndexes(IndexSet())
+
+    setKeybindingsForPlayerCore(mapping)
     updateEditEnabledStatus()
   }
 
@@ -301,8 +308,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     removeKmBtn.isEnabled = shouldEnableEdit && kbTableView.selectedRow != -1
   }
 
-  private func setKeybindingsForPlayerCore() {
-    PlayerCore.setKeyBindings(mappingController.arrangedObjects as! [KeyMapping])
+  private func setKeybindingsForPlayerCore(_ keyBindings: [KeyMapping]) {
+    PlayerCore.setKeyBindings(keyBindings)
   }
 
   private func tellUserToDuplicateConfig() {
@@ -319,7 +326,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @objc func doubleClickedKBTable() {
-//    tableView.editColumn(column, row: row, with: nil, select: true)
     // Disabled for "raw values"
     guard !Preference.bool(for: .displayKeyBindingRawValues) else {
       return

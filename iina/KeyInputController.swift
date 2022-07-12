@@ -103,25 +103,21 @@ class KeyInputController {
 
   private var currentKeyBindingDict: [String: KeyBindingMeta] = [:]
 
-  init(playerCore: PlayerCore) {
+  init(playerCore: PlayerCore, _ globalKeyBindings: [KeyMapping]) {
     self.playerCore = playerCore
     self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
 
-    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main) { _ in
-      self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
-      self.dq.async {
-        self.rebuildCurrentBindings()
-      }
-    }
+    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaGlobalKeyBindingsChanged, object: nil, queue: .main, using: onGlobalKeyBindingsChanged)
+
     // initial load
-    rebuildCurrentBindings()
+    self.dq.async {
+      self.setDefaultBindings(globalKeyBindings)
+      self.enableSection(DEFAULT_SECTION, [MPVInputSection.FLAG_FORCE])
+      self.rebuildCurrentBindings()
+    }
   }
 
   deinit {
-    destroy()
-  }
-
-  func destroy() {
     dq.async {
       if let existingObserver = self.keyBindingsChangedObserver {
         self.log("Removing keyBindingsChangedObserver", level: .verbose)
@@ -212,6 +208,25 @@ class KeyInputController {
     }
   }
 
+  func onGlobalKeyBindingsChanged(_ notification: Notification) {
+    guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
+      Logger.log("onKeyBindingsChanged(): missing object!", level: .error)
+      return
+    }
+    self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
+    self.dq.async {
+      self.setDefaultBindings(globalDefaultBindings)
+      self.rebuildCurrentBindings()
+    }
+  }
+
+  func setDefaultBindings(_ globalDefaultBindings: [KeyMapping]) {
+    // PlayerCore.keyBindings: Treat this as `section=="default", weak==false`.
+    let defaultSection = MPVInputSection(name: DEFAULT_SECTION, globalDefaultBindings, isForce: true)
+    // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
+    sectionsDefined[defaultSection.name] = defaultSection
+  }
+
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c
    Expected to be run inside the the private dispatch queue.
@@ -219,10 +234,7 @@ class KeyInputController {
   private func rebuildCurrentBindings() {
     var rebuiltBindings: [String: KeyBindingMeta] = [:]
 
-    // PlayerCore.keyBindings: Treat this as `section=="default", weak==false`.
-    let defaultSection = MPVInputSection(name: DEFAULT_SECTION, PlayerCore.keyBindings, isForce: true)
-    // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
-    sectionsDefined[defaultSection.name] = defaultSection
+    assert (sectionsDefined[DEFAULT_SECTION] != nil, "Missing default bindings section!")
 
     if let topExclusiveSection = sectionsEnabledExclusive.first {
       log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
@@ -239,9 +251,6 @@ class KeyInputController {
           addBindings(from: inputSection, to: &rebuiltBindings)
         }
       }
-
-      log("RebuildBindings: adding from \(defaultSection)", level: .verbose)
-      addBindings(from: defaultSection, to: &rebuiltBindings)
     }
 
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
@@ -253,10 +262,10 @@ class KeyInputController {
     log("Finished rebuilding input bindings (\(currentKeyBindingDict.count) total)")
 
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let mappingListStr = rebuiltBindings.map { key, meta in
+      let mappingDescriptionList = rebuiltBindings.map { key, meta in
         return "\t[\(meta.srcSectionName)] \(key) -> \(meta.binding.rawAction)"
       }
-      log("Bindings:\n\(mappingListStr)", level: .verbose)
+      log("Bindings:\n\(mappingDescriptionList.joined(separator: "\n"))", level: .verbose)
     }
   }
 

@@ -95,7 +95,7 @@ class InputConfDataStore {
   }
 
   func changeCurrentConfig(_ newIndex: Int) {
-    Logger.log("changeCurrentConfig(): newIndex=\(newIndex)")
+    Logger.log("Changing current input config, newIndex=\(newIndex)", level: .verbose)
     guard let confName = getRow(at: newIndex) else {
       Logger.log("Cannot change current config: invalid index: \(newIndex)", level: .error)
       return
@@ -105,17 +105,17 @@ class InputConfDataStore {
 
   // This is the only method other than updateState() which actually changes the real preference data
   func changeCurrentConfig(_ confName: String) {
-    guard confName != self.currentConfName else {
+    guard confName.localizedCompare(self.currentConfName) != .orderedSame else {
       return
     }
-    Logger.log("changeCurrentConfig(): '\(self.currentConfName)' -> '\(confName)'")
     if tableRows.contains(confName) && getFilePath(forConfig: confName) != nil {
       Preference.set(confName, for: .currentInputConfigName)
     } else {
       Logger.log("Could not change current conf to '\(confName)'; falling back to default config", level: .error)
       Preference.set(InputConfDataStore.defaultConfigNamesSorted[0], for: .currentInputConfigName)
     }
-    
+
+    Logger.log("Current input config changed: '\(self.currentConfName)' -> '\(confName)'")
     NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfChanged))
   }
 
@@ -149,7 +149,7 @@ class InputConfDataStore {
   func renameCurrentConfig(to newName: String) -> Bool {
     var newUserConfigDict = userConfigDict
     Logger.log("Renaming config: \"\(currentConfName)\" -> \"\(newName)\"")
-    guard currentConfName != newName else {
+    guard currentConfName.localizedCompare(newName) == .orderedSame else {
       Logger.log("Cannot rename: '\(currentConfName)' and '\(newName)' are the same", level: .error)
       return false
     }
@@ -170,8 +170,6 @@ class InputConfDataStore {
     }
 
     newUserConfigDict[newName] = filePath
-
-//    let stateChange = RenameAndMoveOneRow(from: )
 
     updateState(newUserConfigDict, currentConfigName: newName, .renameAndMoveOneRow)
 
@@ -201,12 +199,12 @@ class InputConfDataStore {
     // - default configs:
     tableRowsNew.append(contentsOf: InputConfDataStore.defaultConfigNamesSorted)
 
-    // - user: explicitly sort
+    // - user: explicitly sort (ignoring case)
     var userConfigNameList: [String] = []
     userConfigDict.forEach {
       userConfigNameList.append($0.key)
     }
-    userConfigNameList.sort()
+    userConfigNameList.sort{$0.localizedCompare($1) == .orderedAscending}
 
     tableRowsNew.append(contentsOf: userConfigNameList)
 

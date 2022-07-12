@@ -281,6 +281,11 @@ class KeyCodeHelper {
     return keyString
   }
 
+  static func normalizeMpv(_ mpvKeystrokes: String) -> String {
+    // FIXME
+    return mpvKeystrokes
+  }
+
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
     if mpvKeyCode == "+" {
       return ("+", [])

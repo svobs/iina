@@ -147,7 +147,7 @@ class PlayerCore: NSObject {
     self.subsystem = Logger.Subsystem(rawValue: "player\(label)")
     super.init()
     self.mpv = MPVController(playerCore: self)
-    self.keyInputController = KeyInputController(playerCore: self)
+    self.keyInputController = KeyInputController(playerCore: self, Array(PlayerCore.keyBindings.values))
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)
@@ -287,10 +287,27 @@ class PlayerCore: NSObject {
 
   static func setKeyBindings(_ keyMappings: [KeyMapping]) {
     Logger.log("Set key bindings")
-    var keyBindings: [String: KeyMapping] = [:]
-    keyMappings.forEach { keyBindings[$0.key] = $0 }
-    PlayerCore.keyBindings = keyBindings
-    (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(Array(keyBindings.values))
+    // If multiple bindings map to the same key, choose the last one
+    var keyBindingsDict: [String: KeyMapping] = [:]
+    var orderedKeyList: [String] = []
+    keyMappings.forEach {
+      let key = $0.normalizeMpvKey
+      if keyBindingsDict[key] == nil {
+        orderedKeyList.append(key)
+      }
+      keyBindingsDict[key] = $0
+    }
+    PlayerCore.keyBindings = keyBindingsDict
+
+    // For menu item bindings, filter duplicate keys as above, but preserve order
+    var kbUniqueOrderedList: [KeyMapping] = []
+    for key in orderedKeyList {
+      kbUniqueOrderedList.append(keyBindingsDict[key]!)
+    }
+
+    (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(kbUniqueOrderedList)
+
+    NotificationCenter.default.post(Notification(name: .iinaGlobalKeyBindingsChanged, object: kbUniqueOrderedList))
   }
 
   func startMPV() {
@@ -1423,7 +1440,7 @@ class PlayerCore: NSObject {
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
     guard mainWindow.loaded else { return }
-    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
+//    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
 
     switch option {
 

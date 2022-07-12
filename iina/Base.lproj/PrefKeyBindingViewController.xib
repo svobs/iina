@@ -198,11 +198,11 @@
                 </button>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Mhk-DT-3CM">
                     <rect key="frame" x="8" y="62" width="180" height="350"/>
-                    <clipView key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71">
+                    <clipView key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71">
                         <rect key="frame" x="1" y="1" width="178" height="348"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" ambiguous="YES" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="178" height="348"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -248,7 +248,7 @@
                                             </tableCellView>
                                         </prototypeCellViews>
                                     </tableColumn>
-                                    <tableColumn identifier="isDefaultColumn" editable="NO" width="12" minWidth="12" maxWidth="12" id="hqJ-aH-5II" userLabel="IsDefault Column">
+                                    <tableColumn identifier="isDefaultColumn" editable="NO" width="12" minWidth="16" maxWidth="12" id="hqJ-aH-5II" userLabel="IsDefault Column">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="center">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -260,13 +260,13 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="S8W-AF-Z3k" userLabel="IsDefault TableCellView">
-                                                <rect key="frame" x="160" y="1" width="16" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="16" height="18"/>
                                                 <subviews>
                                                     <imageView identifier="isDefault" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bcd-Sf-UF4" userLabel="Locked Image">
-                                                        <rect key="frame" x="2" y="0.5" width="12" height="18"/>
+                                                        <rect key="frame" x="2" y="-2.5" width="12" height="24"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="12" id="CBQ-EE-ewG"/>
-                                                            <constraint firstAttribute="height" constant="12" id="qHE-AJ-6Nv"/>
+                                                            <constraint firstAttribute="height" constant="18" id="qHE-AJ-6Nv"/>
                                                         </constraints>
                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSLockLockedTemplate" id="nvW-Cm-Wbc" userLabel="Locked ImageCell"/>
                                                     </imageView>
@@ -288,7 +288,7 @@
                     <constraints>
                         <constraint firstAttribute="width" constant="180" id="m53-PP-cPT"/>
                     </constraints>
-                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.98319327731092432" horizontal="YES" id="ikw-4D-m1e">
+                    <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.5" horizontal="YES" id="ikw-4D-m1e">
                         <rect key="frame" x="1" y="333" width="178" height="16"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>

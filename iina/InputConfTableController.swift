@@ -84,6 +84,15 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     switch columnName {
       case "nameColumn":
         cell.textField!.stringValue = configName
+        if configDS.isDefaultConfig(configName) {
+          if #available(macOS 10.14, *) {
+            cell.textField?.textColor = .controlAccentColor
+          } else {
+            cell.textField?.textColor = .controlTextColor
+          }
+        } else {
+          cell.textField?.textColor = .textColor
+        }
         return cell
       case "isDefaultColumn":
         cell.imageView?.isHidden = !configDS.isDefaultConfig(configName)
@@ -104,7 +113,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
   // Rename Current Row (callback from DoubleClickEditTextField)
   func onCurrentConfigNameChanged(_ newName: String) -> Bool {
-    guard self.configDS.currentConfName != newName else {
+    guard self.configDS.currentConfName.localizedCompare(newName) != .orderedSame else {
       // No change to current entry: ignore
       return false
     }
