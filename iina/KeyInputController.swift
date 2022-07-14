@@ -8,6 +8,7 @@
 
 import Foundation
 
+let MP_MAX_KEY_DOWN = 4
 fileprivate let DEFAULT_SECTION = "default"
 
 /*
@@ -88,7 +89,7 @@ class KeyInputController {
    mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
    Here, the the newest keypress is at the "head", with the "tail" being the oldest.
    */
-  private var keyPressHistory = RingBuffer<String>(capacity: 4)
+  private var keyPressHistory = RingBuffer<String>(capacity: MP_MAX_KEY_DOWN)
 
   /* mpv euivalent:   `struct cmd_bind_section **sections` */
   private var sectionsDefined: [String : MPVInputSection] = [:]
@@ -304,7 +305,7 @@ class KeyInputController {
   private static func fillInPartialSequences(_ keyBindingsDict: inout [String: KeyBindingMeta]) {
     for (keySequence, keyBindingMeta) in keyBindingsDict {
       if keySequence.contains("-") && keySequence != "default-bindings" {
-        let keySequenceSplit = keySequence.split(separator: "-")
+        let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
         if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
           var partial = ""
           for key in keySequenceSplit {

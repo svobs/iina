@@ -281,9 +281,81 @@ class KeyCodeHelper {
     return keyString
   }
 
-  static func normalizeMpv(_ mpvKeystrokes: String) -> String {
-    // FIXME
-    return mpvKeystrokes
+  private static func getNextSeparatorIndex(_ unparsedRemainder: Substring) -> String.Index? {
+    if let dashIndex = unparsedRemainder.firstIndex(of: "-") {
+      if let indexBeyondEnd = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.endIndex) {
+        // apparently "limitedBy" above doesn't work as advertised; have to check again
+        if indexBeyondEnd < unparsedRemainder.endIndex {
+          if unparsedRemainder[indexBeyondEnd] == "-" {
+            return indexBeyondEnd
+          }
+        }
+        return dashIndex
+      }
+    }
+    return nil
+  }
+
+  // See mpv/input/keycodes.c: mp_input_get_keys_from_string()
+  public static func splitKeystrokes(_ keystrokes: String) -> [String] {
+    var unparsedRemainder = Substring(keystrokes)
+    var splitKeystrokeList: [String] = []
+
+    while !unparsedRemainder.isEmpty && splitKeystrokeList.count < MP_MAX_KEY_DOWN {
+      var endIndex = unparsedRemainder.endIndex
+
+      if let dashIndex = getNextSeparatorIndex(unparsedRemainder), dashIndex != unparsedRemainder.startIndex {
+        endIndex = dashIndex
+      }
+
+      let ks = String(unparsedRemainder[unparsedRemainder.startIndex..<endIndex])
+      guard !ks.isEmpty else {
+          Logger.log("Last keystroke is empty! Returning keystroke list: \(splitKeystrokeList)", level: .error)
+          return splitKeystrokeList
+      }
+      splitKeystrokeList.append(ks)
+
+      guard let indexBeyondEnd = unparsedRemainder.index(endIndex, offsetBy: 1, limitedBy: unparsedRemainder.endIndex) else {
+        break
+      }
+
+      unparsedRemainder = unparsedRemainder[indexBeyondEnd...]
+    }
+    Logger.log("Returning keystroke list: \(splitKeystrokeList)", level: .verbose)
+    return splitKeystrokeList
+  }
+
+  // So far, this only makes sure that alphabetic chars are uppercased, instead of including an explicit "Shift+"
+  private static func normalizeSingleMpvKeystroke(_ mpvKeystroke: String) -> String {
+    let splitted = mpvKeystroke.replacingOccurrences(of: "++", with: "+PLUS").components(separatedBy: "+")
+    if let key = splitted.last, key.count == 1, splitted.contains("Shift"), key.lowercased() != key.uppercased() {
+      let sansShift = splitted.dropLast().filter( { $0 != "Shift" })
+      if sansShift.isEmpty {
+        return key.uppercased()
+      } else {
+        return "\(sansShift.joined(separator: "+"))+\(key.uppercased())"
+      }
+    }
+
+    return mpvKeystroke
+  }
+
+  public static func splitAndNormalizeMpvString(_ mpvKeystrokes: String) -> [String] {
+    let keystrokesList = splitKeystrokes(mpvKeystrokes)
+
+    var normalizedList: [String] = []
+    for keystroke in keystrokesList {
+      normalizedList.append(normalizeSingleMpvKeystroke(keystroke))
+    }
+    return normalizedList
+  }
+
+  // MPV accepts several forms for the same keystroke. This ensures that it is reduced a single standardized form
+  // (such that it can be used in a set or map, and which matches what `mpvKeyCode()` returns).
+  public static func normalizeMpv(_ mpvKeystrokes: String) -> String {
+    let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
+    let normalizedString = normalizedList.joined(separator: "-")
+    return normalizedString
   }
 
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
