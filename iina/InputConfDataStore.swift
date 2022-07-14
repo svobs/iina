@@ -128,19 +128,25 @@ class InputConfDataStore {
     updateState(newUserConfigDict, currentConfigName: name, .addRows)
   }
 
-  func removeCurrentConfig() {
-    let currentConf = currentConfName
-    Logger.log("Removing current config: \"\(currentConf)\"")
-    guard let currentConfIndex = tableRows.firstIndex(of: currentConf) else {
-      Logger.log("Cannot find '\(currentConf)' in table!", level: .error)
-      return
+  @objc
+  func removeConfig(_ configName: String) {
+    let isCurrentConfig: Bool = configName == currentConfName
+    Logger.log("Removing config: \"\(configName)\" (isCurrentConfig: \(isCurrentConfig))")
+
+    var newCurrentConfigName = currentConfName
+
+    if isCurrentConfig {
+      guard let configIndex = tableRows.firstIndex(of: configName) else {
+        Logger.log("Cannot find '\(configName)' in table!", level: .error)
+        return
+      }
+      let prevRowIndex = max(configIndex - 1, 0)
+      newCurrentConfigName = tableRows[prevRowIndex]
     }
-    let prevRowIndex = max(currentConfIndex - 1, 0)
-    let newCurrentConfigName = tableRows[prevRowIndex]
 
     var newUserConfigDict = userConfigDict
-    guard newUserConfigDict.removeValue(forKey: currentConf) != nil else {
-      Logger.log("Cannot remove current config '\(currentConf)': it is not a user config!", level: .error)
+    guard newUserConfigDict.removeValue(forKey: configName) != nil else {
+      Logger.log("Cannot remove config '\(configName)': it is not a user config!", level: .error)
       return
     }
     updateState(newUserConfigDict, currentConfigName: newCurrentConfigName, .removeRows)

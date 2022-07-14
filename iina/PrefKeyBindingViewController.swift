@@ -130,7 +130,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
         return
       }
 
-      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+      self.confTableViewController!.makeNewConfFile(newName, doAction: { (newFilePath: String) in
         // - new file
         if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
           Utility.showAlert("config.cannot_create", sheetWindow: self.view.window)
@@ -142,52 +142,21 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
-    // prompt
-    Utility.quickPromptPanel("config.duplicate", sheetWindow: view.window) { newName in
-      guard !newName.isEmpty else {
-        Utility.showAlert("config.empty_name", sheetWindow: self.view.window)
-        return
-      }
-      guard !self.configDS.tableRows.contains(newName) else {
-        Utility.showAlert("config.name_existing", sheetWindow: self.view.window)
-        return
-      }
-
-      guard let currFilePath = self.configDS.currentConfFilePath else {
-        return
-      }
-      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
-        // - copy file
-        do {
-          try FileManager.default.copyItem(atPath: currFilePath, toPath: newFilePath)
-          return true
-        } catch let error {
-          Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.view.window)
-          return false
-        }
-      })
+    if let confTableViewController = confTableViewController {
+      confTableViewController.duplicateConfig(configDS.currentConfName)
     }
   }
 
   @IBAction func revealConfFileAction(_ sender: AnyObject) {
-    guard let confFilePath = requireCurrentFilePath() else {
-      return
+    if let confTableViewController = confTableViewController {
+      confTableViewController.revealConfig(configDS.currentConfName)
     }
-    let url = URL(fileURLWithPath: confFilePath)
-    NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 
   @IBAction func deleteConfFileAction(_ sender: AnyObject) {
-    guard let confFilePath = requireCurrentFilePath() else {
-      return
+    if let confTableViewController = confTableViewController {
+      confTableViewController.deleteConfig(configDS.currentConfName)
     }
-    do {
-      try FileManager.default.removeItem(atPath: confFilePath)
-    } catch {
-      Utility.showAlert("error_deleting_file", sheetWindow: view.window)
-    }
-    // update prefs & refresh UI
-    configDS.removeCurrentConfig()
   }
 
   @IBAction func importConfigBtnAction(_ sender: Any) {
@@ -216,42 +185,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   // MARK: - UI
-
-  // Check whether file already exists at `filePath`.
-  // If it does, prompt the user to overwrite it or show it in Finder; return true if the former and successful, false otherwise
-  static func handleExistingFile(filePath: String, _ currentWindow: NSWindow) -> Bool {
-    let fm = FileManager.default
-    if fm.fileExists(atPath: filePath) {
-      if Utility.quickAskPanel("config.file_existing", sheetWindow: currentWindow) {
-        // - delete file
-        do {
-          try fm.removeItem(atPath: filePath)
-        } catch {
-          Utility.showAlert("error_deleting_file", sheetWindow: currentWindow)
-          return false
-        }
-      } else {
-        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: filePath)])
-        return false
-      }
-    }
-    return true
-  }
-
-  private func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
-    let newFileName = newName + ".conf"
-    let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
-    // - if exists
-    guard PrefKeyBindingViewController.handleExistingFile(filePath: newFilePath, self.view.window!) else {
-      return
-    }
-
-    guard doAction(newFilePath) else {
-      return
-    }
-
-    self.configDS.addUserConfig(name: newName, filePath: newFilePath)
-  }
 
   private func saveToCurrentConfFile(_ sender: Notification) {
     guard let confFilePath = requireCurrentFilePath() else {

@@ -10,7 +10,7 @@ import Foundation
 import AppKit
 import Cocoa
 
-class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource {
+class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
 
   private unowned var tableView: DoubleClickEditTableView!
 
@@ -23,6 +23,9 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     self.configDS = configDS
 
     super.init()
+
+    self.tableView.menu = NSMenu()
+    self.tableView.menu?.delegate = self
 
     // Set up callbacks:
     tableView.onTextDidEndEditing = onCurrentConfigNameChanged
@@ -62,7 +65,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     selectRow(self.configDS.currentConfName)
   }
 
-  // NSTableViewDataSource
+  // MARK: NSTableViewDataSource
 
   func numberOfRows(in tableView: NSTableView) -> Int {
     return configDS.tableRows.count
@@ -84,15 +87,6 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     switch columnName {
       case "nameColumn":
         cell.textField!.stringValue = configName
-        if configDS.isDefaultConfig(configName) {
-          if #available(macOS 10.14, *) {
-            cell.textField?.textColor = .controlAccentColor
-          } else {
-            cell.textField?.textColor = .controlTextColor
-          }
-        } else {
-          cell.textField?.textColor = .textColor
-        }
         return cell
       case "isDefaultColumn":
         cell.imageView?.isHidden = !configDS.isDefaultConfig(configName)
@@ -103,7 +97,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
   }
 
-  // NSTableViewDelegate
+  // MARK: NSTableViewDelegate
 
   // Selection Changed
   func tableViewSelectionDidChange(_ notification: Notification) {
@@ -132,7 +126,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
 
     // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
-    guard PrefKeyBindingViewController.handleExistingFile(filePath: newFilePath, self.tableView.window!) else {
+    guard self.handleExistingFile(filePath: newFilePath) else {
       return false  // cancel
     }
 
@@ -147,5 +141,169 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
     // Update config lists and update UI
     return configDS.renameCurrentConfig(to: newName)
+  }
+
+  // MARK: NSMenuDelegate
+
+  fileprivate class InputConfMenuItem: NSMenuItem {
+    let configName: String
+
+    public init(configName: String, title: String, action selector: Selector?) {
+      self.configName = configName
+      super.init(title: title, action: selector, keyEquivalent: "")
+    }
+
+    required init(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+
+  private func getClickedConfigName() -> String? {
+    guard tableView.clickedRow >= 0 else {
+      return nil
+    }
+    return configDS.getRow(at: tableView.clickedRow)
+  }
+
+  func menuNeedsUpdate(_ menu: NSMenu) {
+    guard let clickedConfigName = getClickedConfigName() else {
+      // This will prevent menu from showing
+      menu.removeAllItems()
+      return
+    }
+
+    rebuildMenu(menu, clickedConfigName: clickedConfigName)
+  }
+
+  private func rebuildMenu(_ menu: NSMenu, clickedConfigName: String) {
+    menu.removeAllItems()
+
+    // Reveal in Finder
+    var menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.revealConfigFromMenu(_:)))
+    menuItem.target = self
+    menu.addItem(menuItem)
+
+    // Duplicate
+    menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Duplicate...", action: #selector(self.duplicateConfigFromMenu(_:)))
+    menuItem.target = self
+    menu.addItem(menuItem)
+
+    // ---
+    menu.addItem(NSMenuItem.separator())
+
+    // Delete
+    menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Delete", action: #selector(self.deleteConfigFromMenu(_:)))
+    menuItem.target = self
+    menu.addItem(menuItem)
+  }
+
+  @objc fileprivate func deleteConfigFromMenu(_ sender: InputConfMenuItem) {
+    self.deleteConfig(sender.configName)
+  }
+
+  @objc fileprivate func revealConfigFromMenu(_ sender: InputConfMenuItem) {
+    self.revealConfig(sender.configName)
+  }
+
+  @objc fileprivate func duplicateConfigFromMenu(_ sender: InputConfMenuItem) {
+    self.duplicateConfig(sender.configName)
+  }
+
+  // MARK: Reusable UI actions
+
+  @objc public func deleteConfig(_ configName: String) {
+    guard let confFilePath = self.requireFilePath(forConfig: configName) else {
+      return
+    }
+
+    do {
+      try FileManager.default.removeItem(atPath: confFilePath)
+    } catch {
+      Utility.showAlert("error_deleting_file", sheetWindow: tableView.window)
+    }
+    // update prefs & refresh UI
+    configDS.removeConfig(configName)
+  }
+
+  @objc func revealConfig(_ configName: String) {
+    guard let confFilePath = self.requireFilePath(forConfig: configName) else {
+      return
+    }
+    let url = URL(fileURLWithPath: confFilePath)
+    NSWorkspace.shared.activateFileViewerSelecting([url])
+  }
+
+  @objc func duplicateConfig(_ configName: String) {
+    guard let currFilePath = self.requireFilePath(forConfig: configName) else {
+      return
+    }
+    
+    // prompt
+    Utility.quickPromptPanel("config.duplicate", sheetWindow: tableView.window) { newName in
+      guard !newName.isEmpty else {
+        Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
+        return
+      }
+      guard !self.configDS.tableRows.contains(newName) else {
+        Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
+        return
+      }
+
+      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+        // - copy file
+        do {
+          try FileManager.default.copyItem(atPath: currFilePath, toPath: newFilePath)
+          return true
+        } catch let error {
+          Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+          return false
+        }
+      })
+    }
+  }
+
+  func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
+    let newFileName = newName + ".conf"
+    let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
+    // - if exists
+    guard self.handleExistingFile(filePath: newFilePath) else {
+      return
+    }
+
+    guard doAction(newFilePath) else {
+      return
+    }
+
+    self.configDS.addUserConfig(name: newName, filePath: newFilePath)
+  }
+
+  // Check whether file already exists at `filePath`.
+  // If it does, prompt the user to overwrite it or show it in Finder; return true if the former and successful, false otherwise
+  private func handleExistingFile(filePath: String) -> Bool {
+    let fm = FileManager.default
+    if fm.fileExists(atPath: filePath) {
+      if Utility.quickAskPanel("config.file_existing", sheetWindow: self.tableView.window) {
+        // - delete file
+        do {
+          try fm.removeItem(atPath: filePath)
+        } catch {
+          Utility.showAlert("error_deleting_file", sheetWindow: self.tableView.window)
+          return false
+        }
+      } else {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: filePath)])
+        return false
+      }
+    }
+    return true
+  }
+
+  private func requireFilePath(forConfig configName: String) -> String? {
+    if let confFilePath = self.configDS.getFilePath(forConfig: configName) {
+      return confFilePath
+    }
+
+    Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: tableView.window)
+    return nil
   }
 }
