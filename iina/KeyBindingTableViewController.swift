@@ -8,7 +8,7 @@
 
 import Foundation
 
-class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource {
+class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
   fileprivate unowned let parentPrefPanelController: PrefKeyBindingViewController!
   init(_ parentPrefPanelController: PrefKeyBindingViewController) {
     self.parentPrefPanelController = parentPrefPanelController

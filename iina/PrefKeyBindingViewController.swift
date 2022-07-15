@@ -61,6 +61,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     keyBindingsTableController = KeyBindingsTableViewController(self)
     kbTableView.delegate = keyBindingsTableController
+    confTableView.delegate = keyBindingsTableController
 
     confTableViewController = InputConfTableViewController(confTableView, self.configDS)
     confTableView.dataSource = confTableViewController
@@ -142,21 +143,15 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
-    if let confTableViewController = confTableViewController {
-      confTableViewController.duplicateConfig(configDS.currentConfName)
-    }
+    confTableViewController?.duplicateConfig(configDS.currentConfName)
   }
 
   @IBAction func revealConfFileAction(_ sender: AnyObject) {
-    if let confTableViewController = confTableViewController {
-      confTableViewController.revealConfig(configDS.currentConfName)
-    }
+    confTableViewController?.revealConfig(configDS.currentConfName)
   }
 
   @IBAction func deleteConfFileAction(_ sender: AnyObject) {
-    if let confTableViewController = confTableViewController {
-      confTableViewController.deleteConfig(configDS.currentConfName)
-    }
+    confTableViewController?.deleteConfig(configDS.currentConfName)
   }
 
   @IBAction func importConfigBtnAction(_ sender: Any) {
@@ -192,13 +187,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
     let predicate = mappingController.filterPredicate
     mappingController.filterPredicate = nil
-    guard let keyMapping = mappingController.arrangedObjects as? [KeyMapping] else {
+    guard let keyBindingList = mappingController.arrangedObjects as? [KeyMapping] else {
       return
     }
-    setKeybindingsForPlayerCore(keyMapping)
+    setKeybindingsForPlayerCore(keyBindingList)
     mappingController.filterPredicate = predicate
     do {
-      try KeyMapping.generateConfData(from: keyMapping).write(toFile: confFilePath, atomically: true, encoding: .utf8)
+      try KeyMapping.generateConfData(from: keyBindingList).write(toFile: confFilePath, atomically: true, encoding: .utf8)
     } catch {
       Utility.showAlert("config.cannot_write", sheetWindow: view.window)
     }
@@ -209,7 +204,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       return
     }
     Logger.log("Loading key bindings config from \"\(confFilePath)\"")
-    guard let mapping = KeyMapping.parseInputConf(at: confFilePath) else {
+    guard let keyBindingList = KeyMapping.parseInputConf(at: confFilePath) else {
       // on error
       Logger.log("Error loading key bindings config from \"\(confFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: confFilePath).lastPathComponent
@@ -219,10 +214,10 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
 
     mappingController.content = nil
-    mappingController.add(contentsOf: mapping)
+    mappingController.add(contentsOf: keyBindingList)
     mappingController.setSelectionIndexes(IndexSet())
 
-    setKeybindingsForPlayerCore(mapping)
+    setKeybindingsForPlayerCore(keyBindingList)
     updateEditEnabledStatus()
   }
 
@@ -241,8 +236,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     removeKmBtn.isEnabled = shouldEnableEdit && kbTableView.selectedRow != -1
   }
 
-  private func setKeybindingsForPlayerCore(_ keyBindings: [KeyMapping]) {
-    PlayerCore.setKeyBindings(keyBindings)
+  private func setKeybindingsForPlayerCore(_ keyBindingList: [KeyMapping]) {
+    PlayerCore.setKeyBindings(keyBindingList)
   }
 
   private func tellUserToDuplicateConfig() {
