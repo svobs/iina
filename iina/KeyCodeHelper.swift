@@ -185,10 +185,10 @@ class KeyCodeHelper {
   }()
 
   static let mpvSymbolToKeyName: [String: String] = [
-    "META": "⌘",
-    "SHIFT": "⇧",
-    "ALT": "⌥",
-    "CTRL":"⌃",
+    "Meta": "⌘",
+    "Shift": "⇧",
+    "Alt": "⌥",
+    "Ctrl":"⌃",
     "SHARP": "#",
     "ENTER": "↩︎",
     "KP_ENTER": "↩︎",
@@ -310,7 +310,7 @@ class KeyCodeHelper {
 
       let ks = String(unparsedRemainder[unparsedRemainder.startIndex..<endIndex])
       guard !ks.isEmpty else {
-          Logger.log("Last keystroke is empty! Returning keystroke list: \(splitKeystrokeList)", level: .error)
+          Logger.log("While splitting keystrokes: Last keystroke is empty! Returning list: \(splitKeystrokeList)", level: .error)
           return splitKeystrokeList
       }
       splitKeystrokeList.append(ks)
@@ -321,23 +321,43 @@ class KeyCodeHelper {
 
       unparsedRemainder = unparsedRemainder[indexBeyondEnd...]
     }
-    Logger.log("Returning keystroke list: \(splitKeystrokeList)", level: .verbose)
     return splitKeystrokeList
   }
 
-  // So far, this only makes sure that alphabetic chars are uppercased, instead of including an explicit "Shift+"
+  // Normalizes a single "press" of possibly multiple keys (as joined with '+')
   private static func normalizeSingleMpvKeystroke(_ mpvKeystroke: String) -> String {
+    if mpvKeystroke == "+" {
+      return mpvKeystroke
+    }
+    var normalizedList: [String] = []
     let splitted = mpvKeystroke.replacingOccurrences(of: "++", with: "+PLUS").components(separatedBy: "+")
-    if let key = splitted.last, key.count == 1, splitted.contains("Shift"), key.lowercased() != key.uppercased() {
-      let sansShift = splitted.dropLast().filter( { $0 != "Shift" })
-      if sansShift.isEmpty {
-        return key.uppercased()
+    var key = splitted.last!
+    splitted.dropLast().forEach { k in
+      // Modifiers have first letter capitalized. All other special chars are capitalized
+      if k.equalsIgnoreCase("Shift") {
+        // For alphabetic chars, remove the "Shift+" and replace with actual uppercase char
+        if key.count == 1, key.lowercased() != key.uppercased() {
+          key = key.uppercased()
+        } else {
+          normalizedList.append("Shift")
+        }
+      } else if k.equalsIgnoreCase("Meta") {
+        normalizedList.append("Meta")
+      } else if k.equalsIgnoreCase("Ctrl") {
+        normalizedList.append("Ctrl")
+      } else if k.equalsIgnoreCase("Alt") {
+        normalizedList.append("Alt")
       } else {
-        return "\(sansShift.joined(separator: "+"))+\(key.uppercased())"
+        normalizedList.append(k.uppercased())
       }
     }
+    if key.count > 1 {
+      // assume it's a special char
+      key = key.uppercased()
+    }
+    normalizedList.append(key)
 
-    return mpvKeystroke
+    return normalizedList.joined(separator: "+")
   }
 
   public static func splitAndNormalizeMpvString(_ mpvKeystrokes: String) -> [String] {
@@ -358,11 +378,12 @@ class KeyCodeHelper {
     return normalizedString
   }
 
+  // IMPORTANT: `mpvKeyCode` must be normalized first!
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
     if mpvKeyCode == "+" {
       return ("+", [])
     }
-    let splitted = mpvKeyCode.replacingOccurrences(of: "++", with: "+PLUS").components(separatedBy: "+")
+    let splitted = mpvKeyCode.components(separatedBy: "+")
     var key: String
     var modifiers: NSEvent.ModifierFlags = []
     guard !splitted.isEmpty else { return nil }

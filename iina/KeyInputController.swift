@@ -205,7 +205,7 @@ class KeyInputController {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
-      log("current key binding dict: \(currentKeyBindingDict)", level: .verbose)
+      logCurrentBindings()
       return nil
     }
   }
@@ -272,13 +272,7 @@ class KeyInputController {
     currentKeyBindingDict = rebuiltBindings
 
     log("Finished rebuilding input bindings (\(currentKeyBindingDict.count) total)")
-
-    if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let mappingDescriptionList = rebuiltBindings.map { key, meta in
-        return "\t[\(meta.srcSectionName)] \(key) -> \(meta.binding.rawAction)"
-      }
-      log("Bindings:\n\(mappingDescriptionList.joined(separator: "\n"))", level: .verbose)
-    }
+    logCurrentBindings()
   }
 
   private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
@@ -289,6 +283,7 @@ class KeyInputController {
 
   private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
     let mpvKey = keyBinding.normalizeMpvKey
+    log("Normalized key: \"\(keyBinding.key)\" -> \"\(mpvKey)\"", level: .verbose)
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
         log("RebuildBindings: could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
@@ -296,10 +291,18 @@ class KeyInputController {
       }
       // For each binding, use the first weak binding found, or the first strong ("force") binding found
       if prevBindSrcSection.isForce || !inputSection.isForce {
+        log("RebuildBindings: skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): it was already set by higher-priority section \"\(prevBindSrcSection.name)\" (force=\(prevBindSrcSection.isForce))", level: .verbose)
         return
       }
     }
     bindingsDict[mpvKey] = KeyBindingMeta(keyBinding, from: inputSection.name)
+  }
+
+  private func logCurrentBindings() {
+    if Logger.enabled && Logger.Level.preferred >= .verbose {
+      let bindingList = currentKeyBindingDict.map { ("\t<\($1.srcSectionName)> \($0) -> \($1.binding.readableAction)") }
+      log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose)
+    }
   }
 
   private static func fillInPartialSequences(_ keyBindingsDict: inout [String: KeyBindingMeta]) {
@@ -419,7 +422,7 @@ class KeyInputController {
    } else {
      sectionsEnabled.prepend(sectionName)
    }
-   log("After enable_section(\"\(sectionName)\"): SectionsDefined=\(sectionsDefined.keys); SectionsEnabled=\(sectionsEnabled)")
+   log("After enable_section(\"\(sectionName)\") Sections: {Exclusive = \(sectionsEnabledExclusive); Enabled=\(sectionsEnabled); Defined=\(sectionsDefined.keys)}")
    rebuildCurrentBindings()
  }
 

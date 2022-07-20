@@ -39,29 +39,33 @@ class MPVLogHandler {
   static let iinaMpvLogLevel = MPVLogLevel(rawValue: Preference.integer(for: .iinaMpvLogLevel))!
 
   private unowned let player: PlayerCore
-  let subsystem: Logger.Subsystem
+
+  /*
+   Only used for messages coming directly from the mpv log event stream
+   */
+  let mpvLogSubsystem: Logger.Subsystem
 
   init(player: PlayerCore) {
     self.player = player
-    subsystem = Logger.Subsystem(rawValue: "mpv\(player.label)")
+    mpvLogSubsystem = Logger.Subsystem(rawValue: "mpv\(player.label)")
   }
 
   func handleLogMessage(prefix: String, level: String, msg: String) {
-    if !extractSectionInfo(prefix: prefix, severity: level, msg: msg) {
-      // log only if not already handled AND if within the configured mpv logging threshold
-      // (and of course only if IINA logging threshold is .debug or above)
-      if MPVLogHandler.iinaMpvLogLevel.shouldLog(severity: level) {
-        // try to match IINA's log format
-        let lev = level[level.index(level.startIndex, offsetBy: 0)]  // Some log levels are spelled out. Others are only 1 char. Shorten all to 1 char
-        Logger.log("[\(prefix)][\(lev)] \(msg)", level: .debug, subsystem: subsystem, appendNewlineAtTheEnd: false)
-      }
+    // Reproduce the log line to IINA log only if within the configured mpv logging threshold
+    // (and of course only if IINA logging threshold is .debug or above)
+    if MPVLogHandler.iinaMpvLogLevel.shouldLog(severity: level) {
+      // try to match IINA's log format
+      let lev = level[level.index(level.startIndex, offsetBy: 0)]  // Some log levels are spelled out. Others are only 1 char. Shorten all to 1 char
+      Logger.log("[\(prefix)][\(lev)] \(msg)", level: .debug, subsystem: mpvLogSubsystem, appendNewlineAtTheEnd: false)
     }
+    extractSectionInfo(prefix: prefix, severity: level, msg: msg)
   }
 
   /**
    Looks for key binding sections set in scripts; extracts them if found & sends them to relevant key input controller.
    Expected to return `true` if parsed & handled, `false` otherwise
    */
+  @discardableResult
   private func extractSectionInfo(prefix: String, severity: String, msg: String) -> Bool {
     guard prefix == "cplayer", severity == MPVLogLevel.debug.description else {
       return false
@@ -108,7 +112,7 @@ class MPVLogHandler {
         } else {
           // "This command can be used to dispatch arbitrary keys to a script or a client API user".
           // Need to figure out whether to add support for these as well.
-          Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning)
+          Logger.log("Unrecognized mpv command in `define-section`; skipping line: \"\(line)\"", level: .warning, subsystem: player.subsystem)
         }
       }
     }
@@ -124,14 +128,14 @@ class MPVLogHandler {
    */
   private func handleDefineSection(_ msg: String) -> Bool {
     guard let match = matchRegex(DEFINE_SECTION_REGEX, msg) else {
-      Logger.log("Found 'define-section' but failed to parse it: \(msg)", level: .error)
+      Logger.log("Found 'define-section' but failed to parse it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
     guard let nameRange = Range(match.range(at: 1), in: msg),
           let contentsRange = Range(match.range(at: 2), in: msg),
           let flagsRange = Range(match.range(at: 3), in: msg) else {
-      Logger.log("Parsed 'define-section' but failed to find capture groups in it: \(msg)", level: .error)
+      Logger.log("Parsed 'define-section' but failed to find capture groups in it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
@@ -146,13 +150,17 @@ class MPVLogHandler {
         case MPVInputSection.FLAG_DEFAULT:
           isForce = false
         default:
-          Logger.log("Unrecognized flag in 'define-section': \(flag)", level: .error)
-          Logger.log("Offending log line: `\(msg)`", level: .error)
+          Logger.log("Unrecognized flag in 'define-section': \(flag)", level: .error, subsystem: player.subsystem)
+          Logger.log("Offending log line: `\(msg)`", level: .error, subsystem: player.subsystem)
       }
     }
 
     let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce)
-    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings), force=\(section.isForce) ")
+    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings.count), force=\(section.isForce) ", subsystem: player.subsystem)
+    if Logger.enabled && Logger.Level.preferred >= .verbose {
+      let bindingList = section.keyBindings.map { ("\t<\(section.name)> \($0.normalizeMpvKey) -> \($0.readableAction)") }
+      Logger.log("Bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
+    }
     player.keyInputController.defineSection(section)
     return true
   }
@@ -162,20 +170,20 @@ class MPVLogHandler {
    */
   private func handleEnableSection(_ msg: String) -> Bool {
     guard let match = matchRegex(ENABLE_SECTION_REGEX, msg) else {
-      Logger.log("Found 'enable-section' but failed to parse it: \(msg)", level: .error)
+      Logger.log("Found 'enable-section' but failed to parse it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
     guard let nameRange = Range(match.range(at: 1), in: msg),
           let flagsRange = Range(match.range(at: 2), in: msg) else {
-      Logger.log("Parsed 'enable-section' but failed to find capture groups in it: \(msg)", level: .error)
+      Logger.log("Parsed 'enable-section' but failed to find capture groups in it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
     let name = String(msg[nameRange])
     let flags = parseFlags(String(msg[flagsRange]))
 
-    Logger.log("enable-section: \"\(name)\", flags=\(flags) ")
+    Logger.log("enable-section: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
     player.keyInputController.enableSection(name, flags)
     return true
   }
@@ -185,17 +193,17 @@ class MPVLogHandler {
    */
   private func handleDisableSection(_ msg: String) -> Bool {
     guard let match = matchRegex(DISABLE_SECTION_REGEX, msg) else {
-      Logger.log("Found 'disable-section' but failed to parse it: \(msg)", level: .error)
+      Logger.log("Found 'disable-section' but failed to parse it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
     guard let nameRange = Range(match.range(at: 1), in: msg) else {
-      Logger.log("Parsed 'disable-section' but failed to find capture groups in it: \(msg)", level: .error)
+      Logger.log("Parsed 'disable-section' but failed to find capture groups in it: \(msg)", level: .error, subsystem: player.subsystem)
       return false
     }
 
     let name = String(msg[nameRange])
-    Logger.log("disable-section: \"\(name)\"")
+    Logger.log("disable-section: \"\(name)\"", subsystem: player.subsystem)
     player.keyInputController.disableSection(name)
     return true
   }

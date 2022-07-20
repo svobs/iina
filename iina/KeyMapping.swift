@@ -78,7 +78,7 @@ class KeyMapping: NSObject {
 
   var prettyKey: String {
     get {
-      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: self.key, usePrintableKeyName: true) {
+      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: self.normalizeMpvKey, usePrintableKeyName: true) {
         return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
       } else {
         return key
