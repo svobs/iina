@@ -211,9 +211,9 @@ class KeyInputController {
   }
 
   func onGlobalKeyBindingsChanged(_ notification: Notification) {
-    self.log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
+    log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
     guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
-      Logger.log("onGlobalKeyBindingsChanged(): missing object!", level: .error)
+      log("onGlobalKeyBindingsChanged(): missing object!", level: .error)
       return
     }
     self.dq.async {
@@ -276,6 +276,7 @@ class KeyInputController {
   }
 
   private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
+    // Iterate from top of stack to bottom:
     for keyBinding in inputSection.keyBindings {
       addBinding(keyBinding, from: inputSection, to: &bindingsDict)
     }
@@ -283,15 +284,15 @@ class KeyInputController {
 
   private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
     let mpvKey = keyBinding.normalizeMpvKey
-    log("Normalized key: \"\(keyBinding.key)\" -> \"\(mpvKey)\"", level: .verbose)
+    log("RebuildBindings: Normalized key: \"\(keyBinding.key)\" -> \"\(mpvKey)\"", level: .verbose)
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
-        log("RebuildBindings: could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
+        log("RebuildBindings: Could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
         return
       }
-      // For each binding, use the first weak binding found, or the first strong ("force") binding found
+      // For each binding, use the topmost weak binding found, or the topmost strong ("force") binding found
       if prevBindSrcSection.isForce || !inputSection.isForce {
-        log("RebuildBindings: skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): it was already set by higher-priority section \"\(prevBindSrcSection.name)\" (force=\(prevBindSrcSection.isForce))", level: .verbose)
+        log("RebuildBindings: Skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): it was already set by higher-priority section \"\(prevBindSrcSection.name)\" (force=\(prevBindSrcSection.isForce))", level: .verbose)
         return
       }
     }
@@ -402,7 +403,7 @@ class KeyInputController {
          break
        case "exclusive":
          isExclusive = true
-         Logger.log("Enabling exclusive section: \"\(sectionName)\"", subsystem: subsystem)
+         log("Enabling exclusive section: \"\(sectionName)\"")
          break
        default:
          log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
