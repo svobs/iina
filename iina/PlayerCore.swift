@@ -291,7 +291,7 @@ class PlayerCore: NSObject {
     var keyBindingsDict: [String: KeyMapping] = [:]
     var orderedKeyList: [String] = []
     keyMappings.forEach {
-      if $0.key == "default-bindings" && $0.action.count == 1 && $0.action[0] != "start" {
+      if $0.key == "default-bindings" && $0.action.count == 1 && $0.action[0] == "start" {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       } else {
         if let kb = filterSectionBindings($0) {

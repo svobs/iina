@@ -105,7 +105,8 @@ class InputConfDataStore {
 
   // This is the only method other than updateState() which actually changes the real preference data
   func changeCurrentConfig(_ confName: String) {
-    guard confName.localizedCompare(self.currentConfName) != .orderedSame else {
+    guard !confName.equalsIgnoreCase(self.currentConfName) else {
+      Logger.log("No need to persist change to current config '\(confName)'; it is already current", level: .verbose)
       return
     }
     if tableRows.contains(confName) && getFilePath(forConfig: confName) != nil {
@@ -155,7 +156,7 @@ class InputConfDataStore {
   func renameCurrentConfig(to newName: String) -> Bool {
     var newUserConfigDict = userConfigDict
     Logger.log("Renaming config: \"\(currentConfName)\" -> \"\(newName)\"")
-    guard currentConfName.localizedCompare(newName) == .orderedSame else {
+    guard currentConfName.equalsIgnoreCase(newName) else {
       Logger.log("Cannot rename: '\(currentConfName)' and '\(newName)' are the same", level: .error)
       return false
     }
