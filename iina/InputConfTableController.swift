@@ -40,10 +40,12 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
   }
 
-  private func selectRow(_ confName: String) {
+  func selectCurrentInputRow() {
+    let confName = self.configDS.currentConfName
     if let index = configDS.tableRows.firstIndex(of: confName) {
-      Logger.log("Selecting row: '\(confName)'", level: .verbose)
+      Logger.log("Selecting row: '\(confName)' (index \(index))", level: .verbose)
       self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+      Logger.log("Selection is now: \(self.tableView.selectedRow)", level: .verbose)
     }
   }
 
@@ -62,7 +64,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   func onCurrentInputChanged(_ notification: Notification) {
     Logger.log("Got iinaCurrentInputConfChanged notification; changing selection", level: .verbose)
     // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
-    selectRow(self.configDS.currentConfName)
+    selectCurrentInputRow()
   }
 
   // MARK: NSTableViewDataSource

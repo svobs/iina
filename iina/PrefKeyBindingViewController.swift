@@ -77,6 +77,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main) { _ in
       self.loadConfigFile()
     }
+
+    confTableViewController?.selectCurrentInputRow()
     self.loadConfigFile()
   }
 
