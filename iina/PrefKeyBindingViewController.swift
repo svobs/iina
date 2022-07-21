@@ -193,7 +193,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     setKeybindingsForPlayerCore(keyBindingList)
     mappingController.filterPredicate = predicate
     do {
-      try KeyMapping.generateConfData(from: keyBindingList).write(toFile: confFilePath, atomically: true, encoding: .utf8)
+      try KeyMapping.generateInputConf(from: keyBindingList).write(toFile: confFilePath, atomically: true, encoding: .utf8)
     } catch {
       Utility.showAlert("config.cannot_write", sheetWindow: view.window)
     }

@@ -187,10 +187,10 @@ class KeyInputController {
 
       if let meta = currentKeyBindingDict[keySequence] {
         if meta.binding.isIgnored {
-          log("Ignoring \"\(meta.binding.key)\" (from: \"\(meta.srcSectionName)\")", level: .verbose)
+          log("Ignoring \"\(meta.binding.normalizedMpvKey)\" (from: \"\(meta.srcSectionName)\")", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \"\(meta.binding.key)\" -> \(meta.binding.action) (from: \"\(meta.srcSectionName)\")")
+          log("Resolved keySeq \"\(meta.binding.normalizedMpvKey)\" -> \(meta.binding.action) (from: \"\(meta.srcSectionName)\")")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return meta.binding
@@ -243,7 +243,7 @@ class KeyInputController {
       if let topExclusiveSection = sectionsDefined[topExclusiveSectionName] {
         log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
         for keyBinding in topExclusiveSection.keyBindings {
-          rebuiltBindings[keyBinding.normalizeMpvKey] = KeyBindingMeta(keyBinding, from: topExclusiveSection.name)
+          rebuiltBindings[keyBinding.normalizedMpvKey] = KeyBindingMeta(keyBinding, from: topExclusiveSection.name)
         }
       } else {
         // indicates serious internal error
@@ -283,8 +283,7 @@ class KeyInputController {
   }
 
   private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
-    let mpvKey = keyBinding.normalizeMpvKey
-    log("RebuildBindings: Normalized key: \"\(keyBinding.key)\" -> \"\(mpvKey)\"", level: .verbose)
+    let mpvKey = keyBinding.normalizedMpvKey
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
         log("RebuildBindings: Could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)

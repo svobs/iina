@@ -158,7 +158,7 @@ class MPVLogHandler {
     let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce)
     Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = section.keyBindings.map { ("\t<\(section.name)> \($0.normalizeMpvKey) -> \($0.readableAction)") }
+      let bindingList = section.keyBindings.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
       Logger.log("Bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
     }
     player.keyInputController.defineSection(section)

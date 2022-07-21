@@ -11,23 +11,26 @@ import Foundation
 /// - Tag: KeyMapping
 class KeyMapping: NSObject {
 
-  static private let modifierOrder: [String: Int] = [
-    "Ctrl": 0,
-    "Alt": 1,
-    "Shift": 2,
-    "Meta": 3
-  ]
-
+  // TODO: this is UI logic. Move it out of here.
   @objc var keyForDisplay: String {
     get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? key : prettyKey
+      if Preference.bool(for: .displayKeyBindingRawValues) {
+        return rawKey
+      } else {
+        if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) {
+          return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+        } else {
+          return normalizedMpvKey
+        }
+      }
     }
     set {
       key = newValue
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
     }
   }
-  
+
+  // TODO: this is UI logic. Move it out of here.
   @objc var actionForDisplay: String {
     get {
       return Preference.bool(for: .displayKeyBindingRawValues) ? readableAction : prettyCommand
@@ -40,9 +43,35 @@ class KeyMapping: NSObject {
 
   var isIINACommand: Bool
 
-  var key: String
+  private var rawKey: String
 
-  var action: [String]
+  private(set) var normalizedMpvKey: String
+
+  var key: String {
+    set {
+      self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(newValue)
+      self.rawKey = newValue
+    }
+    get {
+      return rawKey
+    }
+  }
+
+  // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
+  // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
+  var section: String? {
+    get {
+      if action.count > 1 && action[0].count > 0 && action[0][action[0].startIndex] == "{" {
+        if let endIndex = action[0].firstIndex(of: "}") {
+          let inner = action[0][action[0].index(after: action[0].startIndex)..<endIndex]
+          return inner.trimmingCharacters(in: .whitespaces)
+        }
+      }
+      return nil
+    }
+  }
+
+  private(set) var action: [String]
 
   private var privateRawAction: String
 
@@ -50,13 +79,12 @@ class KeyMapping: NSObject {
     set {
       if newValue.hasPrefix("@iina") {
         privateRawAction = newValue[newValue.index(newValue.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         isIINACommand = true
       } else {
         privateRawAction = newValue
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
         isIINACommand = false
       }
+      action = privateRawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     }
     get {
       return privateRawAction
@@ -72,20 +100,6 @@ class KeyMapping: NSObject {
     }
   }
 
-  var normalizeMpvKey: String {
-    return KeyCodeHelper.normalizeMpv(key)
-  }
-
-  var prettyKey: String {
-    get {
-      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: self.normalizeMpvKey, usePrintableKeyName: true) {
-        return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
-      } else {
-        return key
-      }
-    }
-  }
-
   var isIgnored: Bool {
     return privateRawAction == MPVCommand.ignore.rawValue
   }
@@ -98,33 +112,24 @@ class KeyMapping: NSObject {
     get {
       let iinaCommandString = isIINACommand ? "#@iina " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      return "\(iinaCommandString) \(key) \(action.joined(separator: " "))\(commentString)"
+      return "\(iinaCommandString)\(key) \(action.joined(separator: " "))\(commentString)"
     }
   }
 
   init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
-    // normalize different letter cases for modifier keys
-    var normalizedKey = key
-    ["Ctrl", "Meta", "Alt", "Shift"].forEach { keyword in
-      normalizedKey = normalizedKey.replacingOccurrences(of: keyword, with: keyword, options: .caseInsensitive)
-    }
-    var keyIsPlus = false
-    if normalizedKey.hasSuffix("+") {
-      keyIsPlus = true
-      normalizedKey = String(normalizedKey.dropLast())
-    }
-    normalizedKey = normalizedKey.components(separatedBy: "+")
-      .sorted { KeyMapping.modifierOrder[$0, default: 9] < KeyMapping.modifierOrder[$1, default: 9] }
-      .joined(separator: "+")
-    if keyIsPlus {
-      normalizedKey += "+"
-    }
-    self.key = normalizedKey
-    self.privateRawAction = rawAction
-    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+    self.rawKey = key
+    self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(key)
     self.isIINACommand = isIINACommand
     self.comment = comment
+    self.privateRawAction = rawAction
+    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
   }
+
+  public override var description: String {
+    return "KeyMapping(\"\(key)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
+  }
+
+  // MARK: Static functions
 
   // Returns nil if cannot read file
   static func parseInputConf(at path: String) -> [KeyMapping]? {
@@ -134,17 +139,21 @@ class KeyMapping: NSObject {
     var mapping: [KeyMapping] = []
     while var line: String = reader.nextLine() {      // ignore empty lines
       var isIINACommand = false
-      if line.isEmpty { continue }
-      if line.hasPrefix("#@iina") {
-        // extended syntax
-        isIINACommand = true
-        line = String(line[line.index(line.startIndex, offsetBy: "#@iina".count)...])
-      } else if line.hasPrefix("#") {
-        // ignore comment
+      if line.trimmingCharacters(in: .whitespaces).isEmpty {
         continue
+      } else if line.hasPrefix("#") {
+        if line.hasPrefix("#@iina") {
+          // extended syntax
+          isIINACommand = true
+          line = String(line[line.index(line.startIndex, offsetBy: "#@iina".count)...])
+        } else {
+          // ignore comment line
+          continue
+        }
       }
-      // remove inline comment
+      var comment: String? = nil
       if let sharpIndex = line.firstIndex(of: "#") {
+        comment = String(line[line.index(after: sharpIndex)...])
         line = String(line[...line.index(before: sharpIndex)])
       }
       // split
@@ -156,16 +165,12 @@ class KeyMapping: NSObject {
       let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)
       let action = String(splitted[1]).trimmingCharacters(in: .whitespaces)
 
-      mapping.append(KeyMapping(key: key, rawAction: action, isIINACommand: isIINACommand, comment: nil))
+      mapping.append(KeyMapping(key: key, rawAction: action, isIINACommand: isIINACommand, comment: comment))
     }
     return mapping
   }
 
-  static func generateConfData(from mappings: [KeyMapping]) -> String {
+  static func generateInputConf(from mappings: [KeyMapping]) -> String {
     return mappings.reduce("# Generated by IINA\n\n", { prevLines, km in prevLines + "\(km.confFileFormat)\n" })
-  }
-
-  public override var description: String {
-    return "KeyMapping(\"\(key)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
   }
 }

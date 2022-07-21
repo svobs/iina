@@ -291,11 +291,17 @@ class PlayerCore: NSObject {
     var keyBindingsDict: [String: KeyMapping] = [:]
     var orderedKeyList: [String] = []
     keyMappings.forEach {
-      let key = $0.normalizeMpvKey
-      if keyBindingsDict[key] == nil {
-        orderedKeyList.append(key)
+      if $0.key == "default-bindings" && $0.action.count == 1 && $0.action[0] != "start" {
+        Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
+      } else {
+        if let kb = filterSectionBindings($0) {
+          let key = kb.normalizedMpvKey
+          if keyBindingsDict[key] == nil {
+            orderedKeyList.append(key)
+          }
+          keyBindingsDict[key] = kb
+        }
       }
-      keyBindingsDict[key] = $0
     }
     PlayerCore.keyBindings = keyBindingsDict
 
@@ -308,6 +314,21 @@ class PlayerCore: NSObject {
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(kbUniqueOrderedList)
 
     NotificationCenter.default.post(Notification(name: .iinaGlobalKeyBindingsChanged, object: kbUniqueOrderedList))
+  }
+
+  static private func filterSectionBindings(_ kb: KeyMapping) -> KeyMapping? {
+    guard let section = kb.section else {
+      return kb
+    }
+
+    if section == "default" {
+      // Drop "{default}" because it is unnecessary and will get in the way of libmpv command execution
+      let newRawAction = Array(kb.action.dropFirst()).joined(separator: " ")
+      return KeyMapping(key: kb.key, rawAction: newRawAction, isIINACommand: kb.isIINACommand, comment: kb.comment)
+    } else {
+      Logger.log("Skipping binding from section \"\(section)\": \(kb.key)", level: .verbose)
+      return nil
+    }
   }
 
   func startMPV() {

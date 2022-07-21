@@ -9,6 +9,13 @@
 import Foundation
 import Carbon
 
+fileprivate let modifierOrder: [String: Int] = [
+  "Ctrl": 0,
+  "Alt": 1,
+  "Shift": 2,
+  "Meta": 3
+]
+
 fileprivate let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
 
 class KeyCodeHelper {
@@ -357,6 +364,7 @@ class KeyCodeHelper {
     }
     normalizedList.append(key)
 
+    normalizedList = normalizedList.sorted { modifierOrder[$0, default: 9] < modifierOrder[$1, default: 9] }
     return normalizedList.joined(separator: "+")
   }
 
@@ -374,8 +382,7 @@ class KeyCodeHelper {
   // (such that it can be used in a set or map, and which matches what `mpvKeyCode()` returns).
   public static func normalizeMpv(_ mpvKeystrokes: String) -> String {
     let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
-    let normalizedString = normalizedList.joined(separator: "-")
-    return normalizedString
+    return normalizedList.joined(separator: "-")
   }
 
   // IMPORTANT: `mpvKeyCode` must be normalized first!
