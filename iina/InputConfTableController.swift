@@ -45,7 +45,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     if let index = configDS.tableRows.firstIndex(of: confName) {
       Logger.log("Selecting row: '\(confName)' (index \(index))", level: .verbose)
       self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-      Logger.log("Selection is now: \(self.tableView.selectedRow)", level: .verbose)
+      Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
     }
   }
 

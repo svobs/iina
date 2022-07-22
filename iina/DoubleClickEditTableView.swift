@@ -79,7 +79,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 }
 
 class DoubleClickEditTableView: NSTableView {
-  static let ROW_ANIMATION: NSTableView.AnimationOptions = .slideDown
+  var rowAnimation: NSTableView.AnimationOptions = .slideDown
   var onTextDidEndEditing: ((String) -> Bool)?
   private var lastEditedTextField: DoubleClickEditTextField? = nil
 
@@ -185,14 +185,14 @@ class DoubleClickEditTableView: NSTableView {
         if spanStarted {
           spanStarted = false
           Logger.log("Inserting row(s) at index: \(spanStartIndex)")
-          self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: DoubleClickEditTableView.ROW_ANIMATION)
+          self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: self.rowAnimation)
         }
       }
     }
     if spanStarted {
       spanStarted = false
       Logger.log("Inserting row(s) at index: \(spanStartIndex)")
-      self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: DoubleClickEditTableView.ROW_ANIMATION)
+      self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: self.rowAnimation)
     }
   }
 
@@ -211,6 +211,6 @@ class DoubleClickEditTableView: NSTableView {
         removedRowIndexes.insert(oldRowIndex)
       }
     }
-    self.removeRows(at: removedRowIndexes, withAnimation: DoubleClickEditTableView.ROW_ANIMATION)
+    self.removeRows(at: removedRowIndexes, withAnimation: self.rowAnimation)
   }
 }

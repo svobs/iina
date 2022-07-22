@@ -160,13 +160,13 @@ class KeyInputController {
   func resolveKeyEvent(_ keyDownEvent: NSEvent) -> KeyMapping? {
     assert (keyDownEvent.type == NSEvent.EventType.keyDown, "Expected a KeyDown event but got: \(keyDownEvent)")
 
-    let keyStroke: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
-    if keyStroke == "" {
+    let keySequence: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
+    if keySequence == "" {
       log("Event could not be translated; ignoring: \(keyDownEvent)")
       return nil
     }
 
-    return resolveFirstMatchingKeySequence(endingWith: keyStroke)
+    return resolveFirstMatchingKeySequence(endingWith: keySequence)
   }
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins

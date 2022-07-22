@@ -378,8 +378,33 @@ class KeyCodeHelper {
     return normalizedList
   }
 
-  // MPV accepts several forms for the same keystroke. This ensures that it is reduced a single standardized form
-  // (such that it can be used in a set or map, and which matches what `mpvKeyCode()` returns).
+  /*
+   MPV accepts several forms for the same keystroke. This ensures that it is reduced a single standardized form
+   (such that it can be used in a set or map, and which matches what `mpvKeyCode()` returns).
+
+   Definitions used here:
+   - A "key" is just any individual key on a keyboard (including keyboards from different locales around the world).
+   - A "keystroke" for our purposes is any combination of up to 4 different keys which are held down simultaneously, of which only one is a
+     "regular" (non-modifier) key, and the rest are "modifier keys". Note that currently we don't enforce the restriction on only one regular key.
+   - The 4 "modifier keys" include: "Meta" (aka Command), "Ctrl", "Alt" (aka Option), "Shift"
+   - A "key sequence" is an ordered list of up to 4 keystrokes. Whereas a "keystroke" is a set of keys typed in parallel, a "key sequence" is a set
+     of keystrokes typed serially.
+
+   Normal Form Rules:
+   1. The input string is parsed as a sequence of up to 4 keystrokes, each of which is separated by the character "-".
+      Note that "-" is itself a valid keystroke, so that e.g. this is a valid 4-key sequence: "-------"
+   2. Each resulting keystroke shall be parsed into up to 4 keys, each of which is separated by the character "+".
+      Note that the "+" character is accepted as a valid key, but it is normalized to "PLUS".
+   3. Each of the 4 modifiers shall be written with the first letter in uppercase and the remaining letters in lowercase.
+   4. There always shall be exactly 1 "regular" key in each keystroke, and it is always the last key in the keystroke.
+   5. A keystroke can contain between 0 and 3 modifiers (up to 1 of each kind).
+   6. The modifiers, if present, shall respect the following order from left to right: "Ctrl", "Alt", "Shift", "Meta"
+      (e.g., "Meta+Ctrl+J" is invalid, but "Ctrl+Alt+DEL" is valid)
+   7. If the regular key in the keystroke is of the set of characters which have separate and distinct uppercase and lowercase versions, then
+      the keystroke shall never contain an explicit "Shift" modifier but instead shall use the uppercase character.
+   8. Any remaining special keys not previously mentioned and which have more than one character in their name shall be written in all uppercase.
+      (examples: SHARP, SPACE, PGDOWN)
+   */
   public static func normalizeMpv(_ mpvKeystrokes: String) -> String {
     let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
     return normalizedList.joined(separator: "-")
@@ -387,9 +412,6 @@ class KeyCodeHelper {
 
   // IMPORTANT: `mpvKeyCode` must be normalized first!
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
-    if mpvKeyCode == "+" {
-      return ("+", [])
-    }
     let splitted = mpvKeyCode.components(separatedBy: "+")
     var key: String
     var modifiers: NSEvent.ModifierFlags = []
