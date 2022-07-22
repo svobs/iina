@@ -108,7 +108,7 @@ class MPVLogHandler {
       if !line.isEmpty {
         let tokens = line.split(separator: " ")
         if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
-          mappings.append(KeyMapping(key: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
+          mappings.append(KeyMapping(rawKey: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
         } else {
           // "This command can be used to dispatch arbitrary keys to a script or a client API user".
           // Need to figure out whether to add support for these as well.

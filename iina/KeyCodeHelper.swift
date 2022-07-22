@@ -9,11 +9,17 @@
 import Foundation
 import Carbon
 
+// mpv modifiers in normal form:
+fileprivate let CTRL_KEY = "Ctrl"
+fileprivate let ALT_KEY = "Alt"
+fileprivate let SHIFT_KEY = "Shift"
+fileprivate let META_KEY = "Meta"
+
 fileprivate let modifierOrder: [String: Int] = [
-  "Ctrl": 0,
-  "Alt": 1,
-  "Shift": 2,
-  "Meta": 3
+  CTRL_KEY: 0,
+  ALT_KEY: 1,
+  SHIFT_KEY: 2,
+  META_KEY: 3
 ]
 
 fileprivate let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
@@ -192,10 +198,10 @@ class KeyCodeHelper {
   }()
 
   static let mpvSymbolToKeyName: [String: String] = [
-    "Meta": "⌘",
-    "Shift": "⇧",
-    "Alt": "⌥",
-    "Ctrl":"⌃",
+    META_KEY: "⌘",
+    SHIFT_KEY: "⇧",
+    ALT_KEY: "⌥",
+    CTRL_KEY:"⌃",
     "SHARP": "#",
     "ENTER": "↩︎",
     "KP_ENTER": "↩︎",
@@ -272,16 +278,16 @@ class KeyCodeHelper {
     // modifiers
     // the same order as `KeyMapping.modifierOrder`
     if modifiers.contains(.control) {
-      keyString += "Ctrl+"
+      keyString += "\(CTRL_KEY)+"
     }
     if modifiers.contains(.option) {
-      keyString += "Alt+"
+      keyString += "\(ALT_KEY)+"
     }
     if modifiers.contains(.shift) {
-      keyString += "Shift+"
+      keyString += "\(SHIFT_KEY)+"
     }
     if modifiers.contains(.command) {
-      keyString += "Meta+"
+      keyString += "\(META_KEY)+"
     }
     // char
     keyString += keyChar
@@ -341,19 +347,19 @@ class KeyCodeHelper {
     var key = splitted.last!
     splitted.dropLast().forEach { k in
       // Modifiers have first letter capitalized. All other special chars are capitalized
-      if k.equalsIgnoreCase("Shift") {
+      if k.equalsIgnoreCase(SHIFT_KEY) {
         // For alphabetic chars, remove the "Shift+" and replace with actual uppercase char
         if key.count == 1, key.lowercased() != key.uppercased() {
           key = key.uppercased()
         } else {
-          normalizedList.append("Shift")
+          normalizedList.append(SHIFT_KEY)
         }
-      } else if k.equalsIgnoreCase("Meta") {
-        normalizedList.append("Meta")
-      } else if k.equalsIgnoreCase("Ctrl") {
-        normalizedList.append("Ctrl")
-      } else if k.equalsIgnoreCase("Alt") {
-        normalizedList.append("Alt")
+      } else if k.equalsIgnoreCase(META_KEY) {
+        normalizedList.append(META_KEY)
+      } else if k.equalsIgnoreCase(CTRL_KEY) {
+        normalizedList.append(CTRL_KEY)
+      } else if k.equalsIgnoreCase(ALT_KEY) {
+        normalizedList.append(ALT_KEY)
       } else {
         normalizedList.append(k.uppercased())
       }
@@ -419,10 +425,10 @@ class KeyCodeHelper {
     key = splitted.last!
     splitted.dropLast().forEach { k in
       switch k {
-      case "Meta": modifiers.insert(.command)
-      case "Ctrl": modifiers.insert(.control)
-      case "Alt": modifiers.insert(.option)
-      case "Shift": modifiers.insert(.shift)
+      case META_KEY: modifiers.insert(.command)
+      case CTRL_KEY: modifiers.insert(.control)
+      case ALT_KEY: modifiers.insert(.option)
+        case SHIFT_KEY: modifiers.insert(.shift)
       default: break
       }
     }

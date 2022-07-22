@@ -201,7 +201,7 @@ class KeyInputController {
     if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
       log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
-      return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
+      return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
@@ -319,7 +319,7 @@ class KeyInputController {
             }
             if partial != keySequence && !keyBindingsDict.keys.contains(partial) {
               // Set an explicit "ignore" for a partial sequence match. This is all done so that the player window doesn't beep.
-              let partialBinding = KeyMapping(key: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
+              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
               keyBindingsDict[partial] = KeyBindingMeta(partialBinding, from: keyBindingMeta.srcSectionName)
             }
           }

@@ -291,7 +291,7 @@ class PlayerCore: NSObject {
     var keyBindingsDict: [String: KeyMapping] = [:]
     var orderedKeyList: [String] = []
     keyMappings.forEach {
-      if $0.key == "default-bindings" && $0.action.count == 1 && $0.action[0] == "start" {
+      if $0.rawKey == "default-bindings" && $0.action.count == 1 && $0.action[0] == "start" {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       } else {
         if let kb = filterSectionBindings($0) {
@@ -324,9 +324,9 @@ class PlayerCore: NSObject {
     if section == "default" {
       // Drop "{default}" because it is unnecessary and will get in the way of libmpv command execution
       let newRawAction = Array(kb.action.dropFirst()).joined(separator: " ")
-      return KeyMapping(key: kb.key, rawAction: newRawAction, isIINACommand: kb.isIINACommand, comment: kb.comment)
+      return KeyMapping(rawKey: kb.rawKey, rawAction: newRawAction, isIINACommand: kb.isIINACommand, comment: kb.comment)
     } else {
-      Logger.log("Skipping binding from section \"\(section)\": \(kb.key)", level: .verbose)
+      Logger.log("Skipping binding from section \"\(section)\": \(kb.rawKey)", level: .verbose)
       return nil
     }
   }

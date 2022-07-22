@@ -25,7 +25,7 @@ class KeyMapping: NSObject {
       }
     }
     set {
-      key = newValue
+      rawKey = newValue
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
     }
   }
@@ -43,19 +43,13 @@ class KeyMapping: NSObject {
 
   var isIINACommand: Bool
 
-  private var rawKey: String
-
-  private(set) var normalizedMpvKey: String
-
-  var key: String {
-    set {
-      self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(newValue)
-      self.rawKey = newValue
-    }
-    get {
-      return rawKey
+  var rawKey: String {
+    didSet {
+      self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
     }
   }
+
+  private(set) var normalizedMpvKey: String
 
   // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
@@ -112,13 +106,13 @@ class KeyMapping: NSObject {
     get {
       let iinaCommandString = isIINACommand ? "#@iina " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      return "\(iinaCommandString)\(key) \(action.joined(separator: " "))\(commentString)"
+      return "\(iinaCommandString)\(rawKey) \(action.joined(separator: " "))\(commentString)"
     }
   }
 
-  init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
-    self.rawKey = key
-    self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(key)
+  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
+    self.rawKey = rawKey
+    self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
     self.isIINACommand = isIINACommand
     self.comment = comment
     self.privateRawAction = rawAction
@@ -126,7 +120,7 @@ class KeyMapping: NSObject {
   }
 
   public override var description: String {
-    return "KeyMapping(\"\(key)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
+    return "KeyMapping(\"\(rawKey)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
   }
 
   // MARK: Static functions
@@ -165,7 +159,7 @@ class KeyMapping: NSObject {
       let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)
       let action = String(splitted[1]).trimmingCharacters(in: .whitespaces)
 
-      mapping.append(KeyMapping(key: key, rawAction: action, isIINACommand: isIINACommand, comment: comment))
+      mapping.append(KeyMapping(rawKey: key, rawAction: action, isIINACommand: isIINACommand, comment: comment))
     }
     return mapping
   }
