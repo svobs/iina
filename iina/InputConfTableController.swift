@@ -28,9 +28,11 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     self.tableView.menu?.delegate = self
 
     // Set up callbacks:
-    tableView.onTextDidEndEditing = onCurrentConfigNameChanged
-    inputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaInputConfListChanged, object: nil, queue: .main, using: onTableDataChanged)
-    currentInputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: onCurrentInputChanged)
+    tableView.onTextDidEndEditing = currentConfNameDidChange
+    inputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaInputConfListChanged, object: nil, queue: .main, using: tableDataDidChange)
+    currentInputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: currentInputDidChange)
+
+    tableView.allowDoubleClickEditForRow = allowDoubleClickEditForRow
   }
 
   deinit {
@@ -49,19 +51,26 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
   }
 
+  func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
+    if let configName = configDS.getRow(at: rowNumber), !configDS.isDefaultConfig(configName) {
+      return true
+    }
+    return false
+  }
+
   // Row(s) changed (callback from datasource)
-  func onTableDataChanged(_ notification: Notification) {
+  func tableDataDidChange(_ notification: Notification) {
     guard let tableChanges = notification.object as? TableStateChange else {
-      Logger.log("onTableDataChanged(): missing object!", level: .error)
+      Logger.log("tableDataDidChange(): missing object!", level: .error)
       return
     }
 
     Logger.log("Got InputConfigListChanged notification; reloading data", level: .verbose)
-    self.tableView.smartReload(tableChanges)
+    self.tableView.smartUpdate(tableChanges)
   }
 
   // Current input file changed (callback from datasource)
-  func onCurrentInputChanged(_ notification: Notification) {
+  func currentInputDidChange(_ notification: Notification) {
     Logger.log("Got iinaCurrentInputConfChanged notification; changing selection", level: .verbose)
     // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
     selectCurrentInputRow()
@@ -69,12 +78,15 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
   // MARK: NSTableViewDataSource
 
+  /*
+   Tell AppKit the number of rows when it asks
+   */
   func numberOfRows(in tableView: NSTableView) -> Int {
     return configDS.tableRows.count
   }
 
   /**
-   Make cell view.
+   Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     let configName = configDS.tableRows[row]
@@ -107,9 +119,10 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
 
-  // Rename Current Row (callback from DoubleClickEditTextField)
-  func onCurrentConfigNameChanged(_ newName: String) -> Bool {
-    guard self.configDS.currentConfName.localizedCompare(newName) != .orderedSame else {
+  // User finished editing (callback from DoubleClickEditTextField).
+  // Renames current comfig & its file on disk
+  func currentConfNameDidChange(_ newName: String) -> Bool {
+    guard !self.configDS.currentConfName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
     }
@@ -128,7 +141,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
 
     // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
-    guard self.handleExistingFile(filePath: newFilePath) else {
+    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
       return false  // cancel
     }
 
@@ -267,8 +280,8 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
     let newFileName = newName + ".conf"
     let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
-    // - if exists
-    guard self.handleExistingFile(filePath: newFilePath) else {
+    // - if exists with same name
+    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
       return
     }
 
@@ -280,8 +293,8 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
   // Check whether file already exists at `filePath`.
-  // If it does, prompt the user to overwrite it or show it in Finder; return true if the former and successful, false otherwise
-  private func handleExistingFile(filePath: String) -> Bool {
+  // If it does, prompt the user to overwrite it or show it in Finder. Return true if user agrees, false otherwise
+  private func handlePossibleExistingFile(filePath: String) -> Bool {
     let fm = FileManager.default
     if fm.fileExists(atPath: filePath) {
       if Utility.quickAskPanel("config.file_existing", sheetWindow: self.tableView.window) {

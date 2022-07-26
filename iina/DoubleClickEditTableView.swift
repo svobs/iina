@@ -81,6 +81,8 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 class DoubleClickEditTableView: NSTableView {
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
   var onTextDidEndEditing: ((String) -> Bool)?
+  var allowDoubleClickEditForRow: ((Int) -> Bool)?
+
   private var lastEditedTextField: DoubleClickEditTextField? = nil
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
@@ -90,20 +92,35 @@ class DoubleClickEditTableView: NSTableView {
       lastEditedTextField = nil
 
       if let editableTextField = responder as? DoubleClickEditTextField {
-        editableTextField.onNewTextEntered = self.onTextDidEndEditing
-        editableTextField.stringValueOrig = editableTextField.stringValue
+        // Unortunately, the event with event.clickCount==2 does not present itself here, so we have to filter at 1st click
+        var isDoubleClickEnabled: Bool = true
+        if let allowDoubleClickEditForRow = allowDoubleClickEditForRow {
+          if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
+            let clickedRow = self.row(at: locationInTable)
+            isDoubleClickEnabled = allowDoubleClickEditForRow(clickedRow)
+          }
+        }
 
-        // keep track of it for later
-        lastEditedTextField = editableTextField
+        if isDoubleClickEnabled {
+          editableTextField.onNewTextEntered = self.onTextDidEndEditing
+          editableTextField.stringValueOrig = editableTextField.stringValue
 
-        return true
+          // keep track of it for later
+          lastEditedTextField = editableTextField
+
+          return true
+        }
       }
     }
 
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
-  func smartReload(_ changes: TableStateChange) {
+  /*
+   Attempts to be a generic mechanism for updating the table's contents with an animation and
+   avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
+   */
+  func smartUpdate(_ changes: TableStateChange) {
     // encapsulate animation transaction in this function
     self.beginUpdates()
     defer {
