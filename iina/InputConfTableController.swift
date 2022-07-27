@@ -151,8 +151,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
       return false
     }
 
-    let newFileName = newName + ".conf"
-    let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
+    let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
 
     if newFilePath != oldFilePath { // allow this...it helps when user is trying to fix corrupted file list
       // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
@@ -171,7 +170,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
 
     // Update config lists and update UI
-    return configDS.renameCurrentConfig(newName: newName, newFilePath: newFilePath)
+    return configDS.renameCurrentConfig(newName: newName)
   }
 
   // MARK: Drag & Drop
@@ -429,8 +428,8 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
         // This probably means the user doesn't know what they are doing, or something is very wrong
         return
       }
-      let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(url.lastPathComponent).path
       let newName = url.deletingPathExtension().lastPathComponent
+      let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
 
       guard self.handlePossibleExistingFile(filePath: newFilePath) else {
         // Do not proceed if user does not want to delete.
@@ -465,8 +464,8 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
-    let newFileName = newName + ".conf"
-    let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
+    let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
+
     // - if exists with same name
     guard self.handlePossibleExistingFile(filePath: newFilePath) else {
       return

@@ -25,6 +25,10 @@ class InputConfDataStore {
     "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: "conf", inDirectory: "config")!
   ]
 
+  static func computeFilePath(forUserConfigName configName: String) -> String {
+    return Utility.userInputConfDirURL.appendingPathComponent(configName + ".conf").path
+  }
+
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
     get {
@@ -188,7 +192,7 @@ class InputConfDataStore {
     updateState(newUserConfigDict, currentConfigName: newCurrentConfigName, .removeRows)
   }
 
-  func renameCurrentConfig(newName: String, newFilePath: String) -> Bool {
+  func renameCurrentConfig(newName: String) -> Bool {
     var newUserConfigDict = userConfigDict
     Logger.log("Renaming config in prefs: \"\(currentConfName)\" -> \"\(newName)\"")
     guard !currentConfName.equalsIgnoreCase(newName) else {
@@ -206,6 +210,7 @@ class InputConfDataStore {
       return false
     }
 
+    let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
     newUserConfigDict[newName] = newFilePath
 
     updateState(newUserConfigDict, currentConfigName: newName, .renameAndMoveOneRow)
