@@ -104,6 +104,11 @@ class InputConfDataStore {
     return tableRows[index]
   }
 
+  func changeCurrentConfigToDefault() {
+    Logger.log("Changing current config to default", level: .verbose)
+    changeCurrentConfig(0)  // using this call will avoid an infinite loop if the default conf cannot be loaded
+  }
+
   func changeCurrentConfig(_ newIndex: Int) {
     Logger.log("Changing current input config, newIndex=\(newIndex)", level: .verbose)
     guard let confName = getRow(at: newIndex) else {
@@ -119,12 +124,13 @@ class InputConfDataStore {
       Logger.log("No need to persist change to current config '\(confName)'; it is already current", level: .verbose)
       return
     }
-    if tableRows.contains(confName) && getFilePath(forConfig: confName) != nil {
-      Preference.set(confName, for: .currentInputConfigName)
-    } else {
+    guard tableRows.contains(confName) && getFilePath(forConfig: confName) != nil else {
       Logger.log("Could not change current conf to '\(confName)'; falling back to default config", level: .error)
-      Preference.set(InputConfDataStore.defaultConfigNamesSorted[0], for: .currentInputConfigName)
+      changeCurrentConfigToDefault()
+      return
     }
+
+    Preference.set(confName, for: .currentInputConfigName)
 
     Logger.log("Current input config changed: '\(self.currentConfName)' -> '\(confName)'")
     NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfChanged))
@@ -170,8 +176,8 @@ class InputConfDataStore {
         Logger.log("Cannot find '\(configName)' in table!", level: .error)
         return
       }
-      let prevRowIndex = max(configIndex - 1, 0)
-      newCurrentConfigName = tableRows[prevRowIndex]
+      // Are we the last entry? If so, after deletion the next entry up should be selected. If not, select the next one down
+      newCurrentConfigName = tableRows[(configIndex == tableRows.count - 1) ? configIndex - 1 : configIndex + 1]
     }
 
     var newUserConfigDict = userConfigDict
@@ -212,10 +218,12 @@ class InputConfDataStore {
     return true
   }
 
+  // Replaces the current state with the given params, and fires listeners.
   private func updateState(_ userConfigDict: [String: String], currentConfigName: String, _ changeType: TableStateChange.ChangeType) {
     let tableChanges = TableStateChange(changeType)
     tableChanges.oldRows = tableRows
-    tableChanges.oldSelectionIndex = tableRows.firstIndex(of: currentConfName)
+
+    let currentConfigChanged = self.currentConfName != currentConfigName
 
     Logger.log("Saving prefs: currentInputConfigName='\(currentConfigName)', inputConfigs='\(userConfigDict)'", level: .verbose)
     Preference.set(userConfigDict, for: .inputConfigs)
@@ -225,6 +233,9 @@ class InputConfDataStore {
     tableChanges.newRows = tableRows
     tableChanges.newSelectionIndex = tableRows.firstIndex(of: currentConfigName)
     NotificationCenter.default.post(Notification(name: .iinaInputConfListChanged, object: tableChanges))
+    if currentConfigChanged {
+      NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfChanged))
+    }
   }
 
 

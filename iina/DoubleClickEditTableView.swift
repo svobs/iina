@@ -21,7 +21,6 @@ class TableStateChange {
   var oldRows: [String] = []
   var newRows: [String]? = nil
 
-  var oldSelectionIndex: Int? = nil
   var newSelectionIndex: Int? = nil
 
   init(_ changeType: ChangeType) {

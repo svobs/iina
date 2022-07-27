@@ -193,6 +193,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func loadConfigFile() {
     guard let confFilePath = configDS.currentConfFilePath else {
+      Logger.log("loadConfigFile(): could not find current conf file; falling back to default config", level: .error)
+      configDS.changeCurrentConfigToDefault()
       return
     }
     Logger.log("Loading key bindings config from \"\(confFilePath)\"")
@@ -201,7 +203,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       Logger.log("Error loading key bindings config from \"\(confFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: confFilePath).lastPathComponent
       Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: view.window)
-      configDS.changeCurrentConfig(0)
+      configDS.changeCurrentConfigToDefault()
       return
     }
 

@@ -51,11 +51,15 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
   func selectCurrentInputRow() {
     let confName = self.configDS.currentConfName
-    if let index = configDS.tableRows.firstIndex(of: confName) {
-      Logger.log("Selecting row: '\(confName)' (index \(index))", level: .verbose)
-      self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-      Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
+    guard let index = configDS.tableRows.firstIndex(of: confName) else {
+      Logger.log("selectCurrentInputRow(): Failed to find '\(confName)' in table; falling back to default", level: .error)
+      configDS.changeCurrentConfigToDefault()
+      return
     }
+
+    Logger.log("Selecting row: '\(confName)' (index \(index))", level: .verbose)
+    self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+    Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
   }
 
   func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
@@ -216,7 +220,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
   /*
-   Accept the drop and import file, or reject drop.
+   Accept the drop and import file(s), or reject drop.
    */
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
@@ -425,7 +429,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
       guard self.handlePossibleExistingFile(filePath: newFilePath) else {
         // Do not proceed if user does not want to delete.
-        Logger.log("Aborting config file import", level: .verbose)
+        Logger.log("Aborting config file import: user did not delete file: \(newFilePath)", level: .verbose)
         return
       }
       createdConfigDict[newName] = (filePath, newFilePath)
@@ -475,15 +479,23 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   private func handlePossibleExistingFile(filePath: String) -> Bool {
     let fm = FileManager.default
     if fm.fileExists(atPath: filePath) {
-      if Utility.quickAskPanel("config.file_existing", sheetWindow: self.tableView.window) {
+      Logger.log("Blocked by existing file: \"\(filePath)'\"", level: .verbose)
+      let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+      // TODO: show the filename in the dialog
+      if Utility.quickAskPanel("config.file_existing", messageComment: "\"\(fileName)\"") {
         // - delete file
         do {
           try fm.removeItem(atPath: filePath)
-        } catch {
+          Logger.log("Successfully removed file: \"\(filePath)'\"")
+          return true
+        } catch  {
           Utility.showAlert("error_deleting_file", sheetWindow: self.tableView.window)
+          Logger.log("Failed to remove file: \"\(filePath)'\": \(error)")
           return false
         }
       } else {
+        // - show file. cancel delete
+        Logger.log("User chose to show file in Finder: \"\(filePath)'\"", level: .verbose)
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: filePath)])
         return false
       }
