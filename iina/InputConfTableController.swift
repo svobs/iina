@@ -176,7 +176,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   // MARK: Drag & Drop
 
   /*
-   Drag start
+   Drag start: convert tableview rows to clipboard items
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
   {
@@ -218,6 +218,9 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
       // no files, or no ".conf" files, or dragging existing items over self
       return []
     }
+
+    // Update that little red number:
+    info.numberOfValidItemsForDrop = newFilePathList.count
 
     tableView.setDropRow(-1, dropOperation: .above)
     return NSDragOperation.copy
