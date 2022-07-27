@@ -37,7 +37,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
       tableView.registerForDraggedTypes([.fileURL])
-
+      tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
   }
