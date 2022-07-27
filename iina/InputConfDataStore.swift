@@ -86,6 +86,16 @@ class InputConfDataStore {
     return userConfigDict[conf]
   }
 
+  // Returns the name of the user config with the given path, or nil if no config matches
+  func getUserConfigName(forFilePath filePath: String) -> String? {
+    for (userConfigName, userFilePath) in userConfigDict {
+      if userFilePath == filePath {
+        return userConfigName
+      }
+    }
+    return nil
+  }
+
   // Avoids hard program crash if index is invalid
   func getRow(at index: Int) -> String? {
     guard index >= 0 && index < tableRows.count else {
@@ -123,10 +133,29 @@ class InputConfDataStore {
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
   // Posts update notification
   func addUserConfig(name: String, filePath: String) {
-    Logger.log("Adding config: \"\(name)\" (filePath: \(filePath))")
+    Logger.log("Adding user config: \"\(name)\" (filePath: \(filePath))")
     var newUserConfigDict = userConfigDict
     newUserConfigDict[name] = filePath
     updateState(newUserConfigDict, currentConfigName: name, .addRows)
+  }
+
+  func addUserConfigs(_ userConfigsToAdd: [String: String]) {
+    Logger.log("Adding user configs: \"\(userConfigsToAdd))")
+    guard let firstConfig = userConfigsToAdd.first else {
+      return
+    }
+    var newCurrentConfig = firstConfig.key
+
+    var newUserConfigDict = userConfigDict
+    for (name, filePath) in userConfigsToAdd {
+      newUserConfigDict[name] = filePath
+      // We can only select one, even if multiple rows added.
+      // Select the added config with the last name in lowercase alphabetical order
+      if newCurrentConfig.localizedCompare(name) == .orderedAscending {
+        newCurrentConfig = name
+      }
+    }
+    updateState(newUserConfigDict, currentConfigName: newCurrentConfig, .addRows)
   }
 
   @objc

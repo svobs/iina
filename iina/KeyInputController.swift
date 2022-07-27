@@ -10,6 +10,7 @@ import Foundation
 
 let MP_MAX_KEY_DOWN = 4
 fileprivate let DEFAULT_SECTION = "default"
+let LOG_BINDINGS_REBUILD = false
 
 /*
  A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
@@ -223,7 +224,9 @@ class KeyInputController {
   }
 
   private func setDefaultBindings(_ globalDefaultBindings: [KeyMapping]) {
-    self.log("Setting default section with \(globalDefaultBindings.count) bindings", level: .verbose)
+    if LOG_BINDINGS_REBUILD {
+      self.log("Setting default section with \(globalDefaultBindings.count) bindings", level: .verbose)
+    }
     // PlayerCore.keyBindings: Treat this as `section=="default", weak==false`.
     let defaultSection = MPVInputSection(name: DEFAULT_SECTION, globalDefaultBindings, isForce: true)
     // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
@@ -253,7 +256,9 @@ class KeyInputController {
       for inputSectionName in sectionsEnabled {
         if let inputSection = sectionsDefined[inputSectionName] {
           if inputSection.keyBindings.isEmpty {
-            log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
+            if LOG_BINDINGS_REBUILD {
+              log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
+            }
           } else {
             log("RebuildBindings: adding from \(inputSection)", level: .verbose)
             addBindings(from: inputSection, to: &rebuiltBindings)
@@ -272,7 +277,9 @@ class KeyInputController {
     currentKeyBindingDict = rebuiltBindings
 
     log("Finished rebuilding input bindings (\(currentKeyBindingDict.count) total)")
-    logCurrentBindings()
+    if LOG_BINDINGS_REBUILD {
+      logCurrentBindings()
+    }
   }
 
   private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: KeyBindingMeta]) {
@@ -422,7 +429,7 @@ class KeyInputController {
    } else {
      sectionsEnabled.prepend(sectionName)
    }
-   log("After enable_section(\"\(sectionName)\") Sections: {Exclusive = \(sectionsEnabledExclusive); Enabled=\(sectionsEnabled); Defined=\(sectionsDefined.keys)}")
+   log("After enable_section(\"\(sectionName)\") Sections: {Exclusive = \(sectionsEnabledExclusive); Enabled=\(sectionsEnabled); Defined=\(sectionsDefined.keys)}", level: .verbose)
    rebuildCurrentBindings()
  }
 
@@ -441,6 +448,8 @@ class KeyInputController {
       sectionsEnabled.remove({ (x: String) -> Bool in x == sectionName })
       sectionsEnabledExclusive.remove({ (x: String) -> Bool in x == sectionName })
       sectionsDefined.removeValue(forKey: sectionName)
+
+      log("After disable_section(\"\(sectionName)\"): section removed", level: .verbose)
     }
   }
 

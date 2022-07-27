@@ -159,17 +159,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBAction func importConfigBtnAction(_ sender: Any) {
     Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: ["conf"]) { url in
       guard url.isFileURL, url.lastPathComponent.hasSuffix(".conf") else { return }
-      let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(url.lastPathComponent).path
-      let newName = url.deletingPathExtension().lastPathComponent
-      // copy file
-      do {
-        try FileManager.default.copyItem(atPath: url.path, toPath: newFilePath)
-      } catch let error {
-        Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.view.window)
-        return
-      }
-      // update prefs & refresh UI
-      self.configDS.addUserConfig(name: newName, filePath: newFilePath)
+      self.confTableViewController?.importConfigFiles([url.lastPathComponent])
     }
   }
 

@@ -33,6 +33,13 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     currentInputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: currentInputDidChange)
 
     tableView.allowDoubleClickEditForRow = allowDoubleClickEditForRow
+
+    if #available(macOS 10.13, *) {
+      // Enable drag & drop for MacOS 10.13+
+      tableView.registerForDraggedTypes([.fileURL])
+
+      tableView.draggingDestinationFeedbackStyle = .regular
+    }
   }
 
   deinit {
@@ -158,6 +165,117 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     return configDS.renameCurrentConfig(to: newName)
   }
 
+  // MARK: Drag & Drop
+
+  /*
+   Drag start
+   */
+  func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
+  {
+    if let configName = configDS.getRow(at: row),
+       let filePath = configDS.getFilePath(forConfig: configName) {
+      return NSURL(fileURLWithPath: filePath)
+    }
+    return nil
+  }
+
+  /**
+   This is implemented to support dropping items onto the Trash icon in the Dock
+   */
+  func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+    guard operation == NSDragOperation.delete else {
+        return
+    }
+
+    let userConfigList = filterCurrentUserConfigs(from: session.draggingPasteboard)
+
+    guard userConfigList.count == 1 else {
+      return
+    }
+
+    Logger.log("User dragged to the trash: \(userConfigList[0])", level: .verbose)
+
+    self.deleteConfig(userConfigList[0])
+  }
+
+  /*
+   Validate drop while hovering.
+   Override drag operation to "copy" always, and set drag target to whole table.
+   */
+  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+
+    let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
+
+    if newFilePathList.isEmpty {
+      // no files, or no ".conf" files, or dragging existing items over self
+      return []
+    }
+
+    tableView.setDropRow(-1, dropOperation: .above)
+    return NSDragOperation.copy
+  }
+
+  /*
+   Accept the drop and import file, or reject drop.
+   */
+  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+
+    let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
+    Logger.log("User dropped \(newFilePathList.count) new config files into table")
+    guard !newFilePathList.isEmpty else {
+      return false
+    }
+
+    // Return immediately, and import (or fail to) asynchronously
+    DispatchQueue.main.async {
+      self.importConfigFiles(newFilePathList)
+    }
+    return true
+  }
+
+  private func filterNewFilePaths(from pasteboard: NSPasteboard) -> [String] {
+    var newFilePathList: [String] = []
+
+    if let filePathList = InputConfTableViewController.extractFileList(from: pasteboard) {
+
+      for filePath in filePathList {
+        // Filter out files which are already in the table, and files which don't end in ".conf"
+        if filePath.lowercasedPathExtension == "conf" && configDS.getUserConfigName(forFilePath: filePath) == nil &&
+            !InputConfDataStore.defaultConfigs.values.contains(filePath) {
+          newFilePathList.append(filePath)
+        }
+      }
+    }
+
+    return newFilePathList
+  }
+
+  private func filterCurrentUserConfigs(from pasteboard: NSPasteboard) -> [String] {
+    var userConfigList: [String] = []
+
+    if let filePathList = InputConfTableViewController.extractFileList(from: pasteboard) {
+
+      for filePath in filePathList {
+        if let configName = configDS.getUserConfigName(forFilePath: filePath) {
+          userConfigList.append(configName)
+        }
+      }
+    }
+
+    return userConfigList
+  }
+
+  private static func extractFileList(from pasteboard: NSPasteboard) -> [String]? {
+    var fileList: [String] = []
+
+    pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.forEach {
+      if let url = $0 as? URL {
+        fileList.append(url.path)
+      }
+    }
+    return fileList
+  }
+
   // MARK: NSMenuDelegate
 
   fileprivate class InputConfMenuItem: NSMenuItem {
@@ -275,6 +393,66 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
         }
       })
     }
+  }
+
+  /*
+   Imports conf file(s).
+   Checks that each file can be opened and parsed and if any cannot, prints an error and does nothing.
+   If any of the imported files would overwrite an existing one, for each conflict the user is asked whether to
+   delete the existing; the import is aborted after the first one the user declines.
+
+   If successful, adds new rows to the UI, with the last added row being selected as the new current config.
+   */
+  func importConfigFiles(_ fileList: [String]) {
+    Logger.log("Importing input config files: \(fileList)", level: .verbose)
+
+    // configName -> (srcFilePath, dstFilePath)
+    var createdConfigDict: [String: (String, String)] = [:]
+
+    for filePath in fileList {
+      let url = URL(fileURLWithPath: filePath)
+      
+      guard KeyMapping.parseInputConf(at: filePath) != nil else {
+        let fileName = url.lastPathComponent
+        Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: tableView.window)
+        Logger.log("Parse error reading config file '\(filePath)'; aborting import", level: .error)
+        // Do not import any files if we can't parse one.
+        // This probably means the user doesn't know what they are doing, or something is very wrong
+        return
+      }
+      let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(url.lastPathComponent).path
+      let newName = url.deletingPathExtension().lastPathComponent
+
+      guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+        // Do not proceed if user does not want to delete.
+        Logger.log("Aborting config file import", level: .verbose)
+        return
+      }
+      createdConfigDict[newName] = (filePath, newFilePath)
+    }
+
+    // Copy files one by one. Allow copy errors but keep track of which failed
+    var failedNameSet = Set<String>()
+    for (newName, (filePath, newFilePath)) in createdConfigDict {
+      do {
+        Logger.log("Import: copying: '\(filePath)' -> '\(newFilePath)'", level: .verbose)
+        try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+      } catch let error {
+        Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+        Logger.log("Import: failed to copy: '\(filePath)' -> '\(newFilePath)': \(error.localizedDescription)", level: .error)
+        failedNameSet.insert(newName)
+      }
+    }
+
+    // Filter failed rows from being added to UI
+    let configsToAdd: [String: String] = createdConfigDict.filter{ !failedNameSet.contains($0.key) }.mapValues { $0.1 }
+    guard !configsToAdd.isEmpty else {
+      return
+    }
+    Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
+
+    // update prefs & refresh UI
+    self.configDS.addUserConfigs(configsToAdd)
   }
 
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {

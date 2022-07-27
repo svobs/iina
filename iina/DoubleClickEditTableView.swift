@@ -139,7 +139,10 @@ class DoubleClickEditTableView: NSTableView {
         reloadData()
     }
 
-    if let oldSelectionIndex = changes.oldSelectionIndex, let newSelectionIndex = changes.newSelectionIndex, oldSelectionIndex != newSelectionIndex {
+    if let newSelectionIndex = changes.newSelectionIndex {
+      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+      // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
+      Logger.log("Selecting table index: \(newSelectionIndex)", level: .verbose)
       self.selectRowIndexes(IndexSet(integer: newSelectionIndex), byExtendingSelection: false)
     }
   }
@@ -185,32 +188,23 @@ class DoubleClickEditTableView: NSTableView {
     var addedRowsSet = Set(newRowsArray)
     assert (addedRowsSet.count == newRowsArray.count)
     addedRowsSet.subtract(changes.oldRows)
-    Logger.log("AddedRows: \(addedRowsSet)", level: .verbose)
+    Logger.log("Set of rows to add = \(addedRowsSet)", level: .verbose)
 
     // Find start indexes of each span of added rows
-    var oldIndex = 0
-    var spanStarted = false
-    var spanStartIndex = 0
+    var tableIndex = 0
+    var indexesOfInserts = IndexSet()
     for newRow in newRowsArray {
       if addedRowsSet.contains(newRow) {
-        if !spanStarted {
-          spanStarted = true
-          spanStartIndex = oldIndex
-        }
-      } else {
-        oldIndex += 1
-        if spanStarted {
-          spanStarted = false
-          Logger.log("Inserting row(s) at index: \(spanStartIndex)")
-          self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: self.rowAnimation)
-        }
+        indexesOfInserts.insert(tableIndex)
       }
+      tableIndex += 1
     }
-    if spanStarted {
-      spanStarted = false
-      Logger.log("Inserting row(s) at index: \(spanStartIndex)")
-      self.insertRows(at: IndexSet(integer: spanStartIndex), withAnimation: self.rowAnimation)
+    guard !indexesOfInserts.isEmpty else {
+      Logger.log("TableStateChange: \(newRowsArray.count) adds but no inserts!", level: .error)
+      return
     }
+    Logger.log("Inserting \(indexesOfInserts.count) indexes into table")
+    self.insertRows(at: indexesOfInserts, withAnimation: self.rowAnimation)
   }
 
   private func removeRows(_ changes: TableStateChange) {
@@ -220,14 +214,14 @@ class DoubleClickEditTableView: NSTableView {
     var removedRowsSet = Set(changes.oldRows)
     assert (removedRowsSet.count == changes.oldRows.count)
     removedRowsSet.subtract(newRowsArray)
-    Logger.log("RemovedRows: \(removedRowsSet)", level: .verbose)
 
-    var removedRowIndexes = IndexSet()
+    var indexesOfRemoves = IndexSet()
     for (oldRowIndex, oldRow) in changes.oldRows.enumerated() {
       if removedRowsSet.contains(oldRow) {
-        removedRowIndexes.insert(oldRowIndex)
+        indexesOfRemoves.insert(oldRowIndex)
       }
     }
-    self.removeRows(at: removedRowIndexes, withAnimation: self.rowAnimation)
+    Logger.log("Removing rows from table (IDs: \(removedRowsSet); \(indexesOfRemoves.count) indexes)", level: .verbose)
+    self.removeRows(at: indexesOfRemoves, withAnimation: self.rowAnimation)
   }
 }
