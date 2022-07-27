@@ -10,17 +10,17 @@ import Foundation
 import AppKit
 import Cocoa
 
-class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
+class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
 
   private unowned var tableView: DoubleClickEditTableView!
+  private unowned var ds: InputConfigDataStore!
 
-  private unowned var configDS: InputConfDataStore!
-  private var inputChangedObserver: NSObjectProtocol? = nil
-  private var currentInputChangedObserver: NSObjectProtocol? = nil
+  private var configListChangedObserver: NSObjectProtocol? = nil
+  private var currentConfigChangedObserver: NSObjectProtocol? = nil
 
-  init(_ confTableView: DoubleClickEditTableView, _ configDS: InputConfDataStore) {
-    self.tableView = confTableView
-    self.configDS = configDS
+  init(_ inputConfigTableView: DoubleClickEditTableView, _ ds: InputConfigDataStore) {
+    self.tableView = inputConfigTableView
+    self.ds = ds
 
     super.init()
 
@@ -28,9 +28,9 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     self.tableView.menu?.delegate = self
 
     // Set up callbacks:
-    tableView.onTextDidEndEditing = currentConfNameDidChange
-    inputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaInputConfListChanged, object: nil, queue: .main, using: tableDataDidChange)
-    currentInputChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: currentInputDidChange)
+    tableView.onTextDidEndEditing = userDidEndEditingCurrentName
+    configListChangedObserver = NotificationCenter.default.addObserver(forName: .iinaInputConfListChanged, object: nil, queue: .main, using: tableDataDidChange)
+    currentConfigChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: currentInputDidChange)
 
     tableView.allowDoubleClickEditForRow = allowDoubleClickEditForRow
 
@@ -43,27 +43,27 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
   deinit {
-    if let observer = inputChangedObserver {
+    if let observer = configListChangedObserver {
       NotificationCenter.default.removeObserver(observer)
-      inputChangedObserver = nil
+      configListChangedObserver = nil
     }
   }
 
-  func selectCurrentInputRow() {
-    let confName = self.configDS.currentConfName
-    guard let index = configDS.tableRows.firstIndex(of: confName) else {
-      Logger.log("selectCurrentInputRow(): Failed to find '\(confName)' in table; falling back to default", level: .error)
-      configDS.changeCurrentConfigToDefault()
+  func selectCurrenConfigRow() {
+    let configName = self.ds.currentConfigName
+    guard let index = ds.tableRows.firstIndex(of: configName) else {
+      Logger.log("selectCurrenConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
+      ds.changeCurrentConfigToDefault()
       return
     }
 
-    Logger.log("Selecting row: '\(confName)' (index \(index))", level: .verbose)
+    Logger.log("Selecting row: '\(configName)' (index \(index))", level: .verbose)
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
   }
 
   func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
-    if let configName = configDS.getRow(at: rowNumber), !configDS.isDefaultConfig(configName) {
+    if let configName = ds.getRow(at: rowNumber), !ds.isDefaultConfig(configName) {
       return true
     }
     return false
@@ -84,7 +84,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   func currentInputDidChange(_ notification: Notification) {
     Logger.log("Got iinaCurrentInputConfChanged notification; changing selection", level: .verbose)
     // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
-    selectCurrentInputRow()
+    selectCurrenConfigRow()
   }
 
   // MARK: NSTableViewDataSource
@@ -93,14 +93,14 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return configDS.tableRows.count
+    return ds.tableRows.count
   }
 
   /**
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    let configName = configDS.tableRows[row]
+    let configName = ds.tableRows[row]
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -114,7 +114,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
         cell.textField!.stringValue = configName
         return cell
       case "isDefaultColumn":
-        cell.imageView?.isHidden = !configDS.isDefaultConfig(configName)
+        cell.imageView?.isHidden = !ds.isDefaultConfig(configName)
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
@@ -126,32 +126,32 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
 
   // Selection Changed
   func tableViewSelectionDidChange(_ notification: Notification) {
-    configDS.changeCurrentConfig(tableView.selectedRow)
+    ds.changeCurrentConfig(tableView.selectedRow)
   }
 
 
   // User finished editing (callback from DoubleClickEditTextField).
   // Renames current comfig & its file on disk
-  func currentConfNameDidChange(_ newName: String) -> Bool {
-    guard !self.configDS.currentConfName.equalsIgnoreCase(newName) else {
+  func userDidEndEditingCurrentName(_ newName: String) -> Bool {
+    guard !self.ds.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
     }
 
     Logger.log("User renamed current config to \"\(newName)\" in editor", level: .verbose)
 
-    guard let oldFilePath = self.configDS.currentConfFilePath else {
+    guard let oldFilePath = self.ds.currentConfigFilePath else {
       Logger.log("Failed to find file for current config! Aborting rename", level: .error)
       return false
     }
 
-    guard !self.configDS.tableRows.contains(newName) else {
+    guard !self.ds.tableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
     }
 
-    let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
+    let newFilePath = InputConfigDataStore.computeFilePath(forUserConfigName: newName)
 
     if newFilePath != oldFilePath { // allow this...it helps when user is trying to fix corrupted file list
       // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
@@ -170,7 +170,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
 
     // Update config lists and update UI
-    return configDS.renameCurrentConfig(newName: newName)
+    return ds.renameCurrentConfig(newName: newName)
   }
 
   // MARK: Drag & Drop
@@ -180,8 +180,8 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
   {
-    if let configName = configDS.getRow(at: row),
-       let filePath = configDS.getFilePath(forConfig: configName) {
+    if let configName = ds.getRow(at: row),
+       let filePath = ds.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)
     }
     return nil
@@ -247,12 +247,12 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   private func filterNewFilePaths(from pasteboard: NSPasteboard) -> [String] {
     var newFilePathList: [String] = []
 
-    if let filePathList = InputConfTableViewController.extractFileList(from: pasteboard) {
+    if let filePathList = InputConfigTableViewController.extractFileList(from: pasteboard) {
 
       for filePath in filePathList {
         // Filter out files which are already in the table, and files which don't end in ".conf"
-        if filePath.lowercasedPathExtension == "conf" && configDS.getUserConfigName(forFilePath: filePath) == nil &&
-            !InputConfDataStore.defaultConfigs.values.contains(filePath) {
+        if filePath.lowercasedPathExtension == InputConfigDataStore.CONFIG_FILE_EXTENSION && ds.getUserConfigName(forFilePath: filePath) == nil &&
+            !InputConfigDataStore.defaultConfigs.values.contains(filePath) {
           newFilePathList.append(filePath)
         }
       }
@@ -264,10 +264,10 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   private func filterCurrentUserConfigs(from pasteboard: NSPasteboard) -> [String] {
     var userConfigList: [String] = []
 
-    if let filePathList = InputConfTableViewController.extractFileList(from: pasteboard) {
+    if let filePathList = InputConfigTableViewController.extractFileList(from: pasteboard) {
 
       for filePath in filePathList {
-        if let configName = configDS.getUserConfigName(forFilePath: filePath) {
+        if let configName = ds.getUserConfigName(forFilePath: filePath) {
           userConfigList.append(configName)
         }
       }
@@ -306,7 +306,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     guard tableView.clickedRow >= 0 else {
       return nil
     }
-    return configDS.getRow(at: tableView.clickedRow)
+    return ds.getRow(at: tableView.clickedRow)
   }
 
   func menuNeedsUpdate(_ menu: NSMenu) {
@@ -366,7 +366,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
       Utility.showAlert("error_deleting_file", sheetWindow: tableView.window)
     }
     // update prefs & refresh UI
-    configDS.removeConfig(configName)
+    ds.removeConfig(configName)
   }
 
   @objc func revealConfig(_ configName: String) {
@@ -388,7 +388,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
         Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
         return
       }
-      guard !self.configDS.tableRows.contains(newName) else {
+      guard !self.ds.tableRows.contains(newName) else {
         Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
         return
       }
@@ -432,7 +432,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
         return
       }
       let newName = url.deletingPathExtension().lastPathComponent
-      let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
+      let newFilePath = InputConfigDataStore.computeFilePath(forUserConfigName: newName)
 
       guard self.handlePossibleExistingFile(filePath: newFilePath) else {
         // Do not proceed if user does not want to delete.
@@ -463,11 +463,11 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
 
     // update prefs & refresh UI
-    self.configDS.addUserConfigs(configsToAdd)
+    self.ds.addUserConfigs(configsToAdd)
   }
 
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
-    let newFilePath = InputConfDataStore.computeFilePath(forUserConfigName: newName)
+    let newFilePath = InputConfigDataStore.computeFilePath(forUserConfigName: newName)
 
     // - if exists with same name
     guard self.handlePossibleExistingFile(filePath: newFilePath) else {
@@ -478,7 +478,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
       return
     }
 
-    self.configDS.addUserConfig(name: newName, filePath: newFilePath)
+    self.ds.addUserConfig(name: newName, filePath: newFilePath)
   }
 
   // Check whether file already exists at `filePath`.
@@ -511,7 +511,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
   }
 
   private func requireFilePath(forConfig configName: String) -> String? {
-    if let confFilePath = self.configDS.getFilePath(forConfig: configName) {
+    if let confFilePath = self.ds.getFilePath(forConfig: configName) {
       return confFilePath
     }
 

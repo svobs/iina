@@ -30,26 +30,26 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // This is referenced outside of keybindings code:
   static var defaultConfigs: [String: String] {
     get {
-      InputConfDataStore.defaultConfigs
+      InputConfigDataStore.defaultConfigs
     }
   }
 
-  private var configDS = InputConfDataStore()
+  private var ds = InputConfigDataStore()
 
-  private var confTableViewController: InputConfTableViewController? = nil
+  private var configTableController: InputConfigTableViewController? = nil
   private var keyBindingsTableController: KeyBindingsTableViewController? = nil
 
   var shouldEnableEdit: Bool = true
 
   // MARK: - Outlets
 
-  @IBOutlet weak var confTableView: DoubleClickEditTableView!
+  @IBOutlet weak var inputConfigTableView: DoubleClickEditTableView!
   @IBOutlet weak var kbTableView: DoubleClickEditTableView!
   @IBOutlet weak var configHintLabel: NSTextField!
   @IBOutlet weak var addKmBtn: NSButton!
   @IBOutlet weak var removeKmBtn: NSButton!
-  @IBOutlet weak var revealConfFileBtn: NSButton!
-  @IBOutlet weak var deleteConfFileBtn: NSButton!
+  @IBOutlet weak var revealConfigFileBtn: NSButton!
+  @IBOutlet weak var deleteConfigFileBtn: NSButton!
   @IBOutlet weak var newConfigBtn: NSButton!
   @IBOutlet weak var duplicateConfigBtn: NSButton!
   @IBOutlet weak var useMediaKeysButton: NSButton!
@@ -61,11 +61,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     keyBindingsTableController = KeyBindingsTableViewController(self)
     kbTableView.delegate = keyBindingsTableController
-    confTableView.delegate = keyBindingsTableController
+    inputConfigTableView.delegate = keyBindingsTableController
 
-    confTableViewController = InputConfTableViewController(confTableView, self.configDS)
-    confTableView.dataSource = confTableViewController
-    confTableView.delegate = confTableViewController
+    configTableController = InputConfigTableViewController(inputConfigTableView, self.ds)
+    inputConfigTableView.dataSource = configTableController
+    inputConfigTableView.delegate = configTableController
 
     removeKmBtn.isEnabled = false
 
@@ -73,12 +73,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: saveToCurrentConfFile)
+    NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: saveToCurrentConfigFile)
     NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main) { _ in
       self.loadConfigFile()
     }
 
-    confTableViewController?.selectCurrentInputRow()
+    configTableController?.selectCurrenConfigRow()
     self.loadConfigFile()
   }
 
@@ -125,7 +125,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
   }
 
-  @IBAction func newConfFileAction(_ sender: AnyObject) {
+  @IBAction func newConfigFileAction(_ sender: AnyObject) {
     // prompt
     Utility.quickPromptPanel("config.new", sheetWindow: view.window) { newName in
       guard !newName.isEmpty else {
@@ -133,7 +133,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
         return
       }
 
-      self.confTableViewController!.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+      self.configTableController!.makeNewConfFile(newName, doAction: { (newFilePath: String) in
         // - new file
         if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
           Utility.showAlert("config.cannot_create", sheetWindow: self.view.window)
@@ -144,22 +144,22 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
   }
 
-  @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
-    confTableViewController?.duplicateConfig(configDS.currentConfName)
+  @IBAction func duplicateConfigFileAction(_ sender: AnyObject) {
+    configTableController?.duplicateConfig(ds.currentConfigName)
   }
 
-  @IBAction func revealConfFileAction(_ sender: AnyObject) {
-    confTableViewController?.revealConfig(configDS.currentConfName)
+  @IBAction func revealConfigFileAction(_ sender: AnyObject) {
+    configTableController?.revealConfig(ds.currentConfigName)
   }
 
-  @IBAction func deleteConfFileAction(_ sender: AnyObject) {
-    confTableViewController?.deleteConfig(configDS.currentConfName)
+  @IBAction func deleteConfigFileAction(_ sender: AnyObject) {
+    configTableController?.deleteConfig(ds.currentConfigName)
   }
 
   @IBAction func importConfigBtnAction(_ sender: Any) {
-    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: ["conf"]) { url in
+    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: [InputConfigDataStore.CONFIG_FILE_EXTENSION]) { url in
       guard url.isFileURL, url.lastPathComponent.hasSuffix(".conf") else { return }
-      self.confTableViewController?.importConfigFiles([url.lastPathComponent])
+      self.configTableController?.importConfigFiles([url.lastPathComponent])
     }
   }
 
@@ -173,8 +173,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   // MARK: - UI
 
-  private func saveToCurrentConfFile(_ sender: Notification) {
-    guard let confFilePath = requireCurrentFilePath() else {
+  private func saveToCurrentConfigFile(_ sender: Notification) {
+    guard let configFilePath = requireCurrentFilePath() else {
       return
     }
     let predicate = mappingController.filterPredicate
@@ -185,25 +185,25 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     setKeybindingsForPlayerCore(keyBindingList)
     mappingController.filterPredicate = predicate
     do {
-      try KeyMapping.generateInputConf(from: keyBindingList).write(toFile: confFilePath, atomically: true, encoding: .utf8)
+      try KeyMapping.generateInputConf(from: keyBindingList).write(toFile: configFilePath, atomically: true, encoding: .utf8)
     } catch {
       Utility.showAlert("config.cannot_write", sheetWindow: view.window)
     }
   }
 
   private func loadConfigFile() {
-    guard let confFilePath = configDS.currentConfFilePath else {
-      Logger.log("loadConfigFile(): could not find current conf file; falling back to default config", level: .error)
-      configDS.changeCurrentConfigToDefault()
+    guard let configFilePath = ds.currentConfigFilePath else {
+      Logger.log("loadConfigFile(): could not find current config file; falling back to default config", level: .error)
+      ds.changeCurrentConfigToDefault()
       return
     }
-    Logger.log("Loading key bindings config from \"\(confFilePath)\"")
-    guard let keyBindingList = KeyMapping.parseInputConf(at: confFilePath) else {
+    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
+    guard let keyBindingList = KeyMapping.parseInputConf(at: configFilePath) else {
       // on error
-      Logger.log("Error loading key bindings config from \"\(confFilePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: confFilePath).lastPathComponent
+      Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
+      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
       Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: view.window)
-      configDS.changeCurrentConfigToDefault()
+      ds.changeCurrentConfigToDefault()
       return
     }
 
@@ -216,8 +216,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private func updateEditEnabledStatus() {
-    shouldEnableEdit = !self.configDS.isDefaultConfig(configDS.currentConfName)
-    [revealConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
+    shouldEnableEdit = !self.ds.isDefaultConfig(ds.currentConfigName)
+    [revealConfigFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = shouldEnableEdit
     }
     kbTableView.tableColumns.forEach { $0.isEditable = shouldEnableEdit }
@@ -239,8 +239,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private func requireCurrentFilePath() -> String? {
-    if let confFilePath = configDS.currentConfFilePath {
-      return confFilePath
+    if let configFilePath = ds.currentConfigFilePath {
+      return configFilePath
     }
 
     Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: view.window)

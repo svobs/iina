@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="20037" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="20037"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -9,16 +8,16 @@
         <customObject id="-2" userLabel="File's Owner" customClass="PrefKeyBindingViewController" customModule="IINA" customModuleProvider="target">
             <connections>
                 <outlet property="addKmBtn" destination="f5l-5w-zmm" id="L2K-7M-RLc"/>
-                <outlet property="confTableView" destination="AYj-6d-niF" id="mCQ-0s-wf9"/>
                 <outlet property="configHintLabel" destination="tP6-Ua-acA" id="bRT-AA-zL7"/>
-                <outlet property="deleteConfFileBtn" destination="EpF-t6-PtC" id="3NC-Xb-5kT"/>
+                <outlet property="deleteConfigFileBtn" destination="EpF-t6-PtC" id="3NC-Xb-5kT"/>
                 <outlet property="duplicateConfigBtn" destination="5WK-s3-J9x" id="Ri8-b5-d3s"/>
+                <outlet property="inputConfigTableView" destination="AYj-6d-niF" id="mCQ-0s-wf9"/>
                 <outlet property="kbTableView" destination="1Z4-NL-6P3" id="OyE-OE-MSd"/>
                 <outlet property="keyMappingSearchField" destination="x6N-6q-HiV" id="mRh-rd-I8d"/>
                 <outlet property="mappingController" destination="xGz-Vh-hMb" id="hDG-Z5-OmL"/>
                 <outlet property="newConfigBtn" destination="iCp-ho-SlQ" id="LI0-TX-tNs"/>
                 <outlet property="removeKmBtn" destination="uFG-OF-DJ5" id="XWN-Lt-tmc"/>
-                <outlet property="revealConfFileBtn" destination="KZA-hu-vhZ" id="lVg-3j-Qgp"/>
+                <outlet property="revealConfigFileBtn" destination="KZA-hu-vhZ" id="lVg-3j-Qgp"/>
                 <outlet property="useMediaKeysButton" destination="LU9-QU-BFL" id="b9B-LC-pyM"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
@@ -48,7 +47,7 @@
                     <rect key="frame" x="196" y="62" width="491" height="320"/>
                     <clipView key="contentView" id="Hxb-1N-pOY">
                         <rect key="frame" x="1" y="1" width="489" height="318"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" headerView="OOd-BT-w3p" id="1Z4-NL-6P3" userLabel="KeyBindingsTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="489" height="295"/>
@@ -126,7 +125,7 @@
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <action selector="revealConfFileAction:" target="-2" id="NK4-Mj-IlB"/>
+                        <action selector="revealConfigFileAction:" target="-2" id="NK4-Mj-IlB"/>
                     </connections>
                 </button>
                 <box boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="mLe-eI-lIk">
@@ -200,7 +199,7 @@
                     <rect key="frame" x="8" y="62" width="180" height="350"/>
                     <clipView key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71">
                         <rect key="frame" x="1" y="1" width="178" height="348"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="178" height="348"/>
@@ -311,7 +310,7 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="newConfFileAction:" target="-2" id="zyI-2f-FHa"/>
+                                    <action selector="newConfigFileAction:" target="-2" id="zyI-2f-FHa"/>
                                 </connections>
                             </button>
                             <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EpF-t6-PtC">
@@ -322,7 +321,7 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="deleteConfFileAction:" target="-2" id="v3N-VV-gc0"/>
+                                    <action selector="deleteConfigFileAction:" target="-2" id="v3N-VV-gc0"/>
                                 </connections>
                             </button>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="5WK-s3-J9x">
@@ -332,7 +331,7 @@
                                     <font key="font" metaFont="label" size="9"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="duplicateConfFileAction:" target="-2" id="TJJ-4y-6g0"/>
+                                    <action selector="duplicateConfigFileAction:" target="-2" id="TJJ-4y-6g0"/>
                                 </connections>
                             </button>
                             <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="nTU-Bf-Utf">

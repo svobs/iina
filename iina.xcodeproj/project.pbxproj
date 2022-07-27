@@ -158,9 +158,9 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
-		D1049C852872C154003D47C1 /* InputConfTableController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* InputConfTableController.swift */; };
+		D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* KeyBindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */; };
-		D1049C892872CAD6003D47C1 /* InputConfDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfDataStore.swift */; };
+		D1049C892872CAD6003D47C1 /* InputConfigDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* KeyInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* KeyInputController.swift */; };
@@ -1207,9 +1207,9 @@
 		C7DBA5EB1F07C5FD00C2B416 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InitialWindowController.strings; sourceTree = "<group>"; };
 		C7DC79CE1EC63821002DE23B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
-		D1049C842872C154003D47C1 /* InputConfTableController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfTableController.swift; sourceTree = "<group>"; };
+		D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingTableViewController.swift; sourceTree = "<group>"; };
-		D1049C882872CAD6003D47C1 /* InputConfDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfDataStore.swift; sourceTree = "<group>"; };
+		D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigDataStore.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* KeyInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyInputController.swift; sourceTree = "<group>"; };
@@ -2160,9 +2160,11 @@
 		D1DC3D36287191E90052B062 /* KeyBinding */ = {
 			isa = PBXGroup;
 			children = (
+				D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
-				D1049C842872C154003D47C1 /* InputConfTableController.swift */,
+				D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */,
+				D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */,
 				840D47991DFEF649000D9A64 /* KeyRecordViewController.swift */,
 				8400D5EC1E1AB33B006785F5 /* KeyRecordViewController.xib */,
 				84F5D4941E44D5230060A838 /* KeyBindingCriterion.swift */,
@@ -2170,8 +2172,6 @@
 				84F5D49F1E44F9DB0060A838 /* KeyBindingItem.swift */,
 				84F5D4A11E4796F50060A838 /* KeyBindingTranslator.swift */,
 				84F5D49C1E44E9A50060A838 /* KeyBinding.strings */,
-				D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */,
-				D1049C882872CAD6003D47C1 /* InputConfDataStore.swift */,
 			);
 			name = KeyBinding;
 			sourceTree = "<group>";
@@ -2441,7 +2441,7 @@
 				84A09A0E1F2DF596000FF343 /* MiniPlayerWindowController.swift in Sources */,
 				84BEEC421DFEE46200F945CA /* StreamReader.swift in Sources */,
 				84C644601E92BA2700B1410B /* TimeLabelOverflowedView.swift in Sources */,
-				D1049C892872CAD6003D47C1 /* InputConfDataStore.swift in Sources */,
+				D1049C892872CAD6003D47C1 /* InputConfigDataStore.swift in Sources */,
 				E3C12F6B201F281F00297964 /* FirstRunManager.swift in Sources */,
 				84EB1F071D2F5E76004FA5A1 /* Utility.swift in Sources */,
 				84D0FB7E1F5E519300C6A6A7 /* FreeSelectingViewController.swift in Sources */,
@@ -2466,7 +2466,7 @@
 				D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */,
 				519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */,
 				842904E21F0EC01600478376 /* AutoFileMatcher.swift in Sources */,
-				D1049C852872C154003D47C1 /* InputConfTableController.swift in Sources */,
+				D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,
 				84A0BA9E1D2FAD4000BC8DA1 /* MainWindowController.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
