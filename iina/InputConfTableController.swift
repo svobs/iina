@@ -138,7 +138,10 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
       return false
     }
 
+    Logger.log("User renamed current config to \"\(newName)\" in editor", level: .verbose)
+
     guard let oldFilePath = self.configDS.currentConfFilePath else {
+      Logger.log("Failed to find file for current config! Aborting rename", level: .error)
       return false
     }
 
@@ -151,9 +154,11 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     let newFileName = newName + ".conf"
     let newFilePath = Utility.userInputConfDirURL.appendingPathComponent(newFileName).path
 
-    // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
-    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-      return false  // cancel
+    if newFilePath != oldFilePath { // allow this...it helps when user is trying to fix corrupted file list
+      // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
+      guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+        return false  // cancel
+      }
     }
 
     // - Move file on disk
@@ -166,7 +171,7 @@ class InputConfTableViewController: NSObject, NSTableViewDelegate, NSTableViewDa
     }
 
     // Update config lists and update UI
-    return configDS.renameCurrentConfig(to: newName)
+    return configDS.renameCurrentConfig(newName: newName, newFilePath: newFilePath)
   }
 
   // MARK: Drag & Drop

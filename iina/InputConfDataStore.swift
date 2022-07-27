@@ -188,16 +188,11 @@ class InputConfDataStore {
     updateState(newUserConfigDict, currentConfigName: newCurrentConfigName, .removeRows)
   }
 
-  func renameCurrentConfig(to newName: String) -> Bool {
+  func renameCurrentConfig(newName: String, newFilePath: String) -> Bool {
     var newUserConfigDict = userConfigDict
-    Logger.log("Renaming config: \"\(currentConfName)\" -> \"\(newName)\"")
-    guard currentConfName.equalsIgnoreCase(newName) else {
-      Logger.log("Cannot rename: '\(currentConfName)' and '\(newName)' are the same", level: .error)
-      return false
-    }
-
-    guard let filePath = currentConfFilePath else {
-      Logger.log("Cannot rename current config '\(currentConfName)': no file path!", level: .error)
+    Logger.log("Renaming config in prefs: \"\(currentConfName)\" -> \"\(newName)\"")
+    guard !currentConfName.equalsIgnoreCase(newName) else {
+      Logger.log("Skipping rename: '\(currentConfName)' and '\(newName)' are the same", level: .error)
       return false
     }
 
@@ -211,7 +206,7 @@ class InputConfDataStore {
       return false
     }
 
-    newUserConfigDict[newName] = filePath
+    newUserConfigDict[newName] = newFilePath
 
     updateState(newUserConfigDict, currentConfigName: newName, .renameAndMoveOneRow)
 
