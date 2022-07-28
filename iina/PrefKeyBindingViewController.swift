@@ -37,9 +37,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   private var ds = InputConfigDataStore()
 
   private var configTableController: InputConfigTableViewController? = nil
-  private var keyBindingsTableController: KeyBindingsTableViewController? = nil
-
-  var shouldEnableEdit: Bool = true
+  private var kbTableController: KeyBindingsTableViewController? = nil
 
   // MARK: - Outlets
 
@@ -59,27 +57,24 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    keyBindingsTableController = KeyBindingsTableViewController(self)
-    kbTableView.delegate = keyBindingsTableController
-    inputConfigTableView.delegate = keyBindingsTableController
+    kbTableController = KeyBindingsTableViewController(kbTableView, ds)
+    kbTableView.dataSource = kbTableController
+    kbTableView.delegate = kbTableController
 
-    configTableController = InputConfigTableViewController(inputConfigTableView, self.ds)
+    configTableController = InputConfigTableViewController(inputConfigTableView, ds)
     inputConfigTableView.dataSource = configTableController
     inputConfigTableView.delegate = configTableController
-
-    removeKmBtn.isEnabled = false
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: saveToCurrentConfigFile)
-    NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main) { _ in
-      self.loadConfigFile()
+    NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main) { _ in
+      self.updateEditEnabledStatus()
     }
 
     configTableController?.selectCurrenConfigRow()
-    self.loadConfigFile()
+    self.updateEditEnabledStatus()
   }
 
   // MARK: - IBActions
@@ -173,78 +168,21 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   // MARK: - UI
 
-  private func saveToCurrentConfigFile(_ sender: Notification) {
-    guard let configFilePath = requireCurrentFilePath() else {
-      return
-    }
-    let predicate = mappingController.filterPredicate
-    mappingController.filterPredicate = nil
-    guard let keyBindingList = mappingController.arrangedObjects as? [KeyMapping] else {
-      return
-    }
-    setKeybindingsForPlayerCore(keyBindingList)
-    mappingController.filterPredicate = predicate
-    do {
-      try KeyMapping.generateInputConf(from: keyBindingList).write(toFile: configFilePath, atomically: true, encoding: .utf8)
-    } catch {
-      Utility.showAlert("config.cannot_write", sheetWindow: view.window)
-    }
-  }
-
-  private func loadConfigFile() {
-    guard let configFilePath = ds.currentConfigFilePath else {
-      Logger.log("loadConfigFile(): could not find current config file; falling back to default config", level: .error)
-      ds.changeCurrentConfigToDefault()
-      return
-    }
-    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let keyBindingList = KeyMapping.parseInputConf(at: configFilePath) else {
-      // on error
-      Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
-      Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: view.window)
-      ds.changeCurrentConfigToDefault()
-      return
-    }
-
-    mappingController.content = nil
-    mappingController.add(contentsOf: keyBindingList)
-    mappingController.setSelectionIndexes(IndexSet())
-
-    setKeybindingsForPlayerCore(keyBindingList)
-    updateEditEnabledStatus()
-  }
-
   private func updateEditEnabledStatus() {
-    shouldEnableEdit = !self.ds.isDefaultConfig(ds.currentConfigName)
+    let isEditEnabled = ds.isEditEnabled()
     [revealConfigFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
-      btn.isEnabled = shouldEnableEdit
+      btn.isEnabled = isEditEnabled
     }
-    kbTableView.tableColumns.forEach { $0.isEditable = shouldEnableEdit }
-    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(shouldEnableEdit ? "2" : "1")", comment: "preference.key_binding_hint")
+    kbTableView.tableColumns.forEach { $0.isEditable = isEditEnabled }
+    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabled ? "2" : "1")", comment: "preference.key_binding_hint")
+
+    self.updateRemoveButtonEnablement()
   }
 
   // TODO: change this to a notification
   func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = shouldEnableEdit && kbTableView.selectedRow != -1
-  }
-
-  private func setKeybindingsForPlayerCore(_ keyBindingList: [KeyMapping]) {
-    PlayerCore.setKeyBindings(keyBindingList)
-  }
-
-  private func tellUserToDuplicateConfig() {
-    Utility.showAlert("duplicate_config", sheetWindow: view.window)
-  }
-
-  private func requireCurrentFilePath() -> String? {
-    if let configFilePath = ds.currentConfigFilePath {
-      return configFilePath
-    }
-
-    Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: view.window)
-    return nil
+    removeKmBtn.isEnabled = ds.isEditEnabled() && kbTableView.selectedRow != -1
   }
 
   @objc func doubleClickedKBTable() {
@@ -253,12 +191,14 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       return
     }
 
-    guard shouldEnableEdit else {
-      tellUserToDuplicateConfig()
+    guard ds.isEditEnabled() else {
+      // Cannot edit one of the default configs. Tell user to duplicate config instead:
+      Utility.showAlert("duplicate_config", sheetWindow: view.window)
       return
     }
-    guard kbTableView.selectedRow != -1 else { return }
-    let selectedData = mappingController.selectedObjects[0] as! KeyMapping
+    guard let selectedData = ds.getBindingRow(at: kbTableView.selectedRow) else {
+      return
+    }
     showKeyBindingPanel(key: selectedData.rawKey, action: selectedData.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
       selectedData.rawKey = key

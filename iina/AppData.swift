@@ -105,12 +105,19 @@ extension Notification.Name {
   static let iinaMediaTitleChanged = Notification.Name("IINAMediaTitleChanged")
   static let iinaVFChanged = Notification.Name("IINAVfChanged")
   static let iinaAFChanged = Notification.Name("IINAAfChanged")
-  static let iinaInputConfListChanged = Notification.Name("IINAInputConfListChanged")
-  static let iinaCurrentInputConfChanged = Notification.Name("IINACurrentInputConfChanged")
+  // the list of user input configs had additions, subtractions, of renames:
+  static let iinaInputConfigListChanged = Notification.Name("IINAInputConfigListChanged")
+  // a different file is now being used as the "current" input config:
+  static let iinaCurrentInputConfigChanged = Notification.Name("IINACurrentInputConfigChanged")
+  // an error occurred in the key bindings page and needs to be displayed:
+  static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
+  // supports auto-complete for key binding editing:
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")
+  // contains the replacement list of keybindings which comprise the "default section" which will be used for all players:
   static let iinaGlobalKeyBindingsChanged = Notification.Name("iinaGlobalKeyBindingsChanged")
+  // keybinding(s) were added, removed, or changed in the current input file
   static let iinaKeyBindingChanged = Notification.Name("iinaKeyBindingChanged")
 }

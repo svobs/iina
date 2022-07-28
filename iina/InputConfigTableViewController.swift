@@ -14,9 +14,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
-
-  private var configListChangedObserver: NSObjectProtocol? = nil
-  private var currentConfigChangedObserver: NSObjectProtocol? = nil
+  private var observers: [NSObjectProtocol] = []
 
   init(_ inputConfigTableView: DoubleClickEditTableView, _ ds: InputConfigDataStore) {
     self.tableView = inputConfigTableView
@@ -29,8 +27,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     // Set up callbacks:
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
-    configListChangedObserver = NotificationCenter.default.addObserver(forName: .iinaInputConfListChanged, object: nil, queue: .main, using: tableDataDidChange)
-    currentConfigChangedObserver = NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfChanged, object: nil, queue: .main, using: currentInputDidChange)
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main, using: tableDataDidChange))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
 
     tableView.allowDoubleClickEditForRow = allowDoubleClickEditForRow
 
@@ -43,15 +41,15 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   deinit {
-    if let observer = configListChangedObserver {
+    for observer in observers {
       NotificationCenter.default.removeObserver(observer)
-      configListChangedObserver = nil
     }
+    observers = []
   }
 
   func selectCurrenConfigRow() {
     let configName = self.ds.currentConfigName
-    guard let index = ds.tableRows.firstIndex(of: configName) else {
+    guard let index = ds.configTableRows.firstIndex(of: configName) else {
       Logger.log("selectCurrenConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
       ds.changeCurrentConfigToDefault()
       return
@@ -63,7 +61,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
-    if let configName = ds.getRow(at: rowNumber), !ds.isDefaultConfig(configName) {
+    if let configName = ds.getConfigRow(at: rowNumber), !ds.isDefaultConfig(configName) {
       return true
     }
     return false
@@ -81,8 +79,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   // Current input file changed (callback from datasource)
-  func currentInputDidChange(_ notification: Notification) {
-    Logger.log("Got iinaCurrentInputConfChanged notification; changing selection", level: .verbose)
+  private func currentConfigDidChange(_ notification: Notification) {
+    Logger.log("Got iinaCurrentInputConfigChanged notification; changing selection", level: .verbose)
     // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
     selectCurrenConfigRow()
   }
@@ -93,14 +91,14 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return ds.tableRows.count
+    return ds.configTableRows.count
   }
 
   /**
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    let configName = ds.tableRows[row]
+    let configName = ds.configTableRows[row]
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -145,7 +143,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return false
     }
 
-    guard !self.ds.tableRows.contains(newName) else {
+    guard !self.ds.configTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -180,7 +178,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
   {
-    if let configName = ds.getRow(at: row),
+    if let configName = ds.getConfigRow(at: row),
        let filePath = ds.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)
     }
@@ -306,7 +304,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     guard tableView.clickedRow >= 0 else {
       return nil
     }
-    return ds.getRow(at: tableView.clickedRow)
+    return ds.getConfigRow(at: tableView.clickedRow)
   }
 
   func menuNeedsUpdate(_ menu: NSMenu) {
@@ -388,7 +386,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
         Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
         return
       }
-      guard !self.ds.tableRows.contains(newName) else {
+      guard !self.ds.configTableRows.contains(newName) else {
         Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
         return
       }
