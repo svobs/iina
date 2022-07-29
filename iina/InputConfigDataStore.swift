@@ -254,8 +254,8 @@ class InputConfigDataStore {
 
   // Replaces the current state with the given params, and fires listeners.
   private func updateState(_ userConfigDict: [String: String], currentConfigNameUpdated: String, _ changeType: TableStateChange.ChangeType) {
-    let tableChanges = TableStateChange(changeType)
-    tableChanges.oldRows = configTableRows
+    let configTableChanges = TableStateChange(changeType)
+    configTableChanges.oldRows = configTableRows
 
     let currentConfigChanged = self.currentConfigName != currentConfigNameUpdated
 
@@ -270,11 +270,11 @@ class InputConfigDataStore {
 
     // refresh
     configTableRows = buildCofigTableRows()
-    tableChanges.newRows = configTableRows
-    tableChanges.newSelectionIndex = configTableRows.firstIndex(of: self.currentConfigName)
+    configTableChanges.newRows = configTableRows
+    configTableChanges.newSelectionIndex = configTableRows.firstIndex(of: self.currentConfigName)
 
     // finally, fire listeners
-    NotificationCenter.default.post(Notification(name: .iinaInputConfigListChanged, object: tableChanges))
+    NotificationCenter.default.post(Notification(name: .iinaInputConfigListChanged, object: configTableChanges))
     if currentConfigChanged {
       NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigChanged))
     }

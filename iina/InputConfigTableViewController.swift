@@ -22,15 +22,15 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     super.init()
 
-    self.tableView.menu = NSMenu()
-    self.tableView.menu?.delegate = self
+    tableView.menu = NSMenu()
+    tableView.menu?.delegate = self
 
     // Set up callbacks:
+    tableView.allowDoubleClickEditFor = allowDoubleClickEditFor
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
     observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main, using: tableDataDidChange))
     observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
 
-    tableView.allowDoubleClickEditForRow = allowDoubleClickEditForRow
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -58,31 +58,6 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Logger.log("Selecting row: '\(configName)' (index \(index))", level: .verbose)
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
-  }
-
-  func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
-    if let configName = ds.getConfigRow(at: rowNumber), !ds.isDefaultConfig(configName) {
-      return true
-    }
-    return false
-  }
-
-  // Row(s) changed (callback from datasource)
-  func tableDataDidChange(_ notification: Notification) {
-    guard let tableChanges = notification.object as? TableStateChange else {
-      Logger.log("tableDataDidChange(): missing object!", level: .error)
-      return
-    }
-
-    Logger.log("Got InputConfigListChanged notification; reloading data", level: .verbose)
-    self.tableView.smartUpdate(tableChanges)
-  }
-
-  // Current input file changed (callback from datasource)
-  private func currentConfigDidChange(_ notification: Notification) {
-    Logger.log("Got iinaCurrentInputConfigChanged notification; changing selection", level: .verbose)
-    // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
-    selectCurrenConfigRow()
   }
 
   // MARK: NSTableViewDataSource
@@ -127,10 +102,36 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     ds.changeCurrentConfig(tableView.selectedRow)
   }
 
+  // MARK: Custom callbacks
+
+  func allowDoubleClickEditFor(_ rowNumber: Int, _ colNumber: Int) -> Bool {
+    if let configName = ds.getConfigRow(at: rowNumber), !ds.isDefaultConfig(configName) {
+      return true
+    }
+    return false
+  }
+
+  // Row(s) changed (callback from datasource)
+  func tableDataDidChange(_ notification: Notification) {
+    guard let tableChanges = notification.object as? TableStateChange else {
+      Logger.log("tableDataDidChange(): missing object!", level: .error)
+      return
+    }
+
+    Logger.log("Got InputConfigListChanged notification; reloading data", level: .verbose)
+    self.tableView.smartUpdate(tableChanges)
+  }
+
+  // Current input file changed (callback from datasource)
+  private func currentConfigDidChange(_ notification: Notification) {
+    Logger.log("Got iinaCurrentInputConfigChanged notification; changing selection", level: .verbose)
+    // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
+    selectCurrenConfigRow()
+  }
 
   // User finished editing (callback from DoubleClickEditTextField).
   // Renames current comfig & its file on disk
-  func userDidEndEditingCurrentName(_ newName: String) -> Bool {
+  func userDidEndEditingCurrentName(_ newName: String, row: Int, column: Int) -> Bool {
     guard !self.ds.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
@@ -176,8 +177,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   /*
    Drag start: convert tableview rows to clipboard items
    */
-  func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
-  {
+  func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
     if let configName = ds.getConfigRow(at: row),
        let filePath = ds.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)

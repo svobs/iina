@@ -12,18 +12,19 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
+  private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
-  init(_ kbTableView: DoubleClickEditTableView, _ ds: InputConfigDataStore) {
+  init(_ kbTableView: DoubleClickEditTableView, _ ds: InputConfigDataStore, selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = kbTableView
     self.ds = ds
+    self.selectionDidChangeHandler = selectionDidChangeHandler
 
     super.init()
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorLoadingConfigFile))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main) { _ in
-      self.tableView.reloadData()
-    })
+    tableView.allowDoubleClickEditFor = allowDoubleClickEditFor
+    tableView.onTextDidEndEditing = userDidEndEditing
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
   }
 
   deinit {
@@ -31,33 +32,6 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
-  }
-
-
-  func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
-    return Preference.bool(for: .displayKeyBindingRawValues)
-  }
-
-  func tableViewSelectionDidChange(_ notification: Notification) {
-    // re-evaluate this each time either table changed selection:
-
-    // FIXME
-//    parentPrefPanelController.updateRemoveButtonEnablement()
-  }
-
-  func allowDoubleClickEditForRow(_ rowNumber: Int) -> Bool {
-    return ds.isEditEnabled()
-  }
-
-  // Display error alert if load error occurred:
-  private func errorLoadingConfigFile(_ notification: Notification) {
-    let args: [String]?
-      if let fileName = notification.object as? String {
-        args = [fileName]
-      } else {
-        args = nil
-      }
-    Utility.showAlert("keybinding_config.error", arguments: args, sheetWindow: self.tableView.window)
   }
 
   // MARK: NSTableViewDataSource
@@ -97,6 +71,39 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
         return nil
     }
+  }
+
+  // MARK: NSTableViewDelegate
+
+  func tableViewSelectionDidChange(_ notification: Notification) {
+    selectionDidChangeHandler()
+  }
+
+  // MARK: Custom callbacks
+
+  func allowDoubleClickEditFor(_ rowNumber: Int, _ colNumber: Int) -> Bool {
+    return ds.isEditEnabled()
+  }
+
+  func userDidEndEditing(_ newValue: String, row: Int, column: Int) -> Bool {
+    // TODO
+    return false
+  }
+
+  // Current input file changed (callback from datasource)
+  private func currentConfigDidChange(_ notification: Notification) {
+    self.tableView.reloadData()
+  }
+
+  // Display error alert if load error occurred:
+  private func errorDidOccur(_ notification: Notification) {
+    let args: [String]?
+      if let fileName = notification.object as? String {
+        args = [fileName]
+      } else {
+        args = nil
+      }
+    Utility.showAlert("keybinding_config.error", arguments: args, sheetWindow: self.tableView.window)
   }
 
 }

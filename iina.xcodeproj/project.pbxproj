@@ -1576,7 +1576,6 @@
 				E3B3DD5920FDB8A600325184 /* PreferenceWindowController.xib */,
 				E3513AFA20F120F600F8C347 /* PreferenceViewController.swift */,
 				E374160B20F138A900B4F7F9 /* CollapseView.swift */,
-				D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */,
 				519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */,
 			);
 			name = Preference;
@@ -2036,6 +2035,7 @@
 				E3DBD23D218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.xib */,
 				9E47DABF1E3CFA6D00457420 /* DurationDisplayTextField.swift */,
 				843FFD4C1D5DAA01001F3A44 /* RoundedTextFieldCell.swift */,
+				D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
 				8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */,

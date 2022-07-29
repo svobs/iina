@@ -57,7 +57,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    kbTableController = KeyBindingsTableViewController(kbTableView, ds)
+    kbTableController = KeyBindingsTableViewController(kbTableView, ds, selectionDidChangeHandler: updateRemoveButtonEnablement)
     kbTableView.dataSource = kbTableController
     kbTableView.delegate = kbTableController
 
@@ -179,8 +179,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     self.updateRemoveButtonEnablement()
   }
 
-  // TODO: change this to a notification
-  func updateRemoveButtonEnablement() {
+  private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
     removeKmBtn.isEnabled = ds.isEditEnabled() && kbTableView.selectedRow != -1
   }

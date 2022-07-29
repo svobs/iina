@@ -30,7 +30,7 @@ class TableStateChange {
 
 class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   var stringValueOrig: String = ""
-  var onNewTextEntered: ((String) -> Bool)?
+  var editDidEndWithNewText: ((String) -> Bool)?
 
   override func mouseDown(with event: NSEvent) {
     if (event.clickCount == 2 && !self.isEditable) {
@@ -47,12 +47,12 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
     }
 
     if stringValue != stringValueOrig {
-      if let callbackFunc = onNewTextEntered {
+      if let callbackFunc = editDidEndWithNewText {
         if callbackFunc(stringValue) {
-          Logger.log("onNewTextEntered callback returned TRUE", level: .verbose)
+          Logger.log("editDidEndWithNewText callback returned TRUE", level: .verbose)
         } else {
           // a return value of false tells us to use the previous value
-          Logger.log("onNewTextEntered callback returned FALSE: reverting displayed value to \"\(stringValueOrig)\"", level: .verbose)
+          Logger.log("editDidEndWithNewText callback returned FALSE: reverting displayed value to \"\(stringValueOrig)\"", level: .verbose)
           self.stringValue = self.stringValueOrig
         }
       }
@@ -79,8 +79,10 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 
 class DoubleClickEditTableView: NSTableView {
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
-  var onTextDidEndEditing: ((String) -> Bool)?
-  var allowDoubleClickEditForRow: ((Int) -> Bool)?
+  // args are (newText, editorRow, editorColumn)
+  var onTextDidEndEditing: ((String, Int, Int) -> Bool)?
+  // args are (row, column)
+  var allowDoubleClickEditFor: ((Int, Int) -> Bool)?
 
   private var lastEditedTextField: DoubleClickEditTextField? = nil
 
@@ -92,22 +94,29 @@ class DoubleClickEditTableView: NSTableView {
 
       if let editableTextField = responder as? DoubleClickEditTextField {
         // Unortunately, the event with event.clickCount==2 does not present itself here, so we have to filter at 1st click
-        var isDoubleClickEnabled: Bool = true
-        if let allowDoubleClickEditForRow = allowDoubleClickEditForRow {
-          if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
-            let clickedRow = self.row(at: locationInTable)
-            isDoubleClickEnabled = allowDoubleClickEditForRow(clickedRow)
+        if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
+          let clickedRow = self.row(at: locationInTable)
+          let clickedColumn = self.column(at: locationInTable)
+          var isDoubleClickEnabled: Bool = true
+          if let allowDoubleClickEditFor = allowDoubleClickEditFor {
+            isDoubleClickEnabled = allowDoubleClickEditFor(clickedRow, clickedColumn)
           }
-        }
 
-        if isDoubleClickEnabled {
-          editableTextField.onNewTextEntered = self.onTextDidEndEditing
-          editableTextField.stringValueOrig = editableTextField.stringValue
+          if isDoubleClickEnabled {
+            if let onTextDidEndEditing = onTextDidEndEditing {
+              // Use a closure to bind row and column to the callback function:
+              editableTextField.editDidEndWithNewText = { onTextDidEndEditing($0, clickedRow, clickedColumn) }
+            } else {
+              // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
+              editableTextField.editDidEndWithNewText = nil
+            }
+            editableTextField.stringValueOrig = editableTextField.stringValue
 
-          // keep track of it for later
-          lastEditedTextField = editableTextField
+            // keep track of it for later
+            lastEditedTextField = editableTextField
 
-          return true
+            return true
+          }
         }
       }
     }
