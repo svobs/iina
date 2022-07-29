@@ -95,7 +95,7 @@ class InputConfigDataStore {
     observers = []
   }
 
-  func isEditEnabled() -> Bool {
+  func isEditEnabledForCurrentConfig() -> Bool {
     return !isDefaultConfig(currentConfigName)
   }
 
@@ -280,6 +280,18 @@ class InputConfigDataStore {
     }
   }
 
+  func addBinding(_ row: Int, _ binding: KeyMapping) {
+    // TODO
+
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+  }
+
+  func removeBindings(at indexes: IndexSet) {
+    // TODO
+
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+  }
+
   private func updateCurrentConfigState(configName: String, confFilePath: String) {
     Preference.set(configName, for: .currentInputConfigName)
 
@@ -299,7 +311,8 @@ class InputConfigDataStore {
       // on error
       Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: fileName))
+      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
 
       changeCurrentConfigToDefault()
       return
@@ -339,8 +352,8 @@ class InputConfigDataStore {
     do {
       try KeyMapping.generateInputConf(from: keyBindingList).write(toFile: configFilePath, atomically: true, encoding: .utf8)
     } catch {
-      // FIXME
-//      Utility.showAlert("config.cannot_write", sheetWindow: view.window)
+      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
   }
 
@@ -348,8 +361,8 @@ class InputConfigDataStore {
     if let filePath = currentConfigFilePath {
       return filePath
     }
-    // FIXME
-//    Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: view.window)
+    let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     return nil
   }
 
@@ -359,7 +372,7 @@ class InputConfigDataStore {
 
   private func onNewGlobalBindingsSet(_ notification: Notification) {
     guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
-      Logger.log("onGlobalKeyBindingsChanged(): missing object!", level: .error)
+      Logger.log("onGlobalKeyBindingsChanged(): invalid object: \(type(of: notification.object))", level: .error)
       return
     }
     // TODO: use this to populate row metadata

@@ -11,36 +11,6 @@ import Foundation
 /// - Tag: KeyMapping
 class KeyMapping: NSObject {
 
-  // TODO: this is UI logic. Move it out of here.
-  @objc var keyForDisplay: String {
-    get {
-      if Preference.bool(for: .displayKeyBindingRawValues) {
-        return rawKey
-      } else {
-        if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) {
-          return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
-        } else {
-          return normalizedMpvKey
-        }
-      }
-    }
-    set {
-      rawKey = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
-
-  // TODO: this is UI logic. Move it out of here.
-  @objc var actionForDisplay: String {
-    get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? readableAction : prettyCommand
-    }
-    set {
-      rawAction = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
-
   var isIINACommand: Bool
 
   var rawKey: String {
@@ -50,6 +20,17 @@ class KeyMapping: NSObject {
   }
 
   private(set) var normalizedMpvKey: String
+
+  // For UI
+  var prettyKey: String {
+    get {
+      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) {
+        return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+      } else {
+        return normalizedMpvKey
+      }
+    }
+  }
 
   // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
@@ -71,12 +52,12 @@ class KeyMapping: NSObject {
 
   var rawAction: String {
     set {
-      if newValue.hasPrefix("@iina") {
-        privateRawAction = newValue[newValue.index(newValue.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        isIINACommand = true
+      if let trimmedAction = KeyMapping.removeIINAPrefix(from: newValue) {
+        self.isIINACommand = true
+        self.privateRawAction = trimmedAction
       } else {
-        privateRawAction = newValue
-        isIINACommand = false
+        self.isIINACommand = false
+        self.privateRawAction = newValue
       }
       action = privateRawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     }
@@ -98,7 +79,8 @@ class KeyMapping: NSObject {
     return privateRawAction == MPVCommand.ignore.rawValue
   }
 
-  @objc var prettyCommand: String {
+  // For UI
+  var prettyCommand: String {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
   }
 
@@ -111,12 +93,24 @@ class KeyMapping: NSObject {
   }
 
   init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
+    self.isIINACommand = isIINACommand
+    self.privateRawAction = rawAction
+    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
+      self.isIINACommand = true
+      self.privateRawAction = trimmedAction
+    }
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-    self.isIINACommand = isIINACommand
     self.comment = comment
-    self.privateRawAction = rawAction
     self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+  }
+
+  private static func removeIINAPrefix(from rawAction: String) -> String? {
+    if rawAction.hasPrefix("@iina") {
+      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
+    } else {
+      return nil
+    }
   }
 
   public override var description: String {

@@ -31,9 +31,12 @@ class TableStateChange {
 class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   var stringValueOrig: String = ""
   var editDidEndWithNewText: ((String) -> Bool)?
+  var userDidDoubleClickOnCell: (() -> Bool) = {() -> Bool in
+    return true
+  }
 
   override func mouseDown(with event: NSEvent) {
-    if (event.clickCount == 2 && !self.isEditable) {
+    if (event.clickCount == 2 && !self.isEditable && userDidDoubleClickOnCell()) {
       self.beginEditing();
     } else {
       super.mouseDown(with: event)
@@ -51,7 +54,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
         if callbackFunc(stringValue) {
           Logger.log("editDidEndWithNewText callback returned TRUE", level: .verbose)
         } else {
-          // a return value of false tells us to use the previous value
+          // a return value of false tells us to revert to the previous value
           Logger.log("editDidEndWithNewText callback returned FALSE: reverting displayed value to \"\(stringValueOrig)\"", level: .verbose)
           self.stringValue = self.stringValueOrig
         }
@@ -81,8 +84,10 @@ class DoubleClickEditTableView: NSTableView {
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
   // args are (newText, editorRow, editorColumn)
   var onTextDidEndEditing: ((String, Int, Int) -> Bool)?
-  // args are (row, column)
-  var allowDoubleClickEditFor: ((Int, Int) -> Bool)?
+  // args are (row, column). If true is returned, a row editor will be displayed for editing cell text
+  var userDidDoubleClickOnCell: ((Int, Int) -> Bool) = {(row: Int, column: Int) -> Bool in
+    return true
+  }
 
   private var lastEditedTextField: DoubleClickEditTextField? = nil
 
@@ -92,31 +97,30 @@ class DoubleClickEditTableView: NSTableView {
       lastEditedTextField?.endEditing()
       lastEditedTextField = nil
 
+      NSLog("CLICK COUNT: \(event.clickCount)")
+
       if let editableTextField = responder as? DoubleClickEditTextField {
-        // Unortunately, the event with event.clickCount==2 does not present itself here, so we have to filter at 1st click
+        // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
+        // Workaround: pass everything to the DoubleClickEditTextField, which does see double-click.
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
-          var isDoubleClickEnabled: Bool = true
-          if let allowDoubleClickEditFor = allowDoubleClickEditFor {
-            isDoubleClickEnabled = allowDoubleClickEditFor(clickedRow, clickedColumn)
+          // Use a closure to bind row and column to the callback function:
+          editableTextField.userDidDoubleClickOnCell = {() -> Bool in self.userDidDoubleClickOnCell(clickedRow, clickedColumn) }
+
+          if let onTextDidEndEditing = onTextDidEndEditing {
+            // Use a closure to bind row and column to the callback function:
+            editableTextField.editDidEndWithNewText = { onTextDidEndEditing($0, clickedRow, clickedColumn) }
+          } else {
+            // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
+            editableTextField.editDidEndWithNewText = nil
           }
+          editableTextField.stringValueOrig = editableTextField.stringValue
 
-          if isDoubleClickEnabled {
-            if let onTextDidEndEditing = onTextDidEndEditing {
-              // Use a closure to bind row and column to the callback function:
-              editableTextField.editDidEndWithNewText = { onTextDidEndEditing($0, clickedRow, clickedColumn) }
-            } else {
-              // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
-              editableTextField.editDidEndWithNewText = nil
-            }
-            editableTextField.stringValueOrig = editableTextField.stringValue
+          // keep track of it for later
+          lastEditedTextField = editableTextField
 
-            // keep track of it for later
-            lastEditedTextField = editableTextField
-
-            return true
-          }
+          return true
         }
       }
     }
@@ -143,6 +147,9 @@ class DoubleClickEditTableView: NSTableView {
       case .removeRows:
         removeRows(changes)
       case .reloadAll:
+
+
+        // TODO
         Logger.log("ReloadAll", level: .verbose)
         reloadData()
     }
@@ -153,6 +160,22 @@ class DoubleClickEditTableView: NSTableView {
       Logger.log("Selecting table index: \(newSelectionIndex)", level: .verbose)
       self.selectRowIndexes(IndexSet(integer: newSelectionIndex), byExtendingSelection: false)
     }
+  }
+
+  // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
+  // This will preserve the selection indexes (whereas reloadData() will not)
+  func reloadExistingRows() {
+    reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
+  }
+
+  // The default implementation of reloadData() removes the selection. This method restores it.
+  // NOTE: this will result in an unncessary call to NSTableViewDelegate.tableViewSelectionDidChange().
+  // Wherever possible, update via the underlying datasource and then call smartUpdate()
+  func reloadDataAndKeepSelection() {
+    let selectedRows = self.selectedRowIndexes
+    reloadData()
+    // Fires change listener...
+    self.selectRowIndexes(selectedRows, byExtendingSelection: false)
   }
 
   private func renameAndMoveOneRow(_ changes: TableStateChange) {

@@ -26,7 +26,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.menu?.delegate = self
 
     // Set up callbacks:
-    tableView.allowDoubleClickEditFor = allowDoubleClickEditFor
+    tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
     observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main, using: tableDataDidChange))
     observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
@@ -104,7 +104,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // MARK: Custom callbacks
 
-  func allowDoubleClickEditFor(_ rowNumber: Int, _ colNumber: Int) -> Bool {
+  func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
     if let configName = ds.getConfigRow(at: rowNumber), !ds.isDefaultConfig(configName) {
       return true
     }
@@ -114,7 +114,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // Row(s) changed (callback from datasource)
   func tableDataDidChange(_ notification: Notification) {
     guard let tableChanges = notification.object as? TableStateChange else {
-      Logger.log("tableDataDidChange(): missing object!", level: .error)
+      Logger.log("tableDataDidChange(): invalid object: \(type(of: notification.object))", level: .error)
       return
     }
 

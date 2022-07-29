@@ -21,7 +21,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
     super.init()
-    tableView.allowDoubleClickEditFor = allowDoubleClickEditFor
+    tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
@@ -58,19 +58,21 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
     let columnName = identifier.rawValue
 
-    let isRaw = Preference.bool(for: .displayKeyBindingRawValues)
-
     switch columnName {
       case "keyColumn":
-        cell.textField!.stringValue = isRaw ? binding.rawKey : binding.keyForDisplay
+        cell.textField!.stringValue = isRaw() ? binding.rawKey : binding.prettyKey
         return cell
       case "actionColumn":
-        cell.textField!.stringValue = isRaw ? binding.rawAction : binding.actionForDisplay
+        cell.textField!.stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
         return nil
     }
+  }
+
+  func isRaw() -> Bool {
+    return Preference.bool(for: .displayKeyBindingRawValues)
   }
 
   // MARK: NSTableViewDelegate
@@ -81,13 +83,48 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // MARK: Custom callbacks
 
-  func allowDoubleClickEditFor(_ rowNumber: Int, _ colNumber: Int) -> Bool {
-    return ds.isEditEnabled()
+  func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
+    guard ds.isEditEnabledForCurrentConfig() else {
+      // Cannot edit one of the default configs. Tell user to duplicate config instead:
+      Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
+      return false
+    }
+    if isRaw() {
+      // Use in-line editor
+      return true
+    }
+
+    if let selectedBinding = ds.getBindingRow(at: rowNumber) {
+      showKeyBindingPanel(key: selectedBinding.rawKey, action: selectedBinding.readableAction) { key, action in
+        guard !key.isEmpty && !action.isEmpty else { return }
+        selectedBinding.rawKey = key
+        selectedBinding.rawAction = action
+        // FIXME: ds.update() instead
+        NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+      }
+    }
+    return false
   }
 
   func userDidEndEditing(_ newValue: String, row: Int, column: Int) -> Bool {
-    // TODO
-    return false
+    guard let editedBinding = ds.getBindingRow(at: row) else {
+      Logger.log("userDidEndEditing(): failed to get row \(row) (newValue='\(newValue)')")
+      return false
+    }
+
+    switch column {
+      case 0:  // key
+        editedBinding.rawKey = newValue
+      case 1:  // action
+        editedBinding.rawAction = newValue
+      default:
+        Logger.log("userDidEndEditing(): bad column: \(column)'")
+        return false
+    }
+
+    // FIXME: ds.update() instead
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+    return true
   }
 
   // Current input file changed (callback from datasource)
@@ -95,15 +132,59 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.tableView.reloadData()
   }
 
-  // Display error alert if load error occurred:
+  // Display error alert for errors:
   private func errorDidOccur(_ notification: Notification) {
-    let args: [String]?
-      if let fileName = notification.object as? String {
-        args = [fileName]
-      } else {
-        args = nil
+    guard let alertInfo = notification.object as? AlertInfo else {
+      Logger.log("Notification.iinaKeyBindingErrorOccurred: cannot display error: invalid object: \(type(of: notification.object))", level: .error)
+      return
+    }
+    Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
+  }
+
+  // MARK: Reusable actions
+
+  func addNewBinding() {
+    if isRaw() {
+      // TODO!
+
+
+    } else {
+      showKeyBindingPanel { key, action in
+        guard !key.isEmpty && !action.isEmpty else { return }
+
+        var row = self.tableView.selectedRow
+        if row >= 0 {
+          row += 1
+        } else {
+          row = self.tableView.numberOfRows
+        }
+        self.ds.addBinding(row, KeyMapping(rawKey: key, rawAction: action))
+        self.tableView.scrollRowToVisible(row)
       }
-    Utility.showAlert("keybinding_config.error", arguments: args, sheetWindow: self.tableView.window)
+    }
+  }
+
+  func removeSelectedBindings() {
+    ds.removeBindings(at: tableView.selectedRowIndexes)
+  }
+
+  func showKeyBindingPanel(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
+    let panel = NSAlert()
+    let keyRecordViewController = KeyRecordViewController()
+    keyRecordViewController.keyCode = key
+    keyRecordViewController.action = action
+    panel.messageText = NSLocalizedString("keymapping.title", comment: "Key Mapping")
+    panel.informativeText = NSLocalizedString("keymapping.message", comment: "Press any key to record.")
+    panel.accessoryView = keyRecordViewController.view
+    panel.window.initialFirstResponder = keyRecordViewController.keyRecordView
+    let okButton = panel.addButton(withTitle: NSLocalizedString("general.ok", comment: "OK"))
+    okButton.cell!.bind(.enabled, to: keyRecordViewController, withKeyPath: "ready", options: nil)
+    panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
+    panel.beginSheetModal(for: tableView.window!) { respond in
+      if respond == .alertFirstButtonReturn {
+        ok(keyRecordViewController.keyCode, keyRecordViewController.action)
+      }
+    }
   }
 
 }

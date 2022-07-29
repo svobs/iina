@@ -52,7 +52,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var duplicateConfigBtn: NSButton!
   @IBOutlet weak var useMediaKeysButton: NSButton!
   @IBOutlet weak var keyMappingSearchField: NSSearchField!
-  @IBOutlet var mappingController: NSArrayController!
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -79,45 +78,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   // MARK: - IBActions
 
-  func showKeyBindingPanel(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
-    let panel = NSAlert()
-    let keyRecordViewController = KeyRecordViewController()
-    keyRecordViewController.keyCode = key
-    keyRecordViewController.action = action
-    panel.messageText = NSLocalizedString("keymapping.title", comment: "Key Mapping")
-    panel.informativeText = NSLocalizedString("keymapping.message", comment: "Press any key to record.")
-    panel.accessoryView = keyRecordViewController.view
-    panel.window.initialFirstResponder = keyRecordViewController.keyRecordView
-    let okButton = panel.addButton(withTitle: NSLocalizedString("general.ok", comment: "OK"))
-    okButton.cell!.bind(.enabled, to: keyRecordViewController, withKeyPath: "ready", options: nil)
-    panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
-    panel.beginSheetModal(for: view.window!) { respond in
-      if respond == .alertFirstButtonReturn {
-        ok(keyRecordViewController.keyCode, keyRecordViewController.action)
-      }
-    }
-  }
-
   @IBAction func addKeyMappingBtnAction(_ sender: AnyObject) {
-    showKeyBindingPanel { key, action in
-      guard !key.isEmpty && !action.isEmpty else { return }
-      if action.hasPrefix("@iina") {
-        let trimmedAction = action[action.index(action.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        self.mappingController.addObject(KeyMapping(rawKey: key,
-                                        rawAction: trimmedAction,
-                                        isIINACommand: true))
-      } else {
-        self.mappingController.addObject(KeyMapping(rawKey: key, rawAction: action))
-      }
-
-      self.kbTableView.scrollRowToVisible((self.mappingController.arrangedObjects as! [AnyObject]).count - 1)
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
+    kbTableController?.addNewBinding()
   }
 
   @IBAction func removeKeyMappingBtnAction(_ sender: AnyObject) {
-    mappingController.remove(sender)
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+    kbTableController?.removeSelectedBindings()
   }
 
   @IBAction func newConfigFileAction(_ sender: AnyObject) {
@@ -159,7 +125,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func displayRawValueAction(_ sender: NSButton) {
-    kbTableView.reloadData()
+    kbTableView.reloadExistingRows()
   }
 
   @IBAction func openKeyBindingsHelpAction(_ sender: AnyObject) {
@@ -169,42 +135,18 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isEditEnabled = ds.isEditEnabled()
+    let isEditEnabledForCurrentConfig = ds.isEditEnabledForCurrentConfig()
     [revealConfigFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
-      btn.isEnabled = isEditEnabled
+      btn.isEnabled = isEditEnabledForCurrentConfig
     }
-    kbTableView.tableColumns.forEach { $0.isEditable = isEditEnabled }
-    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabled ? "2" : "1")", comment: "preference.key_binding_hint")
+    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabledForCurrentConfig ? "2" : "1")", comment: "preference.key_binding_hint")
 
     self.updateRemoveButtonEnablement()
   }
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = ds.isEditEnabled() && kbTableView.selectedRow != -1
+    Logger.log("KeyBindingsTable selection changed!")
+    removeKmBtn.isEnabled = ds.isEditEnabledForCurrentConfig() && kbTableView.selectedRow != -1
   }
-
-  @objc func doubleClickedKBTable() {
-    // Disabled for "raw values"
-    guard !Preference.bool(for: .displayKeyBindingRawValues) else {
-      return
-    }
-
-    guard ds.isEditEnabled() else {
-      // Cannot edit one of the default configs. Tell user to duplicate config instead:
-      Utility.showAlert("duplicate_config", sheetWindow: view.window)
-      return
-    }
-    guard let selectedData = ds.getBindingRow(at: kbTableView.selectedRow) else {
-      return
-    }
-    showKeyBindingPanel(key: selectedData.rawKey, action: selectedData.readableAction) { key, action in
-      guard !key.isEmpty && !action.isEmpty else { return }
-      selectedData.rawKey = key
-      selectedData.rawAction = action
-      self.kbTableView.reloadData()
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
-
 }

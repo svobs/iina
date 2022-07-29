@@ -214,7 +214,7 @@ class KeyInputController {
   func onGlobalKeyBindingsChanged(_ notification: Notification) {
     log("Global bindings changed: queuing up keybindings rebuild", level: .verbose)
     guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
-      log("onGlobalKeyBindingsChanged(): missing object!", level: .error)
+      log("onGlobalKeyBindingsChanged(): invalid object: \(type(of: notification.object))", level: .error)
       return
     }
     self.dq.async {
