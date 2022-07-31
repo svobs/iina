@@ -68,7 +68,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main) { _ in
+    NotificationCenter.default.addObserver(forName: .iinaInputConfigListDidChange, object: nil, queue: .main) { _ in
       self.updateEditEnabledStatus()
     }
 
@@ -146,7 +146,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    Logger.log("KeyBindingsTable selection changed!")
     removeKmBtn.isEnabled = ds.isEditEnabledForCurrentConfig() && kbTableView.selectedRow != -1
   }
 }

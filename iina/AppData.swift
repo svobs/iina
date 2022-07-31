@@ -105,17 +105,19 @@ extension Notification.Name {
   static let iinaMediaTitleChanged = Notification.Name("IINAMediaTitleChanged")
   static let iinaVFChanged = Notification.Name("IINAVfChanged")
   static let iinaAFChanged = Notification.Name("IINAAfChanged")
-  // the list of user input configs had additions, subtractions, of renames:
-  static let iinaInputConfigListChanged = Notification.Name("IINAInputConfigListChanged")
+  // The list of user input configs had additions, subtractions, of renames:
+  static let iinaInputConfigListDidChange = Notification.Name("IINAInputConfigListDidChange")
   // The current input .conf file was loaded (either the intitial load, or due to a change or to a new file being chosen)
   static let iinaCurrentInputConfigDidLoad = Notification.Name("IINACurrentInputConfigDidLoad")
-  // an error occurred in the key bindings page and needs to be displayed:
+  // An error occurred in the key bindings page and needs to be displayed:
   static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
-  // supports auto-complete for key binding editing:
+  // Supports auto-complete for key binding editing:
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
+  // The current input .conf file was loaded (either the intitial load, or due to a change or to a new file being chosen)
+  static let iinaCurrentBindingsDidChange = Notification.Name("IINACurrentBindingsDidChange")
+  // Contains the replacement list of keybindings which comprise the "default section" which will be used for all players:
+  static let iinaDidSetGlobalPlayerBindings = Notification.Name("IINADidSetGlobalPlayerBindings")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")
-  // contains the replacement list of keybindings which comprise the "default section" which will be used for all players:
-  static let iinaDidSetGlobalPlayerBindings = Notification.Name("IINADidSetGlobalPlayerBindings")
 }

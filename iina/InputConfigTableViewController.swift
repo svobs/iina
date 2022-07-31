@@ -28,7 +28,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Set up callbacks:
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main, using: tableDataDidChange))
+    tableView.registerTableUpdateObserver(forName: .iinaInputConfigListDidChange)
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -107,17 +107,6 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return true
     }
     return false
-  }
-
-  // Row(s) changed in datasource. Could be insertions or deletions.
-  func tableDataDidChange(_ notification: Notification) {
-    guard let tableChanges = notification.object as? TableStateChange else {
-      Logger.log("tableDataDidChange(): invalid object: \(type(of: notification.object))", level: .error)
-      return
-    }
-
-    Logger.log("Got InputConfigListChanged notification (type: \(tableChanges.changeType))", level: .verbose)
-    self.tableView.smartUpdate(tableChanges)
   }
 
   // User finished editing (callback from DoubleClickEditTextField).

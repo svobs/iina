@@ -8,24 +8,41 @@
 
 import Foundation
 
-class TableStateChange {
+class TableUpdate {
   enum ChangeType {
     case selectionChangeOnly
     case addRows
     case removeRows
     case renameAndMoveOneRow
+    case updateRows
     case reloadAll
   }
 
   let changeType: ChangeType
 
+  var newSelectedRows: IndexSet? = nil
+
+  fileprivate init(_ changeType: ChangeType) {
+    self.changeType = changeType
+  }
+}
+
+class TableUpdateByRowID: TableUpdate {
   var oldRows: [String] = []
   var newRows: [String]? = nil
 
-  var newSelectionIndex: Int? = nil
+  override init(_ changeType: ChangeType) {
+    super.init(changeType)
+  }
+}
 
-  init(_ changeType: ChangeType) {
-    self.changeType = changeType
+class TableUpdateByRowIndex: TableUpdate {
+  var toInsert: IndexSet? = nil
+  var toRemove: IndexSet? = nil
+  var toUpdate: IndexSet? = nil
+
+  override init(_ changeType: ChangeType) {
+    super.init(changeType)
   }
 }
 
@@ -89,6 +106,14 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   private var lastEditedTextField: DoubleClickEditTextField? = nil
+  private var observers: [NSObjectProtocol] = []
+
+  deinit {
+    for observer in observers {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    observers = []
+  }
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
     if let event = event, event.type == .leftMouseDown {
@@ -127,36 +152,59 @@ class DoubleClickEditTableView: NSTableView {
 
   func beginEdit(row: Int, column: Int) {
     self.editColumn(column, row: row, with: nil, select: false)
-//    let identifier: NSUserInterfaceItemIdentifier = NSUserInterfaceItemIdentifier(rawValue: "keyColumn")
-//    guard let cell = makeView(withIdentifier: identifier, owner: self.delegate) as? NSTableCellView else {
-//      return
-//    }
-//    if let textField = cell.textField! as? DoubleClickEditTextField {
-//      textField.edit
-//      textField.beginEditing()
-//    }
+    //    let identifier: NSUserInterfaceItemIdentifier = NSUserInterfaceItemIdentifier(rawValue: "keyColumn")
+    //    guard let cell = makeView(withIdentifier: identifier, owner: self.delegate) as? NSTableCellView else {
+    //      return
+    //    }
+    //    if let textField = cell.textField! as? DoubleClickEditTextField {
+    //      textField.edit
+    //      textField.beginEditing()
+    //    }
   }
 
-  /*
-   Attempts to be a generic mechanism for updating the table's contents with an animation and
-   avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
-   */
-  func smartUpdate(_ changes: TableStateChange) {
-    // encapsulate animation transaction in this function
+  func registerTableUpdateObserver(forName name: Notification.Name) {
+    observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableDataDidUpdate))
+  }
+
+  // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ChangeType`)
+  private func tableDataDidUpdate(_ notification: Notification) {
+    guard let tableUpdate = notification.object as? TableUpdate else {
+      Logger.log("tableDataDidUpdate: invalid object: \(type(of: notification.object))", level: .error)
+      return
+    }
+
+    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableUpdate.changeType)", level: .verbose)
+    if let updateByRowId = tableUpdate as? TableUpdateByRowID {
+      self.smartUpdate(updateByRowId)
+    } else if let updateByIndex = tableUpdate as? TableUpdateByRowIndex {
+      self.smartUpdate(updateByIndex)
+    }
+  }
+
+  func smartUpdate(_ update: TableUpdateByRowIndex) {
     self.beginUpdates()
     defer {
       self.endUpdates()
     }
 
-    switch changes.changeType {
+    switch update.changeType {
       case .selectionChangeOnly:
         fallthrough
       case .renameAndMoveOneRow:
-        renameAndMoveOneRow(changes)
+        // FIXME
+        assert(false)
       case .addRows:
-        addRows(changes)
+        if let indexes = update.toInsert {
+          self.insertRows(at: indexes, withAnimation: self.rowAnimation)
+        }
       case .removeRows:
-        removeRows(changes)
+        if let indexes = update.toRemove {
+          self.removeRows(at: indexes, withAnimation: self.rowAnimation)
+        }
+      case .updateRows:
+        if let indexes = update.toUpdate {
+          reloadData(forRowIndexes: indexes, columnIndexes: IndexSet(0..<numberOfColumns))
+        }
       case .reloadAll:
 
 
@@ -165,11 +213,50 @@ class DoubleClickEditTableView: NSTableView {
         reloadData()
     }
 
-    if let newSelectionIndex = changes.newSelectionIndex {
+    if let newSelectedRows = update.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
-      Logger.log("Selecting table index: \(newSelectionIndex)", level: .verbose)
-      self.selectRowIndexes(IndexSet(integer: newSelectionIndex), byExtendingSelection: false)
+      Logger.log("Updating table selection to: \(newSelectedRows)", level: .verbose)
+      self.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+    }
+  }
+
+  /*
+   Attempts to be a generic mechanism for updating the table's contents with an animation and
+   avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
+   */
+  func smartUpdate(_ update: TableUpdateByRowID) {
+    // encapsulate animation transaction in this function
+    self.beginUpdates()
+    defer {
+      self.endUpdates()
+    }
+
+    switch update.changeType {
+      case .selectionChangeOnly:
+        fallthrough
+      case .renameAndMoveOneRow:
+        renameAndMoveOneRow(update)
+      case .addRows:
+        addRows(update)
+      case .removeRows:
+        removeRows(update)
+      case .updateRows:
+        // Just redraw all of them. This is a very inexpensive operation
+        reloadExistingRows()
+      case .reloadAll:
+
+
+        // TODO
+        Logger.log("ReloadAll", level: .verbose)
+        reloadData()
+    }
+
+    if let newSelectedRows = update.newSelectedRows {
+      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+      // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
+      Logger.log("Updating table selection to: \(newSelectedRows)", level: .verbose)
+      self.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
     }
   }
 
@@ -189,14 +276,14 @@ class DoubleClickEditTableView: NSTableView {
     self.selectRowIndexes(selectedRows, byExtendingSelection: false)
   }
 
-  private func renameAndMoveOneRow(_ changes: TableStateChange) {
-    guard let newRowsArray = changes.newRows else {
+  private func renameAndMoveOneRow(_ update: TableUpdateByRowID) {
+    guard let newRowsArray = update.newRows else {
       return
     }
-    guard newRowsArray.count == changes.oldRows.count else {
+    guard newRowsArray.count == update.oldRows.count else {
       return
     }
-    var oldRowsSet = Set(changes.oldRows)
+    var oldRowsSet = Set(update.oldRows)
     let oldSet = oldRowsSet.subtracting(newRowsArray)
     guard oldSet.count == 1 else {
       return
@@ -213,7 +300,7 @@ class DoubleClickEditTableView: NSTableView {
       return
     }
 
-    guard let oldIndex = changes.oldRows.firstIndex(of: oldName) else {
+    guard let oldIndex = update.oldRows.firstIndex(of: oldName) else {
       return
     }
     guard let newIndex = newRowsArray.firstIndex(of: newName) else {
@@ -223,13 +310,13 @@ class DoubleClickEditTableView: NSTableView {
     self.moveRow(at: oldIndex, to: newIndex)
   }
 
-  private func addRows(_ changes: TableStateChange) {
-    guard let newRowsArray = changes.newRows else {
+  private func addRows(_ update: TableUpdateByRowID) {
+    guard let newRowsArray = update.newRows else {
       return
     }
     var addedRowsSet = Set(newRowsArray)
     assert (addedRowsSet.count == newRowsArray.count)
-    addedRowsSet.subtract(changes.oldRows)
+    addedRowsSet.subtract(update.oldRows)
     Logger.log("Set of rows to add = \(addedRowsSet)", level: .verbose)
 
     // Find start indexes of each span of added rows
@@ -242,23 +329,23 @@ class DoubleClickEditTableView: NSTableView {
       tableIndex += 1
     }
     guard !indexesOfInserts.isEmpty else {
-      Logger.log("TableStateChange: \(newRowsArray.count) adds but no inserts!", level: .error)
+      Logger.log("TableUpdate: \(newRowsArray.count) adds but no inserts!", level: .error)
       return
     }
     Logger.log("Inserting \(indexesOfInserts.count) indexes into table")
     self.insertRows(at: indexesOfInserts, withAnimation: self.rowAnimation)
   }
 
-  private func removeRows(_ changes: TableStateChange) {
-    guard let newRowsArray = changes.newRows else {
+  private func removeRows(_ update: TableUpdateByRowID) {
+    guard let newRowsArray = update.newRows else {
       return
     }
-    var removedRowsSet = Set(changes.oldRows)
-    assert (removedRowsSet.count == changes.oldRows.count)
+    var removedRowsSet = Set(update.oldRows)
+    assert (removedRowsSet.count == update.oldRows.count)
     removedRowsSet.subtract(newRowsArray)
 
     var indexesOfRemoves = IndexSet()
-    for (oldRowIndex, oldRow) in changes.oldRows.enumerated() {
+    for (oldRowIndex, oldRow) in update.oldRows.enumerated() {
       if removedRowsSet.contains(oldRow) {
         indexesOfRemoves.insert(oldRowIndex)
       }

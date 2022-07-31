@@ -23,6 +23,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     super.init()
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
+    tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigDidLoad, object: nil, queue: .main, using: currentConfigDidLoad))
   }
@@ -47,9 +48,11 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let binding = ds.getBindingRow(at: row) else {
+    guard let bindingRow = ds.getBindingRow(at: row) else {
       return nil
     }
+
+    let binding = bindingRow.binding
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -78,12 +81,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSTableViewDelegate
 
   func tableViewSelectionDidChange(_ notification: Notification) {
+    Logger.log("KeyBindingsTable selection changed!")
     selectionDidChangeHandler()
   }
 
   // MARK: Custom callbacks
 
-  func userDidDoubleClickOnCell(_ row: Int, _ column: Int) -> Bool {
+  func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
     guard ds.isEditEnabledForCurrentConfig() else {
       // Cannot edit one of the default configs. Tell user to duplicate config instead:
       Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
@@ -94,37 +98,36 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return true
     }
 
-    if let selectedBinding = ds.getBindingRow(at: row) {
-      showKeyBindingPanel(key: selectedBinding.rawKey, action: selectedBinding.readableAction) { key, action in
+    if let row = ds.getBindingRow(at: rowIndex) {
+      showKeyBindingPanel(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
-        selectedBinding.rawKey = key
-        selectedBinding.rawAction = action
+        row.binding.rawKey = key
+        row.binding.rawAction = action
 
-        // FIXME: ds.update()
+        self.ds.updateBinding(at: rowIndex, to: row.binding)
       }
     }
+    // Deny in-line editor from opening
     return false
   }
 
-  func userDidEndEditing(_ newValue: String, row: Int, column: Int) -> Bool {
-    guard let editedBinding = ds.getBindingRow(at: row) else {
-      Logger.log("userDidEndEditing(): failed to get row \(row) (newValue='\(newValue)')")
+  func userDidEndEditing(_ newValue: String, rowIndex: Int, column: Int) -> Bool {
+    guard let editedRow = ds.getBindingRow(at: rowIndex) else {
+      Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
 
     switch column {
       case 0:  // key
-        editedBinding.rawKey = newValue
+        editedRow.binding.rawKey = newValue
       case 1:  // action
-        editedBinding.rawAction = newValue
+        editedRow.binding.rawAction = newValue
       default:
         Logger.log("userDidEndEditing(): bad column: \(column)'")
         return false
     }
 
-    // FIXME: ds.update()
-
-
+    ds.updateBinding(at: rowIndex, to: editedRow.binding)
     return true
   }
 
@@ -146,26 +149,28 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: Reusable actions
 
   func addNewBinding() {
-    var row = self.tableView.selectedRow
+    var rowIndex = self.tableView.selectedRow
     // If row is selected, add row after it. Otherwise add to end
-    if row >= 0 {
-      row += 1
+    if rowIndex >= 0 {
+      rowIndex += 1
     } else {
       //
-      row = self.tableView.numberOfRows
+      rowIndex = self.tableView.numberOfRows
     }
+
+    Logger.log("Adding new binding at table index: \(rowIndex)")
 
     if isRaw() {
       // TODO!
-      self.ds.insertNewBinding(at: row, KeyMapping(rawKey: "", rawAction: ""))
-      self.tableView.scrollRowToVisible(row)
-      self.tableView.beginEdit(row: row, column: 0)
+      self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: "", rawAction: ""))
+      self.tableView.scrollRowToVisible(rowIndex)
+      self.tableView.beginEdit(row: rowIndex, column: 0)
     } else {
       showKeyBindingPanel { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        self.ds.insertNewBinding(at: row, KeyMapping(rawKey: key, rawAction: action))
-        self.tableView.scrollRowToVisible(row)
+        self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: key, rawAction: action))
+        self.tableView.scrollRowToVisible(rowIndex)
       }
     }
   }
