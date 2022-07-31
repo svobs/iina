@@ -21,11 +21,20 @@ class KeyMapping: NSObject {
 
   private(set) var normalizedMpvKey: String
 
+  var normalizedMacKey: String? {
+    get {
+      guard let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) else {
+        return nil
+      }
+      return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+    }
+  }
+
   // For UI
   var prettyKey: String {
     get {
-      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) {
-        return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+      if let normalizedMacKey = normalizedMacKey {
+        return normalizedMacKey
       } else {
         return normalizedMpvKey
       }

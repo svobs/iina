@@ -109,7 +109,7 @@ class KeyInputController {
     self.playerCore = playerCore
     self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
 
-    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaGlobalKeyBindingsChanged, object: nil, queue: .main, using: onGlobalKeyBindingsChanged)
+    keyBindingsChangedObserver = NotificationCenter.default.addObserver(forName: .iinaDidSetGlobalPlayerBindings, object: nil, queue: .main, using: onGlobalKeyBindingsChanged)
 
     // initial load
     self.dq.async {

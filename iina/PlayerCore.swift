@@ -272,19 +272,6 @@ class PlayerCore: NSObject {
     mpv.command(.loadfile, args: [path])
   }
 
-  static func loadKeyBindings() {
-    Logger.log("Loading key bindings")
-    let userConfigs = Preference.dictionary(for: .inputConfigs)
-    let iinaDefaultConfPath = PrefKeyBindingViewController.defaultConfigs["IINA Default"]!
-    var inputConfPath = iinaDefaultConfPath
-    if let confFromUd = Preference.string(for: .currentInputConfigName) {
-      if let currentConfigFilePath = Utility.getFilePath(Configs: userConfigs, forConfig: confFromUd, showAlert: false) {
-        inputConfPath = currentConfigFilePath
-      }
-    }
-    setKeyBindings(KeyMapping.parseInputConf(at: inputConfPath) ?? KeyMapping.parseInputConf(at: iinaDefaultConfPath)!)
-  }
-
   static func setKeyBindings(_ keyMappings: [KeyMapping]) {
     Logger.log("Set key bindings (\(keyMappings.count) mappings)")
     // If multiple bindings map to the same key, choose the last one
@@ -313,7 +300,7 @@ class PlayerCore: NSObject {
 
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(kbUniqueOrderedList)
 
-    NotificationCenter.default.post(Notification(name: .iinaGlobalKeyBindingsChanged, object: kbUniqueOrderedList))
+    NotificationCenter.default.post(Notification(name: .iinaDidSetGlobalPlayerBindings, object: kbUniqueOrderedList))
   }
 
   static private func filterSectionBindings(_ kb: KeyMapping) -> KeyMapping? {

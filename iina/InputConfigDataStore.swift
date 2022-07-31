@@ -14,6 +14,8 @@ import Foundation
  Not thread-safe at present!
  */
 class InputConfigDataStore {
+  // MARK: Static section
+
   static let CONFIG_FILE_EXTENSION = "conf"
 
   // Immmutable default configs.
@@ -26,9 +28,17 @@ class InputConfigDataStore {
     "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: CONFIG_FILE_EXTENSION, inDirectory: "config")!
   ]
 
+  private static let singletonInstance = InputConfigDataStore()
+
   static func computeFilePath(forUserConfigName configName: String) -> String {
     return Utility.userInputConfDirURL.appendingPathComponent(configName + ".config").path
   }
+
+  static func getInstance() -> InputConfigDataStore {
+    return InputConfigDataStore.singletonInstance
+  }
+
+  // MARK: Non-static section start
 
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
@@ -37,33 +47,42 @@ class InputConfigDataStore {
         Logger.fatal("Cannot get pref: \(Preference.Key.inputConfigs.rawValue)!")
       }
       return userConfigDict
+    } set {
+      Preference.set(newValue, for: .inputConfigs)
     }
   }
 
   // Actual persisted data #2
-  var currentConfigName: String {
+  private(set) var currentConfigName: String {
     get {
       guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
         Logger.fatal("Cannot get pref: \(Preference.Key.currentInputConfigName.rawValue)!")
       }
       Logger.log("Returning currentConfigName='\(currentConfig)'", level: .verbose)
       return currentConfig
+    } set {
+      Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
+      Preference.set(newValue, for: .currentInputConfigName)
+
+      loadBindingsFromCurrentConfig()
     }
-    // no setter. See: changeCurrentConfig()
   }
 
+  // Looks up the current config, then searches for it first in the user configs, theb the default configs,
+  // then if still not found, returns nil
   var currentConfigFilePath: String? {
     get {
       let currentConfig = currentConfigName
-      if let filePath = InputConfigDataStore.defaultConfigs[currentConfig] {
-        Logger.log("Found file path for default inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
-        return filePath
-      }
+
       if let filePath = userConfigDict[currentConfig] {
         Logger.log("Found file path for user inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
         if URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent != currentConfig {
           Logger.log("InputConfig's name '\(currentConfig)' does not match its filename: \"\(filePath)\"", level: .warning)
         }
+        return filePath
+      }
+      if let filePath = InputConfigDataStore.defaultConfigs[currentConfig] {
+        Logger.log("Found file path for default inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
         return filePath
       }
       Logger.log("Cannot find file path for inputConfig: '\(currentConfig)'", level: .error)
@@ -81,11 +100,11 @@ class InputConfigDataStore {
   private var observers: [NSObjectProtocol] = []
 
   init() {
-    configTableRows = buildCofigTableRows()
-    loadBindingsForCurrentConfig()
+    configTableRows = buildConfigTableRows()
+    loadBindingsFromCurrentConfig()
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: saveToCurrentConfigFile))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaGlobalKeyBindingsChanged, object: nil, queue: .main, using: onNewGlobalBindingsSet))
+    // Register observers for notifications:
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaDidSetGlobalPlayerBindings, object: nil, queue: .main, using: onGlobalPlayerBindingsSet))
   }
 
   deinit {
@@ -94,6 +113,8 @@ class InputConfigDataStore {
     }
     observers = []
   }
+
+  // MARK: Config CRUD
 
   func isEditEnabledForCurrentConfig() -> Bool {
     return !isDefaultConfig(currentConfigName)
@@ -128,14 +149,6 @@ class InputConfigDataStore {
     return configTableRows[index]
   }
 
-  // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> KeyMapping? {
-    guard index >= 0 && index < bindingTableRows.count else {
-      return nil
-    }
-    return bindingTableRows[index]
-  }
-
   func changeCurrentConfigToDefault() {
     Logger.log("Changing current config to default", level: .verbose)
     changeCurrentConfig(0)  // using this call will avoid an infinite loop if the default config cannot be loaded
@@ -143,35 +156,32 @@ class InputConfigDataStore {
 
   func changeCurrentConfig(_ newIndex: Int) {
     Logger.log("Changing current input config, newIndex=\(newIndex)", level: .verbose)
-    guard let configName = getConfigRow(at: newIndex) else {
+    guard let configNameNew = getConfigRow(at: newIndex) else {
       Logger.log("Cannot change current config: invalid index: \(newIndex)", level: .error)
       return
     }
-    changeCurrentConfig(configName)
+    changeCurrentConfig(configNameNew)
   }
 
-  // This is the only method other than updateState() which actually changes the real preference data
-  func changeCurrentConfig(_ configName: String) {
-    guard !configName.equalsIgnoreCase(self.currentConfigName) else {
-      Logger.log("No need to persist change to current config '\(configName)'; it is already current", level: .verbose)
+  // This is the only method other than setConfigTableState() which actually changes the real preference data
+  func changeCurrentConfig(_ configNameNew: String) {
+    guard !configNameNew.equalsIgnoreCase(self.currentConfigName) else {
+      Logger.log("No need to persist change to current config '\(configNameNew)'; it is already current", level: .verbose)
       return
     }
-    guard configTableRows.contains(configName) else {
-      Logger.log("Could not change current config to '\(configName)' (not found in table); falling back to default config", level: .error)
+    guard configTableRows.contains(configNameNew) else {
+      Logger.log("Could not change current config to '\(configNameNew)' (not found in table); falling back to default config", level: .error)
       changeCurrentConfigToDefault()
       return
     }
 
-    guard let filePath = getFilePath(forConfig: configName) else {
-      Logger.log("Could not change current config to '\(configName)' (no entry in prefs); falling back to default config", level: .error)
+    guard getFilePath(forConfig: configNameNew) != nil else {
+      Logger.log("Could not change current config to '\(configNameNew)' (no entry in prefs); falling back to default config", level: .error)
       changeCurrentConfigToDefault()
       return
     }
 
-    updateCurrentConfigState(configName: configName, confFilePath: filePath)
-
-    Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(configName)'")
-    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigChanged))
+    setConfigTableState(currentConfigNameNew: configNameNew, .selectionChangeOnly)
   }
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
@@ -180,7 +190,7 @@ class InputConfigDataStore {
     Logger.log("Adding user config: \"\(name)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[name] = filePath
-    updateState(userConfDictUpdated, currentConfigNameUpdated: name, .addRows)
+    setConfigTableState(userConfDictUpdated, currentConfigNameNew: name, .addRows)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -199,7 +209,7 @@ class InputConfigDataStore {
         newCurrentConfig = name
       }
     }
-    updateState(userConfDictUpdated, currentConfigNameUpdated: newCurrentConfig, .addRows)
+    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newCurrentConfig, .addRows)
   }
 
   @objc
@@ -223,7 +233,7 @@ class InputConfigDataStore {
       Logger.log("Cannot remove config '\(configName)': it is not a user config!", level: .error)
       return
     }
-    updateState(userConfDictUpdated, currentConfigNameUpdated: newCurrentConfName, .removeRows)
+    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newCurrentConfName, .removeRows)
   }
 
   func renameCurrentConfig(newName: String) -> Bool {
@@ -247,82 +257,13 @@ class InputConfigDataStore {
     let newFilePath = InputConfigDataStore.computeFilePath(forUserConfigName: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    updateState(userConfDictUpdated, currentConfigNameUpdated: newName, .renameAndMoveOneRow)
+    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)
 
     return true
   }
 
-  // Replaces the current state with the given params, and fires listeners.
-  private func updateState(_ userConfigDict: [String: String], currentConfigNameUpdated: String, _ changeType: TableStateChange.ChangeType) {
-    let configTableChanges = TableStateChange(changeType)
-    configTableChanges.oldRows = configTableRows
-
-    let currentConfigChanged = self.currentConfigName != currentConfigNameUpdated
-
-    Logger.log("Saving prefs: currentInputConfigName='\(currentConfigNameUpdated)', inputConfigs='\(userConfigDict)'", level: .verbose)
-    guard let confFilePath = userConfigDict[currentConfigNameUpdated] else {
-      Logger.log("Cannot update: '\(currentConfigNameUpdated)' not found in supplied config dict (\(userConfigDict))", level: .error)
-      return
-    }
-    Preference.set(userConfigDict, for: .inputConfigs)
-    // Keep in mind that if a failure happens this may end up changing currentConfigName to a different value than what goes in here:
-    updateCurrentConfigState(configName: currentConfigNameUpdated, confFilePath: confFilePath)
-
-    // refresh
-    configTableRows = buildCofigTableRows()
-    configTableChanges.newRows = configTableRows
-    configTableChanges.newSelectionIndex = configTableRows.firstIndex(of: self.currentConfigName)
-
-    // finally, fire listeners
-    NotificationCenter.default.post(Notification(name: .iinaInputConfigListChanged, object: configTableChanges))
-    if currentConfigChanged {
-      NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigChanged))
-    }
-  }
-
-  func addBinding(_ row: Int, _ binding: KeyMapping) {
-    // TODO
-
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-  }
-
-  func removeBindings(at indexes: IndexSet) {
-    // TODO
-
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-  }
-
-  private func updateCurrentConfigState(configName: String, confFilePath: String) {
-    Preference.set(configName, for: .currentInputConfigName)
-
-    loadBindingsForCurrentConfig()
-
-    setKeybindingsForPlayerCore(bindingTableRows)
-  }
-
-  private func loadBindingsForCurrentConfig() {
-    guard let configFilePath = currentConfigFilePath else {
-      Logger.log("loadConfigFile(): could not find current config file; falling back to default config", level: .error)
-      changeCurrentConfigToDefault()
-      return
-    }
-    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let keyBindingList = KeyMapping.parseInputConf(at: configFilePath) else {
-      // on error
-      Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
-      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-
-      changeCurrentConfigToDefault()
-      return
-    }
-
-    bindingTableRows = keyBindingList
-  }
-
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars
-  private func buildCofigTableRows() -> [String] {
+  private func buildConfigTableRows() -> [String] {
     var configTableRowsNew: [String] = []
 
     // - default configs:
@@ -342,6 +283,81 @@ class InputConfigDataStore {
     return configTableRowsNew
   }
 
+  // Replaces the current state with the given params, and fires listeners.
+  private func setConfigTableState(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableStateChange.ChangeType) {
+    let configTableChanges = TableStateChange(changeType)
+    configTableChanges.oldRows = configTableRows
+
+    let currentConfigNameChanged = !self.currentConfigName.equalsIgnoreCase(currentConfigNameNew)
+
+    if let userConfigDictNew = userConfigDictNew {
+      Logger.log("Saving prefs: currentInputConfigName='\(currentConfigNameNew)', inputConfigs='\(userConfigDictNew)'", level: .verbose)
+      guard userConfigDictNew[currentConfigNameNew] != nil else {
+        Logger.log("Cannot update: '\(userConfigDictNew)' not found in supplied config dict (\(userConfigDictNew))", level: .error)
+        return
+      }
+      self.userConfigDict = userConfigDictNew
+    }
+
+    if currentConfigNameChanged {
+      // Keep in mind that if a failure happens this may end up changing currentConfigName to a different value than what goes in here.
+      // This will also trigger a file load and
+      currentConfigName = currentConfigNameNew
+    }
+
+    configTableRows = buildConfigTableRows()
+    configTableChanges.newRows = configTableRows
+    configTableChanges.newSelectionIndex = configTableRows.firstIndex(of: self.currentConfigName)
+
+    // Finally, fire notification. This covers row selection too
+    NotificationCenter.default.post(Notification(name: .iinaInputConfigListChanged, object: configTableChanges))
+  }
+
+  // MARK: Binding CRUD
+
+  // Avoids hard program crash if index is invalid (which would happen for array dereference)
+  func getBindingRow(at index: Int) -> KeyMapping? {
+    guard index >= 0 && index < bindingTableRows.count else {
+      return nil
+    }
+    return bindingTableRows[index]
+  }
+
+
+  func insertNewBinding(at index: Int, _ binding: KeyMapping) {
+    // TODO
+
+//    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+  }
+
+  func removeBindings(at indexes: IndexSet) {
+    // TODO
+
+//    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+  }
+
+  public func loadBindingsFromCurrentConfig() {
+    guard let configFilePath = currentConfigFilePath else {
+      Logger.log("loadConfigFile(): could not find current config file; falling back to default config", level: .error)
+      changeCurrentConfigToDefault()
+      return
+    }
+    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
+    guard let keyBindingList = KeyMapping.parseInputConf(at: configFilePath) else {
+      // on error
+      Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
+      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
+      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+
+      changeCurrentConfigToDefault()
+      return
+    }
+
+    bindingTableRows = keyBindingList
+
+    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: keyBindingList))
+  }
 
   private func saveToCurrentConfigFile(_ notification: Notification) {
     guard let configFilePath = requireCurrentFilePath() else {
@@ -370,7 +386,7 @@ class InputConfigDataStore {
     PlayerCore.setKeyBindings(keyBindingList)
   }
 
-  private func onNewGlobalBindingsSet(_ notification: Notification) {
+  private func onGlobalPlayerBindingsSet(_ notification: Notification) {
     guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
       Logger.log("onGlobalKeyBindingsChanged(): invalid object: \(type(of: notification.object))", level: .error)
       return

@@ -24,7 +24,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigDidLoad, object: nil, queue: .main, using: currentConfigDidLoad))
   }
 
   deinit {
@@ -83,7 +83,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // MARK: Custom callbacks
 
-  func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
+  func userDidDoubleClickOnCell(_ row: Int, _ column: Int) -> Bool {
     guard ds.isEditEnabledForCurrentConfig() else {
       // Cannot edit one of the default configs. Tell user to duplicate config instead:
       Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
@@ -94,13 +94,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return true
     }
 
-    if let selectedBinding = ds.getBindingRow(at: rowNumber) {
+    if let selectedBinding = ds.getBindingRow(at: row) {
       showKeyBindingPanel(key: selectedBinding.rawKey, action: selectedBinding.readableAction) { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
         selectedBinding.rawKey = key
         selectedBinding.rawAction = action
-        // FIXME: ds.update() instead
-        NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+
+        // FIXME: ds.update()
       }
     }
     return false
@@ -122,13 +122,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         return false
     }
 
-    // FIXME: ds.update() instead
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+    // FIXME: ds.update()
+
+
     return true
   }
 
-  // Current input file changed (callback from datasource)
-  private func currentConfigDidChange(_ notification: Notification) {
+  // Current input file (re)loaded - callback from datasource
+  private func currentConfigDidLoad(_ notification: Notification) {
+    // Reload whole table. Do not preserve selection
     self.tableView.reloadData()
   }
 
@@ -144,21 +146,25 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: Reusable actions
 
   func addNewBinding() {
+    var row = self.tableView.selectedRow
+    // If row is selected, add row after it. Otherwise add to end
+    if row >= 0 {
+      row += 1
+    } else {
+      //
+      row = self.tableView.numberOfRows
+    }
+
     if isRaw() {
       // TODO!
-
-
+      self.ds.insertNewBinding(at: row, KeyMapping(rawKey: "", rawAction: ""))
+      self.tableView.scrollRowToVisible(row)
+      self.tableView.beginEdit(row: row, column: 0)
     } else {
       showKeyBindingPanel { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        var row = self.tableView.selectedRow
-        if row >= 0 {
-          row += 1
-        } else {
-          row = self.tableView.numberOfRows
-        }
-        self.ds.addBinding(row, KeyMapping(rawKey: key, rawAction: action))
+        self.ds.insertNewBinding(at: row, KeyMapping(rawKey: key, rawAction: action))
         self.tableView.scrollRowToVisible(row)
       }
     }

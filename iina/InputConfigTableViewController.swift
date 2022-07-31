@@ -29,8 +29,6 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
     observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListChanged, object: nil, queue: .main, using: tableDataDidChange))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigChanged, object: nil, queue: .main, using: currentConfigDidChange))
-
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -47,10 +45,10 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     observers = []
   }
 
-  func selectCurrenConfigRow() {
+  func selectCurrentConfigRow() {
     let configName = self.ds.currentConfigName
     guard let index = ds.configTableRows.firstIndex(of: configName) else {
-      Logger.log("selectCurrenConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
+      Logger.log("selectCurrentConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
       ds.changeCurrentConfigToDefault()
       return
     }
@@ -111,22 +109,15 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return false
   }
 
-  // Row(s) changed (callback from datasource)
+  // Row(s) changed in datasource. Could be insertions or deletions.
   func tableDataDidChange(_ notification: Notification) {
     guard let tableChanges = notification.object as? TableStateChange else {
       Logger.log("tableDataDidChange(): invalid object: \(type(of: notification.object))", level: .error)
       return
     }
 
-    Logger.log("Got InputConfigListChanged notification; reloading data", level: .verbose)
+    Logger.log("Got InputConfigListChanged notification (type: \(tableChanges.changeType))", level: .verbose)
     self.tableView.smartUpdate(tableChanges)
-  }
-
-  // Current input file changed (callback from datasource)
-  private func currentConfigDidChange(_ notification: Notification) {
-    Logger.log("Got iinaCurrentInputConfigChanged notification; changing selection", level: .verbose)
-    // This relies on NSTableView being smart enough to not call tableViewSelectionDidChange() if it did not actually change
-    selectCurrenConfigRow()
   }
 
   // User finished editing (callback from DoubleClickEditTextField).
@@ -300,15 +291,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func getClickedConfigName() -> String? {
-    guard tableView.clickedRow >= 0 else {
-      return nil
-    }
-    return ds.getConfigRow(at: tableView.clickedRow)
-  }
-
   func menuNeedsUpdate(_ menu: NSMenu) {
-    guard let clickedConfigName = getClickedConfigName() else {
+    guard let clickedConfigName = ds.getConfigRow(at: tableView.clickedRow) else {
       // This will prevent menu from showing
       menu.removeAllItems()
       return

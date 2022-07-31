@@ -10,6 +10,7 @@ import Foundation
 
 class TableStateChange {
   enum ChangeType {
+    case selectionChangeOnly
     case addRows
     case removeRows
     case renameAndMoveOneRow
@@ -31,9 +32,7 @@ class TableStateChange {
 class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   var stringValueOrig: String = ""
   var editDidEndWithNewText: ((String) -> Bool)?
-  var userDidDoubleClickOnCell: (() -> Bool) = {() -> Bool in
-    return true
-  }
+  var userDidDoubleClickOnCell: (() -> Bool) = { return true }
 
   override func mouseDown(with event: NSEvent) {
     if (event.clickCount == 2 && !self.isEditable && userDidDoubleClickOnCell()) {
@@ -97,8 +96,6 @@ class DoubleClickEditTableView: NSTableView {
       lastEditedTextField?.endEditing()
       lastEditedTextField = nil
 
-      NSLog("CLICK COUNT: \(event.clickCount)")
-
       if let editableTextField = responder as? DoubleClickEditTextField {
         // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
         // Workaround: pass everything to the DoubleClickEditTextField, which does see double-click.
@@ -106,7 +103,7 @@ class DoubleClickEditTableView: NSTableView {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
           // Use a closure to bind row and column to the callback function:
-          editableTextField.userDidDoubleClickOnCell = {() -> Bool in self.userDidDoubleClickOnCell(clickedRow, clickedColumn) }
+          editableTextField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(clickedRow, clickedColumn) }
 
           if let onTextDidEndEditing = onTextDidEndEditing {
             // Use a closure to bind row and column to the callback function:
@@ -128,6 +125,18 @@ class DoubleClickEditTableView: NSTableView {
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
+  func beginEdit(row: Int, column: Int) {
+    self.editColumn(column, row: row, with: nil, select: false)
+//    let identifier: NSUserInterfaceItemIdentifier = NSUserInterfaceItemIdentifier(rawValue: "keyColumn")
+//    guard let cell = makeView(withIdentifier: identifier, owner: self.delegate) as? NSTableCellView else {
+//      return
+//    }
+//    if let textField = cell.textField! as? DoubleClickEditTextField {
+//      textField.edit
+//      textField.beginEditing()
+//    }
+  }
+
   /*
    Attempts to be a generic mechanism for updating the table's contents with an animation and
    avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
@@ -140,6 +149,8 @@ class DoubleClickEditTableView: NSTableView {
     }
 
     switch changes.changeType {
+      case .selectionChangeOnly:
+        fallthrough
       case .renameAndMoveOneRow:
         renameAndMoveOneRow(changes)
       case .addRows:
