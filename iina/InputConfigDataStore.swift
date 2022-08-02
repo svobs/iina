@@ -66,7 +66,7 @@ class InputConfigDataStore {
       guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
         Logger.fatal("Cannot get pref: \(Preference.Key.currentInputConfigName.rawValue)!")
       }
-      Logger.log("Returning currentConfigName='\(currentConfig)'", level: .verbose)
+//      Logger.log("Returning currentConfigName='\(currentConfig)'", level: .verbose)
       return currentConfig
     } set {
       Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
@@ -374,21 +374,26 @@ class InputConfigDataStore {
     setBindingTableState(bindingTableUpdate)
   }
 
-  private func setBindingTableState(_ bindingsTableUpdate: TableUpdateByRowIndex) {
-    saveBindingsToCurrentConfigFile()
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingsTableUpdate))
+  private func setBindingTableState(_ bindingTableUpdate: TableUpdateByRowIndex) {
+    guard let bindingList = saveBindingsToCurrentConfigFile() else {
+      return
+    }
+    // Notify Key Bindings table of update:
+    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
+    // Make sure PlayerCore updates its bindings:
+    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: bindingList))
   }
 
   public func loadBindingsFromCurrentConfig() {
     guard let configFilePath = currentConfigFilePath else {
-      Logger.log("loadConfigFile(): could not find current config file; falling back to default config", level: .error)
+      Logger.log("Could not find file for current config (\"\(self.currentConfigName)\"); falling back to default config", level: .error)
       changeCurrentConfigToDefault()
       return
     }
     Logger.log("Loading key bindings config from \"\(configFilePath)\"")
     guard let bindingList = KeyMapping.parseInputConf(at: configFilePath) else {
       // on error
-      Logger.log("Error loading key bindings config from \"\(configFilePath)\"", level: .error)
+      Logger.log("Error loading key bindings from config \"\(self.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
       let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
@@ -399,24 +404,25 @@ class InputConfigDataStore {
 
     bindingTableRows = bindingList.map({ BindingTableRow($0) })
     NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: bindingList))
+    // Notify Key Bindings table of update:
+    let bindingTableUpdate = TableUpdateByRowIndex(.reloadAll)
+    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
   }
 
-  // This sends out a `iinaCurrentInputConfigDidLoad` notification so that e.g., PlayerCore updates its bindings
-  private func saveBindingsToCurrentConfigFile() {
+  private func saveBindingsToCurrentConfigFile() -> [KeyMapping]? {
     guard let configFilePath = requireCurrentFilePath() else {
-      return
+      return nil
     }
     Logger.log("Saving bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     let bindingList = extractBindingsFromTableRows()
     do {
       try KeyMapping.generateInputConf(from: bindingList).write(toFile: configFilePath, atomically: true, encoding: .utf8)
+      return bindingList
     } catch {
       let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return
     }
-
-    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: bindingList))
+    return nil
   }
 
   private func extractBindingsFromTableRows() -> [KeyMapping] {

@@ -60,11 +60,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func textDidEndEditing(_ notification: Notification) {
-    defer {
-      // Must ALWAYS call super method or extreme wackiness will happen
-      super.textDidEndEditing(notification)
-    }
-
     if stringValue != stringValueOrig {
       if let callbackFunc = editDidEndWithNewText {
         if callbackFunc(stringValue) {
@@ -76,6 +71,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
         }
       }
     }
+    endEditing()
   }
 
   func beginEditing() {
@@ -88,6 +84,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 
   func endEditing() {
     self.currentEditor()?.window?.endEditing(for: self)
+    self.resignFirstResponder()
     self.isEditable = false
     self.isSelectable = false
     self.backgroundColor = NSColor.clear
@@ -203,6 +200,8 @@ class DoubleClickEditTableView: NSTableView {
         }
       case .updateRows:
         if let indexes = update.toUpdate {
+          // IndexSet doesn't support joined()
+          Logger.log("Updating \(indexes): \(indexes.reduce("", { "\($0) \($1)"  }))")
           reloadData(forRowIndexes: indexes, columnIndexes: IndexSet(0..<numberOfColumns))
         }
       case .reloadAll:
@@ -307,6 +306,7 @@ class DoubleClickEditTableView: NSTableView {
       return
     }
 
+    Logger.log("Moving row from index \(oldIndex) to index \(newIndex)", level: .verbose)
     self.moveRow(at: oldIndex, to: newIndex)
   }
 

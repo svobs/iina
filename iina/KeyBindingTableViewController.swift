@@ -25,7 +25,6 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.onTextDidEndEditing = userDidEndEditing
     tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigDidLoad, object: nil, queue: .main, using: currentConfigDidLoad))
   }
 
   deinit {
@@ -89,16 +88,18 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
     guard ds.isEditEnabledForCurrentConfig() else {
-      // Cannot edit one of the default configs. Tell user to duplicate config instead:
+      Logger.log("Row #\(rowIndex) is a defualt config. Telling user to duplicate it instead", level: .verbose)
       Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
       return false
     }
     if isRaw() {
+      Logger.log("Opening in-line editor for row #\(rowIndex)", level: .verbose)
       // Use in-line editor
       return true
     }
 
     if let row = ds.getBindingRow(at: rowIndex) {
+      Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
       showKeyBindingPanel(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
         row.binding.rawKey = key
@@ -111,30 +112,26 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return false
   }
 
-  func userDidEndEditing(_ newValue: String, rowIndex: Int, column: Int) -> Bool {
+  func userDidEndEditing(_ newValue: String, rowIndex: Int, columnIndex: Int) -> Bool {
     guard let editedRow = ds.getBindingRow(at: rowIndex) else {
       Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
 
-    switch column {
+    Logger.log("User finishing entering value for row #\(rowIndex), col #\(columnIndex): \"\(newValue)\"", level: .verbose)
+
+    switch columnIndex {
       case 0:  // key
         editedRow.binding.rawKey = newValue
       case 1:  // action
         editedRow.binding.rawAction = newValue
       default:
-        Logger.log("userDidEndEditing(): bad column: \(column)'")
+        Logger.log("userDidEndEditing(): bad column: \(columnIndex)'")
         return false
     }
 
     ds.updateBinding(at: rowIndex, to: editedRow.binding)
     return true
-  }
-
-  // Current input file (re)loaded - callback from datasource
-  private func currentConfigDidLoad(_ notification: Notification) {
-    // Reload whole table. Do not preserve selection
-    self.tableView.reloadData()
   }
 
   // Display error alert for errors:
