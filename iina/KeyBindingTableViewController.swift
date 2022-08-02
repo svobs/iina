@@ -158,10 +158,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Logger.log("Adding new binding at table index: \(rowIndex)")
 
     if isRaw() {
-      // TODO!
       self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: "", rawAction: ""))
-      self.tableView.scrollRowToVisible(rowIndex)
-      self.tableView.beginEdit(row: rowIndex, column: 0)
+      self.tableView.editCell(rowIndex: rowIndex, columnIndex: 0)
+
     } else {
       showKeyBindingPanel { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }

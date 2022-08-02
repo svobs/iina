@@ -59,6 +59,11 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
     }
   }
 
+  override func becomeFirstResponder() -> Bool {
+    self.beginEditing()
+    return true
+  }
+
   override func textDidEndEditing(_ notification: Notification) {
     if stringValue != stringValueOrig {
       if let callbackFunc = editDidEndWithNewText {
@@ -84,7 +89,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
 
   func endEditing() {
     self.currentEditor()?.window?.endEditing(for: self)
-    self.resignFirstResponder()
+    _ = self.resignFirstResponder()
     self.isEditable = false
     self.isSelectable = false
     self.backgroundColor = NSColor.clear
@@ -124,21 +129,8 @@ class DoubleClickEditTableView: NSTableView {
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
-          // Use a closure to bind row and column to the callback function:
-          editableTextField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(clickedRow, clickedColumn) }
-
-          if let onTextDidEndEditing = onTextDidEndEditing {
-            // Use a closure to bind row and column to the callback function:
-            editableTextField.editDidEndWithNewText = { onTextDidEndEditing($0, clickedRow, clickedColumn) }
-          } else {
-            // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
-            editableTextField.editDidEndWithNewText = nil
-          }
-          editableTextField.stringValueOrig = editableTextField.stringValue
-
-          // keep track of it for later
-          lastEditedTextField = editableTextField
-
+          prepareTextFieldForEdit(editableTextField, row: clickedRow, column: clickedColumn)
+          // approved!
           return true
         }
       }
@@ -147,16 +139,33 @@ class DoubleClickEditTableView: NSTableView {
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
-  func beginEdit(row: Int, column: Int) {
-    self.editColumn(column, row: row, with: nil, select: false)
-    //    let identifier: NSUserInterfaceItemIdentifier = NSUserInterfaceItemIdentifier(rawValue: "keyColumn")
-    //    guard let cell = makeView(withIdentifier: identifier, owner: self.delegate) as? NSTableCellView else {
-    //      return
-    //    }
-    //    if let textField = cell.textField! as? DoubleClickEditTextField {
-    //      textField.edit
-    //      textField.beginEditing()
-    //    }
+  private func prepareTextFieldForEdit(_ textField: DoubleClickEditTextField, row: Int, column: Int) {
+    // Use a closure to bind row and column to the callback function:
+    textField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(row, column) }
+
+    if let onTextDidEndEditing = onTextDidEndEditing {
+      // Use a closure to bind row and column to the callback function:
+      textField.editDidEndWithNewText = { onTextDidEndEditing($0, row, column) }
+    } else {
+      // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
+      textField.editDidEndWithNewText = nil
+    }
+    textField.stringValueOrig = textField.stringValue
+
+    // keep track of it for later
+    lastEditedTextField = textField
+  }
+
+  func editCell(rowIndex: Int, columnIndex: Int) {
+    self.scrollRowToVisible(rowIndex)
+    let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false)
+    if let cellView = view as? NSTableCellView {
+      if let editableTextField = cellView.textField as? DoubleClickEditTextField {
+        Logger.log("Editing cell at [\(rowIndex), 0]", level: .verbose)
+        self.prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
+        self.window?.makeFirstResponder(editableTextField)
+      }
+    }
   }
 
   func registerTableUpdateObserver(forName name: Notification.Name) {
