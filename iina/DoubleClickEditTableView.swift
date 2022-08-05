@@ -8,6 +8,25 @@
 
 import Foundation
 
+// If true, enables TAB or SHIFT+TAB to go to the next or prev row, respectively,
+// when already at the end or beginning of the current row, instead of just closing the editor,
+// and RETURN edits the cell below in addition to accepting changes.
+fileprivate let ENABLE_SPREADSHEET_MODE = false
+
+fileprivate func eventTypeText(_ event: NSEvent?) -> String {
+  if let event = event {
+    switch event.type {
+      case .leftMouseDown:
+        return "leftMouseDown"
+      case .cursorUpdate:
+        return "cursorUpdate"
+      default:
+        return "\(event.type)"
+    }
+  }
+  return "nil"
+}
+
 class TableUpdate {
   enum ChangeType {
     case selectionChangeOnly
@@ -50,10 +69,18 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   var stringValueOrig: String = ""
   var editDidEndWithNewText: ((String) -> Bool)?
   var userDidDoubleClickOnCell: (() -> Bool) = { return true }
+  var editCell: (() -> Void)?
+  var parentTable: DoubleClickEditTableView? = nil
+  override var acceptsFirstResponder: Bool { return true }
 
   override func mouseDown(with event: NSEvent) {
     if (event.clickCount == 2 && !self.isEditable && userDidDoubleClickOnCell()) {
-      self.beginEditing();
+      if let editCallback = editCell {
+        // This will ensure that the row is selected if not already:
+        editCallback()
+      } else {
+        Logger.log("Table cell received double-click event without validateProposedFirstResponder() being called first!", level: .error)
+      }
     } else {
       super.mouseDown(with: event)
     }
@@ -68,27 +95,33 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
     if stringValue != stringValueOrig {
       if let callbackFunc = editDidEndWithNewText {
         if callbackFunc(stringValue) {
-          Logger.log("editDidEndWithNewText callback returned TRUE", level: .verbose)
+          Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
         } else {
           // a return value of false tells us to revert to the previous value
-          Logger.log("editDidEndWithNewText callback returned FALSE: reverting displayed value to \"\(stringValueOrig)\"", level: .verbose)
+          Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(stringValueOrig)\"", level: .verbose)
           self.stringValue = self.stringValueOrig
         }
       }
     }
-    endEditing()
+    if let parentTable = parentTable, parentTable.editAnotherCellAfterEditEnd(notification) {
+      // Focus went to new editor (old editor will be implicitly closed)
+      return
+    } else {
+      endEditing()
+    }
   }
 
   func beginEditing() {
     self.isEditable = true
     self.isSelectable = true
     self.backgroundColor = NSColor.white
-    self.selectText(nil)
+    self.selectText(nil)  // creates editor
     self.needsDisplay = true
   }
 
   func endEditing() {
-    self.currentEditor()?.window?.endEditing(for: self)
+    self.editCell = nil
+    self.window?.endEditing(for: self)
     _ = self.resignFirstResponder()
     self.isEditable = false
     self.isSelectable = false
@@ -117,7 +150,23 @@ class DoubleClickEditTableView: NSTableView {
     observers = []
   }
 
+  override func keyDown(with event: NSEvent) {
+    let keyChar = KeyCodeHelper.keyMap[event.keyCode]?.0
+    switch keyChar {
+      case "ENTER", "KP_ENTER":
+        if selectedRow >= 0 && selectedRow < numberOfRows {
+          Logger.log("TableView.KeyDown: ENTER on row \(selectedRow)")
+          editCell(rowIndex: selectedRow, columnIndex: 0)
+          return
+        }
+      default:
+        break
+    }
+    super.keyDown(with: event)
+  }
+
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
+    Logger.log("validateProposedFirstResponder() called for: \(eventTypeText(event)), responder: \(responder)")
     if let event = event, event.type == .leftMouseDown {
       // stop old editor
       lastEditedTextField?.endEditing()
@@ -142,6 +191,7 @@ class DoubleClickEditTableView: NSTableView {
   private func prepareTextFieldForEdit(_ textField: DoubleClickEditTextField, row: Int, column: Int) {
     // Use a closure to bind row and column to the callback function:
     textField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(row, column) }
+    textField.editCell = { self.editCell(rowIndex: row, columnIndex: column) }
 
     if let onTextDidEndEditing = onTextDidEndEditing {
       // Use a closure to bind row and column to the callback function:
@@ -151,21 +201,98 @@ class DoubleClickEditTableView: NSTableView {
       textField.editDidEndWithNewText = nil
     }
     textField.stringValueOrig = textField.stringValue
+    textField.parentTable = self
 
     // keep track of it for later
     lastEditedTextField = textField
   }
 
-  func editCell(rowIndex: Int, columnIndex: Int) {
-    self.scrollRowToVisible(rowIndex)
-    let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false)
+  override func editColumn(_ column: Int, row: Int, with event: NSEvent?, select: Bool) {
+    Logger.log("editColumn() called for row: \(row), column: \(column) and event: \(eventTypeText(event))")
+    if row != selectedRow {
+      self.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+    }
+
+    self.scrollRowToVisible(row)
+    let view = self.view(atColumn: column, row: row, makeIfNecessary: false)
     if let cellView = view as? NSTableCellView {
       if let editableTextField = cellView.textField as? DoubleClickEditTextField {
-        Logger.log("Editing cell at [\(rowIndex), 0]", level: .verbose)
-        self.prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
+        Logger.log("Editing cell at [\(row), 0]", level: .verbose)
+        self.prepareTextFieldForEdit(editableTextField, row: row, column: column)
         self.window?.makeFirstResponder(editableTextField)
       }
     }
+  }
+
+  func editCell(rowIndex: Int, columnIndex: Int) {
+    self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
+  }
+
+  // Thanks to:
+  // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
+  // Returns true if another editor was opened for another cell which means no
+  // further action needed to end editing.
+  fileprivate func editAnotherCellAfterEditEnd(_ notification: Notification) -> Bool {
+    Logger.log("Table editAnotherCellAfterEditEnd: \(notification.name)")
+    guard
+      let view = notification.object as? NSView,
+      let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
+      let textMovement = NSTextMovement(rawValue: textMovementInt) else { return false }
+
+    let columnIndex = column(for: view)
+    let rowIndex = row(for: view)
+
+    var newRowIndex: Int
+    var newColIndex: Int
+    switch textMovement {
+      case .tab:
+        // Snake down the grid, left to right, top down
+        newColIndex = columnIndex + 1
+        if newColIndex >= numberOfColumns {
+          guard ENABLE_SPREADSHEET_MODE else {
+            return false
+          }
+          newColIndex = 0
+          newRowIndex = rowIndex + 1
+          if newRowIndex >= numberOfRows {
+            return false
+          }
+        } else {
+          newRowIndex = rowIndex
+        }
+      case .backtab:
+        // Snake up the grid, right to left, bottom up
+        newColIndex = columnIndex - 1
+        if newColIndex < 0 {
+          guard ENABLE_SPREADSHEET_MODE else {
+            return false
+          }
+          newColIndex = numberOfColumns - 1
+          newRowIndex = rowIndex - 1
+          if newRowIndex < 0 {
+            return false
+          }
+        } else {
+          newRowIndex = rowIndex
+        }
+      case .return:
+        guard ENABLE_SPREADSHEET_MODE else {
+          return false
+        }
+        // Go to cell directly below
+        newRowIndex = rowIndex + 1
+        if newRowIndex >= numberOfRows {
+          return false
+        }
+        newColIndex = columnIndex
+      default: return false
+    }
+
+    DispatchQueue.main.async {
+      self.editCell(rowIndex: newRowIndex, columnIndex: newColIndex)
+    }
+    // handled
+    return true
   }
 
   func registerTableUpdateObserver(forName name: Notification.Name) {

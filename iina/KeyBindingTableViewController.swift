@@ -84,6 +84,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     selectionDidChangeHandler()
   }
 
+  func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
+
+    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(tableColumn)")
+    return ds.isEditEnabledForCurrentConfig() && isRaw()
+  }
+
   // MARK: Custom callbacks
 
   func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
