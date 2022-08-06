@@ -18,6 +18,8 @@ fileprivate func eventTypeText(_ event: NSEvent?) -> String {
     switch event.type {
       case .leftMouseDown:
         return "leftMouseDown"
+      case .leftMouseUp:
+        return "leftMouseUp"
       case .cursorUpdate:
         return "cursorUpdate"
       default:
@@ -103,7 +105,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
         }
       }
     }
-    if let parentTable = parentTable, parentTable.editAnotherCellAfterEditEnd(notification) {
+    if let parentTable = parentTable, parentTable.editNextCellAfterEditEnd(notification) {
       // Focus went to new editor (old editor will be implicitly closed)
       return
     } else {
@@ -166,7 +168,8 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-    Logger.log("validateProposedFirstResponder() called for: \(eventTypeText(event)), responder: \(responder)")
+    Logger.log("validateProposedFirstResponder() called for \(eventTypeText(event)), responder: \(responder)", level: .verbose)
+
     if let event = event, event.type == .leftMouseDown {
       // stop old editor
       lastEditedTextField?.endEditing()
@@ -232,8 +235,7 @@ class DoubleClickEditTableView: NSTableView {
   // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
   // Returns true if another editor was opened for another cell which means no
   // further action needed to end editing.
-  fileprivate func editAnotherCellAfterEditEnd(_ notification: Notification) -> Bool {
-    Logger.log("Table editAnotherCellAfterEditEnd: \(notification.name)")
+  fileprivate func editNextCellAfterEditEnd(_ notification: Notification) -> Bool {
     guard
       let view = notification.object as? NSView,
       let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
