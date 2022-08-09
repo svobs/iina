@@ -163,6 +163,10 @@ class MenuController: NSObject, NSMenuDelegate {
   @IBOutlet weak var inspector: NSMenuItem!
   @IBOutlet weak var miniPlayer: NSMenuItem!
 
+  @IBAction func toggleFullScreen(_ sender: NSMenuItem) {
+    // FIXME: need to associate this with window instance somehow, to ensure correct enable/disable behavior
+    NSApplication.shared.sendAction(#selector(MainWindowController.menuToggleFullScreen(_:)), to: nil, from: self)
+  }
 
   // MARK: - Construct Menus
 
@@ -247,7 +251,6 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // -- screen
-    fullScreen.action = #selector(MainWindowController.menuToggleFullScreen(_:))
     if #available(macOS 10.12, *) {
       pictureInPicture.action = #selector(MainWindowController.menuTogglePIP(_:))
     } else {

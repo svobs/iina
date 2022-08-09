@@ -383,6 +383,9 @@ CA
                             </menuItem>
                             <menuItem title="Enter Full Screen" id="6Eq-ni-6hG">
                                 <modifierMask key="keyEquivalentModifierMask"/>
+								<connections>
+                                    <action selector="toggleFullScreen:" target="cyK-tE-xgA" id="aNs-Bh-9nb"/>
+                                </connections>
                             </menuItem>
                             <menuItem title="Float on Top" id="wex-rX-PcY">
                                 <modifierMask key="keyEquivalentModifierMask"/>
