@@ -8,11 +8,23 @@
 
 import Foundation
 
-class BindingTableRow {
-  var binding: KeyMapping
+enum BindingOrigin {
+  case inputConf
+  case luaScript
+  case iinaPlugin
+}
 
-  init(_ binding: KeyMapping) {
+class BindingLineItem {
+  var binding: KeyMapping
+  var origin: BindingOrigin
+  var isEnabled: Bool
+  var isMenuItem: Bool
+
+  init(_ binding: KeyMapping, origin: BindingOrigin, isEnabled: Bool, isMenuItem: Bool) {
     self.binding = binding
+    self.origin = origin
+    self.isEnabled = isEnabled
+    self.isMenuItem = isMenuItem
   }
 }
 
@@ -66,7 +78,6 @@ class InputConfigDataStore {
       guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
         Logger.fatal("Cannot get pref: \(Preference.Key.currentInputConfigName.rawValue)!")
       }
-//      Logger.log("Returning currentConfigName='\(currentConfig)'", level: .verbose)
       return currentConfig
     } set {
       Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
@@ -98,21 +109,20 @@ class InputConfigDataStore {
     }
   }
 
+  private var currentLoadedConfig: InputConfigFile? = nil
+
   /*
    Contains names of all user configs, which are also the identifiers in the UI table.
    */
   private(set) var configTableRows: [String] = []
 
-  private(set) var bindingTableRows: [BindingTableRow] = []
+  private(set) var bindingTableRows: [BindingLineItem] = []
 
   private var observers: [NSObjectProtocol] = []
 
   init() {
     configTableRows = buildConfigTableRows()
     loadBindingsFromCurrentConfig()
-
-    // Register observers for notifications:
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaDidSetGlobalPlayerBindings, object: nil, queue: .main, using: onGlobalPlayerBindingsSet))
   }
 
   deinit {
@@ -326,7 +336,7 @@ class InputConfigDataStore {
   // MARK: Binding CRUD
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> BindingTableRow? {
+  func getBindingRow(at index: Int) -> BindingLineItem? {
     guard index >= 0 && index < bindingTableRows.count else {
       return nil
     }
@@ -340,13 +350,14 @@ class InputConfigDataStore {
     bindingTableUpdate.newSelectedRows = bindingTableUpdate.toInsert!
 
     // Update table, then notify UI
-    bindingTableRows.insert(BindingTableRow(binding), at: index)
-    setBindingTableState(bindingTableUpdate)
+    bindingTableRows.insert(BindingLineItem(binding, origin: .inputConf, isEnabled: true, isMenuItem: false), at: index)
+
+    applyBindingsStateUpdates(bindingTableUpdate)
   }
 
   func removeBindings(at indexes: IndexSet) {
     Logger.log("Removing bindings (\(indexes))", level: .verbose)
-    var bindingTableRowsUpdated: [BindingTableRow] = []
+    var bindingTableRowsUpdated: [BindingLineItem] = []
     for (index, row) in bindingTableRows.enumerated() {
       if !indexes.contains(index) {
         bindingTableRowsUpdated.append(row)
@@ -358,7 +369,7 @@ class InputConfigDataStore {
 
     // Update table, then notify UI
     bindingTableRows = bindingTableRowsUpdated
-    setBindingTableState(bindingTableUpdate)
+    applyBindingsStateUpdates(bindingTableUpdate)
   }
 
   func updateBinding(at index: Int, to binding: KeyMapping) {
@@ -371,19 +382,49 @@ class InputConfigDataStore {
     if let existingRow = getBindingRow(at: index) {
       existingRow.binding = binding
     }
-    setBindingTableState(bindingTableUpdate)
+    applyBindingsStateUpdates(bindingTableUpdate)
   }
 
-  private func setBindingTableState(_ bindingTableUpdate: TableUpdateByRowIndex) {
+  private func applyBindingsStateUpdates(_ bindingTableUpdate: TableUpdateByRowIndex) {
     guard let bindingList = saveBindingsToCurrentConfigFile() else {
       return
     }
-    // Notify Key Bindings table of update:
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
-    // Make sure PlayerCore updates its bindings:
-    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: bindingList))
+
+    processBindingsList(bindingList, bindingTableUpdate)
   }
 
+  private func processBindingsList(_ bindingList: [KeyMapping], _ bindingTableUpdate: TableUpdateByRowIndex) {
+    // Send to KeyInputController to ingest. It wil return the metadata we need
+    bindingTableRows = KeyInputController.setSharedPlayerBindings(bindingList)
+    assert(bindingTableRows.count >= bindingList.count, "Something went wrong!")
+
+    // Notify Key Bindings table of update:
+    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
+  }
+
+  private func saveBindingsToCurrentConfigFile() -> [KeyMapping]? {
+    guard let configFilePath = requireCurrentFilePath() else {
+      return nil
+    }
+    let bindingList = extractBindingsFromTableRows()
+    Logger.log("Saving bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    do {
+      guard let currentConfig = currentLoadedConfig else {
+        Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
+        return nil
+      }
+      currentConfig.replaceAllBindings(with: bindingList)
+      try currentConfig.write(to: configFilePath)
+      return currentConfig.parseBindings()  // gets updated line numbers
+    } catch {
+      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
+      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+    }
+    return nil
+  }
+
+  // Triggered any time `currentConfigName` is changed
   public func loadBindingsFromCurrentConfig() {
     guard let configFilePath = currentConfigFilePath else {
       Logger.log("Could not find file for current config (\"\(self.currentConfigName)\"); falling back to default config", level: .error)
@@ -391,7 +432,7 @@ class InputConfigDataStore {
       return
     }
     Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let bindingList = KeyMapping.parseInputConf(at: configFilePath) else {
+    guard let configContent = InputConfigFile.loadFile(at: configFilePath) else {
       // on error
       Logger.log("Error loading key bindings from config \"\(self.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
@@ -401,28 +442,10 @@ class InputConfigDataStore {
       changeCurrentConfigToDefault()
       return
     }
+    self.currentLoadedConfig = configContent
 
-    bindingTableRows = bindingList.map({ BindingTableRow($0) })
-    NotificationCenter.default.post(Notification(name: .iinaCurrentInputConfigDidLoad, object: bindingList))
-    // Notify Key Bindings table of update:
-    let bindingTableUpdate = TableUpdateByRowIndex(.reloadAll)
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
-  }
-
-  private func saveBindingsToCurrentConfigFile() -> [KeyMapping]? {
-    guard let configFilePath = requireCurrentFilePath() else {
-      return nil
-    }
-    Logger.log("Saving bindings to current config file: \"\(configFilePath)\"", level: .verbose)
-    let bindingList = extractBindingsFromTableRows()
-    do {
-      try KeyMapping.generateInputConf(from: bindingList).write(toFile: configFilePath, atomically: true, encoding: .utf8)
-      return bindingList
-    } catch {
-      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-    }
-    return nil
+    let bindingList = configContent.parseBindings()
+    processBindingsList(bindingList, TableUpdateByRowIndex(.reloadAll))
   }
 
   private func extractBindingsFromTableRows() -> [KeyMapping] {
@@ -436,13 +459,5 @@ class InputConfigDataStore {
     let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     return nil
-  }
-
-  private func onGlobalPlayerBindingsSet(_ notification: Notification) {
-    guard let globalDefaultBindings = notification.object as? [KeyMapping] else {
-      Logger.log("onGlobalKeyBindingsChanged(): invalid object: \(type(of: notification.object))", level: .error)
-      return
-    }
-    // TODO: use this to populate row metadata
   }
 }

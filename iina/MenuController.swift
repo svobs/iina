@@ -628,7 +628,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ keyBindings: [KeyMapping]) {
+  func updateKeyEquivalentsFrom(_ bindingLineItems: [BindingLineItem]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -697,7 +697,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
     settings.forEach { (menuItem, isIINACmd, actions, normalizeLastNum, numRange, l10nKey) in
       var bound = false
-      for kb in keyBindings {
+      for lineItem in bindingLineItems {
+        guard lineItem.isEnabled else { continue }
+        let kb = lineItem.binding
         guard kb.isIINACommand == isIINACmd else { continue }
         let (sameAction, value) = sameKeyAction(kb.action, actions, normalizeLastNum, numRange)
         if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
@@ -708,6 +710,7 @@ class MenuController: NSObject, NSMenuDelegate {
             menuItem.representedObject = value
           }
           bound = true
+          lineItem.isMenuItem = true  // so we can indicate it in UI
           break
         }
       }

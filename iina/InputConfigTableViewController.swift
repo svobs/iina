@@ -394,10 +394,10 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     for filePath in fileList {
       let url = URL(fileURLWithPath: filePath)
       
-      guard KeyMapping.parseInputConf(at: filePath) != nil else {
+      guard InputConfigFile.loadFile(at: filePath) != nil else {
         let fileName = url.lastPathComponent
         Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: tableView.window)
-        Logger.log("Parse error reading config file '\(filePath)'; aborting import", level: .error)
+        Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)
         // Do not import any files if we can't parse one.
         // This probably means the user doesn't know what they are doing, or something is very wrong
         return

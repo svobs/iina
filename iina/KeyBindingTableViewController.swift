@@ -85,8 +85,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
+    guard let identifier = tableColumn?.identifier else { return false }
+    let columnName = identifier.rawValue
 
-    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(tableColumn)")
+    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)")
     return ds.isEditEnabledForCurrentConfig() && isRaw()
   }
 

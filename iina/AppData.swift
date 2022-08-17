@@ -115,8 +115,6 @@ extension Notification.Name {
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
   // The current input .conf file was loaded (either the intitial load, or due to a change or to a new file being chosen)
   static let iinaCurrentBindingsDidChange = Notification.Name("IINACurrentBindingsDidChange")
-  // Contains the replacement list of keybindings which comprise the "default section" which will be used for all players:
-  static let iinaDidSetGlobalPlayerBindings = Notification.Name("IINADidSetGlobalPlayerBindings")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

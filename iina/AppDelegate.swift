@@ -120,12 +120,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     Logger.log("App will launch")
 
-    NotificationCenter.default.addObserver(forName: .iinaCurrentInputConfigDidLoad, object: nil, queue: .main, using: { notification in
-      if let keyBindings = notification.object as? [KeyMapping] {
-        PlayerCore.setKeyBindings(keyBindings)
-      }
-    })
-
     // register for url event
     NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(self.handleURLEvent(event:withReplyEvent:)), forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
 
