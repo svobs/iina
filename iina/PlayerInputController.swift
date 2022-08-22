@@ -1,5 +1,5 @@
 //
-//  KeyInputController.swift
+//  PlayerInputController.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.05.17.
@@ -13,7 +13,7 @@ fileprivate let DEFAULT_SECTION = "default"
 let LOG_BINDINGS_REBUILD = false
 
 /*
- A single KeyInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
+ A single PlayerInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
  PlayerWindowController is expected to direct key presses to this class's `resolveKeyEvent` method.
  to match the user's key stroke(s) into recognized commands..
 
@@ -23,7 +23,7 @@ let LOG_BINDINGS_REBUILD = false
  The data structures in this class should look similar to mpv's `struct input_ctx`, because they are based on it and attempt to mirror
  its functionality.
 
- A [key mapping](x-source-tag://KeyMapping) is an association from user input to an IINA or mpv command.
+ A `KeyMapping` is an association from user input to an IINA or mpv command.
  This can include mouse events (though not handled by this class), single keystroke (which may include modifiers), or a sequence of keystrokes.
  See [the mpv manual](https://mpv.io/manual/master/#key-names) for information on mpv's valid "key names".
 
@@ -57,11 +57,11 @@ let LOG_BINDINGS_REBUILD = false
  > The maximum number of (non-modifier) keys for combinations is currently 4.
 
  Although IINA's active key bindings (as set in IINA's Preferences window) take effect immediately and apply to all player windows, each player
- window maintains independent state, and in keeping with this, each player's KeyInputController maintains a separate buffer of pressed keystrokes
+ window maintains independent state, and in keeping with this, each player's PlayerInputController maintains a separate buffer of pressed keystrokes
  (going back as many as 4 keystrokes).
 
  */
-class KeyInputController {
+class PlayerInputController {
   private struct ActiveBindingLineItem {
     let binding: KeyMapping
     let srcSectionName: String
@@ -74,9 +74,9 @@ class KeyInputController {
 
   // MARK: - Shared state for all players
 
-  static private let sharedSubsystem = Logger.Subsystem(rawValue: "keyinput")
+  static private let sharedSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
-  static func setSharedPlayerBindings(_ bindingList: [KeyMapping]) -> [BindingLineItem] {
+  static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [BindingLineItem] {
     Logger.log("Set InputConf bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
     var bindingLineItemList: [BindingLineItem] = []
@@ -127,7 +127,7 @@ class KeyInputController {
 
     // - Send bindings to individual players
     for player in PlayerCore.playerCores {
-      player.keyInputController.setSharedPlayerBindings(chosenBindingList)
+      player.inputController.setSharedPlayerBindings(chosenBindingList)
     }
 
     return bindingLineItemList
@@ -170,21 +170,25 @@ class KeyInputController {
   /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
   private var sectionsEnabled = LinkedList<String>()
 
-  /* mpv includes this in its active_sections array but we break it out separately.
-   Sections which are enabled with "exclusive" = the section is used and all previous sections are ignored
+  /*
+   (mpv includes this in its active_sections array but we break it out separately.)
+   When a section is enabled with the "exclusive" flag, its bindings are the only ones used, and all other sections are ignored
+   until it is disabled. If, while an exclusive section is enabled, another section is enabled with the "exclusive" flag,
+   the latest section is pushed onto the top of the stack. An "exclusive" section which is no longer at the top can become active again by
+   either another explicit call to enable it with the "exclusive" flag, or it can wait for the sections above it to be disabled.
    */
   private var sectionsEnabledExclusive = LinkedList<String>()
 
   // The master dictionary: contains only the bindings which are currently active for this player
   private var currentPlayerBindings: [String: ActiveBindingLineItem] = [:]
 
-  init(playerCore: PlayerCore, _ sharedPlayerBindings: [KeyMapping]) {
+  init(playerCore: PlayerCore) {
     self.playerCore = playerCore
-    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(KeyInputController.sharedSubsystem.rawValue)")
+    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerInputController.sharedSubsystem.rawValue)")
 
     // initial load
     self.dq.async {
-      self.setDefaultSectionBindings(sharedPlayerBindings)
+      self.setDefaultSectionBindings([])
       self.enableSection_Unsafe(DEFAULT_SECTION, [])
       assert (self.sectionsEnabled.count == 1)
       assert (self.sectionsDefined.count == 1)
@@ -204,6 +208,10 @@ class KeyInputController {
 
   private func log(_ msg: String, level: Logger.Level = .debug) {
     Logger.log(msg, level: level, subsystem: subsystem)
+  }
+
+  func currentBindingFor(_ keySequence: String) -> KeyMapping? {
+    return currentPlayerBindings[keySequence]?.binding
   }
 
   // Called when this window has keyboard focus but it was already handled by someone else (probably the main menu).
@@ -333,7 +341,7 @@ class KeyInputController {
     }
 
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-    KeyInputController.fillInPartialSequences(&rebuiltBindings)
+    PlayerInputController.fillInPartialSequences(&rebuiltBindings)
 
     // hopefully this will be an atomic replacement
     currentPlayerBindings = rebuiltBindings

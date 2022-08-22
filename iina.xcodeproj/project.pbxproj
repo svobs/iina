@@ -163,7 +163,7 @@
 		D1049C892872CAD6003D47C1 /* InputConfigDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
-		D18333BE2834CE620060A4E9 /* KeyInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* KeyInputController.swift */; };
+		D18333BE2834CE620060A4E9 /* PlayerInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputController.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFile.swift */; };
 		D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */; };
@@ -1213,7 +1213,7 @@
 		D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigDataStore.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
-		D18333BD2834CE620060A4E9 /* KeyInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyInputController.swift; sourceTree = "<group>"; };
+		D18333BD2834CE620060A4E9 /* PlayerInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputController.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFile.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleClickEditTableView.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogHandler.swift; sourceTree = "<group>"; };
@@ -1718,7 +1718,7 @@
 				E38BD4AE20054BD9007635FC /* MainWindow.swift */,
 				84CFC92523F8DDE000381E5B /* PlayerWindowController.swift */,
 				84A0BA9C1D2FAD4000BC8DA1 /* MainWindowController.swift */,
-				D18333BD2834CE620060A4E9 /* KeyInputController.swift */,
+				D18333BD2834CE620060A4E9 /* PlayerInputController.swift */,
 				84D123B31ECAA405004E0D53 /* TouchBarSupport.swift */,
 				8400D5C81E1AB2F1006785F5 /* MainWindowController.xib */,
 				8466BE161D5CDD0300039D03 /* QuickSettingViewController.swift */,
@@ -2476,7 +2476,7 @@
 				E3F698872120D878005792C9 /* ExtendedColors.swift in Sources */,
 				D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */,
 				8476440C1D48F63D004F6DF5 /* OSDMessage.swift in Sources */,
-				D18333BE2834CE620060A4E9 /* KeyInputController.swift in Sources */,
+				D18333BE2834CE620060A4E9 /* PlayerInputController.swift in Sources */,
 				84AE59491E0FD65800771B7E /* MainMenuActions.swift in Sources */,
 				E3CB75BD1FDACB82004DB10A /* SavedFilter.swift in Sources */,
 				E342832F20B7149800139865 /* Logger.swift in Sources */,

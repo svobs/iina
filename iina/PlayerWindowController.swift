@@ -246,7 +246,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
-    if let keyBinding = player.keyInputController.resolveKeyEvent(event) {
+    if let keyBinding = player.inputController.resolveKeyEvent(event) {
       if !keyBinding.isIgnored {  // if "ignore", do nothing. No beep, no send
         if !handleKeyBinding(keyBinding) {
           // beep if cmd failed

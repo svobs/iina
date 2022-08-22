@@ -394,8 +394,8 @@ class InputConfigDataStore {
   }
 
   private func processBindingsList(_ bindingList: [KeyMapping], _ bindingTableUpdate: TableUpdateByRowIndex) {
-    // Send to KeyInputController to ingest. It wil return the metadata we need
-    bindingTableRows = KeyInputController.setSharedPlayerBindings(bindingList)
+    // Send to PlayerInputController to ingest. It wil return the metadata we need
+    bindingTableRows = PlayerInputController.applySharedBindingsFromInputConfFile(bindingList)
     assert(bindingTableRows.count >= bindingList.count, "Something went wrong!")
 
     // Notify Key Bindings table of update:

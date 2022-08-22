@@ -138,16 +138,14 @@ class PlayerCore: NSObject {
     isInMiniPlayer ? miniPlayer.isPlaylistVisible : mainWindow.sideBarStatus == .playlist
   }
 
-  static var keyBindings: [String: KeyMapping] = [:]
-
-  var keyInputController: KeyInputController!
+  var inputController: PlayerInputController!
 
   init(_ label: String) {
     self.label = label
     self.subsystem = Logger.Subsystem(rawValue: "player\(label)")
     super.init()
     self.mpv = MPVController(playerCore: self)
-    self.keyInputController = KeyInputController(playerCore: self, Array(PlayerCore.keyBindings.values))
+    self.inputController = PlayerInputController(playerCore: self)
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)
