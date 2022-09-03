@@ -9,7 +9,7 @@
 import Foundation
 
 enum BindingOrigin {
-  case inputConf
+  case confFile
   case luaScript
   case iinaPlugin
 }
@@ -51,7 +51,7 @@ class InputConfigDataStore {
   private static let singletonInstance = InputConfigDataStore()
 
   static func computeFilePath(forUserConfigName configName: String) -> String {
-    return Utility.userInputConfDirURL.appendingPathComponent(configName + ".config").path
+    return Utility.userInputConfDirURL.appendingPathComponent(configName + CONFIG_FILE_EXTENSION).path
   }
 
   static func getInstance() -> InputConfigDataStore {
@@ -83,7 +83,7 @@ class InputConfigDataStore {
       Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
       Preference.set(newValue, for: .currentInputConfigName)
 
-      loadBindingsFromCurrentConfig()
+      loadBindingsFromCurrentConfigFile()
     }
   }
 
@@ -122,7 +122,7 @@ class InputConfigDataStore {
 
   init() {
     configTableRows = buildConfigTableRows()
-    loadBindingsFromCurrentConfig()
+    loadBindingsFromCurrentConfigFile()
   }
 
   deinit {
@@ -345,69 +345,70 @@ class InputConfigDataStore {
 
   func insertNewBinding(at index: Int, _ binding: KeyMapping) {
     Logger.log("Inserting new binding at index \(index): \(binding)", level: .verbose)
-    let bindingTableUpdate = TableUpdateByRowIndex(.addRows)
-    bindingTableUpdate.toInsert = IndexSet(integer: index)
-    bindingTableUpdate.newSelectedRows = bindingTableUpdate.toInsert!
+    let tableUpdate = TableUpdateByRowIndex(.addRows)
+    tableUpdate.toInsert = IndexSet(integer: index)
+    tableUpdate.newSelectedRows = tableUpdate.toInsert!
 
-    // Update table, then notify UI
-    bindingTableRows.insert(BindingLineItem(binding, origin: .inputConf, isEnabled: true, isMenuItem: false), at: index)
+    var updatedTRs = bindingTableRows
+    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: index)
 
-    applyBindingsStateUpdates(bindingTableUpdate)
+    applyBindingsStateUpdates(updatedTRs, tableUpdate)
   }
 
   func removeBindings(at indexes: IndexSet) {
     Logger.log("Removing bindings (\(indexes))", level: .verbose)
-    var bindingTableRowsUpdated: [BindingLineItem] = []
+    var updatedTRs: [BindingLineItem] = []
     for (index, row) in bindingTableRows.enumerated() {
       if !indexes.contains(index) {
-        bindingTableRowsUpdated.append(row)
+        updatedTRs.append(row)
       }
     }
 
-    let bindingTableUpdate = TableUpdateByRowIndex(.removeRows)
-    bindingTableUpdate.toRemove = indexes
+    let tableUpdate = TableUpdateByRowIndex(.removeRows)
+    tableUpdate.toRemove = indexes
 
-    // Update table, then notify UI
-    bindingTableRows = bindingTableRowsUpdated
-    applyBindingsStateUpdates(bindingTableUpdate)
+    applyBindingsStateUpdates(updatedTRs, tableUpdate)
   }
 
   func updateBinding(at index: Int, to binding: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
 
-    let bindingTableUpdate = TableUpdateByRowIndex(.updateRows)
-    bindingTableUpdate.toUpdate = IndexSet(integer: index)
+    let tableUpdate = TableUpdateByRowIndex(.updateRows)
+    tableUpdate.toUpdate = IndexSet(integer: index)
 
     // Update table, then notify UI
     if let existingRow = getBindingRow(at: index) {
       existingRow.binding = binding
     }
-    applyBindingsStateUpdates(bindingTableUpdate)
+    applyBindingsStateUpdates(bindingTableRows, tableUpdate)
   }
 
-  private func applyBindingsStateUpdates(_ bindingTableUpdate: TableUpdateByRowIndex) {
-    guard let bindingList = saveBindingsToCurrentConfigFile() else {
+  private func applyBindingsStateUpdates(_ updatedTRs: [BindingLineItem], _ tableUpdate: TableUpdateByRowIndex) {
+    guard let bindingsFromFile = saveBindingsToCurrentConfigFile(updatedTRs) else {
       return
     }
 
-    processBindingsList(bindingList, bindingTableUpdate)
+    distributeBindings(bindingsFromFile, tableUpdate)
   }
 
-  private func processBindingsList(_ bindingList: [KeyMapping], _ bindingTableUpdate: TableUpdateByRowIndex) {
+  private func distributeBindings(_ bindingsFromFile: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
     // Send to PlayerInputController to ingest. It wil return the metadata we need
-    bindingTableRows = PlayerInputController.applySharedBindingsFromInputConfFile(bindingList)
-    assert(bindingTableRows.count >= bindingList.count, "Something went wrong!")
+    let sharedPlayerBindings = PlayerInputController.applySharedBindingsFromInputConfFile(bindingsFromFile)
+    assert(sharedPlayerBindings.count >= bindingsFromFile.count, "Something went wrong!")
+
+    // TODO: add dropdown to UI: Preferences > Key Bindings to choose display for a single player vs shared
+    bindingTableRows = sharedPlayerBindings
 
     // Notify Key Bindings table of update:
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: bindingTableUpdate))
+    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: tableUpdate))
   }
 
-  private func saveBindingsToCurrentConfigFile() -> [KeyMapping]? {
+  private func saveBindingsToCurrentConfigFile(_ bindingLines: [BindingLineItem]) -> [KeyMapping]? {
     guard let configFilePath = requireCurrentFilePath() else {
       return nil
     }
-    let bindingList = extractBindingsFromTableRows()
-    Logger.log("Saving bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    let bindingList = extractConfFileBindings(bindingLines)
+    Logger.log("Saving \(bindingList.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
       guard let currentConfig = currentLoadedConfig else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
@@ -425,7 +426,7 @@ class InputConfigDataStore {
   }
 
   // Triggered any time `currentConfigName` is changed
-  public func loadBindingsFromCurrentConfig() {
+  public func loadBindingsFromCurrentConfigFile() {
     guard let configFilePath = currentConfigFilePath else {
       Logger.log("Could not find file for current config (\"\(self.currentConfigName)\"); falling back to default config", level: .error)
       changeCurrentConfigToDefault()
@@ -445,11 +446,11 @@ class InputConfigDataStore {
     self.currentLoadedConfig = configContent
 
     let bindingList = configContent.parseBindings()
-    processBindingsList(bindingList, TableUpdateByRowIndex(.reloadAll))
+    distributeBindings(bindingList, TableUpdateByRowIndex(.reloadAll))
   }
 
-  private func extractBindingsFromTableRows() -> [KeyMapping] {
-    return bindingTableRows.map({ $0.binding })
+  private func extractConfFileBindings(_ bindingLines: [BindingLineItem]) -> [KeyMapping] {
+    return bindingLines.filter({ $0.origin == .confFile }).map({ $0.binding })
   }
 
   private func requireCurrentFilePath() -> String? {

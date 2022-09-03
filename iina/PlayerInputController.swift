@@ -76,6 +76,10 @@ class PlayerInputController {
 
   static private let sharedSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
+  // This exists so that new instances of PlayerInputController can immediately populate their default section.
+  // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
+  static private var currentSharedBindingList: [KeyMapping] = []
+
   static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [BindingLineItem] {
     Logger.log("Set InputConf bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
@@ -89,7 +93,7 @@ class PlayerInputController {
       guard let bindingID = $0.bindingID else {
         Logger.fatal("setSharedPlayerBindings(): is missing bindingID: \($0)")
       }
-      let meta = BindingLineItem($0, origin: .inputConf, isEnabled: false, isMenuItem: false)
+      let meta = BindingLineItem($0, origin: .confFile, isEnabled: false, isMenuItem: false)
       bindingLineItemList.append(meta)
       bindingLineItemDict[bindingID] = meta
 
@@ -122,6 +126,9 @@ class PlayerInputController {
       lineItem.isEnabled = true
       chosenBindingList.append(chosenBinding)
     }
+
+    // cache this so that new players can use it
+    currentSharedBindingList = chosenBindingList
 
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(bindingLineItemList)
 
@@ -188,7 +195,7 @@ class PlayerInputController {
 
     // initial load
     self.dq.async {
-      self.setDefaultSectionBindings([])
+      self.setDefaultSectionBindings(PlayerInputController.currentSharedBindingList)
       self.enableSection_Unsafe(DEFAULT_SECTION, [])
       assert (self.sectionsEnabled.count == 1)
       assert (self.sectionsDefined.count == 1)

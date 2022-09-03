@@ -80,7 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func getReady() {
     menuController.bindMenuItems()
-    InputConfigDataStore.getInstance().loadBindingsFromCurrentConfig()
+    InputConfigDataStore.getInstance().loadBindingsFromCurrentConfigFile()
     isReady = true
   }
 
