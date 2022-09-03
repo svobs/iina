@@ -269,6 +269,10 @@ struct Preference {
 
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
+    /* When writing key bindings to disk: `false` will overwrite entire conf file, deleting comments and empty lines;
+     `true` will try to keep them */
+    static let retainIgnoredLinesInInputConfigFiles = Key("retainIgnoredLinesInInputConfigFiles")
+
     /** unused */
     // static let resizeFrameBuffer = Key("resizeFrameBuffer")
 
@@ -791,6 +795,7 @@ struct Preference {
     .logLevel: Logger.Level.debug.rawValue,
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .displayKeyBindingRawValues: false,
+    .retainIgnoredLinesInInputConfigFiles: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
     .userDefinedConfDir: "~/.config/mpv/",

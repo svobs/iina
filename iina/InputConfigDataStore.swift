@@ -8,19 +8,19 @@
 
 import Foundation
 
-enum BindingOrigin {
-  case confFile
-  case luaScript
-  case iinaPlugin
-}
-
 class BindingLineItem {
+  enum Origin {
+    case confFile
+    case luaScript
+    case iinaPlugin
+  }
+
   var binding: KeyMapping
-  var origin: BindingOrigin
+  var origin: Origin
   var isEnabled: Bool
   var isMenuItem: Bool
 
-  init(_ binding: KeyMapping, origin: BindingOrigin, isEnabled: Bool, isMenuItem: Bool) {
+  init(_ binding: KeyMapping, origin: Origin, isEnabled: Bool, isMenuItem: Bool) {
     self.binding = binding
     self.origin = origin
     self.isEnabled = isEnabled
