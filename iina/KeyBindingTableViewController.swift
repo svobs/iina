@@ -51,26 +51,41 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return nil
     }
 
-    let binding = bindingRow.binding
-
     guard let identifier = tableColumn?.identifier else { return nil }
 
     guard let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView else {
       return nil
     }
     let columnName = identifier.rawValue
+    let binding = bindingRow.binding
 
     switch columnName {
       case "keyColumn":
-        cell.textField!.stringValue = isRaw() ? binding.rawKey : binding.prettyKey
+        let stringValue = isRaw() ? binding.rawKey : binding.prettyKey
+        setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
       case "actionColumn":
-        cell.textField!.stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
+        let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
+        setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
         return nil
     }
+  }
+
+  private func setRowText(for textField: NSTextField, to stringValue: String, isEnabled: Bool) {
+    let attrString = NSMutableAttributedString(string: stringValue)
+
+    if isEnabled {
+      textField.textColor = NSColor.controlTextColor
+    } else {
+      textField.textColor = NSColor.systemRed
+
+      let strikethroughAttr = [NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue]
+      attrString.addAttributes(strikethroughAttr, range: NSRange(location: 0, length: attrString.length))
+    }
+    textField.attributedStringValue = attrString
   }
 
   func isRaw() -> Bool {

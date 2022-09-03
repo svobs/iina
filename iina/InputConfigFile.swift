@@ -130,10 +130,10 @@ class InputConfigFile {
     return newLines
   }
 
+  // FIXME: need to confirm this works, and verify logic is correct for override lines
   private func replaceAllBindingsRetainingIgnoredLines(_ newBindings: [KeyMapping]) -> [Line] {
     var newLines: [Line] = []
 
-    // FIXME: need to confirm this works, and verify logic is correct for override lines
     var prevLineNumber: Int = 0
     for newBinding in newBindings {
       if let newLineNumber = newBinding.bindingID {

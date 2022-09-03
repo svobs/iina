@@ -160,7 +160,7 @@ class PlayerInputController {
   private unowned let playerCore: PlayerCore!
   private let subsystem: Logger.Subsystem
 
-  private let dq = DispatchQueue(label: "KeyInputSection", qos: .userInitiated)
+  private let dq = DispatchQueue(label: "PlayerInput", qos: .userInitiated)
 
   // Reacts when there is a change to the global key bindings
   private var keyBindingsChangedObserver: NSObjectProtocol? = nil
