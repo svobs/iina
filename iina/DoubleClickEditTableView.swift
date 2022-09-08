@@ -8,11 +8,6 @@
 
 import Foundation
 
-// If true, enables TAB or SHIFT+TAB to go to the next or prev row, respectively,
-// when already at the end or beginning of the current row, instead of just closing the editor,
-// and RETURN edits the cell below in addition to accepting changes.
-fileprivate let ENABLE_SPREADSHEET_MODE = false
-
 fileprivate func eventTypeText(_ event: NSEvent?) -> String {
   if let event = event {
     switch event.type {
@@ -95,6 +90,10 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func textDidEndEditing(_ notification: Notification) {
+    defer {
+      endEditing()
+    }
+
     if stringValue != stringValueOrig {
       if let callbackFunc = editDidEndWithNewText {
         if callbackFunc(stringValue) {
@@ -106,11 +105,8 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
         }
       }
     }
-    if let parentTable = parentTable, parentTable.editNextCellAfterEditEnd(notification) {
-      // Focus went to new editor (old editor will be implicitly closed)
-      return
-    } else {
-      endEditing()
+    if let parentTable = parentTable {
+      let _ = parentTable.editNextCellAfterEditEnd(notification)
     }
   }
 
@@ -187,7 +183,6 @@ class DoubleClickEditTableView: NSTableView {
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
-          Logger.log("Preparing edit for responder \(editableTextField) (row \(clickedRow), col \(clickedColumn))", level: .verbose)
           prepareTextFieldForEdit(editableTextField, row: clickedRow, column: clickedColumn)
           // approved!
           return true
@@ -199,6 +194,8 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   private func prepareTextFieldForEdit(_ textField: DoubleClickEditTextField, row: Int, column: Int) {
+    Logger.log("Preparing edit for \(textField) (row \(clickedRow), col \(clickedColumn))", level: .verbose)
+
     // Use a closure to bind row and column to the callback function:
     textField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(row, column) }
     textField.editCell = { self.editCell(rowIndex: row, columnIndex: column) }
@@ -231,7 +228,6 @@ class DoubleClickEditTableView: NSTableView {
     let view = self.view(atColumn: column, row: row, makeIfNecessary: false)
     if let cellView = view as? NSTableCellView {
       if let editableTextField = cellView.textField as? DoubleClickEditTextField {
-        Logger.log("Editing cell at [\(row), \(column)]", level: .verbose)
         self.prepareTextFieldForEdit(editableTextField, row: row, column: column)
         self.window?.makeFirstResponder(editableTextField)
       }
@@ -253,6 +249,8 @@ class DoubleClickEditTableView: NSTableView {
       let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
       let textMovement = NSTextMovement(rawValue: textMovementInt) else { return false }
 
+    let isInterRowNavigationEnabled = Preference.bool(for: .enableInterRowNavigationInKeyBindingsTable)
+
     let columnIndex = column(for: view)
     let rowIndex = row(for: view)
 
@@ -263,7 +261,7 @@ class DoubleClickEditTableView: NSTableView {
         // Snake down the grid, left to right, top down
         newColIndex = columnIndex + 1
         if newColIndex >= numberOfColumns {
-          guard ENABLE_SPREADSHEET_MODE else {
+          guard isInterRowNavigationEnabled else {
             return false
           }
           newColIndex = 0
@@ -278,7 +276,7 @@ class DoubleClickEditTableView: NSTableView {
         // Snake up the grid, right to left, bottom up
         newColIndex = columnIndex - 1
         if newColIndex < 0 {
-          guard ENABLE_SPREADSHEET_MODE else {
+          guard isInterRowNavigationEnabled else {
             return false
           }
           newColIndex = numberOfColumns - 1
@@ -290,7 +288,7 @@ class DoubleClickEditTableView: NSTableView {
           newRowIndex = rowIndex
         }
       case .return:
-        guard ENABLE_SPREADSHEET_MODE else {
+        guard isInterRowNavigationEnabled else {
           return false
         }
         // Go to cell directly below

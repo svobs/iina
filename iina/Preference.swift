@@ -269,6 +269,15 @@ struct Preference {
 
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
+    /* If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
+     When this pref is `true`:
+     * When editing the last column of a row, pressing TAB accepts changes and opens a new editor in the first column of the next row.
+     * When editing the first column of a row, pressing SHIFT+TAB accepts changes and opens a new editor in the last column of the previous row.
+     * When editing any column, pressing RETURN will accept changes and open an editor in the same column of the next row.
+     When this pref is `false` (default), each of the above actions will accept changes but will not open a new editor.
+     */
+    static let enableInterRowNavigationInKeyBindingsTable = Key("enableInterRowNavigationInKeyBindingsTable")
+
     /* When writing key bindings to disk: `false` will overwrite entire conf file, deleting comments and empty lines;
      `true` will try to keep them */
     static let retainIgnoredLinesInInputConfigFiles = Key("retainIgnoredLinesInInputConfigFiles")
@@ -795,6 +804,7 @@ struct Preference {
     .logLevel: Logger.Level.debug.rawValue,
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .displayKeyBindingRawValues: false,
+    .enableInterRowNavigationInKeyBindingsTable: false,
     .retainIgnoredLinesInInputConfigFiles: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
