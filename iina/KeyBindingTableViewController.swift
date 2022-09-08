@@ -9,6 +9,8 @@
 import Foundation
 
 class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
+  private let COLUMN_INDEX_KEY = 0
+  private let COLUMN_INDEX_ACTION = 1
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
@@ -21,10 +23,16 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
     super.init()
+
+    tableView.menu = NSMenu()
+    tableView.menu?.delegate = self
+
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
     tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
+
+    tableView.scrollRowToVisible(0)
   }
 
   deinit {
@@ -121,16 +129,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return true
     }
 
-    if let row = ds.getBindingRow(at: rowIndex) {
-      Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
-      showKeyBindingPanel(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
-        guard !key.isEmpty && !action.isEmpty else { return }
-        row.binding.rawKey = key
-        row.binding.rawAction = action
-
-        self.ds.updateBinding(at: rowIndex, to: row.binding)
-      }
-    }
+    editWithPopup(rowIndex: rowIndex)
     // Deny in-line editor from opening
     return false
   }
@@ -144,9 +143,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Logger.log("User finishing entering value for row #\(rowIndex), col #\(columnIndex): \"\(newValue)\"", level: .verbose)
 
     switch columnIndex {
-      case 0:  // key
+      case COLUMN_INDEX_KEY:
         editedRow.binding.rawKey = newValue
-      case 1:  // action
+      case COLUMN_INDEX_ACTION:
         editedRow.binding.rawAction = newValue
       default:
         Logger.log("userDidEndEditing(): bad column: \(columnIndex)'")
@@ -168,17 +167,51 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // MARK: Reusable actions
 
-  func addNewBinding() {
-    var rowIndex = self.tableView.selectedRow
-    // If row is selected, add row after it. Otherwise add to end
-    if rowIndex >= 0 {
-      rowIndex += 1
-    } else {
-      //
-      rowIndex = self.tableView.numberOfRows
+  // Edit either inline or with popup, depending on current mode
+  private func edit(rowIndex: Int, columnIndex: Int = 0) {
+    guard ds.isEditEnabledForCurrentConfig() else {
+      Logger.log("Row #\(rowIndex) is a defualt config. Telling user to duplicate it instead", level: .verbose)
+      Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
+      return
     }
 
-    Logger.log("Adding new binding at table index: \(rowIndex)")
+    if isRaw() {
+      // Use in-line editor
+      self.tableView.editCell(rowIndex: rowIndex, columnIndex: columnIndex)
+    } else {
+      editWithPopup(rowIndex: rowIndex)
+    }
+  }
+
+  func editWithPopup(rowIndex: Int) {
+    Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
+
+    guard let row = ds.getBindingRow(at: rowIndex) else {
+      return
+    }
+
+    showKeyBindingPanel(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
+      guard !key.isEmpty && !action.isEmpty else { return }
+      row.binding.rawKey = key
+      row.binding.rawAction = action
+
+      self.ds.updateBinding(at: rowIndex, to: row.binding)
+    }
+  }
+
+  func addNewBinding() {
+    var rowIndex: Int
+    // If row is selected, add row after it. Otherwise add to end
+    if tableView.selectedRow >= 0 {
+      rowIndex = tableView.selectedRow + 1
+    } else {
+      rowIndex = self.tableView.numberOfRows
+    }
+    insertNewBinding(at: rowIndex)
+  }
+
+  func insertNewBinding(at rowIndex: Int) {
+    Logger.log("Inserting new binding at row index: \(rowIndex)")
 
     if isRaw() {
       self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: "", rawAction: ""))
@@ -198,6 +231,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     ds.removeBindings(at: tableView.selectedRowIndexes)
   }
 
+  // Displays popup for editing a binding
   func showKeyBindingPanel(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
     let panel = NSAlert()
     let keyRecordViewController = KeyRecordViewController()
@@ -215,6 +249,90 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         ok(keyRecordViewController.keyCode, keyRecordViewController.action)
       }
     }
+  }
+
+  // MARK: NSMenuDelegate
+
+  fileprivate class BindingMenuItem: NSMenuItem {
+    let row: BindingLineItem
+    let rowIndex: Int
+
+    public init(_ row: BindingLineItem, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
+      self.row = row
+      self.rowIndex = rowIndex
+      super.init(title: title, action: selector, keyEquivalent: "")
+      self.target = target
+    }
+
+    required init(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+
+  private func addItem(to menu: NSMenu, for row: BindingLineItem, withIndex rowIndex: Int, title: String, action: Selector?) {
+    menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
+  }
+
+  func menuNeedsUpdate(_ menu: NSMenu) {
+    // This will prevent menu from showing if no items are added
+    menu.removeAllItems()
+
+    let clickedIndex = tableView.clickedRow
+    guard let clickedRow = ds.getBindingRow(at: tableView.clickedRow) else {
+      return
+    }
+
+    guard ds.isEditEnabledForCurrentConfig() else {
+      return
+    }
+
+    let isRaw = isRaw()
+
+    // Edit
+    if isRaw {
+      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Key", action: #selector(self.editKeyColumn(_:)))
+
+      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Action", action: #selector(self.editActionColumn(_:)))
+    } else {
+      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Row...", action: #selector(self.editRow(_:)))
+    }
+
+    // ---
+    menu.addItem(NSMenuItem.separator())
+
+    // Add
+    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Add New Row Above", action: #selector(self.addNewRowAbove(_:)))
+    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Add New Row Below", action: #selector(self.addNewRowBelow(_:)))
+
+    // ---
+    menu.addItem(NSMenuItem.separator())
+
+    // Delete
+    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Delete Row", action: #selector(self.removeRow(_:)))
+  }
+
+  @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {
+    edit(rowIndex: sender.rowIndex, columnIndex: COLUMN_INDEX_KEY)
+  }
+
+  @objc fileprivate func editActionColumn(_ sender: BindingMenuItem) {
+    edit(rowIndex: sender.rowIndex, columnIndex: COLUMN_INDEX_ACTION)
+  }
+
+  @objc fileprivate func editRow(_ sender: BindingMenuItem) {
+    edit(rowIndex: sender.rowIndex)
+  }
+
+  @objc fileprivate func addNewRowAbove(_ sender: BindingMenuItem) {
+    insertNewBinding(at: sender.rowIndex)
+  }
+
+  @objc fileprivate func addNewRowBelow(_ sender: BindingMenuItem) {
+    insertNewBinding(at: sender.rowIndex + 1)
+  }
+
+  @objc fileprivate func removeRow(_ sender: BindingMenuItem) {
+    ds.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 
 }

@@ -270,9 +270,10 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   fileprivate class InputConfMenuItem: NSMenuItem {
     let configName: String
 
-    public init(configName: String, title: String, action selector: Selector?) {
+    public init(configName: String, title: String, action selector: Selector?, target: AnyObject?) {
       self.configName = configName
       super.init(title: title, action: selector, keyEquivalent: "")
+      self.target = target
     }
 
     required init(coder: NSCoder) {
@@ -281,35 +282,28 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func menuNeedsUpdate(_ menu: NSMenu) {
+    // This will prevent menu from showing if no items are added
+    menu.removeAllItems()
+
     guard let clickedConfigName = ds.getConfigRow(at: tableView.clickedRow) else {
-      // This will prevent menu from showing
-      menu.removeAllItems()
       return
     }
 
-    rebuildMenu(menu, clickedConfigName: clickedConfigName)
+    buildMenu(menu, clickedConfigName: clickedConfigName)
   }
 
-  private func rebuildMenu(_ menu: NSMenu, clickedConfigName: String) {
-    menu.removeAllItems()
-
+  private func buildMenu(_ menu: NSMenu, clickedConfigName: String) {
     // Reveal in Finder
-    var menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.revealConfigFromMenu(_:)))
-    menuItem.target = self
-    menu.addItem(menuItem)
+    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.revealConfigFromMenu(_:)), target: self))
 
     // Duplicate
-    menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Duplicate...", action: #selector(self.duplicateConfigFromMenu(_:)))
-    menuItem.target = self
-    menu.addItem(menuItem)
+    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Duplicate...", action: #selector(self.duplicateConfigFromMenu(_:)), target: self))
 
     // ---
     menu.addItem(NSMenuItem.separator())
 
     // Delete
-    menuItem = InputConfMenuItem(configName: clickedConfigName, title: "Delete", action: #selector(self.deleteConfigFromMenu(_:)))
-    menuItem.target = self
-    menu.addItem(menuItem)
+    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Delete", action: #selector(self.deleteConfigFromMenu(_:)), target: self))
   }
 
   @objc fileprivate func deleteConfigFromMenu(_ sender: InputConfMenuItem) {

@@ -344,13 +344,19 @@ class InputConfigDataStore {
   }
 
   func insertNewBinding(at index: Int, _ binding: KeyMapping) {
-    Logger.log("Inserting new binding at index \(index): \(binding)", level: .verbose)
+    var rowIndex = index
+    if rowIndex < 0 {
+      rowIndex = 0
+    } else if rowIndex > bindingTableRows.count {
+      rowIndex = bindingTableRows.count
+    }
+    Logger.log("Inserting new binding at index \(rowIndex): \(binding)", level: .verbose)
     let tableUpdate = TableUpdateByRowIndex(.addRows)
-    tableUpdate.toInsert = IndexSet(integer: index)
+    tableUpdate.toInsert = IndexSet(integer: rowIndex)
     tableUpdate.newSelectedRows = tableUpdate.toInsert!
 
     var updatedTRs = bindingTableRows
-    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: index)
+    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: rowIndex)
 
     applyBindingsStateUpdates(updatedTRs, tableUpdate)
   }

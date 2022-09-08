@@ -89,6 +89,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func becomeFirstResponder() -> Bool {
+    Logger.log("becomeFirstResponder(): \(self)", level: .verbose)
     self.beginEditing()
     return true
   }
@@ -114,6 +115,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   func beginEditing() {
+    Logger.log("beginEiting(): \(self)", level: .verbose)
     self.isEditable = true
     self.isSelectable = true
     self.backgroundColor = NSColor.white
@@ -122,6 +124,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   func endEditing() {
+    Logger.log("endEditing(): \(self)", level: .verbose)
     self.editCell = nil
     self.window?.endEditing(for: self)
     _ = self.resignFirstResponder()
@@ -172,8 +175,11 @@ class DoubleClickEditTableView: NSTableView {
 
     if let event = event, event.type == .leftMouseDown {
       // stop old editor
-      lastEditedTextField?.endEditing()
-      lastEditedTextField = nil
+      if let oldTextField = lastEditedTextField {
+        Logger.log("Ending editing for oldTextField \(oldTextField)", level: .verbose)
+        oldTextField.endEditing()
+        self.lastEditedTextField = nil
+      }
 
       if let editableTextField = responder as? DoubleClickEditTextField {
         // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
@@ -181,6 +187,7 @@ class DoubleClickEditTableView: NSTableView {
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
+          Logger.log("Preparing edit for responder \(editableTextField) (row \(clickedRow), col \(clickedColumn))", level: .verbose)
           prepareTextFieldForEdit(editableTextField, row: clickedRow, column: clickedColumn)
           // approved!
           return true
@@ -211,7 +218,11 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   override func editColumn(_ column: Int, row: Int, with event: NSEvent?, select: Bool) {
-    Logger.log("editColumn() called for row: \(row), column: \(column) and event: \(eventTypeText(event))")
+    Logger.log("Opening in-line editor for row \(row), column \(column) (event: \(eventTypeText(event)))")
+    guard row >= 0 && column >= 0 else {
+      return
+    }
+
     if row != selectedRow {
       self.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
     }
@@ -220,13 +231,14 @@ class DoubleClickEditTableView: NSTableView {
     let view = self.view(atColumn: column, row: row, makeIfNecessary: false)
     if let cellView = view as? NSTableCellView {
       if let editableTextField = cellView.textField as? DoubleClickEditTextField {
-        Logger.log("Editing cell at [\(row), 0]", level: .verbose)
+        Logger.log("Editing cell at [\(row), \(column)]", level: .verbose)
         self.prepareTextFieldForEdit(editableTextField, row: row, column: column)
         self.window?.makeFirstResponder(editableTextField)
       }
     }
   }
 
+  // Convenience method
   func editCell(rowIndex: Int, columnIndex: Int) {
     self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
   }
@@ -343,9 +355,7 @@ class DoubleClickEditTableView: NSTableView {
           reloadData(forRowIndexes: indexes, columnIndexes: IndexSet(0..<numberOfColumns))
         }
       case .reloadAll:
-
-
-        // TODO
+        // Try not to use this much, if at all
         Logger.log("ReloadAll", level: .verbose)
         reloadData()
     }
@@ -382,9 +392,7 @@ class DoubleClickEditTableView: NSTableView {
         // Just redraw all of them. This is a very inexpensive operation
         reloadExistingRows()
       case .reloadAll:
-
-
-        // TODO
+        // Try not to use this much, if at all
         Logger.log("ReloadAll", level: .verbose)
         reloadData()
     }
