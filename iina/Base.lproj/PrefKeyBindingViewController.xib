@@ -72,7 +72,7 @@
                                                 <rect key="frame" x="1" y="1" width="121" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" userLabel="Key TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" userLabel="Key TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="115" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="FcW-hn-lT4"/>
@@ -111,7 +111,7 @@
                                                 <rect key="frame" x="125" y="1" width="333" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="335" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="1JE-NY-Qb1"/>
@@ -268,7 +268,7 @@
                                                 <rect key="frame" x="1" y="1" width="156" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" userLabel="Name TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" userLabel="Name TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="150" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="GN5-eh-pGI"/>
@@ -433,6 +433,9 @@
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </searchFieldCell>
+                    <connections>
+                        <action selector="searchAction:" target="-2" id="ogf-Gk-XAq"/>
+                    </connections>
                 </searchField>
             </subviews>
             <constraints>

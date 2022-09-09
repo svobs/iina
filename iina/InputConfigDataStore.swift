@@ -116,7 +116,10 @@ class InputConfigDataStore {
    */
   private(set) var configTableRows: [String] = []
 
-  private(set) var bindingTableRows: [BindingLineItem] = []
+  private var bindingRowsUnfiltered: [BindingLineItem] = []
+  private var bindingRowsFlltered: [BindingLineItem] = []
+
+  private var filterString: String = ""
 
   private var observers: [NSObjectProtocol] = []
 
@@ -335,75 +338,162 @@ class InputConfigDataStore {
 
   // MARK: Binding CRUD
 
-  // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> BindingLineItem? {
-    guard index >= 0 && index < bindingTableRows.count else {
-      return nil
-    }
-    return bindingTableRows[index]
+  func getBindingRowCount() -> Int {
+    return bindingRowsFlltered.count
   }
 
-  func insertNewBinding(at index: Int, _ binding: KeyMapping) {
-    var rowIndex = index
-    if rowIndex < 0 {
-      rowIndex = 0
-    } else if rowIndex > bindingTableRows.count {
-      rowIndex = bindingTableRows.count
+  // Avoids hard program crash if index is invalid (which would happen for array dereference)
+  func getBindingRow(at index: Int) -> BindingLineItem? {
+    guard index >= 0 && index < bindingRowsFlltered.count else {
+      return nil
     }
-    Logger.log("Inserting new binding at index \(rowIndex): \(binding)", level: .verbose)
-    let tableUpdate = TableUpdateByRowIndex(.addRows)
-    tableUpdate.toInsert = IndexSet(integer: rowIndex)
-    tableUpdate.newSelectedRows = tableUpdate.toInsert!
+    return bindingRowsFlltered[index]
+  }
 
-    var updatedTRs = bindingTableRows
-    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: rowIndex)
+  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) {
+    var insertIndex: Int
+    if index < 0 {
+      // snap to very beginning
+      insertIndex = 0
+    } else if index >= bindingRowsFlltered.count {
+      // snap to very end
+      insertIndex = bindingRowsUnfiltered.count
+    } else {
+      insertIndex = index  // default to requested index
+      if isFiltered() {
+        // If there is an active filter, convert the filtered index to unfiltered index
+        let bindingAtIndex = bindingRowsFlltered[index]
+        if let bindingID = bindingAtIndex.binding.bindingID {
+          for (unfilteredIndex, row) in bindingRowsUnfiltered.enumerated() {
+            if row.binding.bindingID == bindingID {
+              insertIndex = unfilteredIndex
+              break
+            }
+          }
+        }
+      }
+      if isAfterNotAt {
+        insertIndex += 1
+        if insertIndex >= bindingRowsFlltered.count {
+          insertIndex = bindingRowsFlltered.count
+        }
+      }
+    }
+    Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") index \(insertIndex): \(binding)", level: .verbose)
 
-    applyBindingsStateUpdates(updatedTRs, tableUpdate)
+
+    let tableUpdate: TableUpdateByRowIndex
+    if isFiltered() {
+      // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
+      clearFilter()
+      tableUpdate = TableUpdateByRowIndex(.reloadAll)
+      tableUpdate.newSelectedRows = IndexSet(integer: insertIndex)
+    } else {
+      tableUpdate = TableUpdateByRowIndex(.addRows)
+      tableUpdate.toInsert = IndexSet(integer: insertIndex)
+      tableUpdate.newSelectedRows = tableUpdate.toInsert!
+    }
+
+    var updatedTRs = bindingRowsUnfiltered
+    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
+
+    saveAndApplyBindingsStateUpdates(updatedTRs, tableUpdate)
+  }
+
+  private func reoolveBindingIDsFromIndexes(_ indexes: IndexSet) -> Set<Int> {
+    var idSet = Set<Int>()
+    for index in indexes {
+      if let row = getBindingRow(at: index) {
+        if let id = row.binding.bindingID {
+          idSet.insert(id)
+        } else {
+          Logger.log("Cannot remove row at index \(index): binding has no ID!", level: .error)
+        }
+      }
+    }
+    return idSet
   }
 
   func removeBindings(at indexes: IndexSet) {
     Logger.log("Removing bindings (\(indexes))", level: .verbose)
-    var updatedTRs: [BindingLineItem] = []
-    for (index, row) in bindingTableRows.enumerated() {
-      if !indexes.contains(index) {
-        updatedTRs.append(row)
+
+    // If there is an active filter, the indexes reflect filtered rows.
+    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
+    let idsToRemove = reoolveBindingIDsFromIndexes(indexes)
+
+    var remainingRowsUnfiltered: [BindingLineItem] = []
+    for row in bindingRowsUnfiltered {
+      if let id = row.binding.bindingID, !idsToRemove.contains(id) {
+        remainingRowsUnfiltered.append(row)
       }
     }
 
     let tableUpdate = TableUpdateByRowIndex(.removeRows)
     tableUpdate.toRemove = indexes
 
-    applyBindingsStateUpdates(updatedTRs, tableUpdate)
+    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableUpdate)
   }
 
   func updateBinding(at index: Int, to binding: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
 
-    let tableUpdate = TableUpdateByRowIndex(.updateRows)
-    tableUpdate.toUpdate = IndexSet(integer: index)
-
-    // Update table, then notify UI
     if let existingRow = getBindingRow(at: index) {
       existingRow.binding = binding
     }
-    applyBindingsStateUpdates(bindingTableRows, tableUpdate)
+
+    let tableUpdate: TableUpdateByRowIndex
+    if isFiltered() {
+      // If a filter is active, disable it. Otherwise the row update may then cause the row to be filtered out, which might confuse the user.
+      clearFilter()
+      tableUpdate = TableUpdateByRowIndex(.reloadAll)
+    } else {
+      tableUpdate = TableUpdateByRowIndex(.updateRows)
+      tableUpdate.toUpdate = IndexSet(integer: index)
+    }
+
+    saveAndApplyBindingsStateUpdates(bindingRowsUnfiltered, tableUpdate)
   }
 
-  private func applyBindingsStateUpdates(_ updatedTRs: [BindingLineItem], _ tableUpdate: TableUpdateByRowIndex) {
-    guard let bindingsFromFile = saveBindingsToCurrentConfigFile(updatedTRs) else {
+  private func isFiltered() -> Bool {
+    return !filterString.isEmpty
+  }
+
+  private func clearFilter() {
+    filterBindings("")
+  }
+
+  func filterBindings(_ searchString: String) {
+    Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
+    self.filterString = searchString
+    updateFilteredBindings()
+  }
+
+  private func updateFilteredBindings() {
+    if isFiltered() {
+      bindingRowsFlltered = bindingRowsUnfiltered.filter {
+        $0.binding.rawKey.localizedStandardContains(filterString) || $0.binding.rawAction.localizedStandardContains(filterString)
+      }
+    } else {
+      bindingRowsFlltered = bindingRowsUnfiltered
+    }
+  }
+
+  private func saveAndApplyBindingsStateUpdates(_ bindingRowsUnfilteredNew: [BindingLineItem], _ tableUpdate: TableUpdateByRowIndex) {
+    guard let configFileBindings = saveBindingsToCurrentConfigFile(bindingRowsUnfilteredNew) else {
       return
     }
 
-    distributeBindings(bindingsFromFile, tableUpdate)
+    applyBindingsStateUpdates(configFileBindings, tableUpdate)
   }
 
-  private func distributeBindings(_ bindingsFromFile: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
+  private func applyBindingsStateUpdates(_ configFileBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
     // Send to PlayerInputController to ingest. It wil return the metadata we need
-    let sharedPlayerBindings = PlayerInputController.applySharedBindingsFromInputConfFile(bindingsFromFile)
-    assert(sharedPlayerBindings.count >= bindingsFromFile.count, "Something went wrong!")
+    let sharedPlayerBindings = PlayerInputController.applySharedBindingsFromInputConfFile(configFileBindings)
+    assert(sharedPlayerBindings.count >= configFileBindings.count, "Something went wrong!")
 
     // TODO: add dropdown to UI: Preferences > Key Bindings to choose display for a single player vs shared
-    bindingTableRows = sharedPlayerBindings
+    bindingRowsUnfiltered = sharedPlayerBindings
+    updateFilteredBindings()
 
     // Notify Key Bindings table of update:
     NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: tableUpdate))
@@ -413,14 +503,14 @@ class InputConfigDataStore {
     guard let configFilePath = requireCurrentFilePath() else {
       return nil
     }
-    let bindingList = extractConfFileBindings(bindingLines)
-    Logger.log("Saving \(bindingList.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    let configFileBindings = extractConfFileBindings(bindingLines)
+    Logger.log("Saving \(configFileBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
       guard let currentConfig = currentLoadedConfig else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }
-      currentConfig.replaceAllBindings(with: bindingList)
+      currentConfig.replaceAllBindings(with: configFileBindings)
       try currentConfig.write(to: configFilePath)
       return currentConfig.parseBindings()  // gets updated line numbers
     } catch {
@@ -451,8 +541,8 @@ class InputConfigDataStore {
     }
     self.currentLoadedConfig = configContent
 
-    let bindingList = configContent.parseBindings()
-    distributeBindings(bindingList, TableUpdateByRowIndex(.reloadAll))
+    let configFileBindings = configContent.parseBindings()
+    applyBindingsStateUpdates(configFileBindings, TableUpdateByRowIndex(.reloadAll))
   }
 
   private func extractConfFileBindings(_ bindingLines: [BindingLineItem]) -> [KeyMapping] {

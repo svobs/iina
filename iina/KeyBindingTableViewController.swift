@@ -48,7 +48,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return ds.bindingTableRows.count
+    return ds.getBindingRowCount()
   }
 
   /**
@@ -94,6 +94,8 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       attrString.addAttributes(strikethroughAttr, range: NSRange(location: 0, length: attrString.length))
     }
     textField.attributedStringValue = attrString
+
+//    textField.toolTip = "Matt's Tool Tip!"
   }
 
   func isRaw() -> Bool {
@@ -203,25 +205,25 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     var rowIndex: Int
     // If row is selected, add row after it. Otherwise add to end
     if tableView.selectedRow >= 0 {
-      rowIndex = tableView.selectedRow + 1
+      rowIndex = tableView.selectedRow
     } else {
-      rowIndex = self.tableView.numberOfRows
+      rowIndex = self.tableView.numberOfRows - 1
     }
-    insertNewBinding(at: rowIndex)
+    insertNewBinding(relativeTo: rowIndex, isAfterNotAt: true)
   }
 
-  func insertNewBinding(at rowIndex: Int) {
+  func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     Logger.log("Inserting new binding at row index: \(rowIndex)")
 
     if isRaw() {
-      self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: "", rawAction: ""))
+      self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
       self.tableView.editCell(rowIndex: rowIndex, columnIndex: 0)
 
     } else {
       showKeyBindingPanel { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        self.ds.insertNewBinding(at: rowIndex, KeyMapping(rawKey: key, rawAction: action))
+        self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
         self.tableView.scrollRowToVisible(rowIndex)
       }
     }
@@ -324,11 +326,11 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   @objc fileprivate func addNewRowAbove(_ sender: BindingMenuItem) {
-    insertNewBinding(at: sender.rowIndex)
+    insertNewBinding(relativeTo: sender.rowIndex, isAfterNotAt: false)
   }
 
   @objc fileprivate func addNewRowBelow(_ sender: BindingMenuItem) {
-    insertNewBinding(at: sender.rowIndex + 1)
+    insertNewBinding(relativeTo: sender.rowIndex, isAfterNotAt: true)
   }
 
   @objc fileprivate func removeRow(_ sender: BindingMenuItem) {

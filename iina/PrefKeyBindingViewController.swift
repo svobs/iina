@@ -132,6 +132,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     NSWorkspace.shared.open(URL(string: AppData.wikiLink.appending("/Manage-Key-Bindings"))!)
   }
 
+  @IBAction func searchAction(_ sender: NSSearchField) {
+    ds.filterBindings(sender.stringValue)
+    kbTableView.reloadData()
+  }
+
   // MARK: - UI
 
   private func updateEditEnabledStatus() {

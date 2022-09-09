@@ -412,7 +412,7 @@ class DoubleClickEditTableView: NSTableView {
   // The default implementation of reloadData() removes the selection. This method restores it.
   // NOTE: this will result in an unncessary call to NSTableViewDelegate.tableViewSelectionDidChange().
   // Wherever possible, update via the underlying datasource and then call smartUpdate()
-  func reloadDataAndKeepSelection() {
+  func reloadDataKeepingSelectedIndexes() {
     let selectedRows = self.selectedRowIndexes
     reloadData()
     // Fires change listener...
