@@ -85,13 +85,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
             cell.imageView?.image = nsImage
             cell.imageView?.isHidden = false
             cell.imageView?.contentTintColor = .controlTextColor
-            cell.toolTip = "This key binding is associated with a menu item"
+            cell.toolTip = bindingRow.statusMessage
           } else if !bindingRow.isEnabled {
             let nsImage = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
             cell.imageView?.image = nsImage
             cell.imageView?.isHidden = false
             cell.imageView?.contentTintColor = .systemRed
-            cell.toolTip = bindingRow.disabledReason
+            cell.toolTip = bindingRow.statusMessage
           } else {
             cell.imageView?.isHidden = true
             cell.toolTip = nil

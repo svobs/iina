@@ -22,7 +22,7 @@ class BindingRow {
   var origin: Origin
   var isEnabled: Bool
   var isMenuItem: Bool
-  var disabledReason: String = ""
+  var statusMessage: String = ""
 
   init(_ binding: KeyMapping, origin: Origin, isEnabled: Bool, isMenuItem: Bool) {
     self.binding = binding

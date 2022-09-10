@@ -83,8 +83,8 @@ class PlayerInputController {
   static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [BindingRow] {
     Logger.log("Set InputConf bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
-    var bindingLineItemList: [BindingRow] = []
-    var bindingLineItemDict: [Int: BindingRow] = [:]
+    var bindingMetaList: [BindingRow] = []
+    var bindingMetaDict: [Int: BindingRow] = [:]
 
     // If multiple bindings map to the same key, choose the last one
     var chosenBindingsDict: [String: KeyMapping] = [:]
@@ -94,12 +94,12 @@ class PlayerInputController {
         Logger.fatal("setSharedPlayerBindings(): is missing bindingID: \($0)")
       }
       let meta = BindingRow($0, origin: .confFile, isEnabled: false, isMenuItem: false)
-      bindingLineItemList.append(meta)
-      bindingLineItemDict[bindingID] = meta
+      bindingMetaList.append(meta)
+      bindingMetaDict[bindingID] = meta
 
       if $0.rawKey == "default-bindings" && $0.action.count == 1 && $0.action[0] == "start" {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
-        meta.disabledReason = "IINA does not use default-level (\"weak\") bindings"
+        meta.statusMessage = "IINA does not use default-level (\"weak\") bindings"
       } else {
         if let defaultSectionBinding = filterSectionBindings($0) {
           let key = defaultSectionBinding.normalizedMpvKey
@@ -107,13 +107,13 @@ class PlayerInputController {
             orderedKeyList.append(key)
           } else {
             if let bindingID = chosenBindingsDict[key]?.bindingID {
-              bindingLineItemDict[bindingID]?.disabledReason = "This binding was overridden by another binding below it with the same key"
+              bindingMetaDict[bindingID]?.statusMessage = "This binding was overridden by another binding below it with the same key"
             }
           }
           // Overwrite previous entry:
           chosenBindingsDict[key] = defaultSectionBinding
         } else {
-          meta.disabledReason = "Adding to input sections other than \"default\" are not supported"
+          meta.statusMessage = "Adding to input sections other than \"default\" are not supported"
         }
       }
     }
@@ -127,7 +127,7 @@ class PlayerInputController {
       guard let bindingID = chosenBinding.bindingID else {
         Logger.fatal("setSharedPlayerBindings(): chosenBinding is missing bindingID: \"\(chosenBinding)\"")
       }
-      guard let lineItem = bindingLineItemDict[bindingID] else {
+      guard let lineItem = bindingMetaDict[bindingID] else {
         Logger.fatal("setSharedPlayerBindings(): failed to find meta for bindingID \(bindingID)")
       }
 
@@ -138,14 +138,14 @@ class PlayerInputController {
     // cache this so that new players can use it
     currentSharedBindingList = chosenBindingList
 
-    (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(bindingLineItemList)
+    (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(bindingMetaList)
 
     // - Send bindings to individual players
     for player in PlayerCore.playerCores {
       player.inputController.setSharedPlayerBindings(chosenBindingList)
     }
 
-    return bindingLineItemList
+    return bindingMetaList
   }
 
   static private func filterSectionBindings(_ kb: KeyMapping) -> KeyMapping? {
