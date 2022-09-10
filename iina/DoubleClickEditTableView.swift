@@ -141,6 +141,8 @@ class DoubleClickEditTableView: NSTableView {
     return true
   }
 
+  var editableTextColumnIndexes: [Int] = []
+
   private var lastEditedTextField: DoubleClickEditTextField? = nil
   private var observers: [NSObjectProtocol] = []
 
@@ -157,7 +159,7 @@ class DoubleClickEditTableView: NSTableView {
       case "ENTER", "KP_ENTER":
         if selectedRow >= 0 && selectedRow < numberOfRows {
           Logger.log("TableView.KeyDown: ENTER on row \(selectedRow)")
-          editCell(rowIndex: selectedRow, columnIndex: 0)
+          editCell(rowIndex: selectedRow, columnIndex: editableTextColumnIndexes[0])
           return
         }
       default:
@@ -239,6 +241,30 @@ class DoubleClickEditTableView: NSTableView {
     self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
   }
 
+  private func getIndexOfEditableColumn(_ columnIndex: Int) -> Int? {
+    for (indexIndex, index) in editableTextColumnIndexes.enumerated() {
+      if columnIndex == index {
+        return indexIndex
+      }
+    }
+    Logger.log("Failed to find index in editableTextColumnIndexes: \(columnIndex)", level: .error)
+    return nil
+  }
+
+  private func nextTabColumnIndex(_ columnIndex: Int) -> Int {
+    if let indexIndex = getIndexOfEditableColumn(columnIndex) {
+      return editableTextColumnIndexes[(indexIndex+1) % editableTextColumnIndexes.count]
+    }
+    return editableTextColumnIndexes[0]
+  }
+
+  private func prevTabColumnIndex(_ columnIndex: Int) -> Int {
+    if let indexIndex = getIndexOfEditableColumn(columnIndex) {
+      return editableTextColumnIndexes[(indexIndex-1) % editableTextColumnIndexes.count]
+    }
+    return editableTextColumnIndexes[0]
+  }
+
   // Thanks to:
   // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
   // Returns true if another editor was opened for another cell which means no
@@ -249,7 +275,7 @@ class DoubleClickEditTableView: NSTableView {
       let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
       let textMovement = NSTextMovement(rawValue: textMovementInt) else { return false }
 
-    let isInterRowNavigationEnabled = Preference.bool(for: .enableInterRowNavigationInKeyBindingsTable)
+    let isInterRowTabEditingEnabled = Preference.bool(for: .enableInterRowTabEditingInKeyBindingsTable)
 
     let columnIndex = column(for: view)
     let rowIndex = row(for: view)
@@ -259,12 +285,11 @@ class DoubleClickEditTableView: NSTableView {
     switch textMovement {
       case .tab:
         // Snake down the grid, left to right, top down
-        newColIndex = columnIndex + 1
-        if newColIndex >= numberOfColumns {
-          guard isInterRowNavigationEnabled else {
+        newColIndex = nextTabColumnIndex(columnIndex)
+        if newColIndex <= columnIndex {
+          guard isInterRowTabEditingEnabled else {
             return false
           }
-          newColIndex = 0
           newRowIndex = rowIndex + 1
           if newRowIndex >= numberOfRows {
             return false
@@ -274,12 +299,11 @@ class DoubleClickEditTableView: NSTableView {
         }
       case .backtab:
         // Snake up the grid, right to left, bottom up
-        newColIndex = columnIndex - 1
-        if newColIndex < 0 {
-          guard isInterRowNavigationEnabled else {
+        newColIndex = prevTabColumnIndex(columnIndex)
+        if newColIndex >= columnIndex {
+          guard isInterRowTabEditingEnabled else {
             return false
           }
-          newColIndex = numberOfColumns - 1
           newRowIndex = rowIndex - 1
           if newRowIndex < 0 {
             return false
@@ -288,7 +312,7 @@ class DoubleClickEditTableView: NSTableView {
           newRowIndex = rowIndex
         }
       case .return:
-        guard isInterRowNavigationEnabled else {
+        guard isInterRowTabEditingEnabled else {
           return false
         }
         // Go to cell directly below

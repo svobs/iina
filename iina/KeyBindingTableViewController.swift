@@ -27,6 +27,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 
+    tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
     tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)

@@ -11,6 +11,7 @@ import AppKit
 import Cocoa
 
 class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
+  private let COLUMN_INDEX_NAME = 0
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
@@ -26,6 +27,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.menu?.delegate = self
 
     // Set up callbacks:
+    tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
     tableView.registerTableUpdateObserver(forName: .iinaInputConfigListDidChange)

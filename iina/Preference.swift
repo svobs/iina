@@ -276,7 +276,7 @@ struct Preference {
      * When editing any column, pressing RETURN will accept changes and open an editor in the same column of the next row.
      When this pref is `false` (default), each of the above actions will accept changes but will not open a new editor.
      */
-    static let enableInterRowNavigationInKeyBindingsTable = Key("enableInterRowNavigationInKeyBindingsTable")
+    static let enableInterRowTabEditingInKeyBindingsTable = Key("enableInterRowTabEditingInKeyBindingsTable")
 
     /* When writing key bindings to disk: `false` will overwrite entire conf file, deleting comments and empty lines;
      `true` will try to keep them */
@@ -804,7 +804,7 @@ struct Preference {
     .logLevel: Logger.Level.debug.rawValue,
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .displayKeyBindingRawValues: false,
-    .enableInterRowNavigationInKeyBindingsTable: false,
+    .enableInterRowTabEditingInKeyBindingsTable: false,
     .retainIgnoredLinesInInputConfigFiles: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
