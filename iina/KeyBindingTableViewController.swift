@@ -76,6 +76,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
         setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
+      case "statusColumn":
+        cell.imageView?.isHidden = bindingRow.isEnabled
+        if #available(macOS 10.14, *) {
+          cell.imageView?.contentTintColor = .systemRed
+        } else {
+          // Fallback on earlier versions
+        }
+        return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
         return nil
