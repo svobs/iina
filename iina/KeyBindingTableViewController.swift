@@ -72,18 +72,30 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         let stringValue = isRaw() ? binding.rawKey : binding.prettyKey
         setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
+
       case "actionColumn":
         let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
         setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
+
       case "statusColumn":
-        cell.imageView?.isHidden = bindingRow.isEnabled
-        if #available(macOS 10.14, *) {
-          cell.imageView?.contentTintColor = .systemRed
-        } else {
-          // Fallback on earlier versions
+        if #available(macOS 11.0, *) {
+          if bindingRow.isMenuItem {
+            let nsImage = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
+            cell.imageView?.image = nsImage
+            cell.imageView?.isHidden = false
+            cell.imageView?.contentTintColor = .controlTextColor
+          } else if !bindingRow.isEnabled {
+            let nsImage = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
+            cell.imageView?.image = nsImage
+            cell.imageView?.isHidden = false
+            cell.imageView?.contentTintColor = .systemRed
+          } else {
+            cell.imageView?.isHidden = true
+          }
         }
         return cell
+
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
         return nil
