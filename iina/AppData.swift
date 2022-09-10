@@ -115,6 +115,8 @@ extension Notification.Name {
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
   // The current input .conf file was loaded (either the intitial load, or due to a change or to a new file being chosen)
   static let iinaCurrentBindingsDidChange = Notification.Name("IINACurrentBindingsDidChange")
+  // Requests that the search field above the Key Bindings table change its text to the contained string
+  static let iinaUpdateKeyBindingSearchField = Notification.Name("IINAUpdateKeyBindingSearchField")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

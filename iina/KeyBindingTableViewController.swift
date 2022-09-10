@@ -213,18 +213,18 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
-    Logger.log("Inserting new binding at row index: \(rowIndex)")
+    Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
     if isRaw() {
-      self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
-      self.tableView.editCell(rowIndex: rowIndex, columnIndex: 0)
+      let insertedRowIndex = self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
+      self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
 
     } else {
       showKeyBindingPanel { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
-        self.tableView.scrollRowToVisible(rowIndex)
+        let insertedRowIndex = self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
+        self.tableView.scrollRowToVisible(insertedRowIndex)
       }
     }
   }

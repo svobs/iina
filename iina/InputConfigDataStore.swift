@@ -350,7 +350,8 @@ class InputConfigDataStore {
     return bindingRowsFlltered[index]
   }
 
-  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) {
+  // Returns the index at which it was ultimately inserted
+  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) -> Int {
     var insertIndex: Int
     if index < 0 {
       // snap to very beginning
@@ -359,18 +360,21 @@ class InputConfigDataStore {
       // snap to very end
       insertIndex = bindingRowsUnfiltered.count
     } else {
-      insertIndex = index  // default to requested index
       if isFiltered() {
+        insertIndex = bindingRowsUnfiltered.count  // default to end, in case something breaks
         // If there is an active filter, convert the filtered index to unfiltered index
         let bindingAtIndex = bindingRowsFlltered[index]
         if let bindingID = bindingAtIndex.binding.bindingID {
           for (unfilteredIndex, row) in bindingRowsUnfiltered.enumerated() {
             if row.binding.bindingID == bindingID {
+              Logger.log("Found matching bindingID \(bindingID) at unfiltered row index \(unfilteredIndex)", level: .verbose)
               insertIndex = unfilteredIndex
               break
             }
           }
         }
+      } else {
+        insertIndex = index  // default to requested index
       }
       if isAfterNotAt {
         insertIndex += 1
@@ -379,25 +383,27 @@ class InputConfigDataStore {
         }
       }
     }
-    Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") index \(insertIndex): \(binding)", level: .verbose)
+    Logger.log("Inserting new binding at unfiltered row index \(insertIndex): \(binding)", level: .verbose)
 
 
-    let tableUpdate: TableUpdateByRowIndex
     if isFiltered() {
       // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
       clearFilter()
-      tableUpdate = TableUpdateByRowIndex(.reloadAll)
-      tableUpdate.newSelectedRows = IndexSet(integer: insertIndex)
-    } else {
-      tableUpdate = TableUpdateByRowIndex(.addRows)
-      tableUpdate.toInsert = IndexSet(integer: insertIndex)
-      tableUpdate.newSelectedRows = tableUpdate.toInsert!
+      let tableUpdateReload = TableUpdateByRowIndex(.reloadAll)
+      // Tell the UI to reload the table. We will do the insert as a separate step, because a "reload" is a sledgehammer which
+      // doesn't support animation and also blows away selections and editors.
+      saveAndApplyBindingsStateUpdates(bindingRowsUnfiltered, tableUpdateReload)
     }
+
+    let tableUpdateInsert = TableUpdateByRowIndex(.addRows)
+    tableUpdateInsert.toInsert = IndexSet(integer: insertIndex)
+    tableUpdateInsert.newSelectedRows = tableUpdateInsert.toInsert!
 
     var updatedTRs = bindingRowsUnfiltered
     updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
 
-    saveAndApplyBindingsStateUpdates(updatedTRs, tableUpdate)
+    saveAndApplyBindingsStateUpdates(updatedTRs, tableUpdateInsert)
+    return insertIndex
   }
 
   private func reoolveBindingIDsFromIndexes(_ indexes: IndexSet) -> Set<Int> {
@@ -460,6 +466,7 @@ class InputConfigDataStore {
 
   private func clearFilter() {
     filterBindings("")
+    NotificationCenter.default.post(Notification(name: .iinaUpdateKeyBindingSearchField, object: ""))
   }
 
   func filterBindings(_ searchString: String) {
