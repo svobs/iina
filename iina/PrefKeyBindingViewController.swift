@@ -151,7 +151,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   @IBAction func searchAction(_ sender: NSSearchField) {
     ds.filterBindings(sender.stringValue)
-    kbTableView.reloadData()
   }
 
   // MARK: - UI
