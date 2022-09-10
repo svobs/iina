@@ -88,7 +88,7 @@ class PlayerInputController {
 
     // If multiple bindings map to the same key, choose the last one
     var chosenBindingsDict: [String: KeyMapping] = [:]
-    var orderedKeyList: [String] = []  // TODO: see about removing this
+    var orderedKeyList: [String] = []
     bindingList.forEach {
       guard let bindingID = $0.bindingID else {
         Logger.fatal("setSharedPlayerBindings(): is missing bindingID: \($0)")
@@ -99,13 +99,21 @@ class PlayerInputController {
 
       if $0.rawKey == "default-bindings" && $0.action.count == 1 && $0.action[0] == "start" {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
+        meta.disabledReason = "IINA does not use default-level (\"weak\") bindings"
       } else {
         if let defaultSectionBinding = filterSectionBindings($0) {
           let key = defaultSectionBinding.normalizedMpvKey
           if chosenBindingsDict[key] == nil {
             orderedKeyList.append(key)
+          } else {
+            if let bindingID = chosenBindingsDict[key]?.bindingID {
+              bindingLineItemDict[bindingID]?.disabledReason = "This binding was overridden by another binding below it with the same key"
+            }
           }
+          // Overwrite previous entry:
           chosenBindingsDict[key] = defaultSectionBinding
+        } else {
+          meta.disabledReason = "Adding to input sections other than \"default\" are not supported"
         }
       }
     }

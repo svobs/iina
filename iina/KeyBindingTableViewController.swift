@@ -10,7 +10,7 @@ import Foundation
 
 class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
   private let COLUMN_INDEX_KEY = 0
-  private let COLUMN_INDEX_ACTION = 1
+  private let COLUMN_INDEX_ACTION = 2
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
@@ -85,13 +85,16 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
             cell.imageView?.image = nsImage
             cell.imageView?.isHidden = false
             cell.imageView?.contentTintColor = .controlTextColor
+            cell.toolTip = "This key binding is associated with a menu item"
           } else if !bindingRow.isEnabled {
             let nsImage = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
             cell.imageView?.image = nsImage
             cell.imageView?.isHidden = false
             cell.imageView?.contentTintColor = .systemRed
+            cell.toolTip = bindingRow.disabledReason
           } else {
             cell.imageView?.isHidden = true
+            cell.toolTip = nil
           }
         }
         return cell
@@ -168,7 +171,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       case COLUMN_INDEX_ACTION:
         editedRow.binding.rawAction = newValue
       default:
-        Logger.log("userDidEndEditing(): bad column: \(columnIndex)'")
+        Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
         return false
     }
 
