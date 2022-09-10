@@ -94,8 +94,6 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       attrString.addAttributes(strikethroughAttr, range: NSRange(location: 0, length: attrString.length))
     }
     textField.attributedStringValue = attrString
-
-//    textField.toolTip = "Matt's Tool Tip!"
   }
 
   func isRaw() -> Bool {
@@ -256,10 +254,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSMenuDelegate
 
   fileprivate class BindingMenuItem: NSMenuItem {
-    let row: BindingLineItem
+    let row: BindingRow
     let rowIndex: Int
 
-    public init(_ row: BindingLineItem, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
+    public init(_ row: BindingRow, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
       self.row = row
       self.rowIndex = rowIndex
       super.init(title: title, action: selector, keyEquivalent: "")
@@ -271,7 +269,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func addItem(to menu: NSMenu, for row: BindingLineItem, withIndex rowIndex: Int, title: String, action: Selector?) {
+  private func addItem(to menu: NSMenu, for row: BindingRow, withIndex rowIndex: Int, title: String, action: Selector?) {
     menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
   }
 

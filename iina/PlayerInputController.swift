@@ -62,7 +62,7 @@ let LOG_BINDINGS_REBUILD = false
 
  */
 class PlayerInputController {
-  private struct ActiveBindingLineItem {
+  private struct ActiveBindingEntry {
     let binding: KeyMapping
     let srcSectionName: String
 
@@ -80,11 +80,11 @@ class PlayerInputController {
   // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
   static private var currentSharedBindingList: [KeyMapping] = []
 
-  static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [BindingLineItem] {
+  static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [BindingRow] {
     Logger.log("Set InputConf bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
-    var bindingLineItemList: [BindingLineItem] = []
-    var bindingLineItemDict: [Int: BindingLineItem] = [:]
+    var bindingLineItemList: [BindingRow] = []
+    var bindingLineItemDict: [Int: BindingRow] = [:]
 
     // If multiple bindings map to the same key, choose the last one
     var chosenBindingsDict: [String: KeyMapping] = [:]
@@ -93,7 +93,7 @@ class PlayerInputController {
       guard let bindingID = $0.bindingID else {
         Logger.fatal("setSharedPlayerBindings(): is missing bindingID: \($0)")
       }
-      let meta = BindingLineItem($0, origin: .confFile, isEnabled: false, isMenuItem: false)
+      let meta = BindingRow($0, origin: .confFile, isEnabled: false, isMenuItem: false)
       bindingLineItemList.append(meta)
       bindingLineItemDict[bindingID] = meta
 
@@ -187,7 +187,7 @@ class PlayerInputController {
   private var sectionsEnabledExclusive = LinkedList<String>()
 
   // The master dictionary: contains only the bindings which are currently active for this player
-  private var currentPlayerBindings: [String: ActiveBindingLineItem] = [:]
+  private var currentPlayerBindings: [String: ActiveBindingEntry] = [:]
 
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
@@ -315,7 +315,7 @@ class PlayerInputController {
    Expected to be run inside the the private dispatch queue.
    */
   private func rebuildCurrentPlayerBindings() {
-    var rebuiltBindings: [String: ActiveBindingLineItem] = [:]
+    var rebuiltBindings: [String: ActiveBindingEntry] = [:]
 
     assert (sectionsDefined[DEFAULT_SECTION] != nil, "Missing default bindings section!")
 
@@ -323,7 +323,7 @@ class PlayerInputController {
       if let topExclusiveSection = sectionsDefined[topExclusiveSectionName] {
         log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
         for keyBinding in topExclusiveSection.keyBindings {
-          rebuiltBindings[keyBinding.normalizedMpvKey] = ActiveBindingLineItem(keyBinding, from: topExclusiveSection.name)
+          rebuiltBindings[keyBinding.normalizedMpvKey] = ActiveBindingEntry(keyBinding, from: topExclusiveSection.name)
         }
       } else {
         // indicates serious internal error
@@ -359,14 +359,14 @@ class PlayerInputController {
     }
   }
 
-  private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingLineItem]) {
+  private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingEntry]) {
     // Iterate from top of stack to bottom:
     for keyBinding in inputSection.keyBindings {
       addBinding(keyBinding, from: inputSection, to: &bindingsDict)
     }
   }
 
-  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingLineItem]) {
+  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingEntry]) {
     let mpvKey = keyBinding.normalizedMpvKey
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
@@ -379,7 +379,7 @@ class PlayerInputController {
         return
       }
     }
-    bindingsDict[mpvKey] = ActiveBindingLineItem(keyBinding, from: inputSection.name)
+    bindingsDict[mpvKey] = ActiveBindingEntry(keyBinding, from: inputSection.name)
   }
 
   private func logCurrentPlayerBindings() {
@@ -389,8 +389,8 @@ class PlayerInputController {
     }
   }
 
-  private static func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBindingLineItem]) {
-    for (keySequence, keyBindingLineItem) in activeBindingsDict {
+  private static func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBindingEntry]) {
+    for (keySequence, keyBindingRow) in activeBindingsDict {
       if keySequence.contains("-") && keySequence != "default-bindings" {
         let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
         if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
@@ -404,7 +404,7 @@ class PlayerInputController {
             if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
               // Set an explicit "ignore" for a partial sequence match. This is all done so that the player window doesn't beep.
               let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
-              activeBindingsDict[partial] = ActiveBindingLineItem(partialBinding, from: keyBindingLineItem.srcSectionName)
+              activeBindingsDict[partial] = ActiveBindingEntry(partialBinding, from: keyBindingRow.srcSectionName)
             }
           }
         }

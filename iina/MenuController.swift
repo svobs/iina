@@ -628,7 +628,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ bindingLineItems: [BindingLineItem]) {
+  func updateKeyEquivalentsFrom(_ bindingLineItems: [BindingRow]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),

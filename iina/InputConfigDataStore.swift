@@ -8,7 +8,10 @@
 
 import Foundation
 
-class BindingLineItem {
+/*
+ Encapsulates a single row/line in the Bindings table
+ */
+class BindingRow {
   enum Origin {
     case confFile
     case luaScript
@@ -117,10 +120,10 @@ class InputConfigDataStore {
   private(set) var configTableRows: [String] = []
 
   // The unfiltered list of table rows
-  private var bindingRowsAll: [BindingLineItem] = []
+  private var bindingRowsAll: [BindingRow] = []
 
   // The table rows currently displayed, which will change depending on the current filterString
-  private var bindingRowsFlltered: [BindingLineItem] = []
+  private var bindingRowsFlltered: [BindingRow] = []
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
@@ -347,7 +350,7 @@ class InputConfigDataStore {
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> BindingLineItem? {
+  func getBindingRow(at index: Int) -> BindingRow? {
     guard index >= 0 && index < bindingRowsFlltered.count else {
       return nil
     }
@@ -396,7 +399,7 @@ class InputConfigDataStore {
     tableUpdateInsert.newSelectedRows = tableUpdateInsert.toInsert!
 
     var updatedTRs = bindingRowsAll
-    updatedTRs.insert(BindingLineItem(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
+    updatedTRs.insert(BindingRow(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
 
     saveAndApplyBindingsStateUpdates(updatedTRs, tableUpdateInsert)
     return insertIndex
@@ -440,7 +443,7 @@ class InputConfigDataStore {
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
     let idsToRemove = reoolveBindingIDsFromIndexes(indexes)
 
-    var remainingRowsUnfiltered: [BindingLineItem] = []
+    var remainingRowsUnfiltered: [BindingRow] = []
     for row in bindingRowsAll {
       if let id = row.binding.bindingID, !idsToRemove.contains(id) {
         remainingRowsUnfiltered.append(row)
@@ -510,7 +513,7 @@ class InputConfigDataStore {
     }
   }
 
-  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [BindingLineItem], _ tableUpdate: TableUpdateByRowIndex) {
+  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [BindingRow], _ tableUpdate: TableUpdateByRowIndex) {
     guard let configFileBindings = saveBindingsToCurrentConfigFile(bindingRowsAllNew) else {
       return
     }
@@ -531,7 +534,7 @@ class InputConfigDataStore {
     NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: tableUpdate))
   }
 
-  private func saveBindingsToCurrentConfigFile(_ bindingLines: [BindingLineItem]) -> [KeyMapping]? {
+  private func saveBindingsToCurrentConfigFile(_ bindingLines: [BindingRow]) -> [KeyMapping]? {
     guard let configFilePath = requireCurrentFilePath() else {
       return nil
     }
@@ -577,7 +580,7 @@ class InputConfigDataStore {
     applyBindingsStateUpdates(configFileBindings, TableUpdateByRowIndex(.reloadAll))
   }
 
-  private func extractConfFileBindings(_ bindingLines: [BindingLineItem]) -> [KeyMapping] {
+  private func extractConfFileBindings(_ bindingLines: [BindingRow]) -> [KeyMapping] {
     return bindingLines.filter({ $0.origin == .confFile }).map({ $0.binding })
   }
 
