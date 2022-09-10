@@ -107,7 +107,7 @@ class PlayerInputController {
             orderedKeyList.append(key)
           } else {
             if let bindingID = chosenBindingsDict[key]?.bindingID {
-              bindingMetaDict[bindingID]?.statusMessage = "This binding was overridden by another binding below it with the same key"
+              bindingMetaDict[bindingID]?.statusMessage = "This binding was overridden by another binding below it which has the same key"
             }
           }
           // Overwrite previous entry:
