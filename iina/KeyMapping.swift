@@ -8,7 +8,7 @@
 
 import Foundation
 
-class KeyMapping: NSObject {
+class KeyMapping: NSObject, NSCopying, Codable {
 
   var bindingID: Int?
 
@@ -134,5 +134,10 @@ class KeyMapping: NSObject {
 
   func rawEquals(_ other: KeyMapping) -> Bool {
     return rawKey == other.rawKey && rawAction == other.rawAction
+  }
+
+  //  NOTE: Does not copy bindingID!
+  func copy(with zone: NSZone? = nil) -> Any {
+    return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: nil)
   }
 }

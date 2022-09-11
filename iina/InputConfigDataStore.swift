@@ -11,8 +11,8 @@ import Foundation
 /*
  Encapsulates a single row/line in the Bindings table
  */
-class BindingRow {
-  enum Origin {
+class BindingRow: NSObject, Codable {
+  enum Origin: Codable {
     case confFile
     case luaScript
     case iinaPlugin
@@ -29,6 +29,36 @@ class BindingRow {
     self.origin = origin
     self.isEnabled = isEnabled
     self.isMenuItem = isMenuItem
+  }
+
+  required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+      guard let data = propertyList as? Data,
+          let row = try? PropertyListDecoder().decode(BindingRow.self, from: data) else { return nil }
+    self.init(row.binding, origin: row.origin, isEnabled: row.isEnabled, isMenuItem: row.isMenuItem)
+  }
+}
+
+extension BindingRow: NSPasteboardWriting, NSPasteboardReading {
+  static func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+    return [.iinaBindingRow]
+  }
+  static func readingOptions(forType type: NSPasteboard.PasteboardType, pasteboard: NSPasteboard) -> NSPasteboard.ReadingOptions {
+    return .asData
+  }
+
+  func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+    return [.string, .iinaBindingRow]
+  }
+
+  func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
+    switch type {
+      case .string:
+        return NSString(utf8String: self.binding.confFileFormat)
+      case .iinaBindingRow:
+        return try? PropertyListEncoder().encode(self)
+      default:
+        return nil
+    }
   }
 }
 
@@ -54,12 +84,12 @@ class InputConfigDataStore {
 
   private static let singletonInstance = InputConfigDataStore()
 
-  static func computeFilePath(forUserConfigName configName: String) -> String {
-    return Utility.userInputConfDirURL.appendingPathComponent(configName + CONFIG_FILE_EXTENSION).path
-  }
-
   static func getInstance() -> InputConfigDataStore {
     return InputConfigDataStore.singletonInstance
+  }
+
+  static func computeFilePath(forUserConfigName configName: String) -> String {
+    return Utility.userInputConfDirURL.appendingPathComponent(configName + CONFIG_FILE_EXTENSION).path
   }
 
   // MARK: Non-static section start
@@ -358,13 +388,12 @@ class InputConfigDataStore {
     return bindingRowsFlltered[index]
   }
 
-  // Returns the index at which it was ultimately inserted
-  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) -> Int {
+  private func determimeInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
     var insertIndex: Int
-    if index < 0 {
+    if requestedIndex < 0 {
       // snap to very beginning
       insertIndex = 0
-    } else if index >= bindingRowsFlltered.count {
+    } else if requestedIndex >= bindingRowsFlltered.count {
       // snap to very end
       insertIndex = bindingRowsAll.count
     } else {
@@ -372,11 +401,11 @@ class InputConfigDataStore {
         insertIndex = bindingRowsAll.count  // default to end, in case something breaks
 
         // If there is an active filter, convert the filtered index to unfiltered index
-        if let unfilteredIndex = resolveFilteredIndexToUnfilteredIndex(index) {
+        if let unfilteredIndex = resolveFilteredIndexToUnfilteredIndex(requestedIndex) {
           insertIndex = unfilteredIndex
         }
       } else {
-        insertIndex = index  // default to requested index
+        insertIndex = requestedIndex  // default to requested index
       }
       if isAfterNotAt {
         insertIndex += 1
@@ -385,8 +414,53 @@ class InputConfigDataStore {
         }
       }
     }
-    Logger.log("Inserting new binding at unfiltered row index \(insertIndex): \(binding)", level: .verbose)
 
+    return insertIndex
+  }
+
+  func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
+    let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
+    Logger.log("Movimg \(bindingList.count) bindings to unfiltered row index \(insertIndex)", level: .verbose)
+
+    if isFiltered() {
+      clearFilter()
+    }
+
+    let affectedIDs = Set(bindingList.map { $0.bindingID! })
+
+    // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
+    // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
+    var beforeInsert: [BindingRow] = []
+    var afterInsert: [BindingRow] = []
+    var movedRows: [BindingRow] = []
+    var moveIndexPairs: [(Int, Int)] = []
+    var newSelectedRows = IndexSet()
+    for (index, row) in bindingRowsAll.enumerated() {
+      if let bindingID = row.binding.bindingID, affectedIDs.contains(bindingID) {
+        let moveToIndex = insertIndex + movedRows.count
+        moveIndexPairs.append((index, moveToIndex))
+        newSelectedRows.insert(moveToIndex)
+        movedRows.append(row)
+      } else if index < insertIndex {
+        beforeInsert.append(row)
+      } else {
+        afterInsert.append(row)
+      }
+    }
+    let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
+
+    let tableUpdate = TableUpdateByRowIndex(.moveRows)
+    tableUpdate.toMove = moveIndexPairs
+    tableUpdate.newSelectedRows = newSelectedRows
+
+    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
+    return insertIndex
+  }
+
+  // Returns the index of the first element which was ultimately inserted
+  func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping]) -> Int {
+    let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
+    Logger.log("Inserting \(bindingList.count) bindings into unfiltered row index \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
@@ -395,15 +469,22 @@ class InputConfigDataStore {
       clearFilter()
     }
 
-    let tableUpdateInsert = TableUpdateByRowIndex(.addRows)
-    tableUpdateInsert.toInsert = IndexSet(integer: insertIndex)
-    tableUpdateInsert.newSelectedRows = tableUpdateInsert.toInsert!
+    let tableUpdate = TableUpdateByRowIndex(.addRows)
+    tableUpdate.toInsert = IndexSet(integer: insertIndex)
+    tableUpdate.newSelectedRows = tableUpdate.toInsert!
 
-    var updatedTRs = bindingRowsAll
-    updatedTRs.insert(BindingRow(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
+    var bindingRowsAllUpdated = bindingRowsAll
+    for binding in bindingList.reversed() {
+      bindingRowsAllUpdated.insert(BindingRow(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
+    }
 
-    saveAndApplyBindingsStateUpdates(updatedTRs, tableUpdateInsert)
+    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
     return insertIndex
+  }
+
+  // Returns the index at which it was ultimately inserted
+  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) -> Int {
+    return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding])
   }
 
   // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFlltered.
@@ -437,12 +518,12 @@ class InputConfigDataStore {
     return idSet
   }
 
-  func removeBindings(at indexes: IndexSet) {
-    Logger.log("Removing bindings (\(indexes))", level: .verbose)
+  func removeBindings(at indexesToRemove: IndexSet) {
+    Logger.log("Removing bindings (\(indexesToRemove))", level: .verbose)
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    let idsToRemove = reoolveBindingIDsFromIndexes(indexes)
+    let idsToRemove = reoolveBindingIDsFromIndexes(indexesToRemove)
 
     var remainingRowsUnfiltered: [BindingRow] = []
     for row in bindingRowsAll {
@@ -452,7 +533,30 @@ class InputConfigDataStore {
     }
 
     let tableUpdate = TableUpdateByRowIndex(.removeRows)
-    tableUpdate.toRemove = indexes
+    tableUpdate.toRemove = indexesToRemove
+
+    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableUpdate)
+  }
+
+  func removeBindings(withIDs idsToRemove: [Int]) {
+    Logger.log("Removing bindings with IDs (\(idsToRemove))", level: .verbose)
+
+    // If there is an active filter, the indexes reflect filtered rows.
+    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
+    var remainingRowsUnfiltered: [BindingRow] = []
+    var indexesToRemove = IndexSet()
+    for (rowIndex, row) in bindingRowsAll.enumerated() {
+      if let id = row.binding.bindingID {
+        if idsToRemove.contains(id) {
+          indexesToRemove.insert(rowIndex)
+        } else {
+          remainingRowsUnfiltered.append(row)
+        }
+      }
+    }
+
+    let tableUpdate = TableUpdateByRowIndex(.removeRows)
+    tableUpdate.toRemove = indexesToRemove
 
     saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableUpdate)
   }

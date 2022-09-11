@@ -29,6 +29,7 @@ class TableUpdate {
     case selectionChangeOnly
     case addRows
     case removeRows
+    case moveRows
     case renameAndMoveOneRow
     case updateRows
     case reloadAll
@@ -56,6 +57,7 @@ class TableUpdateByRowIndex: TableUpdate {
   var toInsert: IndexSet? = nil
   var toRemove: IndexSet? = nil
   var toUpdate: IndexSet? = nil
+  var toMove: [(Int, Int)]? = nil
 
   override init(_ changeType: ChangeType) {
     super.init(changeType)
@@ -120,7 +122,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   func endEditing() {
-    Logger.log("endEditing(): \(self)", level: .verbose)
     self.editCell = nil
     self.window?.endEditing(for: self)
     _ = self.resignFirstResponder()
@@ -169,12 +170,9 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-    Logger.log("validateProposedFirstResponder() called for \(eventTypeText(event)), responder: \(responder)", level: .verbose)
-
     if let event = event, event.type == .leftMouseDown {
       // stop old editor
       if let oldTextField = lastEditedTextField {
-        Logger.log("Ending editing for oldTextField \(oldTextField)", level: .verbose)
         oldTextField.endEditing()
         self.lastEditedTextField = nil
       }
@@ -196,8 +194,6 @@ class DoubleClickEditTableView: NSTableView {
   }
 
   private func prepareTextFieldForEdit(_ textField: DoubleClickEditTextField, row: Int, column: Int) {
-    Logger.log("Preparing edit for \(textField) (row \(clickedRow), col \(clickedColumn))", level: .verbose)
-
     // Use a closure to bind row and column to the callback function:
     textField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(row, column) }
     textField.editCell = { self.editCell(rowIndex: row, columnIndex: column) }
@@ -360,8 +356,13 @@ class DoubleClickEditTableView: NSTableView {
       case .selectionChangeOnly:
         fallthrough
       case .renameAndMoveOneRow:
-        // FIXME
-        assert(false)
+        Logger.fatal("Not yet supported: renameAndMoveOneRow for TableUpdateByRowIndex")
+      case .moveRows:
+        if let movePairs = update.toMove {
+          for (oldIndex, newIndex) in movePairs {
+            self.moveRow(at: oldIndex, to: newIndex)
+          }
+        }
       case .addRows:
         if let indexes = update.toInsert {
           self.insertRows(at: indexes, withAnimation: self.rowAnimation)
@@ -413,6 +414,8 @@ class DoubleClickEditTableView: NSTableView {
       case .updateRows:
         // Just redraw all of them. This is a very inexpensive operation
         reloadExistingRows()
+      case .moveRows:
+        Logger.fatal("Not yet supported: moveRows for TableUpdateByRowID")
       case .reloadAll:
         // Try not to use this much, if at all
         Logger.log("ReloadAll", level: .verbose)

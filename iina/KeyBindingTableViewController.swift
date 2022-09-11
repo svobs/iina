@@ -8,9 +8,16 @@
 
 import Foundation
 
+// Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
+extension NSPasteboard.PasteboardType {
+  static let iinaBindingRow = NSPasteboard.PasteboardType("com.colliderli.iina.BindingRow")
+}
+
+
 class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
+  private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: DoubleClickEditTableView!
   private unowned var ds: InputConfigDataStore!
@@ -33,6 +40,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
 
+    if #available(macOS 10.13, *) {
+      // Enable drag & drop for MacOS 10.13+. Default to "move"
+      tableView.registerForDraggedTypes([.string, .iinaBindingRow])
+      tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
+      tableView.draggingDestinationFeedbackStyle = .regular
+    }
+
     tableView.scrollRowToVisible(0)
   }
 
@@ -41,6 +55,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
+  }
+
+  // Display error alert for errors:
+  private func errorDidOccur(_ notification: Notification) {
+    guard let alertInfo = notification.object as? AlertInfo else {
+      Logger.log("Notification.iinaKeyBindingErrorOccurred: cannot display error: invalid object: \(type(of: notification.object))", level: .error)
+      return
+    }
+    Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
   }
 
   // MARK: NSTableViewDataSource
@@ -127,19 +150,17 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSTableViewDelegate
 
   func tableViewSelectionDidChange(_ notification: Notification) {
-    Logger.log("KeyBindingsTable selection changed!")
     selectionDidChangeHandler()
   }
 
   func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
-    guard let identifier = tableColumn?.identifier else { return false }
-    let columnName = identifier.rawValue
+    guard let columnName = tableColumn?.identifier.rawValue else { return false }
 
-    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)")
+    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)", level: .verbose)
     return ds.isEditEnabledForCurrentConfig() && isRaw()
   }
 
-  // MARK: Custom callbacks
+  // MARK: DoubleClickEditTableView callbacks
 
   func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
     guard ds.isEditEnabledForCurrentConfig() else {
@@ -180,15 +201,6 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return true
   }
 
-  // Display error alert for errors:
-  private func errorDidOccur(_ notification: Notification) {
-    guard let alertInfo = notification.object as? AlertInfo else {
-      Logger.log("Notification.iinaKeyBindingErrorOccurred: cannot display error: invalid object: \(type(of: notification.object))", level: .error)
-      return
-    }
-    Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
-  }
-
   // MARK: Reusable actions
 
   // Edit either inline or with popup, depending on current mode
@@ -207,6 +219,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
+  // Use this if isRaw()==false (i.e., not inline editing)
   func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
@@ -223,9 +236,11 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
+  // Adds a new binding after the current selection and then opens an editor for it. The editor with either be inline or using the popup,
+  // depending on whether isRaw() is true or false, respectively.
   func addNewBinding() {
     var rowIndex: Int
-    // If row is selected, add row after it. Otherwise add to end
+    // If there is a selected row, add the new row right below it. Otherwise add to end of table.
     if tableView.selectedRow >= 0 {
       rowIndex = tableView.selectedRow
     } else {
@@ -234,6 +249,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     insertNewBinding(relativeTo: rowIndex, isAfterNotAt: true)
   }
 
+  // Adds a new binding at the given location then opens an editor for it. The editor with either be inline or using the popup,
+  // depending on whether isRaw() is true or false, respectively.
+  // If isAfterNotAt==true, inserts after the row with given rowIndex. If isAfterNotAt==false, inserts before the row with given rowIndex.
   func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
@@ -249,6 +267,22 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         self.tableView.scrollRowToVisible(insertedRowIndex)
       }
     }
+  }
+
+  func moveBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+    let bindings: [KeyMapping] = rowList.map { $0.binding }
+    let firstInsertedRowIndex = self.ds.moveBindings(bindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
+
+    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+  }
+
+  func copyBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+    // Make sure to use copy() to clone the object here
+    let newBindings: [KeyMapping] = rowList.map { $0.binding.copy() as! KeyMapping }
+
+    let firstInsertedRowIndex = self.ds.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
+
+    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
 
   func removeSelectedBindings() {
@@ -273,6 +307,122 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         ok(keyRecordViewController.keyCode, keyRecordViewController.action)
       }
     }
+  }
+
+  // MARK: Drag & Drop
+
+  /*
+   Drag start: convert tableview rows to clipboard items
+   */
+  func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
+    return ds.getBindingRow(at: rowIndex)
+  }
+
+  /**
+   This is implemented to support dropping items onto the Trash icon in the Dock
+   */
+  func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+    guard ds.isEditEnabledForCurrentConfig(), operation == NSDragOperation.delete else {
+      return
+    }
+
+    let rowList = getBindingRowsOrNothing(from: session.draggingPasteboard)
+
+    guard !rowList.isEmpty else {
+      return
+    }
+
+    Logger.log("User dragged to the trash: \(rowList)", level: .verbose)
+
+    ds.removeBindings(withIDs: rowList.map{$0.binding.bindingID!})
+  }
+
+  private func getBindingRowsOrNothing(from pasteboard: NSPasteboard) -> [BindingRow] {
+    var rowList: [BindingRow] = []
+    if let objList = pasteboard.readObjects(forClasses: [BindingRow.self], options: nil) {
+      for obj in objList {
+        if let row = obj as? BindingRow, row.origin == .confFile {
+          rowList.append(row)
+        } else {
+          return [] // return empty list if something was amiss
+        }
+      }
+    }
+    return rowList
+  }
+
+  /*
+   Validate drop while hovering.
+   */
+  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+
+    guard ds.isEditEnabledForCurrentConfig() else {
+      return []  // deny drop
+    }
+
+    let rowList = getBindingRowsOrNothing(from: info.draggingPasteboard)
+
+    guard !rowList.isEmpty else {
+      return []  // deny drop
+    }
+
+    // Update that little red number:
+    info.numberOfValidItemsForDrop = rowList.count
+
+    // TODO: change drop row & operatiom if dropping into non-conf-file territory
+
+    if dropOperation == .on {
+      // Cannot drop on/into existing rows. Put below it
+      tableView.setDropRow(row + 1, dropOperation: .above)
+    } else {
+      tableView.setDropRow(row, dropOperation: .above)
+    }
+
+    let dragMask = info.draggingSourceOperationMask
+    switch dragMask {
+      case .copy:
+        tableView.draggingDestinationFeedbackStyle = .regular
+        return dragMask
+      case .move:
+        tableView.draggingDestinationFeedbackStyle = .gap
+        return dragMask
+      default:
+        return DEFAULT_DRAG_OPERATION
+    }
+  }
+
+  /*
+   Accept the drop and execute changes, or reject drop.
+   */
+  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+
+    let rowList = getBindingRowsOrNothing(from: info.draggingPasteboard)
+    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") row \(rowIndex)")
+    guard !rowList.isEmpty else {
+      return false
+    }
+
+    guard dropOperation == .above else {
+      Logger.log("Expected dropOperaion==.above but got: \(dropOperation); bailing")
+      return false
+    }
+
+    var dragMask = info.draggingSourceOperationMask
+    if dragMask == NSDragOperation.every {
+      dragMask = DEFAULT_DRAG_OPERATION
+    }
+
+    // Return immediately, and import (or fail to) asynchronously
+    DispatchQueue.main.async {
+      if dragMask == .move {
+        self.moveBindingRows(from: rowList, to: rowIndex - 1, isAfterNotAt: false)
+      } else if dragMask == .copy {
+        self.copyBindingRows(from: rowList, to: rowIndex - 1, isAfterNotAt: false)
+      } else {
+        Logger.log("Unexpected drag operatiom: \(dragMask)")
+      }
+    }
+    return true
   }
 
   // MARK: NSMenuDelegate

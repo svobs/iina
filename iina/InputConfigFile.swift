@@ -10,6 +10,8 @@ import Foundation
 
 class InputConfigFile {
   // At least one of its fields should be non-nil.
+  // Only Lines with non-nil `rawFileContent` are present in the file on disk.
+  // A Line struct can include additional in-memory state (if `bindingOverride` is non-nil) which is not present on disk.
   private struct Line {
     let rawFileContent: String?  // reflects content on disk
     let bindingOverride: KeyMapping?  // only exists in memory. Useful for maintaining edits even while they are not parseable
@@ -43,11 +45,12 @@ class InputConfigFile {
   func parseBindings() -> [KeyMapping] {
     var bindingList: [KeyMapping] = []
 
-    for (lineNumber, line) in self.lines.enumerated() {
+    for (lineIndex, line) in self.lines.enumerated() {
       if let binding = line.bindingOverride {
-        binding.bindingID = lineNumber
+        // Note: `lineIndex` includes bindingOverrides and thus may be greater than the equivalent line number in the physical file
+        binding.bindingID = lineIndex
         bindingList.append(binding)
-      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFile.parseRawLine(rawFileContent, lineNumber) {
+      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFile.parseRawLine(rawFileContent, lineIndex) {
         bindingList.append(binding)
       }
     }
@@ -55,15 +58,15 @@ class InputConfigFile {
     return bindingList
   }
 
-  private func parseLine(_ lineNumber: Int) -> KeyMapping? {
-    if let rawLine = lines[lineNumber].rawFileContent {
-      return InputConfigFile.parseRawLine(rawLine, lineNumber)
+  private func parseLine(_ lineIndex: Int) -> KeyMapping? {
+    if let rawLine = lines[lineIndex].rawFileContent {
+      return InputConfigFile.parseRawLine(rawLine, lineIndex)
     }
     return nil
   }
 
   // Returns a KeyMapping if successful, nil if line has no mapping or is not correct format
-  fileprivate static func parseRawLine(_ rawLine: String, _ lineNumber: Int? = nil) -> KeyMapping? {
+  fileprivate static func parseRawLine(_ rawLine: String, _ lineIndex: Int? = nil) -> KeyMapping? {
     var content = rawLine
     var isIINACommand = false
     if content.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -92,7 +95,7 @@ class InputConfigFile {
     let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)
     let action = String(splitted[1]).trimmingCharacters(in: .whitespaces)
 
-    return KeyMapping(rawKey: key, rawAction: action, isIINACommand: isIINACommand, comment: comment, bindingID: lineNumber)
+    return KeyMapping(rawKey: key, rawAction: action, isIINACommand: isIINACommand, comment: comment, bindingID: lineIndex)
   }
 
   func replaceAllBindings(with newBindings: [KeyMapping]) {
@@ -113,9 +116,9 @@ class InputConfigFile {
       let rawLine = newBinding.confFileFormat
       if InputConfigFile.parseRawLine(rawLine) == nil {
         Logger.log("While serializing bindings: looks like an active edit: \(newBinding)", level: .verbose)
-        if let lineNumber = newBinding.bindingID,
-           lineNumber <= self.lines.count,
-           let fileRawLine = self.lines[lineNumber].rawFileContent {
+        if let lineIndex = newBinding.bindingID,
+           lineIndex <= self.lines.count,
+           let fileRawLine = self.lines[lineIndex].rawFileContent {
           // line previously existed
           newLines.append(Line(fileRawLine, newBinding))
         } else {
@@ -165,20 +168,20 @@ class InputConfigFile {
     return newLines
   }
 
-  // For all the lines between lineNumberStart and lineNumberEnd (exclusive), append to lineArray if they are not parsable bindings
-  private func appendNonBindingLines(between lineNumberStart: Int, and lineNumberEnd: Int, to lineArray: inout [Line]) {
-    for inBetweenLineNumber in (lineNumberStart+1)..<lineNumberEnd {
+  // For all the lines between lineIndexStart and lineIndexEnd (exclusive), append to lineArray if they are not parsable bindings
+  private func appendNonBindingLines(between lineIndexStart: Int, and lineIndexEnd: Int, to lineArray: inout [Line]) {
+    for inBetweenLineNumber in (lineIndexStart+1)..<lineIndexEnd {
       appendNonBindingLine(at: inBetweenLineNumber, to: &lineArray)
     }
   }
 
-  private func appendNonBindingLine(at lineNumber: Int, to lineArray: inout [Line]) {
-    if parseLine(lineNumber) == nil {
+  private func appendNonBindingLine(at lineIndex: Int, to lineArray: inout [Line]) {
+    if parseLine(lineIndex) == nil {
       // No binding - maybe comment or some other thing. Write it back to file
-      lineArray.append(lines[lineNumber])
+      lineArray.append(lines[lineIndex])
     } else {
       // If it was not included in the new bindings, treat it as a remove.
-      Logger.log("Binding on line \(lineNumber) removed")
+      Logger.log("Binding on line \(lineIndex) removed")
     }
   }
 

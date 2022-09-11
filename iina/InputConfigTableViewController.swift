@@ -38,6 +38,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
+
+    tableView.scrollRowToVisible(0)
   }
 
   deinit {
@@ -102,7 +104,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     ds.changeCurrentConfig(tableView.selectedRow)
   }
 
-  // MARK: Custom callbacks
+  // MARK: DoubleClickEditTableView callbacks
 
   func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
     if let configName = ds.getConfigRow(at: rowNumber), !ds.isDefaultConfig(configName) {
