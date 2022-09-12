@@ -337,7 +337,7 @@ class InputConfigDataStore {
 
     configTableRowsNew.append(contentsOf: userConfigNameList)
 
-    Logger.log("Rebuilt table rows (currentConfig='\(currentConfigName)'): \(configTableRowsNew)", level: .verbose)
+    Logger.log("Rebuilt Config table rows (current='\(currentConfigName)'): \(configTableRowsNew)", level: .verbose)
 
     return configTableRowsNew
   }
@@ -420,7 +420,7 @@ class InputConfigDataStore {
 
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
     let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") filtered rowIndex \(index) -> insert at unfiltered rowIndex \(insertIndex)", level: .verbose)
+    Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       clearFilter()
@@ -435,17 +435,24 @@ class InputConfigDataStore {
     var movedRows: [BindingRow] = []
     var moveIndexPairs: [(Int, Int)] = []
     var newSelectedRows = IndexSet()
-    for (index, row) in bindingRowsAll.enumerated() {
+    var moveFromOffset = 0
+    var moveToOffset = 0
+
+    // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
+    for (origIndex, row) in bindingRowsAll.enumerated() {
       if let bindingID = row.binding.bindingID, movedBindingIDs.contains(bindingID) {
-        var moveToIndex = insertIndex + movedRows.count
-        if moveToIndex > index {
+        if origIndex < insertIndex {
           // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
-          moveToIndex -= 1
+          moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
+          newSelectedRows.insert(insertIndex + moveFromOffset - 1)
+          moveFromOffset -= 1
+        } else {
+          moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
+          newSelectedRows.insert(insertIndex + moveToOffset)
+          moveToOffset += 1
         }
-        moveIndexPairs.append((index, moveToIndex))
-        newSelectedRows.insert(moveToIndex)
         movedRows.append(row)
-      } else if index < insertIndex {
+      } else if origIndex < insertIndex {
         beforeInsert.append(row)
       } else {
         afterInsert.append(row)
@@ -475,7 +482,7 @@ class InputConfigDataStore {
     }
 
     let tableUpdate = TableUpdateByRowIndex(.addRows)
-    tableUpdate.toInsert = IndexSet(integer: insertIndex)
+    tableUpdate.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
     tableUpdate.newSelectedRows = tableUpdate.toInsert!
 
     var bindingRowsAllUpdated = bindingRowsAll

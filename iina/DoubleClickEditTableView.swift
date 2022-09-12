@@ -122,7 +122,8 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   func endEditing() {
     self.editCell = nil
     self.window?.endEditing(for: self)
-    _ = self.resignFirstResponder()
+    // Resign first responder status and give focus back to table row selection:
+    self.window?.makeFirstResponder(self.parentTable)
     self.isEditable = false
     self.isSelectable = false
     self.backgroundColor = NSColor.clear
@@ -214,6 +215,12 @@ class DoubleClickEditTableView: NSTableView {
     Logger.log("Opening in-line editor for row \(row), column \(column) (event: \(eventTypeText(event)))")
     guard row >= 0 && column >= 0 else {
       return
+    }
+
+    // Close old editor (if any):
+    if let oldTextField = lastEditedTextField {
+      oldTextField.endEditing()
+      self.lastEditedTextField = nil
     }
 
     if row != selectedRow {

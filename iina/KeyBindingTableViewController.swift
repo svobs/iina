@@ -34,12 +34,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 
+    tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
     tableView.registerTableUpdateObserver(forName: .iinaCurrentBindingsDidChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
-
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
       tableView.registerForDraggedTypes([.string, .iinaBindingRow])
@@ -240,9 +240,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // depending on whether isRaw() is true or false, respectively.
   func addNewBinding() {
     var rowIndex: Int
-    // If there is a selected row, add the new row right below it. Otherwise add to end of table.
-    if tableView.selectedRow >= 0 {
-      rowIndex = tableView.selectedRow
+    // If there are selected rows, add the new row right below the last selection. Otherwise add to end of table.
+    if let lastSelectionIndex = tableView.selectedRowIndexes.max() {
+      rowIndex = lastSelectionIndex
     } else {
       rowIndex = self.tableView.numberOfRows - 1
     }
@@ -460,6 +460,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
+    if tableView.selectedRowIndexes.contains(clickedIndex) && tableView.selectedRowIndexes.count > 1 {
+      // Special menu for right-click on multiple selection
+
+      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(tableView.selectedRowIndexes.count) Rows", action: #selector(self.removeSelectedRows(_:)))
+      return
+    }
+
     let isRaw = isRaw()
 
     // Edit
@@ -509,4 +516,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     ds.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 
+  @objc fileprivate func removeSelectedRows(_ sender: BindingMenuItem) {
+    ds.removeBindings(at: tableView.selectedRowIndexes)
+  }
 }
