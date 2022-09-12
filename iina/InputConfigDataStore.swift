@@ -393,7 +393,7 @@ class InputConfigDataStore {
     if requestedIndex < 0 {
       // snap to very beginning
       insertIndex = 0
-    } else if requestedIndex >= bindingRowsFlltered.count {
+    } else if requestedIndex >= bindingRowsAll.count {
       // snap to very end
       insertIndex = bindingRowsAll.count
     } else {
@@ -420,13 +420,13 @@ class InputConfigDataStore {
 
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
     let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Movimg \(bindingList.count) bindings to unfiltered row index \(insertIndex)", level: .verbose)
+    Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") filtered rowIndex \(index) -> insert at unfiltered rowIndex \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       clearFilter()
     }
 
-    let affectedIDs = Set(bindingList.map { $0.bindingID! })
+    let movedBindingIDs = Set(bindingList.map { $0.bindingID! })
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
@@ -436,8 +436,12 @@ class InputConfigDataStore {
     var moveIndexPairs: [(Int, Int)] = []
     var newSelectedRows = IndexSet()
     for (index, row) in bindingRowsAll.enumerated() {
-      if let bindingID = row.binding.bindingID, affectedIDs.contains(bindingID) {
-        let moveToIndex = insertIndex + movedRows.count
+      if let bindingID = row.binding.bindingID, movedBindingIDs.contains(bindingID) {
+        var moveToIndex = insertIndex + movedRows.count
+        if moveToIndex > index {
+          // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
+          moveToIndex -= 1
+        }
         moveIndexPairs.append((index, moveToIndex))
         newSelectedRows.insert(moveToIndex)
         movedRows.append(row)
@@ -450,6 +454,7 @@ class InputConfigDataStore {
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
     let tableUpdate = TableUpdateByRowIndex(.moveRows)
+    Logger.log("MovePairs: \(moveIndexPairs)")
     tableUpdate.toMove = moveIndexPairs
     tableUpdate.newSelectedRows = newSelectedRows
 
@@ -460,7 +465,7 @@ class InputConfigDataStore {
   // Returns the index of the first element which was ultimately inserted
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping]) -> Int {
     let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Inserting \(bindingList.count) bindings into unfiltered row index \(insertIndex)", level: .verbose)
+    Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
@@ -489,18 +494,31 @@ class InputConfigDataStore {
 
   // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFlltered.
   private func resolveFilteredIndexToUnfilteredIndex(_ filteredIndex: Int) -> Int? {
-    guard filteredIndex >= 0 || filteredIndex < bindingRowsFlltered.count else {
+    guard filteredIndex >= 0 else {
       return nil
     }
-    let bindingAtIndex = bindingRowsFlltered[filteredIndex]
-    if let bindingID = bindingAtIndex.binding.bindingID {
-      for (unfilteredIndex, row) in bindingRowsAll.enumerated() {
-        if row.binding.bindingID == bindingID {
+    if filteredIndex == bindingRowsFlltered.count {
+      let filteredRowAtIndex = bindingRowsFlltered[filteredIndex - 1]
+
+      guard let unfilteredIndex = findUnfilteredIndexOfBindingRow(filteredRowAtIndex) else {
+        return nil
+      }
+      return unfilteredIndex + 1
+    }
+    let filteredRowAtIndex = bindingRowsFlltered[filteredIndex]
+    return findUnfilteredIndexOfBindingRow(filteredRowAtIndex)
+  }
+
+  private func findUnfilteredIndexOfBindingRow(_ row: BindingRow) -> Int? {
+    if let bindingID = row.binding.bindingID {
+      for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
+        if unfilteredRow.binding.bindingID == bindingID {
           Logger.log("Found matching bindingID \(bindingID) at unfiltered row index \(unfilteredIndex)", level: .verbose)
           return unfilteredIndex
         }
       }
     }
+    Logger.log("Failed to find unfiltered row index for: \(row)", level: .error)
     return nil
   }
 

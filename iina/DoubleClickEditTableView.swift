@@ -86,7 +86,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func becomeFirstResponder() -> Bool {
-    Logger.log("becomeFirstResponder(): \(self)", level: .verbose)
     self.beginEditing()
     return true
   }
@@ -113,7 +112,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   func beginEditing() {
-    Logger.log("beginEiting(): \(self)", level: .verbose)
     self.isEditable = true
     self.isSelectable = true
     self.backgroundColor = NSColor.white
@@ -372,11 +370,9 @@ class DoubleClickEditTableView: NSTableView {
           self.removeRows(at: indexes, withAnimation: self.rowAnimation)
         }
       case .updateRows:
-        if let indexes = update.toUpdate {
-          // IndexSet doesn't support joined()
-          Logger.log("Updating \(indexes): \(indexes.reduce("", { "\($0) \($1)"  }))")
-          reloadData(forRowIndexes: indexes, columnIndexes: IndexSet(0..<numberOfColumns))
-        }
+        // Just redraw all of them. This is a very inexpensive operation, and much easier
+        // than chasing down all the possible ways other rows could be updated.
+        reloadExistingRows()
       case .reloadAll:
         // Try not to use this much, if at all
         Logger.log("ReloadAll", level: .verbose)
@@ -386,8 +382,10 @@ class DoubleClickEditTableView: NSTableView {
     if let newSelectedRows = update.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
-      Logger.log("Updating table selection to: \(newSelectedRows)", level: .verbose)
+      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
       self.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+      // Make sure the table gets focus:
+      self.window!.makeFirstResponder(self)
     }
   }
 
@@ -425,7 +423,7 @@ class DoubleClickEditTableView: NSTableView {
     if let newSelectedRows = update.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
-      Logger.log("Updating table selection to: \(newSelectedRows)", level: .verbose)
+      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
       self.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
     }
   }

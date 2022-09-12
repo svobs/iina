@@ -169,7 +169,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return false
     }
     if isRaw() {
-      Logger.log("Opening in-line editor for row #\(rowIndex)", level: .verbose)
+      Logger.log("Opening in-line editor for row \(rowIndex)", level: .verbose)
       // Use in-line editor
       return true
     }
@@ -185,7 +185,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return false
     }
 
-    Logger.log("User finishing entering value for row #\(rowIndex), col #\(columnIndex): \"\(newValue)\"", level: .verbose)
+    Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \"\(newValue)\"", level: .verbose)
 
     switch columnIndex {
       case COLUMN_INDEX_KEY:
@@ -397,7 +397,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
     let rowList = getBindingRowsOrNothing(from: info.draggingPasteboard)
-    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") row \(rowIndex)")
+    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
     }
@@ -415,9 +415,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Return immediately, and import (or fail to) asynchronously
     DispatchQueue.main.async {
       if dragMask == .move {
-        self.moveBindingRows(from: rowList, to: rowIndex - 1, isAfterNotAt: false)
+        self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
       } else if dragMask == .copy {
-        self.copyBindingRows(from: rowList, to: rowIndex - 1, isAfterNotAt: false)
+        self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
       } else {
         Logger.log("Unexpected drag operatiom: \(dragMask)")
       }
