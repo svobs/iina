@@ -375,6 +375,10 @@ class KeyCodeHelper {
   }
 
   public static func splitAndNormalizeMpvString(_ mpvKeystrokes: String) -> [String] {
+    // this is a hard-coded special case in mpv
+    if mpvKeystrokes == "default-bindings" {
+      return [mpvKeystrokes]
+    }
     let keystrokesList = splitKeystrokes(mpvKeystrokes)
 
     var normalizedList: [String] = []
