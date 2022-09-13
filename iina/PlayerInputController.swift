@@ -72,6 +72,18 @@ class PlayerInputController {
     }
   }
 
+  private struct EnabledSectionMeta {
+    let name: String
+
+    /*
+     When a section is enabled with the MP_INPUT_EXCLUSIVE flag, its bindings are the only ones used, and all other sections are ignored
+     until it is disabled. If, while an exclusive section is enabled, another section is enabled with the "exclusive" flag,
+     the latest section is pushed onto the top of the stack. An "exclusive" section which is no longer at the top can become active again by
+     either another explicit call to enable it with the "exclusive" flag, or it can wait for the sections above it to be disabled.
+     */
+    let isExclusive: Bool
+  }
+
   // MARK: - Shared state for all players
 
   static private let sharedSubsystem = Logger.Subsystem(rawValue: "inputbindings")
@@ -140,7 +152,7 @@ class PlayerInputController {
 
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(bindingMetaList)
 
-    // - Send bindings to individual players
+    // - Send bindings to individual players: they will need to re-determine which bindings they want to override
     for player in PlayerCore.playerCores {
       player.inputController.setSharedPlayerBindings(chosenBindingList)
     }
@@ -183,16 +195,7 @@ class PlayerInputController {
   private var sectionsDefined: [String : MPVInputSection] = [:]
 
   /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
-  private var sectionsEnabled = LinkedList<String>()
-
-  /*
-   (mpv includes this in its active_sections array but we break it out separately.)
-   When a section is enabled with the "exclusive" flag, its bindings are the only ones used, and all other sections are ignored
-   until it is disabled. If, while an exclusive section is enabled, another section is enabled with the "exclusive" flag,
-   the latest section is pushed onto the top of the stack. An "exclusive" section which is no longer at the top can become active again by
-   either another explicit call to enable it with the "exclusive" flag, or it can wait for the sections above it to be disabled.
-   */
-  private var sectionsEnabledExclusive = LinkedList<String>()
+  private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
   // The master dictionary: contains only the bindings which are currently active for this player
   private var currentPlayerBindings: [String: ActiveBindingEntry] = [:]
@@ -216,7 +219,6 @@ class PlayerInputController {
       self.keyPressHistory.clear()
       self.sectionsDefined = [:]
       self.sectionsEnabled.clear()
-      self.sectionsEnabledExclusive.clear()
       self.currentPlayerBindings = [:]
     }
   }
@@ -323,37 +325,9 @@ class PlayerInputController {
    Expected to be run inside the the private dispatch queue.
    */
   private func rebuildCurrentPlayerBindings() {
-    var rebuiltBindings: [String: ActiveBindingEntry] = [:]
-
     assert (sectionsDefined[DEFAULT_SECTION] != nil, "Missing default bindings section!")
 
-    if let topExclusiveSectionName = sectionsEnabledExclusive.first {
-      if let topExclusiveSection = sectionsDefined[topExclusiveSectionName] {
-        log("RebuildBindings: adding exclusively: \"\(topExclusiveSection)\"", level: .verbose)
-        for keyBinding in topExclusiveSection.keyBindings {
-          rebuiltBindings[keyBinding.normalizedMpvKey] = ActiveBindingEntry(keyBinding, from: topExclusiveSection.name)
-        }
-      } else {
-        // indicates serious internal error
-        log("RebuildBindings: failed to find exclusive section: \"\(topExclusiveSectionName)\"", level: .error)
-      }
-    } else {
-      for inputSectionName in sectionsEnabled {
-        if let inputSection = sectionsDefined[inputSectionName] {
-          if inputSection.keyBindings.isEmpty {
-            if LOG_BINDINGS_REBUILD {
-              log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
-            }
-          } else {
-            log("RebuildBindings: adding from \(inputSection)", level: .verbose)
-            addBindings(from: inputSection, to: &rebuiltBindings)
-          }
-        } else {
-          // indicates serious internal error
-          log("RebuildBindings: failed to find section: \"\(inputSectionName)\"", level: .error)
-        }
-      }
-    }
+    var rebuiltBindings: [String: ActiveBindingEntry] = buildBindingsDictFromEnabledSections()
 
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     PlayerInputController.fillInPartialSequences(&rebuiltBindings)
@@ -367,11 +341,33 @@ class PlayerInputController {
     }
   }
 
-  private func addBindings(from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingEntry]) {
-    // Iterate from top of stack to bottom:
-    for keyBinding in inputSection.keyBindings {
-      addBinding(keyBinding, from: inputSection, to: &bindingsDict)
+  private func buildBindingsDictFromEnabledSections() -> [String: ActiveBindingEntry] {
+    var bindingsDict: [String: ActiveBindingEntry] = [:]
+
+    for enabledSectionMeta in sectionsEnabled {
+      if let inputSection = sectionsDefined[enabledSectionMeta.name] {
+        if inputSection.keyBindings.isEmpty {
+          if LOG_BINDINGS_REBUILD {
+            log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
+          }
+        } else {
+          log("RebuildBindings: adding from \(inputSection)", level: .verbose)
+          // Iterate from top of stack to bottom:
+          for keyBinding in inputSection.keyBindings {
+            addBinding(keyBinding, from: inputSection, to: &bindingsDict)
+          }
+        }
+
+        if enabledSectionMeta.isExclusive {
+          log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
+          return bindingsDict
+        }
+      } else {
+        // indicates serious internal error
+        log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
+      }
     }
+    return bindingsDict
   }
 
   private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingEntry]) {
@@ -509,12 +505,8 @@ class PlayerInputController {
    disableSection_Unsafe(sectionName)
 
    sectionsDefined[sectionName] = section
-   if isExclusive {
-     sectionsEnabledExclusive.prepend(sectionName)
-   } else {
-     sectionsEnabled.prepend(sectionName)
-   }
-   log("After enable_section(\"\(sectionName)\") Sections: {Exclusive = \(sectionsEnabledExclusive); Enabled=\(sectionsEnabled); Defined=\(sectionsDefined.keys)}", level: .verbose)
+   sectionsEnabled.prepend(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
+   log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
    rebuildCurrentPlayerBindings()
  }
 
@@ -530,11 +522,10 @@ class PlayerInputController {
 
   private func disableSection_Unsafe(_ sectionName: String) {
     if sectionsDefined[sectionName] != nil {
-      sectionsEnabled.remove({ (x: String) -> Bool in x == sectionName })
-      sectionsEnabledExclusive.remove({ (x: String) -> Bool in x == sectionName })
+      sectionsEnabled.remove({ $0.name == sectionName })
       sectionsDefined.removeValue(forKey: sectionName)
 
-      log("After disable_section(\"\(sectionName)\"): section removed", level: .verbose)
+      log("InputSection was disabled: \"\(sectionName)\"", level: .verbose)
     }
   }
 
