@@ -70,7 +70,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   var userDidDoubleClickOnCell: (() -> Bool) = { return true }
   var editCell: (() -> Void)?
   var parentTable: DoubleClickEditTableView? = nil
-  override var acceptsFirstResponder: Bool { return true }
 
   override func mouseDown(with event: NSEvent) {
     if (event.clickCount == 2 && !self.isEditable && userDidDoubleClickOnCell()) {
