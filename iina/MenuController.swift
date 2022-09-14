@@ -174,7 +174,7 @@ class MenuController: NSObject, NSMenuDelegate {
   func bindMenuItems() {
 
     [cycleSubtitles, cycleAudioTracks, cycleVideoTracks].forEach { item in
-      item?.action = #selector(MainMenuActionHandler.menuCycleTrack(_:))
+      item?.action = #selector(PlayerWindowController.menuCycleTrack(_:))
     }
 
     // File menu
@@ -186,8 +186,8 @@ class MenuController: NSObject, NSMenuDelegate {
     stringForOpenAlternative = openAlternative.title
     stringForOpenURLAlternative = openURLAlternative.title
 
-    savePlaylist.action = #selector(MainMenuActionHandler.menuSavePlaylist(_:))
-    deleteCurrentFile.action = #selector(MainMenuActionHandler.menuDeleteCurrentFile(_:))
+    savePlaylist.action = #selector(PlayerWindowController.menuSavePlaylist(_:))
+    deleteCurrentFile.action = #selector(PlayerWindowController.menuDeleteCurrentFile(_:))
 
     if Preference.bool(for: .enableCmdN) {
       newWindowSeparator.isHidden = false
@@ -198,16 +198,16 @@ class MenuController: NSObject, NSMenuDelegate {
 
     playbackMenu.delegate = self
 
-    pause.action = #selector(MainMenuActionHandler.menuTogglePause(_:))
-    stop.action = #selector(MainMenuActionHandler.menuStop(_:))
+    pause.action = #selector(PlayerWindowController.menuTogglePause(_:))
+    stop.action = #selector(PlayerWindowController.menuStop(_:))
 
     // -- seeking
-    forward.action = #selector(MainMenuActionHandler.menuStep(_:))
-    nextFrame.action = #selector(MainMenuActionHandler.menuStepFrame(_:))
-    backward.action = #selector(MainMenuActionHandler.menuStep(_:))
-    previousFrame.action = #selector(MainMenuActionHandler.menuStepFrame(_:))
-    jumpToBegin.action = #selector(MainMenuActionHandler.menuJumpToBegin(_:))
-    jumpTo.action = #selector(MainMenuActionHandler.menuJumpTo(_:))
+    forward.action = #selector(PlayerWindowController.menuStep(_:))
+    nextFrame.action = #selector(PlayerWindowController.menuStepFrame(_:))
+    backward.action = #selector(PlayerWindowController.menuStep(_:))
+    previousFrame.action = #selector(PlayerWindowController.menuStepFrame(_:))
+    jumpToBegin.action = #selector(PlayerWindowController.menuJumpToBegin(_:))
+    jumpTo.action = #selector(PlayerWindowController.menuJumpTo(_:))
 
     // -- speed
     (speedUp.representedObject,
@@ -215,28 +215,28 @@ class MenuController: NSObject, NSMenuDelegate {
      speedDown.representedObject,
      speedDownSlightly.representedObject) = (2.0, 1.1, 0.5, 0.9)
     [speedUp, speedDown, speedUpSlightly, speedDownSlightly, speedReset].forEach { item in
-      item?.action = #selector(MainMenuActionHandler.menuChangeSpeed(_:))
+      item?.action = #selector(PlayerWindowController.menuChangeSpeed(_:))
     }
 
     // -- screenshot
-    screenshot.action = #selector(MainMenuActionHandler.menuSnapshot(_:))
+    screenshot.action = #selector(PlayerWindowController.menuSnapshot(_:))
     gotoScreenshotFolder.action = #selector(AppDelegate.menuOpenScreenshotFolder(_:))
     // advancedScreenShot
 
     // -- list and chapter
-    abLoop.action = #selector(MainMenuActionHandler.menuABLoop(_:))
-    fileLoop.action = #selector(MainMenuActionHandler.menuFileLoop(_:))
+    abLoop.action = #selector(PlayerWindowController.menuABLoop(_:))
+    fileLoop.action = #selector(PlayerWindowController.menuFileLoop(_:))
     playlistMenu.delegate = self
     chapterMenu.delegate = self
-    playlistLoop.action = #selector(MainMenuActionHandler.menuPlaylistLoop(_:))
+    playlistLoop.action = #selector(PlayerWindowController.menuPlaylistLoop(_:))
     playlistPanel.action = #selector(MainWindowController.menuShowPlaylistPanel(_:))
     chapterPanel.action = #selector(MainWindowController.menuShowChaptersPanel(_:))
 
-    nextMedia.action = #selector(MainMenuActionHandler.menuNextMedia(_:))
-    previousMedia.action = #selector(MainMenuActionHandler.menuPreviousMedia(_:))
+    nextMedia.action = #selector(PlayerWindowController.menuNextMedia(_:))
+    previousMedia.action = #selector(PlayerWindowController.menuPreviousMedia(_:))
 
-    nextChapter.action = #selector(MainMenuActionHandler.menuNextChapter(_:))
-    previousChapter.action = #selector(MainMenuActionHandler.menuPreviousChapter(_:))
+    nextChapter.action = #selector(PlayerWindowController.menuNextChapter(_:))
+    previousChapter.action = #selector(PlayerWindowController.menuPreviousChapter(_:))
 
     // Video menu
 
@@ -266,7 +266,7 @@ class MenuController: NSObject, NSMenuDelegate {
     var aspectListObject = AppData.aspects
     aspectList.insert(Constants.String.default, at: 0)
     aspectListObject.insert("Default", at: 0)
-    bind(menu: aspectMenu, withOptions: aspectList, objects: aspectListObject, objectMap: nil, action: #selector(MainMenuActionHandler.menuChangeAspect(_:))) {
+    bind(menu: aspectMenu, withOptions: aspectList, objects: aspectListObject, objectMap: nil, action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       PlayerCore.active.info.unsureAspect == $0.representedObject as? String
     }
 
@@ -279,7 +279,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // Allow custom crop size.
     cropList.append(Constants.String.custom)
     cropListForObject.append("Custom")
-    bind(menu: cropMenu, withOptions: cropList, objects: cropListForObject, objectMap: nil, action: #selector(MainMenuActionHandler.menuChangeCrop(_:))) {
+    bind(menu: cropMenu, withOptions: cropList, objects: cropListForObject, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
       return PlayerCore.active.info.unsureCrop == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
@@ -287,17 +287,17 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- rotation
     let rotationTitles = AppData.rotations.map { "\($0)\(Constants.String.degree)" }
-    bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(MainMenuActionHandler.menuChangeRotation(_:))) {
+    bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
       PlayerCore.active.info.rotation == $0.representedObject as? Int
     }
 
     // -- flip and mirror
     flipMenu.delegate = self
-    flip.action = #selector(MainMenuActionHandler.menuToggleFlip(_:))
-    mirror.action = #selector(MainMenuActionHandler.menuToggleMirror(_:))
+    flip.action = #selector(PlayerWindowController.menuToggleFlip(_:))
+    mirror.action = #selector(PlayerWindowController.menuToggleMirror(_:))
 
     // -- deinterlace
-    deinterlace.action = #selector(MainMenuActionHandler.menuToggleDeinterlace(_:))
+    deinterlace.action = #selector(PlayerWindowController.menuToggleDeinterlace(_:))
 
     // -- delogo
     delogo.action = #selector(MainWindowController.menuSetDelogo(_:))
@@ -321,9 +321,9 @@ class MenuController: NSObject, NSMenuDelegate {
      increaseVolumeSlightly.representedObject,
      decreaseVolumeSlightly.representedObject) = (5, -5, 1, -1)
     [increaseVolume, decreaseVolume, increaseVolumeSlightly, decreaseVolumeSlightly].forEach { item in
-      item?.action = #selector(MainMenuActionHandler.menuChangeVolume(_:))
+      item?.action = #selector(PlayerWindowController.menuChangeVolume(_:))
     }
-    mute.action = #selector(MainMenuActionHandler.menuToggleMute(_:))
+    mute.action = #selector(PlayerWindowController.menuToggleMute(_:))
 
     // - audio delay
     (increaseAudioDelay.representedObject,
@@ -331,9 +331,9 @@ class MenuController: NSObject, NSMenuDelegate {
      decreaseAudioDelay.representedObject,
      decreaseAudioDelaySlightly.representedObject) = (0.5, 0.1, -0.5, -0.1)
     [increaseAudioDelay, decreaseAudioDelay, increaseAudioDelaySlightly, decreaseAudioDelaySlightly].forEach { item in
-      item?.action = #selector(MainMenuActionHandler.menuChangeAudioDelay(_:))
+      item?.action = #selector(PlayerWindowController.menuChangeAudioDelay(_:))
     }
-    resetAudioDelay.action = #selector(MainMenuActionHandler.menuResetAudioDelay(_:))
+    resetAudioDelay.action = #selector(PlayerWindowController.menuResetAudioDelay(_:))
 
     // - audio device
     audioDeviceMenu.delegate = self
@@ -349,18 +349,18 @@ class MenuController: NSObject, NSMenuDelegate {
 
     subMenu.delegate = self
     quickSettingsSub.action = #selector(MainWindowController.menuShowSubQuickSettings(_:))
-    loadExternalSub.action = #selector(MainMenuActionHandler.menuLoadExternalSub(_:))
+    loadExternalSub.action = #selector(PlayerWindowController.menuLoadExternalSub(_:))
     subTrackMenu.delegate = self
     secondSubTrackMenu.delegate = self
 
-    findOnlineSub.action = #selector(MainMenuActionHandler.menuFindOnlineSub(_:))
-    saveDownloadedSub.action = #selector(MainMenuActionHandler.saveDownloadedSub(_:))
+    findOnlineSub.action = #selector(PlayerWindowController.menuFindOnlineSub(_:))
+    saveDownloadedSub.action = #selector(PlayerWindowController.saveDownloadedSub(_:))
 
     onlineSubSourceMenu.delegate = self
 
     // - text size
     [increaseTextSize, decreaseTextSize, resetTextSize].forEach {
-      $0.action = #selector(MainMenuActionHandler.menuChangeSubScale(_:))
+      $0.action = #selector(PlayerWindowController.menuChangeSubScale(_:))
     }
 
     // - delay
@@ -369,17 +369,17 @@ class MenuController: NSObject, NSMenuDelegate {
      decreaseSubDelay.representedObject,
      decreaseSubDelaySlightly.representedObject) = (0.5, 0.1, -0.5, -0.1)
     [increaseSubDelay, decreaseSubDelay, increaseSubDelaySlightly, decreaseSubDelaySlightly].forEach { item in
-      item?.action = #selector(MainMenuActionHandler.menuChangeSubDelay(_:))
+      item?.action = #selector(PlayerWindowController.menuChangeSubDelay(_:))
     }
-    resetSubDelay.action = #selector(MainMenuActionHandler.menuResetSubDelay(_:))
+    resetSubDelay.action = #selector(PlayerWindowController.menuResetSubDelay(_:))
 
     // encoding
     let encodingTitles = AppData.encodings.map { $0.title }
     let encodingObjects = AppData.encodings.map { $0.code }
-    bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: #selector(MainMenuActionHandler.menuSetSubEncoding(_:))) {
+    bind(menu: encodingMenu, withOptions: encodingTitles, objects: encodingObjects, objectMap: nil, action: #selector(PlayerWindowController.menuSetSubEncoding(_:))) {
       PlayerCore.active.info.subEncoding == $0.representedObject as? String
     }
-    subFont.action = #selector(MainMenuActionHandler.menuSubFont(_:))
+    subFont.action = #selector(PlayerWindowController.menuSubFont(_:))
     // Separate Auto from other encoding types
     encodingMenu.insertItem(NSMenuItem.separator(), at: 1)
 
@@ -399,7 +399,7 @@ class MenuController: NSObject, NSMenuDelegate {
       customTouchBar.isHidden = true
     }
 
-    inspector.action = #selector(MainMenuActionHandler.menuShowInspector(_:))
+    inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
     miniPlayer.action = #selector(MainWindowController.menuSwitchToMiniPlayer(_:))
   }
 
@@ -408,7 +408,7 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updatePlaylist() {
     playlistMenu.removeAllItems()
     for (index, item) in PlayerCore.active.info.playlist.enumerated() {
-      playlistMenu.addItem(withTitle: item.filenameForDisplay, action: #selector(MainMenuActionHandler.menuPlaylistItem(_:)),
+      playlistMenu.addItem(withTitle: item.filenameForDisplay, action: #selector(PlayerWindowController.menuPlaylistItem(_:)),
                            tag: index, obj: nil, stateOn: item.isCurrent)
     }
   }
@@ -426,7 +426,7 @@ class MenuController: NSObject, NSMenuDelegate {
       let menuTitle = "\(padder(chapter.time.stringRepresentation)) – \(chapter.title)"
       let nextChapterTime = info.chapters[at: index+1]?.time ?? Constants.Time.infinite
       let isPlaying = info.videoPosition?.between(chapter.time, nextChapterTime) ?? false
-      let menuItem = NSMenuItem(title: menuTitle, action: #selector(MainMenuActionHandler.menuChapterSwitch(_:)), keyEquivalent: "")
+      let menuItem = NSMenuItem(title: menuTitle, action: #selector(PlayerWindowController.menuChapterSwitch(_:)), keyEquivalent: "")
       menuItem.tag = index
       menuItem.state = isPlaying ? .on : .off
       menuItem.attributedTitle = NSAttributedString(string: menuTitle, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)])
@@ -437,14 +437,14 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updateTracks(forMenu menu: NSMenu, type: MPVTrack.TrackType) {
     let info = PlayerCore.active.info
     menu.removeAllItems()
-    let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: #selector(MainMenuActionHandler.menuChangeTrack(_:)), keyEquivalent: "")
+    let noTrackMenuItem = NSMenuItem(title: Constants.String.trackNone, action: #selector(PlayerWindowController.menuChangeTrack(_:)), keyEquivalent: "")
     noTrackMenuItem.representedObject = MPVTrack.emptyTrack(for: type)
     if info.trackId(type) == 0 {  // no track
       noTrackMenuItem.state = .on
     }
     menu.addItem(noTrackMenuItem)
     for track in info.trackList(type) {
-      menu.addItem(withTitle: track.readableTitle, action: #selector(MainMenuActionHandler.menuChangeTrack(_:)),
+      menu.addItem(withTitle: track.readableTitle, action: #selector(PlayerWindowController.menuChangeTrack(_:)),
                              tag: nil, obj: (track, type), stateOn: track.id == info.trackId(type))
     }
   }
@@ -512,7 +512,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   private func updateOnlineSubSourceMenu() {
     OnlineSubtitle.populateMenu(onlineSubSourceMenu,
-                                action: #selector(MainMenuActionHandler.menuFindOnlineSub(_:)))
+                                action: #selector(MainWindowController.menuFindOnlineSub(_:)))
   }
 
   func updateSavedFiltersMenu(type: String) {
@@ -739,7 +739,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ keyBindings: [KeyMapping]) {
+  func updateKeyEquivalentsFrom(_ bindingRows: [BindingRow]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -808,10 +808,12 @@ class MenuController: NSObject, NSMenuDelegate {
 
     settings.forEach { (menuItem, isIINACmd, actions, normalizeLastNum, numRange, l10nKey) in
       var bound = false
-      for kb in keyBindings {
+      for bindingRow in bindingRows {
+        guard bindingRow.isEnabled else { continue }
+        let kb = bindingRow.binding
         guard kb.isIINACommand == isIINACmd else { continue }
         let (sameAction, value) = sameKeyAction(kb.action, actions, normalizeLastNum, numRange)
-        if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.key) {
+        if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
           menuItem.keyEquivalent = kEqv
           menuItem.keyEquivalentModifierMask = kMdf
           if let value = value, let l10nKey = l10nKey {
@@ -819,6 +821,8 @@ class MenuController: NSObject, NSMenuDelegate {
             menuItem.representedObject = value
           }
           bound = true
+          bindingRow.isMenuItem = true  // so we can indicate it in UI
+          bindingRow.statusMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
           break
         }
       }

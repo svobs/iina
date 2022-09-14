@@ -10,7 +10,6 @@ import Cocoa
 
 typealias PK = Preference.Key
 
-
 class Utility {
 
   static let supportedFileExt: [MPVTrack.TrackType: [String]] = [
@@ -525,6 +524,20 @@ class Utility {
   }
 
   // MARK: - Util classes
+
+  class AlertInfo {
+    let key: String
+    let comment: String?
+    let args: [CVarArg]?
+    let style: NSAlert.Style
+
+    init(key: String, comment: String? = nil, args: [CVarArg]? = nil, _ style: NSAlert.Style = .critical) {
+      self.key = key
+      self.comment = comment
+      self.args = args
+      self.style = style
+    }
+  }
 
   class FontAttributes {
     struct AttributeType {

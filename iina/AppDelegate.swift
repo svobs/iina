@@ -88,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func getReady() {
     menuController.bindMenuItems()
-    PlayerCore.loadKeyBindings()
+    InputConfigDataStore.getInstance().loadBindingsFromCurrentConfigFile()
     isReady = true
   }
 

@@ -61,8 +61,7 @@ class PlayerCore: NSObject {
   }
 
   static private func createPlayerCore() -> PlayerCore {
-    let pc = PlayerCore()
-    pc.label = "\(playerCoreCounter)"
+    let pc = PlayerCore("\(playerCoreCounter)")
     playerCores.append(pc)
     pc.startMPV()
     pc.loadPlugins()
@@ -77,9 +76,9 @@ class PlayerCore: NSObject {
 
   // MARK: - Fields
 
-  lazy var subsystem = Logger.Subsystem(rawValue: "player\(label!)")
+  let subsystem: Logger.Subsystem
 
-  var label: String!
+  var label: String
   var isManagedByPlugin = false
   var userLabel: String?
   var disableUI = false
@@ -148,11 +147,14 @@ class PlayerCore: NSObject {
     isInMiniPlayer ? miniPlayer.isPlaylistVisible : mainWindow.sideBarStatus == .playlist
   }
 
-  static var keyBindings: [String: KeyMapping] = [:]
+  var inputController: PlayerInputController!
 
-  override init() {
+  init(_ label: String) {
+    self.label = label
+    self.subsystem = Logger.Subsystem(rawValue: "player\(label)")
     super.init()
     self.mpv = MPVController(playerCore: self)
+    self.inputController = PlayerInputController(playerCore: self)
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)
@@ -311,27 +313,6 @@ class PlayerCore: NSObject {
     info.fileLoading = true
     info.justOpenedFile = true
     mpv.command(.loadfile, args: [path])
-  }
-
-  static func loadKeyBindings() {
-    Logger.log("Loading key bindings")
-    let userConfigs = Preference.dictionary(for: .inputConfigs)
-    let iinaDefaultConfPath = PrefKeyBindingViewController.defaultConfigs["IINA Default"]!
-    var inputConfPath = iinaDefaultConfPath
-    if let confFromUd = Preference.string(for: .currentInputConfigName) {
-      if let currentConfigFilePath = Utility.getFilePath(Configs: userConfigs, forConfig: confFromUd, showAlert: false) {
-        inputConfPath = currentConfigFilePath
-      }
-    }
-    setKeyBindings(KeyMapping.parseInputConf(at: inputConfPath) ?? KeyMapping.parseInputConf(at: iinaDefaultConfPath)!)
-  }
-
-  static func setKeyBindings(_ keyMappings: [KeyMapping]) {
-    Logger.log("Set key bindings")
-    var keyBindings: [String: KeyMapping] = [:]
-    keyMappings.forEach { keyBindings[$0.key] = $0 }
-    PlayerCore.keyBindings = keyBindings
-    (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(Array(keyBindings.values))
   }
 
   func startMPV() {
@@ -1411,7 +1392,7 @@ class PlayerCore: NSObject {
       !info.isNetworkResource && info.subTracks.isEmpty &&
       (info.videoDuration?.second ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
       DispatchQueue.main.async {
-        self.mainWindow.menuActionHandler.menuFindOnlineSub(.dummy)
+        self.mainWindow.menuFindOnlineSub(.dummy)
       }
     }
   }
@@ -1505,7 +1486,7 @@ class PlayerCore: NSObject {
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
     guard mainWindow.loaded else { return }
-    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
+//    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
 
     switch option {
 
@@ -1600,7 +1581,7 @@ class PlayerCore: NSObject {
   }
 
   func sendOSD(_ osd: OSDMessage, autoHide: Bool = true, forcedTimeout: Float? = nil, accessoryView: NSView? = nil, context: Any? = nil, external: Bool = false) {
-    // querying `mainWindow.isWindowLoaded` will initialize mainWindow unexpectly
+    // querying `mainWindow.isWindowLoaded` will initialize mainWindow unexpectedly
     guard mainWindow.loaded && Preference.bool(for: .enableOSD) else { return }
     if info.disableOSDForFileLoading && !external {
       guard case .fileStart = osd else {

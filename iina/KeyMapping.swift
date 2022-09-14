@@ -8,61 +8,63 @@
 
 import Foundation
 
-class KeyMapping: NSObject {
+class KeyMapping: NSObject, NSCopying, Codable {
 
-  static private let modifierOrder: [String: Int] = [
-    "Ctrl": 0,
-    "Alt": 1,
-    "Shift": 2,
-    "Meta": 3
-  ]
-
-  @objc var keyForDisplay: String {
-    get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? key : prettyKey
-    }
-    set {
-      key = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
-  
-  @objc var actionForDisplay: String {
-    get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? readableAction : prettyCommand
-    }
-    set {
-      rawAction = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
+  var bindingID: Int?
 
   var isIINACommand: Bool
 
-  var key: String
+  // MARK: Key
 
-  var action: [String]
+  var rawKey: String {
+    didSet {
+      self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
+    }
+  }
+
+  private(set) var normalizedMpvKey: String
+
+  var normalizedMacKey: String? {
+    get {
+      guard let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) else {
+        return nil
+      }
+      return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+    }
+  }
+
+  // For UI
+  var prettyKey: String {
+    get {
+      if let normalizedMacKey = normalizedMacKey {
+        return normalizedMacKey
+      } else {
+        return normalizedMpvKey
+      }
+    }
+  }
+
+  // MARK: Action
+
+  private(set) var action: [String]
 
   private var privateRawAction: String
 
   var rawAction: String {
     set {
-      if newValue.hasPrefix("@iina") {
-        privateRawAction = newValue[newValue.index(newValue.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        isIINACommand = true
+      if let trimmedAction = KeyMapping.removeIINAPrefix(from: newValue) {
+        self.isIINACommand = true
+        self.privateRawAction = trimmedAction
       } else {
-        privateRawAction = newValue
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        isIINACommand = false
+        self.isIINACommand = false
+        self.privateRawAction = newValue
       }
+      action = privateRawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     }
     get {
       return privateRawAction
     }
   }
-
-  var comment: String?
 
   @objc var readableAction: String {
     get {
@@ -71,85 +73,71 @@ class KeyMapping: NSObject {
     }
   }
 
-  var prettyKey: String {
-    get {
-      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: self.key, usePrintableKeyName: true) {
-        return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
-      } else {
-        return key
-      }
-    }
-  }
-
-  @objc var prettyCommand: String {
+  // For UI
+  var prettyCommand: String {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
   }
 
-  init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
-    // normalize different letter cases for modifier keys
-    var normalizedKey = key
-    ["Ctrl", "Meta", "Alt", "Shift"].forEach { keyword in
-      normalizedKey = normalizedKey.replacingOccurrences(of: keyword, with: keyword, options: .caseInsensitive)
+  // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
+  // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
+  var section: String? {
+    get {
+      if action.count > 1 && action[0].count > 0 && action[0][action[0].startIndex] == "{" {
+        if let endIndex = action[0].firstIndex(of: "}") {
+          let inner = action[0][action[0].index(after: action[0].startIndex)..<endIndex]
+          return inner.trimmingCharacters(in: .whitespaces)
+        }
+      }
+      return nil
     }
-    var keyIsPlus = false
-    if normalizedKey.hasSuffix("+") {
-      keyIsPlus = true
-      normalizedKey = String(normalizedKey.dropLast())
+  }
+
+  var comment: String?
+
+  var isIgnored: Bool {
+    return privateRawAction == MPVCommand.ignore.rawValue
+  }
+
+  var confFileFormat: String {
+    get {
+      let iinaCommandString = isIINACommand ? "#@iina " : ""
+      let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+      return "\(iinaCommandString)\(rawKey) \(action.joined(separator: " "))\(commentString)"
     }
-    normalizedKey = normalizedKey.components(separatedBy: "+")
-      .sorted { KeyMapping.modifierOrder[$0, default: 9] < KeyMapping.modifierOrder[$1, default: 9] }
-      .joined(separator: "+")
-    if keyIsPlus {
-      normalizedKey += "+"
-    }
-    self.key = normalizedKey
-    self.privateRawAction = rawAction
-    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+  }
+
+  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil, bindingID: Int? = nil) {
+    self.bindingID = bindingID
     self.isIINACommand = isIINACommand
+    self.privateRawAction = rawAction
+    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
+      self.isIINACommand = true
+      self.privateRawAction = trimmedAction
+    }
+    self.rawKey = rawKey
+    self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
     self.comment = comment
+    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
   }
 
-  static func parseInputConf(at path: String) -> [KeyMapping]? {
-    let reader = StreamReader(path: path)
-    var mapping: [KeyMapping] = []
-    while var line: String = reader?.nextLine() {      // ignore empty lines
-      var isIINACommand = false
-      if line.isEmpty { continue }
-      if line.hasPrefix("#@iina") {
-        // extended syntax
-        isIINACommand = true
-        line = String(line[line.index(line.startIndex, offsetBy: "#@iina".count)...])
-      } else if line.hasPrefix("#") {
-        // ignore comment
-        continue
-      }
-      // remove inline comment
-      if let sharpIndex = line.firstIndex(of: "#") {
-        line = String(line[...line.index(before: sharpIndex)])
-      }
-      // split
-      let splitted = line.split(maxSplits: 1, whereSeparator: { $0 == " " || $0 == "\t"})
-      if splitted.count < 2 {
-        Logger.log("Skipped corrupted line in input.conf: \(line)", level: .warning)
-        continue  // no command, wrong format
-      }
-      let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)
-      let action = String(splitted[1]).trimmingCharacters(in: .whitespaces)
-
-      mapping.append(KeyMapping(key: key, rawAction: action, isIINACommand: isIINACommand, comment: nil))
+  private static func removeIINAPrefix(from rawAction: String) -> String? {
+    if rawAction.hasPrefix("@iina") {
+      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
+    } else {
+      return nil
     }
-    return mapping
   }
 
-  static func generateConfData(from mappings: [KeyMapping]) -> String {
-    var result = "# Generated by IINA\n\n"
-    mappings.forEach { km in
-      if km.isIINACommand {
-        result += "#@iina \(km.key) \(km.action.joined(separator: " "))\n"
-      } else {
-        result += "\(km.key) \(km.action.joined(separator: " "))\n"
-      }
-    }
-    return result
+  public override var description: String {
+    return "KeyMapping(\"\(rawKey)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
+  }
+
+  func rawEquals(_ other: KeyMapping) -> Bool {
+    return rawKey == other.rawKey && rawAction == other.rawAction
+  }
+
+  //  NOTE: Does not copy bindingID!
+  func copy(with zone: NSZone? = nil) -> Any {
+    return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: nil)
   }
 }
