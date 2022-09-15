@@ -401,6 +401,16 @@ class MenuController: NSObject, NSMenuDelegate {
 
     inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
     miniPlayer.action = #selector(MainWindowController.menuSwitchToMiniPlayer(_:))
+
+    NotificationCenter.default.addObserver(forName: .iinaMainWindowChanged, object: nil, queue: .main, using: mainWindowDidChange)
+  }
+
+  private func mainWindowDidChange(_ notification: Notification) {
+    let didBecomeMain = notification.object as! Bool
+    Logger.log("DidBecomeMain: \(didBecomeMain)")
+    guard didBecomeMain else { return }
+
+    self.updatePluginMenu()
   }
 
   // MARK: - Update Menus
@@ -529,10 +539,22 @@ class MenuController: NSObject, NSMenuDelegate {
 
   func updatePluginMenu() {
     pluginMenu.removeAllItems()
+
+    let errorNotice = NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: "")
+    errorNotice.isHidden = true
+    pluginMenu.addItem(errorNotice)
+
+    // this will keep track of binding assignments and will update them as users change player bindings.
+    // A new one should be built each time the plugins menu is rebuilt.
+    var keyBindingMediator = PluginMenuKeyBindingMediator(completionHandler: { failureList in
+      errorNotice.isHidden = (failureList.count == 0)
+
+      // TOOD: populate item sub-menu with list of errors?
+    })
+
     pluginMenu.addItem(withTitle: "Manage Plugins…")
     pluginMenu.addItem(.separator())
 
-    var errorList: [(String, String)] = []
     for (index, plugin) in PlayerCore.active.plugins.enumerated() {
       var counter = 0
       var rootMenu: NSMenu! = pluginMenu
@@ -546,7 +568,7 @@ class MenuController: NSObject, NSMenuDelegate {
       
       for item in menuItems {
         if counter == 5 {
-          Logger.log("Please avoid adding too much first-level menu items. IINA will only display the first 5 of them.",
+          Logger.log("Please avoid adding too many first-level menu items. IINA will only display the first 5 of them.",
                      level: .warning, subsystem: plugin.subsystem)
           let moreItem = NSMenuItem()
           moreItem.title = "More…"
@@ -554,24 +576,20 @@ class MenuController: NSObject, NSMenuDelegate {
           moreItem.submenu = rootMenu
           pluginMenu.addItem(moreItem)
         }
-        add(menuItemDef: item, to: rootMenu, for: plugin, errorList: &errorList)
+        add(menuItemDef: item, to: rootMenu, for: plugin, keyBindingMediator: &keyBindingMediator)
         counter += 1
       }
     }
-    if errorList.count > 0 {
-      pluginMenu.insertItem(
-        NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: ""),
-        at: 0)
-    }
 
-    pluginMenuNeedsUpdate = false
+    // This will set any key equivalents
+    PlayerCore.lastActive.inputController.setPluginMenuMediator(keyBindingMediator)
   }
 
   @discardableResult
   private func add(menuItemDef item: JavascriptPluginMenuItem,
                    to menu: NSMenu,
                    for plugin: JavascriptPluginInstance,
-                   errorList: inout [(String, String)]) -> NSMenuItem {
+                   keyBindingMediator: inout PluginMenuKeyBindingMediator) -> NSMenuItem {
     if (item.isSeparator) {
       let item = NSMenuItem.separator()
       menu.addItem(item)
@@ -590,18 +608,14 @@ class MenuController: NSObject, NSMenuDelegate {
 
     menuItem.isEnabled = item.enabled
     menuItem.state = item.selected ? .on : .off
-    if let key = item.keyBinding {
-      if PlayerCore.keyBindings[key] != nil {
-        errorList.append((plugin.plugin.name, key))
-      } else if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: key) {
-        menuItem.keyEquivalent = kEqv
-        menuItem.keyEquivalentModifierMask = kMdf
-      }
+    if let rawKey = item.keyBinding {
+      // Store the item with its pair - the PlayerInputController will set the binding & deal with conflicts
+      keyBindingMediator.add(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem)
     }
     if !item.items.isEmpty {
       menuItem.submenu = NSMenu()
       for submenuItem in item.items {
-        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, errorList: &errorList)
+        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, keyBindingMediator: &keyBindingMediator)
       }
     }
     item.nsMenuItem = menuItem
@@ -676,7 +690,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
   // MARK: - Menu delegate
 
-  func menuWillOpen(_ menu: NSMenu) {
+  func menuNeedsUpdate(_ menu: NSMenu) {
+    Logger.log("Updating menu: \(menu.title)", level: .verbose)
+
     switch menu {
     case fileMenu:
       updateOpenMenuItems()
