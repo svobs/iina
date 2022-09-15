@@ -420,7 +420,7 @@ class KeyCodeHelper {
     return normalizedList.joined(separator: "-")
   }
 
-  // IMPORTANT: `mpvKeyCode` must be normalized first!
+  // IMPORTANT: `mpvKeyCode` must be normalized first! Use KeyCodeHelper.normalizeMpv().
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
     let splitted = mpvKeyCode.components(separatedBy: "+")
     var key: String

@@ -94,33 +94,46 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     switch columnName {
       case "keyColumn":
         let stringValue = isRaw() ? binding.rawKey : binding.prettyKey
-        setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
 
       case "actionColumn":
         let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
-        setRowText(for: cell.textField!, to: stringValue, isEnabled: bindingRow.isEnabled)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
 
       case "statusColumn":
-        if #available(macOS 11.0, *) {
-          if bindingRow.isMenuItem {
-            let nsImage = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
-            cell.imageView?.image = nsImage
-            cell.imageView?.isHidden = false
-            cell.imageView?.contentTintColor = .controlTextColor
-            cell.toolTip = bindingRow.statusMessage
-          } else if !bindingRow.isEnabled {
-            let nsImage = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
-            cell.imageView?.image = nsImage
-            cell.imageView?.isHidden = false
-            cell.imageView?.contentTintColor = .systemRed
-            cell.toolTip = bindingRow.statusMessage
+        cell.toolTip = bindingRow.statusMessage
+
+        if let imageView: NSImageView = cell.imageView {
+          if #available(macOS 11.0, *) {
+            imageView.isHidden = false
+
+            if bindingRow.isEnabled {
+              imageView.image = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
+              imageView.contentTintColor = NSColor.systemRed
+              return cell
+            }
+
+            switch bindingRow.origin {
+              case .iinaPlugin:
+                imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
+              case .luaScript:
+                imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
+              default:
+                if bindingRow.isMenuItem {
+                  imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
+                } else {
+                  imageView.image = nil
+                }
+            }
+            imageView.contentTintColor = NSColor.controlTextColor
           } else {
-            cell.imageView?.isHidden = true
-            cell.toolTip = nil
+            // FIXME: find icons to use so that all versions are supported
+            imageView.isHidden = true
           }
         }
+
         return cell
 
       default:
@@ -129,7 +142,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func setRowText(for textField: NSTextField, to stringValue: String, isEnabled: Bool) {
+  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool) {
+    guard let textField = cell.textField else { return }
+
     let attrString = NSMutableAttributedString(string: stringValue)
 
     if isEnabled {
@@ -143,7 +158,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     textField.attributedStringValue = attrString
   }
 
-  func isRaw() -> Bool {
+  private func isRaw() -> Bool {
     return Preference.bool(for: .displayKeyBindingRawValues)
   }
 
@@ -220,14 +235,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   // Use this if isRaw()==false (i.e., not inline editing)
-  func editWithPopup(rowIndex: Int) {
+  private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
     guard let row = ds.getBindingRow(at: rowIndex) else {
       return
     }
 
-    showKeyBindingPanel(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
+    showEditBindingPopup(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
       row.binding.rawKey = key
       row.binding.rawAction = action
@@ -252,7 +267,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // Adds a new binding at the given location then opens an editor for it. The editor with either be inline or using the popup,
   // depending on whether isRaw() is true or false, respectively.
   // If isAfterNotAt==true, inserts after the row with given rowIndex. If isAfterNotAt==false, inserts before the row with given rowIndex.
-  func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
     if isRaw() {
@@ -260,7 +275,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
 
     } else {
-      showKeyBindingPanel { key, action in
+      showEditBindingPopup { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
         let insertedRowIndex = self.ds.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
@@ -269,28 +284,8 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  func moveBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
-    let bindings: [KeyMapping] = rowList.map { $0.binding }
-    let firstInsertedRowIndex = self.ds.moveBindings(bindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
-
-    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
-  }
-
-  func copyBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
-    // Make sure to use copy() to clone the object here
-    let newBindings: [KeyMapping] = rowList.map { $0.binding.copy() as! KeyMapping }
-
-    let firstInsertedRowIndex = self.ds.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
-
-    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
-  }
-
-  func removeSelectedBindings() {
-    ds.removeBindings(at: tableView.selectedRowIndexes)
-  }
-
   // Displays popup for editing a binding
-  func showKeyBindingPanel(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
+  private func showEditBindingPopup(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
     let panel = NSAlert()
     let keyRecordViewController = KeyRecordViewController()
     keyRecordViewController.keyCode = key
@@ -307,6 +302,26 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         ok(keyRecordViewController.keyCode, keyRecordViewController.action)
       }
     }
+  }
+
+  private func copyBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+    // Make sure to use copy() to clone the object here
+    let newBindings: [KeyMapping] = rowList.map { $0.binding.copy() as! KeyMapping }
+
+    let firstInsertedRowIndex = self.ds.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
+
+    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+  }
+
+  private func moveBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+    let bindings: [KeyMapping] = rowList.map { $0.binding }
+    let firstInsertedRowIndex = self.ds.moveBindings(bindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
+
+    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+  }
+
+  func removeSelectedBindings() {
+    ds.removeBindings(at: tableView.selectedRowIndexes)
   }
 
   // MARK: Drag & Drop
@@ -380,11 +395,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     let dragMask = info.draggingSourceOperationMask
     switch dragMask {
-      case .copy:
-        tableView.draggingDestinationFeedbackStyle = .regular
-        return dragMask
-      case .move:
-        tableView.draggingDestinationFeedbackStyle = .gap
+      case .copy, .move:
         return dragMask
       default:
         return DEFAULT_DRAG_OPERATION
@@ -414,12 +425,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     // Return immediately, and import (or fail to) asynchronously
     DispatchQueue.main.async {
-      if dragMask == .move {
-        self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-      } else if dragMask == .copy {
-        self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-      } else {
-        Logger.log("Unexpected drag operatiom: \(dragMask)")
+      switch dragMask {
+        case .copy:
+          self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        case .move:
+          self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        default:
+          Logger.log("Unexpected drag operatiom: \(dragMask)")
       }
     }
     return true
