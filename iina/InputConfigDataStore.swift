@@ -9,7 +9,7 @@
 import Foundation
 
 /*
- Encapsulates a single row/line in the Bindings table
+ Encapsulates a single row/line in the Key Bindings table
  */
 class BindingRow: NSObject, Codable {
   enum Origin: Codable {
