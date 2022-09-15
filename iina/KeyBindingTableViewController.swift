@@ -100,6 +100,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       case "actionColumn":
         let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
+        
         return cell
 
       case "statusColumn":
@@ -109,7 +110,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
           if #available(macOS 11.0, *) {
             imageView.isHidden = false
 
-            if bindingRow.isEnabled {
+            if !bindingRow.isEnabled {
               imageView.image = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: nil)!
               imageView.contentTintColor = NSColor.systemRed
               return cell

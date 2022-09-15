@@ -57,9 +57,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    Logger.log("Selecting row: '\(configName)' (index \(index))", level: .verbose)
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-    Logger.log("Selected row is now: \(self.tableView.selectedRow)", level: .verbose)
+    Logger.log("Selected row: '\(configName)' (index \(index)). Selected rows are now: \(self.tableView.selectedRowIndexes)", level: .verbose)
   }
 
   // MARK: NSTableViewDataSource
