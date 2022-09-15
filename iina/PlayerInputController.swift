@@ -12,6 +12,32 @@ let MP_MAX_KEY_DOWN = 4
 fileprivate let DEFAULT_SECTION = "default"
 let LOG_BINDINGS_REBUILD = false
 
+class PluginMenuKeyBindingMediator {
+  class Entry {
+    let rawKey: String
+    let pluginName: String
+    let menuItem: NSMenuItem
+
+    init(rawKey: String, pluginName: String, _ menuItem: NSMenuItem) {
+      self.rawKey = rawKey
+      self.pluginName = pluginName
+      self.menuItem = menuItem
+    }
+  }
+
+  fileprivate var entryList: [Entry] = []
+  // Arg0 = failureList
+  fileprivate var didComplete: ([Entry]) -> Void
+
+  init(completionHandler: @escaping ([Entry]) -> Void) {
+    self.didComplete = completionHandler
+  }
+
+  func add(rawKey: String, pluginName: String, _ menuItem: NSMenuItem) {
+    entryList.append(Entry(rawKey: rawKey, pluginName: pluginName, menuItem))
+  }
+}
+
 /*
  A single PlayerInputController instance should be associated with a single PlayerCore, and while the player window has focus, its
  PlayerWindowController is expected to direct key presses to this class's `resolveKeyEvent` method.
@@ -62,13 +88,16 @@ let LOG_BINDINGS_REBUILD = false
 
  */
 class PlayerInputController {
+  // Contains just just the extra metadata that is needed for logic in this class:
   private struct ActiveBindingEntry {
     let binding: KeyMapping
     let srcSectionName: String
+    let isFromPlugin: Bool
 
-    init(_ kb: KeyMapping, from sectionName: String) {
-      binding = kb
-      srcSectionName = sectionName
+    init(_ kb: KeyMapping, from sectionName: String, isFromPlugin: Bool = false) {
+      self.binding = kb
+      self.srcSectionName = sectionName
+      self.isFromPlugin = isFromPlugin
     }
   }
 
@@ -113,7 +142,7 @@ class PlayerInputController {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
         meta.statusMessage = "IINA does not use default-level (\"weak\") bindings"
       } else {
-        if let defaultSectionBinding = filterSectionBindings($0) {
+        if let defaultSectionBinding = filterExtraneousSectionBindings($0) {
           let key = defaultSectionBinding.normalizedMpvKey
           if chosenBindingsDict[key] == nil {
             orderedKeyList.append(key)
@@ -157,20 +186,21 @@ class PlayerInputController {
       player.inputController.setSharedPlayerBindings(chosenBindingList)
     }
 
+    // FIXME: replace with async notification after we rebuild active bindings
     return bindingMetaList
   }
 
-  static private func filterSectionBindings(_ kb: KeyMapping) -> KeyMapping? {
-    guard let section = kb.section else {
+  static private func filterExtraneousSectionBindings(_ kb: KeyMapping) -> KeyMapping? {
+    guard let destinationSection = kb.destinationSection else {
       return kb
     }
 
-    if section == "default" {
+    if destinationSection == "default" {
       // Drop "{default}" because it is unnecessary and will get in the way of libmpv command execution
       let newRawAction = Array(kb.action.dropFirst()).joined(separator: " ")
       return KeyMapping(rawKey: kb.rawKey, rawAction: newRawAction, isIINACommand: kb.isIINACommand, comment: kb.comment)
     } else {
-      Logger.log("Skipping binding from section \"\(section)\": \(kb.rawKey)", level: .verbose)
+      Logger.log("Skipping binding which specifies section \"\(destinationSection)\": \(kb.rawKey)", level: .verbose)
       return nil
     }
   }
@@ -199,6 +229,8 @@ class PlayerInputController {
 
   // The master dictionary: contains only the bindings which are currently active for this player
   private var currentPlayerBindings: [String: ActiveBindingEntry] = [:]
+
+  private var pluginMenuMediator: PluginMenuKeyBindingMediator? = nil
 
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
@@ -278,6 +310,12 @@ class PlayerInputController {
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
       if let meta = currentPlayerBindings[keySequence] {
+        if meta.isFromPlugin {
+          // Make extra sure we don't resolve plugin bindings here
+          log("Sequence \"\(keySequence)\" resolved to a plugin binding! This should never happen! Ignoring", level: .error)
+          logCurrentPlayerBindings()
+          return nil
+        }
         if meta.binding.isIgnored {
           log("Ignoring \"\(meta.binding.normalizedMpvKey)\" (from: \"\(meta.srcSectionName)\")", level: .verbose)
           hasPartialValidSequence = true
@@ -329,6 +367,9 @@ class PlayerInputController {
 
     var rebuiltBindings: [String: ActiveBindingEntry] = buildBindingsDictFromEnabledSections()
 
+    // Set key equivalents in the Plugin menu, making sure to
+    updatePluginMenuBindings(&rebuiltBindings)
+
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     PlayerInputController.fillInPartialSequences(&rebuiltBindings)
 
@@ -338,6 +379,34 @@ class PlayerInputController {
     log("Finished rebuilding input bindings (\(currentPlayerBindings.count) total)")
     if LOG_BINDINGS_REBUILD {
       logCurrentPlayerBindings()
+    }
+  }
+
+  // Each plugin's bindings are equivalent to a "weak" input section.
+  private func updatePluginMenuBindings(_ bindingsDict: inout [String: ActiveBindingEntry]) {
+    if let mediator = self.pluginMenuMediator {
+      var failureList: [PluginMenuKeyBindingMediator.Entry] = []
+      for entry in mediator.entryList {
+        let mpvKey = KeyCodeHelper.normalizeMpv(entry.rawKey)
+        if let bindingEntry = bindingsDict[mpvKey], !bindingEntry.binding.isIgnored {
+          // Conflict! Key binding already reserved
+          failureList.append(entry)
+          entry.menuItem.keyEquivalent = ""
+          entry.menuItem.keyEquivalentModifierMask = []
+        } else {
+          if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
+            entry.menuItem.keyEquivalent = kEqv
+            entry.menuItem.keyEquivalentModifierMask = kMdf
+
+            // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it
+            let action = "Plugin > \(entry.pluginName) > \(entry.menuItem.title)"
+            let binding = KeyMapping(rawKey: entry.rawKey, rawAction: action, isIINACommand: true)
+            bindingsDict[mpvKey] = ActiveBindingEntry(binding, from: entry.pluginName, isFromPlugin: true)
+          }
+        }
+      }
+
+      mediator.didComplete(failureList)
     }
   }
 
@@ -388,7 +457,7 @@ class PlayerInputController {
 
   private func logCurrentPlayerBindings() {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = currentPlayerBindings.map { ("\t<\($1.srcSectionName)> \($0) -> \($1.binding.readableAction)") }
+      let bindingList = currentPlayerBindings.map { ("\t<\($1.isFromPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.binding.readableAction)") }
       log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose)
     }
   }
@@ -555,4 +624,11 @@ class PlayerInputController {
     return nil
   }
 
+  func setPluginMenuMediator(_ mediator: PluginMenuKeyBindingMediator?) {
+    self.pluginMenuMediator = mediator
+    if let mediator = mediator {
+      log("Plugin menu updated, requests \(mediator.entryList.count) key bindings")
+    }
+    self.rebuildCurrentPlayerBindings()
+  }
 }

@@ -80,7 +80,7 @@ class KeyMapping: NSObject, NSCopying, Codable {
 
   // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
-  var section: String? {
+  var destinationSection: String? {
     get {
       if action.count > 1 && action[0].count > 0 && action[0][action[0].startIndex] == "{" {
         if let endIndex = action[0].firstIndex(of: "}") {
