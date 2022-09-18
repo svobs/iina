@@ -8,12 +8,6 @@
 
 import Foundation
 
-// Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
-extension NSPasteboard.PasteboardType {
-  static let iinaBindingRow = NSPasteboard.PasteboardType("com.colliderli.iina.BindingRow")
-}
-
-
 class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
@@ -42,7 +36,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
-      tableView.registerForDraggedTypes([.string, .iinaBindingRow])
+      tableView.registerForDraggedTypes([.string, .iinaPlayerBinding])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -72,14 +66,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return ds.getBindingRowCount()
+    return ds.getPlayerBindingCount()
   }
 
   /**
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let bindingRow = ds.getBindingRow(at: row) else {
+    guard let bindingRow = ds.getPlayerBinding(at: row) else {
       return nil
     }
 
@@ -197,7 +191,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func userDidEndEditing(_ newValue: String, rowIndex: Int, columnIndex: Int) -> Bool {
-    guard let editedRow = ds.getBindingRow(at: rowIndex) else {
+    guard let editedRow = ds.getPlayerBinding(at: rowIndex) else {
       Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
@@ -240,7 +234,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
-    guard let row = ds.getBindingRow(at: rowIndex) else {
+    guard let row = ds.getPlayerBinding(at: rowIndex) else {
       return
     }
 
@@ -306,7 +300,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func copyBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func copyPlayerBindings(from rowList: [PlayerBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
     let newBindings: [KeyMapping] = rowList.map { $0.binding.copy() as! KeyMapping }
 
@@ -315,7 +309,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
 
-  private func moveBindingRows(from rowList: [BindingRow], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func movePlayerBindings(from rowList: [PlayerBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     let bindings: [KeyMapping] = rowList.map { $0.binding }
     let firstInsertedRowIndex = self.ds.moveBindings(bindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
 
@@ -332,7 +326,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Drag start: convert tableview rows to clipboard items
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    return ds.getBindingRow(at: rowIndex)
+    return ds.getPlayerBinding(at: rowIndex)
   }
 
   /**
@@ -343,7 +337,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    let rowList = getBindingRowsOrNothing(from: session.draggingPasteboard)
+    let rowList = getPlayerBindingsOrNothing(from: session.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return
@@ -354,11 +348,11 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     ds.removeBindings(withIDs: rowList.map{$0.binding.bindingID!})
   }
 
-  private func getBindingRowsOrNothing(from pasteboard: NSPasteboard) -> [BindingRow] {
-    var rowList: [BindingRow] = []
-    if let objList = pasteboard.readObjects(forClasses: [BindingRow.self], options: nil) {
+  private func getPlayerBindingsOrNothing(from pasteboard: NSPasteboard) -> [PlayerBinding] {
+    var rowList: [PlayerBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [PlayerBinding.self], options: nil) {
       for obj in objList {
-        if let row = obj as? BindingRow, row.origin == .confFile {
+        if let row = obj as? PlayerBinding, row.origin == .confFile {
           rowList.append(row)
         } else {
           return [] // return empty list if something was amiss
@@ -377,7 +371,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return []  // deny drop
     }
 
-    let rowList = getBindingRowsOrNothing(from: info.draggingPasteboard)
+    let rowList = getPlayerBindingsOrNothing(from: info.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return []  // deny drop
@@ -409,7 +403,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    */
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = getBindingRowsOrNothing(from: info.draggingPasteboard)
+    let rowList = getPlayerBindingsOrNothing(from: info.draggingPasteboard)
     Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
@@ -429,9 +423,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     DispatchQueue.main.async {
       switch dragMask {
         case .copy:
-          self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+          self.copyPlayerBindings(from: rowList, to: rowIndex, isAfterNotAt: false)
         case .move:
-          self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+          self.movePlayerBindings(from: rowList, to: rowIndex, isAfterNotAt: false)
         default:
           Logger.log("Unexpected drag operatiom: \(dragMask)")
       }
@@ -442,10 +436,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSMenuDelegate
 
   fileprivate class BindingMenuItem: NSMenuItem {
-    let row: BindingRow
+    let row: PlayerBinding
     let rowIndex: Int
 
-    public init(_ row: BindingRow, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
+    public init(_ row: PlayerBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
       self.row = row
       self.rowIndex = rowIndex
       super.init(title: title, action: selector, keyEquivalent: "")
@@ -457,7 +451,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func addItem(to menu: NSMenu, for row: BindingRow, withIndex rowIndex: Int, title: String, action: Selector?) {
+  private func addItem(to menu: NSMenu, for row: PlayerBinding, withIndex rowIndex: Int, title: String, action: Selector?) {
     menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
   }
 
@@ -466,7 +460,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     menu.removeAllItems()
 
     let clickedIndex = tableView.clickedRow
-    guard let clickedRow = ds.getBindingRow(at: tableView.clickedRow) else {
+    guard let clickedRow = ds.getPlayerBinding(at: tableView.clickedRow) else {
       return
     }
 
