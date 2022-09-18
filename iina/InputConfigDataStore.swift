@@ -599,7 +599,7 @@ class InputConfigDataStore {
 
   private func applyBindingsStateUpdates(_ configFileBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
     // Send to PlayerInputController to ingest. It wil return the metadata we need
-    let sharedPlayerBindings = PlayerInputController.applySharedBindingsFromInputConfFile(configFileBindings)
+    let sharedPlayerBindings = PlayerInputController.rebuildDefaultSectionBindings(configFileBindings)
     assert(sharedPlayerBindings.count >= configFileBindings.count, "Something went wrong!")
 
     // TODO: add dropdown to UI: Preferences > Key Bindings to choose display for a single player vs shared

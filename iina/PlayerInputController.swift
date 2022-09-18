@@ -119,9 +119,16 @@ class PlayerInputController {
 
   // This exists so that new instances of PlayerInputController can immediately populate their default section.
   // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
-  static private var currentDefaultSectionBindings: [KeyMapping] = []
+  static private var currentDefaultSection: MPVInputSection = makeDefaultSection() {
+    didSet {
+      // - Send bindings to individual players: they will need to re-determine which bindings they want to override
+      for player in PlayerCore.playerCores {
+        player.inputController.updateDefaultSectionDefinition()
+      }
+    }
+  }
 
-  static func applySharedBindingsFromInputConfFile(_ bindingList: [KeyMapping]) -> [PlayerBinding] {
+  static func rebuildDefaultSectionBindings(_ bindingList: [KeyMapping]) -> [PlayerBinding] {
     Logger.log("Set InputConf bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
     var bindingMetaList: [PlayerBinding] = []
@@ -176,15 +183,10 @@ class PlayerInputController {
       chosenBindingList.append(chosenBinding)
     }
 
-    // cache this so that new players can use it
-    currentDefaultSectionBindings = chosenBindingList
-
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(bindingMetaList)
 
-    // - Send bindings to individual players: they will need to re-determine which bindings they want to override
-    for player in PlayerCore.playerCores {
-      player.inputController.setDefaultSectionBindings(chosenBindingList)
-    }
+    // Update the default section for all players, and cache it so that new players can use it
+    currentDefaultSection = makeDefaultSection(from: chosenBindingList)
 
     // FIXME: replace with async notification after we rebuild active bindings
     return bindingMetaList
@@ -203,6 +205,10 @@ class PlayerInputController {
       Logger.log("Skipping binding which specifies section \"\(destinationSection)\": \(kb.rawKey)", level: .verbose)
       return nil
     }
+  }
+
+  private static func makeDefaultSection(from bindingList: [KeyMapping] = []) -> MPVInputSection {
+    return MPVInputSection(name: DEFAULT_SECTION, bindingList, isForce: true)
   }
 
   // MARK: - Single player instance
@@ -242,7 +248,7 @@ class PlayerInputController {
 
     // initial load
     self.dq.async {
-      self.setDefaultSectionBindings_Unsafe(PlayerInputController.currentDefaultSectionBindings)
+      self.updateDefaultSectionDefinition_Unsafe()
       self.enableSection_Unsafe(DEFAULT_SECTION, [])
       assert (self.sectionsEnabled.count == 1)
       assert (self.sectionsDefined.count == 1)
@@ -344,21 +350,21 @@ class PlayerInputController {
     }
   }
 
-  private func setDefaultSectionBindings(_ defaultSectionBindings: [KeyMapping]) {
+  private func updateDefaultSectionDefinition() {
     log("Default section bindings changed: will rebuild active bindings", level: .verbose)
     self.dq.async {
-      self.setDefaultSectionBindings_Unsafe(defaultSectionBindings)
+      self.updateDefaultSectionDefinition_Unsafe()
     }
   }
 
-  private func setDefaultSectionBindings_Unsafe(_ defaultSectionBindings: [KeyMapping]) {
+  private func updateDefaultSectionDefinition_Unsafe() {
     if LOG_BINDINGS_REBUILD {
-      self.log("Setting 'default' section with \(defaultSectionBindings.count) bindings", level: .verbose)
+      let count = PlayerInputController.currentDefaultSection.keyBindings.count
+      self.log("Redefining 'default' section with \(count) bindings", level: .verbose)
     }
     // Treat global bindings as `section=="default", weak==false`.
-    let defaultSection = MPVInputSection(name: DEFAULT_SECTION, defaultSectionBindings, isForce: true)
     // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
-    sectionsDefined[defaultSection.name] = defaultSection
+    sectionsDefined[PlayerInputController.currentDefaultSection.name] = PlayerInputController.currentDefaultSection
     self.rebuildCurrentPlayerBindings()
   }
 
