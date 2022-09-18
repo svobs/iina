@@ -2497,15 +2497,6 @@
 			name = KeyBinding;
 			sourceTree = "<group>";
 		};
-		AF119E67C2E61E10DC27039C /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				A1F8439D2926257DC5434942 /* Pods-iina.debug.xcconfig */,
-				61C6D8870FEB96F250D1448D /* Pods-iina.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
 		E35306F22147F770008FE492 /* API */ = {
 			isa = PBXGroup;
 			children = (
@@ -4397,6 +4388,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = iina/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4442,6 +4434,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = iina/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
