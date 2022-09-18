@@ -98,7 +98,8 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         return cell
 
       case "actionColumn":
-        let stringValue = isRaw() ? binding.rawAction : binding.prettyCommand
+        let stringValue = isRaw() ? binding.rawAction : binding.readableCommand
+
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
         
         return cell

@@ -50,6 +50,7 @@ class KeyMapping: NSObject, NSCopying, Codable {
 
   private var privateRawAction: String
 
+  // The action with @iina removed (if applicable), but otherwise not formatted
   var rawAction: String {
     set {
       if let trimmedAction = KeyMapping.removeIINAPrefix(from: newValue) {
@@ -66,15 +67,16 @@ class KeyMapping: NSObject, NSCopying, Codable {
     }
   }
 
-  @objc var readableAction: String {
+  // Similar to rawAction, but the tokens will always be separated by exactly one space
+  var readableAction: String {
     get {
       let joined = action.joined(separator: " ")
       return isIINACommand ? ("@iina " + joined) : joined
     }
   }
 
-  // For UI
-  var prettyCommand: String {
+  // The human-language description of the action
+  var readableCommand: String {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
   }
 
@@ -92,17 +94,20 @@ class KeyMapping: NSObject, NSCopying, Codable {
     }
   }
 
+  // The MPV comment
   var comment: String?
 
+  // Convenience method. Returns true if action is "ignore"
   var isIgnored: Bool {
     return privateRawAction == MPVCommand.ignore.rawValue
   }
 
+  // Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
     get {
       let iinaCommandString = isIINACommand ? "#@iina " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      return "\(iinaCommandString)\(rawKey) \(action.joined(separator: " "))\(commentString)"
+      return "\(iinaCommandString)\(rawKey) \(privateRawAction)\(commentString)"
     }
   }
 
