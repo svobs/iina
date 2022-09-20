@@ -188,6 +188,8 @@ class InputConfigDataStore {
       return
     }
 
+    Logger.log("Changing current config to: \"\(configNameNew)\"", level: .verbose)
+
     setConfigTableState(currentConfigNameNew: configNameNew, .selectionChangeOnly)
   }
 
@@ -324,16 +326,23 @@ class InputConfigDataStore {
 
   // MARK: Binding CRUD
 
-  func getActiveBindingMetaCount() -> Int {
+  func getBindingRowCount() -> Int {
     return bindingRowsFlltered.count
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getActiveBindingMeta(at index: Int) -> ActiveBindingMeta? {
+  func getBindingRow(at index: Int) -> ActiveBindingMeta? {
     guard index >= 0 && index < bindingRowsFlltered.count else {
       return nil
     }
     return bindingRowsFlltered[index]
+  }
+
+  func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
+    guard let row = self.getBindingRow(at: rowIndex) else {
+      return false
+    }
+    return row.origin == .confFile
   }
 
   private func determimeInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
@@ -477,12 +486,15 @@ class InputConfigDataStore {
     return nil
   }
 
-  private func reoolveBindingIDsFromIndexes(_ indexes: IndexSet) -> Set<Int> {
+  private func resolveBindingIDsFromIndexes(_ indexes: IndexSet, excluding isExcluded: ((ActiveBindingMeta) -> Bool)?) -> Set<Int> {
     var idSet = Set<Int>()
     for index in indexes {
-      if let row = getActiveBindingMeta(at: index) {
+      if let row = getBindingRow(at: index) {
         if let id = row.binding.bindingID {
-          idSet.insert(id)
+          if let isExcluded = isExcluded, isExcluded(row) {
+          } else {
+            idSet.insert(id)
+          }
         } else {
           Logger.log("Cannot remove row at index \(index): binding has no ID!", level: .error)
         }
@@ -496,11 +508,18 @@ class InputConfigDataStore {
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    let idsToRemove = reoolveBindingIDsFromIndexes(indexesToRemove)
+    let idsToRemove = resolveBindingIDsFromIndexes(indexesToRemove, excluding: { !$0.isEditableByUser })
+
+    if idsToRemove.isEmpty {
+      Logger.log("Aborting remove operation: none of the rows can be modified")
+      return
+    }
 
     var remainingRowsUnfiltered: [ActiveBindingMeta] = []
     for row in bindingRowsAll {
-      if let id = row.binding.bindingID, !idsToRemove.contains(id) {
+      if let id = row.binding.bindingID, idsToRemove.contains(id) {
+      } else {
+        // be sure to include rows which do not have IDs
         remainingRowsUnfiltered.append(row)
       }
     }
@@ -520,12 +539,14 @@ class InputConfigDataStore {
     var indexesToRemove = IndexSet()
     for (rowIndex, row) in bindingRowsAll.enumerated() {
       if let id = row.binding.bindingID {
-        if idsToRemove.contains(id) {
+        // Non-editable rows probably do not have IDs, but check editable status to be sure
+        if idsToRemove.contains(id) && row.isEditableByUser {
           indexesToRemove.insert(rowIndex)
-        } else {
-          remainingRowsUnfiltered.append(row)
+          continue
         }
       }
+      // Be sure to include rows which do not have IDs
+      remainingRowsUnfiltered.append(row)
     }
 
     let tableUpdate = TableUpdateByRowIndex(.removeRows)
@@ -537,9 +558,12 @@ class InputConfigDataStore {
   func updateBinding(at index: Int, to binding: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
 
-    if let existingRow = getActiveBindingMeta(at: index) {
-      existingRow.binding = binding
+    guard let existingRow = getBindingRow(at: index), existingRow.isEditableByUser else {
+      Logger.log("Cannot update binding at index \(index); aborting", level: .error)
+      return
     }
+
+    existingRow.binding = binding
 
     let tableUpdate = TableUpdateByRowIndex(.updateRows)
 

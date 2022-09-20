@@ -50,7 +50,7 @@ class AppActiveBindingController {
   // But there is only a single menubar, while Plugin menu items will change each time a different player window comes into focus.
   // Also, each time the player bindings are changed, they may override some of the menu items, so the Plugin menu will need to be
   // updated to stay consistent. This object will facilitate those updates.
-  private var pluginMenuMediator: PluginMenuKeyBindingMediator? = nil
+  private var pluginMenuMediator = PluginMenuKeyBindingMediator(completionHandler: { _ in })
 
   // Cached bindings for each type
   private var currentDefaultSectionBindings: [ActiveBindingMeta] = []
@@ -151,11 +151,12 @@ class AppActiveBindingController {
     return currentDefaultSection
   }
 
-  func setPluginMenuMediator(_ mediator: PluginMenuKeyBindingMediator?) {
-    pluginMenuMediator = mediator
-    if let mediator = mediator {
-      Logger.log("Plugin menu updated, requests \(mediator.entryList.count) key bindings", level: .verbose)
-    }
+  func setPluginMenuMediator(_ newMediator: PluginMenuKeyBindingMediator) {
+    let needsRebuild: Bool = !(pluginMenuMediator.entryList.count == 0 && newMediator.entryList.count == 0)
+    guard needsRebuild else { return }
+    
+    pluginMenuMediator = newMediator
+    Logger.log("Plugin menu updated, requests \(pluginMenuMediator.entryList.count) key bindings", level: .verbose)
     // This will call `updatePluginMenuBindings()`
     PlayerCore.active.inputController.rebuildCurrentActiveBindingList()
   }
@@ -164,36 +165,35 @@ class AppActiveBindingController {
   func updatePluginMenuBindings(_ bindingsDict: inout [String: ActiveBindingMeta]) {
     var pluginMenuBindings: [ActiveBindingMeta] = []
 
-    if let mediator = self.pluginMenuMediator {
-      var failureList: [PluginMenuKeyBindingMediator.Entry] = []
-      for entry in mediator.entryList {
-        let mpvKey = KeyCodeHelper.normalizeMpv(entry.rawKey)
+    let mediator = self.pluginMenuMediator
+    var failureList: [PluginMenuKeyBindingMediator.Entry] = []
+    for entry in mediator.entryList {
+      let mpvKey = KeyCodeHelper.normalizeMpv(entry.rawKey)
 
-        // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it
-        let action = "Plugin > \(entry.pluginName) > \(entry.menuItem.title)"
-        let binding = KeyMapping(rawKey: entry.rawKey, rawAction: action, isIINACommand: true)
-        let bindingMeta = ActiveBindingMeta(binding, origin: .iinaPlugin, srcSectionName: entry.pluginName, isMenuItem: true, isEnabled: false)
+      // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it
+      let action = "Plugin > \(entry.pluginName) > \(entry.menuItem.title)"
+      let binding = KeyMapping(rawKey: entry.rawKey, rawAction: action, isIINACommand: true)
+      let bindingMeta = ActiveBindingMeta(binding, origin: .iinaPlugin, srcSectionName: entry.pluginName, isMenuItem: true, isEnabled: false)
 
-        if let existingBindingMeta = bindingsDict[mpvKey], !existingBindingMeta.binding.isIgnored {
-          // Conflict! Key binding already reserved
-          failureList.append(entry)
-          entry.menuItem.keyEquivalent = ""
-          entry.menuItem.keyEquivalentModifierMask = []
-        } else {
-          if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
-            entry.menuItem.keyEquivalent = kEqv
-            entry.menuItem.keyEquivalentModifierMask = kMdf
+      if let existingBindingMeta = bindingsDict[mpvKey], !existingBindingMeta.binding.isIgnored {
+        // Conflict! Key binding already reserved
+        failureList.append(entry)
+        entry.menuItem.keyEquivalent = ""
+        entry.menuItem.keyEquivalentModifierMask = []
+      } else {
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
+          entry.menuItem.keyEquivalent = kEqv
+          entry.menuItem.keyEquivalentModifierMask = kMdf
 
-            bindingsDict[mpvKey] = bindingMeta
-            bindingMeta.isEnabled = true
-          }
+          bindingsDict[mpvKey] = bindingMeta
+          bindingMeta.isEnabled = true
         }
-
-        pluginMenuBindings.append(bindingMeta)
       }
 
-      mediator.didComplete(failureList)
+      pluginMenuBindings.append(bindingMeta)
     }
+
+    mediator.didComplete(failureList)
 
     currentPluginMenuBindings = pluginMenuBindings
     Logger.log("Updated Plugin menu bindings (count: \(currentPluginMenuBindings.count))")

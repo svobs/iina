@@ -9,7 +9,6 @@
 import Foundation
 
 let MP_MAX_KEY_DOWN = 4
-fileprivate let DEFAULT_INPUT_SECTION = "default"
 fileprivate let LOG_BINDINGS_REBUILD = false
 
 /*
@@ -80,8 +79,7 @@ class PlayerBindingController {
 
   private unowned let playerCore: PlayerCore!
   private let subsystem: Logger.Subsystem
-
-  private let dq = DispatchQueue(label: "PlayerInput", qos: .userInitiated)
+  private let dq: DispatchQueue
 
   // Reacts when there is a change to the global key bindings
   private var keyBindingsChangedObserver: NSObjectProtocol? = nil
@@ -106,13 +104,13 @@ class PlayerBindingController {
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
     self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerBindingController.inputBindingsSubsystem.rawValue)")
+    self.dq = DispatchQueue(label: "Player\(playerCore.label)-Bindings", qos: .userInitiated)
 
-    // initial load
+    // Init data structures with no data for now; they will soon be populated
     self.dq.async {
-      self.refreshDefaultSectionBindings_Unsafe()
-      self.enableSection_Unsafe(DEFAULT_INPUT_SECTION, [])
-      assert (self.sectionsEnabled.count == 1)
-      assert (self.sectionsDefined.count == 1)
+      let defaultSection = self.inputConfigDataStore.appActiveBindingController.getCurrentDefaultSection()
+      self.sectionsDefined[defaultSection.name] = defaultSection
+      self.sectionsEnabled.prepend(EnabledSectionMeta(name: defaultSection.name, isExclusive: false))
     }
   }
 
@@ -220,7 +218,6 @@ class PlayerBindingController {
 
   private func refreshDefaultSectionBindings_Unsafe() {
     let defaultSection = inputConfigDataStore.appActiveBindingController.getCurrentDefaultSection()
-    inputConfigDataStore.loadBindingsFromCurrentConfigFile()
     if LOG_BINDINGS_REBUILD {
       let count = defaultSection.keyBindings.count
       self.log("Refreshing 'default' section: new binding count = \(count)", level: .verbose)
@@ -236,26 +233,32 @@ class PlayerBindingController {
    Expected to be run inside the the private dispatch queue.
    */
   func rebuildCurrentActiveBindingList() {
-    assert (sectionsDefined[DEFAULT_INPUT_SECTION] != nil, "Missing default bindings section!")
-
-    let isActivePlayer = PlayerCore.active == self.playerCore
+    assert (sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
+    self.log("Starting rebuild of player input bindings", level: .verbose)
 
     var rebuiltBindings: [String: ActiveBindingMeta] = buildBindingsDictFromEnabledSections()
 
-    // Set key equivalents in the Plugin menu, making sure to
-    if isActivePlayer {
-      inputConfigDataStore.appActiveBindingController.updatePluginMenuBindings(&rebuiltBindings)
-    }
+    DispatchQueue.main.async {
+      // need to execute the next couple of lines on UI thread
+      let isActivePlayer = PlayerCore.active == self.playerCore
+      // Set key equivalents in the Plugin menu, making sure to
+      if isActivePlayer {
+        self.inputConfigDataStore.appActiveBindingController.updatePluginMenuBindings(&rebuiltBindings)
+      }
 
-    // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-    PlayerBindingController.fillInPartialSequences(&rebuiltBindings)
+      // Relieve the UI thread by finishing up outside it
+      self.dq.async {
+        // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
+        PlayerBindingController.fillInPartialSequences(&rebuiltBindings)
 
-    // hopefully this will be an atomic replacement
-    currentActiveBindingMetas = rebuiltBindings
+        // hopefully this will be an atomic replacement
+        self.currentActiveBindingMetas = rebuiltBindings
 
-    log("Finished rebuilding input bindings (\(currentActiveBindingMetas.count) total)")
-    if LOG_BINDINGS_REBUILD {
-      logCurrentActiveBindingMetas()
+        self.log("Finished rebuilding player input bindings (\(self.currentActiveBindingMetas.count) total)")
+        if LOG_BINDINGS_REBUILD {
+          self.logCurrentActiveBindingMetas()
+        }
+      }
     }
   }
 
@@ -269,7 +272,9 @@ class PlayerBindingController {
             log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
           }
         } else {
-          log("RebuildBindings: adding from \(inputSection)", level: .verbose)
+          if LOG_BINDINGS_REBUILD {
+            log("RebuildBindings: adding from \(inputSection)", level: .verbose)
+          }
           // Iterate from top of stack to bottom:
           for keyBinding in inputSection.keyBindings {
             addBinding(keyBinding, from: inputSection, to: &bindingsDict)
@@ -398,6 +403,7 @@ class PlayerBindingController {
   func enableSection(_ sectionName: String, _ flags: [String]) {
     dq.sync {
       enableSection_Unsafe(sectionName, flags)
+      rebuildCurrentActiveBindingList()
     }
   }
 
@@ -417,17 +423,17 @@ class PlayerBindingController {
      }
    }
 
-   guard let section = sectionsDefined[sectionName] else {
+   guard sectionsDefined[sectionName] != nil else {
      log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
      return
    }
 
-   disableSection_Unsafe(sectionName)
+   // Need to disable any existing before enabling, to match mpv behavior.
+   // This may alter the section's position in the stack, which changes precedence.
+   sectionsEnabled.remove({ $0.name == sectionName })
 
-   sectionsDefined[sectionName] = section
    sectionsEnabled.prepend(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
    log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
-   rebuildCurrentActiveBindingList()
  }
 
   /*

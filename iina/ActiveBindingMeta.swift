@@ -32,6 +32,12 @@ class ActiveBindingMeta: NSObject, Codable {
     self.isEnabled = isEnabled
   }
 
+  var isEditableByUser: Bool {
+    get {
+      self.origin == .confFile
+    }
+  }
+
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
       guard let data = propertyList as? Data,
           let row = try? PropertyListDecoder().decode(ActiveBindingMeta.self, from: data) else { return nil }
