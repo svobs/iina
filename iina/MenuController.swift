@@ -582,7 +582,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // This will set any key equivalents
-    PlayerCore.lastActive.inputController.setPluginMenuMediator(keyBindingMediator)
+    (NSApp.delegate as! AppDelegate).inputConfigDataStore.appActiveBindingController.setPluginMenuMediator(keyBindingMediator)
   }
 
   @discardableResult
@@ -609,7 +609,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.isEnabled = item.enabled
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
-      // Store the item with its pair - the PlayerInputController will set the binding & deal with conflicts
+      // Store the item with its pair - the PlayerBindingController will set the binding & deal with conflicts
       keyBindingMediator.add(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem)
     }
     if !item.items.isEmpty {
@@ -755,7 +755,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ bindingRows: [PlayerBinding]) {
+  func updateKeyEquivalentsFrom(_ bindingRows: [ActiveBindingMeta]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),

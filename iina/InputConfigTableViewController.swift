@@ -30,7 +30,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
-    tableView.registerTableUpdateObserver(forName: .iinaInputConfigListDidChange)
+    tableView.registerTableUpdateObserver(forName: .iinaInputConfigTableShouldUpdate)
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -391,7 +391,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     for filePath in fileList {
       let url = URL(fileURLWithPath: filePath)
       
-      guard InputConfigFile.loadFile(at: filePath) != nil else {
+      guard ParsedInputConfigFile.loadFile(at: filePath) != nil else {
         let fileName = url.lastPathComponent
         Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: tableView.window)
         Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)

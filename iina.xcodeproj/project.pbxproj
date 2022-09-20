@@ -165,9 +165,10 @@
 		D1049C892872CAD6003D47C1 /* InputConfigDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
-		D18333BE2834CE620060A4E9 /* PlayerInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputController.swift */; };
-		D188CB2228D6DE1900F166FD /* PlayerBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* PlayerBinding.swift */; };
-		D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFile.swift */; };
+		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
+		D188CB2228D6DE1900F166FD /* ActiveBindingMeta.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */; };
+		D188CB2428D8466B00F166FD /* AppActiveBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2328D8466B00F166FD /* AppActiveBindingController.swift */; };
+		D19AF88428A3CBCE009B598C /* ParsedInputConfigFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* ParsedInputConfigFile.swift */; };
 		D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */; };
 		D1FD2DDA28521B5900CF7B35 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */; };
@@ -1487,9 +1488,10 @@
 		D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigDataStore.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
-		D18333BD2834CE620060A4E9 /* PlayerInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputController.swift; sourceTree = "<group>"; };
-		D188CB2128D6DE1900F166FD /* PlayerBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBinding.swift; sourceTree = "<group>"; };
-		D19AF88328A3CBCE009B598C /* InputConfigFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFile.swift; sourceTree = "<group>"; };
+		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
+		D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingMeta.swift; sourceTree = "<group>"; };
+		D188CB2328D8466B00F166FD /* AppActiveBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActiveBindingController.swift; sourceTree = "<group>"; };
+		D19AF88328A3CBCE009B598C /* ParsedInputConfigFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedInputConfigFile.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleClickEditTableView.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogHandler.swift; sourceTree = "<group>"; };
 		D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
@@ -1911,7 +1913,7 @@
 				E3CB75BC1FDACB82004DB10A /* SavedFilter.swift */,
 				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
-				D188CB2128D6DE1900F166FD /* PlayerBinding.swift */,
+				D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -2118,7 +2120,8 @@
 				842904E11F0EC01600478376 /* AutoFileMatcher.swift */,
 				846121BC1F35FCA500ABB39C /* DraggingDetect.swift */,
 				D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */,
-				D18333BD2834CE620060A4E9 /* PlayerInputController.swift */,
+				D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */,
+				D188CB2328D8466B00F166FD /* AppActiveBindingController.swift */,
 			);
 			name = Controllers;
 			sourceTree = "<group>";
@@ -2484,7 +2487,7 @@
 			isa = PBXGroup;
 			children = (
 				D1049C882872CAD6003D47C1 /* InputConfigDataStore.swift */,
-				D19AF88328A3CBCE009B598C /* InputConfigFile.swift */,
+				D19AF88328A3CBCE009B598C /* ParsedInputConfigFile.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
 				D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */,
@@ -2811,6 +2814,7 @@
 				84A886EC1E2573A5008755BB /* JustExtension.swift in Sources */,
 				84D0FB811F5E5A4000C6A6A7 /* CropBoxViewController.swift in Sources */,
 				84D377631D6B66DE007F7396 /* MPVPlaylistItem.swift in Sources */,
+				D188CB2428D8466B00F166FD /* AppActiveBindingController.swift in Sources */,
 				E3ECC89E1FE9A6D900BED8C7 /* GeometryDef.swift in Sources */,
 				E337D5E22411B64A00B5729A /* JavascriptPolyfill.swift in Sources */,
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
@@ -2860,7 +2864,7 @@
 				E3366AFA224A039500EF3C32 /* JavascriptAPIPreferences.swift in Sources */,
 				E32B157F21BE219700CDBCEA /* JavascriptPluginMenuItem.swift in Sources */,
 				8476440C1D48F63D004F6DF5 /* OSDMessage.swift in Sources */,
-				D18333BE2834CE620060A4E9 /* PlayerInputController.swift in Sources */,
+				D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */,
 				84AE59491E0FD65800771B7E /* MainMenuActions.swift in Sources */,
 				E38B3216214FF700000F6D27 /* EventController.swift in Sources */,
 				E3CB75BD1FDACB82004DB10A /* SavedFilter.swift in Sources */,
@@ -2874,7 +2878,7 @@
 				845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */,
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
-				D188CB2228D6DE1900F166FD /* PlayerBinding.swift in Sources */,
+				D188CB2228D6DE1900F166FD /* ActiveBindingMeta.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
 				84795C371E0825AD0059A648 /* GifGenerator.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,
@@ -2926,7 +2930,7 @@
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
-				D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */,
+				D19AF88428A3CBCE009B598C /* ParsedInputConfigFile.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,

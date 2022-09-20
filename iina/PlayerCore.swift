@@ -147,14 +147,14 @@ class PlayerCore: NSObject {
     isInMiniPlayer ? miniPlayer.isPlaylistVisible : mainWindow.sideBarStatus == .playlist
   }
 
-  var inputController: PlayerInputController!
+  var inputController: PlayerBindingController!
 
   init(_ label: String) {
     self.label = label
     self.subsystem = Logger.Subsystem(rawValue: "player\(label)")
     super.init()
     self.mpv = MPVController(playerCore: self)
-    self.inputController = PlayerInputController(playerCore: self)
+    self.inputController = PlayerBindingController(playerCore: self)
     self.mainWindow = MainWindowController(playerCore: self)
     self.miniPlayer = MiniPlayerWindowController(playerCore: self)
     self.initialWindow = InitialWindowController(playerCore: self)

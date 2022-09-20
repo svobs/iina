@@ -18,8 +18,7 @@ class InputConfigDataStore {
 
   static let CONFIG_FILE_EXTENSION = "conf"
 
-  // Immmutable default configs.
-  // TODO: these would be best combined into a SortedDictionary
+  // Immmutable default configs. These would be best combined into a SortedDictionary
   private static let defaultConfigNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
   static let defaultConfigs: [String: String] = [
     "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: CONFIG_FILE_EXTENSION, inDirectory: "config")!,
@@ -28,25 +27,24 @@ class InputConfigDataStore {
     "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: CONFIG_FILE_EXTENSION, inDirectory: "config")!
   ]
 
-  private static let singletonInstance = InputConfigDataStore()
-
-  static func getInstance() -> InputConfigDataStore {
-    return InputConfigDataStore.singletonInstance
-  }
-
   static func computeFilePath(forUserConfigName configName: String) -> String {
     return Utility.userInputConfDirURL.appendingPathComponent(configName + CONFIG_FILE_EXTENSION).path
   }
 
   // MARK: Non-static section start
 
+  let appActiveBindingController = AppActiveBindingController()
+
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
     get {
-      guard let userConfigDict = Preference.dictionary(for: .inputConfigs) as? [String: String] else {
-        Logger.fatal("Cannot get pref: \(Preference.Key.inputConfigs.rawValue)!")
+      guard let userConfigDict = Preference.dictionary(for: .inputConfigs) else {
+        return [:]
       }
-      return userConfigDict
+      guard let userConfigStringDict = userConfigDict as? [String: String] else {
+        Logger.fatal("Unexpected type for pref: \(Preference.Key.inputConfigs.rawValue): \(type(of: userConfigDict))")
+      }
+      return userConfigStringDict
     } set {
       Preference.set(newValue, for: .inputConfigs)
     }
@@ -56,7 +54,9 @@ class InputConfigDataStore {
   private(set) var currentConfigName: String {
     get {
       guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
-        Logger.fatal("Cannot get pref: \(Preference.Key.currentInputConfigName.rawValue)!")
+        let defaultConfig = InputConfigDataStore.defaultConfigNamesSorted[0]
+        Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
+        return defaultConfig
       }
       return currentConfig
     } set {
@@ -89,7 +89,7 @@ class InputConfigDataStore {
     }
   }
 
-  private var currentLoadedConfig: InputConfigFile? = nil
+  private var currentParsedConfigFile: ParsedInputConfigFile? = nil
 
   /*
    Contains names of all user configs, which are also the identifiers in the UI table.
@@ -97,10 +97,10 @@ class InputConfigDataStore {
   private(set) var configTableRows: [String] = []
 
   // The unfiltered list of table rows
-  private var bindingRowsAll: [PlayerBinding] = []
+  private var bindingRowsAll: [ActiveBindingMeta] = []
 
   // The table rows currently displayed, which will change depending on the current filterString
-  private var bindingRowsFlltered: [PlayerBinding] = []
+  private var bindingRowsFlltered: [ActiveBindingMeta] = []
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
@@ -110,6 +110,8 @@ class InputConfigDataStore {
   init() {
     configTableRows = buildConfigTableRows()
     loadBindingsFromCurrentConfigFile()
+
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaAppActiveKeyBindingsChanged, object: nil, queue: .main, using: appActiveBindingsChanged))
   }
 
   deinit {
@@ -317,17 +319,17 @@ class InputConfigDataStore {
     }
 
     // Finally, fire notification. This covers row selection too
-    NotificationCenter.default.post(Notification(name: .iinaInputConfigListDidChange, object: configTableUpdate))
+    NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableUpdate))
   }
 
   // MARK: Binding CRUD
 
-  func getPlayerBindingCount() -> Int {
+  func getActiveBindingMetaCount() -> Int {
     return bindingRowsFlltered.count
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getPlayerBinding(at index: Int) -> PlayerBinding? {
+  func getActiveBindingMeta(at index: Int) -> ActiveBindingMeta? {
     guard index >= 0 && index < bindingRowsFlltered.count else {
       return nil
     }
@@ -376,9 +378,9 @@ class InputConfigDataStore {
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
-    var beforeInsert: [PlayerBinding] = []
-    var afterInsert: [PlayerBinding] = []
-    var movedRows: [PlayerBinding] = []
+    var beforeInsert: [ActiveBindingMeta] = []
+    var afterInsert: [ActiveBindingMeta] = []
+    var movedRows: [ActiveBindingMeta] = []
     var moveIndexPairs: [(Int, Int)] = []
     var newSelectedRows = IndexSet()
     var moveFromOffset = 0
@@ -433,7 +435,7 @@ class InputConfigDataStore {
 
     var bindingRowsAllUpdated = bindingRowsAll
     for binding in bindingList.reversed() {
-      bindingRowsAllUpdated.insert(PlayerBinding(binding, origin: .confFile, isEnabled: true, isMenuItem: false), at: insertIndex)
+      bindingRowsAllUpdated.insert(ActiveBindingMeta(binding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
     saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
@@ -453,16 +455,16 @@ class InputConfigDataStore {
     if filteredIndex == bindingRowsFlltered.count {
       let filteredRowAtIndex = bindingRowsFlltered[filteredIndex - 1]
 
-      guard let unfilteredIndex = findUnfilteredIndexOfPlayerBinding(filteredRowAtIndex) else {
+      guard let unfilteredIndex = findUnfilteredIndexOfActiveBindingMeta(filteredRowAtIndex) else {
         return nil
       }
       return unfilteredIndex + 1
     }
     let filteredRowAtIndex = bindingRowsFlltered[filteredIndex]
-    return findUnfilteredIndexOfPlayerBinding(filteredRowAtIndex)
+    return findUnfilteredIndexOfActiveBindingMeta(filteredRowAtIndex)
   }
 
-  private func findUnfilteredIndexOfPlayerBinding(_ row: PlayerBinding) -> Int? {
+  private func findUnfilteredIndexOfActiveBindingMeta(_ row: ActiveBindingMeta) -> Int? {
     if let bindingID = row.binding.bindingID {
       for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
         if unfilteredRow.binding.bindingID == bindingID {
@@ -478,7 +480,7 @@ class InputConfigDataStore {
   private func reoolveBindingIDsFromIndexes(_ indexes: IndexSet) -> Set<Int> {
     var idSet = Set<Int>()
     for index in indexes {
-      if let row = getPlayerBinding(at: index) {
+      if let row = getActiveBindingMeta(at: index) {
         if let id = row.binding.bindingID {
           idSet.insert(id)
         } else {
@@ -496,7 +498,7 @@ class InputConfigDataStore {
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
     let idsToRemove = reoolveBindingIDsFromIndexes(indexesToRemove)
 
-    var remainingRowsUnfiltered: [PlayerBinding] = []
+    var remainingRowsUnfiltered: [ActiveBindingMeta] = []
     for row in bindingRowsAll {
       if let id = row.binding.bindingID, !idsToRemove.contains(id) {
         remainingRowsUnfiltered.append(row)
@@ -514,7 +516,7 @@ class InputConfigDataStore {
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    var remainingRowsUnfiltered: [PlayerBinding] = []
+    var remainingRowsUnfiltered: [ActiveBindingMeta] = []
     var indexesToRemove = IndexSet()
     for (rowIndex, row) in bindingRowsAll.enumerated() {
       if let id = row.binding.bindingID {
@@ -535,7 +537,7 @@ class InputConfigDataStore {
   func updateBinding(at index: Int, to binding: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
 
-    if let existingRow = getPlayerBinding(at: index) {
+    if let existingRow = getActiveBindingMeta(at: index) {
       existingRow.binding = binding
     }
 
@@ -568,14 +570,14 @@ class InputConfigDataStore {
   private func clearFilter() {
     filterBindings("")
     // Tell search field to clear itself:
-    NotificationCenter.default.post(Notification(name: .iinaUpdateKeyBindingSearchField, object: ""))
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingSearchFieldShouldUpdate, object: ""))
   }
 
   func filterBindings(_ searchString: String) {
     Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
     updateFilteredBindings()
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: TableUpdateByRowIndex(.reloadAll)))
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingsTableShouldUpdate, object: TableUpdateByRowIndex(.reloadAll)))
     // TODO: add code to maintain selection across reloads
   }
 
@@ -589,41 +591,52 @@ class InputConfigDataStore {
     }
   }
 
-  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [PlayerBinding], _ tableUpdate: TableUpdateByRowIndex) {
-    guard let configFileBindings = saveBindingsToCurrentConfigFile(bindingRowsAllNew) else {
+  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBindingMeta], _ tableUpdate: TableUpdateByRowIndex) {
+    guard let defaultSectionBindings = saveBindingsToCurrentConfigFile(bindingRowsAllNew) else {
       return
     }
 
-    applyBindingsStateUpdates(configFileBindings, tableUpdate)
+    applyDefaultSectionUpdates(defaultSectionBindings, tableUpdate)
   }
 
-  private func applyBindingsStateUpdates(_ configFileBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
-    // Send to PlayerInputController to ingest. It wil return the metadata we need
-    let sharedPlayerBindings = PlayerInputController.rebuildDefaultSectionBindings(configFileBindings)
-    assert(sharedPlayerBindings.count >= configFileBindings.count, "Something went wrong!")
+  private func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
+    // Send to AppActiveBindingController to ingest. It will return the updated list of rows.
+    // Note: we rely on the assumption that we know which rows will be added
+    // and removed, and that information is contained in `tableUpdate`.
+    // This is needed so that animations can work. But AppActiveBindingController
+    // builds the actual row data, and the two must match or else visual bugs will result.
+    let bindingRowsAllNew = appActiveBindingController.replaceDefaultSectionBindings(defaultSectionBindings)
+    guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
+      Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
+      return
+    }
 
-    // TODO: add dropdown to UI: Preferences > Key Bindings to choose display for a single player vs shared
-    bindingRowsAll = sharedPlayerBindings
+    applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
+  }
+
+  // General purpose update
+  private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBindingMeta], _ tableUpdate: TableUpdateByRowIndex) {
+    bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
-    NotificationCenter.default.post(Notification(name: .iinaCurrentBindingsDidChange, object: tableUpdate))
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableUpdate))
   }
 
-  private func saveBindingsToCurrentConfigFile(_ bindingLines: [PlayerBinding]) -> [KeyMapping]? {
+  private func saveBindingsToCurrentConfigFile(_ bindingLines: [ActiveBindingMeta]) -> [KeyMapping]? {
     guard let configFilePath = requireCurrentFilePath() else {
       return nil
     }
-    let configFileBindings = extractConfFileBindings(bindingLines)
-    Logger.log("Saving \(configFileBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    let defaultSectionBindings = extractConfFileBindings(bindingLines)
+    Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
-      guard let currentConfig = currentLoadedConfig else {
+      guard let currentParsedConfig = currentParsedConfigFile else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }
-      currentConfig.replaceAllBindings(with: configFileBindings)
-      try currentConfig.write(to: configFilePath)
-      return currentConfig.parseBindings()  // gets updated line numbers
+      currentParsedConfig.replaceAllBindings(with: defaultSectionBindings)
+      try currentParsedConfig.write(to: configFilePath)
+      return currentParsedConfig.parseBindings()  // gets updated line numbers
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
@@ -640,7 +653,7 @@ class InputConfigDataStore {
       return
     }
     Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let configContent = InputConfigFile.loadFile(at: configFilePath) else {
+    guard let configContent = ParsedInputConfigFile.loadFile(at: configFilePath) else {
       // on error
       Logger.log("Error loading key bindings from config \"\(self.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
@@ -650,13 +663,13 @@ class InputConfigDataStore {
       changeCurrentConfigToDefault()
       return
     }
-    self.currentLoadedConfig = configContent
+    self.currentParsedConfigFile = configContent
 
-    let configFileBindings = configContent.parseBindings()
-    applyBindingsStateUpdates(configFileBindings, TableUpdateByRowIndex(.reloadAll))
+    let defaultSectionBindings = configContent.parseBindings()
+    applyDefaultSectionUpdates(defaultSectionBindings, TableUpdateByRowIndex(.reloadAll))
   }
 
-  private func extractConfFileBindings(_ bindingLines: [PlayerBinding]) -> [KeyMapping] {
+  private func extractConfFileBindings(_ bindingLines: [ActiveBindingMeta]) -> [KeyMapping] {
     return bindingLines.filter({ $0.origin == .confFile }).map({ $0.binding })
   }
 
@@ -667,5 +680,18 @@ class InputConfigDataStore {
     let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     return nil
+  }
+
+  // Callback for when Plugin menu bindings or active player bindings have changed
+  private func appActiveBindingsChanged(_ notification: Notification) {
+    guard let bindingRowsAllNew = notification.object as? [ActiveBindingMeta] else {
+      Logger.log("Notification.iinaAppActiveKeyBindingsChanged: invalid object: \(type(of: notification.object))", level: .error)
+      return
+    }
+
+    // FIXME: calculate diff, use animation
+    let tableUpdate = TableUpdateByRowIndex(.reloadAll)
+
+    applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
   }
 }

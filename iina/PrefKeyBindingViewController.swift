@@ -77,13 +77,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigListDidChange, object: nil, queue: .main) { _ in
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigTableShouldUpdate, object: nil, queue: .main) { _ in
       self.updateEditEnabledStatus()
     })
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaUpdateKeyBindingSearchField, object: nil, queue: .main) { notification in
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
       guard let newStringValue = notification.object as? String else {
-        Logger.log("iinaUpdateKeyBindingSearchField: invalid object: \(type(of: notification.object))", level: .error)
+        Logger.log("iinaKeyBindingSearchFieldShouldUpdate: invalid object: \(type(of: notification.object))", level: .error)
         return
       }
       self.keyMappingSearchField.stringValue = newStringValue

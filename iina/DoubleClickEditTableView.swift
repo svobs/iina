@@ -85,6 +85,7 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func becomeFirstResponder() -> Bool {
+    // FIXME: put this elsewhere
     self.beginEditing()
     return true
   }

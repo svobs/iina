@@ -9,6 +9,7 @@
 import Foundation
 
 class MPVInputSection: CustomStringConvertible {
+  static let DEFAULT_SECTION_NAME = "default"
   static let FLAG_DEFAULT = "default"
   static let FLAG_FORCE = "force"
   static let FLAG_EXCLUSIVE = "exclusive"
