@@ -86,7 +86,7 @@ class PlayerBindingController {
   // Reacts when there is a change to the global key bindings
   private var keyBindingsChangedObserver: NSObjectProtocol? = nil
 
-  private unowned let inputConfigDataStore: InputConfigDataStore! = (NSApp.delegate as? AppDelegate)?.inputConfigDataStore
+  private unowned let activeBindingController: ActiveBindingController! = ActiveBindingController.get()
 
   /*
    mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
@@ -110,7 +110,7 @@ class PlayerBindingController {
 
     // Init data structures with no data for now; they will soon be populated
     self.dq.async {
-      let defaultSection = self.inputConfigDataStore.appActiveBindingController.getCurrentDefaultSection()
+      let defaultSection = self.activeBindingController.getCurrentDefaultSection()
       self.sectionsDefined[defaultSection.name] = defaultSection
       self.sectionsEnabled.prepend(EnabledSectionMeta(name: defaultSection.name, isExclusive: false))
     }
@@ -214,7 +214,7 @@ class PlayerBindingController {
   func refreshDefaultSectionBindings() {
     log("Default section bindings changed: will rebuild active bindings", level: .verbose)
     self.dq.async {
-      let defaultSection = self.inputConfigDataStore.appActiveBindingController.getCurrentDefaultSection()
+      let defaultSection = self.activeBindingController.getCurrentDefaultSection()
       if LOG_BINDINGS_REBUILD {
         let count = defaultSection.keyBindings.count
         self.log("Refreshing 'default' section with \(count) bindings", level: .verbose)
@@ -251,7 +251,7 @@ class PlayerBindingController {
         let isActivePlayer = PlayerCore.active == self.playerCore
         // Set key equivalents in the Plugin menu, making sure to
         if isActivePlayer {
-          self.inputConfigDataStore.appActiveBindingController.updatePluginMenuBindings(&rebuiltBindings)
+          self.activeBindingController.updatePluginMenuBindings(&rebuiltBindings)
         }
 
         // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.

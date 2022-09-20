@@ -36,15 +36,23 @@ class PluginMenuKeyBindingMediator {
   }
 }
 
-class AppActiveBindingController {
+/*
+ This class is a little messy, but the idea is for it to "own" the current set of active bindings within the IINA app.
+ Unlike the ActiveBindingStore, this class interfaces with various disparate classes the MenuController to set menu item key equivalents, as well as
 
-  static private func makeDefaultSection(from bindingList: [KeyMapping] = []) -> MPVInputSection {
-    return MPVInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, bindingList, isForce: true)
+ */
+class ActiveBindingController {
+  static private let inst = ActiveBindingController()
+
+  static func get() -> ActiveBindingController {
+    return inst
   }
+
+  private unowned let bindingStore: ActiveBindingStore! = ActiveBindingStore.get()
 
   // This exists so that new instances of PlayerBindingController can immediately populate their default section.
   // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
-  private var currentDefaultSection: MPVInputSection = makeDefaultSection()
+  private var currentDefaultSection = makeDefaultSection()
 
   // Each player can have a set of plugins associated with it, and each can place keyboard shortcuts in the menubar.
   // But there is only a single menubar, while Plugin menu items will change each time a different player window comes into focus.
@@ -56,17 +64,34 @@ class AppActiveBindingController {
   private var currentDefaultSectionBindings: [ActiveBindingMeta] = []
   private var currentPluginMenuBindings: [ActiveBindingMeta] = []
 
-  // The end product of this class
+  // The end product of this class. Should be consistent with the rows in the Preferences -> Key Bindings table
   var currentActiveBindingsList: [ActiveBindingMeta] {
     get {
       currentPluginMenuBindings + currentDefaultSectionBindings
     }
   }
 
+  private static func makeDefaultSection(from defaultSectionBindings: [KeyMapping] = []) -> MPVInputSection {
+    return MPVInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, defaultSectionBindings, isForce: true)
+  }
+
+  // FIXME: add a lock to this (1/2)
+  func getCurrentDefaultSection() -> MPVInputSection {
+    return currentDefaultSection
+  }
+
+  // FIXME: add a lock around this (2/2)
+  private func replaceCurrentDefaultSection(from defaultSectionActiveBindings: [ActiveBindingMeta]) {
+    let enabledBindings = defaultSectionActiveBindings.filter { $0.isEnabled }.map { $0.binding }
+
+    currentDefaultSectionBindings = defaultSectionActiveBindings
+    currentDefaultSection = ActiveBindingController.makeDefaultSection(from: enabledBindings)
+  }
+
   // The 'default' section contains the bindings loaded from the currently
   // selected input config file, and will be shared for all `PlayerCore` instances.
   // This method also calculates which of these will qualify as menu item bindings.
-  func replaceDefaultSectionBindings(_ bindingList: [KeyMapping]) -> [ActiveBindingMeta] {
+  func updateAllDefaultSectionBindings(_ bindingList: [KeyMapping]) -> [ActiveBindingMeta] {
     Logger.log("Rebuilding 'default' section bindings (\(bindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
     var defaultSectionMetaList: [ActiveBindingMeta] = []
@@ -105,23 +130,18 @@ class AppActiveBindingController {
     // This will also update the isMenuItem status of each
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(defaultSectionMetaList)
 
-    // Send bindings to all players: they will need to re-determine which bindings they want to override.
-    let enabledBindingList = defaultSectionMetaList.filter { $0.isEnabled }.map { $0.binding }
+    self.replaceCurrentDefaultSection(from: defaultSectionMetaList)  // cache it so that new players can use it
 
-    // FIXME: add a lock around this (1/2)
-    self.currentDefaultSection = AppActiveBindingController.makeDefaultSection(from: enabledBindingList)  // cache it so that new players can use it
+    // Send bindings to all players: they will need to re-determine which bindings they want to override.
     // One of these will set `currentPluginMenuBindings`
     for player in PlayerCore.playerCores {
       player.inputController.refreshDefaultSectionBindings()
     }
 
-    currentDefaultSectionBindings = defaultSectionMetaList
-
-    return currentActiveBindingsList
+    return defaultSectionMetaList
   }
 
   private func analyzeDefaultSectionBinding(_ binding: KeyMapping) -> ActiveBindingMeta {
-
     let meta = ActiveBindingMeta(binding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: false)
 
     if binding.rawKey == "default-bindings" && binding.action.count == 1 && binding.action[0] == "start" {
@@ -144,11 +164,6 @@ class AppActiveBindingController {
     }
     meta.isEnabled = true
     return meta
-  }
-
-  func getCurrentDefaultSection() -> MPVInputSection {
-    // FIXME: add a lock to this (2/2)
-    return currentDefaultSection
   }
 
   func setPluginMenuMediator(_ newMediator: PluginMenuKeyBindingMediator) {
@@ -203,11 +218,7 @@ class AppActiveBindingController {
     currentPluginMenuBindings = pluginMenuBindings
     Logger.log("Updated Plugin menu bindings (count: \(currentPluginMenuBindings.count))")
 
-    sendActiveBindingsChangedNotification()
-  }
-
-  func sendActiveBindingsChangedNotification() {
-    NotificationCenter.default.post(Notification(name: .iinaAppActiveKeyBindingsChanged, object: currentActiveBindingsList))
+    bindingStore.appActiveBindingsDidChange(currentActiveBindingsList)
   }
 
 }

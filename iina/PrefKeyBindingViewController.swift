@@ -30,16 +30,17 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // This is referenced outside of keybindings code:
   static var defaultConfigs: [String: String] {
     get {
-      InputConfigDataStore.defaultConfigs
+      InputConfigStore.defaultConfigs
     }
   }
 
-  private var observers: [NSObjectProtocol] = []
-
-  private var ds = InputConfigDataStore()
+  private unowned var inputConfigStore: InputConfigStore! = InputConfigStore.get()
+  private unowned var bindingStore: ActiveBindingStore! = ActiveBindingStore.get()
 
   private var configTableController: InputConfigTableViewController? = nil
   private var kbTableController: KeyBindingsTableViewController? = nil
+
+  private var observers: [NSObjectProtocol] = []
 
   // MARK: - Outlets
 
@@ -65,11 +66,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    kbTableController = KeyBindingsTableViewController(kbTableView, ds, selectionDidChangeHandler: updateRemoveButtonEnablement)
+    kbTableController = KeyBindingsTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     kbTableView.dataSource = kbTableController
     kbTableView.delegate = kbTableController
 
-    configTableController = InputConfigTableViewController(inputConfigTableView, ds)
+    configTableController = InputConfigTableViewController(inputConfigTableView, inputConfigStore)
     inputConfigTableView.dataSource = configTableController
     inputConfigTableView.delegate = configTableController
 
@@ -123,20 +124,20 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func duplicateConfigFileAction(_ sender: AnyObject) {
-    configTableController?.duplicateConfig(ds.currentConfigName)
+    configTableController?.duplicateConfig(inputConfigStore.currentConfigName)
   }
 
   @IBAction func revealConfigFileAction(_ sender: AnyObject) {
-    configTableController?.revealConfig(ds.currentConfigName)
+    configTableController?.revealConfig(inputConfigStore.currentConfigName)
   }
 
   @IBAction func deleteConfigFileAction(_ sender: AnyObject) {
-    configTableController?.deleteConfig(ds.currentConfigName)
+    configTableController?.deleteConfig(inputConfigStore.currentConfigName)
   }
 
   @IBAction func importConfigBtnAction(_ sender: Any) {
-    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: [InputConfigDataStore.CONFIG_FILE_EXTENSION]) { url in
-      guard url.isFileURL, url.lastPathComponent.hasSuffix(InputConfigDataStore.CONFIG_FILE_EXTENSION) else { return }
+    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: [AppData.configFileExtension]) { url in
+      guard url.isFileURL, url.lastPathComponent.hasSuffix(AppData.configFileExtension) else { return }
       self.configTableController?.importConfigFiles([url.lastPathComponent])
     }
   }
@@ -150,13 +151,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    ds.filterBindings(sender.stringValue)
+    bindingStore.filterBindings(sender.stringValue)
   }
 
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isEditEnabledForCurrentConfig = ds.isEditEnabledForCurrentConfig()
+    let isEditEnabledForCurrentConfig = inputConfigStore.isEditEnabledForCurrentConfig()
     [revealConfigFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = isEditEnabledForCurrentConfig
     }
@@ -167,6 +168,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = ds.isEditEnabledForCurrentConfig() && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = inputConfigStore.isEditEnabledForCurrentConfig() && kbTableView.selectedRow != -1
   }
 }

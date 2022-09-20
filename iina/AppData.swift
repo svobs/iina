@@ -59,6 +59,8 @@ struct AppData {
   static let chromeExtensionLink = "https://chrome.google.com/webstore/detail/open-in-iina/pdnojahnhpgmdhjdhgphgdcecehkbhfo"
   static let firefoxExtensionLink = "https://addons.mozilla.org/addon/open-in-iina-x"
 
+  static let configFileExtension = "conf"
+
   static let widthWhenNoVideo = 640
   static let heightWhenNoVideo = 360
   static let sizeWhenNoVideo = NSSize(width: widthWhenNoVideo, height: heightWhenNoVideo)
@@ -122,7 +124,7 @@ extension Notification.Name {
   // A change to the active set of key bindings was made, but was not initiated
   // from the Key Bindings Prefs UI. In practice this means that either the
   // Plugin menu was updated, or a Lua script changed the active player's bindings.
-  static let iinaAppActiveKeyBindingsChanged = Notification.Name("IINAAppActiveKeyBindingsChanged")
+//  static let iinaAppActiveKeyBindingsChanged = Notification.Name("IINAAppActiveKeyBindingsChanged")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

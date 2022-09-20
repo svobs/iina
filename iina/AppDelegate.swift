@@ -19,7 +19,6 @@ fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
 fileprivate let AlternativeMenuItemTag = 1
 
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -86,11 +85,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @IBOutlet weak var dockMenu: NSMenu!
 
-  let inputConfigDataStore = InputConfigDataStore()
-
   private func getReady() {
     menuController.bindMenuItems()
-    inputConfigDataStore.loadBindingsFromCurrentConfigFile()
     isReady = true
   }
 
