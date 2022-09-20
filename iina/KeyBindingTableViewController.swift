@@ -491,17 +491,30 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
   }
 
+  private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBindingMeta, withIndex rowIndex: Int, title: String) {
+    let attrTitle = NSMutableAttributedString(string: title)
+    // FIXME: make italic
+//        let font = NSFont.systemFont(ofSize: 12)
+//        attrTitle.addAttribute(NSAttributedString.Key.font, value: font, range: NSRange(location: 0, length: attrTitle.length))
+    let item = BindingMenuItem(row, rowIndex: rowIndex, title: title, action: nil, target: self)
+    item.attributedTitle = attrTitle
+    item.isEnabled = false
+    menu.addItem(item)
+  }
+
   func menuNeedsUpdate(_ menu: NSMenu) {
     // This will prevent menu from showing if no items are added
     menu.removeAllItems()
 
-    guard ds.isEditEnabledForCurrentConfig() else {
-      return
-    }
-
     // TODO: add Cut, Copy Paste support + menu items
     let clickedIndex = tableView.clickedRow
     guard let clickedRow = ds.getBindingRow(at: tableView.clickedRow), clickedRow.isEditableByUser else {
+      return
+    }
+
+    guard ds.isEditEnabledForCurrentConfig() else {
+      let title = "Cannot make changes: \"\(ds.currentConfigName)\" is a default config"
+      addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
       return
     }
 
@@ -514,14 +527,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
       if readOnlyCount > 0 {
         let title = "\(readOnlyCount) of \(tableView.selectedRowIndexes.count) rows are read-only"
-        let attrTitle = NSMutableAttributedString(string: title)
-        // FIXME: make italic
-//        let font = NSFont.systemFont(ofSize: 12)
-//        attrTitle.addAttribute(NSAttributedString.Key.font, value: font, range: NSRange(location: 0, length: attrTitle.length))
-        let item = BindingMenuItem(clickedRow, rowIndex: clickedIndex, title: title, action: nil, target: self)
-        item.attributedTitle = attrTitle
-        item.isEnabled = false
-        menu.addItem(item)
+        addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
       } else {
         addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(tableView.selectedRowIndexes.count) Rows", action: #selector(self.removeSelectedRows(_:)))
       }

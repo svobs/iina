@@ -154,7 +154,7 @@ class AppActiveBindingController {
   func setPluginMenuMediator(_ newMediator: PluginMenuKeyBindingMediator) {
     let needsRebuild: Bool = !(pluginMenuMediator.entryList.count == 0 && newMediator.entryList.count == 0)
     guard needsRebuild else { return }
-    
+
     pluginMenuMediator = newMediator
     Logger.log("Plugin menu updated, requests \(pluginMenuMediator.entryList.count) key bindings", level: .verbose)
     // This will call `updatePluginMenuBindings()`
@@ -166,6 +166,11 @@ class AppActiveBindingController {
     var pluginMenuBindings: [ActiveBindingMeta] = []
 
     let mediator = self.pluginMenuMediator
+    guard !mediator.entryList.isEmpty else {
+      // No plugin menu items: nothing to do
+      return
+    }
+
     var failureList: [PluginMenuKeyBindingMediator.Entry] = []
     for entry in mediator.entryList {
       let mpvKey = KeyCodeHelper.normalizeMpv(entry.rawKey)

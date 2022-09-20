@@ -600,8 +600,7 @@ class InputConfigDataStore {
   func filterBindings(_ searchString: String) {
     Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
-    updateFilteredBindings()
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingsTableShouldUpdate, object: TableUpdateByRowIndex(.reloadAll)))
+    applyBindingTableUpdates(bindingRowsAll, TableUpdateByRowIndex(.reloadAll))
     // TODO: add code to maintain selection across reloads
   }
 
@@ -644,7 +643,9 @@ class InputConfigDataStore {
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableUpdate))
+    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableUpdate)
+    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableUpdate.changeType)", level: .verbose)
+    NotificationCenter.default.post(notification)
   }
 
   private func saveBindingsToCurrentConfigFile(_ bindingLines: [ActiveBindingMeta]) -> [KeyMapping]? {
@@ -712,6 +713,7 @@ class InputConfigDataStore {
       Logger.log("Notification.iinaAppActiveKeyBindingsChanged: invalid object: \(type(of: notification.object))", level: .error)
       return
     }
+    Logger.log("Got '\(notification.name.rawValue)' notification with \(bindingRowsAllNew.count) bindings", level: .verbose)
 
     // FIXME: calculate diff, use animation
     let tableUpdate = TableUpdateByRowIndex(.reloadAll)
