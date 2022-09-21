@@ -166,7 +166,7 @@
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
-		D188CB2228D6DE1900F166FD /* ActiveBindingMeta.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */; };
+		D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBinding.swift */; };
 		D188CB2428D8466B00F166FD /* ActiveBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2328D8466B00F166FD /* ActiveBindingController.swift */; };
 		D188CB2628D9E95500F166FD /* ActiveBindingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingStore.swift */; };
 		D188CB2A28DA788900F166FD /* InputConfigFileWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2928DA788900F166FD /* InputConfigFileWriter.swift */; };
@@ -1491,7 +1491,7 @@
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
-		D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingMeta.swift; sourceTree = "<group>"; };
+		D188CB2128D6DE1900F166FD /* ActiveBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBinding.swift; sourceTree = "<group>"; };
 		D188CB2328D8466B00F166FD /* ActiveBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingController.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* ActiveBindingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingStore.swift; sourceTree = "<group>"; };
 		D188CB2928DA788900F166FD /* InputConfigFileWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileWriter.swift; sourceTree = "<group>"; };
@@ -1917,7 +1917,7 @@
 				E3CB75BC1FDACB82004DB10A /* SavedFilter.swift */,
 				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
-				D188CB2128D6DE1900F166FD /* ActiveBindingMeta.swift */,
+				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -2885,7 +2885,7 @@
 				845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */,
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
-				D188CB2228D6DE1900F166FD /* ActiveBindingMeta.swift in Sources */,
+				D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
 				84795C371E0825AD0059A648 /* GifGenerator.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,

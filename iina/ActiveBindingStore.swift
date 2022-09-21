@@ -21,10 +21,10 @@ class ActiveBindingStore {
   // MARK: State
 
   // The unfiltered list of table rows
-  private var bindingRowsAll: [ActiveBindingMeta] = []
+  private var bindingRowsAll: [ActiveBinding] = []
 
   // The table rows currently displayed, which will change depending on the current filterString
-  private var bindingRowsFlltered: [ActiveBindingMeta] = []
+  private var bindingRowsFlltered: [ActiveBinding] = []
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
@@ -38,7 +38,7 @@ class ActiveBindingStore {
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> ActiveBindingMeta? {
+  func getBindingRow(at index: Int) -> ActiveBinding? {
     guard index >= 0 && index < bindingRowsFlltered.count else {
       return nil
     }
@@ -94,9 +94,9 @@ class ActiveBindingStore {
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
-    var beforeInsert: [ActiveBindingMeta] = []
-    var afterInsert: [ActiveBindingMeta] = []
-    var movedRows: [ActiveBindingMeta] = []
+    var beforeInsert: [ActiveBinding] = []
+    var afterInsert: [ActiveBinding] = []
+    var movedRows: [ActiveBinding] = []
     var moveIndexPairs: [(Int, Int)] = []
     var newSelectedRows = IndexSet()
     var moveFromOffset = 0
@@ -104,7 +104,7 @@ class ActiveBindingStore {
 
     // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
     for (origIndex, row) in bindingRowsAll.enumerated() {
-      if let bindingID = row.binding.bindingID, movedBindingIDs.contains(bindingID) {
+      if let bindingID = row.mpvBinding.bindingID, movedBindingIDs.contains(bindingID) {
         if origIndex < insertIndex {
           // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
           moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
@@ -151,7 +151,7 @@ class ActiveBindingStore {
 
     var bindingRowsAllUpdated = bindingRowsAll
     for binding in bindingList.reversed() {
-      bindingRowsAllUpdated.insert(ActiveBindingMeta(binding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
+      bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
     saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
@@ -171,19 +171,19 @@ class ActiveBindingStore {
     if filteredIndex == bindingRowsFlltered.count {
       let filteredRowAtIndex = bindingRowsFlltered[filteredIndex - 1]
 
-      guard let unfilteredIndex = findUnfilteredIndexOfActiveBindingMeta(filteredRowAtIndex) else {
+      guard let unfilteredIndex = findUnfilteredIndexOfActiveBinding(filteredRowAtIndex) else {
         return nil
       }
       return unfilteredIndex + 1
     }
     let filteredRowAtIndex = bindingRowsFlltered[filteredIndex]
-    return findUnfilteredIndexOfActiveBindingMeta(filteredRowAtIndex)
+    return findUnfilteredIndexOfActiveBinding(filteredRowAtIndex)
   }
 
-  private func findUnfilteredIndexOfActiveBindingMeta(_ row: ActiveBindingMeta) -> Int? {
-    if let bindingID = row.binding.bindingID {
+  private func findUnfilteredIndexOfActiveBinding(_ row: ActiveBinding) -> Int? {
+    if let bindingID = row.mpvBinding.bindingID {
       for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
-        if unfilteredRow.binding.bindingID == bindingID {
+        if unfilteredRow.mpvBinding.bindingID == bindingID {
           Logger.log("Found matching bindingID \(bindingID) at unfiltered row index \(unfilteredIndex)", level: .verbose)
           return unfilteredIndex
         }
@@ -193,11 +193,11 @@ class ActiveBindingStore {
     return nil
   }
 
-  private func resolveBindingIDsFromIndexes(_ indexes: IndexSet, excluding isExcluded: ((ActiveBindingMeta) -> Bool)?) -> Set<Int> {
+  private func resolveBindingIDsFromIndexes(_ indexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)?) -> Set<Int> {
     var idSet = Set<Int>()
     for index in indexes {
       if let row = getBindingRow(at: index) {
-        if let id = row.binding.bindingID {
+        if let id = row.mpvBinding.bindingID {
           if let isExcluded = isExcluded, isExcluded(row) {
           } else {
             idSet.insert(id)
@@ -222,9 +222,9 @@ class ActiveBindingStore {
       return
     }
 
-    var remainingRowsUnfiltered: [ActiveBindingMeta] = []
+    var remainingRowsUnfiltered: [ActiveBinding] = []
     for row in bindingRowsAll {
-      if let id = row.binding.bindingID, idsToRemove.contains(id) {
+      if let id = row.mpvBinding.bindingID, idsToRemove.contains(id) {
       } else {
         // be sure to include rows which do not have IDs
         remainingRowsUnfiltered.append(row)
@@ -242,10 +242,10 @@ class ActiveBindingStore {
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    var remainingRowsUnfiltered: [ActiveBindingMeta] = []
+    var remainingRowsUnfiltered: [ActiveBinding] = []
     var indexesToRemove = IndexSet()
     for (rowIndex, row) in bindingRowsAll.enumerated() {
-      if let id = row.binding.bindingID {
+      if let id = row.mpvBinding.bindingID {
         // Non-editable rows probably do not have IDs, but check editable status to be sure
         if idsToRemove.contains(id) && row.isEditableByUser {
           indexesToRemove.insert(rowIndex)
@@ -270,7 +270,7 @@ class ActiveBindingStore {
       return
     }
 
-    existingRow.binding = binding
+    existingRow.mpvBinding = binding
 
     let tableUpdate = TableUpdateByRowIndex(.updateRows)
 
@@ -314,14 +314,14 @@ class ActiveBindingStore {
   private func updateFilteredBindings() {
     if isFiltered() {
       bindingRowsFlltered = bindingRowsAll.filter {
-        $0.binding.rawKey.localizedStandardContains(filterString) || $0.binding.rawAction.localizedStandardContains(filterString)
+        $0.mpvBinding.rawKey.localizedStandardContains(filterString) || $0.mpvBinding.rawAction.localizedStandardContains(filterString)
       }
     } else {
       bindingRowsFlltered = bindingRowsAll
     }
   }
 
-  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBindingMeta], _ tableUpdate: TableUpdateByRowIndex) {
+  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     let defaultSectionBindings = extractConfFileBindings(bindingRowsAllNew)
     guard let defaultSectionBindings = InputConfigStore.get().inputConfigFileWriter.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return
@@ -330,8 +330,8 @@ class ActiveBindingStore {
     applyDefaultSectionUpdates(defaultSectionBindings, tableUpdate)
   }
 
-  private func extractConfFileBindings(_ bindingLines: [ActiveBindingMeta]) -> [KeyMapping] {
-    return bindingLines.filter({ $0.origin == .confFile }).map({ $0.binding })
+  private func extractConfFileBindings(_ bindingLines: [ActiveBinding]) -> [KeyMapping] {
+    return bindingLines.filter({ $0.origin == .confFile }).map({ $0.mpvBinding })
   }
 
   func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
@@ -350,7 +350,7 @@ class ActiveBindingStore {
   }
 
   // General purpose update
-  private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBindingMeta], _ tableUpdate: TableUpdateByRowIndex) {
+  private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
@@ -361,7 +361,7 @@ class ActiveBindingStore {
   }
 
   // Callback for when Plugin menu bindings or active player bindings have changed
-  func appActiveBindingsDidChange(_ activeBindingList: [ActiveBindingMeta]) {
+  func appActiveBindingsDidChange(_ activeBindingList: [ActiveBinding]) {
     // FIXME: calculate diff, use animation
     let tableUpdate = TableUpdateByRowIndex(.reloadAll)
 

@@ -101,7 +101,7 @@ class PlayerBindingController {
 
   // This structure results from merging the layers of enabled input sections for this player using precedence rules.
   // Contains only the bindings which are currently active for this player, and consulted via `currentBindingFor()`
-  private var currentActiveBindingMetas: [String: ActiveBindingMeta] = [:]
+  private var currentActiveBindings: [String: ActiveBinding] = [:]
 
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
@@ -122,7 +122,7 @@ class PlayerBindingController {
       self.keyPressHistory.clear()
       self.sectionsDefined = [:]
       self.sectionsEnabled.clear()
-      self.currentActiveBindingMetas = [:]
+      self.currentActiveBindings = [:]
     }
   }
 
@@ -131,7 +131,7 @@ class PlayerBindingController {
   }
 
   func currentBindingFor(_ keySequence: String) -> KeyMapping? {
-    return currentActiveBindingMetas[keySequence]?.binding
+    return currentActiveBindings[keySequence]?.mpvBinding
   }
 
   // Called when this window has keyboard focus but it was already handled by someone else (probably the main menu).
@@ -180,21 +180,21 @@ class PlayerBindingController {
 
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
-      if let meta = currentActiveBindingMetas[keySequence] {
-        if meta.origin == .iinaPlugin {
+      if let binding = currentActiveBindings[keySequence] {
+        if binding.origin == .iinaPlugin {
           // Make extra sure we don't resolve plugin bindings here
           log("Sequence \"\(keySequence)\" resolved to an IINA plugin (and will be ignored)! This indicates a bug which should be fixed", level: .error)
-          logCurrentActiveBindingMetas()
+          logCurrentActiveBindings()
           return nil
         }
-        if meta.binding.isIgnored {
-          log("Ignoring \"\(meta.binding.normalizedMpvKey)\" (from: \"\(meta.srcSectionName)\")", level: .verbose)
+        if binding.mpvBinding.isIgnored {
+          log("Ignoring \"\(binding.mpvBinding.normalizedMpvKey)\" (from: \"\(binding.srcSectionName)\")", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \"\(meta.binding.normalizedMpvKey)\" -> \(meta.binding.action) (from: \"\(meta.srcSectionName)\")")
+          log("Resolved keySeq \"\(binding.mpvBinding.normalizedMpvKey)\" -> \(binding.mpvBinding.action) (from: \"\(binding.srcSectionName)\")")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
-          return meta.binding
+          return binding.mpvBinding
         }
       }
     }
@@ -206,7 +206,7 @@ class PlayerBindingController {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
-      logCurrentActiveBindingMetas()
+      logCurrentActiveBindings()
       return nil
     }
   }
@@ -245,7 +245,7 @@ class PlayerBindingController {
         assert (self.sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
         self.log("Starting rebuild of player input bindings (refresh #\(self.lastRebuildVersion))", level: .verbose)
 
-        var rebuiltBindings: [String: ActiveBindingMeta] = self.buildBindingsDictFromEnabledSections()
+        var rebuiltBindings: [String: ActiveBinding] = self.buildBindingsDictFromEnabledSections()
 
         // need to execute the next couple of lines on UI thread
         let isActivePlayer = PlayerCore.active == self.playerCore
@@ -258,18 +258,18 @@ class PlayerBindingController {
         PlayerBindingController.fillInPartialSequences(&rebuiltBindings)
 
         // hopefully this will be an atomic replacement
-        self.currentActiveBindingMetas = rebuiltBindings
+        self.currentActiveBindings = rebuiltBindings
 
-        self.log("Finished rebuilding player input bindings (\(self.currentActiveBindingMetas.count) total)")
+        self.log("Finished rebuilding player input bindings (\(self.currentActiveBindings.count) total)")
         if LOG_BINDINGS_REBUILD {
-          self.logCurrentActiveBindingMetas()
+          self.logCurrentActiveBindings()
         }
       }
     }
   }
 
-  private func buildBindingsDictFromEnabledSections() -> [String: ActiveBindingMeta] {
-    var bindingsDict: [String: ActiveBindingMeta] = [:]
+  private func buildBindingsDictFromEnabledSections() -> [String: ActiveBinding] {
+    var bindingsDict: [String: ActiveBinding] = [:]
 
     for enabledSectionMeta in sectionsEnabled {
       if let inputSection = sectionsDefined[enabledSectionMeta.name] {
@@ -299,7 +299,7 @@ class PlayerBindingController {
     return bindingsDict
   }
 
-  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBindingMeta]) {
+  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBinding]) {
     let mpvKey = keyBinding.normalizedMpvKey
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
@@ -313,19 +313,19 @@ class PlayerBindingController {
       }
     }
     // Currently, IINA does not allow config files to add to any input sections other than "default", so this is a fair assumption.
-    let origin = inputSection.name == MPVInputSection.DEFAULT_SECTION_NAME ? ActiveBindingMeta.Origin.confFile : ActiveBindingMeta.Origin.luaScript
-    bindingsDict[mpvKey] = ActiveBindingMeta(keyBinding, origin: origin, srcSectionName: inputSection.name, isMenuItem: false, isEnabled: true)
+    let origin = inputSection.name == MPVInputSection.DEFAULT_SECTION_NAME ? ActiveBinding.Origin.confFile : ActiveBinding.Origin.luaScript
+    bindingsDict[mpvKey] = ActiveBinding(keyBinding, origin: origin, srcSectionName: inputSection.name, isMenuItem: false, isEnabled: true)
   }
 
-  private func logCurrentActiveBindingMetas() {
+  private func logCurrentActiveBindings() {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = currentActiveBindingMetas.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.binding.readableAction)") }
+      let bindingList = currentActiveBindings.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
       log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose)
     }
   }
 
-  private static func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBindingMeta]) {
-    for (keySequence, meta) in activeBindingsDict {
+  private static func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBinding]) {
+    for (keySequence, binding) in activeBindingsDict {
       if keySequence.contains("-") && keySequence != "default-bindings" {
         let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
         if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
@@ -339,7 +339,7 @@ class PlayerBindingController {
             if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
               // Set an explicit "ignore" for a partial sequence match. This is all done so that the player window doesn't beep.
               let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
-              activeBindingsDict[partial] = ActiveBindingMeta(partialBinding, origin: meta.origin, srcSectionName: meta.srcSectionName, isMenuItem: meta.isMenuItem, isEnabled: meta.isEnabled)
+              activeBindingsDict[partial] = ActiveBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isMenuItem: binding.isMenuItem, isEnabled: binding.isEnabled)
             }
           }
         }

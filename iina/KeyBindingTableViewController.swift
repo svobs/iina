@@ -36,7 +36,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
-      tableView.registerForDraggedTypes([.string, .iinaActiveBindingMeta])
+      tableView.registerForDraggedTypes([.string, .iinaActiveBinding])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -83,7 +83,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return nil
     }
     let columnName = identifier.rawValue
-    let binding = bindingRow.binding
+    let binding = bindingRow.mpvBinding
 
     switch columnName {
       case "keyColumn":
@@ -208,15 +208,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     switch columnIndex {
       case COLUMN_INDEX_KEY:
-        editedRow.binding.rawKey = newValue
+        editedRow.mpvBinding.rawKey = newValue
       case COLUMN_INDEX_ACTION:
-        editedRow.binding.rawAction = newValue
+        editedRow.mpvBinding.rawAction = newValue
       default:
         Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
         return false
     }
 
-    bindingStore.updateBinding(at: rowIndex, to: editedRow.binding)
+    bindingStore.updateBinding(at: rowIndex, to: editedRow.mpvBinding)
     return true
   }
 
@@ -248,12 +248,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    showEditBindingPopup(key: row.binding.rawKey, action: row.binding.readableAction) { key, action in
+    showEditBindingPopup(key: row.mpvBinding.rawKey, action: row.mpvBinding.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
-      row.binding.rawKey = key
-      row.binding.rawAction = action
+      row.mpvBinding.rawKey = key
+      row.mpvBinding.rawAction = action
 
-      self.bindingStore.updateBinding(at: rowIndex, to: row.binding)
+      self.bindingStore.updateBinding(at: rowIndex, to: row.mpvBinding)
     }
   }
 
@@ -312,19 +312,19 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func copyBindingRows(from rowList: [ActiveBindingMeta], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func copyBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
-    let newBindings: [KeyMapping] = rowList.map { $0.binding.copy() as! KeyMapping }
+    let newBindings: [KeyMapping] = rowList.map { $0.mpvBinding.copy() as! KeyMapping }
 
     let firstInsertedRowIndex = bindingStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
 
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
 
-  private func moveBindingRows(from rowList: [ActiveBindingMeta], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func moveBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
 
-    let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.binding }
+    let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.mpvBinding }
     guard !editableBindings.isEmpty else {
       Logger.log("Aborting move: none of the \(rowList.count) dragged bindings is editable")
       return
@@ -381,14 +381,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       }
     }
 
-    bindingStore.removeBindings(withIDs: rowList.map{$0.binding.bindingID!})
+    bindingStore.removeBindings(withIDs: rowList.map{$0.mpvBinding.bindingID!})
   }
 
-  private func getBindingRowsOrEmptyList(from pasteboard: NSPasteboard) -> [ActiveBindingMeta] {
-    var rowList: [ActiveBindingMeta] = []
-    if let objList = pasteboard.readObjects(forClasses: [ActiveBindingMeta.self], options: nil) {
+  private func getBindingRowsOrEmptyList(from pasteboard: NSPasteboard) -> [ActiveBinding] {
+    var rowList: [ActiveBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
       for obj in objList {
-        if let row = obj as? ActiveBindingMeta {
+        if let row = obj as? ActiveBinding {
           rowList.append(row)
         } else {
           return [] // return empty list if something was amiss
@@ -472,10 +472,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSMenuDelegate
 
   fileprivate class BindingMenuItem: NSMenuItem {
-    let row: ActiveBindingMeta
+    let row: ActiveBinding
     let rowIndex: Int
 
-    public init(_ row: ActiveBindingMeta, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
+    public init(_ row: ActiveBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
       self.row = row
       self.rowIndex = rowIndex
       super.init(title: title, action: selector, keyEquivalent: "")
@@ -487,11 +487,11 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func addItem(to menu: NSMenu, for row: ActiveBindingMeta, withIndex rowIndex: Int, title: String, action: Selector?) {
+  private func addItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String, action: Selector?) {
     menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
   }
 
-  private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBindingMeta, withIndex rowIndex: Int, title: String) {
+  private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String) {
     let attrTitle = NSMutableAttributedString(string: title)
     // FIXME: make italic
 //        let font = NSFont.systemFont(ofSize: 12)

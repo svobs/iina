@@ -402,7 +402,7 @@ class MenuController: NSObject, NSMenuDelegate {
     inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
     miniPlayer.action = #selector(MainWindowController.menuSwitchToMiniPlayer(_:))
 
-    NotificationCenter.default.addObserver(forName: .iinaMainWindowChanged, object: nil, queue: .main, using: mainWindowDidChange)
+//    NotificationCenter.default.addObserver(forName: .iinaMainWindowChanged, object: nil, queue: .main, using: mainWindowDidChange)
   }
 
   private func mainWindowDidChange(_ notification: Notification) {
@@ -538,6 +538,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   func updatePluginMenu() {
+    Logger.log("Updating Plugin menu")
     pluginMenu.removeAllItems()
 
     let errorNotice = NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: "")
@@ -690,7 +691,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
   // MARK: - Menu delegate
 
-  func menuNeedsUpdate(_ menu: NSMenu) {
+  func menuWillOpen(_ menu: NSMenu) {
     Logger.log("Updating menu: \(menu.title)", level: .verbose)
 
     switch menu {
@@ -755,7 +756,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ bindingRows: [ActiveBindingMeta]) {
+  func updateKeyEquivalentsFrom(_ bindingRows: [ActiveBinding]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -826,7 +827,7 @@ class MenuController: NSObject, NSMenuDelegate {
       var bound = false
       for bindingRow in bindingRows {
         guard bindingRow.isEnabled else { continue }
-        let kb = bindingRow.binding
+        let kb = bindingRow.mpvBinding
         guard kb.isIINACommand == isIINACmd else { continue }
         let (sameAction, value) = sameKeyAction(kb.action, actions, normalizeLastNum, numRange)
         if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
