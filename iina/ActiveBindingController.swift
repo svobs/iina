@@ -71,6 +71,8 @@ class ActiveBindingController {
     }
   }
 
+  // MARK: Default Section bindings
+
   private static func makeDefaultSection(from defaultSectionBindings: [KeyMapping] = []) -> MPVInputSection {
     return MPVInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, defaultSectionBindings, isForce: true)
   }
@@ -166,6 +168,8 @@ class ActiveBindingController {
     return meta
   }
 
+  // MARK: Plugin Menu
+
   func setPluginMenuMediator(_ newMediator: PluginMenuKeyBindingMediator) {
     let needsRebuild: Bool = !(pluginMenuMediator.entryList.count == 0 && newMediator.entryList.count == 0)
     guard needsRebuild else { return }
@@ -176,8 +180,8 @@ class ActiveBindingController {
     PlayerCore.active.inputController.rebuildCurrentActiveBindingList()
   }
 
-  // Each plugin's bindings are equivalent to a "weak" input section.
-  func updatePluginMenuBindings(_ bindingsDict: inout [String: ActiveBindingMeta]) {
+  // The Plugin menu bindings are equivalent to a "weak" input section which is enabled last in the active player
+  func updatePluginMenuBindings(_ playerBindingsDict: inout [String: ActiveBindingMeta]) {
     var pluginMenuBindings: [ActiveBindingMeta] = []
 
     let mediator = self.pluginMenuMediator
@@ -190,12 +194,12 @@ class ActiveBindingController {
     for entry in mediator.entryList {
       let mpvKey = KeyCodeHelper.normalizeMpv(entry.rawKey)
 
-      // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it
+      // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it.
       let action = "Plugin > \(entry.pluginName) > \(entry.menuItem.title)"
       let binding = KeyMapping(rawKey: entry.rawKey, rawAction: action, isIINACommand: true)
       let bindingMeta = ActiveBindingMeta(binding, origin: .iinaPlugin, srcSectionName: entry.pluginName, isMenuItem: true, isEnabled: false)
 
-      if let existingBindingMeta = bindingsDict[mpvKey], !existingBindingMeta.binding.isIgnored {
+      if let existingBindingMeta = playerBindingsDict[mpvKey], !existingBindingMeta.binding.isIgnored {
         // Conflict! Key binding already reserved
         failureList.append(entry)
         entry.menuItem.keyEquivalent = ""
@@ -205,7 +209,7 @@ class ActiveBindingController {
           entry.menuItem.keyEquivalent = kEqv
           entry.menuItem.keyEquivalentModifierMask = kMdf
 
-          bindingsDict[mpvKey] = bindingMeta
+          playerBindingsDict[mpvKey] = bindingMeta
           bindingMeta.isEnabled = true
         }
       }

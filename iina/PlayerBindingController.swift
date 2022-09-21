@@ -81,12 +81,11 @@ class PlayerBindingController {
   private let subsystem: Logger.Subsystem
   private let dq: DispatchQueue
 
-  private var lastRefreshVersion: Int = 0
-
-  // Reacts when there is a change to the global key bindings
-  private var keyBindingsChangedObserver: NSObjectProtocol? = nil
-
   private unowned let activeBindingController: ActiveBindingController! = ActiveBindingController.get()
+
+  // Versioning the builds for the active bindings, and build requests, allows us to drop unnecessary rebuilds
+  // if several requests are made in quick succession
+  private var lastRebuildVersion: Int = 0
 
   /*
    mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
@@ -100,7 +99,8 @@ class PlayerBindingController {
   /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
   private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  // The final product for this player. Contains only the bindings which are currently active for this player.
+  // This structure results from merging the layers of enabled input sections for this player using precedence rules.
+  // Contains only the bindings which are currently active for this player, and consulted via `currentBindingFor()`
   private var currentActiveBindingMetas: [String: ActiveBindingMeta] = [:]
 
   init(playerCore: PlayerCore) {
@@ -234,16 +234,16 @@ class PlayerBindingController {
   func rebuildCurrentActiveBindingList() {
     self.dq.async {
       // Optimization: drop all but the most recent request
-      let refreshVersion = self.lastRefreshVersion + 1
-      self.log("Requesting ActiveBindingList refresh (#\(refreshVersion))", level: .verbose)
+      let rebuildVersion = self.lastRebuildVersion + 1
+      self.log("Requesting ActiveBindingList refresh (#\(rebuildVersion))", level: .verbose)
 
       DispatchQueue.main.async {
-        if self.lastRefreshVersion >= refreshVersion {
+        if self.lastRebuildVersion >= rebuildVersion {
           return
         }
-        self.lastRefreshVersion = refreshVersion
+        self.lastRebuildVersion = rebuildVersion
         assert (self.sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
-        self.log("Starting rebuild of player input bindings (refresh #\(self.lastRefreshVersion))", level: .verbose)
+        self.log("Starting rebuild of player input bindings (refresh #\(self.lastRebuildVersion))", level: .verbose)
 
         var rebuiltBindings: [String: ActiveBindingMeta] = self.buildBindingsDictFromEnabledSections()
 
