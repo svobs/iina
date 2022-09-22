@@ -1,5 +1,5 @@
 //
-//  PlayerBindingController.swift
+//  PlayerInputConfig.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.05.17.
@@ -12,8 +12,8 @@ let MP_MAX_KEY_DOWN = 4
 fileprivate let LOG_BINDINGS_REBUILD = false
 
 /*
- A single PlayerBindingController instance should be associated with a single PlayerCore, and while the player window has focus, its
- PlayerBindingController is expected to direct key presses to this class's `resolveKeyEvent` method.
+ A single PlayerInputConfig instance should be associated with a single PlayerCore, and while the player window has focus, its
+ PlayerInputConfig is expected to direct key presses to this class's `resolveKeyEvent` method.
  to match the user's key stroke(s) into recognized commands..
 
  This class also keeps track of any binidngs set by Lua scripts. It expects to be notified of new mpv "input sections" and updates to their
@@ -56,12 +56,67 @@ fileprivate let LOG_BINDINGS_REBUILD = false
  > The maximum number of (non-modifier) keys for combinations is currently 4.
 
  Although IINA's active key bindings (as set in IINA's Preferences window) take effect immediately and apply to all player windows, each player
- window maintains independent state, and in keeping with this, each player's PlayerBindingController maintains a separate buffer of pressed keystrokes
+ window maintains independent state, and in keeping with this, each player's PlayerInputConfig maintains a separate buffer of pressed keystrokes
  (going back as many as 4 keystrokes).
 
  */
-class PlayerBindingController {
+class PlayerInputConfig {
+  class GlobalInputSection: InputSection {
+    let name: String
+    let isForce: Bool
+    var activeBindingList: [ActiveBinding] = [] {
+      didSet {
+        PlayerInputConfig.rebuildCurrentActiveBindingsDict()
+      }
+    }
+
+    init(name: String, _ activeBindingList: [ActiveBinding], isForce: Bool) {
+      self.name = name
+      self.activeBindingList = activeBindingList
+      self.isForce = isForce
+    }
+
+    var keyBindingList: [KeyMapping] {
+      get {
+        activeBindingList.map { $0.mpvBinding }
+      }
+    }
+
+    var description: String {
+      get {
+        "GlobalInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(activeBindingList.count) bindings)"
+      }
+    }
+  }
+
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
+
+  static let defaultSection = GlobalInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, [], isForce: true)
+  static let pluginSection = GlobalInputSection(name: "Plugins", [], isForce: false)
+
+  // This structure results from merging the layers of enabled input sections for this player using precedence rules.
+  // Contains only the bindings which are currently active for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
+  static var currentActiveBindingsDict: [String: ActiveBinding] = [:]
+
+  /*
+   This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c
+   Expected to be run inside the the private dispatch queue.
+   */
+  static func rebuildCurrentActiveBindingsDict() {
+    guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
+      Logger.log("No active player!", level: .error)
+      return
+    }
+
+    currentActiveBindingsDict = activePlayerInputConfig.buildActiveBindingsDict()
+  }
+
+  // Should be consistent with the rows in the Preferences -> Key Bindings table
+  static var currentActiveBindingsList: [ActiveBinding] {
+    get {
+      pluginSection.activeBindingList + defaultSection.activeBindingList
+    }
+  }
 
   private struct EnabledSectionMeta {
     let name: String
@@ -77,15 +132,15 @@ class PlayerBindingController {
 
   // MARK: - Single player instance
 
+  private var activeBindingController: ActiveBindingController {
+    get {
+      (NSApp.delegate as! AppDelegate).activeBindingController
+    }
+  }
+
   private unowned let playerCore: PlayerCore!
   private let subsystem: Logger.Subsystem
   private let dq: DispatchQueue
-
-  private unowned var activeBindingController: ActiveBindingController!
-
-  // Versioning the builds for the active bindings, and build requests, allows us to drop unnecessary rebuilds
-  // if several requests are made in quick succession
-  private var lastRebuildVersion: Int = 0
 
   /*
    mpv equivalent: `int key_history[MP_MAX_KEY_DOWN];`
@@ -94,52 +149,39 @@ class PlayerBindingController {
   private var keyPressHistory = RingBuffer<String>(capacity: MP_MAX_KEY_DOWN)
 
   /* mpv euivalent:   `struct cmd_bind_section **sections` */
-  private var sectionsDefined: [String : MPVInputSection] = [:]
+  private var sectionsDefined: [String : InputSection] = [:]
 
   /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
   private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  // This structure results from merging the layers of enabled input sections for this player using precedence rules.
-  // Contains only the bindings which are currently active for this player, and consulted via `currentBindingFor()`
-  private var currentActiveBindings: [String: ActiveBinding] = [:]
-
   init(playerCore: PlayerCore) {
     self.playerCore = playerCore
-    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerBindingController.inputBindingsSubsystem.rawValue)")
+    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerInputConfig.inputBindingsSubsystem.rawValue)")
     self.dq = DispatchQueue(label: "Player\(playerCore.label)-Bindings", qos: .userInitiated)
-    self.activeBindingController = (NSApp.delegate as! AppDelegate).activeBindingController
 
-    // Init data structures with no data for now; they will soon be populated
-    self.dq.async {
-      let defaultSection = self.activeBindingController.getCurrentDefaultSection()
-      self.sectionsDefined[defaultSection.name] = defaultSection
-      self.sectionsEnabled.prepend(EnabledSectionMeta(name: defaultSection.name, isExclusive: false))
+    // Create dummy empty default section for now so that data structures are consistent
+    for section in [PlayerInputConfig.defaultSection, PlayerInputConfig.pluginSection] {
+      self.sectionsDefined[section.name] = section
+      self.sectionsEnabled.prepend(EnabledSectionMeta(name: section.name, isExclusive: false))
     }
   }
 
   deinit {
-    dq.async {
-      // facilitate garbage collection
-      self.keyPressHistory.clear()
-      self.sectionsDefined = [:]
-      self.sectionsEnabled.clear()
-      self.currentActiveBindings = [:]
-    }
+    // facilitate garbage collection
+    self.keyPressHistory.clear()
+    self.sectionsDefined = [:]
+    self.sectionsEnabled.clear()
   }
 
   private func log(_ msg: String, level: Logger.Level = .debug) {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
-  func currentBindingFor(_ keySequence: String) -> KeyMapping? {
-    return currentActiveBindings[keySequence]?.mpvBinding
-  }
-
-  // Called when this window has keyboard focus but it was already handled by someone else (probably the main menu).
-  // But it's still important to know that it happened
-  func keyWasHandled(_ keyDownEvent: NSEvent) {
-    log("Clearing list of pressed keys", level: .verbose)
-    keyPressHistory.clear()
+  /*
+   Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
+   */
+  func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
+    PlayerInputConfig.currentActiveBindingsDict[keySequence]?.mpvBinding
   }
 
   /*
@@ -172,6 +214,8 @@ class PlayerBindingController {
     var keySequence = ""
     var hasPartialValidSequence = false
 
+    let activeBindingsDict = PlayerInputConfig.currentActiveBindingsDict
+
     for prevKey in keyPressHistory.reversed() {
       if keySequence.isEmpty {
         keySequence = prevKey
@@ -181,11 +225,11 @@ class PlayerBindingController {
 
       log("Checking sequence: \"\(keySequence)\"", level: .verbose)
 
-      if let binding = currentActiveBindings[keySequence] {
+      if let binding = activeBindingsDict[keySequence] {
         if binding.origin == .iinaPlugin {
           // Make extra sure we don't resolve plugin bindings here
           log("Sequence \"\(keySequence)\" resolved to an IINA plugin (and will be ignored)! This indicates a bug which should be fixed", level: .error)
-          logCurrentActiveBindings()
+          PlayerInputConfig.logCurrentActiveBindings()
           return nil
         }
         if binding.mpvBinding.isIgnored {
@@ -207,66 +251,28 @@ class PlayerBindingController {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
-      logCurrentActiveBindings()
+      PlayerInputConfig.logCurrentActiveBindings()
       return nil
     }
   }
 
-  func refreshDefaultSectionBindings() {
-    log("Default section bindings changed: will rebuild active bindings", level: .verbose)
-    self.dq.async {
-      let defaultSection = self.activeBindingController.getCurrentDefaultSection()
+  func buildActiveBindingsDict() -> [String: ActiveBinding] {
+    var rebuiltBindings: [String: ActiveBinding] = [:]
+    self.dq.sync {
+      assert (self.sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
+      self.log("Starting rebuild of active player input bindings", level: .verbose)
+
+      rebuiltBindings = self.buildBindingsDictFromEnabledSections()
+
+      // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
+      PlayerInputConfig.fillInPartialSequences(&rebuiltBindings)
+
+      self.log("Finished rebuilding active player input bindings (\(rebuiltBindings.count) total)")
       if LOG_BINDINGS_REBUILD {
-        let count = defaultSection.keyBindings.count
-        self.log("Refreshing 'default' section with \(count) bindings", level: .verbose)
-      }
-      // Treat global bindings as `section=="default", weak==false`.
-      // Like other sections, overwrite with latest changes. UNLIKE other sections, do not change its position in the stack.
-      self.sectionsDefined[defaultSection.name] = defaultSection
-
-      self.rebuildCurrentActiveBindingList()
-    }
-  }
-
-  /*
-   This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c
-   Expected to be run inside the the private dispatch queue.
-   */
-  func rebuildCurrentActiveBindingList() {
-    self.dq.async {
-      // Optimization: drop all but the most recent request
-      let rebuildVersion = self.lastRebuildVersion + 1
-      self.log("Requesting ActiveBindingList refresh (#\(rebuildVersion))", level: .verbose)
-
-      DispatchQueue.main.async {
-        if self.lastRebuildVersion >= rebuildVersion {
-          return
-        }
-        self.lastRebuildVersion = rebuildVersion
-        assert (self.sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
-        self.log("Starting rebuild of player input bindings (refresh #\(self.lastRebuildVersion))", level: .verbose)
-
-        var rebuiltBindings: [String: ActiveBinding] = self.buildBindingsDictFromEnabledSections()
-
-        // need to execute the next couple of lines on UI thread
-        let isActivePlayer = PlayerCore.active == self.playerCore
-        // Set key equivalents in the Plugin menu, making sure to
-        if isActivePlayer {
-          self.activeBindingController.updatePluginMenuBindings(&rebuiltBindings)
-        }
-
-        // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-        PlayerBindingController.fillInPartialSequences(&rebuiltBindings)
-
-        // hopefully this will be an atomic replacement
-        self.currentActiveBindings = rebuiltBindings
-
-        self.log("Finished rebuilding player input bindings (\(self.currentActiveBindings.count) total)")
-        if LOG_BINDINGS_REBUILD {
-          self.logCurrentActiveBindings()
-        }
+        PlayerInputConfig.logCurrentActiveBindings()
       }
     }
+    return rebuiltBindings
   }
 
   private func buildBindingsDictFromEnabledSections() -> [String: ActiveBinding] {
@@ -274,7 +280,7 @@ class PlayerBindingController {
 
     for enabledSectionMeta in sectionsEnabled {
       if let inputSection = sectionsDefined[enabledSectionMeta.name] {
-        if inputSection.keyBindings.isEmpty {
+        if inputSection.keyBindingList.isEmpty {
           if LOG_BINDINGS_REBUILD {
             log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
           }
@@ -283,7 +289,7 @@ class PlayerBindingController {
             log("RebuildBindings: adding from \(inputSection)", level: .verbose)
           }
           // Iterate from top of stack to bottom:
-          for keyBinding in inputSection.keyBindings {
+          for keyBinding in inputSection.keyBindingList {
             addBinding(keyBinding, from: inputSection, to: &bindingsDict)
           }
         }
@@ -300,7 +306,7 @@ class PlayerBindingController {
     return bindingsDict
   }
 
-  private func addBinding(_ keyBinding: KeyMapping, from inputSection: MPVInputSection, to bindingsDict: inout [String: ActiveBinding]) {
+  private func addBinding(_ keyBinding: KeyMapping, from inputSection: InputSection, to bindingsDict: inout [String: ActiveBinding]) {
     let mpvKey = keyBinding.normalizedMpvKey
     if let prevBind = bindingsDict[mpvKey] {
       guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
@@ -318,10 +324,10 @@ class PlayerBindingController {
     bindingsDict[mpvKey] = ActiveBinding(keyBinding, origin: origin, srcSectionName: inputSection.name, isMenuItem: false, isEnabled: true)
   }
 
-  private func logCurrentActiveBindings() {
+  private static func logCurrentActiveBindings() {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = currentActiveBindings.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
-      log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose)
+      let bindingList = currentActiveBindingsDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
+      Logger.log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: inputBindingsSubsystem)
     }
   }
 
@@ -381,14 +387,14 @@ class PlayerBindingController {
   func defineSection(_ inputSection: MPVInputSection) {
     dq.sync {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
-      if inputSection.keyBindings.isEmpty && sectionsDefined[inputSection.name] != nil {
+      if inputSection.keyBindingList.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
         log("New definition of \"\(inputSection.name)\" contains no bindings: disabling & removing it")
         disableSection_Unsafe(inputSection.name)
       }
       sectionsDefined[inputSection.name] = inputSection
-      rebuildCurrentActiveBindingList()
     }
+    PlayerInputConfig.rebuildCurrentActiveBindingsDict()
   }
 
   /*
@@ -409,38 +415,35 @@ class PlayerBindingController {
    */
   func enableSection(_ sectionName: String, _ flags: [String]) {
     dq.sync {
-      enableSection_Unsafe(sectionName, flags)
-      rebuildCurrentActiveBindingList()
+      var isExclusive = false
+      for flag in flags {
+        switch flag {
+          case "allow-hide-cursor", "allow-vo-dragging":
+            // Ignore
+            break
+          case "exclusive":
+            isExclusive = true
+            log("Enabling exclusive section: \"\(sectionName)\"")
+            break
+          default:
+            log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
+        }
+      }
+
+      guard sectionsDefined[sectionName] != nil else {
+        log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
+        return
+      }
+
+      // Need to disable any existing before enabling, to match mpv behavior.
+      // This may alter the section's position in the stack, which changes precedence.
+      sectionsEnabled.remove({ $0.name == sectionName })
+
+      sectionsEnabled.prepend(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
+      log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
     }
-  }
-
- private func enableSection_Unsafe(_ sectionName: String, _ flags: [String]) {
-   var isExclusive = false
-   for flag in flags {
-     switch flag {
-       case "allow-hide-cursor", "allow-vo-dragging":
-         // Ignore
-         break
-       case "exclusive":
-         isExclusive = true
-         log("Enabling exclusive section: \"\(sectionName)\"")
-         break
-       default:
-         log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
-     }
-   }
-
-   guard sectionsDefined[sectionName] != nil else {
-     log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
-     return
-   }
-
-   // Need to disable any existing before enabling, to match mpv behavior.
-   // This may alter the section's position in the stack, which changes precedence.
-   sectionsEnabled.remove({ $0.name == sectionName })
-
-   sectionsEnabled.prepend(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
-   log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
+    // FIXME: only do this for active player
+    PlayerInputConfig.rebuildCurrentActiveBindingsDict()
  }
 
   /*
@@ -449,8 +452,8 @@ class PlayerBindingController {
   func disableSection(_ sectionName: String) {
     dq.sync {
       disableSection_Unsafe(sectionName)
-      rebuildCurrentActiveBindingList()
     }
+    PlayerInputConfig.rebuildCurrentActiveBindingsDict()
   }
 
   private func disableSection_Unsafe(_ sectionName: String) {
@@ -464,7 +467,7 @@ class PlayerBindingController {
 
   private func extractScriptNames(inputSection: MPVInputSection) -> Set<String> {
     var scriptNameSet = Set<String>()
-    for kb in inputSection.keyBindings {
+    for kb in inputSection.keyBindingList {
       if kb.action.count == 2 && kb.action[0] == MPVCommand.scriptBinding.rawValue {
         let scriptBindingName = kb.action[1]
         if let scriptName = parseScriptName(from: scriptBindingName) {

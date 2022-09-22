@@ -42,49 +42,13 @@ class PluginMenuKeyBindingMediator {
 
  */
 class ActiveBindingController {
-  private var bindingStore: ActiveBindingStore {
-    return (NSApp.delegate as! AppDelegate).bindingStore
-  }
-
-  // This exists so that new instances of PlayerBindingController can immediately populate their default section.
-  // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
-  private var currentDefaultSection = makeDefaultSection()
-
   // Each player can have a set of plugins associated with it, and each can place keyboard shortcuts in the menubar.
   // But there is only a single menubar, while Plugin menu items will change each time a different player window comes into focus.
   // Also, each time the player bindings are changed, they may override some of the menu items, so the Plugin menu will need to be
   // updated to stay consistent. This object will facilitate those updates.
   private var pluginMenuMediator = PluginMenuKeyBindingMediator(completionHandler: { _ in })
 
-  // Cached bindings for each type
-  private var currentDefaultSectionBindings: [ActiveBinding] = []
-  private var currentPluginMenuBindings: [ActiveBinding] = []
-
-  // The end product of this class. Should be consistent with the rows in the Preferences -> Key Bindings table
-  var currentActiveBindingsList: [ActiveBinding] {
-    get {
-      currentPluginMenuBindings + currentDefaultSectionBindings
-    }
-  }
-
   // MARK: Default Section bindings
-
-  private static func makeDefaultSection(from defaultSectionBindings: [KeyMapping] = []) -> MPVInputSection {
-    return MPVInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, defaultSectionBindings, isForce: true)
-  }
-
-  // FIXME: add a lock to this (1/2)
-  func getCurrentDefaultSection() -> MPVInputSection {
-    return currentDefaultSection
-  }
-
-  // FIXME: add a lock around this (2/2)
-  private func replaceCurrentDefaultSection(from defaultSectionActiveBindings: [ActiveBinding]) {
-    let enabledBindings = defaultSectionActiveBindings.filter { $0.isEnabled }.map { $0.mpvBinding }
-
-    currentDefaultSectionBindings = defaultSectionActiveBindings
-    currentDefaultSection = ActiveBindingController.makeDefaultSection(from: enabledBindings)
-  }
 
   // The 'default' section contains the bindings loaded from the currently
   // selected input config file, and will be shared for all `PlayerCore` instances.
@@ -126,16 +90,11 @@ class ActiveBindingController {
       }
     }
 
-    // This will also update the isMenuItem status of each
+    // This will also update the isMenuItem status of each:
     (NSApp.delegate as? AppDelegate)?.menuController.updateKeyEquivalentsFrom(defaultSectionBindingList)
 
-    self.replaceCurrentDefaultSection(from: defaultSectionBindingList)  // cache it so that new players can use it
-
-    // Send bindings to all players: they will need to re-determine which bindings they want to override.
-    // One of these will set `currentPluginMenuBindings`
-    for player in PlayerCore.playerCores {
-      player.inputBindingController.refreshDefaultSectionBindings()
-    }
+    // This will trigger a rebuild of the bindings lookup table
+    PlayerInputConfig.defaultSection.activeBindingList = defaultSectionBindingList
 
     return defaultSectionBindingList
   }
@@ -174,7 +133,7 @@ class ActiveBindingController {
     pluginMenuMediator = newMediator
     Logger.log("Plugin menu updated, requests \(pluginMenuMediator.entryList.count) key bindings", level: .verbose)
     // This will call `updatePluginMenuBindings()`
-    PlayerCore.active.inputBindingController.rebuildCurrentActiveBindingList()
+    PlayerInputConfig.rebuildCurrentActiveBindingsDict()
   }
 
   // The Plugin menu bindings are equivalent to a "weak" input section which is enabled last in the active player
@@ -216,10 +175,11 @@ class ActiveBindingController {
 
     mediator.didComplete(failureList)
 
-    currentPluginMenuBindings = pluginMenuBindings
-    Logger.log("Updated Plugin menu bindings (count: \(currentPluginMenuBindings.count))")
+    // This will trigger a rebuild of the bindings lookup table
+    PlayerInputConfig.pluginSection.activeBindingList = pluginMenuBindings
+    Logger.log("Updated Plugin menu bindings (count: \(pluginMenuBindings.count))")
 
-    bindingStore.appActiveBindingsDidChange(currentActiveBindingsList)
+    (NSApp.delegate as! AppDelegate).bindingStore.appActiveBindingsDidChange(PlayerInputConfig.currentActiveBindingsList)
   }
 
 }

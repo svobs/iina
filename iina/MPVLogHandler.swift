@@ -156,12 +156,12 @@ class MPVLogHandler {
     }
 
     let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce)
-    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindings.count), force=\(section.isForce) ", subsystem: player.subsystem)
+    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = section.keyBindings.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
+      let bindingList = section.keyBindingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
       Logger.log("Bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
     }
-    player.inputBindingController.defineSection(section)
+    player.inputConfig.defineSection(section)
     return true
   }
 
@@ -184,7 +184,7 @@ class MPVLogHandler {
     let flags = parseFlags(String(msg[flagsRange]))
 
     Logger.log("enable-section: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
-    player.inputBindingController.enableSection(name, flags)
+    player.inputConfig.enableSection(name, flags)
     return true
   }
 
@@ -204,7 +204,7 @@ class MPVLogHandler {
 
     let name = String(msg[nameRange])
     Logger.log("disable-section: \"\(name)\"", subsystem: player.subsystem)
-    player.inputBindingController.disableSection(name)
+    player.inputConfig.disableSection(name)
     return true
   }
 }

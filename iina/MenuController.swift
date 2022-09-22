@@ -401,16 +401,6 @@ class MenuController: NSObject, NSMenuDelegate {
 
     inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
     miniPlayer.action = #selector(MainWindowController.menuSwitchToMiniPlayer(_:))
-
-//    NotificationCenter.default.addObserver(forName: .iinaMainWindowChanged, object: nil, queue: .main, using: mainWindowDidChange)
-  }
-
-  private func mainWindowDidChange(_ notification: Notification) {
-    let didBecomeMain = notification.object as! Bool
-    Logger.log("DidBecomeMain: \(didBecomeMain)")
-    guard didBecomeMain else { return }
-
-    self.updatePluginMenu()
   }
 
   // MARK: - Update Menus
@@ -610,7 +600,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.isEnabled = item.enabled
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
-      // Store the item with its pair - the PlayerBindingController will set the binding & deal with conflicts
+      // Store the item with its pair - the PlayerInputConfig will set the binding & deal with conflicts
       keyBindingMediator.add(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem)
     }
     if !item.items.isEmpty {

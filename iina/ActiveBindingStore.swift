@@ -9,7 +9,9 @@
 import Foundation
 
 // Data store which serves as the single source of truth for the Key Bindings table in the Preferences UI.
+// Encapsulates the logic for create/remove/update/delete operations on the table, and also completely handles filtering.
 // Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
+// This class must stay in sync with the ActiveBindingController, which handles the assembly of the rows.
 class ActiveBindingStore {
 
   // MARK: State
@@ -22,8 +24,6 @@ class ActiveBindingStore {
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
-
-  // MARK: Lifecycle
 
   // MARK: Bindings Table CRUD
 
@@ -315,8 +315,17 @@ class ActiveBindingStore {
     }
   }
 
+  /*
+   Must execute sequentially:
+   1. Save conf file, get updated default section rows
+   2. Send updated default section bindings to ActiveBindingController. It will recalculate all bindings and re-bind appropriately, then
+      returns the updated set of all bindings to us.
+   3. Update the list of all bindings here.
+   4. Push update to the Key Bindings table in the UI so it can be animated.
+   */
   private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
-    let defaultSectionBindings = extractConfFileBindings(bindingRowsAllNew)
+    // Save to file
+    let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.mpvBinding })
     let inputConfigStore = (NSApp.delegate as! AppDelegate).inputConfigStore
     guard let defaultSectionBindings = inputConfigStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return
@@ -325,16 +334,13 @@ class ActiveBindingStore {
     applyDefaultSectionUpdates(defaultSectionBindings, tableUpdate)
   }
 
-  private func extractConfFileBindings(_ bindingLines: [ActiveBinding]) -> [KeyMapping] {
-    return bindingLines.filter({ $0.origin == .confFile }).map({ $0.mpvBinding })
-  }
-
+  /*
+   Send to ActiveBindingController to ingest. It will return the updated list of all rows.
+   Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableUpdate`.
+   This is needed so that animations can work. But ActiveBindingController builds the actual row data,
+   and the two must match or else visual bugs will result.
+   */
   func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
-    // Send to ActiveBindingController to ingest. It will return the updated list of rows.
-    // Note: we rely on the assumption that we know which rows will be added
-    // and removed, and that information is contained in `tableUpdate`.
-    // This is needed so that animations can work. But ActiveBindingController
-    // builds the actual row data, and the two must match or else visual bugs will result.
     let activeBindingController = (NSApp.delegate as! AppDelegate).activeBindingController
     let bindingRowsAllNew = activeBindingController.rebuildDefaultSection(defaultSectionBindings)
     guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
@@ -345,7 +351,10 @@ class ActiveBindingStore {
     applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
   }
 
-  // General purpose update
+  /*
+  - Update the list of all bindings here.
+  - Push update to the Key Bindings table in the UI so it can be animated.
+  */
   private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()

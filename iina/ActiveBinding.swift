@@ -21,7 +21,7 @@ class ActiveBinding: NSObject, Codable {
     case iinaPlugin
   }
 
-  // TODO: should be nil for origin==.iinaPlugin
+  // TODO: should be nil for origin==.iinaPlugin?
   var mpvBinding: KeyMapping
   var origin: Origin
 

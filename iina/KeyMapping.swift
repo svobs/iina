@@ -10,6 +10,7 @@ import Foundation
 
 class KeyMapping: NSObject, NSCopying, Codable {
 
+  // TODO: move this into ActiveBinding
   var bindingID: Int?
 
   var isIINACommand: Bool
