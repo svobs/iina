@@ -246,7 +246,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
-    if let keyBinding = player.inputController.resolveKeyEvent(event) {
+    if let keyBinding = player.inputBindingController.resolveKeyEvent(event) {
       if !keyBinding.isIgnored {  // if "ignore", do nothing. No beep, no send
         if !handleKeyBinding(keyBinding) {
           // beep if cmd failed
@@ -408,6 +408,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   // MARK: - Window delegate: Activeness status
 
   func windowDidBecomeMain(_ notification: Notification) {
+    Logger.log("Window became main: \(player.subsystem.rawValue)", level: .verbose)
+
     PlayerCore.lastActive = player
     if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       NowPlayingInfoManager.updateInfo(withTitle: true)
@@ -416,6 +418,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
   
   func windowDidResignMain(_ notification: Notification) {
+    Logger.log("Window resigned main: \(player.subsystem.rawValue)", level: .verbose)
+
     NotificationCenter.default.post(name: .iinaMainWindowChanged, object: false)
   }
 

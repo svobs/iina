@@ -42,13 +42,9 @@ class PluginMenuKeyBindingMediator {
 
  */
 class ActiveBindingController {
-  static private let inst = ActiveBindingController()
-
-  static func get() -> ActiveBindingController {
-    return inst
+  private var bindingStore: ActiveBindingStore {
+    return (NSApp.delegate as! AppDelegate).bindingStore
   }
-
-  private unowned let bindingStore: ActiveBindingStore! = ActiveBindingStore.get()
 
   // This exists so that new instances of PlayerBindingController can immediately populate their default section.
   // Try not to use it anywhere else, as we already have a lot of redundant binding info scattered around.
@@ -92,8 +88,9 @@ class ActiveBindingController {
 
   // The 'default' section contains the bindings loaded from the currently
   // selected input config file, and will be shared for all `PlayerCore` instances.
-  // This method also calculates which of these will qualify as menu item bindings.
-  func updateAllDefaultSectionBindings(_ mpvBindingList: [KeyMapping]) -> [ActiveBinding] {
+  // This method also determines which of these will qualify as menu item bindings, and sets them appropriately
+  // Returns a list of ActiveBindings which contains added metadata for each binding in the parameter list
+  func rebuildDefaultSection(_ mpvBindingList: [KeyMapping]) -> [ActiveBinding] {
     Logger.log("Rebuilding 'default' section bindings (\(mpvBindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
     var defaultSectionBindingList: [ActiveBinding] = []
@@ -137,7 +134,7 @@ class ActiveBindingController {
     // Send bindings to all players: they will need to re-determine which bindings they want to override.
     // One of these will set `currentPluginMenuBindings`
     for player in PlayerCore.playerCores {
-      player.inputController.refreshDefaultSectionBindings()
+      player.inputBindingController.refreshDefaultSectionBindings()
     }
 
     return defaultSectionBindingList
@@ -177,7 +174,7 @@ class ActiveBindingController {
     pluginMenuMediator = newMediator
     Logger.log("Plugin menu updated, requests \(pluginMenuMediator.entryList.count) key bindings", level: .verbose)
     // This will call `updatePluginMenuBindings()`
-    PlayerCore.active.inputController.rebuildCurrentActiveBindingList()
+    PlayerCore.active.inputBindingController.rebuildCurrentActiveBindingList()
   }
 
   // The Plugin menu bindings are equivalent to a "weak" input section which is enabled last in the active player

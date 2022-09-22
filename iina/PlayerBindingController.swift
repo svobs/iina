@@ -81,7 +81,7 @@ class PlayerBindingController {
   private let subsystem: Logger.Subsystem
   private let dq: DispatchQueue
 
-  private unowned let activeBindingController: ActiveBindingController! = ActiveBindingController.get()
+  private unowned var activeBindingController: ActiveBindingController!
 
   // Versioning the builds for the active bindings, and build requests, allows us to drop unnecessary rebuilds
   // if several requests are made in quick succession
@@ -107,6 +107,7 @@ class PlayerBindingController {
     self.playerCore = playerCore
     self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerBindingController.inputBindingsSubsystem.rawValue)")
     self.dq = DispatchQueue(label: "Player\(playerCore.label)-Bindings", qos: .userInitiated)
+    self.activeBindingController = (NSApp.delegate as! AppDelegate).activeBindingController
 
     // Init data structures with no data for now; they will soon be populated
     self.dq.async {

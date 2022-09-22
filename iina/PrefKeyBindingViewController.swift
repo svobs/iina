@@ -34,8 +34,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
   }
 
-  private unowned var inputConfigStore: InputConfigStore! = InputConfigStore.get()
-  private unowned var bindingStore: ActiveBindingStore! = ActiveBindingStore.get()
+  private var inputConfigStore: InputConfigStore {
+    return (NSApp.delegate as! AppDelegate).inputConfigStore
+  }
+
+  private var bindingStore: ActiveBindingStore {
+    return (NSApp.delegate as! AppDelegate).bindingStore
+  }
 
   private var configTableController: InputConfigTableViewController? = nil
   private var kbTableController: KeyBindingsTableViewController? = nil

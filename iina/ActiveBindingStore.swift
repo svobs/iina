@@ -12,12 +12,6 @@ import Foundation
 // Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
 class ActiveBindingStore {
 
-  static private let inst = ActiveBindingStore()
-
-  static func get() -> ActiveBindingStore {
-    return inst
-  }
-
   // MARK: State
 
   // The unfiltered list of table rows
@@ -323,7 +317,8 @@ class ActiveBindingStore {
 
   private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     let defaultSectionBindings = extractConfFileBindings(bindingRowsAllNew)
-    guard let defaultSectionBindings = InputConfigStore.get().inputConfigFileWriter.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
+    let inputConfigStore = (NSApp.delegate as! AppDelegate).inputConfigStore
+    guard let defaultSectionBindings = inputConfigStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return
     }
 
@@ -340,7 +335,8 @@ class ActiveBindingStore {
     // and removed, and that information is contained in `tableUpdate`.
     // This is needed so that animations can work. But ActiveBindingController
     // builds the actual row data, and the two must match or else visual bugs will result.
-    let bindingRowsAllNew = ActiveBindingController.get().updateAllDefaultSectionBindings(defaultSectionBindings)
+    let activeBindingController = (NSApp.delegate as! AppDelegate).activeBindingController
+    let bindingRowsAllNew = activeBindingController.rebuildDefaultSection(defaultSectionBindings)
     guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
       Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
       return

@@ -583,7 +583,7 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // This will set any key equivalents
-    ActiveBindingController.get().setPluginMenuMediator(keyBindingMediator)
+    (NSApp.delegate as! AppDelegate).activeBindingController.setPluginMenuMediator(keyBindingMediator)
   }
 
   @discardableResult

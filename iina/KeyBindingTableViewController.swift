@@ -14,8 +14,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: DoubleClickEditTableView!
-  private unowned let inputConfigStore: InputConfigStore! = InputConfigStore.get()
-  private unowned let bindingStore: ActiveBindingStore! = ActiveBindingStore.get()
+  private var inputConfigStore: InputConfigStore {
+    return (NSApp.delegate as! AppDelegate).inputConfigStore
+  }
+
+  private var bindingStore: ActiveBindingStore {
+    return (NSApp.delegate as! AppDelegate).bindingStore
+  }
+
+
   private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
