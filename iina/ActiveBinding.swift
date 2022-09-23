@@ -15,15 +15,9 @@
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
 class ActiveBinding: NSObject, Codable {
-  enum Origin: Codable {
-    case confFile
-    case luaScript
-    case iinaPlugin
-  }
-
   // TODO: should be nil for origin==.iinaPlugin?
   var mpvBinding: KeyMapping
-  var origin: Origin
+  var origin: InputBindingOrigin
 
   /*
    Will be one of:
@@ -43,7 +37,7 @@ class ActiveBinding: NSObject, Codable {
   // for use in UI only
   var statusMessage: String = ""
 
-  init(_ mpvBinding: KeyMapping, origin: Origin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
+  init(_ mpvBinding: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
     self.mpvBinding = mpvBinding
     self.origin = origin
     self.srcSectionName = srcSectionName

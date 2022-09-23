@@ -64,16 +64,18 @@ class PlayerInputConfig {
   class GlobalInputSection: InputSection {
     let name: String
     let isForce: Bool
+    let origin: InputBindingOrigin
     var activeBindingList: [ActiveBinding] = [] {
       didSet {
         PlayerInputConfig.rebuildCurrentActiveBindingsDict()
       }
     }
 
-    init(name: String, _ activeBindingList: [ActiveBinding], isForce: Bool) {
+    init(name: String, _ activeBindingList: [ActiveBinding], isForce: Bool, origin: InputBindingOrigin) {
       self.name = name
       self.activeBindingList = activeBindingList
       self.isForce = isForce
+      self.origin = origin
     }
 
     var keyBindingList: [KeyMapping] {
@@ -91,12 +93,12 @@ class PlayerInputConfig {
 
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
-  static let defaultSection = GlobalInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, [], isForce: true)
-  static let pluginSection = GlobalInputSection(name: "Plugins", [], isForce: false)
+  static let defaultSection = GlobalInputSection(name: MPVInputSection.DEFAULT_SECTION_NAME, [], isForce: true, origin: .confFile)
+  static let pluginSection = GlobalInputSection(name: "Plugins", [], isForce: false, origin: .luaScript)
 
   // This structure results from merging the layers of enabled input sections for this player using precedence rules.
   // Contains only the bindings which are currently active for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
-  static var currentActiveBindingsDict: [String: ActiveBinding] = [:]
+  static var currentResolverDict: [String: ActiveBinding] = [:]
 
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c
@@ -108,7 +110,7 @@ class PlayerInputConfig {
       return
     }
 
-    currentActiveBindingsDict = activePlayerInputConfig.buildActiveBindingsDict()
+    currentResolverDict = activePlayerInputConfig.buildResolverDict()
   }
 
   // Should be consistent with the rows in the Preferences -> Key Bindings table
@@ -151,7 +153,12 @@ class PlayerInputConfig {
   /* mpv euivalent:   `struct cmd_bind_section **sections` */
   private var sectionsDefined: [String : InputSection] = [:]
 
-  /* mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50) */
+  /*
+   mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50)
+   This has the behavior of a stack which is also an ordered set. We use the convention that the head of the list is considered the "top".
+   But it is also keyed by section name. Adding a section to the list with the same name as something in the list will
+   remove the previous section from wherever it is before pushing the new section to the front.
+   */
   private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
   init(playerCore: PlayerCore) {
@@ -181,7 +188,7 @@ class PlayerInputConfig {
    Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
    */
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    PlayerInputConfig.currentActiveBindingsDict[keySequence]?.mpvBinding
+    PlayerInputConfig.currentResolverDict[keySequence]?.mpvBinding
   }
 
   /*
@@ -214,7 +221,7 @@ class PlayerInputConfig {
     var keySequence = ""
     var hasPartialValidSequence = false
 
-    let activeBindingsDict = PlayerInputConfig.currentActiveBindingsDict
+    let activeBindingsDict = PlayerInputConfig.currentResolverDict
 
     for prevKey in keyPressHistory.reversed() {
       if keySequence.isEmpty {
@@ -256,28 +263,29 @@ class PlayerInputConfig {
     }
   }
 
-  func buildActiveBindingsDict() -> [String: ActiveBinding] {
-    var rebuiltBindings: [String: ActiveBinding] = [:]
+  private func buildResolverDict() -> [String: ActiveBinding] {
+    var resolverDict: [String: ActiveBinding] = [:]
     self.dq.sync {
       assert (self.sectionsDefined[MPVInputSection.DEFAULT_SECTION_NAME] != nil, "Missing default bindings section!")
       self.log("Starting rebuild of active player input bindings", level: .verbose)
 
-      rebuiltBindings = self.buildBindingsDictFromEnabledSections()
+      resolverDict = self.buildResolverDictFromEnabledSections()
 
       // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-      PlayerInputConfig.fillInPartialSequences(&rebuiltBindings)
+      PlayerInputConfig.fillInPartialSequences(&resolverDict)
 
-      self.log("Finished rebuilding active player input bindings (\(rebuiltBindings.count) total)")
+      self.log("Finished rebuilding active player input bindings (\(resolverDict.count) total)")
       if LOG_BINDINGS_REBUILD {
         PlayerInputConfig.logCurrentActiveBindings()
       }
     }
-    return rebuiltBindings
+    return resolverDict
   }
 
-  private func buildBindingsDictFromEnabledSections() -> [String: ActiveBinding] {
-    var bindingsDict: [String: ActiveBinding] = [:]
+  private func buildResolverDictFromEnabledSections() -> [String: ActiveBinding] {
+    var resolverDict: [String: ActiveBinding] = [:]
 
+    // Iterate from top to the bottom of the "stack":
     for enabledSectionMeta in sectionsEnabled {
       if let inputSection = sectionsDefined[enabledSectionMeta.name] {
         if inputSection.keyBindingList.isEmpty {
@@ -288,45 +296,53 @@ class PlayerInputConfig {
           if LOG_BINDINGS_REBUILD {
             log("RebuildBindings: adding from \(inputSection)", level: .verbose)
           }
-          // Iterate from top of stack to bottom:
+          // Iterate from top of stack to bottom (roughly decreasing priority)
           for keyBinding in inputSection.keyBindingList {
-            addBinding(keyBinding, from: inputSection, to: &bindingsDict)
+            addBinding(keyBinding, from: inputSection, to: &resolverDict)
           }
         }
 
         if enabledSectionMeta.isExclusive {
           log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
-          return bindingsDict
+          return resolverDict
         }
       } else {
         // indicates serious internal error
         log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
       }
     }
-    return bindingsDict
+    return resolverDict
   }
 
-  private func addBinding(_ keyBinding: KeyMapping, from inputSection: InputSection, to bindingsDict: inout [String: ActiveBinding]) {
+  private func addBinding(_ keyBinding: KeyMapping, from inputSection: InputSection, to resolverDict: inout [String: ActiveBinding]) {
     let mpvKey = keyBinding.normalizedMpvKey
-    if let prevBind = bindingsDict[mpvKey] {
-      guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
-        log("RebuildBindings: Could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
+    if let prevBind = resolverDict[mpvKey] {
+      if !inputSection.isForce {
+        log("RebuildBindings: Skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): a weak binding can never override an existing one", level: .verbose)
         return
       }
-      // For each binding, use the topmost weak binding found, or the topmost strong ("force") binding found
-      if prevBindSrcSection.isForce || !inputSection.isForce {
-        log("RebuildBindings: Skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): it was already set by higher-priority section \"\(prevBindSrcSection.name)\" (force=\(prevBindSrcSection.isForce))", level: .verbose)
-        return
+
+      // Make sure we aren't still in the same section, because "strong" bindings can override the previous ones.
+      // Remember that we are iterating down the stack, so each successive section is less recent than the previous one,
+      // but within the section we are iterating down the bindings list, where each successive binding is more recent than the previous one.
+      if prevBind.srcSectionName != inputSection.name {
+        guard let prevBindSrcSection = sectionsDefined[prevBind.srcSectionName] else {
+          log("RebuildBindings: Could not find previously added section: \"\(prevBind.srcSectionName)\". This is a bug", level: .error)
+          return
+        }
+        // For each binding, use the topmost weak binding found, or the topmost strong ("force") binding found
+        if prevBindSrcSection.isForce {
+          log("RebuildBindings: Skipping key: \"\(mpvKey)\" from section \"\(inputSection.name)\" (force=\(inputSection.isForce)): it was already set by higher-priority section \"\(prevBindSrcSection.name)\" (force=\(prevBindSrcSection.isForce))", level: .verbose)
+          return
+        }
       }
     }
-    // Currently, IINA does not allow config files to add to any input sections other than "default", so this is a fair assumption.
-    let origin = inputSection.name == MPVInputSection.DEFAULT_SECTION_NAME ? ActiveBinding.Origin.confFile : ActiveBinding.Origin.luaScript
-    bindingsDict[mpvKey] = ActiveBinding(keyBinding, origin: origin, srcSectionName: inputSection.name, isMenuItem: false, isEnabled: true)
+    resolverDict[mpvKey] = ActiveBinding(keyBinding, origin: inputSection.origin, srcSectionName: inputSection.name, isMenuItem: false, isEnabled: true)
   }
 
   private static func logCurrentActiveBindings() {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = currentActiveBindingsDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
+      let bindingList = currentResolverDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
       Logger.log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: inputBindingsSubsystem)
     }
   }

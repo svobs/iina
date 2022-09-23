@@ -53,40 +53,36 @@ class ActiveBindingController {
   // The 'default' section contains the bindings loaded from the currently
   // selected input config file, and will be shared for all `PlayerCore` instances.
   // This method also determines which of these will qualify as menu item bindings, and sets them appropriately
-  // Returns a list of ActiveBindings which contains added metadata for each binding in the parameter list
+  // Returns a list of ActiveBindings, each of which which encapsulates the corresponding item in the parameter list and adds extra metadata to it
   func rebuildDefaultSection(_ mpvBindingList: [KeyMapping]) -> [ActiveBinding] {
     Logger.log("Rebuilding 'default' section bindings (\(mpvBindingList.count) lines)")
     // Build meta to return. These two variables form a quick & dirty SortedDictionary:
     var defaultSectionBindingList: [ActiveBinding] = []
     var defaultSectionBindingDict: [Int: ActiveBinding] = [:]
 
-    // If multiple bindings map to the same key, choose the last one
+    // If multiple bindings map to the same key, choose the last one (i.e., treat them as "force"
     var enabledMpvBindingsDict: [String: KeyMapping] = [:]
-    var orderedKeyList: [String] = []
     for mpvBinding in mpvBindingList {
       guard let bindingID = mpvBinding.bindingID else {
         Logger.fatal("setDefaultSectionBindings(): is missing bindingID: \(mpvBinding)")
       }
       let key = mpvBinding.normalizedMpvKey
-      // Derive the binding's metadata and determine whether it should be enabled (in which case meta.isEnabled will be set to `true`).
-      // Note: this mey also put a different object into `meta.mpvBinding`, so from here on `meta.mpvBinding`
+      // Derive the binding's metadata and determine whether it should be enabled (in which case binding.isEnabled will be set to `true`).
+      // Note: this mey also put a different object into `binding.mpvBinding`, so from here on `binding.mpvBinding`
       // should be used instead of `binding`.
-      let meta = analyzeDefaultSectionBinding(mpvBinding)
-      defaultSectionBindingList.append(meta)
-      defaultSectionBindingDict[bindingID] = meta
+      let binding = analyzeDefaultSectionBinding(mpvBinding)
+      defaultSectionBindingList.append(binding)
+      defaultSectionBindingDict[bindingID] = binding
 
-      if meta.isEnabled {
-        if enabledMpvBindingsDict[key] == nil {
-          orderedKeyList.append(key)
-        } else {
-          if let bindingID = enabledMpvBindingsDict[key]?.bindingID,
-             let overriddenBinding = defaultSectionBindingDict[bindingID] {
-            overriddenBinding.isEnabled = false
-            overriddenBinding.statusMessage = "This binding was overridden by another binding below it which has the same key"
-          }
+      if binding.isEnabled {
+        if let prevMpvBinding = enabledMpvBindingsDict[key],
+           let bindingID = prevMpvBinding.bindingID,
+           let prevBinding = defaultSectionBindingDict[bindingID] {
+          prevBinding.isEnabled = false
+          prevBinding.statusMessage = "This binding was overridden by another binding below it which has the same key"
         }
         // Store it, overwriting any previous entry:
-        enabledMpvBindingsDict[key] = meta.mpvBinding
+        enabledMpvBindingsDict[key] = binding.mpvBinding
       }
     }
 
@@ -100,12 +96,12 @@ class ActiveBindingController {
   }
 
   private func analyzeDefaultSectionBinding(_ mpvBinding: KeyMapping) -> ActiveBinding {
-    let meta = ActiveBinding(mpvBinding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: false)
+    let binding = ActiveBinding(mpvBinding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: false)
 
     if mpvBinding.rawKey == "default-bindings" && mpvBinding.action.count == 1 && mpvBinding.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
-      meta.statusMessage = "IINA does not use default-level (\"weak\") bindings"
-      return meta
+      binding.statusMessage = "IINA does not use default-level (\"weak\") bindings"
+      return binding
     }
 
     // Special case: do bindings specify a different section using curly braces?
@@ -113,15 +109,15 @@ class ActiveBindingController {
       if destinationSectionName == MPVInputSection.DEFAULT_SECTION_NAME {
         // Drop "{default}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(mpvBinding.action.dropFirst()).joined(separator: " ")
-        meta.mpvBinding = KeyMapping(rawKey: mpvBinding.rawKey, rawAction: newRawAction, isIINACommand: mpvBinding.isIINACommand, comment: mpvBinding.comment)
+        binding.mpvBinding = KeyMapping(rawKey: mpvBinding.rawKey, rawAction: newRawAction, isIINACommand: mpvBinding.isIINACommand, comment: mpvBinding.comment)
       } else {
         Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(mpvBinding.rawKey)", level: .verbose)
-        meta.statusMessage = "Adding to input sections other than \"\(MPVInputSection.DEFAULT_SECTION_NAME)\" are not supported"
-        return meta
+        binding.statusMessage = "Adding to input sections other than \"\(MPVInputSection.DEFAULT_SECTION_NAME)\" is not supported"
+        return binding
       }
     }
-    meta.isEnabled = true
-    return meta
+    binding.isEnabled = true
+    return binding
   }
 
   // MARK: Plugin Menu
@@ -132,8 +128,37 @@ class ActiveBindingController {
 
     pluginMenuMediator = newMediator
     Logger.log("Plugin menu updated, requests \(pluginMenuMediator.entryList.count) key bindings", level: .verbose)
+
+    rebuildPluginsSection()
     // This will call `updatePluginMenuBindings()`
     PlayerInputConfig.rebuildCurrentActiveBindingsDict()
+  }
+
+  private func rebuildPluginsSection() {
+    // If multiple bindings map to the same key, choose the first one (i.e., treat them as "weak")
+    var pluginSectionBindingList: [ActiveBinding] = []
+    var enabledBindingDict: [String: ActiveBinding] = [:]
+
+    let mediator = self.pluginMenuMediator
+    for entry in mediator.entryList {
+      // Kludge here: storing plugin name info in the action field, then making sure we don't try to execute it.
+      let action = "Plugin > \(entry.pluginName) > \(entry.menuItem.title)"
+      let mpvBinding = KeyMapping(rawKey: entry.rawKey, rawAction: action, isIINACommand: true)
+      let binding = ActiveBinding(mpvBinding, origin: .iinaPlugin, srcSectionName: entry.pluginName, isMenuItem: true, isEnabled: true)
+
+      pluginSectionBindingList.append(binding)
+
+      if let lastBindingForSameKey = enabledBindingDict[mpvBinding.normalizedMpvKey] {
+        binding.isEnabled = false
+        binding.statusMessage = "\"\(mpvBinding.normalizedMpvKey)\" is already used by \"\(lastBindingForSameKey.mpvBinding.action)\". Plugins must use key bindings which have not already been used."
+      } else {
+        enabledBindingDict[mpvBinding.normalizedMpvKey] = binding
+      }
+    }
+
+    // This will trigger a rebuild of the bindings lookup table
+    PlayerInputConfig.pluginSection.activeBindingList = pluginSectionBindingList
+    Logger.log("Updated Plugin menu bindings (count: \(pluginSectionBindingList.count))")
   }
 
   // The Plugin menu bindings are equivalent to a "weak" input section which is enabled last in the active player
