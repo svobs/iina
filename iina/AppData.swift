@@ -61,6 +61,16 @@ struct AppData {
 
   static let configFileExtension = "conf"
 
+  // Immmutable default input configs.
+  // TODO: combine into a SortedDictionary when available
+  static let defaultConfigNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
+  static let defaultConfigs: [String: String] = [
+    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!
+  ]
+
   static let widthWhenNoVideo = 640
   static let heightWhenNoVideo = 360
   static let sizeWhenNoVideo = NSSize(width: widthWhenNoVideo, height: heightWhenNoVideo)

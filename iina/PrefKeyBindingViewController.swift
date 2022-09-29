@@ -27,13 +27,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return false
   }
 
-  // This is referenced outside of keybindings code:
-  static var defaultConfigs: [String: String] {
-    get {
-      InputConfigStore.defaultConfigs
-    }
-  }
-
   private var inputConfigStore: InputConfigStore {
     return (NSApp.delegate as! AppDelegate).inputConfigStore
   }

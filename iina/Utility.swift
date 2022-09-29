@@ -358,7 +358,7 @@ class Utility {
   static func getFilePath(Configs userConfigs: [String: Any]!, forConfig conf: String, showAlert: Bool = true) -> String? {
 
     // if is default config
-    if let dv = PrefKeyBindingViewController.defaultConfigs[conf] {
+    if let dv = AppData.defaultConfigs[conf] {
       return dv
     } else if let uv = userConfigs[conf] as? String {
       return uv
@@ -368,6 +368,10 @@ class Utility {
       }
       return nil
     }
+  }
+
+  static func computeConfigFilePath(for userConfigName: String) -> String {
+    return Utility.userInputConfDirURL.appendingPathComponent(userConfigName + AppData.configFileExtension).path
   }
 
   static let appSupportDirUrl: URL = {

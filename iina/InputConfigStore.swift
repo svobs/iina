@@ -14,21 +14,6 @@ import Foundation
  Not thread-safe at present!
  */
 class InputConfigStore {
-  // MARK: Static section
-
-  // Immmutable default configs. These would be best combined into a SortedDictionary
-  private static let defaultConfigNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
-  static let defaultConfigs: [String: String] = [
-    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!
-  ]
-
-  static func computeFilePath(forUserConfigName configName: String) -> String {
-    return Utility.userInputConfDirURL.appendingPathComponent(configName + AppData.configFileExtension).path
-  }
-
   // MARK: Non-static section start
 
   private var currentParsedConfigFile: InputConfigFileData? = nil
@@ -52,7 +37,7 @@ class InputConfigStore {
   private(set) var currentConfigName: String {
     get {
       guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
-        let defaultConfig = InputConfigStore.defaultConfigNamesSorted[0]
+        let defaultConfig = AppData.defaultConfigNamesSorted[0]
         Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
         return defaultConfig
       }
@@ -78,7 +63,7 @@ class InputConfigStore {
         }
         return filePath
       }
-      if let filePath = InputConfigStore.defaultConfigs[currentConfig] {
+      if let filePath = AppData.defaultConfigs[currentConfig] {
         Logger.log("Found file path for default inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
         return filePath
       }
@@ -103,11 +88,11 @@ class InputConfigStore {
   }
 
   func isDefaultConfig(_ configName: String) -> Bool {
-    return InputConfigStore.defaultConfigs[configName] != nil
+    return AppData.defaultConfigs[configName] != nil
   }
 
   func getFilePath(forConfig config: String) -> String? {
-    if let dv = InputConfigStore.defaultConfigs[config] {
+    if let dv = AppData.defaultConfigs[config] {
       return dv
     }
     return userConfigDict[config]
@@ -238,7 +223,7 @@ class InputConfigStore {
       return false
     }
 
-    let newFilePath = InputConfigStore.computeFilePath(forUserConfigName: newName)
+    let newFilePath = Utility.computeConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
     setConfigTableState(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)
@@ -251,7 +236,7 @@ class InputConfigStore {
     var configTableRowsNew: [String] = []
 
     // - default configs:
-    configTableRowsNew.append(contentsOf: InputConfigStore.defaultConfigNamesSorted)
+    configTableRowsNew.append(contentsOf: AppData.defaultConfigNamesSorted)
 
     // - user: explicitly sort (ignoring case)
     var userConfigNameList: [String] = []
