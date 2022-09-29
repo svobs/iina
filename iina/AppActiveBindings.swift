@@ -11,17 +11,16 @@ import Foundation
 // The currently active bindings for the IINA app (key lookup table + other data)
 class AppActiveBindings {
   static let LOG_BINDINGS_REBUILD = false
-  static var current = AppActiveBindings()
 
-  // Should be consistent with the rows in the Preferences -> Key Bindings table
-  let activeBindingsList: [ActiveBinding]
+  // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
+  // the active bindings are rebuilt and the old set is discarded.
+  static var current = AppActiveBindings()
 
   // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
   // Contains only the bindings which are currently enabled for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
   let resolverDict: [String: ActiveBinding]
 
-  init(_ list: [ActiveBinding] = [], _ resolverDict: [String: ActiveBinding] = [:]) {
-    self.activeBindingsList = list
+  init(_ resolverDict: [String: ActiveBinding] = [:]) {
     self.resolverDict = resolverDict
   }
 
@@ -48,11 +47,11 @@ class AppActiveBindingsBuilder {
     var newBindingsStruct = AppActiveBindings()
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
-    let bindingList = self.sectionStack.combineEnabledSectionBindings()
+    let bindingCandidateList = self.sectionStack.combineEnabledSectionBindings()
     var resolverDict: [String: ActiveBinding] = [:]
 
     // Now build the resolverDict, disabling redundant key bindings along the way.
-    for binding in bindingList {
+    for binding in bindingCandidateList {
       guard binding.isEnabled else { continue }
 
       let key = binding.mpvBinding.normalizedMpvKey
@@ -74,9 +73,9 @@ class AppActiveBindingsBuilder {
     fillInPartialSequences(&resolverDict)
 
     Logger.log("Finished rebuilding active player input bindings (\(resolverDict.count) total)", subsystem: sectionStack.subsystem)
-    newBindingsStruct = AppActiveBindings(bindingList, resolverDict)
+    newBindingsStruct = AppActiveBindings(resolverDict)
 
-    handleCompletion(newBindingsStruct.activeBindingsList)
+    handleCompletion(bindingCandidateList)
 
     if AppActiveBindings.LOG_BINDINGS_REBUILD {
       newBindingsStruct.logCurrentResolverDictContents()
