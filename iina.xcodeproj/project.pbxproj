@@ -162,12 +162,12 @@
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
 		D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* KeyBindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */; };
-		D1049C892872CAD6003D47C1 /* InputConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigStore.swift */; };
+		D1049C892872CAD6003D47C1 /* InputConfigTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
 		D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBinding.swift */; };
-		D188CB2628D9E95500F166FD /* ActiveBindingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingStore.swift */; };
+		D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
 		D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
@@ -1486,12 +1486,12 @@
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
 		D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingTableViewController.swift; sourceTree = "<group>"; };
-		D1049C882872CAD6003D47C1 /* InputConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigStore.swift; sourceTree = "<group>"; };
+		D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableStore.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* ActiveBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBinding.swift; sourceTree = "<group>"; };
-		D188CB2528D9E95500F166FD /* ActiveBindingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingStore.swift; sourceTree = "<group>"; };
+		D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingTableStore.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleClickEditTableView.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
@@ -2488,8 +2488,8 @@
 		D1DC3D36287191E90052B062 /* KeyBinding */ = {
 			isa = PBXGroup;
 			children = (
-				D1049C882872CAD6003D47C1 /* InputConfigStore.swift */,
-				D188CB2528D9E95500F166FD /* ActiveBindingStore.swift */,
+				D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */,
+				D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */,
 				D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
@@ -2828,7 +2828,7 @@
 				84BEEC421DFEE46200F945CA /* StreamReader.swift in Sources */,
 				E3CAD4AF2146DB47000B373A /* JavascriptAPI.swift in Sources */,
 				84C644601E92BA2700B1410B /* TimeLabelOverflowedView.swift in Sources */,
-				D1049C892872CAD6003D47C1 /* InputConfigStore.swift in Sources */,
+				D1049C892872CAD6003D47C1 /* InputConfigTableStore.swift in Sources */,
 				E3958565253133E80096811F /* SidebarTabView.swift in Sources */,
 				E3C12F6B201F281F00297964 /* FirstRunManager.swift in Sources */,
 				84EB1F071D2F5E76004FA5A1 /* Utility.swift in Sources */,
@@ -2961,7 +2961,7 @@
 				E3530700214908DD008FE492 /* JavascriptAPIHttp.swift in Sources */,
 				84FBF23E1EF06A90003EA491 /* ThumbnailCache.swift in Sources */,
 				845FB0C71D39462E00C011E0 /* ControlBarView.swift in Sources */,
-				D188CB2628D9E95500F166FD /* ActiveBindingStore.swift in Sources */,
+				D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */,
 				E3513AFB20F120F600F8C347 /* PreferenceViewController.swift in Sources */,
 				D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */,
 				E38BD4AF20054BD9007635FC /* MainWindow.swift in Sources */,

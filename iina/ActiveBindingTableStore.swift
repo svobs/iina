@@ -1,5 +1,5 @@
 //
-//  ActiveBindingStore.swift
+//  ActiveBindingTableStore.swift
 //  iina
 //
 //  Created by Matt Svoboda on 9/20/22.
@@ -8,11 +8,14 @@
 
 import Foundation
 
-// Data store which serves as the single source of truth for the Key Bindings table in the Preferences UI.
-// Encapsulates the logic for create/remove/update/delete operations on the table, and also completely handles filtering.
-// Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
-// This class must stay in sync with the ActiveBindingController, which handles the assembly of the rows.
-class ActiveBindingStore {
+/*
+ Encapsulates the user's list of user input config files via stored preferences.
+ Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code so that everything is cleaner.
+ Not thread-safe at present!
+ Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
+ This class must stay in sync with AppInputBindings, which handles the assembly of the rows, as much as possible, and `bindingRowsAll` should match `AppInputBindings.current`.
+ */
+class ActiveBindingTableStore {
 
   // MARK: State
 
@@ -326,8 +329,8 @@ class ActiveBindingStore {
   private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     // Save to file
     let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.mpvBinding })
-    let inputConfigStore = (NSApp.delegate as! AppDelegate).inputConfigStore
-    guard let defaultSectionBindings = inputConfigStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
+    let inputConfigTableStore = (NSApp.delegate as! AppDelegate).inputConfigTableStore
+    guard let defaultSectionBindings = inputConfigTableStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return
     }
 

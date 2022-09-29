@@ -111,7 +111,7 @@ class PlayerInputConfig {
         completionHandler(activeBindingList)
       } else {
         // Notify binding table
-        appDelegate.bindingStore.appActiveBindingsDidChange(PlayerInputConfig.appBindings.activeBindingsList)
+        appDelegate.bindingTableStore.appActiveBindingsDidChange(PlayerInputConfig.appBindings.activeBindingsList)
       }
     })
   }

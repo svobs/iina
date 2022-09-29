@@ -14,12 +14,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: DoubleClickEditTableView!
-  private var inputConfigStore: InputConfigStore {
-    return (NSApp.delegate as! AppDelegate).inputConfigStore
+  private var inputConfigTableStore: InputConfigTableStore {
+    return (NSApp.delegate as! AppDelegate).inputConfigTableStore
   }
 
-  private var bindingStore: ActiveBindingStore {
-    return (NSApp.delegate as! AppDelegate).bindingStore
+  private var bindingTableStore: ActiveBindingTableStore {
+    return (NSApp.delegate as! AppDelegate).bindingTableStore
   }
 
 
@@ -73,14 +73,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingStore.getBindingRowCount()
+    return bindingTableStore.getBindingRowCount()
   }
 
   /**
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let bindingRow = bindingStore.getBindingRow(at: row) else {
+    guard let bindingRow = bindingTableStore.getBindingRow(at: row) else {
       return nil
     }
 
@@ -175,7 +175,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     guard let columnName = tableColumn?.identifier.rawValue else { return false }
 
     Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)", level: .verbose)
-    return inputConfigStore.isEditEnabledForCurrentConfig() && isRaw()
+    return inputConfigTableStore.isEditEnabledForCurrentConfig() && isRaw()
   }
 
   // MARK: DoubleClickEditTableView callbacks
@@ -183,7 +183,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit cell") else { return false }
 
-    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
       return false
     }
@@ -200,13 +200,13 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func userDidEndEditing(_ newValue: String, rowIndex: Int, columnIndex: Int) -> Bool {
-    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // An error here would be really bad
       Logger.log("Cannot save binding row \(rowIndex): edit is not allowed for this row type! If you see this message please report it.", level: .error)
       return false
     }
 
-    guard let editedRow = bindingStore.getBindingRow(at: rowIndex) else {
+    guard let editedRow = bindingTableStore.getBindingRow(at: rowIndex) else {
       Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
@@ -223,7 +223,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
         return false
     }
 
-    bindingStore.updateBinding(at: rowIndex, to: editedRow.mpvBinding)
+    bindingTableStore.updateBinding(at: rowIndex, to: editedRow.mpvBinding)
     return true
   }
 
@@ -233,7 +233,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private func edit(rowIndex: Int, columnIndex: Int = 0) {
     guard requireCurrentConfigIsEditable(forAction: "edit") else { return }
 
-    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // Should never see this message
       Logger.log("Cannot edit binding row \(rowIndex): edit is not allowed for this row! Aborting", level: .error)
       return
@@ -251,7 +251,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
-    guard let row = bindingStore.getBindingRow(at: rowIndex) else {
+    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else {
       return
     }
 
@@ -260,7 +260,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       row.mpvBinding.rawKey = key
       row.mpvBinding.rawAction = action
 
-      self.bindingStore.updateBinding(at: rowIndex, to: row.mpvBinding)
+      self.bindingTableStore.updateBinding(at: rowIndex, to: row.mpvBinding)
     }
   }
 
@@ -286,14 +286,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
     if isRaw() {
-      let insertedRowIndex = bindingStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
+      let insertedRowIndex = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
       self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
 
     } else {
       showEditBindingPopup { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        let insertedRowIndex = self.bindingStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
+        let insertedRowIndex = self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
         self.tableView.scrollRowToVisible(insertedRowIndex)
       }
     }
@@ -323,7 +323,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Make sure to use copy() to clone the object here
     let newBindings: [KeyMapping] = rowList.map { $0.mpvBinding.copy() as! KeyMapping }
 
-    let firstInsertedRowIndex = bindingStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
+    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
 
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
@@ -337,16 +337,16 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    let firstInsertedRowIndex = bindingStore.moveBindings(editableBindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
+    let firstInsertedRowIndex = bindingTableStore.moveBindings(editableBindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
 
   func removeSelectedBindings() {
-    bindingStore.removeBindings(at: tableView.selectedRowIndexes)
+    bindingTableStore.removeBindings(at: tableView.selectedRowIndexes)
   }
 
   private func requireCurrentConfigIsEditable(forAction action: String) -> Bool {
-    if inputConfigStore.isEditEnabledForCurrentConfig() {
+    if inputConfigTableStore.isEditEnabledForCurrentConfig() {
       return true
     }
 
@@ -362,14 +362,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Drag start: convert tableview rows to clipboard items
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    return bindingStore.getBindingRow(at: rowIndex)
+    return bindingTableStore.getBindingRow(at: rowIndex)
   }
 
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock
    */
   func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard inputConfigStore.isEditEnabledForCurrentConfig(), operation == NSDragOperation.delete else {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig(), operation == NSDragOperation.delete else {
       return
     }
 
@@ -388,7 +388,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       }
     }
 
-    bindingStore.removeBindings(withIDs: rowList.map{$0.mpvBinding.bindingID!})
+    bindingTableStore.removeBindings(withIDs: rowList.map{$0.mpvBinding.bindingID!})
   }
 
   private func getBindingRowsOrEmptyList(from pasteboard: NSPasteboard) -> [ActiveBinding] {
@@ -410,7 +410,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    */
   func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard inputConfigStore.isEditEnabledForCurrentConfig() else {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig() else {
       return []  // deny drop
     }
 
@@ -515,12 +515,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     // TODO: add Cut, Copy Paste support + menu items
     let clickedIndex = tableView.clickedRow
-    guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow), clickedRow.isEditableByUser else {
+    guard let clickedRow = bindingTableStore.getBindingRow(at: tableView.clickedRow), clickedRow.isEditableByUser else {
       return
     }
 
-    guard inputConfigStore.isEditEnabledForCurrentConfig() else {
-      let title = "Cannot make changes: \"\(inputConfigStore.currentConfigName)\" is a default config"
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig() else {
+      let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a default config"
       addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
       return
     }
@@ -529,7 +529,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       // Special menu for right-click on multiple selection
 
       let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
-        return bindingStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
+        return bindingTableStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
       }
 
       if readOnlyCount > 0 {
@@ -587,10 +587,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   @objc fileprivate func removeRow(_ sender: BindingMenuItem) {
-    bindingStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
+    bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 
   @objc fileprivate func removeSelectedRows(_ sender: BindingMenuItem) {
-    bindingStore.removeBindings(at: tableView.selectedRowIndexes)
+    bindingTableStore.removeBindings(at: tableView.selectedRowIndexes)
   }
 }

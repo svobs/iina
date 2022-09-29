@@ -14,12 +14,12 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private let COLUMN_INDEX_NAME = 0
 
   private unowned var tableView: DoubleClickEditTableView!
-  private unowned var configStore: InputConfigStore!
+  private unowned var tableStore: InputConfigTableStore!
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfigTableView: DoubleClickEditTableView, _ configStore: InputConfigStore) {
+  init(_ inputConfigTableView: DoubleClickEditTableView, _ tableStore: InputConfigTableStore) {
     self.tableView = inputConfigTableView
-    self.configStore = configStore
+    self.tableStore = tableStore
 
     super.init()
 
@@ -50,10 +50,10 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   func selectCurrentConfigRow() {
-    let configName = self.configStore.currentConfigName
-    guard let index = configStore.configTableRows.firstIndex(of: configName) else {
+    let configName = self.tableStore.currentConfigName
+    guard let index = tableStore.configTableRows.firstIndex(of: configName) else {
       Logger.log("selectCurrentConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
-      configStore.changeCurrentConfigToDefault()
+      tableStore.changeCurrentConfigToDefault()
       return
     }
 
@@ -67,14 +67,14 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return configStore.configTableRows.count
+    return tableStore.configTableRows.count
   }
 
   /**
    Make cell view when asked
    */
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    let configName = configStore.configTableRows[row]
+    let configName = tableStore.configTableRows[row]
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -88,7 +88,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
         cell.textField!.stringValue = configName
         return cell
       case "isDefaultColumn":
-        cell.imageView?.isHidden = !configStore.isDefaultConfig(configName)
+        cell.imageView?.isHidden = !tableStore.isDefaultConfig(configName)
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
@@ -100,13 +100,13 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // Selection Changed
   func tableViewSelectionDidChange(_ notification: Notification) {
-    configStore.changeCurrentConfig(tableView.selectedRow)
+    tableStore.changeCurrentConfig(tableView.selectedRow)
   }
 
   // MARK: DoubleClickEditTableView callbacks
 
   func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
-    if let configName = configStore.getConfigRow(at: rowNumber), !configStore.isDefaultConfig(configName) {
+    if let configName = tableStore.getConfigRow(at: rowNumber), !tableStore.isDefaultConfig(configName) {
       return true
     }
     return false
@@ -115,19 +115,19 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // User finished editing (callback from DoubleClickEditTextField).
   // Renames current comfig & its file on disk
   func userDidEndEditingCurrentName(_ newName: String, row: Int, column: Int) -> Bool {
-    guard !self.configStore.currentConfigName.equalsIgnoreCase(newName) else {
+    guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
     }
 
     Logger.log("User renamed current config to \"\(newName)\" in editor", level: .verbose)
 
-    guard let oldFilePath = self.configStore.currentConfigFilePath else {
+    guard let oldFilePath = self.tableStore.currentConfigFilePath else {
       Logger.log("Failed to find file for current config! Aborting rename", level: .error)
       return false
     }
 
-    guard !self.configStore.configTableRows.contains(newName) else {
+    guard !self.tableStore.configTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -152,7 +152,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
 
     // Update config lists and update UI
-    return configStore.renameCurrentConfig(newName: newName)
+    return tableStore.renameCurrentConfig(newName: newName)
   }
 
   // MARK: Drag & Drop
@@ -161,8 +161,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Drag start: convert tableview rows to clipboard items
    */
   func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-    if let configName = configStore.getConfigRow(at: row),
-       let filePath = configStore.getFilePath(forConfig: configName) {
+    if let configName = tableStore.getConfigRow(at: row),
+       let filePath = tableStore.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)
     }
     return nil
@@ -232,7 +232,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
       for filePath in filePathList {
         // Filter out files which are already in the table, and files which don't end in ".conf"
-        if filePath.lowercasedPathExtension == AppData.configFileExtension && configStore.getUserConfigName(forFilePath: filePath) == nil &&
+        if filePath.lowercasedPathExtension == AppData.configFileExtension && tableStore.getUserConfigName(forFilePath: filePath) == nil &&
             !AppData.defaultConfigs.values.contains(filePath) {
           newFilePathList.append(filePath)
         }
@@ -248,7 +248,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     if let filePathList = InputConfigTableViewController.extractFileList(from: pasteboard) {
 
       for filePath in filePathList {
-        if let configName = configStore.getUserConfigName(forFilePath: filePath) {
+        if let configName = tableStore.getUserConfigName(forFilePath: filePath) {
           userConfigList.append(configName)
         }
       }
@@ -288,7 +288,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // This will prevent menu from showing if no items are added
     menu.removeAllItems()
 
-    guard let clickedConfigName = configStore.getConfigRow(at: tableView.clickedRow) else {
+    guard let clickedConfigName = tableStore.getConfigRow(at: tableView.clickedRow) else {
       return
     }
 
@@ -334,7 +334,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       Utility.showAlert("error_deleting_file", sheetWindow: tableView.window)
     }
     // update prefs & refresh UI
-    configStore.removeConfig(configName)
+    tableStore.removeConfig(configName)
   }
 
   @objc func revealConfig(_ configName: String) {
@@ -356,7 +356,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
         Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
         return
       }
-      guard !self.configStore.configTableRows.contains(newName) else {
+      guard !self.tableStore.configTableRows.contains(newName) else {
         Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
         return
       }
@@ -431,7 +431,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
 
     // update prefs & refresh UI
-    self.configStore.addUserConfigs(configsToAdd)
+    self.tableStore.addUserConfigs(configsToAdd)
   }
 
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
@@ -446,7 +446,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    self.configStore.addUserConfig(name: newName, filePath: newFilePath)
+    self.tableStore.addUserConfig(name: newName, filePath: newFilePath)
   }
 
   // Check whether file already exists at `filePath`.
@@ -479,7 +479,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   private func requireFilePath(forConfig configName: String) -> String? {
-    if let confFilePath = self.configStore.getFilePath(forConfig: configName) {
+    if let confFilePath = self.tableStore.getFilePath(forConfig: configName) {
       return confFilePath
     }
 

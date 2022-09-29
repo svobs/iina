@@ -355,7 +355,7 @@ class MPVController: NSObject {
 
     // Load keybindings. This is still required for mpv to handle media keys or apple remote.
     let userConfigs = Preference.dictionary(for: .inputConfigs)
-    var inputConfPath =  AppData.defaultConfigs["IINA Default"]
+    var inputConfPath =  AppData.defaultConfigs[AppData.defaultConfigNamesSorted[0]]
     if let confFromUd = Preference.string(for: .currentInputConfigName) {
       if let currentConfigFilePath = Utility.getFilePath(Configs: userConfigs, forConfig: confFromUd, showAlert: false) {
         inputConfPath = currentConfigFilePath

@@ -9,11 +9,12 @@
 import Foundation
 
 /*
- Encapsulates the user's UserConf stored preferences.
- Controls access & restricts updates to support being used as a backing store for an NSTableView, but does not contain any UI code.
+ Encapsulates the user's list of user input config files via stored preferences.
+ Used as a data store for an NSTableView with CRUD operations and support for setting up
+ animations, but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  */
-class InputConfigStore {
+class InputConfigTableStore {
   // MARK: Non-static section start
 
   private var currentParsedConfigFile: InputConfigFileData? = nil
@@ -308,7 +309,7 @@ class InputConfigStore {
     self.currentParsedConfigFile = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
-    (NSApp.delegate as! AppDelegate).bindingStore.applyDefaultSectionUpdates(defaultSectionBindings, TableUpdateByRowIndex(.reloadAll))
+    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableUpdateByRowIndex(.reloadAll))
   }
 
   // Input Config File: Save
