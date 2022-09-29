@@ -145,7 +145,7 @@ class ActiveBindingStore {
 
     var bindingRowsAllUpdated = bindingRowsAll
     for binding in bindingList.reversed() {
-      bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: MPVInputSection.DEFAULT_SECTION_NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
+      bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
     saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
@@ -341,14 +341,15 @@ class ActiveBindingStore {
    and the two must match or else visual bugs will result.
    */
   func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
-    let activeBindingController = (NSApp.delegate as! AppDelegate).activeBindingController
-    let bindingRowsAllNew = activeBindingController.rebuildDefaultSection(defaultSectionBindings)
-    guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
-      Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
-      return
-    }
+    PlayerInputConfig.replaceDefaultSectionBindings(defaultSectionBindings, onCompletion: { bindingRowsAllNew in
 
-    applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
+      guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
+        Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
+        return
+      }
+
+      self.applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
+    })
   }
 
   /*

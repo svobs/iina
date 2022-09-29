@@ -391,7 +391,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     for filePath in fileList {
       let url = URL(fileURLWithPath: filePath)
       
-      guard ParsedInputConfigFile.loadFile(at: filePath) != nil else {
+      guard InputConfigFileData.loadFile(at: filePath) != nil else {
         let fileName = url.lastPathComponent
         Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: tableView.window)
         Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)

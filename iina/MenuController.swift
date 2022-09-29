@@ -45,6 +45,9 @@ class MenuController: NSObject, NSMenuDelegate {
   /** For convenient bindings. see `bind(...)` below. [menu: check state block] */
   private var menuBindingList: [NSMenu: (NSMenuItem) -> Bool] = [:]
 
+  // If too many menu items are added to the Plugin menu (may be hidden)
+  private var pluginErrorNotice = NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: "")
+
   private var stringForOpen: String!
   private var stringForOpenAlternative: String!
   private var stringForOpenURL: String!
@@ -530,18 +533,10 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenu() {
     Logger.log("Updating Plugin menu")
     pluginMenu.removeAllItems()
+    pluginMenu.addItem(pluginErrorNotice)
+    pluginErrorNotice.isHidden = true
 
-    let errorNotice = NSMenuItem(title: "⚠︎ Conflicting key shortcuts…", action: nil, keyEquivalent: "")
-    errorNotice.isHidden = true
-    pluginMenu.addItem(errorNotice)
-
-    // this will keep track of binding assignments and will update them as users change player bindings.
-    // A new one should be built each time the plugins menu is rebuilt.
-    var keyBindingMediator = PluginMenuKeyBindingMediator(completionHandler: { failureList in
-      errorNotice.isHidden = (failureList.count == 0)
-
-      // TOOD: populate item sub-menu with list of errors?
-    })
+    var keyMappings: [PluginKeyMapping] = []
 
     pluginMenu.addItem(withTitle: "Manage Plugins…")
     pluginMenu.addItem(.separator())
@@ -567,20 +562,46 @@ class MenuController: NSObject, NSMenuDelegate {
           moreItem.submenu = rootMenu
           pluginMenu.addItem(moreItem)
         }
-        add(menuItemDef: item, to: rootMenu, for: plugin, keyBindingMediator: &keyBindingMediator)
+        add(menuItemDef: item, to: rootMenu, for: plugin, keyMappings: &keyMappings)
         counter += 1
       }
     }
 
-    // This will set any key equivalents
-    (NSApp.delegate as! AppDelegate).activeBindingController.setPluginMenuMediator(keyBindingMediator)
+    // This will kick off a series of updates set any key equivalents and update them as needed
+    PlayerInputConfig.replacePluginsSectionBindings(keyMappings)
+  }
+
+  func updatePluginMenuKeyEquivalents(from pluginBindings: [ActiveBinding]) {
+    var failureList: [ActiveBinding] = []
+    for pluginBinding in pluginBindings {
+      guard pluginBinding.isMenuItem && pluginBinding.origin == .iinaPlugin else { continue }
+      guard let mapping = pluginBinding.mpvBinding as? PluginKeyMapping else { continue }
+
+      if pluginBinding.isEnabled {
+        // Conflict! Key binding already reserved
+        failureList.append(pluginBinding)
+        mapping.menuItem.keyEquivalent = ""
+        mapping.menuItem.keyEquivalentModifierMask = []
+      } else {
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mapping.normalizedMpvKey) {
+          mapping.menuItem.keyEquivalent = kEqv
+          mapping.menuItem.keyEquivalentModifierMask = kMdf
+        }
+      }
+    }
+
+    // When done:
+    pluginErrorNotice.isHidden = (failureList.count == 0)
+
+    Logger.log("Updated Plugin menu bindings with \(failureList.count) / \(pluginBindings.count) failures")
+
   }
 
   @discardableResult
   private func add(menuItemDef item: JavascriptPluginMenuItem,
                    to menu: NSMenu,
                    for plugin: JavascriptPluginInstance,
-                   keyBindingMediator: inout PluginMenuKeyBindingMediator) -> NSMenuItem {
+                   keyMappings: inout [PluginKeyMapping]) -> NSMenuItem {
     if (item.isSeparator) {
       let item = NSMenuItem.separator()
       menu.addItem(item)
@@ -601,12 +622,12 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
       // Store the item with its pair - the PlayerInputConfig will set the binding & deal with conflicts
-      keyBindingMediator.add(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem)
+      keyMappings.append(PluginKeyMapping(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem: menuItem))
     }
     if !item.items.isEmpty {
       menuItem.submenu = NSMenu()
       for submenuItem in item.items {
-        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, keyBindingMediator: &keyBindingMediator)
+        add(menuItemDef: submenuItem, to: menuItem.submenu!, for: plugin, keyMappings: &keyMappings)
       }
     }
     item.nsMenuItem = menuItem
@@ -747,6 +768,24 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   func updateKeyEquivalentsFrom(_ bindingRows: [ActiveBinding]) {
+
+    var mpvBindings: [ActiveBinding] = []
+    var pluginBindings: [ActiveBinding] = []
+
+    for binding in bindingRows {
+      switch binding.origin {
+        case .iinaPlugin:
+          // include disabled bindings: need to set their menu item key equivs to nil
+          pluginBindings.append(binding)
+        case .confFile, .libmpv:
+          if binding.isEnabled { // don't care about disabled bindings here
+            mpvBindings.append(binding)
+          }
+      }
+    }
+
+    updatePluginMenuKeyEquivalents(from: pluginBindings)
+
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -815,7 +854,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     settings.forEach { (menuItem, isIINACmd, actions, normalizeLastNum, numRange, l10nKey) in
       var bound = false
-      for bindingRow in bindingRows {
+      for bindingRow in mpvBindings {
         guard bindingRow.isEnabled else { continue }
         let kb = bindingRow.mpvBinding
         guard kb.isIINACommand == isIINACmd else { continue }

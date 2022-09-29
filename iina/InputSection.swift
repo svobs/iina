@@ -9,9 +9,9 @@
 import Foundation
 
 enum InputBindingOrigin: Codable {
-  case confFile
-  case iinaPlugin
-  case luaScript
+  case confFile    // Input config file (can include @iina commands or mpv commands)
+  case iinaPlugin  // Plugin menu key equivalent
+  case libmpv      // Set by input sections transmitted over libmpv (almost always Lua scripts, but could include other RPC clients)
 }
 
 protocol InputSection: CustomStringConvertible {
@@ -21,8 +21,9 @@ protocol InputSection: CustomStringConvertible {
   var keyBindingList: [KeyMapping] { get }
 
   /*
-   Indicates that all bindings in `keyBindingList` are "strong" or "force" in the mpv sense
-   (they override previous bindings)
+   If true, indicates that all bindings in `keyBindingList` are "force" (AKA "strong")
+   in the mpv vocabulary: each will always override any previous binding with the same key.
+   If false, indicates that they are all "weak": each will only be enabled if no previous binding with the same key has been set
    */
   var isForce: Bool { get }
 
@@ -33,13 +34,12 @@ protocol InputSection: CustomStringConvertible {
 }
 
 class MPVInputSection: InputSection {
-  static let DEFAULT_SECTION_NAME = "default"
   static let FLAG_DEFAULT = "default"
   static let FLAG_FORCE = "force"
   static let FLAG_EXCLUSIVE = "exclusive"
 
   let name: String
-  let keyBindingList: [KeyMapping]
+  fileprivate(set) var keyBindingList: [KeyMapping]
   let isForce: Bool
   let origin: InputBindingOrigin
 
@@ -61,5 +61,29 @@ class MPVInputSection: InputSection {
     get {
       "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyBindingList.count) bindings)"
     }
+  }
+}
+
+// The 'default' section contains the bindings loaded from the currently
+// selected input config file, and will be shared for all `PlayerCore` instances.
+class DefaultInputSection: MPVInputSection {
+  static let NAME = "default"
+  init() {
+    super.init(name: DefaultInputSection.NAME, [], isForce: true, origin: .confFile)
+  }
+
+  func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
+    self.keyBindingList = keyBindingList
+  }
+}
+
+class PluginsInputSection: MPVInputSection {
+  static let NAME = "Plugins"
+  init() {
+    super.init(name: PluginsInputSection.NAME, [], isForce: false, origin: .iinaPlugin)
+  }
+
+  func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
+    self.keyBindingList = keyBindingList
   }
 }

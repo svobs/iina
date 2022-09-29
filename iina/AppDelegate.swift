@@ -88,7 +88,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   // Input bindings
   let inputConfigStore = InputConfigStore()
   let bindingStore = ActiveBindingStore()
-  let activeBindingController = ActiveBindingController()
 
   private func getReady() {
     inputConfigStore.loadBindingsFromCurrentConfigFile()

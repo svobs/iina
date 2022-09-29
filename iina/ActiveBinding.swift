@@ -15,14 +15,15 @@
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
 class ActiveBinding: NSObject, Codable {
-  // TODO: should be nil for origin==.iinaPlugin?
+  // Will be nil for plugin bindings.
   var mpvBinding: KeyMapping
+
   var origin: InputBindingOrigin
 
   /*
    Will be one of:
    - "default", if origin == .confFile
-   - The input section name, if origin == .luaScript
+   - The input section name, if origin == .libmpv
    - The plugin name, if origin == .iinaPlugin
    */
   var srcSectionName: String
@@ -45,6 +46,11 @@ class ActiveBinding: NSObject, Codable {
     self.isEnabled = isEnabled
   }
 
+  convenience init(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) {
+    let mapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
+    self.init(mapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
+  }
+
   var isEditableByUser: Bool {
     get {
       self.origin == .confFile
@@ -55,6 +61,12 @@ class ActiveBinding: NSObject, Codable {
       guard let data = propertyList as? Data,
           let row = try? PropertyListDecoder().decode(ActiveBinding.self, from: data) else { return nil }
     self.init(row.mpvBinding, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
+  }
+
+  // Plugin bindings only
+  static func makeActiveBindingForPlugin(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) -> ActiveBinding {
+    let mapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
+    return ActiveBinding(mapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
   }
 }
 

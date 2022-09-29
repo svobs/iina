@@ -1,5 +1,5 @@
 //
-//  ParsedInputConfigFile.swift
+//  InputConfigFileData.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.08.10.
@@ -9,7 +9,7 @@
 import Foundation
 
 // Represents an input config file which has been loaded into memory.
-class ParsedInputConfigFile {
+class InputConfigFileData {
   // At least one of its fields should be non-nil.
   // Only Lines with non-nil `rawFileContent` are present in the file on disk.
   // A Line struct can include additional in-memory state (if `bindingOverride` is non-nil) which is not present on disk.
@@ -51,7 +51,7 @@ class ParsedInputConfigFile {
         // Note: `lineIndex` includes bindingOverrides and thus may be greater than the equivalent line number in the physical file
         binding.bindingID = lineIndex
         bindingList.append(binding)
-      } else if let rawFileContent = line.rawFileContent, let binding = ParsedInputConfigFile.parseRawLine(rawFileContent, lineIndex) {
+      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFileData.parseRawLine(rawFileContent, lineIndex) {
         bindingList.append(binding)
       }
     }
@@ -61,7 +61,7 @@ class ParsedInputConfigFile {
 
   private func parseLine(_ lineIndex: Int) -> KeyMapping? {
     if let rawLine = lines[lineIndex].rawFileContent {
-      return ParsedInputConfigFile.parseRawLine(rawLine, lineIndex)
+      return InputConfigFileData.parseRawLine(rawLine, lineIndex)
     }
     return nil
   }
@@ -115,7 +115,7 @@ class ParsedInputConfigFile {
     newLines.append(Line(""))
     for newBinding in newBindings {
       let rawLine = newBinding.confFileFormat
-      if ParsedInputConfigFile.parseRawLine(rawLine) == nil {
+      if InputConfigFileData.parseRawLine(rawLine) == nil {
         Logger.log("While serializing bindings: looks like an active edit: \(newBinding)", level: .verbose)
         if let lineIndex = newBinding.bindingID,
            lineIndex <= self.lines.count,
@@ -186,17 +186,17 @@ class ParsedInputConfigFile {
     }
   }
 
-  func write(to path: String) throws {
+  func writeFile(to path: String) throws {
     let fileContent: String = lines.filter({ $0.rawFileContent != nil}).map({ $0.rawFileContent! }).joined(separator: "\n")
     try fileContent.write(toFile: path, atomically: true, encoding: .utf8)
   }
 
   // Returns nil if cannot read file
-  static func loadFile(at path: String) -> ParsedInputConfigFile? {
+  static func loadFile(at path: String) -> InputConfigFileData? {
     guard let reader = StreamReader(path: path) else {
       return nil
     }
-    let result = ParsedInputConfigFile()
+    let result = InputConfigFileData()
 
     while let rawFileContent: String = reader.nextLine() {      // ignore empty lines
       result.lines.append(Line(rawFileContent))

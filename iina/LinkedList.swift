@@ -29,7 +29,7 @@ public final class LinkedList<T> {
     case indexOutOfBounds(_ msg: String)
   }
 
-  public class LinkedListNode<T> {
+  fileprivate class LinkedListNode<T> {
     var value: T
     var next: LinkedListNode?
     weak var previous: LinkedListNode?
@@ -40,13 +40,13 @@ public final class LinkedList<T> {
   }
 
   /// Typealiasing the node class to increase readability of code
-  public typealias Node = LinkedListNode<T>
+  fileprivate typealias Node = LinkedListNode<T>
 
   /// The first element of the LinkedList
-  public private(set) var firstNode: Node?
+  private var firstNode: Node?
 
   // The last element of the LinkedList
-  public private(set) var lastNode: Node?
+  private var lastNode: Node?
 
   /// Computed property to check if the linked list is empty
   public var isEmpty: Bool {
@@ -144,14 +144,6 @@ public final class LinkedList<T> {
   /// - Parameter value: The data value to be appended
   public func append(_ value: T) {
     let newNode = Node(value: value)
-    append(newNode)
-  }
-
-  /// Append a copy of a LinkedListNode to the end of the list.
-  ///
-  /// - Parameter node: The node containing the value to be appended
-  private func append(_ node: Node) {
-    let newNode = node
     try! insert(newNode, at: count)
   }
 
@@ -279,10 +271,9 @@ public final class LinkedList<T> {
   }
 
 
-  /// Function to remove a specific node.
-  ///
-  /// - Parameter node: The node to be deleted
-  /// - Returns: The data value contained in the deleted node.
+  // Function to remove a specific node.
+  // - Parameter node: The node to be deleted
+  // - Returns: The data value contained in the deleted node.
   @discardableResult
   private func remove(node: Node) -> T {
     let prev = node.previous

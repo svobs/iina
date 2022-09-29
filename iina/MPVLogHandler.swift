@@ -155,7 +155,7 @@ class MPVLogHandler {
       }
     }
 
-    let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce, origin: .luaScript)
+    let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
     Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = section.keyBindingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }

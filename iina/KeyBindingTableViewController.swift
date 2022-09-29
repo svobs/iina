@@ -121,7 +121,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
             switch bindingRow.origin {
               case .iinaPlugin:
                 imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
-              case .luaScript:
+              case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
               default:
                 if bindingRow.isMenuItem {

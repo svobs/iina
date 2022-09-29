@@ -147,3 +147,35 @@ class KeyMapping: NSObject, NSCopying, Codable {
     return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: nil)
   }
 }
+
+class PluginKeyMapping: KeyMapping {
+  let menuItem: NSMenuItem
+
+  init(rawKey: String, pluginName: String, menuItem: NSMenuItem, comment: String? = nil, bindingID: Int? = nil) {
+    self.menuItem = menuItem
+    // Kludge here: storing plugin name info in rawAction, then making sure we don't try to execute it.
+    let rawAction = "Plugin > \(pluginName) > \(menuItem.title)"
+    super.init(rawKey: rawKey, rawAction: rawAction, isIINACommand: true, comment: comment, bindingID: bindingID)
+  }
+
+  required init(from decoder: Decoder) throws {
+    Logger.fatal("init(from:) is not supported for PluginKeyMapping")
+  }
+
+  override var rawAction: String {
+    get {
+      return super.rawAction
+    }
+    set {
+      Logger.fatal("setting rawAction is not supported for PluginKeyMapping")
+    }
+  }
+
+  override var readableAction: String {
+    return rawAction
+  }
+
+  override var readableCommand: String {
+    return rawAction
+  }
+}

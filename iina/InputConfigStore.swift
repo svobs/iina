@@ -31,7 +31,7 @@ class InputConfigStore {
 
   // MARK: Non-static section start
 
-  private var currentParsedConfigFile: ParsedInputConfigFile? = nil
+  private var currentParsedConfigFile: InputConfigFileData? = nil
 
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
@@ -65,7 +65,7 @@ class InputConfigStore {
     }
   }
 
-  // Looks up the current config, then searches for it first in the user configs, theb the default configs,
+  // Looks up the current config, then searches for it first in the user configs, then the default configs,
   // then if still not found, returns nil
   var currentConfigFilePath: String? {
     get {
@@ -285,7 +285,7 @@ class InputConfigStore {
 
     if currentConfigNameChanged {
       // Keep in mind that if a failure happens this may end up changing currentConfigName to a different value than what goes in here.
-      // This will also trigger a file load and
+      // This will also trigger a file load a Key Bindings Table update
       currentConfigName = currentConfigNameNew
     }
 
@@ -299,8 +299,9 @@ class InputConfigStore {
     NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableUpdate))
   }
 
-  // MARK: Input Config File load/save
+  // MARK: Input Config File serialize/deserialize
 
+  // Input Config File: Load
   // Triggered any time `currentConfigName` is changed
   public func loadBindingsFromCurrentConfigFile() {
     guard let configFilePath = currentConfigFilePath else {
@@ -309,7 +310,7 @@ class InputConfigStore {
       return
     }
     Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let inputConfigFile = ParsedInputConfigFile.loadFile(at: configFilePath) else {
+    guard let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
       // on error
       Logger.log("Error loading key bindings from config \"\(self.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
       let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
@@ -325,8 +326,11 @@ class InputConfigStore {
     (NSApp.delegate as! AppDelegate).bindingStore.applyDefaultSectionUpdates(defaultSectionBindings, TableUpdateByRowIndex(.reloadAll))
   }
 
+  // Input Config File: Save
   public func saveBindingsToCurrentConfigFile(_ defaultSectionBindings: [KeyMapping]) -> [KeyMapping]? {
-    guard let configFilePath = requireCurrentFilePath() else {
+    guard let configFilePath = self.currentConfigFilePath else {
+      let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return nil
     }
     Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
@@ -336,22 +340,13 @@ class InputConfigStore {
         return nil
       }
       currentParsedConfig.replaceAllBindings(with: defaultSectionBindings)
-      try currentParsedConfig.write(to: configFilePath)
+      try currentParsedConfig.writeFile(to: configFilePath)
       return currentParsedConfig.parseBindings()  // gets updated line numbers
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
-    return nil
-  }
-
-  private func requireCurrentFilePath() -> String? {
-    if let filePath = self.currentConfigFilePath {
-      return filePath
-    }
-    let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     return nil
   }
 
