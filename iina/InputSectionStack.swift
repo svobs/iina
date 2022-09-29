@@ -8,31 +8,11 @@
 
 import Foundation
 
-fileprivate let LOG_BINDINGS_REBUILD = false
 fileprivate let dq = DispatchQueue.global(qos: .userInitiated)
 
-class AppInputBindings {
-
-  // Should be consistent with the rows in the Preferences -> Key Bindings table
-  let activeBindingsList: [ActiveBinding]
-
-  // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
-  // Contains only the bindings which are currently enabled for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
-  let resolverDict: [String: ActiveBinding]
-
-  init(_ list: [ActiveBinding] = [], _ resolverDict: [String: ActiveBinding] = [:]) {
-    self.activeBindingsList = list
-    self.resolverDict = resolverDict
-  }
-
-  func logCurrentResolverDictContents() {
-    if LOG_BINDINGS_REBUILD, Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = resolverDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
-      Logger.log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
-    }
-  }
-}
-
+/*
+ Every player contains an InputSectionStack, to keep track of key binding assignments. See `PlayerInputConfig` for more info.
+ */
 class InputSectionStack {
 
   // For internal use, in `sectionsEnabled`
@@ -50,20 +30,26 @@ class InputSectionStack {
 
   // MARK: Shared input sections
 
-  class Shared {
+  // Contains static sections which occupy the bottom of every stack.
+  // Sort of like a prototype, but a change to any of these sections will immediately affects all players.
+  static let shared = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
+                                        initialEnabledSections: [DefaultInputSection(), PluginsInputSection()])
 
-    // Only one instance of each of these is ever needed at a given time. Each can be recalculated as needed.
-    static private let sectionsDefined: [String: MPVInputSection] = [
-      DefaultInputSection.NAME : DefaultInputSection(),
-      PluginsInputSection.NAME : PluginsInputSection()
-    ]
-
-    static fileprivate var defaultSection: DefaultInputSection {
-      sectionsDefined[DefaultInputSection.NAME]! as! DefaultInputSection
+  // FIXME: make this async and merge with `PlayerInputConfig.replaceDefaultSectionBindings` to avoid confusion
+  static func replaceDefaultSectionBindings(_ bindings: [KeyMapping]) {
+    dq.sync {
+      if let defaultSection = shared.sectionsDefined[DefaultInputSection.NAME] as? DefaultInputSection {
+        defaultSection.setKeyBindingList(bindings)
+      }
     }
+  }
 
-    static fileprivate var pluginsSection: PluginsInputSection {
-      sectionsDefined[PluginsInputSection.NAME]! as! PluginsInputSection
+  // FIXME: make this async and merge with `PlayerInputConfig.replacePluginsSectionBindings` to avoid confusion
+  static func replacePluginsSectionBindings(_ bindings: [KeyMapping]) {
+    dq.sync {
+      if let pluginsSection = shared.sectionsDefined[DefaultInputSection.NAME] as? PluginsInputSection {
+        pluginsSection.setKeyBindingList(bindings)
+      }
     }
   }
 
@@ -80,13 +66,20 @@ class InputSectionStack {
    */
   private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
-  private let subsystem: Logger.Subsystem
+  let subsystem: Logger.Subsystem
 
-  init(_ subsystem: Logger.Subsystem) {
+  init(_ subsystem: Logger.Subsystem, initialEnabledSections: [InputSection]? = nil) {
     self.subsystem = subsystem
 
-    // All players include the shared sections at the bottom of their stack
-    for section in [Shared.defaultSection, Shared.pluginsSection] {
+    let sections: [InputSection]
+    if let initialEnabledSections = initialEnabledSections {
+      sections = initialEnabledSections
+    } else {
+      // Default to adding the static shared sections
+      sections = InputSectionStack.shared.sectionsEnabled.map( { InputSectionStack.shared.sectionsDefined[$0.name]! })
+    }
+
+    for section in sections {
       self.sectionsDefined[section.name] = section
       self.sectionsEnabled.prepend(EnabledSectionMeta(name: section.name, isExclusive: false))
     }
@@ -102,109 +95,43 @@ class InputSectionStack {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
-  // MARK: Building AppInputBindings
-
-  func buildActiveBindings(onCompletion completionHandler: ([ActiveBinding]) -> Void) -> AppInputBindings {
-    self.log("Starting rebuild of active player input bindings", level: .verbose)
-
-    var newBindingsStruct = AppInputBindings()
-
-    dq.sync {
-      // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
-      let bindingList = self.combineEnabledSectionBindings()
-      var resolverDict: [String: ActiveBinding] = [:]
-
-      // Now build the resolverDict, disabling redundant key bindings along the way.
-      for binding in bindingList {
-        guard binding.isEnabled else { continue }
-
-        let key = binding.mpvBinding.normalizedMpvKey
-
-        // If multiple bindings map to the same key, favor the last one always.
-        if let prevSameKeyBinding = resolverDict[key] {
-          prevSameKeyBinding.isEnabled = false
-          if prevSameKeyBinding.origin == .iinaPlugin {
-            prevSameKeyBinding.statusMessage = "\"\(key)\" is overridden by \"\(binding.mpvBinding.readableAction)\". Plugins must use key bindings which have not already been used."
-          } else {
-            prevSameKeyBinding.statusMessage = "This binding was overridden by another binding below it which also uses \"\(key)\""
-          }
-        }
-        // Store it, overwriting any previous entry:
-        resolverDict[key] = binding
-      }
-
-      // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
-      InputSectionStack.fillInPartialSequences(&resolverDict)
-
-      self.log("Finished rebuilding active player input bindings (\(resolverDict.count) total)")
-      newBindingsStruct = AppInputBindings(bindingList, resolverDict)
-    }
-
-    completionHandler(newBindingsStruct.activeBindingsList)
-
-    if LOG_BINDINGS_REBUILD {
-      newBindingsStruct.logCurrentResolverDictContents()
-    }
-
-    return newBindingsStruct
-  }
-
-  // Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.
-  private static func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBinding]) {
-    for (keySequence, binding) in activeBindingsDict {
-      if keySequence.contains("-") {
-        let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
-        if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
-          var partial = ""
-          for key in keySequenceSplit {
-            if partial == "" {
-              partial = String(key)
-            } else {
-              partial = "\(partial)-\(key)"
-            }
-            if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
-              let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
-              activeBindingsDict[partial] = ActiveBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isMenuItem: binding.isMenuItem, isEnabled: binding.isEnabled)
-            }
-          }
-        }
-      }
-    }
-  }
+  // MARK: Building AppActiveBindings
 
   /*
    Merges the binding lists from all the InputSections in this stack into a single list of ActiveBindings.
    The list may contain multiple bindings with the same key sequence.
    */
-  private func combineEnabledSectionBindings() -> [ActiveBinding] {
-    var linkedList = LinkedList<ActiveBinding>()
+  func combineEnabledSectionBindings() -> [ActiveBinding] {
+    dq.sync {
+      var linkedList = LinkedList<ActiveBinding>()
 
-    // Iterate from top to the bottom of the "stack":
-    for enabledSectionMeta in sectionsEnabled {
-      guard let inputSection = sectionsDefined[enabledSectionMeta.name] else {
-        // indicates serious internal error
-        log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
-        continue
+      // Iterate from top to the bottom of the "stack":
+      for enabledSectionMeta in sectionsEnabled {
+        guard let inputSection = sectionsDefined[enabledSectionMeta.name] else {
+          // indicates serious internal error
+          log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
+          continue
+        }
+
+        addAllBindings(from: inputSection, to: &linkedList)
+
+        if enabledSectionMeta.isExclusive {
+          log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
+          return Array<ActiveBinding>(linkedList)
+        }
       }
 
-      addAllBindings(from: inputSection, to: &linkedList)
-
-      if enabledSectionMeta.isExclusive {
-        log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
-        return Array<ActiveBinding>(linkedList)
-      }
+      return Array<ActiveBinding>(linkedList)
     }
-
-    return Array<ActiveBinding>(linkedList)
   }
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<ActiveBinding>) {
     if inputSection.keyBindingList.isEmpty {
-      if LOG_BINDINGS_REBUILD {
+      if AppActiveBindings.LOG_BINDINGS_REBUILD {
         log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
       }
     } else {
-      if LOG_BINDINGS_REBUILD {
+      if AppActiveBindings.LOG_BINDINGS_REBUILD {
         log("RebuildBindings: adding from \(inputSection)", level: .verbose)
       }
       if inputSection.isForce {
@@ -252,22 +179,6 @@ class InputSectionStack {
     }
     binding.isEnabled = true
     return binding
-  }
-
-  // Mark: Shared Input Sections
-
-  func replaceDefaultSectionBindings(_ bindings: [KeyMapping]) {
-    dq.sync {
-      guard let defaultSection = sectionsDefined[DefaultInputSection.NAME] as? DefaultInputSection else { return }
-      defaultSection.setKeyBindingList(bindings)
-    }
-  }
-
-  func replacePluginsSectionBindings(_ bindings: [KeyMapping]) {
-    dq.sync {
-      guard let pluginsSection = sectionsDefined[PluginsInputSection.NAME] as? PluginsInputSection else { return }
-      pluginsSection.setKeyBindingList(bindings)
-    }
   }
 
   // MARK: MPV Input Section API
@@ -372,6 +283,10 @@ class InputSectionStack {
 
   private func disableSection_Unsafe(_ sectionName: String) {
     if sectionsDefined[sectionName] != nil {
+      if InputSectionStack.shared.sectionsDefined[sectionName] != nil {
+        // Indicates developer error. Never remove default or plugins sections
+        Logger.fatal("Can never remove a shared input section!")
+      }
       sectionsEnabled.remove({ $0.name == sectionName })
       sectionsDefined.removeValue(forKey: sectionName)
 

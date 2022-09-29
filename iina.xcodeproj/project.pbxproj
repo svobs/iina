@@ -171,6 +171,7 @@
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
 		D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
+		D1FA42E528E5E54700DF49DD /* AppActiveBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */; };
 		D1FD2DDA28521B5900CF7B35 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */; };
 		D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DDB28533EE700CF7B35 /* InputSection.swift */; };
@@ -1495,6 +1496,7 @@
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleClickEditTableView.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
+		D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActiveBindings.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogHandler.swift; sourceTree = "<group>"; };
 		D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D1FD2DDB28533EE700CF7B35 /* InputSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSection.swift; sourceTree = "<group>"; };
@@ -1919,6 +1921,7 @@
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
 				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
+				D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -2947,6 +2950,7 @@
 				8434BAA71D5DF2DA003BECF2 /* Extensions.swift in Sources */,
 				845404AC1E43980900B02B12 /* LuaScript.swift in Sources */,
 				E35306F42147F78D008FE492 /* JavascriptAPICore.swift in Sources */,
+				D1FA42E528E5E54700DF49DD /* AppActiveBindings.swift in Sources */,
 				847557141F405F8C0006B0FF /* MainWindowMenuActions.swift in Sources */,
 				841B14281E941DFF00744AB8 /* TimeLabelOverflowedStackView.swift in Sources */,
 				E33BA5C7204BD9FE0069A0F6 /* SubChooseViewController.swift in Sources */,

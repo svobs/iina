@@ -13,7 +13,7 @@ import Foundation
  Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
- This class must stay in sync with AppInputBindings, which handles the assembly of the rows, as much as possible, and `bindingRowsAll` should match `AppInputBindings.current`.
+ This class must stay in sync with AppActiveBindings, which handles the assembly of the rows, as much as possible, and `bindingRowsAll` should match `AppActiveBindings.current`.
  */
 class ActiveBindingTableStore {
 

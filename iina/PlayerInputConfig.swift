@@ -65,27 +65,15 @@ class PlayerInputConfig {
 
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
-  // The currently active bindings for the IINA app (key lookup table + other data)
-  static var appBindings = AppInputBindings()
-
   // Also calls `rebuildAppBindings()`. Calls `onCompletion` after everything finishes.
   static func replaceDefaultSectionBindings(_ bindings: [KeyMapping], onCompletion completionHandler: (([ActiveBinding]) -> Void)? = nil) {
-    guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-      Logger.log("No active player!", level: .error)
-      return
-    }
-    activePlayerInputConfig.sectionStack.replaceDefaultSectionBindings(bindings)
+    InputSectionStack.replaceDefaultSectionBindings(bindings)
     rebuildAppBindings(onCompletion: completionHandler)
   }
 
   // Also calls `rebuildAppBindings()`. Calls `onCompletion` after everything finishes.
   static func replacePluginsSectionBindings(_ bindings: [KeyMapping], onCompletion completionHandler: (([ActiveBinding]) -> Void)? = nil) {
-    guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-      Logger.log("No active player!", level: .error)
-      return
-    }
-    activePlayerInputConfig.sectionStack.replacePluginsSectionBindings(bindings)
-
+    InputSectionStack.replacePluginsSectionBindings(bindings)
     rebuildAppBindings(onCompletion: completionHandler)
   }
 
@@ -101,7 +89,8 @@ class PlayerInputConfig {
       return
     }
 
-    appBindings = activePlayerInputConfig.sectionStack.buildActiveBindings(onCompletion: { activeBindingList in
+    let builder = AppActiveBindingsBuilder(activePlayerInputConfig.sectionStack)
+    AppActiveBindings.current = builder.buildActiveBindings(onCompletion: { activeBindingList in
       let appDelegate = (NSApp.delegate as! AppDelegate)
 
       // This will update all standard menu item bindings, and also update the isMenuItem status of each:
@@ -111,7 +100,7 @@ class PlayerInputConfig {
         completionHandler(activeBindingList)
       } else {
         // Notify binding table
-        appDelegate.bindingTableStore.appActiveBindingsDidChange(PlayerInputConfig.appBindings.activeBindingsList)
+        appDelegate.bindingTableStore.appActiveBindingsDidChange(AppActiveBindings.current.activeBindingsList)
       }
     })
   }
@@ -167,7 +156,7 @@ class PlayerInputConfig {
    Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
    */
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    PlayerInputConfig.appBindings.resolverDict[keySequence]?.mpvBinding
+    AppActiveBindings.current.resolverDict[keySequence]?.mpvBinding
   }
 
   /*
@@ -195,7 +184,7 @@ class PlayerInputConfig {
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins
   private func resolveFirstMatchingKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
-    let appBindings: AppInputBindings = PlayerInputConfig.appBindings
+    let appBindings: AppActiveBindings = AppActiveBindings.current
     var keySequence = ""
     var hasPartialValidSequence = false
 
