@@ -177,7 +177,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     guard let columnName = tableColumn?.identifier.rawValue else { return false }
 
     Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)", level: .verbose)
-    return inputConfigTableStore.isEditEnabledForCurrentConfig() && isRaw()
+    return inputConfigTableStore.isEditEnabledForCurrentConfig && isRaw()
   }
 
   // MARK: EditableTableView callbacks
@@ -348,7 +348,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   private func requireCurrentConfigIsEditable(forAction action: String) -> Bool {
-    if inputConfigTableStore.isEditEnabledForCurrentConfig() {
+    if inputConfigTableStore.isEditEnabledForCurrentConfig {
       return true
     }
 
@@ -371,7 +371,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    This is implemented to support dropping items onto the Trash icon in the Dock
    */
   func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig(), operation == NSDragOperation.delete else {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
       return
     }
 
@@ -412,7 +412,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    */
   func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig() else {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       return []  // deny drop
     }
 
@@ -521,7 +521,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig() else {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a default config"
       addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
       return

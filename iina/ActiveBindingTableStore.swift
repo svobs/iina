@@ -192,6 +192,19 @@ class ActiveBindingTableStore {
     return nil
   }
 
+  static private func getBindingIDs(from rows: [ActiveBinding]) -> Set<Int> {
+    return rows.reduce(into: Set<Int>(), { (ids, row) in
+      if let bindingID = row.keyMapping.bindingID {
+        ids.insert(bindingID)
+      }
+    })
+  }
+
+  static private func getHashes(from rows: [ActiveBinding]) -> [String] {
+    // Just use the content itself - should be shorter than an MD5 in most cases
+    return rows.map({ $0.keyMapping.confFileFormat })
+  }
+
   private func resolveBindingIDsFromIndexes(_ rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
     var idSet = Set<Int>()
     for rowIndex in rowIndexes {
@@ -209,8 +222,8 @@ class ActiveBindingTableStore {
     return idSet
   }
 
-  // Opposite of previous
-  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, from rows: [ActiveBinding]) -> IndexSet {
+  // Inverse of previous function
+  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, in rows: [ActiveBinding]) -> IndexSet {
     var indexSet = IndexSet()
     for targetID in bindingIDs {
       for (rowIndex, row) in rows.enumerated() {
@@ -341,14 +354,14 @@ class ActiveBindingTableStore {
    1. Save conf file, get updated default section rows
    2. Send updated default section bindings to ActiveBindingController. It will recalculate all bindings and re-bind appropriately, then
       returns the updated set of all bindings to us.
-   3. Update the list of all bindings here.
+   3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
   private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     // Save to file
     let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    let inputConfigTableStore = (NSApp.delegate as! AppDelegate).inputConfigTableStore
-    guard let defaultSectionBindings = inputConfigTableStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
+    let inputConfigFileHandler = (NSApp.delegate as! AppDelegate).inputConfigFileHandler
+    guard let defaultSectionBindings = inputConfigFileHandler.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return
     }
 
@@ -376,37 +389,58 @@ class ActiveBindingTableStore {
   }
 
   /*
-  - Update the list of all bindings here.
+  - Update this class's unfiltered list of bindings, and recalculate filtered list
   - Push update to the Key Bindings table in the UI so it can be animated.
   Expected to be run on the main thread.
   */
   private func applyBindingTableChanges(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
+    let tableChangeImproved: TableChangeByRowIndex = (tableChange.changeType == .reloadAll ? buildBetterReloadAll(bindingRowsAllNew) : tableChange)
+
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChange)
-    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
+    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChangeImproved)
+    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChangeImproved.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
+  }
+
+  private func buildBetterReloadAll(_ bindingRowsAllNew: [ActiveBinding]) -> TableChangeByRowIndex {
+
+    // FIXME: calculate diff, use animation
+
+    let tableChange = TableChangeByRowIndex(.custom)
+
+    let hashesBefore: [String] = ActiveBindingTableStore.getHashes(from: bindingRowsAll)
+    let hashesAfter: [String] = ActiveBindingTableStore.getHashes(from: bindingRowsAllNew)
+
+    // Maintain selection across reloads by comparing hashes
+    let hashesSelectedBefore: Set<String> = selectedRowIndexes.reduce(into: Set<String>(), { (hashes, index) in
+      if index < hashesBefore.count {
+        hashes.insert(hashesBefore[index])
+      }
+    })
+
+
+
+//    let newSelectedRowIndexes = ActiveBindingTableStore.resolveIndexesFromHashes(hashesSelected, in: bindingRowsAllNew)
+//    tableChange.newSelectedRows = newSelectedRowIndexes
+//    Logger.log("Bindings table update: translated \(selectedRowIndexes.count)/\(bindingRowsAll.count) selections to \(newSelectedRowIndexes.count)/\(bindingRowsAllNew.count)")
+
+    tableChange.customFunction = { tableView in
+
+    }
+
+    return tableChange
   }
 
   // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
   // Expected to be run on the main thread.
-  func appActiveBindingsDidChange(_ bindingRowsNew: [ActiveBinding]) {
+  func appActiveBindingsDidChange(_ bindingRowsAllNew: [ActiveBinding]) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    // FIXME: calculate diff, use animation
-
-    let tableChange = TableChangeByRowIndex(.reloadAll)
-
-    // Maintain selection across reloads by comparing binding IDs
-    let selectedIDSet = resolveBindingIDsFromIndexes(selectedRowIndexes)
-    let newSelectedRowIndexes = ActiveBindingTableStore.resolveIndexesFromBindingIDs(selectedIDSet, from: bindingRowsNew)
-    tableChange.newSelectedRows = newSelectedRowIndexes
-    Logger.log("Bindings table update: translated \(selectedRowIndexes.count)/\(bindingRowsAll.count) selections to \(newSelectedRowIndexes.count)/\(bindingRowsNew.count)")
-
-    self.applyBindingTableChanges(bindingRowsNew, tableChange)
+    self.applyBindingTableChanges(bindingRowsAllNew, buildBetterReloadAll(bindingRowsAllNew))
   }
 }

@@ -15,9 +15,6 @@ import Foundation
  Not thread-safe at present!
  */
 class InputConfigTableStore {
-  // MARK: Non-static section start
-
-  private var currentParsedConfigFile: InputConfigFileData? = nil
 
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
@@ -47,7 +44,7 @@ class InputConfigTableStore {
       Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
       Preference.set(newValue, for: .currentInputConfigName)
 
-      self.loadBindingsFromCurrentConfigFile()
+      (NSApp.delegate as! AppDelegate).inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
     }
   }
 
@@ -82,15 +79,15 @@ class InputConfigTableStore {
     configTableRows = buildConfigTableRows()
   }
 
-  // MARK: Config CRUD
-
-  func isEditEnabledForCurrentConfig() -> Bool {
+  var isEditEnabledForCurrentConfig: Bool {
     return !isDefaultConfig(currentConfigName)
   }
 
   func isDefaultConfig(_ configName: String) -> Bool {
     return AppData.defaultConfigs[configName] != nil
   }
+
+  // MARK: Config CRUD
 
   func getFilePath(forConfig config: String) -> String? {
     if let dv = AppData.defaultConfigs[config] {
@@ -182,7 +179,6 @@ class InputConfigTableStore {
     setConfigTableState(userConfDictUpdated, currentConfigNameNew: newCurrentConfig, .addRows)
   }
 
-  @objc
   func removeConfig(_ configName: String) {
     let isCurrentConfig: Bool = configName == currentConfigName
     Logger.log("Removing config: \"\(configName)\" (isCurrentConfig: \(isCurrentConfig))")
@@ -286,54 +282,5 @@ class InputConfigTableStore {
   }
 
   // MARK: Input Config File serialize/deserialize
-
-  // Input Config File: Load
-  // Triggered any time `currentConfigName` is changed
-  public func loadBindingsFromCurrentConfigFile() {
-    guard let configFilePath = currentConfigFilePath else {
-      Logger.log("Could not find file for current config (\"\(self.currentConfigName)\"); falling back to default config", level: .error)
-      self.changeCurrentConfigToDefault()
-      return
-    }
-    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
-    guard let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
-      // on error
-      Logger.log("Error loading key bindings from config \"\(self.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
-      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-
-      self.changeCurrentConfigToDefault()
-      return
-    }
-    self.currentParsedConfigFile = inputConfigFile
-
-    let defaultSectionBindings = inputConfigFile.parseBindings()
-    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
-  }
-
-  // Input Config File: Save
-  public func saveBindingsToCurrentConfigFile(_ defaultSectionBindings: [KeyMapping]) -> [KeyMapping]? {
-    guard let configFilePath = self.currentConfigFilePath else {
-      let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return nil
-    }
-    Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
-    do {
-      guard let currentParsedConfig = self.currentParsedConfigFile else {
-        Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
-        return nil
-      }
-      currentParsedConfig.replaceAllBindings(with: defaultSectionBindings)
-      try currentParsedConfig.writeFile(to: configFilePath)
-      return currentParsedConfig.parseBindings()  // gets updated line numbers
-    } catch {
-      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-    }
-    return nil
-  }
 
 }

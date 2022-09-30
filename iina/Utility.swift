@@ -356,7 +356,7 @@ class Utility {
   }
 
   static func buildConfigFilePath(for userConfigName: String) -> String {
-    return Utility.userInputConfDirURL.appendingPathComponent(userConfigName + AppData.configFileExtension).path
+    return Utility.userInputConfDirURL.appendingPathComponent(userConfigName).appendingPathExtension(AppData.configFileExtension).path
   }
 
   static let appSupportDirUrl: URL = {

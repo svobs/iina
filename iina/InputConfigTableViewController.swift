@@ -296,8 +296,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   private func buildMenu(_ menu: NSMenu, clickedConfigName: String) {
-    // Reveal in Finder
-    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.revealConfigFromMenu(_:)), target: self))
+    // Show in Finder
+    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.showInFinderFromMenu(_:)), target: self))
 
     // Duplicate
     menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Duplicate...", action: #selector(self.duplicateConfigFromMenu(_:)), target: self))
@@ -313,8 +313,8 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.deleteConfig(sender.configName)
   }
 
-  @objc fileprivate func revealConfigFromMenu(_ sender: InputConfMenuItem) {
-    self.revealConfig(sender.configName)
+  @objc fileprivate func showInFinderFromMenu(_ sender: InputConfMenuItem) {
+    self.showInFinder(sender.configName)
   }
 
   @objc fileprivate func duplicateConfigFromMenu(_ sender: InputConfMenuItem) {
@@ -337,7 +337,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableStore.removeConfig(configName)
   }
 
-  @objc func revealConfig(_ configName: String) {
+  @objc func showInFinder(_ configName: String) {
     guard let confFilePath = self.requireFilePath(forConfig: configName) else {
       return
     }

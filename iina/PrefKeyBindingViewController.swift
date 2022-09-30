@@ -47,7 +47,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var configHintLabel: NSTextField!
   @IBOutlet weak var addKmBtn: NSButton!
   @IBOutlet weak var removeKmBtn: NSButton!
-  @IBOutlet weak var revealConfigFileBtn: NSButton!
+  @IBOutlet weak var showInFinderFileBtn: NSButton!
   @IBOutlet weak var deleteConfigFileBtn: NSButton!
   @IBOutlet weak var newConfigBtn: NSButton!
   @IBOutlet weak var duplicateConfigBtn: NSButton!
@@ -125,8 +125,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     configTableController?.duplicateConfig(inputConfigTableStore.currentConfigName)
   }
 
-  @IBAction func revealConfigFileAction(_ sender: AnyObject) {
-    configTableController?.revealConfig(inputConfigTableStore.currentConfigName)
+  @IBAction func showInFinderFileAction(_ sender: AnyObject) {
+    configTableController?.showInFinder(inputConfigTableStore.currentConfigName)
   }
 
   @IBAction func deleteConfigFileAction(_ sender: AnyObject) {
@@ -155,8 +155,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isEditEnabledForCurrentConfig = inputConfigTableStore.isEditEnabledForCurrentConfig()
-    [revealConfigFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
+    let isEditEnabledForCurrentConfig = inputConfigTableStore.isEditEnabledForCurrentConfig
+    [showInFinderFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = isEditEnabledForCurrentConfig
     }
     configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabledForCurrentConfig ? "2" : "1")", comment: "preference.key_binding_hint")
@@ -166,6 +166,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = inputConfigTableStore.isEditEnabledForCurrentConfig() && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = inputConfigTableStore.isEditEnabledForCurrentConfig && kbTableView.selectedRow != -1
   }
 }

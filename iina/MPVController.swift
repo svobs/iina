@@ -354,7 +354,6 @@ class MPVController: NSObject {
     // Load external scripts
 
     // Load keybindings. This is still required for mpv to handle media keys or apple remote.
-    let userConfigs = Preference.dictionary(for: .inputConfigs)
     let inputConfPath: String
     if let currentConfigFilePath = (NSApp.delegate as! AppDelegate).inputConfigTableStore.currentConfigFilePath {
       inputConfPath = currentConfigFilePath

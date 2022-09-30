@@ -28,11 +28,15 @@ class TableChange {
     // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
     // use this only when absolutely needed:
     case reloadAll
+    case custom
   }
 
   let changeType: ChangeType
 
   var newSelectedRows: IndexSet? = nil
+
+  // Only for changeType == .custom:
+  var customFunction: ((EditableTableView) -> Void)? = nil
 
   fileprivate init(_ changeType: ChangeType) {
     self.changeType = changeType
@@ -79,6 +83,11 @@ class TableChangeByStringElement: TableChange {
         // Try not to use this much, if at all
         Logger.log("TableChangeByStringElement: ReloadAll", level: .verbose)
         tableView.reloadData()
+      case .custom:
+        if let customFunction = customFunction {
+          Logger.log("TableChangeByStringElement: executing custom function", level: .verbose)
+          customFunction(tableView)
+        }
     }
 
     if let newSelectedRows = self.newSelectedRows {
@@ -174,6 +183,7 @@ class TableChangeByRowIndex: TableChange {
   var toInsert: IndexSet? = nil
   var toRemove: IndexSet? = nil
   var toUpdate: IndexSet? = nil
+  // Used by ChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
 
   override init(_ changeType: ChangeType) {
@@ -213,6 +223,11 @@ class TableChangeByRowIndex: TableChange {
         // Try not to use this much, if at all
         Logger.log("TableChangeByRowIndex: ReloadAll", level: .verbose)
         tableView.reloadData()
+      case .custom:
+        if let customFunction = customFunction {
+          Logger.log("TableChangeByRowIndex: executing custom function", level: .verbose)
+          customFunction(tableView)
+        }
     }
 
     if let newSelectedRows = self.newSelectedRows {

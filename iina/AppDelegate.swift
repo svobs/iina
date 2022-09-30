@@ -86,11 +86,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   @IBOutlet weak var dockMenu: NSMenu!
 
   // Input bindings
+  let inputConfigFileHandler = InputConfigFileHandler()
   let inputConfigTableStore = InputConfigTableStore()
   let bindingTableStore = ActiveBindingTableStore()
 
   private func getReady() {
-    inputConfigTableStore.loadBindingsFromCurrentConfigFile()
+    inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
     menuController.bindMenuItems()
     isReady = true
   }
