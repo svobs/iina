@@ -568,7 +568,9 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // This will kick off a series of updates set any key equivalents and update them as needed
-    PlayerInputConfig.replacePluginsSectionBindings(keyMappings)
+    if InputSectionStack.replacePluginsSectionBindings(keyMappings) {
+      PlayerInputConfig.rebuildAppBindingsAsync()
+    }
   }
 
   func updatePluginMenuKeyEquivalents(from pluginBindings: [ActiveBinding]) {

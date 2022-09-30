@@ -13,7 +13,7 @@ import Foundation
  Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
- This class must stay in sync with AppActiveBindings, which handles the assembly of the rows, as much as possible, and `bindingRowsAll` should match `AppActiveBindings.current`.
+ This class is downstream from `AppActiveBindings.current` and should be notified of any changes to it.
  */
 class ActiveBindingTableStore {
 
@@ -305,7 +305,6 @@ class ActiveBindingTableStore {
     Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
     applyBindingTableUpdates(bindingRowsAll, TableUpdateByRowIndex(.reloadAll))
-    // TODO: add code to maintain selection across reloads
   }
 
   private func updateFilteredBindings() {
@@ -344,20 +343,23 @@ class ActiveBindingTableStore {
    and the two must match or else visual bugs will result.
    */
   func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
-    PlayerInputConfig.replaceDefaultSectionBindings(defaultSectionBindings, onCompletion: { bindingRowsAllNew in
+    InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
+    DispatchQueue.main.async {
+      let bindingRowsAllNew = PlayerInputConfig.rebuildAppBindings().bindingCandidateList
       guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
         Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
         return
       }
 
       self.applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
-    })
+    }
   }
 
   /*
   - Update the list of all bindings here.
   - Push update to the Key Bindings table in the UI so it can be animated.
+  Expected to be run on the main thread.
   */
   private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     bindingRowsAll = bindingRowsAllNew
@@ -369,11 +371,13 @@ class ActiveBindingTableStore {
     NotificationCenter.default.post(notification)
   }
 
-  // Callback for when Plugin menu bindings or active player bindings have changed
+  // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
+  // Expected to be run on the main thread.
   func appActiveBindingsDidChange(_ activeBindingList: [ActiveBinding]) {
     // FIXME: calculate diff, use animation
+    // TODO: add code to maintain selection across reloads
     let tableUpdate = TableUpdateByRowIndex(.reloadAll)
 
-    applyBindingTableUpdates(activeBindingList, tableUpdate)
+    self.applyBindingTableUpdates(activeBindingList, tableUpdate)
   }
 }

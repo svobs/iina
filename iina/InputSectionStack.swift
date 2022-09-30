@@ -35,7 +35,6 @@ class InputSectionStack {
   static let shared = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
                                         initialEnabledSections: [DefaultInputSection(), PluginsInputSection()])
 
-  // FIXME: make this async and merge with `PlayerInputConfig.replaceDefaultSectionBindings` to avoid confusion
   static func replaceDefaultSectionBindings(_ bindings: [KeyMapping]) {
     dq.sync {
       if let defaultSection = shared.sectionsDefined[DefaultInputSection.NAME] as? DefaultInputSection {
@@ -44,13 +43,21 @@ class InputSectionStack {
     }
   }
 
-  // FIXME: make this async and merge with `PlayerInputConfig.replacePluginsSectionBindings` to avoid confusion
-  static func replacePluginsSectionBindings(_ bindings: [KeyMapping]) {
+  static func replacePluginsSectionBindings(_ bindings: [KeyMapping]) -> Bool {
+    var changed = false
     dq.sync {
       if let pluginsSection = shared.sectionsDefined[DefaultInputSection.NAME] as? PluginsInputSection {
-        pluginsSection.setKeyBindingList(bindings)
+        // Try to minimize duplicate work by detecting when there is no change.
+        // TODO: get more sophisticated than this simple check
+        if !pluginsSection.keyBindingList.isEmpty || !bindings.contains(where: { type(of: $0) == PluginKeyMapping.self}) {
+          changed = true
+        } else {
+          pluginsSection.setKeyBindingList(bindings)
+        }
       }
     }
+    Logger.log("changed = \(changed)")
+    return changed
   }
 
   // MARK: Single player instance
@@ -98,8 +105,9 @@ class InputSectionStack {
   // MARK: Building AppActiveBindings
 
   /*
-   Merges the binding lists from all the InputSections in this stack into a single list of ActiveBindings.
-   The list may contain multiple bindings with the same key sequence.
+   Generates ActiveBindings for all the bindings in all the InputSections in this stack, and combines them into a single list.
+   Some basic individual validation is performed on each, so some will have isEnabled set to false.
+   Bindings with identical keys will not be filtered or disabled here.
    */
   func combineEnabledSectionBindings() -> [ActiveBinding] {
     dq.sync {

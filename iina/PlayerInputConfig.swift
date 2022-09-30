@@ -65,44 +65,40 @@ class PlayerInputConfig {
 
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
-  // Also calls `rebuildAppBindings()`. Calls `onCompletion` after everything finishes.
-  static func replaceDefaultSectionBindings(_ bindings: [KeyMapping], onCompletion completionHandler: (([ActiveBinding]) -> Void)? = nil) {
-    InputSectionStack.replaceDefaultSectionBindings(bindings)
-    rebuildAppBindings(onCompletion: completionHandler)
-  }
-
-  // Also calls `rebuildAppBindings()`. Calls `onCompletion` after everything finishes.
-  static func replacePluginsSectionBindings(_ bindings: [KeyMapping], onCompletion completionHandler: (([ActiveBinding]) -> Void)? = nil) {
-    InputSectionStack.replacePluginsSectionBindings(bindings)
-    rebuildAppBindings(onCompletion: completionHandler)
-  }
-
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
    Rebuilds `appBindingsList` and `currentResolverDict`, updating menu item key equivalents along the way.
    When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
    as notifies the other callbacks supplied here as needed.
+
+   Should be run on the main thread. For other threads, see `rebuildAppBindingsAsync()`
    */
-  static private func rebuildAppBindings(onCompletion completionHandler: (([ActiveBinding]) -> Void)? = nil) {
+  static func rebuildAppBindings() -> AppActiveBindings {
+    Logger.log("Rebuilding app active bindings", level: .verbose)
+
     guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-      Logger.log("No active player!", level: .error)
-      return
+      Logger.fatal("rebuildAppBindings(): no active player!")
     }
 
     let builder = AppActiveBindingsBuilder(activePlayerInputConfig.sectionStack)
-    AppActiveBindings.current = builder.buildActiveBindings(onCompletion: { activeBindingList in
-      let appDelegate = (NSApp.delegate as! AppDelegate)
+    let newAppBindings = builder.buildActiveBindings()
 
-      // This will update all standard menu item bindings, and also update the isMenuItem status of each:
-      appDelegate.menuController.updateKeyEquivalentsFrom(activeBindingList)
+    // This will update all standard menu item bindings, and also update the isMenuItem status of each:
+    (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalentsFrom(newAppBindings.bindingCandidateList)
 
-      if let completionHandler = completionHandler {
-        completionHandler(activeBindingList)
-      } else {
-        // Notify binding table
-        appDelegate.bindingTableStore.appActiveBindingsDidChange(activeBindingList)
-      }
-    })
+    AppActiveBindings.current = newAppBindings
+
+    return newAppBindings
+  }
+
+  // Same as `rebuildAppBindings()`, but kicks off an async task and notifies Key Bindings table
+  static func rebuildAppBindingsAsync() {
+    DispatchQueue.main.async {
+      let newAppBindings = rebuildAppBindings()
+
+      // Notify binding table
+      (NSApp.delegate as! AppDelegate).bindingTableStore.appActiveBindingsDidChange(newAppBindings.bindingCandidateList)
+    }
   }
 
   // MARK: - Single player instance
@@ -137,17 +133,17 @@ class PlayerInputConfig {
 
   func defineSection(_ inputSection: MPVInputSection) {
     sectionStack.defineSection(inputSection)
-    PlayerInputConfig.rebuildAppBindings()
+    PlayerInputConfig.rebuildAppBindingsAsync()
   }
 
   func enableSection(_ sectionName: String, _ flags: [String]) {
     sectionStack.enableSection(sectionName, flags)
-    PlayerInputConfig.rebuildAppBindings()
+    PlayerInputConfig.rebuildAppBindingsAsync()
   }
 
   func disableSection(_ sectionName: String) {
     sectionStack.disableSection(sectionName)
-    PlayerInputConfig.rebuildAppBindings()
+    PlayerInputConfig.rebuildAppBindingsAsync()
   }
 
   // MARK: Key resolution

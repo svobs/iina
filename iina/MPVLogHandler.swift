@@ -50,6 +50,7 @@ class MPVLogHandler {
     mpvLogSubsystem = Logger.Subsystem(rawValue: "mpv\(player.label)")
   }
 
+  // Assumes we are NOT running on the main thread.
   func handleLogMessage(prefix: String, level: String, msg: String) {
     // Reproduce the log line to IINA log only if within the configured mpv logging threshold
     // (and of course only if IINA logging threshold is .debug or above)

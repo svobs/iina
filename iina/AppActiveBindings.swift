@@ -16,11 +16,16 @@ class AppActiveBindings {
   // the active bindings are rebuilt and the old set is discarded.
   static var current = AppActiveBindings()
 
+  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `ActiveBindingTableStore` should be kept
+  // consistent with this one as much as possible, but some brief inconsistencies may be acceptable due to the asynchronous nature of UI.
+  let bindingCandidateList: [ActiveBinding]
+
   // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
   // Contains only the bindings which are currently enabled for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
   let resolverDict: [String: ActiveBinding]
 
-  init(_ resolverDict: [String: ActiveBinding] = [:]) {
+  init(bindingCandidateList: [ActiveBinding] = [], resolverDict: [String: ActiveBinding] = [:]) {
+    self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
   }
 
@@ -41,10 +46,8 @@ class AppActiveBindingsBuilder {
     self.sectionStack = sectionStack
   }
 
-  func buildActiveBindings(onCompletion handleCompletion: ([ActiveBinding]) -> Void) -> AppActiveBindings {
+  func buildActiveBindings() -> AppActiveBindings {
     Logger.log("Starting rebuild of active player input bindings", level: .verbose, subsystem: sectionStack.subsystem)
-
-    var newBindingsStruct = AppActiveBindings()
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
     let bindingCandidateList = self.sectionStack.combineEnabledSectionBindings()
@@ -73,15 +76,7 @@ class AppActiveBindingsBuilder {
     fillInPartialSequences(&resolverDict)
 
     Logger.log("Finished rebuilding active player input bindings (\(resolverDict.count) total)", subsystem: sectionStack.subsystem)
-    newBindingsStruct = AppActiveBindings(resolverDict)
-
-    handleCompletion(bindingCandidateList)
-
-    if AppActiveBindings.LOG_BINDINGS_REBUILD {
-      newBindingsStruct.logCurrentResolverDictContents()
-    }
-
-    return newBindingsStruct
+    return AppActiveBindings(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
   }
 
   // Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.

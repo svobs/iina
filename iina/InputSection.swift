@@ -73,6 +73,7 @@ class DefaultInputSection: MPVInputSection {
   }
 
   func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
+    Logger.log("Replacing key bindings in \"\(name)\" with \(keyBindingList.count) entries", level: .verbose)
     self.keyBindingList = keyBindingList
   }
 }
@@ -84,6 +85,7 @@ class PluginsInputSection: MPVInputSection {
   }
 
   func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
+    Logger.log("Replacing key bindings in \"\(name)\" with \(keyBindingList.count) entries", level: .verbose)
     self.keyBindingList = keyBindingList
   }
 }
