@@ -169,7 +169,9 @@
 		D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBinding.swift */; };
 		D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
-		D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */; };
+		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
+		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
+		D1EAF5E728E6B6780023BACF /* TableChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableChange.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppActiveBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */; };
@@ -1494,7 +1496,9 @@
 		D188CB2128D6DE1900F166FD /* ActiveBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingTableStore.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
-		D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleClickEditTableView.swift; sourceTree = "<group>"; };
+		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
+		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
+		D1EAF5E628E6B6780023BACF /* TableChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableChange.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
 		D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActiveBindings.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogHandler.swift; sourceTree = "<group>"; };
@@ -2363,7 +2367,9 @@
 				E3DBD23D218EF4F100B3AFBF /* AboutWindowContributorAvatarItem.xib */,
 				9E47DABF1E3CFA6D00457420 /* DurationDisplayTextField.swift */,
 				843FFD4C1D5DAA01001F3A44 /* RoundedTextFieldCell.swift */,
-				D19F9DA928645C860054CC45 /* DoubleClickEditTableView.swift */,
+				D19F9DA928645C860054CC45 /* EditableTableView.swift */,
+				D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */,
+				D1EAF5E628E6B6780023BACF /* TableChange.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
 				8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */,
@@ -2881,6 +2887,7 @@
 				84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */,
 				E38BA1C4254110BE000B551D /* JavascriptMessageHub.swift in Sources */,
 				845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */,
+				D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */,
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
 				D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */,
@@ -2931,7 +2938,7 @@
 				843FFD4D1D5DAA01001F3A44 /* RoundedTextFieldCell.swift in Sources */,
 				E30D2EBD21F5FD2600E1FF0D /* PluginOverlayView.swift in Sources */,
 				8407D1401E3A684C0043895D /* ViewLayer.swift in Sources */,
-				D19F9DAA28645C860054CC45 /* DoubleClickEditTableView.swift in Sources */,
+				D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */,
 				84A0BA9B1D2FAB4100BC8DA1 /* Parameter.swift in Sources */,
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
@@ -2945,6 +2952,7 @@
 				844DE1BF1D3E2B9900272589 /* MPVEvent.swift in Sources */,
 				845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */,
 				E33836852026223800ABC812 /* PrefOSCToolbarSettingsSheetController.swift in Sources */,
+				D1EAF5E728E6B6780023BACF /* TableChange.swift in Sources */,
 				E3958586253309C90096811F /* PluginSidebarView.swift in Sources */,
 				E301EFDA21312AB300BC8588 /* KeychainAccess.swift in Sources */,
 				8434BAA71D5DF2DA003BECF2 /* Extensions.swift in Sources */,

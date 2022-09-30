@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21225" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21225"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -47,9 +46,9 @@
                     <rect key="frame" x="196" y="62" width="491" height="320"/>
                     <clipView key="contentView" id="Hxb-1N-pOY">
                         <rect key="frame" x="1" y="1" width="489" height="318"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="KeyBindingsTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="KeyBindingsTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="489" height="295"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -69,10 +68,10 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="nMC-X0-DpK" userLabel="Key TableCellView">
-                                                <rect key="frame" x="1" y="1" width="121" height="18"/>
+                                                <rect key="frame" x="11" y="1" width="121" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" userLabel="Key TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" userLabel="Key TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="121" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="FcW-hn-lT4"/>
@@ -107,7 +106,7 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView id="oiC-ty-779" userLabel="Status TableCellView">
-                                                <rect key="frame" x="125" y="1" width="18" height="18"/>
+                                                <rect key="frame" x="135" y="1" width="18" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                 <subviews>
                                                     <imageView identifier="status" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="caJ-NG-b5Y" userLabel="Status Image">
@@ -142,10 +141,10 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="Fx4-cZ-KSl" userLabel="Action Table Cell View">
-                                                <rect key="frame" x="146" y="1" width="304" height="18"/>
+                                                <rect key="frame" x="156" y="1" width="304" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="308" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="1JE-NY-Qb1"/>
@@ -277,9 +276,9 @@
                     <rect key="frame" x="8" y="62" width="180" height="350"/>
                     <clipView key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71">
                         <rect key="frame" x="1" y="1" width="178" height="348"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="DoubleClickEditTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="178" height="348"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -302,7 +301,7 @@
                                                 <rect key="frame" x="1" y="1" width="156" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" userLabel="Name TextField" customClass="DoubleClickEditTextField" customModule="IINA" customModuleProvider="target">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" userLabel="Name TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="0.0" width="156" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="GN5-eh-pGI"/>
@@ -337,7 +336,7 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="S8W-AF-Z3k" userLabel="IsDefault TableCellView">
-                                                <rect key="frame" x="160" y="1" width="16" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="16" height="18"/>
                                                 <subviews>
                                                     <imageView identifier="isDefault" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bcd-Sf-UF4" userLabel="Locked Image">
                                                         <rect key="frame" x="2" y="-2.5" width="12" height="24"/>

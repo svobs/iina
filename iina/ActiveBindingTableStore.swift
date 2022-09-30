@@ -123,12 +123,12 @@ class ActiveBindingTableStore {
     }
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
-    let tableUpdate = TableUpdateByRowIndex(.moveRows)
+    let tableChange = TableChangeByRowIndex(.moveRows)
     Logger.log("MovePairs: \(moveIndexPairs)")
-    tableUpdate.toMove = moveIndexPairs
-    tableUpdate.newSelectedRows = newSelectedRows
+    tableChange.toMove = moveIndexPairs
+    tableChange.newSelectedRows = newSelectedRows
 
-    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
+    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -144,16 +144,16 @@ class ActiveBindingTableStore {
       clearFilter()
     }
 
-    let tableUpdate = TableUpdateByRowIndex(.addRows)
-    tableUpdate.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
-    tableUpdate.newSelectedRows = tableUpdate.toInsert!
+    let tableChange = TableChangeByRowIndex(.addRows)
+    tableChange.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
+    tableChange.newSelectedRows = tableChange.toInsert!
 
     var bindingRowsAllUpdated = bindingRowsAll
     for binding in bindingList.reversed() {
       bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
-    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableUpdate)
+    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -247,10 +247,10 @@ class ActiveBindingTableStore {
       }
     }
 
-    let tableUpdate = TableUpdateByRowIndex(.removeRows)
-    tableUpdate.toRemove = indexesToRemove
+    let tableChange = TableChangeByRowIndex(.removeRows)
+    tableChange.toRemove = indexesToRemove
 
-    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableUpdate)
+    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableChange)
   }
 
   func removeBindings(withIDs idsToRemove: [Int]) {
@@ -272,10 +272,10 @@ class ActiveBindingTableStore {
       remainingRowsUnfiltered.append(row)
     }
 
-    let tableUpdate = TableUpdateByRowIndex(.removeRows)
-    tableUpdate.toRemove = indexesToRemove
+    let tableChange = TableChangeByRowIndex(.removeRows)
+    tableChange.toRemove = indexesToRemove
 
-    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableUpdate)
+    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableChange)
   }
 
   func updateBinding(at index: Int, to binding: KeyMapping) {
@@ -288,9 +288,9 @@ class ActiveBindingTableStore {
 
     existingRow.keyMapping = binding
 
-    let tableUpdate = TableUpdateByRowIndex(.updateRows)
+    let tableChange = TableChangeByRowIndex(.updateRows)
 
-    tableUpdate.toUpdate = IndexSet(integer: index)
+    tableChange.toUpdate = IndexSet(integer: index)
 
     var indexToUpdate: Int = index
 
@@ -306,8 +306,8 @@ class ActiveBindingTableStore {
       clearFilter()
     }
 
-    tableUpdate.newSelectedRows = IndexSet(integer: indexToUpdate)
-    saveAndApplyBindingsStateUpdates(bindingRowsAll, tableUpdate)
+    tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
+    saveAndApplyBindingsStateUpdates(bindingRowsAll, tableChange)
   }
 
   private func isFiltered() -> Bool {
@@ -344,7 +344,7 @@ class ActiveBindingTableStore {
    3. Update the list of all bindings here.
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
+  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     // Save to file
     let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
     let inputConfigTableStore = (NSApp.delegate as! AppDelegate).inputConfigTableStore
@@ -352,16 +352,16 @@ class ActiveBindingTableStore {
       return
     }
 
-    applyDefaultSectionUpdates(defaultSectionBindings, tableUpdate)
+    applyDefaultSectionUpdates(defaultSectionBindings, tableChange)
   }
 
   /*
    Send to ActiveBindingController to ingest. It will return the updated list of all rows.
-   Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableUpdate`.
+   Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
    This is needed so that animations can work. But ActiveBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableUpdate: TableUpdateByRowIndex) {
+  func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex) {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
@@ -371,7 +371,7 @@ class ActiveBindingTableStore {
         return
       }
 
-      self.applyBindingTableUpdates(bindingRowsAllNew, tableUpdate)
+      self.applyBindingTableChanges(bindingRowsAllNew, tableChange)
     }
   }
 
@@ -380,15 +380,15 @@ class ActiveBindingTableStore {
   - Push update to the Key Bindings table in the UI so it can be animated.
   Expected to be run on the main thread.
   */
-  private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
+  private func applyBindingTableChanges(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableUpdate)
-    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableUpdate.changeType)", level: .verbose)
+    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChange)
+    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
@@ -399,14 +399,14 @@ class ActiveBindingTableStore {
 
     // FIXME: calculate diff, use animation
 
-    let tableUpdate = TableUpdateByRowIndex(.reloadAll)
+    let tableChange = TableChangeByRowIndex(.reloadAll)
 
     // Maintain selection across reloads by comparing binding IDs
     let selectedIDSet = resolveBindingIDsFromIndexes(selectedRowIndexes)
     let newSelectedRowIndexes = ActiveBindingTableStore.resolveIndexesFromBindingIDs(selectedIDSet, from: bindingRowsNew)
-    tableUpdate.newSelectedRows = newSelectedRowIndexes
+    tableChange.newSelectedRows = newSelectedRowIndexes
     Logger.log("Bindings table update: translated \(selectedRowIndexes.count)/\(bindingRowsAll.count) selections to \(newSelectedRowIndexes.count)/\(bindingRowsNew.count)")
 
-    self.applyBindingTableUpdates(bindingRowsNew, tableUpdate)
+    self.applyBindingTableChanges(bindingRowsNew, tableChange)
   }
 }

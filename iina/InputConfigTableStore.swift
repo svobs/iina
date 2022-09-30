@@ -254,9 +254,9 @@ class InputConfigTableStore {
   }
 
   // Replaces the current state with the given params, and fires listeners.
-  private func setConfigTableState(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableUpdate.ChangeType) {
-    let configTableUpdate = TableUpdateByRowID(changeType)
-    configTableUpdate.oldRows = configTableRows
+  private func setConfigTableState(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType) {
+    let configTableChange = TableChangeByStringElement(changeType)
+    configTableChange.oldRows = configTableRows
 
     let currentConfigNameChanged = !self.currentConfigName.equalsIgnoreCase(currentConfigNameNew)
 
@@ -276,13 +276,13 @@ class InputConfigTableStore {
     }
 
     configTableRows = buildConfigTableRows()
-    configTableUpdate.newRows = configTableRows
+    configTableChange.newRows = configTableRows
     if let currentConfigIndex = configTableRows.firstIndex(of: self.currentConfigName) {
-      configTableUpdate.newSelectedRows = IndexSet(integer: currentConfigIndex)
+      configTableChange.newSelectedRows = IndexSet(integer: currentConfigIndex)
     }
 
     // Finally, fire notification. This covers row selection too
-    NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableUpdate))
+    NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableChange))
   }
 
   // MARK: Input Config File serialize/deserialize
@@ -309,7 +309,7 @@ class InputConfigTableStore {
     self.currentParsedConfigFile = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
-    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableUpdateByRowIndex(.reloadAll))
+    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
   }
 
   // Input Config File: Save

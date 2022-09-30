@@ -13,7 +13,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private let COLUMN_INDEX_ACTION = 2
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
-  private unowned var tableView: DoubleClickEditTableView!
+  private unowned var tableView: EditableTableView!
   private var inputConfigTableStore: InputConfigTableStore {
     return (NSApp.delegate as! AppDelegate).inputConfigTableStore
   }
@@ -26,7 +26,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
-  init(_ kbTableView: DoubleClickEditTableView, selectionDidChangeHandler: @escaping () -> Void) {
+  init(_ kbTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = kbTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
@@ -39,7 +39,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditing
-    tableView.registerTableUpdateObserver(forName: .iinaKeyBindingsTableShouldUpdate)
+    tableView.registerTableChangeObserver(forName: .iinaKeyBindingsTableShouldUpdate)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
@@ -180,7 +180,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return inputConfigTableStore.isEditEnabledForCurrentConfig() && isRaw()
   }
 
-  // MARK: DoubleClickEditTableView callbacks
+  // MARK: EditableTableView callbacks
 
   func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit cell") else { return false }

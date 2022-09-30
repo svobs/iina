@@ -13,11 +13,11 @@ import Cocoa
 class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
   private let COLUMN_INDEX_NAME = 0
 
-  private unowned var tableView: DoubleClickEditTableView!
+  private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigTableStore!
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfigTableView: DoubleClickEditTableView, _ tableStore: InputConfigTableStore) {
+  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigTableStore) {
     self.tableView = inputConfigTableView
     self.tableStore = tableStore
 
@@ -30,7 +30,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
     tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
     tableView.onTextDidEndEditing = userDidEndEditingCurrentName
-    tableView.registerTableUpdateObserver(forName: .iinaInputConfigTableShouldUpdate)
+    tableView.registerTableChangeObserver(forName: .iinaInputConfigTableShouldUpdate)
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -103,7 +103,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     tableStore.changeCurrentConfig(tableView.selectedRow)
   }
 
-  // MARK: DoubleClickEditTableView callbacks
+  // MARK: EditableTableView callbacks
 
   func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
     if let configName = tableStore.getConfigRow(at: rowNumber), !tableStore.isDefaultConfig(configName) {
@@ -112,7 +112,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return false
   }
 
-  // User finished editing (callback from DoubleClickEditTextField).
+  // User finished editing (callback from EditableTextField).
   // Renames current comfig & its file on disk
   func userDidEndEditingCurrentName(_ newName: String, row: Int, column: Int) -> Bool {
     guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {

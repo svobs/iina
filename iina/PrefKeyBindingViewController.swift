@@ -42,8 +42,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   // MARK: - Outlets
 
-  @IBOutlet weak var inputConfigTableView: DoubleClickEditTableView!
-  @IBOutlet weak var kbTableView: DoubleClickEditTableView!
+  @IBOutlet weak var inputConfigTableView: EditableTableView!
+  @IBOutlet weak var kbTableView: EditableTableView!
   @IBOutlet weak var configHintLabel: NSTextField!
   @IBOutlet weak var addKmBtn: NSButton!
   @IBOutlet weak var removeKmBtn: NSButton!
