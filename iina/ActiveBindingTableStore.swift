@@ -101,7 +101,7 @@ class ActiveBindingTableStore {
 
     // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
     for (origIndex, row) in bindingRowsAll.enumerated() {
-      if let bindingID = row.mpvBinding.bindingID, movedBindingIDs.contains(bindingID) {
+      if let bindingID = row.keyMapping.bindingID, movedBindingIDs.contains(bindingID) {
         if origIndex < insertIndex {
           // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
           moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
@@ -178,9 +178,9 @@ class ActiveBindingTableStore {
   }
 
   private func findUnfilteredIndexOfActiveBinding(_ row: ActiveBinding) -> Int? {
-    if let bindingID = row.mpvBinding.bindingID {
+    if let bindingID = row.keyMapping.bindingID {
       for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
-        if unfilteredRow.mpvBinding.bindingID == bindingID {
+        if unfilteredRow.keyMapping.bindingID == bindingID {
           Logger.log("Found matching bindingID \(bindingID) at unfiltered row index \(unfilteredIndex)", level: .verbose)
           return unfilteredIndex
         }
@@ -194,7 +194,7 @@ class ActiveBindingTableStore {
     var idSet = Set<Int>()
     for index in indexes {
       if let row = getBindingRow(at: index) {
-        if let id = row.mpvBinding.bindingID {
+        if let id = row.keyMapping.bindingID {
           if let isExcluded = isExcluded, isExcluded(row) {
           } else {
             idSet.insert(id)
@@ -221,7 +221,7 @@ class ActiveBindingTableStore {
 
     var remainingRowsUnfiltered: [ActiveBinding] = []
     for row in bindingRowsAll {
-      if let id = row.mpvBinding.bindingID, idsToRemove.contains(id) {
+      if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
       } else {
         // be sure to include rows which do not have IDs
         remainingRowsUnfiltered.append(row)
@@ -242,7 +242,7 @@ class ActiveBindingTableStore {
     var remainingRowsUnfiltered: [ActiveBinding] = []
     var indexesToRemove = IndexSet()
     for (rowIndex, row) in bindingRowsAll.enumerated() {
-      if let id = row.mpvBinding.bindingID {
+      if let id = row.keyMapping.bindingID {
         // Non-editable rows probably do not have IDs, but check editable status to be sure
         if idsToRemove.contains(id) && row.isEditableByUser {
           indexesToRemove.insert(rowIndex)
@@ -267,7 +267,7 @@ class ActiveBindingTableStore {
       return
     }
 
-    existingRow.mpvBinding = binding
+    existingRow.keyMapping = binding
 
     let tableUpdate = TableUpdateByRowIndex(.updateRows)
 
@@ -310,7 +310,7 @@ class ActiveBindingTableStore {
   private func updateFilteredBindings() {
     if isFiltered() {
       bindingRowsFlltered = bindingRowsAll.filter {
-        $0.mpvBinding.rawKey.localizedStandardContains(filterString) || $0.mpvBinding.rawAction.localizedStandardContains(filterString)
+        $0.keyMapping.rawKey.localizedStandardContains(filterString) || $0.keyMapping.rawAction.localizedStandardContains(filterString)
       }
     } else {
       bindingRowsFlltered = bindingRowsAll
@@ -327,7 +327,7 @@ class ActiveBindingTableStore {
    */
   private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
     // Save to file
-    let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.mpvBinding })
+    let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
     let inputConfigTableStore = (NSApp.delegate as! AppDelegate).inputConfigTableStore
     guard let defaultSectionBindings = inputConfigTableStore.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
       return

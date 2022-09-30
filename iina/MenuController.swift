@@ -577,17 +577,17 @@ class MenuController: NSObject, NSMenuDelegate {
     var failureList: [ActiveBinding] = []
     for pluginBinding in pluginBindings {
       guard pluginBinding.isMenuItem && pluginBinding.origin == .iinaPlugin else { continue }
-      guard let mapping = pluginBinding.mpvBinding as? PluginKeyMapping else { continue }
+      guard let keyMapping = pluginBinding.keyMapping as? PluginKeyMapping else { continue }
 
       if pluginBinding.isEnabled {
         // Conflict! Key binding already reserved
         failureList.append(pluginBinding)
-        mapping.menuItem.keyEquivalent = ""
-        mapping.menuItem.keyEquivalentModifierMask = []
+        keyMapping.menuItem.keyEquivalent = ""
+        keyMapping.menuItem.keyEquivalentModifierMask = []
       } else {
-        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mapping.normalizedMpvKey) {
-          mapping.menuItem.keyEquivalent = kEqv
-          mapping.menuItem.keyEquivalentModifierMask = kMdf
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: keyMapping.normalizedMpvKey) {
+          keyMapping.menuItem.keyEquivalent = kEqv
+          keyMapping.menuItem.keyEquivalentModifierMask = kMdf
         }
       }
     }
@@ -858,7 +858,7 @@ class MenuController: NSObject, NSMenuDelegate {
       var bound = false
       for bindingRow in mpvBindings {
         guard bindingRow.isEnabled else { continue }
-        let kb = bindingRow.mpvBinding
+        let kb = bindingRow.keyMapping
         guard kb.isIINACommand == isIINACmd else { continue }
         let (sameAction, value) = sameKeyAction(kb.action, actions, normalizeLastNum, numRange)
         if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {

@@ -16,7 +16,7 @@
  */
 class ActiveBinding: NSObject, Codable {
   // Will be nil for plugin bindings.
-  var mpvBinding: KeyMapping
+  var keyMapping: KeyMapping
 
   var origin: InputBindingOrigin
 
@@ -38,8 +38,8 @@ class ActiveBinding: NSObject, Codable {
   // for use in UI only
   var statusMessage: String = ""
 
-  init(_ mpvBinding: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
-    self.mpvBinding = mpvBinding
+  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
+    self.keyMapping = keyMapping
     self.origin = origin
     self.srcSectionName = srcSectionName
     self.isMenuItem = isMenuItem
@@ -47,8 +47,8 @@ class ActiveBinding: NSObject, Codable {
   }
 
   convenience init(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) {
-    let mapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
-    self.init(mapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
+    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
+    self.init(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
   }
 
   var isEditableByUser: Bool {
@@ -60,13 +60,13 @@ class ActiveBinding: NSObject, Codable {
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
       guard let data = propertyList as? Data,
           let row = try? PropertyListDecoder().decode(ActiveBinding.self, from: data) else { return nil }
-    self.init(row.mpvBinding, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
+    self.init(row.keyMapping, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
   }
 
   // Plugin bindings only
   static func makeActiveBindingForPlugin(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) -> ActiveBinding {
-    let mapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
-    return ActiveBinding(mapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
+    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
+    return ActiveBinding(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
   }
 }
 
@@ -90,7 +90,7 @@ extension ActiveBinding: NSPasteboardWriting, NSPasteboardReading {
   func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
     switch type {
       case .string:
-        return NSString(utf8String: self.mpvBinding.confFileFormat)
+        return NSString(utf8String: self.keyMapping.confFileFormat)
       case .iinaActiveBinding:
         return try? PropertyListEncoder().encode(self)
       default:

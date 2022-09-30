@@ -167,7 +167,7 @@ class PlayerInputConfig {
    Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
    */
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    AppActiveBindings.current.resolverDict[keySequence]?.mpvBinding
+    AppActiveBindings.current.resolverDict[keySequence]?.keyMapping
   }
 
   /*
@@ -217,15 +217,15 @@ class PlayerInputConfig {
           appBindings.logCurrentResolverDictContents()
           return nil
         }
-        let mapping = binding.mpvBinding
-        if mapping.isIgnored {
-          log("Ignoring \"\(mapping.normalizedMpvKey)\" (from: \"\(binding.srcSectionName)\")", level: .verbose)
+        let keyMapping = binding.keyMapping
+        if keyMapping.isIgnored {
+          log("Ignoring \"\(keyMapping.normalizedMpvKey)\" (from: \"\(binding.srcSectionName)\")", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \"\(mapping.normalizedMpvKey)\" -> \(mapping.action) (from: \"\(binding.srcSectionName)\")")
+          log("Resolved keySeq \"\(keyMapping.normalizedMpvKey)\" -> \(keyMapping.action) (from: \"\(binding.srcSectionName)\")")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
-          return mapping
+          return keyMapping
         }
       }
     }

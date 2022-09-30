@@ -38,7 +38,7 @@ class InputSectionStack {
   static func replaceDefaultSectionBindings(_ bindings: [KeyMapping]) {
     dq.sync {
       if let defaultSection = shared.sectionsDefined[DefaultInputSection.NAME] as? DefaultInputSection {
-        defaultSection.setKeyBindingList(bindings)
+        defaultSection.setKeyMappingList(bindings)
       }
     }
   }
@@ -49,10 +49,10 @@ class InputSectionStack {
       if let pluginsSection = shared.sectionsDefined[DefaultInputSection.NAME] as? PluginsInputSection {
         // Try to minimize duplicate work by detecting when there is no change.
         // TODO: get more sophisticated than this simple check
-        if !pluginsSection.keyBindingList.isEmpty || !bindings.contains(where: { type(of: $0) == PluginKeyMapping.self}) {
+        if !pluginsSection.keyMappingList.isEmpty || !bindings.contains(where: { type(of: $0) == PluginKeyMapping.self}) {
           changed = true
         } else {
-          pluginsSection.setKeyBindingList(bindings)
+          pluginsSection.setKeyMappingList(bindings)
         }
       }
     }
@@ -134,7 +134,7 @@ class InputSectionStack {
   }
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<ActiveBinding>) {
-    if inputSection.keyBindingList.isEmpty {
+    if inputSection.keyMappingList.isEmpty {
       if AppActiveBindings.LOG_BINDINGS_REBUILD {
         log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
       }
@@ -144,14 +144,14 @@ class InputSectionStack {
       }
       if inputSection.isForce {
         // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
-        for keyBinding in inputSection.keyBindingList {
-          let activeBinding = buildNewActiveBinding(from: keyBinding, sectionName: inputSection.name)
+        for keyMapping in inputSection.keyMappingList {
+          let activeBinding = buildNewActiveBinding(from: keyMapping, sectionName: inputSection.name)
           linkedList.append(activeBinding)
         }
       } else {
         // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
-        for keyBinding in inputSection.keyBindingList.reversed() {
-          let activeBinding = buildNewActiveBinding(from: keyBinding, sectionName: inputSection.name)
+        for keyMapping in inputSection.keyMappingList.reversed() {
+          let activeBinding = buildNewActiveBinding(from: keyMapping, sectionName: inputSection.name)
           linkedList.prepend(activeBinding)
         }
       }
@@ -162,25 +162,25 @@ class InputSectionStack {
    Derive the binding's metadata from the binding, and check for certain disqualifying commands and/or syntax.
    If invalid, the returned object will have `isEnabled` set to `false`; otherwise `isEnabled` will be set to `true`.
    Note: this mey or may not also create a different `KeyMapping` object with modified contents than the one supplied,
-   and put it into `binding.mpvBinding`.
+   and put it into `binding.keyMapping`.
    */
-  private func buildNewActiveBinding(from mpvBinding: KeyMapping, sectionName: String) -> ActiveBinding {
-    let binding = ActiveBinding(mpvBinding, origin: .confFile, srcSectionName: sectionName, isMenuItem: false, isEnabled: false)
+  private func buildNewActiveBinding(from keyMapping: KeyMapping, sectionName: String) -> ActiveBinding {
+    let binding = ActiveBinding(keyMapping, origin: .confFile, srcSectionName: sectionName, isMenuItem: false, isEnabled: false)
 
-    if mpvBinding.rawKey == "default-bindings" && mpvBinding.action.count == 1 && mpvBinding.action[0] == "start" {
+    if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       binding.statusMessage = "IINA does not use default-level (\"weak\") bindings"
       return binding
     }
 
     // Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
-    if let destinationSectionName = mpvBinding.destinationSection {
+    if let destinationSectionName = keyMapping.destinationSection {
       if destinationSectionName == sectionName {
         // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
-        let newRawAction = Array(mpvBinding.action.dropFirst()).joined(separator: " ")
-        binding.mpvBinding = KeyMapping(rawKey: mpvBinding.rawKey, rawAction: newRawAction, isIINACommand: mpvBinding.isIINACommand, comment: mpvBinding.comment)
+        let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
+        binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
       } else {
-        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(mpvBinding.rawKey)", level: .verbose)
+        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(keyMapping.rawKey)", level: .verbose)
         binding.statusMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
         return binding
       }
@@ -224,7 +224,7 @@ class InputSectionStack {
   func defineSection(_ inputSection: MPVInputSection) {
     dq.sync {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
-      if inputSection.keyBindingList.isEmpty && sectionsDefined[inputSection.name] != nil {
+      if inputSection.keyMappingList.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
         log("New definition of \"\(inputSection.name)\" contains no bindings: disabling & removing it")
         disableSection_Unsafe(inputSection.name)
@@ -304,7 +304,7 @@ class InputSectionStack {
 
   private func extractScriptNames(inputSection: MPVInputSection) -> Set<String> {
     var scriptNameSet = Set<String>()
-    for kb in inputSection.keyBindingList {
+    for kb in inputSection.keyMappingList {
       if kb.action.count == 2 && kb.action[0] == MPVCommand.scriptBinding.rawValue {
         let scriptBindingName = kb.action[1]
         if let scriptName = parseScriptName(from: scriptBindingName) {

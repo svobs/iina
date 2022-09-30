@@ -31,7 +31,7 @@ class AppActiveBindings {
 
   func logCurrentResolverDictContents() {
     if AppActiveBindings.LOG_BINDINGS_REBUILD, Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = resolverDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.mpvBinding.readableAction)") }
+      let bindingList = resolverDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.keyMapping.readableAction)") }
       Logger.log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
     }
   }
@@ -57,13 +57,13 @@ class AppActiveBindingsBuilder {
     for binding in bindingCandidateList {
       guard binding.isEnabled else { continue }
 
-      let key = binding.mpvBinding.normalizedMpvKey
+      let key = binding.keyMapping.normalizedMpvKey
 
       // If multiple bindings map to the same key, favor the last one always.
       if let prevSameKeyBinding = resolverDict[key] {
         prevSameKeyBinding.isEnabled = false
         if prevSameKeyBinding.origin == .iinaPlugin {
-          prevSameKeyBinding.statusMessage = "\"\(key)\" is overridden by \"\(binding.mpvBinding.readableAction)\". Plugins must use key bindings which have not already been used."
+          prevSameKeyBinding.statusMessage = "\"\(key)\" is overridden by \"\(binding.keyMapping.readableAction)\". Plugins must use key bindings which have not already been used."
         } else {
           prevSameKeyBinding.statusMessage = "This binding was overridden by another binding below it which also uses \"\(key)\""
         }

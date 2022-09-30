@@ -90,7 +90,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return nil
     }
     let columnName = identifier.rawValue
-    let binding = bindingRow.mpvBinding
+    let binding = bindingRow.keyMapping
 
     switch columnName {
       case "keyColumn":
@@ -215,15 +215,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     switch columnIndex {
       case COLUMN_INDEX_KEY:
-        editedRow.mpvBinding.rawKey = newValue
+        editedRow.keyMapping.rawKey = newValue
       case COLUMN_INDEX_ACTION:
-        editedRow.mpvBinding.rawAction = newValue
+        editedRow.keyMapping.rawAction = newValue
       default:
         Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
         return false
     }
 
-    bindingTableStore.updateBinding(at: rowIndex, to: editedRow.mpvBinding)
+    bindingTableStore.updateBinding(at: rowIndex, to: editedRow.keyMapping)
     return true
   }
 
@@ -255,12 +255,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    showEditBindingPopup(key: row.mpvBinding.rawKey, action: row.mpvBinding.readableAction) { key, action in
+    showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
-      row.mpvBinding.rawKey = key
-      row.mpvBinding.rawAction = action
+      row.keyMapping.rawKey = key
+      row.keyMapping.rawAction = action
 
-      self.bindingTableStore.updateBinding(at: rowIndex, to: row.mpvBinding)
+      self.bindingTableStore.updateBinding(at: rowIndex, to: row.keyMapping)
     }
   }
 
@@ -321,7 +321,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   private func copyBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
-    let newBindings: [KeyMapping] = rowList.map { $0.mpvBinding.copy() as! KeyMapping }
+    let newBindings: [KeyMapping] = rowList.map { $0.keyMapping.copy() as! KeyMapping }
 
     let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
 
@@ -331,7 +331,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private func moveBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
 
-    let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.mpvBinding }
+    let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.keyMapping }
     guard !editableBindings.isEmpty else {
       Logger.log("Aborting move: none of the \(rowList.count) dragged bindings is editable")
       return
@@ -388,7 +388,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       }
     }
 
-    bindingTableStore.removeBindings(withIDs: rowList.map{$0.mpvBinding.bindingID!})
+    bindingTableStore.removeBindings(withIDs: rowList.map{$0.keyMapping.bindingID!})
   }
 
   private func getBindingRowsOrEmptyList(from pasteboard: NSPasteboard) -> [ActiveBinding] {

@@ -18,10 +18,10 @@ protocol InputSection: CustomStringConvertible {
   // Section name must be unique within a player core
   var name: String { get }
 
-  var keyBindingList: [KeyMapping] { get }
+  var keyMappingList: [KeyMapping] { get }
 
   /*
-   If true, indicates that all bindings in `keyBindingList` are "force" (AKA "strong")
+   If true, indicates that all bindings in `keyMappingList` are "force" (AKA "strong")
    in the mpv vocabulary: each will always override any previous binding with the same key.
    If false, indicates that they are all "weak": each will only be enabled if no previous binding with the same key has been set
    */
@@ -39,27 +39,27 @@ class MPVInputSection: InputSection {
   static let FLAG_EXCLUSIVE = "exclusive"
 
   let name: String
-  fileprivate(set) var keyBindingList: [KeyMapping]
+  fileprivate(set) var keyMappingList: [KeyMapping]
   let isForce: Bool
   let origin: InputBindingOrigin
 
-  init(name: String, _ keyBindingsDict: [String: KeyMapping], isForce: Bool, origin: InputBindingOrigin) {
+  init(name: String, _ keyMappingsDict: [String: KeyMapping], isForce: Bool, origin: InputBindingOrigin) {
     self.name = name
-    self.keyBindingList = Array(keyBindingsDict.values)
+    self.keyMappingList = Array(keyMappingsDict.values)
     self.isForce = isForce
     self.origin = origin
   }
 
-  init(name: String, _ keyBindingsArray: [KeyMapping], isForce: Bool, origin: InputBindingOrigin) {
+  init(name: String, _ keyMappingsArray: [KeyMapping], isForce: Bool, origin: InputBindingOrigin) {
     self.name = name
-    self.keyBindingList = keyBindingsArray
+    self.keyMappingList = keyMappingsArray
     self.isForce = isForce
     self.origin = origin
   }
 
   var description: String {
     get {
-      "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyBindingList.count) bindings)"
+      "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyMappingList.count) bindings)"
     }
   }
 }
@@ -72,9 +72,9 @@ class DefaultInputSection: MPVInputSection {
     super.init(name: DefaultInputSection.NAME, [], isForce: true, origin: .confFile)
   }
 
-  func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" with \(keyBindingList.count) entries", level: .verbose)
-    self.keyBindingList = keyBindingList
+  func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
+    Logger.log("Replacing key bindings in \"\(name)\" with \(keyMappingList.count) entries", level: .verbose)
+    self.keyMappingList = keyMappingList
   }
 }
 
@@ -84,8 +84,8 @@ class PluginsInputSection: MPVInputSection {
     super.init(name: PluginsInputSection.NAME, [], isForce: false, origin: .iinaPlugin)
   }
 
-  func setKeyBindingList(_ keyBindingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" with \(keyBindingList.count) entries", level: .verbose)
-    self.keyBindingList = keyBindingList
+  func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
+    Logger.log("Replacing key bindings in \"\(name)\" with \(keyMappingList.count) entries", level: .verbose)
+    self.keyMappingList = keyMappingList
   }
 }

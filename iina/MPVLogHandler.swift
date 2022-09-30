@@ -100,16 +100,16 @@ class MPVLogHandler {
   }
 
   private func parseBindingsFromDefineSectionContents(_ contentsUnparsed: String) -> [KeyMapping] {
-    var mappings: [KeyMapping] = []
+    var keyMappings: [KeyMapping] = []
     if contentsUnparsed.isEmpty {
-      return mappings
+      return keyMappings
     }
 
     for line in contentsUnparsed.components(separatedBy: "\\n") {
       if !line.isEmpty {
         let tokens = line.split(separator: " ")
         if tokens.count == 3 && tokens[1] == MPVCommand.scriptBinding.rawValue {
-          mappings.append(KeyMapping(rawKey: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
+          keyMappings.append(KeyMapping(rawKey: String(tokens[0]), rawAction: "\(tokens[1]) \(tokens[2])"))
         } else {
           // "This command can be used to dispatch arbitrary keys to a script or a client API user".
           // Need to figure out whether to add support for these as well.
@@ -117,7 +117,7 @@ class MPVLogHandler {
         }
       }
     }
-    return mappings
+    return keyMappings
   }
 
   /*
@@ -157,10 +157,10 @@ class MPVLogHandler {
     }
 
     let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
-    Logger.log("define-section: \"\(section.name)\", mappings=\(section.keyBindingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
+    Logger.log("define-section: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = section.keyBindingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
-      Logger.log("Bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
+      let keyMappingList = section.keyMappingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
+      Logger.log("Bindings:\n\(keyMappingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
     }
     player.inputConfig.defineSection(section)
     return true

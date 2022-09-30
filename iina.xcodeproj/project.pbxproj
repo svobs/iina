@@ -1919,8 +1919,8 @@
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
 				D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */,
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
-				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
+				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
 				D1FA42E428E5E54700DF49DD /* AppActiveBindings.swift */,
 			);
 			name = Models;
