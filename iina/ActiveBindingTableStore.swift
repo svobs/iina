@@ -362,6 +362,8 @@ class ActiveBindingTableStore {
   Expected to be run on the main thread.
   */
   private func applyBindingTableUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableUpdate: TableUpdateByRowIndex) {
+    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
@@ -374,6 +376,8 @@ class ActiveBindingTableStore {
   // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
   // Expected to be run on the main thread.
   func appActiveBindingsDidChange(_ activeBindingList: [ActiveBinding]) {
+    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+
     // FIXME: calculate diff, use animation
     // TODO: add code to maintain selection across reloads
     let tableUpdate = TableUpdateByRowIndex(.reloadAll)

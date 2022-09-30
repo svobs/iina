@@ -65,6 +65,8 @@ class PlayerInputConfig {
 
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
 
+  static var lastBuildVersion: Int = 0
+
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
    Rebuilds `appBindingsList` and `currentResolverDict`, updating menu item key equivalents along the way.
@@ -74,7 +76,7 @@ class PlayerInputConfig {
    Should be run on the main thread. For other threads, see `rebuildAppBindingsAsync()`
    */
   static func rebuildAppBindings() -> AppActiveBindings {
-    Logger.log("Rebuilding app active bindings", level: .verbose)
+    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
       Logger.fatal("rebuildAppBindings(): no active player!")
@@ -93,7 +95,20 @@ class PlayerInputConfig {
 
   // Same as `rebuildAppBindings()`, but kicks off an async task and notifies Key Bindings table
   static func rebuildAppBindingsAsync() {
+    dispatchPrecondition(condition: .notOnQueue(DispatchQueue.main))
+
+    let rebuildVersion = PlayerInputConfig.lastBuildVersion + 1
+    Logger.log("Requesting app active bindings rebuild (v\(rebuildVersion))", level: .verbose)
+
     DispatchQueue.main.async {
+      // Optimization: drop all but the most recent request
+      if PlayerInputConfig.lastBuildVersion >= rebuildVersion {
+        Logger.log("No need to rebuild app active bindings - already at v\(PlayerInputConfig.lastBuildVersion)", level: .verbose)
+        return
+      }
+      PlayerInputConfig.lastBuildVersion = rebuildVersion
+      Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
+
       let newAppBindings = rebuildAppBindings()
 
       // Notify binding table
