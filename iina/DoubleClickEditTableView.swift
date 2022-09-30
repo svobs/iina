@@ -85,7 +85,6 @@ class DoubleClickEditTextField: NSTextField, NSTextFieldDelegate {
   }
 
   override func becomeFirstResponder() -> Bool {
-    // FIXME: put this elsewhere
     self.beginEditing()
     return true
   }
@@ -254,14 +253,14 @@ class DoubleClickEditTableView: NSTableView {
 
   private func nextTabColumnIndex(_ columnIndex: Int) -> Int {
     if let indexIndex = getIndexOfEditableColumn(columnIndex) {
-      return editableTextColumnIndexes[(indexIndex+1) % editableTextColumnIndexes.count]
+      return editableTextColumnIndexes[(indexIndex+1) %% editableTextColumnIndexes.count]
     }
     return editableTextColumnIndexes[0]
   }
 
   private func prevTabColumnIndex(_ columnIndex: Int) -> Int {
     if let indexIndex = getIndexOfEditableColumn(columnIndex) {
-      return editableTextColumnIndexes[(indexIndex-1) % editableTextColumnIndexes.count]
+      return editableTextColumnIndexes[(indexIndex-1) %% editableTextColumnIndexes.count]
     }
     return editableTextColumnIndexes[0]
   }
