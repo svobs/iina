@@ -355,22 +355,7 @@ class Utility {
     return allTypes.first { supportedFileExt[$0]!.contains(ext.lowercased()) }
   }
 
-  static func getFilePath(Configs userConfigs: [String: Any]!, forConfig conf: String, showAlert: Bool = true) -> String? {
-
-    // if is default config
-    if let dv = AppData.defaultConfigs[conf] {
-      return dv
-    } else if let uv = userConfigs[conf] as? String {
-      return uv
-    } else {
-      if showAlert {
-        Utility.showAlert("error_finding_file", arguments: ["config"])
-      }
-      return nil
-    }
-  }
-
-  static func computeConfigFilePath(for userConfigName: String) -> String {
+  static func buildConfigFilePath(for userConfigName: String) -> String {
     return Utility.userInputConfDirURL.appendingPathComponent(userConfigName + AppData.configFileExtension).path
   }
 

@@ -224,7 +224,7 @@ class InputConfigTableStore {
       return false
     }
 
-    let newFilePath = Utility.computeConfigFilePath(for: newName)
+    let newFilePath = Utility.buildConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
     setConfigTableState(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)

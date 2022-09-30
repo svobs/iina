@@ -186,8 +186,8 @@ class MPVController: NSObject {
     let setScreenshotPath = { (key: Preference.Key) -> String in
       let screenshotPath = Preference.string(for: .screenshotFolder)!
       return Preference.bool(for: .screenshotSaveToFile) ?
-        NSString(string: screenshotPath).expandingTildeInPath :
-        Utility.screenshotCacheURL.path
+      NSString(string: screenshotPath).expandingTildeInPath :
+      Utility.screenshotCacheURL.path
     }
 
     setUserOption(PK.screenshotFolder, type: .other, forName: MPVOption.Screenshot.screenshotDirectory, transformer: setScreenshotPath)
@@ -322,7 +322,7 @@ class MPVController: NSObject {
     setUserOption(PK.ytdlEnabled, type: .bool, forName: MPVOption.ProgramBehavior.ytdl)
     setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions)
     chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.resetOnNextFile,
-            "\(MPVOption.PlaybackControl.abLoopA),\(MPVOption.PlaybackControl.abLoopB)"))
+                                 "\(MPVOption.PlaybackControl.abLoopA),\(MPVOption.PlaybackControl.abLoopB)"))
 
     // Set user defined conf dir.
     if Preference.bool(for: .enableAdvancedSettings),
@@ -343,7 +343,7 @@ class MPVController: NSObject {
           let status = mpv_set_option_string(mpv, op[0], op[1])
           if status < 0 {
             Utility.showAlert("extra_option.error", arguments:
-              [op[0], op[1], status])
+                                [op[0], op[1], status])
           }
         }
       } else {
@@ -355,11 +355,11 @@ class MPVController: NSObject {
 
     // Load keybindings. This is still required for mpv to handle media keys or apple remote.
     let userConfigs = Preference.dictionary(for: .inputConfigs)
-    var inputConfPath =  AppData.defaultConfigs[AppData.defaultConfigNamesSorted[0]]
-    if let confFromUd = Preference.string(for: .currentInputConfigName) {
-      if let currentConfigFilePath = Utility.getFilePath(Configs: userConfigs, forConfig: confFromUd, showAlert: false) {
-        inputConfPath = currentConfigFilePath
-      }
+    let inputConfPath: String
+    if let currentConfigFilePath = (NSApp.delegate as! AppDelegate).inputConfigTableStore.currentConfigFilePath {
+      inputConfPath = currentConfigFilePath
+    } else {
+      inputConfPath = AppData.defaultConfigs[AppData.defaultConfigNamesSorted[0]]!
     }
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
 
