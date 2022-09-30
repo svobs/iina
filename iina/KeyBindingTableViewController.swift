@@ -168,6 +168,8 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   // MARK: NSTableViewDelegate
 
   func tableViewSelectionDidChange(_ notification: Notification) {
+    // cache this for possible later use
+    bindingTableStore.selectedRowIndexes = tableView.selectedRowIndexes
     selectionDidChangeHandler()
   }
 
@@ -423,7 +425,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Update that little red number:
     info.numberOfValidItemsForDrop = rowList.count
 
-    // TODO: change drop row & operatiom if dropping into non-conf-file territory
+    // FIXME: change drop row & operatiom if dropping into non-conf-file territory
 
     if dropOperation == .on {
       // Cannot drop on/into existing rows. Put below it

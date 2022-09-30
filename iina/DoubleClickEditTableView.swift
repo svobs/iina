@@ -32,6 +32,8 @@ class TableUpdate {
     case moveRows
     case renameAndMoveOneRow
     case updateRows
+    // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
+    // use this only when absolutely needed:
     case reloadAll
   }
 
@@ -381,7 +383,7 @@ class DoubleClickEditTableView: NSTableView {
         reloadExistingRows()
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("ReloadAll", level: .verbose)
+        Logger.log("TableUpdateByRowIndex: ReloadAll", level: .verbose)
         reloadData()
     }
 
@@ -422,7 +424,7 @@ class DoubleClickEditTableView: NSTableView {
         Logger.fatal("Not yet supported: moveRows for TableUpdateByRowID")
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("ReloadAll", level: .verbose)
+        Logger.log("TableUpdateByRowID: ReloadAll", level: .verbose)
         reloadData()
     }
 
@@ -504,7 +506,7 @@ class DoubleClickEditTableView: NSTableView {
       tableIndex += 1
     }
     guard !indexesOfInserts.isEmpty else {
-      Logger.log("TableUpdate: \(newRowsArray.count) adds but no inserts!", level: .error)
+      Logger.log("TableUpdateByRowID: \(newRowsArray.count) adds but no inserts!", level: .error)
       return
     }
     Logger.log("Inserting \(indexesOfInserts.count) indexes into table")

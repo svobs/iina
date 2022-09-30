@@ -28,6 +28,8 @@ class ActiveBindingTableStore {
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
 
+  var selectedRowIndexes = IndexSet()
+
   // MARK: Bindings Table CRUD
 
   func getBindingRowCount() -> Int {
@@ -190,21 +192,38 @@ class ActiveBindingTableStore {
     return nil
   }
 
-  private func resolveBindingIDsFromIndexes(_ indexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)?) -> Set<Int> {
+  private func resolveBindingIDsFromIndexes(_ rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
     var idSet = Set<Int>()
-    for index in indexes {
-      if let row = getBindingRow(at: index) {
+    for rowIndex in rowIndexes {
+      if let row = getBindingRow(at: rowIndex) {
         if let id = row.keyMapping.bindingID {
           if let isExcluded = isExcluded, isExcluded(row) {
           } else {
             idSet.insert(id)
           }
         } else {
-          Logger.log("Cannot remove row at index \(index): binding has no ID!", level: .error)
+          Logger.log("Cannot resolve row at index \(rowIndex): binding has no ID!", level: .error)
         }
       }
     }
     return idSet
+  }
+
+  // Opposite of previous
+  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, from rows: [ActiveBinding]) -> IndexSet {
+    var indexSet = IndexSet()
+    for targetID in bindingIDs {
+      for (rowIndex, row) in rows.enumerated() {
+        guard let rowID = row.keyMapping.bindingID else {
+          Logger.log("Cannot resolve row at index \(rowIndex): binding has no ID!", level: .error)
+          continue
+        }
+        if rowID == targetID {
+          indexSet.insert(rowIndex)
+        }
+      }
+    }
+    return indexSet
   }
 
   func removeBindings(at indexesToRemove: IndexSet) {
@@ -304,7 +323,7 @@ class ActiveBindingTableStore {
   func filterBindings(_ searchString: String) {
     Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
-    applyBindingTableUpdates(bindingRowsAll, TableUpdateByRowIndex(.reloadAll))
+    appActiveBindingsDidChange(bindingRowsAll)
   }
 
   private func updateFilteredBindings() {
@@ -375,13 +394,19 @@ class ActiveBindingTableStore {
 
   // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
   // Expected to be run on the main thread.
-  func appActiveBindingsDidChange(_ activeBindingList: [ActiveBinding]) {
+  func appActiveBindingsDidChange(_ bindingRowsNew: [ActiveBinding]) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // FIXME: calculate diff, use animation
-    // TODO: add code to maintain selection across reloads
+
     let tableUpdate = TableUpdateByRowIndex(.reloadAll)
 
-    self.applyBindingTableUpdates(activeBindingList, tableUpdate)
+    // Maintain selection across reloads by comparing binding IDs
+    let selectedIDSet = resolveBindingIDsFromIndexes(selectedRowIndexes)
+    let newSelectedRowIndexes = ActiveBindingTableStore.resolveIndexesFromBindingIDs(selectedIDSet, from: bindingRowsNew)
+    tableUpdate.newSelectedRows = newSelectedRowIndexes
+    Logger.log("Bindings table update: translated \(selectedRowIndexes.count)/\(bindingRowsAll.count) selections to \(newSelectedRowIndexes.count)/\(bindingRowsNew.count)")
+
+    self.applyBindingTableUpdates(bindingRowsNew, tableUpdate)
   }
 }
