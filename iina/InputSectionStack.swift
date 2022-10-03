@@ -8,15 +8,15 @@
 
 import Foundation
 
-fileprivate let dq = DispatchQueue.global(qos: .userInitiated)
-
 /*
  Every player contains an InputSectionStack, to keep track of key binding assignments. See `PlayerInputConfig` for more info.
  */
 class InputSectionStack {
+  // More than one of these is probably excessive, since there will only ever be one active player at a time making changes
+  static let dq = DispatchQueue.global(qos: .userInitiated)
 
   // For internal use, in `sectionsEnabled`
-  private struct EnabledSectionMeta {
+  struct EnabledSectionMeta {
     let name: String
 
     /*
@@ -65,7 +65,7 @@ class InputSectionStack {
   // MARK: Single player instance
 
   /* mpv euivalent:   `struct cmd_bind_section **sections` */
-  private var sectionsDefined: [String : InputSection] = [:]
+  var sectionsDefined: [String : InputSection] = [:]
 
   /*
    mpv equivalent: `struct active_section active_sections[MAX_ACTIVE_SECTIONS];` (MAX_ACTIVE_SECTIONS = 50)
@@ -73,7 +73,7 @@ class InputSectionStack {
    But it is also keyed by section name. Adding a section to the list with the same name as something in the list will
    remove the previous section from wherever it is before pushing the new section to the front.
    */
-  private var sectionsEnabled = LinkedList<EnabledSectionMeta>()
+  var sectionsEnabled = LinkedList<EnabledSectionMeta>()
 
   let subsystem: Logger.Subsystem
 
@@ -102,94 +102,6 @@ class InputSectionStack {
   // Utility function
   private func log(_ msg: String, level: Logger.Level = .debug) {
     Logger.log(msg, level: level, subsystem: subsystem)
-  }
-
-  // MARK: Building AppInputConfig
-
-  /*
-   Generates ActiveBindings for all the bindings in all the InputSections in this stack, and combines them into a single list.
-   Some basic individual validation is performed on each, so some will have isEnabled set to false.
-   Bindings with identical keys will not be filtered or disabled here.
-   */
-  func combineEnabledSectionBindings() -> [ActiveBinding] {
-    dq.sync {
-      var linkedList = LinkedList<ActiveBinding>()
-
-      // Iterate from top to the bottom of the "stack":
-      for enabledSectionMeta in sectionsEnabled {
-        guard let inputSection = sectionsDefined[enabledSectionMeta.name] else {
-          // indicates serious internal error
-          log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
-          continue
-        }
-
-        addAllBindings(from: inputSection, to: &linkedList)
-
-        if enabledSectionMeta.isExclusive {
-          log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
-          return Array<ActiveBinding>(linkedList)
-        }
-      }
-
-      return Array<ActiveBinding>(linkedList)
-    }
-  }
-
-  private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<ActiveBinding>) {
-    if inputSection.keyMappingList.isEmpty {
-      if AppInputConfig.LOG_BINDINGS_REBUILD {
-        log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
-      }
-    } else {
-      if AppInputConfig.LOG_BINDINGS_REBUILD {
-        log("RebuildBindings: adding from \(inputSection)", level: .verbose)
-      }
-      if inputSection.isForce {
-        // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
-        for keyMapping in inputSection.keyMappingList {
-          let activeBinding = buildNewActiveBinding(from: keyMapping, section: inputSection)
-          linkedList.append(activeBinding)
-        }
-      } else {
-        // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
-        for keyMapping in inputSection.keyMappingList.reversed() {
-          let activeBinding = buildNewActiveBinding(from: keyMapping, section: inputSection)
-          linkedList.prepend(activeBinding)
-        }
-      }
-    }
-  }
-
-  /*
-   Derive the binding's metadata from the binding, and check for certain disqualifying commands and/or syntax.
-   If invalid, the returned object will have `isEnabled` set to `false`; otherwise `isEnabled` will be set to `true`.
-   Note: this mey or may not also create a different `KeyMapping` object with modified contents than the one supplied,
-   and put it into `binding.keyMapping`.
-   */
-  private func buildNewActiveBinding(from keyMapping: KeyMapping, section: InputSection) -> ActiveBinding {
-    // Set `isMenuItem` to `false` always: let `MenuController` decide which to include later
-    let binding = ActiveBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isMenuItem: false, isEnabled: false)
-
-    if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
-      Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
-      binding.statusMessage = "IINA does not use default-level (\"weak\") bindings"
-      return binding
-    }
-
-    // Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
-    if let destinationSectionName = keyMapping.destinationSection {
-      if destinationSectionName == binding.srcSectionName {
-        // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
-        let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
-        binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
-      } else {
-        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(keyMapping.rawKey)", level: .verbose)
-        binding.statusMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
-        return binding
-      }
-    }
-    binding.isEnabled = true
-    return binding
   }
 
   // MARK: MPV Input Section API
@@ -225,7 +137,7 @@ class InputSectionStack {
    See: `mp_input_define_section` in mpv source
    */
   func defineSection(_ inputSection: MPVInputSection) {
-    dq.sync {
+    InputSectionStack.dq.sync {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyMappingList.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
@@ -253,7 +165,7 @@ class InputSectionStack {
 
    */
   func enableSection(_ sectionName: String, _ flags: [String]) {
-    dq.sync {
+    InputSectionStack.dq.sync {
       var isExclusive = false
       for flag in flags {
         switch flag {
@@ -287,7 +199,7 @@ class InputSectionStack {
    Disable the named input section. Undoes enable-section.
    */
   func disableSection(_ sectionName: String) {
-    dq.sync {
+    InputSectionStack.dq.sync {
       disableSection_Unsafe(sectionName)
     }
   }
