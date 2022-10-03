@@ -1,53 +1,21 @@
 //
-//  AppActiveBindings.swift
+//  AppInputConfigBuilder.swift
 //  iina
 //
-//  Created by Matt Svoboda on 9/29/22.
+//  Created by Matt Svoboda on 10/3/22.
 //  Copyright © 2022 lhc. All rights reserved.
 //
 
 import Foundation
 
-// The currently active bindings for the IINA app (key lookup table + other data)
-class AppActiveBindings {
-  static let LOG_BINDINGS_REBUILD = false
-
-  // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
-  // the active bindings are rebuilt and the old set is discarded.
-  static var current = AppActiveBindings()
-
-  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `ActiveBindingTableStore` should be kept
-  // consistent with this one as much as possible, but some brief inconsistencies may be acceptable due to the asynchronous nature of UI.
-  let bindingCandidateList: [ActiveBinding]
-
-  // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
-  // Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
-  // For lookup use `resolveMpvKey()` or `resolveKeyEvent()` from the active player's input config.
-  let resolverDict: [String: ActiveBinding]
-
-  init(bindingCandidateList: [ActiveBinding] = [], resolverDict: [String: ActiveBinding] = [:]) {
-    self.bindingCandidateList = bindingCandidateList
-    self.resolverDict = resolverDict
-  }
-
-  func logEnabledBindings() {
-    if AppActiveBindings.LOG_BINDINGS_REBUILD, Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = bindingCandidateList.filter({ $0.isEnabled })
-      Logger.log("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
-    }
-  }
-}
-
-// MARK: Building AppActiveBindings
-
-class AppActiveBindingsBuilder {
+class AppInputConfigBuilder {
   private let sectionStack: InputSectionStack
 
   init(_ sectionStack: InputSectionStack) {
     self.sectionStack = sectionStack
   }
 
-  func buildActiveBindings() -> AppActiveBindings {
+  func buildActiveBindings() -> AppInputConfig {
     Logger.log("Starting rebuild of active input bindings", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
@@ -76,7 +44,7 @@ class AppActiveBindingsBuilder {
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     fillInPartialSequences(&resolverDict)
 
-    let appBindings = AppActiveBindings(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
+    let appBindings = AppInputConfig(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
     Logger.log("Finished rebuild of active input bindings (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
     appBindings.logEnabledBindings()
 
@@ -106,7 +74,7 @@ class AppActiveBindingsBuilder {
         }
       }
     }
-    if AppActiveBindings.LOG_BINDINGS_REBUILD {
+    if AppInputConfig.LOG_BINDINGS_REBUILD {
       Logger.log("Added \(addedCount) `ignored` bindings for partial key sequences", level: .verbose)
     }
   }

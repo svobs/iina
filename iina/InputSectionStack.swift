@@ -104,7 +104,7 @@ class InputSectionStack {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
-  // MARK: Building AppActiveBindings
+  // MARK: Building AppInputConfig
 
   /*
    Generates ActiveBindings for all the bindings in all the InputSections in this stack, and combines them into a single list.
@@ -137,11 +137,11 @@ class InputSectionStack {
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<ActiveBinding>) {
     if inputSection.keyMappingList.isEmpty {
-      if AppActiveBindings.LOG_BINDINGS_REBUILD {
+      if AppInputConfig.LOG_BINDINGS_REBUILD {
         log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
       }
     } else {
-      if AppActiveBindings.LOG_BINDINGS_REBUILD {
+      if AppInputConfig.LOG_BINDINGS_REBUILD {
         log("RebuildBindings: adding from \(inputSection)", level: .verbose)
       }
       if inputSection.isForce {

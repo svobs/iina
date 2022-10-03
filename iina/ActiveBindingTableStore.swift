@@ -13,7 +13,7 @@ import Foundation
  Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
- This class is downstream from `AppActiveBindings.current` and should be notified of any changes to it.
+ This class is downstream from `AppInputConfig.current` and should be notified of any changes to it.
  */
 class ActiveBindingTableStore {
 
@@ -378,7 +378,7 @@ class ActiveBindingTableStore {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
-      let bindingRowsAllNew = PlayerInputConfig.rebuildAppBindings(thenNotifyPrefsUI: false).bindingCandidateList
+      let bindingRowsAllNew = AppInputConfig.rebuildCurrent(thenNotifyPrefsUI: false).bindingCandidateList
       guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
         Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
         return

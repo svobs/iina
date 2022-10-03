@@ -571,7 +571,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // This will kick off a series of updates set any key equivalents and update them as needed
     if InputSectionStack.replacePluginsSectionBindings(keyMappings) {
-      PlayerInputConfig.rebuildAppBindings()
+      AppInputConfig.rebuildCurrent()
     }
   }
 

@@ -61,66 +61,7 @@ let MP_MAX_KEY_DOWN = 4
  */
 class PlayerInputConfig {
 
-  // MARK: Static shared sections
-
   static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
-
-  static var lastBuildVersion: Int = 0
-
-  /*
-   This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
-   Rebuilds `appBindingsList` and `currentResolverDict`, updating menu item key equivalents along the way.
-   When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
-   as notifies the other callbacks supplied here as needed.
-
-   Should be run on the main thread. For other threads, see `rebuildAppBindingsAsync()`.
-
-   Generally speaking, if the return value of this method is not used, then `thenNotifyPrefsUI` shold be set to true.
-   It should only be false if called synchronously by the Key Bindings UI.
-   */
-  @discardableResult
-  static func rebuildAppBindings(thenNotifyPrefsUI: Bool = true) -> AppActiveBindings {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
-
-    guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-      Logger.fatal("rebuildAppBindings(): no active player!")
-    }
-
-    let builder = AppActiveBindingsBuilder(activePlayerInputConfig.sectionStack)
-    let newAppBindings = builder.buildActiveBindings()
-
-    // This will update all standard menu item bindings, and also update the isMenuItem status of each:
-    (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalentsFrom(newAppBindings.bindingCandidateList)
-
-    AppActiveBindings.current = newAppBindings
-
-    if thenNotifyPrefsUI {
-      // Notify Key Bindings table in prefs UI
-      (NSApp.delegate as! AppDelegate).bindingTableStore.appActiveBindingsDidChange(newAppBindings.bindingCandidateList)
-    }
-
-    return newAppBindings
-  }
-
-  // Same as `rebuildAppBindings()`, but kicks off an async task and notifies Key Bindings table
-  static func rebuildAppBindingsAsync() {
-    dispatchPrecondition(condition: .notOnQueue(DispatchQueue.main))
-
-    let rebuildVersion = PlayerInputConfig.lastBuildVersion + 1
-    Logger.log("Requesting app active bindings rebuild (v\(rebuildVersion))", level: .verbose)
-
-    DispatchQueue.main.async {
-      // Optimization: drop all but the most recent request
-      if PlayerInputConfig.lastBuildVersion >= rebuildVersion {
-        Logger.log("No need to rebuild app active bindings - already at v\(PlayerInputConfig.lastBuildVersion)", level: .verbose)
-        return
-      }
-      PlayerInputConfig.lastBuildVersion = rebuildVersion
-      Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
-
-      rebuildAppBindings(thenNotifyPrefsUI: true)
-    }
-  }
 
   // MARK: - Single player instance
 
@@ -150,21 +91,25 @@ class PlayerInputConfig {
     Logger.log(msg, level: level, subsystem: subsystem)
   }
 
+  func makeAppInputConfigBuilder() -> AppInputConfigBuilder {
+    AppInputConfigBuilder(sectionStack)
+  }
+
   // MARK: MPV Input section API
 
   func defineSection(_ inputSection: MPVInputSection) {
     sectionStack.defineSection(inputSection)
-    PlayerInputConfig.rebuildAppBindingsAsync()
+    AppInputConfig.rebuildCurrentAsync()
   }
 
   func enableSection(_ sectionName: String, _ flags: [String]) {
     sectionStack.enableSection(sectionName, flags)
-    PlayerInputConfig.rebuildAppBindingsAsync()
+    AppInputConfig.rebuildCurrentAsync()
   }
 
   func disableSection(_ sectionName: String) {
     sectionStack.disableSection(sectionName)
-    PlayerInputConfig.rebuildAppBindingsAsync()
+    AppInputConfig.rebuildCurrentAsync()
   }
 
   // MARK: Key resolution
@@ -173,7 +118,7 @@ class PlayerInputConfig {
    Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
    */
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
-    AppActiveBindings.current.resolverDict[keySequence]?.keyMapping
+    AppInputConfig.current.resolverDict[keySequence]?.keyMapping
   }
 
   /*
@@ -201,7 +146,7 @@ class PlayerInputConfig {
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins
   private func resolveFirstMatchingKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
-    let appBindings: AppActiveBindings = AppActiveBindings.current
+    let appBindings: AppInputConfig = AppInputConfig.current
     var keySequence = ""
     var hasPartialValidSequence = false
 
