@@ -73,19 +73,22 @@ class DefaultInputSection: MPVInputSection {
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" with \(keyMappingList.count) entries", level: .verbose)
+    Logger.log("Replacing key bindings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
     self.keyMappingList = keyMappingList
   }
 }
 
+// One section to store the key equivalents for all the IINA plugins.
+// Only one instance of this exists for the whole IINA app.
+// Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
 class PluginsInputSection: MPVInputSection {
-  static let NAME = "Plugins"
+  static let NAME = "plugins"
   init() {
     super.init(name: PluginsInputSection.NAME, [], isForce: false, origin: .iinaPlugin)
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" with \(keyMappingList.count) entries", level: .verbose)
+    Logger.log("Replacing key bindings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
     self.keyMappingList = keyMappingList
   }
 }

@@ -73,9 +73,13 @@ class PlayerInputConfig {
    When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
    as notifies the other callbacks supplied here as needed.
 
-   Should be run on the main thread. For other threads, see `rebuildAppBindingsAsync()`
+   Should be run on the main thread. For other threads, see `rebuildAppBindingsAsync()`.
+
+   Generally speaking, if the return value of this method is not used, then `thenNotifyPrefsUI` shold be set to true.
+   It should only be false if called synchronously by the Key Bindings UI.
    */
-  static func rebuildAppBindings() -> AppActiveBindings {
+  @discardableResult
+  static func rebuildAppBindings(thenNotifyPrefsUI: Bool = true) -> AppActiveBindings {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
@@ -89,6 +93,11 @@ class PlayerInputConfig {
     (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalentsFrom(newAppBindings.bindingCandidateList)
 
     AppActiveBindings.current = newAppBindings
+
+    if thenNotifyPrefsUI {
+      // Notify Key Bindings table in prefs UI
+      (NSApp.delegate as! AppDelegate).bindingTableStore.appActiveBindingsDidChange(newAppBindings.bindingCandidateList)
+    }
 
     return newAppBindings
   }
@@ -109,10 +118,7 @@ class PlayerInputConfig {
       PlayerInputConfig.lastBuildVersion = rebuildVersion
       Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
 
-      let newAppBindings = rebuildAppBindings()
-
-      // Notify binding table
-      (NSApp.delegate as! AppDelegate).bindingTableStore.appActiveBindingsDidChange(newAppBindings.bindingCandidateList)
+      rebuildAppBindings(thenNotifyPrefsUI: true)
     }
   }
 
@@ -214,7 +220,7 @@ class PlayerInputConfig {
         if binding.origin == .iinaPlugin {
           // Make extra sure we don't resolve plugin bindings here
           log("Sequence \"\(keySequence)\" resolved to an IINA plugin (and will be ignored)! This indicates a bug which should be fixed", level: .error)
-          appBindings.logCurrentResolverDictContents()
+          appBindings.logEnabledBindings()
           return nil
         }
         let keyMapping = binding.keyMapping
@@ -237,7 +243,7 @@ class PlayerInputConfig {
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"")
-      appBindings.logCurrentResolverDictContents()
+      appBindings.logEnabledBindings()
       return nil
     }
   }

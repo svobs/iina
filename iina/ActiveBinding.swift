@@ -68,6 +68,10 @@ class ActiveBinding: NSObject, Codable {
     let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
     return ActiveBinding(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
   }
+
+  override var description: String {
+    "<\(origin == .iinaPlugin ? "Plugin:": "")\(srcSectionName)> \(keyMapping.normalizedMpvKey) -> \(keyMapping.readableAction)"
+  }
 }
 
 // Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)

@@ -21,7 +21,8 @@ class AppActiveBindings {
   let bindingCandidateList: [ActiveBinding]
 
   // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
-  // Contains only the bindings which are currently enabled for this player. For lookup use `resolveMpvKey()` or `resolveKeyEvent()`.
+  // Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
+  // For lookup use `resolveMpvKey()` or `resolveKeyEvent()` from the active player's input config.
   let resolverDict: [String: ActiveBinding]
 
   init(bindingCandidateList: [ActiveBinding] = [], resolverDict: [String: ActiveBinding] = [:]) {
@@ -29,10 +30,10 @@ class AppActiveBindings {
     self.resolverDict = resolverDict
   }
 
-  func logCurrentResolverDictContents() {
+  func logEnabledBindings() {
     if AppActiveBindings.LOG_BINDINGS_REBUILD, Logger.enabled && Logger.Level.preferred >= .verbose {
-      let bindingList = resolverDict.map { ("\t<\($1.origin == .iinaPlugin ? "Plugin:": "")\($1.srcSectionName)> \($0) -> \($1.keyMapping.readableAction)") }
-      Logger.log("Current bindings:\n\(bindingList.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
+      let bindingList = bindingCandidateList.filter({ $0.isEnabled })
+      Logger.log("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
     }
   }
 }
@@ -47,7 +48,7 @@ class AppActiveBindingsBuilder {
   }
 
   func buildActiveBindings() -> AppActiveBindings {
-    Logger.log("Starting rebuild of active player input bindings", level: .verbose, subsystem: sectionStack.subsystem)
+    Logger.log("Starting rebuild of active input bindings", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
     let bindingCandidateList = self.sectionStack.combineEnabledSectionBindings()
@@ -75,12 +76,16 @@ class AppActiveBindingsBuilder {
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     fillInPartialSequences(&resolverDict)
 
-    Logger.log("Finished rebuilding active player input bindings (\(resolverDict.count) total)", subsystem: sectionStack.subsystem)
-    return AppActiveBindings(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
+    let appBindings = AppActiveBindings(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
+    Logger.log("Finished rebuild of active input bindings (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
+    appBindings.logEnabledBindings()
+
+    return appBindings
   }
 
   // Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.
   private func fillInPartialSequences(_ activeBindingsDict: inout [String: ActiveBinding]) {
+    var addedCount = 0
     for (keySequence, binding) in activeBindingsDict {
       if keySequence.contains("-") {
         let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
@@ -95,10 +100,14 @@ class AppActiveBindingsBuilder {
             if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
               let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
               activeBindingsDict[partial] = ActiveBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isMenuItem: binding.isMenuItem, isEnabled: binding.isEnabled)
+              addedCount += 1
             }
           }
         }
       }
+    }
+    if AppActiveBindings.LOG_BINDINGS_REBUILD {
+      Logger.log("Added \(addedCount) `ignored` bindings for partial key sequences", level: .verbose)
     }
   }
 }

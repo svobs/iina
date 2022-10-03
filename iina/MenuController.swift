@@ -567,9 +567,11 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
+    Logger.log("Found \(keyMappings.count) key equivalents in Plugin menu items", level: .verbose)
+
     // This will kick off a series of updates set any key equivalents and update them as needed
     if InputSectionStack.replacePluginsSectionBindings(keyMappings) {
-      PlayerInputConfig.rebuildAppBindingsAsync()
+      PlayerInputConfig.rebuildAppBindings()
     }
   }
 
@@ -580,22 +582,24 @@ class MenuController: NSObject, NSMenuDelegate {
       guard let keyMapping = pluginBinding.keyMapping as? PluginKeyMapping else { continue }
 
       if pluginBinding.isEnabled {
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: keyMapping.normalizedMpvKey) {
+          keyMapping.menuItem.keyEquivalent = kEqv
+          keyMapping.menuItem.keyEquivalentModifierMask = kMdf
+        } else {
+          Logger.log("Failed to get MacOS key equivalent for \"\(keyMapping.normalizedMpvKey)\"", level: .error)
+        }
+      } else {
         // Conflict! Key binding already reserved
         failureList.append(pluginBinding)
         keyMapping.menuItem.keyEquivalent = ""
         keyMapping.menuItem.keyEquivalentModifierMask = []
-      } else {
-        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: keyMapping.normalizedMpvKey) {
-          keyMapping.menuItem.keyEquivalent = kEqv
-          keyMapping.menuItem.keyEquivalentModifierMask = kMdf
-        }
       }
     }
 
     // When done:
     pluginErrorNotice.isHidden = (failureList.count == 0)
 
-    Logger.log("Updated Plugin menu bindings with \(failureList.count) / \(pluginBindings.count) failures")
+    Logger.log("Updated \(pluginBindings.count) key equivalents in the Plugin menu (\(failureList.count) were conflicts)")
 
   }
 
@@ -609,6 +613,8 @@ class MenuController: NSObject, NSMenuDelegate {
       menu.addItem(item)
       return item
     }
+
+    Logger.log("Adding Plugin menu item: \"\(item.title)\", key=\"\(item.keyBinding ?? "")\"", level: .verbose)
 
     let menuItem: NSMenuItem
     if item.action == nil {
@@ -769,12 +775,12 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ bindingRows: [ActiveBinding]) {
+  func updateKeyEquivalentsFrom(_ candidateBindings: [ActiveBinding]) {
 
     var mpvBindings: [ActiveBinding] = []
     var pluginBindings: [ActiveBinding] = []
 
-    for binding in bindingRows {
+    for binding in candidateBindings {
       switch binding.origin {
         case .iinaPlugin:
           // include disabled bindings: need to set their menu item key equivs to nil

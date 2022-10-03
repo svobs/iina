@@ -160,7 +160,13 @@ class MPVLogHandler {
     Logger.log("define-section: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       let keyMappingList = section.keyMappingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
-      Logger.log("Bindings:\n\(keyMappingList.joined(separator: "\n"))", level: .verbose, subsystem: player.subsystem)
+      let bindingsString: String
+      if keyMappingList.isEmpty {
+        bindingsString = " (none)"
+      } else {
+        bindingsString = "\n\(keyMappingList.joined(separator: "\n"))"
+      }
+      Logger.log("Bindings for section \"\(section.name)\":\(bindingsString)", level: .verbose, subsystem: player.subsystem)
     }
     player.inputConfig.defineSection(section)
     return true

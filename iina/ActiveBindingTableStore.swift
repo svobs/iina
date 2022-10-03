@@ -378,7 +378,7 @@ class ActiveBindingTableStore {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
-      let bindingRowsAllNew = PlayerInputConfig.rebuildAppBindings().bindingCandidateList
+      let bindingRowsAllNew = PlayerInputConfig.rebuildAppBindings(thenNotifyPrefsUI: false).bindingCandidateList
       guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
         Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
         return

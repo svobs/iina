@@ -46,17 +46,19 @@ class InputSectionStack {
   static func replacePluginsSectionBindings(_ bindings: [KeyMapping]) -> Bool {
     var changed = false
     dq.sync {
-      if let pluginsSection = shared.sectionsDefined[DefaultInputSection.NAME] as? PluginsInputSection {
+      if let pluginsSection = shared.sectionsDefined[PluginsInputSection.NAME] as? PluginsInputSection {
         // Try to minimize duplicate work by detecting when there is no change.
+        let existingCount = pluginsSection.keyMappingList.count
+        let newCount = bindings.count
         // TODO: get more sophisticated than this simple check
-        if !pluginsSection.keyMappingList.isEmpty || !bindings.contains(where: { type(of: $0) == PluginKeyMapping.self}) {
+        if !(existingCount == 0 && newCount == 0) {
           changed = true
-        } else {
+          // Seting this triggers a rebuild of all active bindings:
           pluginsSection.setKeyMappingList(bindings)
         }
       }
     }
-    Logger.log("changed = \(changed)")
+    Logger.log("Input section \"\(PluginsInputSection.NAME)\" changed = \(changed)")
     return changed
   }
 
@@ -145,13 +147,13 @@ class InputSectionStack {
       if inputSection.isForce {
         // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
         for keyMapping in inputSection.keyMappingList {
-          let activeBinding = buildNewActiveBinding(from: keyMapping, sectionName: inputSection.name)
+          let activeBinding = buildNewActiveBinding(from: keyMapping, section: inputSection)
           linkedList.append(activeBinding)
         }
       } else {
         // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
         for keyMapping in inputSection.keyMappingList.reversed() {
-          let activeBinding = buildNewActiveBinding(from: keyMapping, sectionName: inputSection.name)
+          let activeBinding = buildNewActiveBinding(from: keyMapping, section: inputSection)
           linkedList.prepend(activeBinding)
         }
       }
@@ -164,8 +166,10 @@ class InputSectionStack {
    Note: this mey or may not also create a different `KeyMapping` object with modified contents than the one supplied,
    and put it into `binding.keyMapping`.
    */
-  private func buildNewActiveBinding(from keyMapping: KeyMapping, sectionName: String) -> ActiveBinding {
-    let binding = ActiveBinding(keyMapping, origin: .confFile, srcSectionName: sectionName, isMenuItem: false, isEnabled: false)
+  private func buildNewActiveBinding(from keyMapping: KeyMapping, section: InputSection) -> ActiveBinding {
+    // Only "Plugin" menu items are guaranteed to be menu items at this point - others must be checked later.
+    let isMenuItem = section.origin == .iinaPlugin
+    let binding = ActiveBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isMenuItem: isMenuItem, isEnabled: false)
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
@@ -175,7 +179,7 @@ class InputSectionStack {
 
     // Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
     if let destinationSectionName = keyMapping.destinationSection {
-      if destinationSectionName == sectionName {
+      if destinationSectionName == binding.srcSectionName {
         // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
         binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
