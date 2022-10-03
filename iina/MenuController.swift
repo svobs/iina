@@ -578,11 +578,12 @@ class MenuController: NSObject, NSMenuDelegate {
   func updatePluginMenuKeyEquivalents(from pluginBindings: [ActiveBinding]) {
     var failureList: [ActiveBinding] = []
     for pluginBinding in pluginBindings {
-      guard pluginBinding.isMenuItem && pluginBinding.origin == .iinaPlugin else { continue }
+      guard pluginBinding.origin == .iinaPlugin else { continue }
       guard let keyMapping = pluginBinding.keyMapping as? PluginKeyMapping else { continue }
 
       if pluginBinding.isEnabled {
         if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: keyMapping.normalizedMpvKey) {
+          pluginBinding.isMenuItem = true
           keyMapping.menuItem.keyEquivalent = kEqv
           keyMapping.menuItem.keyEquivalentModifierMask = kMdf
         } else {

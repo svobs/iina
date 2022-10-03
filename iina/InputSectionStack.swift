@@ -167,9 +167,8 @@ class InputSectionStack {
    and put it into `binding.keyMapping`.
    */
   private func buildNewActiveBinding(from keyMapping: KeyMapping, section: InputSection) -> ActiveBinding {
-    // Only "Plugin" menu items are guaranteed to be menu items at this point - others must be checked later.
-    let isMenuItem = section.origin == .iinaPlugin
-    let binding = ActiveBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isMenuItem: isMenuItem, isEnabled: false)
+    // Set `isMenuItem` to `false` always: let `MenuController` decide which to include later
+    let binding = ActiveBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isMenuItem: false, isEnabled: false)
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
