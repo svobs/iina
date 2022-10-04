@@ -28,15 +28,13 @@ class TableChange {
     // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
     // use this only when absolutely needed:
     case reloadAll
-    case custom
+    // Can have any number of adds, removes, moves, and updates:
+    case wholeTableDiff
   }
 
   let changeType: ChangeType
 
   var newSelectedRows: IndexSet? = nil
-
-  // Only for changeType == .custom:
-  var customFunction: ((EditableTableView) -> Void)? = nil
 
   fileprivate init(_ changeType: ChangeType) {
     self.changeType = changeType
@@ -83,11 +81,8 @@ class TableChangeByStringElement: TableChange {
         // Try not to use this much, if at all
         Logger.log("TableChangeByStringElement: ReloadAll", level: .verbose)
         tableView.reloadData()
-      case .custom:
-        if let customFunction = customFunction {
-          Logger.log("TableChangeByStringElement: executing custom function", level: .verbose)
-          customFunction(tableView)
-        }
+      case .wholeTableDiff:
+        Logger.fatal("Not yet supported: wholeTableDiff for TableChangeByStringElement")
     }
 
     if let newSelectedRows = self.newSelectedRows {
@@ -223,10 +218,19 @@ class TableChangeByRowIndex: TableChange {
         // Try not to use this much, if at all
         Logger.log("TableChangeByRowIndex: ReloadAll", level: .verbose)
         tableView.reloadData()
-      case .custom:
-        if let customFunction = customFunction {
-          Logger.log("TableChangeByRowIndex: executing custom function", level: .verbose)
-          customFunction(tableView)
+      case .wholeTableDiff:
+        Logger.log("TableChangeByRowIndex: executing diff", level: .verbose)
+        if let toRemove = self.toRemove,
+           let toInsert = self.toInsert,
+           let movePairs = self.toMove {
+          // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
+          Logger.log("TableChangeByRowIndex: diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
+          tableView.removeRows(at: toRemove, withAnimation: tableView.rowAnimation)
+          tableView.insertRows(at: toInsert, withAnimation: tableView.rowAnimation)
+          for (oldIndex, newIndex) in movePairs {
+            Logger.log("Diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
+            tableView.moveRow(at: oldIndex, to: newIndex)
+          }
         }
     }
 
@@ -240,4 +244,74 @@ class TableChangeByRowIndex: TableChange {
     }
   }
 
+  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>) -> TableChangeByRowIndex where R:Hashable {
+    guard #available(macOS 10.15, *) else {
+      Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
+      return TableChangeByRowIndex(.reloadAll)
+    }
+
+    let tableChange = TableChangeByRowIndex(.wholeTableDiff)
+    tableChange.toRemove = IndexSet()
+    tableChange.toInsert = IndexSet()
+    tableChange.toMove = []
+    var oldIndexOffset = 0
+    var newIndexOffset = 0
+
+    // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
+    let removedIndexes = LinkedList<Int>()
+    let addedIndexes = LinkedList<Int>()
+
+    /*
+     References:
+     https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
+     https://stackoverflow.com/a/61535502/1347529
+     Inspired by: https://stackoverflow.com/a/52368491/1347529
+     */
+    let diff = newRows.difference(from: oldRows).inferringMoves()
+    Logger.log("Building table diff: found \(diff.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    for change in diff {
+      switch change {
+        case .remove(let fromOffset, _, let toOffset):
+          // If toOffset != nil, it signifies a MOVE from fromOffset -> toOffset. But the offset must be adjusted for removes!
+          Logger.log("Diff: remove(offset: \(fromOffset), associatedWith: \(String(describing: toOffset))", level: .verbose)
+          if let toOffset = toOffset {
+            // MOVE
+            addedIndexes.append(toOffset)
+          } else {
+            // REMOVE
+            tableChange.toRemove?.insert(fromOffset)
+          }
+          removedIndexes.append(fromOffset)
+
+        case .insert(let toOffset, _, let fromOffset):
+          Logger.log("Diff: insert(offset: \(toOffset), associatedWith: \(String(describing: fromOffset))", level: .verbose)
+          while let lastRemovedOffset = removedIndexes.last, lastRemovedOffset < toOffset {
+            removedIndexes.removeLast()
+            oldIndexOffset += 1
+          }
+          while let lastAddedOffset = addedIndexes.last, lastAddedOffset < toOffset {
+            addedIndexes.removeLast()
+            newIndexOffset += 1
+          }
+
+          if let fromOffset = fromOffset {
+            // MOVE
+            let fromOffsetAdjusted = fromOffset - oldIndexOffset
+            let toOffsetAdjusted = toOffset + newIndexOffset
+            if fromOffsetAdjusted < toOffset {
+              tableChange.toMove?.append((fromOffsetAdjusted, toOffsetAdjusted - 1))
+            } else {
+              tableChange.toMove?.append((fromOffsetAdjusted, toOffsetAdjusted ))
+              newIndexOffset += 1
+            }
+            oldIndexOffset -= 1
+          } else {
+            // ADD
+            tableChange.toInsert?.insert(toOffset)
+            oldIndexOffset += 1
+          }
+      }
+    }
+    return tableChange
+  }
 }

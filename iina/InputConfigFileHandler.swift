@@ -36,7 +36,7 @@ class InputConfigFileHandler {
     self.currentParsedConfigFile = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
-    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
+    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings)
   }
 
   // Input Config File: Save

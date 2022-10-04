@@ -75,34 +75,26 @@ public final class LinkedList<T> {
   ///
   /// - Parameter index: Integer value of the requested value's index
   public subscript(index: Int) -> T?  {
-    do {
-      return try self.item(at: index)
-    } catch {
-      return nil
-    }
+    return self.item(at: index)
   }
 
   /// Function to return the item at a specific index. Throws exception if index is out of bounds (0...self.count)
   ///
   /// - Parameter index: Integer value of the node's index to be returned
   /// - Returns: LinkedListNode
-  public func item(at index: Int) throws -> T {
-    return try node(at: index).value
+  public func item(at index: Int) -> T? {
+    return node(at: index)?.value
   }
 
-  private func node(at index: Int) throws -> Node {
-    if firstNode == nil {
-      throw LinkedListError.listIsEmpty
-    } else if index < 0 {
-      throw LinkedListError.indexInvalid("index must be greater or equal to 0; got \(index)")
-    } else if index >= count {
-      throw LinkedListError.indexInvalid("index (\(index)) is larger than size of list!")
+  private func node(at index: Int) -> Node? {
+    if firstNode == nil || index < 0 || index >= count {
+      return nil
     }
 
     if index == 0 {
-      return firstNode!
+      return firstNode
     } else if index == count - 1 {
-      return lastNode!
+      return lastNode
     } else {
       var node = firstNode!.next
       for _ in 1..<index {
@@ -110,7 +102,7 @@ public final class LinkedList<T> {
         assert (node != nil)
       }
 
-      return node!
+      return node
     }
   }
 
@@ -183,7 +175,9 @@ public final class LinkedList<T> {
       }
       firstNode = newNode
     } else {
-      let prev = try node(at: index - 1)
+      guard let prev = node(at: index - 1) else {
+        throw LinkedListError.indexOutOfBounds("Requested index is longer than this list: \(index)")
+      }
       let next = prev.next
       newNode.previous = prev
       if let next = next {
@@ -212,7 +206,9 @@ public final class LinkedList<T> {
       list.lastNode?.next = firstNode
       firstNode = list.firstNode
     } else {
-      let prev = try node(at: index - 1)
+      guard let prev = node(at: index - 1) else {
+        throw LinkedListError.indexOutOfBounds("Invalid index: \(index)")
+      }
       let next = prev.next
 
       prev.next = list.firstNode
@@ -297,24 +293,26 @@ public final class LinkedList<T> {
     return node.value
   }
 
-  /// Function to remove the last node/value in the list. Crashes if the list is empty
+  /// Function to remove the last node/value in the list. Returns nil if the list is empty
   ///
   /// - Returns: The data value contained in the deleted node.
   @discardableResult
-  public func removeLast() throws -> T {
+  public func removeLast() -> T? {
     guard !isEmpty else {
-      throw LinkedListError.listIsEmpty
+      return nil
     }
     return remove(node: lastNode!)
   }
 
-  /// Function to remove a node/value at a specific index. Crashes if index is out of bounds (0...self.count)
+  /// Function to remove a node/value at a specific index. Returns nil if index is out of bounds (0...self.count)
   ///
   /// - Parameter index: Integer value of the index of the node to be removed
   /// - Returns: The data value contained in the deleted node
   @discardableResult
-  public func remove(at index: Int) throws -> T {
-    let node = try self.node(at: index)
+  public func remove(at index: Int) -> T? {
+    guard let node = self.node(at: index) else {
+      return nil
+    }
     return remove(node: node)
   }
 

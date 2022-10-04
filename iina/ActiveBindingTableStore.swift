@@ -23,7 +23,7 @@ class ActiveBindingTableStore {
   private var bindingRowsAll: [ActiveBinding] = []
 
   // The table rows currently displayed, which will change depending on the current filterString
-  private var bindingRowsFlltered: [ActiveBinding] = []
+  private var bindingRowsFiltered: [ActiveBinding] = []
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
@@ -33,15 +33,15 @@ class ActiveBindingTableStore {
   // MARK: Bindings Table CRUD
 
   func getBindingRowCount() -> Int {
-    return bindingRowsFlltered.count
+    return bindingRowsFiltered.count
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
   func getBindingRow(at index: Int) -> ActiveBinding? {
-    guard index >= 0 && index < bindingRowsFlltered.count else {
+    guard index >= 0 && index < bindingRowsFiltered.count else {
       return nil
     }
-    return bindingRowsFlltered[index]
+    return bindingRowsFiltered[index]
   }
 
   func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
@@ -162,20 +162,20 @@ class ActiveBindingTableStore {
     return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding])
   }
 
-  // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFlltered.
+  // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFiltered.
   private func translateFilteredIndexToUnfilteredIndex(_ filteredIndex: Int) -> Int? {
     guard filteredIndex >= 0 else {
       return nil
     }
-    if filteredIndex == bindingRowsFlltered.count {
-      let filteredRowAtIndex = bindingRowsFlltered[filteredIndex - 1]
+    if filteredIndex == bindingRowsFiltered.count {
+      let filteredRowAtIndex = bindingRowsFiltered[filteredIndex - 1]
 
       guard let unfilteredIndex = findUnfilteredIndexOfActiveBinding(filteredRowAtIndex) else {
         return nil
       }
       return unfilteredIndex + 1
     }
-    let filteredRowAtIndex = bindingRowsFlltered[filteredIndex]
+    let filteredRowAtIndex = bindingRowsFiltered[filteredIndex]
     return findUnfilteredIndexOfActiveBinding(filteredRowAtIndex)
   }
 
@@ -198,11 +198,6 @@ class ActiveBindingTableStore {
         ids.insert(bindingID)
       }
     })
-  }
-
-  static private func getHashes(from rows: [ActiveBinding]) -> [String] {
-    // Just use the content itself - should be shorter than an MD5 in most cases
-    return rows.map({ $0.keyMapping.confFileFormat })
   }
 
   private func resolveBindingIDsFromIndexes(_ rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
@@ -340,12 +335,15 @@ class ActiveBindingTableStore {
   }
 
   private func updateFilteredBindings() {
-    if isFiltered() {
-      bindingRowsFlltered = bindingRowsAll.filter {
-        $0.keyMapping.rawKey.localizedStandardContains(filterString) || $0.keyMapping.rawAction.localizedStandardContains(filterString)
-      }
-    } else {
-      bindingRowsFlltered = bindingRowsAll
+    bindingRowsFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAll, by: filterString)
+  }
+
+  private static func filter(bindingRowsAll: [ActiveBinding], by filterString: String) -> [ActiveBinding] {
+    if filterString.isEmpty {
+      return bindingRowsAll
+    }
+    return bindingRowsAll.filter {
+      $0.keyMapping.rawKey.localizedStandardContains(filterString) || $0.keyMapping.rawAction.localizedStandardContains(filterString)
     }
   }
 
@@ -374,7 +372,7 @@ class ActiveBindingTableStore {
    This is needed so that animations can work. But ActiveBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex) {
+  func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
@@ -393,47 +391,19 @@ class ActiveBindingTableStore {
   - Push update to the Key Bindings table in the UI so it can be animated.
   Expected to be run on the main thread.
   */
-  private func applyBindingTableChanges(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
+  private func applyBindingTableChanges(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    let tableChangeImproved: TableChangeByRowIndex = (tableChange.changeType == .reloadAll ? buildBetterReloadAll(bindingRowsAllNew) : tableChange)
+    // A table change animation can be calculated if not provided, which should be sufficient in most cases:
+    let ultimateTableChange = tableChange ?? buildTableDiff(bindingRowsAllNew)
 
     bindingRowsAll = bindingRowsAllNew
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChangeImproved)
-    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChangeImproved.changeType)", level: .verbose)
+    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: ultimateTableChange)
+    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(ultimateTableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
-  }
-
-  private func buildBetterReloadAll(_ bindingRowsAllNew: [ActiveBinding]) -> TableChangeByRowIndex {
-
-    // FIXME: calculate diff, use animation
-
-    let tableChange = TableChangeByRowIndex(.custom)
-
-    let hashesBefore: [String] = ActiveBindingTableStore.getHashes(from: bindingRowsAll)
-    let hashesAfter: [String] = ActiveBindingTableStore.getHashes(from: bindingRowsAllNew)
-
-    // Maintain selection across reloads by comparing hashes
-    let hashesSelectedBefore: Set<String> = selectedRowIndexes.reduce(into: Set<String>(), { (hashes, index) in
-      if index < hashesBefore.count {
-        hashes.insert(hashesBefore[index])
-      }
-    })
-
-
-
-//    let newSelectedRowIndexes = ActiveBindingTableStore.resolveIndexesFromHashes(hashesSelected, in: bindingRowsAllNew)
-//    tableChange.newSelectedRows = newSelectedRowIndexes
-//    Logger.log("Bindings table update: translated \(selectedRowIndexes.count)/\(bindingRowsAll.count) selections to \(newSelectedRowIndexes.count)/\(bindingRowsAllNew.count)")
-
-    tableChange.customFunction = { tableView in
-
-    }
-
-    return tableChange
   }
 
   // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
@@ -441,6 +411,13 @@ class ActiveBindingTableStore {
   func appActiveBindingsDidChange(_ bindingRowsAllNew: [ActiveBinding]) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    self.applyBindingTableChanges(bindingRowsAllNew, buildBetterReloadAll(bindingRowsAllNew))
+    // Remember, the displayed table contents must reflect the filtered state
+    self.applyBindingTableChanges(bindingRowsAllNew, buildTableDiff(bindingRowsAllNew))
+  }
+
+  private func buildTableDiff(_ bindingRowsAllNew: [ActiveBinding]) -> TableChangeByRowIndex {
+    // Remember, the displayed table contents must reflect the filtered state
+    let bindingRowsAllNewFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
+    return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
 }

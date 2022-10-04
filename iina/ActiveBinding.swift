@@ -72,6 +72,24 @@ class ActiveBinding: NSObject, Codable {
   override var description: String {
     "<\(origin == .iinaPlugin ? "Plugin:": "")\(srcSectionName)> \(keyMapping.normalizedMpvKey) -> \(keyMapping.readableAction)"
   }
+
+  // Hashable protocol conformance, to enable diffing
+  override var hash: Int {
+    var hasher = Hasher()
+    hasher.combine(keyMapping.rawKey)
+    hasher.combine(keyMapping.rawAction)
+    return hasher.finalize()
+  }
+
+  // Equatable protocol conformance, to enable diffing
+  override func isEqual(_ object: Any?) -> Bool {
+    guard let other = object as? ActiveBinding else {
+      return false
+    }
+    return other.origin == self.origin
+      && other.srcSectionName == self.srcSectionName
+      && other.keyMapping.confFileFormat == self.keyMapping.confFileFormat
+  }
 }
 
 // Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
