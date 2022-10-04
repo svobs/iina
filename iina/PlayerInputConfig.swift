@@ -11,15 +11,24 @@ import Foundation
 let MP_MAX_KEY_DOWN = 4
 
 /*
- A single PlayerInputConfig instance should be associated with a single PlayerCore, and while the player window has focus, its
+ A single PlayerInputConfig instance should be associated with a single PlayerCore, and while the player window has focus ("is active"), its
  PlayerInputConfig is expected to direct key presses to this class's `resolveKeyEvent` method.
- to match the user's key stroke(s) into recognized commands..
+ to match the user's key stroke(s) into recognized commands.
+
+ This class stores up to the last 4 key combinations which the user pressed in this window in `keyPressHistory `.
+ Switching between windows, or entering keys in a different window, does not affect the state of this player's window.
+ Only input which occurs while this is the active window will change the contents of this structure. See "Key sequences" below.S
 
  This class also keeps track of any binidngs set by Lua scripts. It expects to be notified of new mpv "input sections" and updates to their
- states, via `defineSection()`, `enableSection()`, and `disableSection()`. These are incorporated into key binding resolution via resolveKeyEvent(.
+ states, via `defineSection()`, `enableSection()`, and `disableSection()`. In order to emulate mpv's algorithm for prioritizing input bindings
+ which are set by Lua plugins via libmpv, each PlayerInputConfig contains an `InputSectionStack` which approximates the stack-like structure
+ used by an mpv core. In it, input bindings are grouped into  "input sections", which in turn must be "defined" and then "enabled" in order to
+ be made active, and their order of enablement as well as any flags (signifying that each section is "strong" or "weak" or "exclusive")
+ determines the rules for setting each binding's priority relative to others which possess an identical key combination trigger.
 
- The data structures in this class should look similar to mpv's `struct input_ctx`, because they are based on it and attempt to mirror
- its functionality.
+ * Some definitions *
+
+ ** Key mappings **
 
  A `KeyMapping` is an association from user input to an IINA or mpv command.
  This can include mouse events (though not handled by this class), single keystroke (which may include modifiers), or a sequence of keystrokes.

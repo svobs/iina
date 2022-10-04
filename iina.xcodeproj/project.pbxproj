@@ -1926,9 +1926,11 @@
 				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
 				D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */,
+				D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */,
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
 				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
+				D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */,
 				D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */,
 				D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */,
 			);
@@ -2130,14 +2132,13 @@
 				84EB1ED91D2F51D3004FA5A1 /* AppDelegate.swift */,
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
+				D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */,
 				845404A91E4396F500B02B12 /* ScriptLoader.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
 				84FBCB361EEACDDD0076C77C /* FFmpegController.h */,
 				84FBCB371EEACDDD0076C77C /* FFmpegController.m */,
 				842904E11F0EC01600478376 /* AutoFileMatcher.swift */,
 				846121BC1F35FCA500ABB39C /* DraggingDetect.swift */,
-				D1FD2DD728521AD500CF7B35 /* MPVLogHandler.swift */,
-				D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */,
 				D1EAF5E828E7176A0023BACF /* InputConfigFileHandler.swift */,
 			);
 			name = Controllers;
@@ -2505,7 +2506,6 @@
 			children = (
 				D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */,
 				D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */,
-				D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
 				D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */,

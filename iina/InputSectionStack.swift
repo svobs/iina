@@ -10,12 +10,16 @@ import Foundation
 
 /*
  Every player contains an InputSectionStack, to keep track of key binding assignments. See `PlayerInputConfig` for more info.
+
+ The data structures in this class should look roughly similar to mpv's `struct input_ctx`, because they result from an attempt to mimic
+ its functionality in order to suport all varieties of Lua scripts, while also supporting IINA's needs such as key equivalents set via
+ plugins.
  */
 class InputSectionStack {
   // More than one of these is probably excessive, since there will only ever be one active player at a time making changes
   static let dq = DispatchQueue.global(qos: .userInitiated)
 
-  // For internal use, in `sectionsEnabled`
+  // For storage in `sectionsEnabled`
   struct EnabledSectionMeta {
     let name: String
 

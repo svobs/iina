@@ -19,7 +19,7 @@ class AppInputConfigBuilder {
     Logger.log(msg, level: level, subsystem: sectionStack.subsystem)
   }
 
-  func buildActiveBindings() -> AppInputConfig {
+  func build() -> AppInputConfig {
     Logger.log("Starting rebuild of active input bindings", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
