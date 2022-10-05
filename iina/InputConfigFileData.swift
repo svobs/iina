@@ -33,10 +33,14 @@ class InputConfigFileData {
     }
   }
 
+  // The path of the source file on disk
+  let filePath: String
+
   // This should reflect what is on disk at all times
   private var lines: [Line]
 
-  init() {
+  init(filePath: String) {
+    self.filePath = filePath
     self.lines = []
   }
 
@@ -186,9 +190,9 @@ class InputConfigFileData {
     }
   }
 
-  func writeFile(to path: String) throws {
+  func saveToDisk() throws {
     let fileContent: String = lines.filter({ $0.rawFileContent != nil}).map({ $0.rawFileContent! }).joined(separator: "\n")
-    try fileContent.write(toFile: path, atomically: true, encoding: .utf8)
+    try fileContent.write(toFile: self.filePath, atomically: true, encoding: .utf8)
   }
 
   // Returns nil if cannot read file
@@ -196,7 +200,7 @@ class InputConfigFileData {
     guard let reader = StreamReader(path: path) else {
       return nil
     }
-    let result = InputConfigFileData()
+    let result = InputConfigFileData(filePath: path)
 
     while let rawFileContent: String = reader.nextLine() {      // ignore empty lines
       result.lines.append(Line(rawFileContent))

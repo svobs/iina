@@ -12,7 +12,7 @@ class InputConfigFileHandler {
   private unowned var inputConfigTableStore: InputConfigTableStore {
     (NSApp.delegate as! AppDelegate).inputConfigTableStore
   }
-  private var currentParsedConfigFile: InputConfigFileData? = nil
+  private var currentConfigFileData: InputConfigFileData? = nil
 
   // Input Config File: Load
   // Triggered any time `currentConfigName` is changed
@@ -33,7 +33,7 @@ class InputConfigFileHandler {
       inputConfigTableStore.changeCurrentConfigToDefault()
       return
     }
-    self.currentParsedConfigFile = inputConfigFile
+    self.currentConfigFileData = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
     (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings)
@@ -48,13 +48,23 @@ class InputConfigFileHandler {
     }
     Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
-      guard let currentParsedConfig = self.currentParsedConfigFile else {
+      guard let currentConfigData = self.currentConfigFileData else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }
-      currentParsedConfig.replaceAllBindings(with: defaultSectionBindings)
-      try currentParsedConfig.writeFile(to: configFilePath)
-      return currentParsedConfig.parseBindings()  // gets updated line numbers
+      let canonicalPathCurrent = URL(fileURLWithPath: configFilePath).resolvingSymlinksInPath().path
+      let canonicalPathLoaded = URL(fileURLWithPath: currentConfigData.filePath).resolvingSymlinksInPath().path
+      guard canonicalPathCurrent == canonicalPathLoaded else {
+        Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
+        let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+        NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+        return nil
+      }
+
+      currentConfigData.replaceAllBindings(with: defaultSectionBindings)
+      try currentConfigData.saveToDisk()
+      return currentConfigData.parseBindings()  // gets updated line numbers
+
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
