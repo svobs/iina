@@ -22,7 +22,7 @@ class ActiveBindingTableStore {
   // The current state of the AppInputConfig on which the state of this table is based.
   // While in almost all cases this should be identical to AppInputConfig.current, it is way simpler and more performant
   // to allow some tiny amount of drift. We treat each AppInputConfig object as a read-only version of the application state,
-  // and each new AppInputConfig is an atomic update which replaces the previously received one.
+  // and each new AppInputConfig is an atomic update which replaces the previously received one via asynchronous updates.
   private var appInputConfig = AppInputConfig.current
 
   // The current unfiltered list of table rows
@@ -50,51 +50,6 @@ class ActiveBindingTableStore {
       return nil
     }
     return bindingRowsFiltered[index]
-  }
-
-  func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
-    guard let row = self.getBindingRow(at: rowIndex) else {
-      return false
-    }
-    return row.origin == .confFile
-  }
-
-  func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
-    var insertIndex: Int
-    if requestedIndex < 0 {
-      // snap to very beginning
-      insertIndex = 0
-    } else if requestedIndex >= bindingRowsAll.count {
-      // snap to very end
-      insertIndex = bindingRowsAll.count
-    } else {
-     insertIndex = requestedIndex  // default to requested index
-    }
-
-    // If there is an active filter, convert the filtered index to unfiltered index
-    if isFiltered(), let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(requestedIndex) {
-      insertIndex = unfilteredIndex
-    }
-
-    // Adjust for insert cursor
-    if isAfterNotAt {
-      insertIndex = min(insertIndex + 1, bindingRowsAll.count)
-    }
-
-    // The "default" section is the only section which can be edited or changed.
-    // If the insert cursor is outside the default section, then snap it to the nearest valid index.
-    let ai = self.appInputConfig
-    if insertIndex < ai.defaultSectionStartIndex {
-      Logger.log("Insert location (\(insertIndex), origReq=\(requestedIndex)) is before the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionStartIndex)", level: .verbose)
-      return ai.defaultSectionStartIndex
-    }
-    if insertIndex > ai.defaultSectionEndIndex {
-      Logger.log("Insert location (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionEndIndex)", level: .verbose)
-      return ai.defaultSectionEndIndex
-    }
-
-    Logger.log("Returning insertIndex: \(insertIndex) from requestedIndex: \(requestedIndex)", level: .verbose)
-    return insertIndex
   }
 
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
@@ -144,7 +99,7 @@ class ActiveBindingTableStore {
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
 
-    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableChange)
+    saveAndPushDefaultSectionChange(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -169,13 +124,144 @@ class ActiveBindingTableStore {
       bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
-    saveAndApplyBindingsStateUpdates(bindingRowsAllUpdated, tableChange)
+    saveAndPushDefaultSectionChange(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
   // Returns the index at which it was ultimately inserted
   func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) -> Int {
     return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding])
+  }
+
+  func removeBindings(at indexesToRemove: IndexSet) {
+    Logger.log("Removing bindings (\(indexesToRemove))", level: .verbose)
+
+    // If there is an active filter, the indexes reflect filtered rows.
+    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
+    let idsToRemove = resolveBindingIDs(from: indexesToRemove, excluding: { !$0.isEditableByUser })
+
+    if idsToRemove.isEmpty {
+      Logger.log("Aborting remove operation: none of the rows can be modified")
+      return
+    }
+
+    var remainingRowsUnfiltered: [ActiveBinding] = []
+    for row in bindingRowsAll {
+      if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
+      } else {
+        // be sure to include rows which do not have IDs
+        remainingRowsUnfiltered.append(row)
+      }
+    }
+
+    let tableChange = TableChangeByRowIndex(.removeRows)
+    tableChange.toRemove = indexesToRemove
+
+    saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
+  }
+
+  func removeBindings(withIDs idsToRemove: [Int]) {
+    Logger.log("Removing bindings with IDs (\(idsToRemove))", level: .verbose)
+
+    // If there is an active filter, the indexes reflect filtered rows.
+    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
+    var remainingRowsUnfiltered: [ActiveBinding] = []
+    var indexesToRemove = IndexSet()
+    for (rowIndex, row) in bindingRowsAll.enumerated() {
+      if let id = row.keyMapping.bindingID {
+        // Non-editable rows probably do not have IDs, but check editable status to be sure
+        if idsToRemove.contains(id) && row.isEditableByUser {
+          indexesToRemove.insert(rowIndex)
+          continue
+        }
+      }
+      // Be sure to include rows which do not have IDs
+      remainingRowsUnfiltered.append(row)
+    }
+
+    let tableChange = TableChangeByRowIndex(.removeRows)
+    tableChange.toRemove = indexesToRemove
+
+    saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
+  }
+
+  func updateBinding(at index: Int, to binding: KeyMapping) {
+    Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
+
+    guard let existingRow = getBindingRow(at: index), existingRow.isEditableByUser else {
+      Logger.log("Cannot update binding at index \(index); aborting", level: .error)
+      return
+    }
+
+    existingRow.keyMapping = binding
+
+    let tableChange = TableChangeByRowIndex(.updateRows)
+
+    tableChange.toUpdate = IndexSet(integer: index)
+
+    var indexToUpdate: Int = index
+
+    // Is a filter active?
+    if isFiltered() {
+      // The affected row will change index after the reload. Track it down before clearing the filter.
+      if let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(index) {
+        indexToUpdate = unfilteredIndex
+      }
+
+      // Disable it. Otherwise the row update may then cause the row to be filtered out, which might confuse the user.
+      // This will also trigger a full table reload, which will update our row for us, but we will still need to save the update to file.
+      clearFilter()
+    }
+
+    tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
+    saveAndPushDefaultSectionChange(bindingRowsAll, tableChange)
+  }
+
+  // MARK: Various support functions
+
+  func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
+    guard let row = self.getBindingRow(at: rowIndex) else {
+      return false
+    }
+    return row.origin == .confFile
+  }
+
+  func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
+    var insertIndex: Int
+    if requestedIndex < 0 {
+      // snap to very beginning
+      insertIndex = 0
+    } else if requestedIndex >= bindingRowsAll.count {
+      // snap to very end
+      insertIndex = bindingRowsAll.count
+    } else {
+      insertIndex = requestedIndex  // default to requested index
+    }
+
+    // If there is an active filter, convert the filtered index to unfiltered index
+    if isFiltered(), let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(requestedIndex) {
+      insertIndex = unfilteredIndex
+    }
+
+    // Adjust for insert cursor
+    if isAfterNotAt {
+      insertIndex = min(insertIndex + 1, bindingRowsAll.count)
+    }
+
+    // The "default" section is the only section which can be edited or changed.
+    // If the insert cursor is outside the default section, then snap it to the nearest valid index.
+    let ai = self.appInputConfig
+    if insertIndex < ai.defaultSectionStartIndex {
+      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is before the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionStartIndex)", level: .verbose)
+      return ai.defaultSectionStartIndex
+    }
+    if insertIndex > ai.defaultSectionEndIndex {
+      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionEndIndex)", level: .verbose)
+      return ai.defaultSectionEndIndex
+    }
+
+    Logger.log("Returning insertIndex: \(insertIndex) from requestedIndex: \(requestedIndex)", level: .verbose)
+    return insertIndex
   }
 
   // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFiltered.
@@ -208,7 +294,7 @@ class ActiveBindingTableStore {
     return nil
   }
 
-  static private func getBindingIDs(from rows: [ActiveBinding]) -> Set<Int> {
+  static private func resolveBindingIDs(from rows: [ActiveBinding]) -> Set<Int> {
     return rows.reduce(into: Set<Int>(), { (ids, row) in
       if let bindingID = row.keyMapping.bindingID {
         ids.insert(bindingID)
@@ -216,7 +302,7 @@ class ActiveBindingTableStore {
     })
   }
 
-  private func resolveBindingIDsFromIndexes(_ rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
+  private func resolveBindingIDs(from rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
     var idSet = Set<Int>()
     for rowIndex in rowIndexes {
       if let row = getBindingRow(at: rowIndex) {
@@ -250,89 +336,7 @@ class ActiveBindingTableStore {
     return indexSet
   }
 
-  func removeBindings(at indexesToRemove: IndexSet) {
-    Logger.log("Removing bindings (\(indexesToRemove))", level: .verbose)
-
-    // If there is an active filter, the indexes reflect filtered rows.
-    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    let idsToRemove = resolveBindingIDsFromIndexes(indexesToRemove, excluding: { !$0.isEditableByUser })
-
-    if idsToRemove.isEmpty {
-      Logger.log("Aborting remove operation: none of the rows can be modified")
-      return
-    }
-
-    var remainingRowsUnfiltered: [ActiveBinding] = []
-    for row in bindingRowsAll {
-      if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
-      } else {
-        // be sure to include rows which do not have IDs
-        remainingRowsUnfiltered.append(row)
-      }
-    }
-
-    let tableChange = TableChangeByRowIndex(.removeRows)
-    tableChange.toRemove = indexesToRemove
-
-    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableChange)
-  }
-
-  func removeBindings(withIDs idsToRemove: [Int]) {
-    Logger.log("Removing bindings with IDs (\(idsToRemove))", level: .verbose)
-
-    // If there is an active filter, the indexes reflect filtered rows.
-    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    var remainingRowsUnfiltered: [ActiveBinding] = []
-    var indexesToRemove = IndexSet()
-    for (rowIndex, row) in bindingRowsAll.enumerated() {
-      if let id = row.keyMapping.bindingID {
-        // Non-editable rows probably do not have IDs, but check editable status to be sure
-        if idsToRemove.contains(id) && row.isEditableByUser {
-          indexesToRemove.insert(rowIndex)
-          continue
-        }
-      }
-      // Be sure to include rows which do not have IDs
-      remainingRowsUnfiltered.append(row)
-    }
-
-    let tableChange = TableChangeByRowIndex(.removeRows)
-    tableChange.toRemove = indexesToRemove
-
-    saveAndApplyBindingsStateUpdates(remainingRowsUnfiltered, tableChange)
-  }
-
-  func updateBinding(at index: Int, to binding: KeyMapping) {
-    Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
-
-    guard let existingRow = getBindingRow(at: index), existingRow.isEditableByUser else {
-      Logger.log("Cannot update binding at index \(index); aborting", level: .error)
-      return
-    }
-
-    existingRow.keyMapping = binding
-
-    let tableChange = TableChangeByRowIndex(.updateRows)
-
-    tableChange.toUpdate = IndexSet(integer: index)
-
-    var indexToUpdate: Int = index
-
-    // Is a filter active?
-    if isFiltered() {
-      // The affected row will change index after the reload. Track it down before clearing the filter.
-      if let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(index) {
-        indexToUpdate = unfilteredIndex
-      }
-
-      // Disable it. Otherwise the row update may then cause the row to be filtered out, which might confuse the user.
-      // This will also trigger a full table reload, which will update our row for us, but we will still need to save the update to file.
-      clearFilter()
-    }
-
-    tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    saveAndApplyBindingsStateUpdates(bindingRowsAll, tableChange)
-  }
+  // MARK: Filtering
 
   private func isFiltered() -> Bool {
     return !filterString.isEmpty
@@ -363,6 +367,8 @@ class ActiveBindingTableStore {
     }
   }
 
+  // MARK: TableChange push & receive with other components
+
   /*
    Must execute sequentially:
    1. Save conf file, get updated default section rows
@@ -371,7 +377,7 @@ class ActiveBindingTableStore {
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func saveAndApplyBindingsStateUpdates(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
+  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     // Save to file
     let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
     let inputConfigFileHandler = (NSApp.delegate as! AppDelegate).inputConfigFileHandler
@@ -379,7 +385,7 @@ class ActiveBindingTableStore {
       return
     }
 
-    applyDefaultSectionUpdates(defaultSectionBindings, tableChange)
+    pushDefaultSectionChange(defaultSectionBindings, tableChange)
   }
 
   /*
@@ -388,7 +394,7 @@ class ActiveBindingTableStore {
    This is needed so that animations can work. But ActiveBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func applyDefaultSectionUpdates(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
+  func pushDefaultSectionChange(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
@@ -398,16 +404,17 @@ class ActiveBindingTableStore {
         return
       }
 
-      self.applyBindingTableChanges(appInputConfigNew, tableChange)
+      self.appInputConfigDidChange(appInputConfigNew, tableChange)
     }
   }
 
   /*
-  - Update this class's unfiltered list of bindings, and recalculate filtered list
-  - Push update to the Key Bindings table in the UI so it can be animated.
-  Expected to be run on the main thread.
+   Does the following sequentially:
+   - Update this class's unfiltered list of bindings, and recalculate filtered list
+   - Push update to the Key Bindings table in the UI so it can be animated.
+   Expected to be run on the main thread.
   */
-  private func applyBindingTableChanges(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChangeByRowIndex? = nil) {
+  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChangeByRowIndex? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases:
@@ -422,18 +429,9 @@ class ActiveBindingTableStore {
     NotificationCenter.default.post(notification)
   }
 
-  // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed by someone other than this class.
-  // Expected to be run on the main thread.
-  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
-
-    // Remember, the displayed table contents must reflect the filtered state
-    self.applyBindingTableChanges(appInputConfigNew, buildTableDiff(appInputConfigNew))
-  }
-
   private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChangeByRowIndex {
     let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
-    // Remember, the displayed table contents must reflect the filtered state
+    // Remember, the displayed table contents must reflect the *filtered* state.
     let bindingRowsAllNewFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
     return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
