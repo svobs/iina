@@ -254,62 +254,26 @@ class TableChangeByRowIndex: TableChange {
     tableChange.toRemove = IndexSet()
     tableChange.toInsert = IndexSet()
     tableChange.toMove = []
-    var oldIndexOffset = 0
-    var newIndexOffset = 0
 
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-    let removedIndexes = LinkedList<Int>()
-    let addedIndexes = LinkedList<Int>()
 
     /*
-     References:
+     Solution shared by Giles Hammond:
+     https://stackoverflow.com/a/63281265/1347529S
+     Further reference:
      https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
-     https://stackoverflow.com/a/61535502/1347529
-     Inspired by: https://stackoverflow.com/a/52368491/1347529
      */
-    let diff = newRows.difference(from: oldRows).inferringMoves()
-    Logger.log("Building table diff: found \(diff.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
-    for change in diff {
-      switch change {
-        case .remove(let fromOffset, _, let toOffset):
+    let steps = newRows.difference(from: oldRows).steps
+    Logger.log("Building table diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    for step in steps {
+      switch step {
+        case let .remove(_, index):
           // If toOffset != nil, it signifies a MOVE from fromOffset -> toOffset. But the offset must be adjusted for removes!
-          Logger.log("Diff: remove(offset: \(fromOffset), associatedWith: \(String(describing: toOffset))", level: .verbose)
-          if let toOffset = toOffset {
-            // MOVE
-            addedIndexes.append(toOffset)
-          } else {
-            // REMOVE
-            tableChange.toRemove?.insert(fromOffset)
-          }
-          removedIndexes.append(fromOffset)
-
-        case .insert(let toOffset, _, let fromOffset):
-          Logger.log("Diff: insert(offset: \(toOffset), associatedWith: \(String(describing: fromOffset))", level: .verbose)
-          while let lastRemovedOffset = removedIndexes.last, lastRemovedOffset < toOffset {
-            removedIndexes.removeLast()
-            oldIndexOffset += 1
-          }
-          while let lastAddedOffset = addedIndexes.last, lastAddedOffset < toOffset {
-            addedIndexes.removeLast()
-            newIndexOffset += 1
-          }
-
-          if let fromOffset = fromOffset {
-            // MOVE
-            let fromOffsetAdjusted = fromOffset - oldIndexOffset
-            let toOffsetAdjusted = toOffset + newIndexOffset
-            if fromOffsetAdjusted < toOffset {
-              tableChange.toMove?.append((fromOffsetAdjusted, toOffsetAdjusted - 1))
-            } else {
-              tableChange.toMove?.append((fromOffsetAdjusted, toOffsetAdjusted ))
-              newIndexOffset += 1
-            }
-            oldIndexOffset -= 1
-          } else {
-            // ADD
-            tableChange.toInsert?.insert(toOffset)
-            oldIndexOffset += 1
-          }
+          tableChange.toRemove?.insert(index)
+        case let .insert(_, index):
+          tableChange.toInsert?.insert(index)
+        case let .move(_, from, to):
+          tableChange.toMove?.append((from, to))
       }
     }
     return tableChange

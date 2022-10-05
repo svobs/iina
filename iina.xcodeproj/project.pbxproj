@@ -171,6 +171,7 @@
 		D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
+		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableChange.swift */; };
 		D1EAF5E928E7176A0023BACF /* InputConfigFileHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E828E7176A0023BACF /* InputConfigFileHandler.swift */; };
@@ -1500,6 +1501,7 @@
 		D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingTableStore.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
+		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableChange.swift; sourceTree = "<group>"; };
 		D1EAF5E828E7176A0023BACF /* InputConfigFileHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileHandler.swift; sourceTree = "<group>"; };
@@ -2122,6 +2124,7 @@
 				D140E81B285A0BEF00067094 /* LinkedList.swift */,
 				E38B3215214FF700000F6D27 /* EventController.swift */,
 				E39A11FC240F176E00A67F9F /* StringEncodingName.swift */,
+				D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -2905,6 +2908,7 @@
 				84EB1EDA1D2F51D3004FA5A1 /* AppDelegate.swift in Sources */,
 				84CFC92623F8DDE000381E5B /* PlayerWindowController.swift in Sources */,
 				E353070521496CE4008FE492 /* PrefPluginViewController.swift in Sources */,
+				D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */,
 				840820111ECF6C1800361416 /* FileGroup.swift in Sources */,
 				E374160C20F138A900B4F7F9 /* CollapseView.swift in Sources */,
 				84A0BA901D2F8D4100BC8DA1 /* IINAError.swift in Sources */,
