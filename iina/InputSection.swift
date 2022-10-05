@@ -59,7 +59,7 @@ class MPVInputSection: InputSection {
 
   var description: String {
     get {
-      "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyMappingList.count) bindings)"
+      "MPVInputSection(\"\(name)\", \(isForce ? "force" : "weak"), \(keyMappingList.count) mappings)"
     }
   }
 }
@@ -73,7 +73,7 @@ class DefaultInputSection: MPVInputSection {
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
+    Logger.log("Replacing key mappings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
     self.keyMappingList = keyMappingList
   }
 }
@@ -88,7 +88,7 @@ class PluginsInputSection: MPVInputSection {
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key bindings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
+    Logger.log("Replacing key mappings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
     self.keyMappingList = keyMappingList
   }
 }

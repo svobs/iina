@@ -19,8 +19,16 @@ class ActiveBindingTableStore {
 
   // MARK: State
 
-  // The unfiltered list of table rows
-  private var bindingRowsAll: [ActiveBinding] = []
+  // The current state of the AppInputConfig on which the state of this table is based.
+  // While in almost all cases this should be identical to AppInputConfig.current, it is way simpler and more performant
+  // to allow some tiny amount of drift. We treat each AppInputConfig object as a read-only version of the application state,
+  // and each new AppInputConfig is an atomic update which replaces the previously received one.
+  private var appInputConfig = AppInputConfig.current
+
+  // The current unfiltered list of table rows
+  private var bindingRowsAll: [ActiveBinding] {
+    appInputConfig.bindingCandidateList
+  }
 
   // The table rows currently displayed, which will change depending on the current filterString
   private var bindingRowsFiltered: [ActiveBinding] = []
@@ -32,7 +40,7 @@ class ActiveBindingTableStore {
 
   // MARK: Bindings Table CRUD
 
-  func getBindingRowCount() -> Int {
+  var bindingRowCount: Int {
     return bindingRowsFiltered.count
   }
 
@@ -51,7 +59,7 @@ class ActiveBindingTableStore {
     return row.origin == .confFile
   }
 
-  private func determimeInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
+  func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
     var insertIndex: Int
     if requestedIndex < 0 {
       // snap to very beginning
@@ -60,29 +68,37 @@ class ActiveBindingTableStore {
       // snap to very end
       insertIndex = bindingRowsAll.count
     } else {
-      if isFiltered() {
-        insertIndex = bindingRowsAll.count  // default to end, in case something breaks
-
-        // If there is an active filter, convert the filtered index to unfiltered index
-        if let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(requestedIndex) {
-          insertIndex = unfilteredIndex
-        }
-      } else {
-        insertIndex = requestedIndex  // default to requested index
-      }
-      if isAfterNotAt {
-        insertIndex += 1
-        if insertIndex >= bindingRowsAll.count {
-          insertIndex = bindingRowsAll.count
-        }
-      }
+     insertIndex = requestedIndex  // default to requested index
     }
 
+    // If there is an active filter, convert the filtered index to unfiltered index
+    if isFiltered(), let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(requestedIndex) {
+      insertIndex = unfilteredIndex
+    }
+
+    // Adjust for insert cursor
+    if isAfterNotAt {
+      insertIndex = min(insertIndex + 1, bindingRowsAll.count)
+    }
+
+    // The "default" section is the only section which can be edited or changed.
+    // If the insert cursor is outside the default section, then snap it to the nearest valid index.
+    let ai = self.appInputConfig
+    if insertIndex < ai.defaultSectionStartIndex {
+      Logger.log("Insert location (\(insertIndex), origReq=\(requestedIndex)) is before the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionStartIndex)", level: .verbose)
+      return ai.defaultSectionStartIndex
+    }
+    if insertIndex > ai.defaultSectionEndIndex {
+      Logger.log("Insert location (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionEndIndex)", level: .verbose)
+      return ai.defaultSectionEndIndex
+    }
+
+    Logger.log("Returning insertIndex: \(insertIndex) from requestedIndex: \(requestedIndex)", level: .verbose)
     return insertIndex
   }
 
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
-    let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
+    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
     if isFiltered() {
@@ -124,7 +140,7 @@ class ActiveBindingTableStore {
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
     let tableChange = TableChangeByRowIndex(.moveRows)
-    Logger.log("MovePairs: \(moveIndexPairs)")
+    Logger.log("MovePairs: \(moveIndexPairs)", level: .verbose)
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
 
@@ -134,7 +150,7 @@ class ActiveBindingTableStore {
 
   // Returns the index of the first element which was ultimately inserted
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping]) -> Int {
-    let insertIndex = determimeInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
+    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
 
     if isFiltered() {
@@ -331,7 +347,7 @@ class ActiveBindingTableStore {
   func filterBindings(_ searchString: String) {
     Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
-    appActiveBindingsDidChange(bindingRowsAll)
+    appInputConfigDidChange(appInputConfig)
   }
 
   private func updateFilteredBindings() {
@@ -376,13 +392,13 @@ class ActiveBindingTableStore {
     InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
 
     DispatchQueue.main.async {
-      let bindingRowsAllNew = AppInputConfig.rebuildCurrent(thenNotifyPrefsUI: false).bindingCandidateList
-      guard bindingRowsAllNew.count >= defaultSectionBindings.count else {
-        Logger.log("Something went wrong: output binding count (\(bindingRowsAllNew.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
+      let appInputConfigNew = AppInputConfig.rebuildCurrent(thenNotifyPrefsUI: false)
+      guard appInputConfigNew.bindingCandidateList.count >= defaultSectionBindings.count else {
+        Logger.log("Something went wrong: output binding count (\(appInputConfigNew.bindingCandidateList.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
         return
       }
 
-      self.applyBindingTableChanges(bindingRowsAllNew, tableChange)
+      self.applyBindingTableChanges(appInputConfigNew, tableChange)
     }
   }
 
@@ -391,13 +407,13 @@ class ActiveBindingTableStore {
   - Push update to the Key Bindings table in the UI so it can be animated.
   Expected to be run on the main thread.
   */
-  private func applyBindingTableChanges(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex? = nil) {
+  private func applyBindingTableChanges(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChangeByRowIndex? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases:
-    let ultimateTableChange = tableChange ?? buildTableDiff(bindingRowsAllNew)
+    let ultimateTableChange = tableChange ?? buildTableDiff(appInputConfigNew)
 
-    bindingRowsAll = bindingRowsAllNew
+    self.appInputConfig = appInputConfigNew
     updateFilteredBindings()
 
     // Notify Key Bindings table of update:
@@ -406,16 +422,17 @@ class ActiveBindingTableStore {
     NotificationCenter.default.post(notification)
   }
 
-  // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed.
+  // Callback for when Plugin menu bindings, active player bindings, or filtered bindings have changed by someone other than this class.
   // Expected to be run on the main thread.
-  func appActiveBindingsDidChange(_ bindingRowsAllNew: [ActiveBinding]) {
+  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // Remember, the displayed table contents must reflect the filtered state
-    self.applyBindingTableChanges(bindingRowsAllNew, buildTableDiff(bindingRowsAllNew))
+    self.applyBindingTableChanges(appInputConfigNew, buildTableDiff(appInputConfigNew))
   }
 
-  private func buildTableDiff(_ bindingRowsAllNew: [ActiveBinding]) -> TableChangeByRowIndex {
+  private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChangeByRowIndex {
+    let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
     // Remember, the displayed table contents must reflect the filtered state
     let bindingRowsAllNewFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
     return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)

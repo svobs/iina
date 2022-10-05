@@ -18,7 +18,7 @@ class AppInputConfig {
 
   // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   // the active bindings are rebuilt and the old set is discarded.
-  static var current = AppInputConfig()
+  static var current = AppInputConfig(bindingCandidateList: [], resolverDict: [:], defaultSectionStartIndex: 0, defaultSectionEndIndex: 0)
 
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
@@ -49,7 +49,7 @@ class AppInputConfig {
 
     if thenNotifyPrefsUI {
       // Notify Key Bindings table in prefs UI
-      (NSApp.delegate as! AppDelegate).bindingTableStore.appActiveBindingsDidChange(newAppBindings.bindingCandidateList)
+      (NSApp.delegate as! AppDelegate).bindingTableStore.appInputConfigDidChange(newAppBindings)
     }
 
     return newAppBindings
@@ -85,9 +85,21 @@ class AppInputConfig {
   // For lookup use `resolveMpvKey()` or `resolveKeyEvent()` from the active player's input config.
   let resolverDict: [String: ActiveBinding]
 
-  init(bindingCandidateList: [ActiveBinding] = [], resolverDict: [String: ActiveBinding] = [:]) {
+  // (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
+  // The index into `bindingCandidateList` of the first binding in the "default" section.
+  // If the "default" section has no bindings, then this will be the last index of the section preceding it in precendence, or simply 0
+  // if there are no sections preceding it.
+  let defaultSectionStartIndex: Int
+  // The index into `bindingCandidateList` of the last binding in the "default" section.
+  // If the "default" section has no bindings, then this will be the index of the first binding belonging to  the next "strong" section,
+  // or simply `bindingCandidateList.count` if there are no sections after it.
+  let defaultSectionEndIndex: Int
+
+  init(bindingCandidateList: [ActiveBinding], resolverDict: [String: ActiveBinding], defaultSectionStartIndex: Int, defaultSectionEndIndex: Int) {
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
+    self.defaultSectionStartIndex = defaultSectionStartIndex
+    self.defaultSectionEndIndex = defaultSectionEndIndex
   }
 
   func logEnabledBindings() {

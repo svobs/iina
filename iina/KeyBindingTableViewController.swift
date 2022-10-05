@@ -73,7 +73,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Tell AppKit the number of rows when it asks
    */
   func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingTableStore.getBindingRowCount()
+    return bindingTableStore.bindingRowCount
   }
 
   /**
@@ -191,7 +191,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
 
     if isRaw() {
-      Logger.log("Opening in-line editor for row \(rowIndex)", level: .verbose)
+      Logger.log("Double-click: opening in-line editor for row \(rowIndex)", level: .verbose)
       // Use in-line editor
       return true
     }
@@ -410,7 +410,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   /*
    Validate drop while hovering.
    */
-  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       return []  // deny drop
@@ -427,12 +427,12 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     // FIXME: change drop row & operatiom if dropping into non-conf-file territory
 
-    if dropOperation == .on {
-      // Cannot drop on/into existing rows. Put below it
-      tableView.setDropRow(row + 1, dropOperation: .above)
-    } else {
-      tableView.setDropRow(row, dropOperation: .above)
-    }
+    // Cannot drop on/into existing rows. Change to below it:
+    let isAfterNotAt = dropOperation == .on
+    // Can only make changes to the "default" section. This will find it:
+    let dropTargetRow = bindingTableStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
+
+    tableView.setDropRow(dropTargetRow, dropOperation: .above)
 
     let dragMask = info.draggingSourceOperationMask
     switch dragMask {

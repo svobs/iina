@@ -11,6 +11,11 @@ import Foundation
 class AppInputConfigBuilder {
   private let sectionStack: InputSectionStack
 
+  // See `AppInputConfig.defaultSectionStartIndex`
+  private var defaultSectionStartIndex: Int? = nil
+  // See `AppInputConfig.defaultSectionEndIndex`
+  private var defaultSectionEndIndex: Int? = nil
+
   init(_ sectionStack: InputSectionStack) {
     self.sectionStack = sectionStack
   }
@@ -23,6 +28,7 @@ class AppInputConfigBuilder {
     Logger.log("Starting rebuild of active input bindings", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of ActiveBindings, including redundancies. We're not done setting each's `isEnabled` field though.
+    // This also sets `defaultSectionStartIndex` and `defaultSectionEndIndex`.
     let bindingCandidateList = self.combineEnabledSectionBindings()
     var resolverDict: [String: ActiveBinding] = [:]
 
@@ -48,7 +54,8 @@ class AppInputConfigBuilder {
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     fillInPartialSequences(&resolverDict)
 
-    let appBindings = AppInputConfig(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict)
+    let appBindings = AppInputConfig(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
+                                     defaultSectionStartIndex: defaultSectionStartIndex!, defaultSectionEndIndex: defaultSectionEndIndex!)
     Logger.log("Finished rebuild of active input bindings (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
     appBindings.logEnabledBindings()
 
@@ -64,6 +71,9 @@ class AppInputConfigBuilder {
     InputSectionStack.dq.sync {
       var linkedList = LinkedList<ActiveBinding>()
 
+      var countOfDefaultSectionBindings: Int = 0
+      var countOfWeakSectionBindings: Int = 0
+
       // Iterate from top to the bottom of the "stack":
       for enabledSectionMeta in sectionStack.sectionsEnabled {
         guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
@@ -72,12 +82,30 @@ class AppInputConfigBuilder {
           continue
         }
 
+        if inputSection.origin == .confFile && inputSection.name == DefaultInputSection.NAME {
+          countOfDefaultSectionBindings = inputSection.keyMappingList.count
+        } else if !inputSection.isForce {
+          countOfWeakSectionBindings += inputSection.keyMappingList.count
+        }
+
         addAllBindings(from: inputSection, to: &linkedList)
 
         if enabledSectionMeta.isExclusive {
           log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
           return Array<ActiveBinding>(linkedList)
         }
+      }
+
+      // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
+      // Remember, all weak bindings precede the default section, and all strong bindings come after it.
+      // But any section may have zero bindings.
+      if countOfDefaultSectionBindings > 0 {
+        defaultSectionStartIndex = countOfWeakSectionBindings
+        defaultSectionEndIndex = countOfWeakSectionBindings + countOfDefaultSectionBindings
+      } else {
+        let startIndex = max(0, countOfWeakSectionBindings - 1)
+        defaultSectionStartIndex = startIndex
+        defaultSectionEndIndex = min(startIndex + 1, linkedList.count)
       }
 
       return Array<ActiveBinding>(linkedList)

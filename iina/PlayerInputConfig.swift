@@ -101,6 +101,7 @@ class PlayerInputConfig {
   }
 
   func makeAppInputConfigBuilder() -> AppInputConfigBuilder {
+    // this class is the only other class which can access this player's InputSectionStack.
     AppInputConfigBuilder(sectionStack)
   }
 
