@@ -8,9 +8,9 @@
 
 import Foundation
 
-class KeyMapping: NSObject, NSCopying, Codable {
+class KeyMapping: NSObject, Codable {
 
-  var bindingID: Int?
+  let bindingID: Int?
 
   var isIINACommand: Bool
 
@@ -141,9 +141,8 @@ class KeyMapping: NSObject, NSCopying, Codable {
     return rawKey == other.rawKey && rawAction == other.rawAction
   }
 
-  //  NOTE: Does not copy bindingID!
-  func copy(with zone: NSZone? = nil) -> Any {
-    return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: nil)
+  func copy(bindingID: Int?) -> KeyMapping {
+    return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: bindingID)
   }
 }
 

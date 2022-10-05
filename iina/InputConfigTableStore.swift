@@ -128,7 +128,7 @@ class InputConfigTableStore {
     changeCurrentConfig(configNameNew)
   }
 
-  // This is the only method other than setConfigTableState() which actually changes the real preference data
+  // This is the only method other than applyConfigTableChange() which actually changes the real preference data
   func changeCurrentConfig(_ configNameNew: String) {
     guard !configNameNew.equalsIgnoreCase(self.currentConfigName) else {
       Logger.log("No need to persist change to current config '\(configNameNew)'; it is already current", level: .verbose)
@@ -148,7 +148,7 @@ class InputConfigTableStore {
 
     Logger.log("Changing current config to: \"\(configNameNew)\"", level: .verbose)
 
-    setConfigTableState(currentConfigNameNew: configNameNew, .selectionChangeOnly)
+    applyConfigTableChange(currentConfigNameNew: configNameNew, .selectionChangeOnly)
   }
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
@@ -157,7 +157,7 @@ class InputConfigTableStore {
     Logger.log("Adding user config: \"\(name)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[name] = filePath
-    setConfigTableState(userConfDictUpdated, currentConfigNameNew: name, .addRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: name, .addRows)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -176,7 +176,7 @@ class InputConfigTableStore {
         newCurrentConfig = name
       }
     }
-    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newCurrentConfig, .addRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig, .addRows)
   }
 
   func removeConfig(_ configName: String) {
@@ -199,7 +199,7 @@ class InputConfigTableStore {
       Logger.log("Cannot remove config '\(configName)': it is not a user config!", level: .error)
       return
     }
-    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newCurrentConfName, .removeRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName, .removeRows)
   }
 
   func renameCurrentConfig(newName: String) -> Bool {
@@ -223,7 +223,7 @@ class InputConfigTableStore {
     let newFilePath = Utility.buildConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    setConfigTableState(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)
 
     return true
   }
@@ -250,7 +250,7 @@ class InputConfigTableStore {
   }
 
   // Replaces the current state with the given params, and fires listeners.
-  private func setConfigTableState(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType) {
+  private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType) {
     let configTableChange = TableChangeByStringElement(changeType)
     configTableChange.oldRows = configTableRows
 
@@ -280,7 +280,4 @@ class InputConfigTableStore {
     // Finally, fire notification. This covers row selection too
     NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableChange))
   }
-
-  // MARK: Input Config File serialize/deserialize
-
 }

@@ -235,6 +235,8 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   private func edit(rowIndex: Int, columnIndex: Int = 0) {
     guard requireCurrentConfigIsEditable(forAction: "edit") else { return }
 
+    Logger.log("Edit requested for row \(rowIndex), col \(columnIndex)")
+
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // Should never see this message
       Logger.log("Cannot edit binding row \(rowIndex): edit is not allowed for this row! Aborting", level: .error)
@@ -289,7 +291,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     if isRaw() {
       let insertedRowIndex = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
-      self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
+      // The previous line will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
+      tableView.afterNextTableUpdate = {
+        self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
+      }
 
     } else {
       showEditBindingPopup { key, action in

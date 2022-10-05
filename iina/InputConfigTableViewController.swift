@@ -56,11 +56,11 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       tableStore.changeCurrentConfigToDefault()
       return
     }
-
+    
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-    Logger.log("Selected row: '\(configName)' (index \(index)). Selected rows are now: \(self.tableView.selectedRowIndexes)", level: .verbose)
+    let printedIndexesMsg = "Selected rows are now: \(self.tableView.selectedRowIndexes.reduce("[", { "\($0) \($1)"  })) ]"
+    Logger.log("Selected row: '\(configName)' (index \(index)). \(printedIndexesMsg)", level: .verbose)
   }
-
   // MARK: NSTableViewDataSource
 
   /*

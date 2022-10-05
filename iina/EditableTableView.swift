@@ -16,6 +16,7 @@ class EditableTableView: NSTableView {
   var userDidDoubleClickOnCell: ((Int, Int) -> Bool) = {(row: Int, column: Int) -> Bool in
     return true
   }
+  var afterNextTableUpdate: (() -> Void)?
 
   var editableTextColumnIndexes: [Int] = []
 
@@ -104,9 +105,18 @@ class EditableTableView: NSTableView {
     return "nil"
   }
 
-  override func editColumn(_ column: Int, row: Int, with event: NSEvent?, select: Bool) {
-    Logger.log("Opening in-line editor for row \(row), column \(column) (event: \(eventTypeText(event)))")
-    guard row >= 0 && column >= 0 else {
+  override func editColumn(_ columnIndex: Int, row rowIndex: Int, with event: NSEvent?, select: Bool) {
+    Logger.log("Opening in-line editor for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)))")
+    guard rowIndex >= 0 && columnIndex >= 0 else {
+      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) or columnIndex (\(columnIndex)) is less than 0", level: .error)
+      return
+    }
+    guard rowIndex < numberOfRows else {
+      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) cannot be less than numberOfRows (\(numberOfRows))", level: .error)
+      return
+    }
+    guard columnIndex < numberOfColumns else {
+      Logger.log("Discarding request to edit cell: columnIndex (\(columnIndex)) cannot be less than numberOfColumns (\(numberOfColumns))", level: .error)
       return
     }
 
@@ -116,15 +126,15 @@ class EditableTableView: NSTableView {
       self.lastEditedTextField = nil
     }
 
-    if row != selectedRow {
-      self.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+    if rowIndex != selectedRow {
+      self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    self.scrollRowToVisible(row)
-    let view = self.view(atColumn: column, row: row, makeIfNecessary: false)
+    self.scrollRowToVisible(rowIndex)
+    let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false)
     if let cellView = view as? NSTableCellView {
       if let editableTextField = cellView.textField as? EditableTextField {
-        self.prepareTextFieldForEdit(editableTextField, row: row, column: column)
+        self.prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
         self.window?.makeFirstResponder(editableTextField)
       }
     }
@@ -238,6 +248,12 @@ class EditableTableView: NSTableView {
 
     Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     tableChange.execute(on: self)
+
+    if let afterNextTableUpdate = self.afterNextTableUpdate {
+      Logger.log("Executing afterNextTableUpdate callback", level: .verbose)
+      self.afterNextTableUpdate = nil // one-time use
+      afterNextTableUpdate()
+    }
   }
 
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.

@@ -17,17 +17,7 @@ class InputConfigFileData {
     let rawFileContent: String?  // reflects content on disk
     let bindingOverride: KeyMapping?  // only exists in memory. Useful for maintaining edits even while they are not parseable
 
-    init(_ rawFileContent: String) {
-      self.rawFileContent = rawFileContent
-      self.bindingOverride = nil
-    }
-
-    init(_  bindingOverride: KeyMapping) {
-      self.rawFileContent = nil
-      self.bindingOverride = bindingOverride
-    }
-
-    init(_ rawFileContent: String, _ bindingOverride: KeyMapping) {
+    init(_ rawFileContent: String? = nil, bindingOverride: KeyMapping? = nil) {
       self.rawFileContent = rawFileContent
       self.bindingOverride = bindingOverride
     }
@@ -50,15 +40,21 @@ class InputConfigFileData {
   func parseBindings() -> [KeyMapping] {
     var bindingList: [KeyMapping] = []
 
-    for (lineIndex, line) in self.lines.enumerated() {
+    var linesNew: [Line] = []
+    for line in self.lines {
+      let lineIndex = linesNew.count
       if let binding = line.bindingOverride {
         // Note: `lineIndex` includes bindingOverrides and thus may be greater than the equivalent line number in the physical file
-        binding.bindingID = lineIndex
-        bindingList.append(binding)
+
+        let bindingNew = binding.copy(bindingID: lineIndex)
+        bindingList.append(bindingNew)
+        linesNew.append(Line(line.rawFileContent, bindingOverride: bindingNew))
       } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFileData.parseRawLine(rawFileContent, lineIndex) {
         bindingList.append(binding)
+        linesNew.append(line)
       }
     }
+    self.lines = linesNew
 
     return bindingList
   }
@@ -125,10 +121,10 @@ class InputConfigFileData {
            lineIndex <= self.lines.count,
            let fileRawLine = self.lines[lineIndex].rawFileContent {
           // line previously existed
-          newLines.append(Line(fileRawLine, newBinding))
+          newLines.append(Line(fileRawLine, bindingOverride: newBinding))
         } else {
           // line was added
-          newLines.append(Line(newBinding))
+          newLines.append(Line(bindingOverride: newBinding))
         }
       } else {
         // valid binding
