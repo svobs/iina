@@ -65,7 +65,6 @@ class AppInputConfig {
     DispatchQueue.main.async {
       // Optimization: drop all but the most recent request
       if AppInputConfig.lastBuildVersion >= rebuildVersion {
-        Logger.log("No need to rebuild app active bindings - already at v\(AppInputConfig.lastBuildVersion)", level: .verbose)
         return
       }
       AppInputConfig.lastBuildVersion = rebuildVersion

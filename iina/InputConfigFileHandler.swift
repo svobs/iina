@@ -36,7 +36,8 @@ class InputConfigFileHandler {
     self.currentConfigFileData = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
-    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings)
+    // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
+    (NSApp.delegate as! AppDelegate).bindingTableStore.applyDefaultSectionUpdates(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
   }
 
   // Input Config File: Save
