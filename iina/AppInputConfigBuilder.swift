@@ -114,11 +114,11 @@ class AppInputConfigBuilder {
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<ActiveBinding>) {
     if inputSection.keyMappingList.isEmpty {
-      if AppInputConfig.LOG_BINDINGS_REBUILD {
+      if AppInputConfig.logBindingsRebuild {
         log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
       }
     } else {
-      if AppInputConfig.LOG_BINDINGS_REBUILD {
+      if AppInputConfig.logBindingsRebuild {
         log("RebuildBindings: adding from \(inputSection)", level: .verbose)
       }
       if inputSection.isForce {
@@ -192,7 +192,7 @@ class AppInputConfigBuilder {
         }
       }
     }
-    if AppInputConfig.LOG_BINDINGS_REBUILD {
+    if AppInputConfig.logBindingsRebuild {
       Logger.log("Added \(addedCount) `ignored` bindings for partial key sequences", level: .verbose)
     }
   }

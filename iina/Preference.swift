@@ -268,6 +268,9 @@ struct Preference {
     /* The highest mpv log level which IINA will include mpv log events in its own logfile (mutually exclusive of mpv's logfile) */
     static let iinaMpvLogLevel = Key("iinaMpvLogLevel")
 
+    /* If true, enables even more verbose logging so that input bindings computations can be more easily debugged. */
+    static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
+
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
     /* If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
@@ -810,6 +813,7 @@ struct Preference {
     .enableLogging: false,
     .logLevel: Logger.Level.debug.rawValue,
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
+    .logKeyBindingsRebuild: false,
     .displayKeyBindingRawValues: false,
     .enableInterRowTabEditingInKeyBindingsTable: false,
     .retainIgnoredLinesInInputConfigFiles: false,

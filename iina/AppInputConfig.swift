@@ -13,7 +13,9 @@ class AppInputConfig {
   
   // MARK: Static
 
-  static let LOG_BINDINGS_REBUILD = false
+  static var logBindingsRebuild: Bool {
+    Preference.bool(for: .logKeyBindingsRebuild)
+  }
   static private var lastBuildVersion: Int = 0
 
   // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
@@ -103,7 +105,7 @@ class AppInputConfig {
   }
 
   func logEnabledBindings() {
-    if AppInputConfig.LOG_BINDINGS_REBUILD, Logger.enabled && Logger.Level.preferred >= .verbose {
+    if AppInputConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
       Logger.log("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
     }

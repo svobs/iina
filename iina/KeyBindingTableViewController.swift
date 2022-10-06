@@ -8,7 +8,7 @@
 
 import Foundation
 
-class KeyBindingsTableViewController: NSObject {
+class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
@@ -71,7 +71,7 @@ class KeyBindingsTableViewController: NSObject {
 }
 
 // MARK: NSTableViewDelegate
-extension KeyBindingsTableViewController: NSTableViewDelegate {
+extension KeyBindingTableViewController: NSTableViewDelegate {
 
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
     selectionDidChangeHandler()
@@ -361,7 +361,7 @@ extension KeyBindingsTableViewController: NSTableViewDelegate {
 }
 
 // MARK: NSTableViewDataSource
-extension KeyBindingsTableViewController: NSTableViewDataSource {
+extension KeyBindingTableViewController: NSTableViewDataSource {
   /*
    Tell AppKit the number of rows when it asks
    */
@@ -496,7 +496,7 @@ extension KeyBindingsTableViewController: NSTableViewDataSource {
 
 // MARK: EditableTableViewDelegate
 
-extension KeyBindingsTableViewController: EditableTableViewDelegate {
+extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // MARK: Cut, copy, paste, delete support.
 
@@ -590,7 +590,7 @@ extension KeyBindingsTableViewController: EditableTableViewDelegate {
 
 // MARK: NSMenuDelegate
 
-extension KeyBindingsTableViewController: NSMenuDelegate {
+extension KeyBindingTableViewController: NSMenuDelegate {
 
   fileprivate class BindingMenuItem: NSMenuItem {
     let row: ActiveBinding
@@ -691,8 +691,8 @@ extension KeyBindingsTableViewController: NSMenuDelegate {
     contextMenu.addItem(NSMenuItem.separator())
 
     // Add
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New Item Above", action: #selector(self.addNewRowAbove(_:)))
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New Item Below", action: #selector(self.addNewRowBelow(_:)))
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
 
   }
 
@@ -720,17 +720,17 @@ extension KeyBindingsTableViewController: NSMenuDelegate {
     if modifiableCount > 0 {
       // By setting the target to `tableView`, AppKit will know to call its `validateUserInterfaceItem()`
       // and will enable/disable each action appropriately
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) Items", action: #selector(self.tableView.cut(_:)), target: self.tableView)
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) Items", action: #selector(self.tableView.copy(_:)), target: self.tableView)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.cut(_:)), target: self.tableView)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.copy(_:)), target: self.tableView)
       let pastableBindings = readBindingsFromClipboard()
       let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.tableView.paste(_:)), target: self.tableView)
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(modifiableCount) Items", action: #selector(self.tableView.delete(_:)), target: self.tableView)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.delete(_:)), target: self.tableView)
     }
   }
 
   private func makePasteMenuItemTitle(itemCount: Int) -> String {
-    itemCount == 0 ? "Paste" : "Paste \(itemCount) Items"
+    itemCount == 0 ? "Paste" : "Paste \(itemCount) \(Constants.String.keyBinding)s"
   }
 
   @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {

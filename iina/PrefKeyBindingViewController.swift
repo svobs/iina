@@ -36,7 +36,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private var configTableController: InputConfigTableViewController? = nil
-  private var kbTableController: KeyBindingsTableViewController? = nil
+  private var kbTableController: KeyBindingTableViewController? = nil
 
   private var observers: [NSObjectProtocol] = []
 
@@ -64,7 +64,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    kbTableController = KeyBindingsTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
+    kbTableController = KeyBindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     configTableController = InputConfigTableViewController(inputConfigTableView, inputConfigTableStore)
 
     if #available(macOS 10.13, *) {

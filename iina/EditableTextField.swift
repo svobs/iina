@@ -21,6 +21,7 @@ class EditableTextField: NSTextField, NSTextFieldDelegate {
   override func mouseDown(with event: NSEvent) {
     if (event.clickCount == 2 && !self.isEditable && userDidDoubleClickOnCell()) {
       if let editCallback = editCell {
+        self.editCell = nil
         // This will ensure that the row is selected if not already:
         editCallback()
       } else {
@@ -60,7 +61,6 @@ class EditableTextField: NSTextField, NSTextFieldDelegate {
   func beginEditing() {
     self.isEditable = true
     self.isSelectable = true
-    self.backgroundColor = NSColor.white
     self.selectText(nil)  // creates editor
     self.needsDisplay = true
   }
@@ -72,7 +72,6 @@ class EditableTextField: NSTextField, NSTextFieldDelegate {
     self.window?.makeFirstResponder(self.parentTable)
     self.isEditable = false
     self.isSelectable = false
-    self.backgroundColor = NSColor.clear
     self.needsDisplay = true
   }
 
