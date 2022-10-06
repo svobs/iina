@@ -65,12 +65,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     super.viewDidLoad()
 
     kbTableController = KeyBindingsTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
-    kbTableView.dataSource = kbTableController
-    kbTableView.delegate = kbTableController
-
     configTableController = InputConfigTableViewController(inputConfigTableView, inputConfigTableStore)
-    inputConfigTableView.dataSource = configTableController
-    inputConfigTableView.delegate = configTableController
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")

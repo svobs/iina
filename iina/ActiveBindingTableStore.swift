@@ -36,8 +36,6 @@ class ActiveBindingTableStore {
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
 
-  var selectedRowIndexes = IndexSet()
-
   // MARK: Bindings Table CRUD
 
   var bindingRowCount: Int {
@@ -52,6 +50,7 @@ class ActiveBindingTableStore {
     return bindingRowsFiltered[index]
   }
 
+  // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
@@ -103,7 +102,8 @@ class ActiveBindingTableStore {
     return insertIndex
   }
 
-  // Returns the index of the first element which was ultimately inserted
+  // Returns the index of the first element which was ultimately inserted;
+  // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping]) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
@@ -119,12 +119,13 @@ class ActiveBindingTableStore {
     tableChange.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
     tableChange.newSelectedRows = tableChange.toInsert!
 
-    var bindingRowsAllUpdated = bindingRowsAll
+    var bindingRowsAllNew = bindingRowsAll
     for binding in bindingList.reversed() {
-      bindingRowsAllUpdated.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
+      // We can get away with making these assumptions about ActiveBinding fields, because only the "default" section can be modified by the user
+      bindingRowsAllNew.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
-    saveAndPushDefaultSectionChange(bindingRowsAllUpdated, tableChange)
+    saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)
     return insertIndex
   }
 
@@ -182,6 +183,7 @@ class ActiveBindingTableStore {
     let tableChange = TableChangeByRowIndex(.removeRows)
     tableChange.toRemove = indexesToRemove
 
+    Logger.log("Of \(idsToRemove.count) requested, (\(indexesToRemove.count) bindings will actually be removed", level: .verbose)
     saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
   }
 
@@ -378,7 +380,8 @@ class ActiveBindingTableStore {
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
   private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
-    // Save to file
+    // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
+    // or of writing another section's bindings to the "default" section.
     let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
     let inputConfigFileHandler = (NSApp.delegate as! AppDelegate).inputConfigFileHandler
     guard let defaultSectionBindings = inputConfigFileHandler.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {

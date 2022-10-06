@@ -8,7 +8,7 @@
 
 import Foundation
 
-class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
+class KeyBindingsTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
@@ -22,7 +22,6 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return (NSApp.delegate as! AppDelegate).bindingTableStore
   }
 
-
   private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
@@ -31,6 +30,9 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
     super.init()
+    tableView.dataSource = self
+    tableView.delegate = self
+    tableView.editableDelegate = self
 
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
@@ -66,20 +68,19 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
     Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
   }
+}
 
-  // MARK: NSTableViewDataSource
+// MARK: NSTableViewDelegate
+extension KeyBindingsTableViewController: NSTableViewDelegate {
 
-  /*
-   Tell AppKit the number of rows when it asks
-   */
-  func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingTableStore.bindingRowCount
+  @objc func tableViewSelectionDidChange(_ notification: Notification) {
+    selectionDidChangeHandler()
   }
 
   /**
    Make cell view when asked
    */
-  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+  @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let bindingRow = bindingTableStore.getBindingRow(at: row) else {
       return nil
     }
@@ -94,15 +95,15 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     switch columnName {
       case "keyColumn":
-        let stringValue = isRaw() ? binding.rawKey : binding.prettyKey
+        let stringValue = isRaw ? binding.rawKey : binding.prettyKey
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
 
       case "actionColumn":
-        let stringValue = isRaw() ? binding.rawAction : binding.readableCommand
+        let stringValue = isRaw ? binding.rawAction : binding.readableCommand
 
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
-        
+
         return cell
 
       case "statusColumn":
@@ -161,23 +162,16 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     textField.attributedStringValue = attrString
   }
 
-  private func isRaw() -> Bool {
+  private var isRaw: Bool {
     return Preference.bool(for: .displayKeyBindingRawValues)
   }
 
-  // MARK: NSTableViewDelegate
-
-  func tableViewSelectionDidChange(_ notification: Notification) {
-    // cache this for possible later use
-    bindingTableStore.selectedRowIndexes = tableView.selectedRowIndexes
-    selectionDidChangeHandler()
+  private var selectedRows: [ActiveBinding] {
+    Array(tableView.selectedRowIndexes.compactMap( { bindingTableStore.getBindingRow(at: $0) }))
   }
 
-  func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
-    guard let columnName = tableColumn?.identifier.rawValue else { return false }
-
-    Logger.log("shouldEdit tableColumn called for row: \(row), col: \(columnName)", level: .verbose)
-    return inputConfigTableStore.isEditEnabledForCurrentConfig && isRaw()
+  private var selectedEditableRows: [ActiveBinding] {
+    self.selectedRows.filter({ $0.isEditableByUser })
   }
 
   // MARK: EditableTableView callbacks
@@ -190,7 +184,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return false
     }
 
-    if isRaw() {
+    if isRaw {
       Logger.log("Double-click: opening in-line editor for row \(rowIndex)", level: .verbose)
       // Use in-line editor
       return true
@@ -243,7 +237,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return
     }
 
-    if isRaw() {
+    if isRaw {
       // Use in-line editor
       self.tableView.editCell(rowIndex: rowIndex, columnIndex: columnIndex)
     } else {
@@ -251,7 +245,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  // Use this if isRaw()==false (i.e., not inline editing)
+  // Use this if isRaw==false (i.e., not inline editing)
   private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
@@ -269,7 +263,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   // Adds a new binding after the current selection and then opens an editor for it. The editor with either be inline or using the popup,
-  // depending on whether isRaw() is true or false, respectively.
+  // depending on whether isRaw is true or false, respectively.
   func addNewBinding() {
     var rowIndex: Int
     // If there are selected rows, add the new row right below the last selection. Otherwise add to end of table.
@@ -282,14 +276,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
   }
 
   // Adds a new binding at the given location then opens an editor for it. The editor with either be inline or using the popup,
-  // depending on whether isRaw() is true or false, respectively.
+  // depending on whether isRaw is true or false, respectively.
   // If isAfterNotAt==true, inserts after the row with given rowIndex. If isAfterNotAt==false, inserts before the row with given rowIndex.
   private func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "insert binding") else { return }
 
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
-    if isRaw() {
+    if isRaw {
       let insertedRowIndex = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
       // The previous line will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
       tableView.afterNextTableUpdate = {
@@ -326,6 +320,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
+  // e.g., drag & drop "copy" operation
   private func copyBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
     let newBindings: [KeyMapping] = rowList.map { $0.keyMapping.copy() as! KeyMapping }
@@ -335,6 +330,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
 
+  // e.g., drag & drop "move" operation
   private func moveBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
 
@@ -362,25 +358,36 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
     return false
   }
+}
+
+// MARK: NSTableViewDataSource
+extension KeyBindingsTableViewController: NSTableViewDataSource {
+  /*
+   Tell AppKit the number of rows when it asks
+   */
+  @objc func numberOfRows(in tableView: NSTableView) -> Int {
+    return bindingTableStore.bindingRowCount
+  }
 
   // MARK: Drag & Drop
 
   /*
    Drag start: convert tableview rows to clipboard items
    */
-  func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
+  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     return bindingTableStore.getBindingRow(at: rowIndex)
   }
 
   /**
-   This is implemented to support dropping items onto the Trash icon in the Dock
+   This is implemented to support dropping items onto the Trash icon in the Dock.
+   TODO: look for a way to animate this so that it's more obvious that something happened.
    */
-  func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     guard inputConfigTableStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
       return
     }
 
-    let rowList = getBindingRowsOrEmptyList(from: session.draggingPasteboard)
+    let rowList = deserializeBindingRows(from: session.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return
@@ -398,30 +405,16 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     bindingTableStore.removeBindings(withIDs: rowList.map{$0.keyMapping.bindingID!})
   }
 
-  private func getBindingRowsOrEmptyList(from pasteboard: NSPasteboard) -> [ActiveBinding] {
-    var rowList: [ActiveBinding] = []
-    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
-      for obj in objList {
-        if let row = obj as? ActiveBinding {
-          rowList.append(row)
-        } else {
-          return [] // return empty list if something was amiss
-        }
-      }
-    }
-    return rowList
-  }
-
   /*
    Validate drop while hovering.
    */
-  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       return []  // deny drop
     }
 
-    let rowList = getBindingRowsOrEmptyList(from: info.draggingPasteboard)
+    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return []  // deny drop
@@ -430,11 +423,10 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Update that little red number:
     info.numberOfValidItemsForDrop = rowList.count
 
-    // FIXME: change drop row & operatiom if dropping into non-conf-file territory
-
     // Cannot drop on/into existing rows. Change to below it:
     let isAfterNotAt = dropOperation == .on
-    // Can only make changes to the "default" section. This will find it:
+    // Can only make changes to the "default" section. If the drop cursor is not already inside it,
+    // then we'll change it to the nearest valid index in the "default" section.
     let dropTargetRow = bindingTableStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
 
     tableView.setDropRow(dropTargetRow, dropOperation: .above)
@@ -453,7 +445,7 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
    */
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = getBindingRowsOrEmptyList(from: info.draggingPasteboard)
+    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
     Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
@@ -483,17 +475,133 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     return true
   }
 
-  // MARK: NSMenuDelegate
+  private func deserializeBindingRows(from pasteboard: NSPasteboard) -> [ActiveBinding] {
+    var rowList: [ActiveBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
+      for obj in objList {
+        if let row = obj as? ActiveBinding {
+          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
+          if row.isEditableByUser {
+            rowList.append(row)
+          }
+        } else {
+          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
+          return [] // return empty list if something was amiss
+        }
+      }
+    }
+    return rowList
+  }
+}
+
+// MARK: EditableTableViewDelegate
+
+extension KeyBindingsTableViewController: EditableTableViewDelegate {
+
+  // MARK: Cut, copy, paste, delete support.
+
+  // Only selected table items which have `isEditableByUser==true` can be included.
+  // Each menu item should be disabled if it cannot operate on at least one item.
+
+  func isCopyEnabled() -> Bool {
+    return inputConfigTableStore.isEditEnabledForCurrentConfig && !selectedEditableRows.isEmpty
+  }
+
+  func isCutEnabled() -> Bool {
+    return isCopyEnabled()
+  }
+
+  func isDeleteEnabled() -> Bool {
+    return isCopyEnabled()
+  }
+
+  func isPasteEnabled() -> Bool {
+    return !readBindingsFromClipboard().isEmpty
+  }
+
+  func doEditMenuCut() {
+    copyToClipboard()
+    removeSelectedBindings()
+  }
+
+  func doEditMenuCopy() {
+    copyToClipboard()
+  }
+
+  func doEditMenuPaste() {
+    pasteFromClipboard()
+  }
+
+  func doEditMenuDelete() {
+    removeSelectedBindings()
+  }
+
+  // If `rowsToCopy` is specified, copies it to the Clipboard.
+  // If it is not specified, uses the currently selected rows
+  private func copyToClipboard(rowsToCopy: [ActiveBinding]? = nil) {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
+      return
+    }
+    let rows: [ActiveBinding]
+    if let rowsToCopy = rowsToCopy {
+      rows = rowsToCopy.filter({ $0.isEditableByUser })
+    } else {
+      rows = self.selectedEditableRows
+    }
+
+    if rows.isEmpty {
+      Logger.log("No bindings to copy: not touching clipboard", level: .verbose)
+      return
+    }
+
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.writeObjects(rows)
+    Logger.log("Copied \(rows.count) bindings to the clipboard", level: .verbose)
+  }
+
+  // If desiredInsertIndex != nil, try to insert after it.
+  // Else if there are selected rows, try to insert after them.
+  // Else just use the end of the table.
+  // `bindingTableStore` will then do a bunch of its own logic and probably end up putting it somewhere else.
+  private func pasteFromClipboard(after desiredInsertIndex: Int? = nil) {
+    let rowsToPaste = readBindingsFromClipboard()
+    guard !rowsToPaste.isEmpty else {
+      Logger.log("Aborting Paste action because there is nothing to paste", level: .warning)
+      return
+    }
+    var insertAfterIndex: Int
+    if let desiredInsertIndex = desiredInsertIndex {
+      insertAfterIndex = desiredInsertIndex
+    } else if let lastSelectedIndex = tableView.selectedRowIndexes.last {
+      insertAfterIndex = lastSelectedIndex
+    } else {
+      insertAfterIndex = bindingTableStore.bindingRowCount
+    }
+    let mappingsToInsert = rowsToPaste.map { $0.keyMapping }
+    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: insertAfterIndex, isAfterNotAt: true, mappingsToInsert)
+    Logger.log("Pasted \(mappingsToInsert.count) bindings to index \(firstInsertedRowIndex)")
+    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+  }
+
+  private func readBindingsFromClipboard() -> [ActiveBinding] {
+    return deserializeBindingRows(from: NSPasteboard.general)
+  }
+}
+
+// MARK: NSMenuDelegate
+
+extension KeyBindingsTableViewController: NSMenuDelegate {
 
   fileprivate class BindingMenuItem: NSMenuItem {
     let row: ActiveBinding
     let rowIndex: Int
 
-    public init(_ row: ActiveBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?) {
+    public init(_ row: ActiveBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?, enabled: Bool = true) {
       self.row = row
       self.rowIndex = rowIndex
       super.init(title: title, action: selector, keyEquivalent: "")
       self.target = target
+      self.isEnabled = enabled
     }
 
     required init(coder: NSCoder) {
@@ -501,8 +609,14 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  private func addItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String, action: Selector?) {
-    menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: self))
+  private func addItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String, action: Selector?, target: AnyObject? = nil, enabled: Bool = true) {
+    let finalTarget: AnyObject
+    if let target = target {
+      finalTarget = target
+    } else {
+      finalTarget = self
+    }
+    menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: finalTarget, enabled: enabled))
   }
 
   private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String) {
@@ -516,61 +630,107 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     menu.addItem(item)
   }
 
-  func menuNeedsUpdate(_ menu: NSMenu) {
+  func menuNeedsUpdate(_ contextMenu: NSMenu) {
     // This will prevent menu from showing if no items are added
-    menu.removeAllItems()
+    contextMenu.removeAllItems()
 
-    // TODO: add Cut, Copy Paste support + menu items
     let clickedIndex = tableView.clickedRow
-    guard let clickedRow = bindingTableStore.getBindingRow(at: tableView.clickedRow), clickedRow.isEditableByUser else {
-      return
-    }
+    guard let clickedRow = bindingTableStore.getBindingRow(at: tableView.clickedRow) else { return }
 
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a default config"
-      addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
+      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
       return
     }
 
-    if tableView.selectedRowIndexes.contains(clickedIndex) && tableView.selectedRowIndexes.count > 1 {
-      // Special menu for right-click on multiple selection
-
-      let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
-        return bindingTableStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
-      }
-
-      if readOnlyCount > 0 {
-        let title = "\(readOnlyCount) of \(tableView.selectedRowIndexes.count) rows are read-only"
-        addItalicDisabledItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: title)
-      } else {
-        addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(tableView.selectedRowIndexes.count) Rows", action: #selector(self.removeSelectedRows(_:)))
-      }
-      return
-    }
-
-    let isRaw = isRaw()
-
-    // Edit
-    if isRaw {
-      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Key", action: #selector(self.editKeyColumn(_:)))
-
-      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Action", action: #selector(self.editActionColumn(_:)))
+    if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedIndex) {
+      populate(contextMenu: contextMenu, for: tableView.selectedRowIndexes, clickedIndex: clickedIndex, clickedRow: clickedRow)
     } else {
-      addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Edit Row...", action: #selector(self.editRow(_:)))
+      populate(contextMenu: contextMenu, for: clickedRow, clickedIndex: clickedIndex)
+    }
+  }
+
+  // For right-click on a single row which is not currently selected.
+  private func populate(contextMenu: NSMenu, for clickedRow: ActiveBinding, clickedIndex: Int) {
+    let isRowEditable = clickedRow.isEditableByUser
+    if isRowEditable {
+      // Edit
+      if isRaw {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Key", action: #selector(self.editKeyColumn(_:)))
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Action", action: #selector(self.editActionColumn(_:)))
+      } else {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Row...", action: #selector(self.editRow(_:)))
+      }
+    } else {
+      let culprit: String
+      switch clickedRow.origin {
+        case .iinaPlugin:
+          culprit = "the IINA plugin \"\(clickedRow.srcSectionName)\""
+        case .libmpv:
+          culprit = "a Lua script or other mpv interface"
+        default:
+          Logger.log("Unrecognized binding origin for rowIndex \(clickedIndex): \(clickedRow.origin)", level: .error)
+          culprit = "<unknown>"
+      }
+      let title = "Cannot modify row: \"\(inputConfigTableStore.currentConfigName)\" it was set by \(culprit)"
+      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
     }
 
     // ---
-    menu.addItem(NSMenuItem.separator())
+    contextMenu.addItem(NSMenuItem.separator())
+
+    // Cut, Copy, Paste, Delete
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut", action: #selector(self.cutRow(_:)), enabled: isRowEditable)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy", action: #selector(self.copyRow(_:)), enabled: isRowEditable)
+    let pastableBindings = readBindingsFromClipboard()
+    let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.pasteAfterIndex(_:)), enabled: !pastableBindings.isEmpty)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete", action: #selector(self.removeRow(_:)), enabled: isRowEditable)
+
+    // ---
+    contextMenu.addItem(NSMenuItem.separator())
 
     // Add
-    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Add New Row Above", action: #selector(self.addNewRowAbove(_:)))
-    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Add New Row Below", action: #selector(self.addNewRowBelow(_:)))
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New Item Above", action: #selector(self.addNewRowAbove(_:)))
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New Item Below", action: #selector(self.addNewRowBelow(_:)))
 
-    // ---
-    menu.addItem(NSMenuItem.separator())
+  }
 
-    // Delete
-    addItem(to: menu, for: clickedRow, withIndex: clickedIndex, title: "Delete Row", action: #selector(self.removeRow(_:)))
+  // For right-click on selected row(s)
+  private func populate(contextMenu: NSMenu, for selectedRowIndexes: IndexSet, clickedIndex: Int, clickedRow: ActiveBinding) {
+    let selectedRowsCount = tableView.selectedRowIndexes.count
+
+    let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
+      return !bindingTableStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
+    }
+    let modifiableCount = selectedRowsCount - readOnlyCount
+
+    if readOnlyCount > 0 {
+      let readOnlyDisclaimer: String
+
+      if readOnlyCount == selectedRowsCount {
+        readOnlyDisclaimer = "\(readOnlyCount) items are read-only"
+      } else {
+        readOnlyDisclaimer = "\(readOnlyCount) of \(selectedRowsCount) items are read-only"
+      }
+      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: readOnlyDisclaimer)
+    }
+
+    // Cut, Copy, Paste, Delete
+    if modifiableCount > 0 {
+      // By setting the target to `tableView`, AppKit will know to call its `validateUserInterfaceItem()`
+      // and will enable/disable each action appropriately
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) Items", action: #selector(self.tableView.cut(_:)), target: self.tableView)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) Items", action: #selector(self.tableView.copy(_:)), target: self.tableView)
+      let pastableBindings = readBindingsFromClipboard()
+      let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.tableView.paste(_:)), target: self.tableView)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(modifiableCount) Items", action: #selector(self.tableView.delete(_:)), target: self.tableView)
+    }
+  }
+
+  private func makePasteMenuItemTitle(itemCount: Int) -> String {
+    itemCount == 0 ? "Paste" : "Paste \(itemCount) Items"
   }
 
   @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {
@@ -593,11 +753,21 @@ class KeyBindingsTableViewController: NSObject, NSTableViewDelegate, NSTableView
     insertNewBinding(relativeTo: sender.rowIndex, isAfterNotAt: true)
   }
 
-  @objc fileprivate func removeRow(_ sender: BindingMenuItem) {
+  // Similar to Edit menu operations, but operating on a single non-selected row:
+  @objc fileprivate func cutRow(_ sender: BindingMenuItem) {
+    copyToClipboard(rowsToCopy: [sender.row])
     bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 
-  @objc fileprivate func removeSelectedRows(_ sender: BindingMenuItem) {
-    bindingTableStore.removeBindings(at: tableView.selectedRowIndexes)
+  @objc fileprivate func copyRow(_ sender: BindingMenuItem) {
+    copyToClipboard(rowsToCopy: [sender.row])
+  }
+
+  @objc fileprivate func pasteAfterIndex(_ sender: BindingMenuItem) {
+    pasteFromClipboard(after: sender.rowIndex)
+  }
+
+  @objc fileprivate func removeRow(_ sender: BindingMenuItem) {
+    bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 }

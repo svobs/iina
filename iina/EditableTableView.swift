@@ -23,6 +23,9 @@ class EditableTableView: NSTableView {
   private var lastEditedTextField: EditableTextField? = nil
   private var observers: [NSObjectProtocol] = []
 
+  // Must provide this for EditableTableView extended functionality
+  var editableDelegate: EditableTableViewDelegate? = nil
+
   deinit {
     for observer in observers {
       NotificationCenter.default.removeObserver(observer)
@@ -43,6 +46,47 @@ class EditableTableView: NSTableView {
         break
     }
     super.keyDown(with: event)
+  }
+
+  @objc func copy(_ sender: AnyObject?) {
+    editableDelegate?.doEditMenuCopy()
+  }
+
+  @objc func cut(_ sender: AnyObject?) {
+    editableDelegate?.doEditMenuCut()
+  }
+
+  @objc func paste(_ sender: AnyObject?) {
+    editableDelegate?.doEditMenuPaste()
+  }
+
+  @objc func delete(_ sender: AnyObject?) {
+    editableDelegate?.doEditMenuDelete()
+  }
+
+  // According to ancient Apple docs, the following is also called for toolbar items:
+  override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+    let actionDescription = item.action == nil ? "nil" : "\(item.action!)"
+    guard let delegate = self.editableDelegate else {
+      Logger.log("EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\"", level: .error)
+      return false
+    }
+    var isAllowed = false
+    switch item.action {
+      case #selector(copy(_:)):
+        isAllowed = delegate.isCopyEnabled()
+      case #selector(cut(_:)):
+        isAllowed = delegate.isCutEnabled()
+      case #selector(paste(_:)):
+        isAllowed = delegate.isPasteEnabled()
+      case #selector(delete(_:)):
+        isAllowed = delegate.isDeleteEnabled()
+      default:
+        Logger.log("EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\"", level: .verbose)
+        return false
+    }
+    Logger.log("EditableTableView.validateUserInterfaceItem(): isAllowed=\(isAllowed) for \"\(actionDescription)\"", level: .verbose)
+    return isAllowed
   }
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {

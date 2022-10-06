@@ -23,6 +23,9 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     super.init()
 
+    tableView.dataSource = self
+    tableView.delegate = self
+
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 

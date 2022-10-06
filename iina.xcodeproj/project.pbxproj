@@ -163,6 +163,7 @@
 		D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* KeyBindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */; };
 		D1049C892872CAD6003D47C1 /* InputConfigTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */; };
+		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
@@ -1493,6 +1494,7 @@
 		D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingTableViewController.swift; sourceTree = "<group>"; };
 		D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableStore.swift; sourceTree = "<group>"; };
+		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
@@ -2379,6 +2381,7 @@
 				843FFD4C1D5DAA01001F3A44 /* RoundedTextFieldCell.swift */,
 				D19F9DA928645C860054CC45 /* EditableTableView.swift */,
 				D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */,
+				D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */,
 				D1EAF5E628E6B6780023BACF /* TableChange.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
@@ -2941,6 +2944,7 @@
 				844C59E71F7C143D008D1B00 /* CacheManager.swift in Sources */,
 				E34EAA83251A36CE00057F27 /* JavascriptAPIFile.swift in Sources */,
 				E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */,
+				D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */,
 				E3BA79EE2131443A00529D99 /* OpenURLWindowController.swift in Sources */,
 				84FBCB381EEACDDD0076C77C /* FFmpegController.m in Sources */,
 				84879A981E0FFC7E0004F894 /* PrefUIViewController.swift in Sources */,
