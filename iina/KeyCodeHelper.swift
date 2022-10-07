@@ -276,7 +276,7 @@ class KeyCodeHelper {
       keyChar = keyName.0
     }
     // modifiers
-    // the same order as `KeyMapping.modifierOrder`
+    // the same order as `KeyCodeHelper.modifierOrder`
     if modifiers.contains(.control) {
       keyString += "\(CTRL_KEY)+"
     }

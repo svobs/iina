@@ -8,6 +8,9 @@
 
 /*
  Contains metadata for a single input binding (a mapping: {key combination or sequence / mouse input / etc} -> {action}) for use by the IINA app.
+
+ The intent of this class was to decorate an otherwise naive `KeyMapping` object with additional metadata such as
+
  All of the sources of key bindings (mpv config file, IINA plugin, etc) are flattened into one standard list so that comflicts between bindings
  can be resolved player window or the menubar (and also to distinguish it from `KeyMapping` and other objects).
  If multiple active bindings are specified with the same input trigger, only one can be enabled, and the others' have property `isEnabled`==false.
@@ -29,6 +32,7 @@ class ActiveBinding: NSObject, Codable {
   var srcSectionName: String
 
   /*
+   FIXME: change this to NSMenuItem, and remove the field from PluginKeyMapping
    Will be true for all `iinPlugin` and some `confFile`
    */
   var isMenuItem: Bool
@@ -36,7 +40,7 @@ class ActiveBinding: NSObject, Codable {
   var isEnabled: Bool
 
   // for use in UI only
-  var statusMessage: String = ""
+  var displayMessage: String = ""
 
   init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
     self.keyMapping = keyMapping

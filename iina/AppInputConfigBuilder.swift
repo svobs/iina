@@ -42,9 +42,9 @@ class AppInputConfigBuilder {
       if let prevSameKeyBinding = resolverDict[key] {
         prevSameKeyBinding.isEnabled = false
         if prevSameKeyBinding.origin == .iinaPlugin {
-          prevSameKeyBinding.statusMessage = "\"\(key)\" is overridden by \"\(binding.keyMapping.readableAction)\". Plugins must use key bindings which have not already been used."
+          prevSameKeyBinding.displayMessage = "\"\(key)\" is overridden by \"\(binding.keyMapping.readableAction)\". Plugins must use key bindings which have not already been used."
         } else {
-          prevSameKeyBinding.statusMessage = "This binding was overridden by another binding below it which also uses \"\(key)\""
+          prevSameKeyBinding.displayMessage = "This binding was overridden by another binding below it which also uses \"\(key)\""
         }
       }
       // Store it, overwriting any previous entry:
@@ -149,7 +149,7 @@ class AppInputConfigBuilder {
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
-      binding.statusMessage = "IINA does not use default-level (\"weak\") bindings"
+      binding.displayMessage = "IINA does not use default-level (\"weak\") bindings"
       return binding
     }
 
@@ -161,7 +161,7 @@ class AppInputConfigBuilder {
         binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
       } else {
         Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(keyMapping.rawKey)", level: .verbose)
-        binding.statusMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
+        binding.displayMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
         return binding
       }
     }

@@ -877,7 +877,7 @@ class MenuController: NSObject, NSMenuDelegate {
           }
           bound = true
           bindingRow.isMenuItem = true  // so we can indicate it in UI
-          bindingRow.statusMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
+          bindingRow.displayMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
           break
         }
       }

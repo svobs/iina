@@ -9,13 +9,18 @@
 import Foundation
 
 /*
- Object which contains all the information needed for an `EditableTableView` to transition
- from {State_N} to {State_N+1} (or at least how that should appear to the user), and to animate that change when executed.
+ Each instance of this class should represent an atomic operation on an associated `EditableTableView`, which contains all the
+ information needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or
+ the response to some external update. All of thiis is needed in order to make AppKit animations work.
 
  In order to facilitate table animations, and to get around some AppKit limitations such as the tendency
  for it to lose track of the row selection, much work is needed to keep track of state. The subclasses of this object
  attempt to automate as much of this as possible and hopefully end up with something which can reduce the effort needed
  in the future.
+
+ Sticky Note: It's useful to understand this each subclass & enums represent several design iterations, which started
+ rough but improved each time. Thus, `wholeTableDiff` (as the most recent) can be thought of as the most useful for the
+ future, while `TableChangeByStringElement` (the oldest) can probably be removed with some future refactoring.
  */
 class TableChange {
   enum ChangeType {

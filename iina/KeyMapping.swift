@@ -8,6 +8,11 @@
 
 import Foundation
 
+protocol InputKey {
+  // TODO!
+}
+
+// Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf"
 class KeyMapping: NSObject, Codable {
 
   let bindingID: Int?
@@ -146,7 +151,12 @@ class KeyMapping: NSObject, Codable {
   }
 }
 
+// This class is a little bit of a hurried kludge, so that bindings set from IINA plugins could go everywhere
+// that mpv's bindings can go, but with each also containing a reference to their associated menu item for later use.
+// TODO: a better design would be to create a `InputKey` protocol which only defines all the `key` methods,
+// then rename the `KeyMapping` class above to `MpvMapping` which adds methods for `action`, `comment`, etc.
 class PluginKeyMapping: KeyMapping {
+  // TODO: move this into ActiveBinding
   let menuItem: NSMenuItem
 
   init(rawKey: String, pluginName: String, menuItem: NSMenuItem, comment: String? = nil, bindingID: Int? = nil) {

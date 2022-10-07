@@ -106,7 +106,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
         return cell
 
       case "statusColumn":
-        cell.toolTip = bindingRow.statusMessage
+        cell.toolTip = bindingRow.displayMessage
 
         if let imageView: NSImageView = cell.imageView {
           if #available(macOS 11.0, *) {
