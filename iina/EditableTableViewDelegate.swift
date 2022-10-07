@@ -12,6 +12,11 @@ import Foundation
 // (which will itself hopefully become an extension of `NSTableView` at some point).
 // NOTE: this was originally planned to be an extesion of NSTableViewDelegate, but it simply wasn't working.
 protocol EditableTableViewDelegate {
+  func textDidEndEditing(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
+
+  // If true is returned, a row editor will be displayed for editing cell text
+  func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool
+
   /*
    OK, this is how standard cut, copy, paste, & delete work. Don't forget again!
 
@@ -53,7 +58,14 @@ protocol EditableTableViewDelegate {
 
 // Adds null defaults for all protocol methods
 extension EditableTableViewDelegate {
-  
+  func textDidEndEditing(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
+    return false
+  }
+
+  func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
+    return true
+  }
+
   func isCutEnabled() -> Bool {
     false
   }

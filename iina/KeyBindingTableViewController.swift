@@ -39,8 +39,6 @@ class KeyBindingTableViewController: NSObject {
 
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
-    tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
-    tableView.onTextDidEndEditing = userDidEndEditing
     tableView.registerTableChangeObserver(forName: .iinaKeyBindingsTableShouldUpdate)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
@@ -71,6 +69,7 @@ class KeyBindingTableViewController: NSObject {
 }
 
 // MARK: NSTableViewDelegate
+
 extension KeyBindingTableViewController: NSTableViewDelegate {
 
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
@@ -173,10 +172,148 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
   private var selectedEditableRows: [ActiveBinding] {
     self.selectedRows.filter({ $0.isEditableByUser })
   }
+}
 
-  // MARK: EditableTableView callbacks
+// MARK: NSTableViewDataSource
 
-  func userDidDoubleClickOnCell(_ rowIndex: Int, _ columnIndex: Int) -> Bool {
+extension KeyBindingTableViewController: NSTableViewDataSource {
+  /*
+   Tell AppKit the number of rows when it asks
+   */
+  @objc func numberOfRows(in tableView: NSTableView) -> Int {
+    return bindingTableStore.bindingRowCount
+  }
+
+  // MARK: Drag & Drop
+
+  /*
+   Drag start: convert tableview rows to clipboard items
+   */
+  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
+    return bindingTableStore.getBindingRow(at: rowIndex)
+  }
+
+  /**
+   This is implemented to support dropping items onto the Trash icon in the Dock.
+   TODO: look for a way to animate this so that it's more obvious that something happened.
+   */
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
+      return
+    }
+
+    let rowList = deserializeBindingRows(from: session.draggingPasteboard)
+
+    guard !rowList.isEmpty else {
+      return
+    }
+
+    Logger.log("User dragged to the trash: \(rowList)", level: .verbose)
+
+    rowList.forEach {
+      if !$0.isEditableByUser {
+        Logger.log("Ignoring drop: dragged list contains at least one row which is read-only: \(rowList)", level: .verbose)
+        return
+      }
+    }
+
+    bindingTableStore.removeBindings(withIDs: rowList.map{$0.keyMapping.bindingID!})
+  }
+
+  /*
+   Validate drop while hovering.
+   */
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+
+    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
+      return []  // deny drop
+    }
+
+    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
+
+    guard !rowList.isEmpty else {
+      return []  // deny drop
+    }
+
+    // Update that little red number:
+    info.numberOfValidItemsForDrop = rowList.count
+
+    // Cannot drop on/into existing rows. Change to below it:
+    let isAfterNotAt = dropOperation == .on
+    // Can only make changes to the "default" section. If the drop cursor is not already inside it,
+    // then we'll change it to the nearest valid index in the "default" section.
+    let dropTargetRow = bindingTableStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
+
+    tableView.setDropRow(dropTargetRow, dropOperation: .above)
+
+    let dragMask = info.draggingSourceOperationMask
+    switch dragMask {
+      case .copy, .move:
+        return dragMask
+      default:
+        return DEFAULT_DRAG_OPERATION
+    }
+  }
+
+  /*
+   Accept the drop and execute changes, or reject drop.
+   */
+  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+
+    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
+    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
+    guard !rowList.isEmpty else {
+      return false
+    }
+
+    guard dropOperation == .above else {
+      Logger.log("Expected dropOperaion==.above but got: \(dropOperation); aborting drop")
+      return false
+    }
+
+    var dragMask = info.draggingSourceOperationMask
+    if dragMask == NSDragOperation.every {
+      dragMask = DEFAULT_DRAG_OPERATION
+    }
+
+    // Return immediately, and import (or fail to) asynchronously
+    DispatchQueue.main.async {
+      switch dragMask {
+        case .copy:
+          self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        case .move:
+          self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        default:
+          Logger.log("Unexpected drag operatiom: \(dragMask)")
+      }
+    }
+    return true
+  }
+
+  private func deserializeBindingRows(from pasteboard: NSPasteboard) -> [ActiveBinding] {
+    var rowList: [ActiveBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
+      for obj in objList {
+        if let row = obj as? ActiveBinding {
+          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
+          if row.isEditableByUser {
+            rowList.append(row)
+          }
+        } else {
+          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
+          return [] // return empty list if something was amiss
+        }
+      }
+    }
+    return rowList
+  }
+}
+
+// MARK: EditableTableViewDelegate
+
+extension KeyBindingTableViewController: EditableTableViewDelegate {
+
+  func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit cell") else { return false }
 
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
@@ -358,145 +495,6 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     Utility.showAlert("duplicate_config", sheetWindow: tableView.window)
     return false
   }
-}
-
-// MARK: NSTableViewDataSource
-extension KeyBindingTableViewController: NSTableViewDataSource {
-  /*
-   Tell AppKit the number of rows when it asks
-   */
-  @objc func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingTableStore.bindingRowCount
-  }
-
-  // MARK: Drag & Drop
-
-  /*
-   Drag start: convert tableview rows to clipboard items
-   */
-  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    return bindingTableStore.getBindingRow(at: rowIndex)
-  }
-
-  /**
-   This is implemented to support dropping items onto the Trash icon in the Dock.
-   TODO: look for a way to animate this so that it's more obvious that something happened.
-   */
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
-      return
-    }
-
-    let rowList = deserializeBindingRows(from: session.draggingPasteboard)
-
-    guard !rowList.isEmpty else {
-      return
-    }
-
-    Logger.log("User dragged to the trash: \(rowList)", level: .verbose)
-
-    rowList.forEach {
-      if !$0.isEditableByUser {
-        Logger.log("Ignoring drop: dragged list contains at least one row which is read-only: \(rowList)", level: .verbose)
-        return
-      }
-    }
-
-    bindingTableStore.removeBindings(withIDs: rowList.map{$0.keyMapping.bindingID!})
-  }
-
-  /*
-   Validate drop while hovering.
-   */
-  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
-      return []  // deny drop
-    }
-
-    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
-
-    guard !rowList.isEmpty else {
-      return []  // deny drop
-    }
-
-    // Update that little red number:
-    info.numberOfValidItemsForDrop = rowList.count
-
-    // Cannot drop on/into existing rows. Change to below it:
-    let isAfterNotAt = dropOperation == .on
-    // Can only make changes to the "default" section. If the drop cursor is not already inside it,
-    // then we'll change it to the nearest valid index in the "default" section.
-    let dropTargetRow = bindingTableStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
-
-    tableView.setDropRow(dropTargetRow, dropOperation: .above)
-
-    let dragMask = info.draggingSourceOperationMask
-    switch dragMask {
-      case .copy, .move:
-        return dragMask
-      default:
-        return DEFAULT_DRAG_OPERATION
-    }
-  }
-
-  /*
-   Accept the drop and execute changes, or reject drop.
-   */
-  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
-
-    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
-    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
-    guard !rowList.isEmpty else {
-      return false
-    }
-
-    guard dropOperation == .above else {
-      Logger.log("Expected dropOperaion==.above but got: \(dropOperation); aborting drop")
-      return false
-    }
-
-    var dragMask = info.draggingSourceOperationMask
-    if dragMask == NSDragOperation.every {
-      dragMask = DEFAULT_DRAG_OPERATION
-    }
-
-    // Return immediately, and import (or fail to) asynchronously
-    DispatchQueue.main.async {
-      switch dragMask {
-        case .copy:
-          self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-        case .move:
-          self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-        default:
-          Logger.log("Unexpected drag operatiom: \(dragMask)")
-      }
-    }
-    return true
-  }
-
-  private func deserializeBindingRows(from pasteboard: NSPasteboard) -> [ActiveBinding] {
-    var rowList: [ActiveBinding] = []
-    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
-      for obj in objList {
-        if let row = obj as? ActiveBinding {
-          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
-          if row.isEditableByUser {
-            rowList.append(row)
-          }
-        } else {
-          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
-          return [] // return empty list if something was amiss
-        }
-      }
-    }
-    return rowList
-  }
-}
-
-// MARK: EditableTableViewDelegate
-
-extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // MARK: Cut, copy, paste, delete support.
 

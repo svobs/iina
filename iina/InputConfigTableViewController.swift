@@ -10,7 +10,7 @@ import Foundation
 import AppKit
 import Cocoa
 
-class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuDelegate {
+class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
 
   private unowned var tableView: EditableTableView!
@@ -31,8 +31,6 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
     // Set up callbacks:
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
-    tableView.userDidDoubleClickOnCell = userDidDoubleClickOnCell
-    tableView.onTextDidEndEditing = userDidEndEditingCurrentName
     tableView.registerTableChangeObserver(forName: .iinaInputConfigTableShouldUpdate)
 
     if #available(macOS 10.13, *) {
@@ -64,19 +62,21 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     let printedIndexesMsg = "Selected rows are now: \(self.tableView.selectedRowIndexes.reduce("[", { "\($0) \($1)"  })) ]"
     Logger.log("Selected row: '\(configName)' (index \(index)). \(printedIndexesMsg)", level: .verbose)
   }
-  // MARK: NSTableViewDataSource
+}
 
-  /*
-   Tell AppKit the number of rows when it asks
-   */
-  func numberOfRows(in tableView: NSTableView) -> Int {
-    return tableStore.configTableRows.count
+// MARK: NSTableViewDelegate
+
+extension InputConfigTableViewController: NSTableViewDelegate {
+
+  // Selection Changed
+  @objc func tableViewSelectionDidChange(_ notification: Notification) {
+    tableStore.changeCurrentConfig(tableView.selectedRow)
   }
 
   /**
    Make cell view when asked
    */
-  func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+  @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     let configName = tableStore.configTableRows[row]
 
     guard let identifier = tableColumn?.identifier else { return nil }
@@ -98,18 +98,14 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
         return nil
     }
   }
+}
 
-  // MARK: NSTableViewDelegate
+// MARK: EditableTableViewDelegate
 
-  // Selection Changed
-  func tableViewSelectionDidChange(_ notification: Notification) {
-    tableStore.changeCurrentConfig(tableView.selectedRow)
-  }
+extension InputConfigTableViewController: EditableTableViewDelegate {
 
-  // MARK: EditableTableView callbacks
-
-  func userDidDoubleClickOnCell(_ rowNumber: Int, _ colNumber: Int) -> Bool {
-    if let configName = tableStore.getConfigRow(at: rowNumber), !tableStore.isDefaultConfig(configName) {
+  func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
+    if let configName = tableStore.getConfigRow(at: rowIndex), !tableStore.isDefaultConfig(configName) {
       return true
     }
     return false
@@ -117,7 +113,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
 
   // User finished editing (callback from EditableTextField).
   // Renames current comfig & its file on disk
-  func userDidEndEditingCurrentName(_ newName: String, row: Int, column: Int) -> Bool {
+  func onTextDidEndEditing(newValue newName: String, row: Int, column: Int) -> Bool {
     guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
@@ -157,13 +153,24 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     // Update config lists and update UI
     return tableStore.renameCurrentConfig(newName: newName)
   }
+}
+
+// MARK: NSTableViewDataSource
+
+extension InputConfigTableViewController: NSTableViewDataSource {
+  /*
+   Tell NSTableView the number of rows when it asks
+   */
+  @objc func numberOfRows(in tableView: NSTableView) -> Int {
+    return tableStore.configTableRows.count
+  }
 
   // MARK: Drag & Drop
 
   /*
    Drag start: convert tableview rows to clipboard items
    */
-  func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
     if let configName = tableStore.getConfigRow(at: row),
        let filePath = tableStore.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)
@@ -174,9 +181,9 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock
    */
-  func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     guard operation == NSDragOperation.delete else {
-        return
+      return
     }
 
     let userConfigList = filterCurrentUserConfigs(from: session.draggingPasteboard)
@@ -194,7 +201,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    Validate drop while hovering.
    Override drag operation to "copy" always, and set drag target to whole table.
    */
-  func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
 
@@ -213,7 +220,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
   /*
    Accept the drop and import file(s), or reject drop.
    */
-  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+  @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
     Logger.log("User dropped \(newFilePathList.count) new config files into table")
@@ -221,10 +228,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
       return false
     }
 
-    // Return immediately, and import (or fail to) asynchronously
-    DispatchQueue.main.async {
-      self.importConfigFiles(newFilePathList)
-    }
+    self.importConfigFiles(newFilePathList)
     return true
   }
 
@@ -270,8 +274,11 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
     return fileList
   }
+}
 
-  // MARK: NSMenuDelegate
+// MARK: NSMenuDelegate
+
+extension InputConfigTableViewController:  NSMenuDelegate {
 
   fileprivate class InputConfMenuItem: NSMenuItem {
     let configName: String
@@ -287,7 +294,7 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
     }
   }
 
-  func menuNeedsUpdate(_ menu: NSMenu) {
+  @objc func menuNeedsUpdate(_ menu: NSMenu) {
     // This will prevent menu from showing if no items are added
     menu.removeAllItems()
 
@@ -386,55 +393,64 @@ class InputConfigTableViewController: NSObject, NSTableViewDelegate, NSTableView
    If successful, adds new rows to the UI, with the last added row being selected as the new current config.
    */
   func importConfigFiles(_ fileList: [String]) {
-    Logger.log("Importing input config files: \(fileList)", level: .verbose)
+    // Return immediately, and import (or fail to) asynchronously
+    DispatchQueue.global(qos: .userInitiated).async {
+      Logger.log("Importing input config files: \(fileList)", level: .verbose)
 
-    // configName -> (srcFilePath, dstFilePath)
-    var createdConfigDict: [String: (String, String)] = [:]
+      // configName -> (srcFilePath, dstFilePath)
+      var createdConfigDict: [String: (String, String)] = [:]
 
-    for filePath in fileList {
-      let url = URL(fileURLWithPath: filePath)
-      
-      guard InputConfigFileData.loadFile(at: filePath) != nil else {
-        let fileName = url.lastPathComponent
-        Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: tableView.window)
-        Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)
-        // Do not import any files if we can't parse one.
-        // This probably means the user doesn't know what they are doing, or something is very wrong
+      for filePath in fileList {
+        let url = URL(fileURLWithPath: filePath)
+
+        guard InputConfigFileData.loadFile(at: filePath) != nil else {
+          let fileName = url.lastPathComponent
+          DispatchQueue.main.async {
+            Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)
+            Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: self.tableView.window)
+          }
+          // Do not import any files if we can't parse one.
+          // This probably means the user doesn't know what they are doing, or something is very wrong
+          return
+        }
+        let newName = url.deletingPathExtension().lastPathComponent
+        let newFilePath =  Utility.buildConfigFilePath(for: newName)
+
+        DispatchQueue.main.sync {  // block because we need user input to proceed
+          guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+            // Do not proceed if user does not want to delete.
+            Logger.log("Aborting config file import: user did not delete file: \(newFilePath)", level: .verbose)
+            return
+          }
+        }
+        createdConfigDict[newName] = (filePath, newFilePath)
+      }
+
+      // Copy files one by one. Allow copy errors but keep track of which failed
+      var failedNameSet = Set<String>()
+      for (newName, (filePath, newFilePath)) in createdConfigDict {
+        do {
+          Logger.log("Import: copying: '\(filePath)' -> '\(newFilePath)'", level: .verbose)
+          try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+        } catch let error {
+          DispatchQueue.main.async {
+            Logger.log("Import: failed to copy: '\(filePath)' -> '\(newFilePath)': \(error.localizedDescription)", level: .error)
+            Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+          }
+          failedNameSet.insert(newName)
+        }
+      }
+
+      // Filter failed rows from being added to UI
+      let configsToAdd: [String: String] = createdConfigDict.filter{ !failedNameSet.contains($0.key) }.mapValues { $0.1 }
+      guard !configsToAdd.isEmpty else {
         return
       }
-      let newName = url.deletingPathExtension().lastPathComponent
-      let newFilePath =  Utility.buildConfigFilePath(for: newName)
+      Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
 
-      guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-        // Do not proceed if user does not want to delete.
-        Logger.log("Aborting config file import: user did not delete file: \(newFilePath)", level: .verbose)
-        return
-      }
-      createdConfigDict[newName] = (filePath, newFilePath)
+      // update prefs & refresh UI
+      self.tableStore.addUserConfigs(configsToAdd)
     }
-
-    // Copy files one by one. Allow copy errors but keep track of which failed
-    var failedNameSet = Set<String>()
-    for (newName, (filePath, newFilePath)) in createdConfigDict {
-      do {
-        Logger.log("Import: copying: '\(filePath)' -> '\(newFilePath)'", level: .verbose)
-        try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
-      } catch let error {
-        Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
-        Logger.log("Import: failed to copy: '\(filePath)' -> '\(newFilePath)': \(error.localizedDescription)", level: .error)
-        failedNameSet.insert(newName)
-      }
-    }
-
-    // Filter failed rows from being added to UI
-    let configsToAdd: [String: String] = createdConfigDict.filter{ !failedNameSet.contains($0.key) }.mapValues { $0.1 }
-    guard !configsToAdd.isEmpty else {
-      return
-    }
-    Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
-
-    // update prefs & refresh UI
-    self.tableStore.addUserConfigs(configsToAdd)
   }
 
   func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {

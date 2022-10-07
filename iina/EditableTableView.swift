@@ -10,13 +10,7 @@ import Foundation
 
 class EditableTableView: NSTableView {
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
-  // args are (newText, editorRow, editorColumn)
-  var onTextDidEndEditing: ((String, Int, Int) -> Bool)?
-  // args are (row, column). If true is returned, a row editor will be displayed for editing cell text
-  var userDidDoubleClickOnCell: ((Int, Int) -> Bool) = {(row: Int, column: Int) -> Bool in
-    return true
-  }
-  var afterNextTableUpdate: (() -> Void)?
+  var afterNextTableUpdate: (() -> Void)? = nil
 
   var editableTextColumnIndexes: [Int] = []
 
@@ -115,16 +109,16 @@ class EditableTableView: NSTableView {
 
   private func prepareTextFieldForEdit(_ textField: EditableTextField, row: Int, column: Int) {
     // Use a closure to bind row and column to the callback function:
-    textField.userDidDoubleClickOnCell = { self.userDidDoubleClickOnCell(row, column) }
+    let cb = { return self.editableDelegate?.userDidDoubleClickOnCell(row: row, column: column) ?? false }
+    textField.userDidDoubleClickOnCell = cb
     textField.editCell = { self.editCell(rowIndex: row, columnIndex: column) }
 
-    if let onTextDidEndEditing = onTextDidEndEditing {
-      // Use a closure to bind row and column to the callback function:
-      textField.editDidEndWithNewText = { onTextDidEndEditing($0, row, column) }
-    } else {
-      // Remember that AppKit reuses objects as an optimization, so make sure we keep it up-to-date:
-      textField.editDidEndWithNewText = nil
+    // Use a closure to bind row and column to the callback function:
+    let cb2: ((String) -> Bool)? = { newValue in
+      return self.editableDelegate?.textDidEndEditing(newValue: newValue, row: row, column: column) ?? false
     }
+    textField.editDidEndWithNewText = cb2
+
     textField.stringValueOrig = textField.stringValue
     textField.parentTable = self
 
