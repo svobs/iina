@@ -46,7 +46,7 @@ class InputConfigFileData {
       if let binding = line.bindingOverride {
         // Note: `lineIndex` includes bindingOverrides and thus may be greater than the equivalent line number in the physical file
 
-        let bindingNew = binding.copy(bindingID: lineIndex)
+        let bindingNew = binding.clone(bindingID: lineIndex)
         bindingList.append(bindingNew)
         linesNew.append(Line(line.rawFileContent, bindingOverride: bindingNew))
       } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFileData.parseRawLine(rawFileContent, lineIndex) {

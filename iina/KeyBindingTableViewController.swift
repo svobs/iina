@@ -99,7 +99,13 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
         return cell
 
       case "actionColumn":
-        let stringValue = isRaw ? binding.rawAction : binding.readableCommand
+        let stringValue: String
+        if bindingRow.origin == .iinaPlugin {
+          // IINA plugins do not map directly to mpv commands
+          stringValue = bindingRow.keyMapping.comment ?? ""
+        } else {
+          stringValue = isRaw ? binding.rawAction : binding.readableCommand
+        }
 
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
 
@@ -346,17 +352,21 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
     Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \"\(newValue)\"", level: .verbose)
 
+    let key, action: String?
     switch columnIndex {
       case COLUMN_INDEX_KEY:
-        editedRow.keyMapping.rawKey = newValue
+        key = newValue
+        action = nil
       case COLUMN_INDEX_ACTION:
-        editedRow.keyMapping.rawAction = newValue
+        key = nil
+        action = newValue
       default:
         Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
         return false
     }
 
-    bindingTableStore.updateBinding(at: rowIndex, to: editedRow.keyMapping)
+    let newVersion = editedRow.keyMapping.clone(rawKey: key, rawAction: action)
+    bindingTableStore.updateBinding(at: rowIndex, to: newVersion)
     return true
   }
 
@@ -376,7 +386,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
     if isRaw {
       // Use in-line editor
-      self.tableView.editCell(rowIndex: rowIndex, columnIndex: columnIndex)
+      self.tableView.editCell(row: rowIndex, column: columnIndex)
     } else {
       editWithPopup(rowIndex: rowIndex)
     }
@@ -392,10 +402,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
     showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
-      row.keyMapping.rawKey = key
-      row.keyMapping.rawAction = action
-
-      self.bindingTableStore.updateBinding(at: rowIndex, to: row.keyMapping)
+      let newVersion = row.keyMapping.clone(rawKey: key, rawAction: action)
+      self.bindingTableStore.updateBinding(at: rowIndex, to: newVersion)
     }
   }
 
@@ -424,7 +432,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       let insertedRowIndex = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
       // The previous line will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
       tableView.afterNextTableUpdate = {
-        self.tableView.editCell(rowIndex: insertedRowIndex, columnIndex: 0)
+        self.tableView.editCell(row: insertedRowIndex, column: 0)
       }
 
     } else {
@@ -460,9 +468,9 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // e.g., drag & drop "copy" operation
   private func copyBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
-    let newBindings: [KeyMapping] = rowList.map { $0.keyMapping.copy() as! KeyMapping }
+    let newMappings: [KeyMapping] = rowList.map { $0.keyMapping.clone() }
 
-    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newBindings)
+    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings)
 
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }

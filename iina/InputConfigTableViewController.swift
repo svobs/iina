@@ -25,6 +25,7 @@ class InputConfigTableViewController: NSObject {
 
     tableView.dataSource = self
     tableView.delegate = self
+    tableView.editableDelegate = self
 
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self

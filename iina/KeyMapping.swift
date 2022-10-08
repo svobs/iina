@@ -12,22 +12,18 @@ protocol InputKey {
   // TODO!
 }
 
-// Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf"
+// Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
 class KeyMapping: NSObject, Codable {
 
   let bindingID: Int?
 
-  var isIINACommand: Bool
+  let isIINACommand: Bool
 
   // MARK: Key
 
-  var rawKey: String {
-    didSet {
-      self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-    }
-  }
+  let rawKey: String
 
-  private(set) var normalizedMpvKey: String
+  let normalizedMpvKey: String
 
   var normalizedMacKey: String? {
     get {
@@ -51,26 +47,10 @@ class KeyMapping: NSObject, Codable {
 
   // MARK: Action
 
-  private(set) var action: [String]
-
-  private var privateRawAction: String
+  let action: [String]
 
   // The action with @iina removed (if applicable), but otherwise not formatted
-  var rawAction: String {
-    set {
-      if let trimmedAction = KeyMapping.removeIINAPrefix(from: newValue) {
-        self.isIINACommand = true
-        self.privateRawAction = trimmedAction
-      } else {
-        self.isIINACommand = false
-        self.privateRawAction = newValue
-      }
-      action = privateRawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-    }
-    get {
-      return privateRawAction
-    }
-  }
+  let rawAction: String
 
   // Similar to rawAction, but the tokens will always be separated by exactly one space
   var readableAction: String {
@@ -104,7 +84,7 @@ class KeyMapping: NSObject, Codable {
 
   // Convenience method. Returns true if action is "ignore"
   var isIgnored: Bool {
-    return privateRawAction == MPVCommand.ignore.rawValue
+    return rawAction == MPVCommand.ignore.rawValue
   }
 
   // Serialized form, suitable for writing to a single line of mpv's input.conf
@@ -112,22 +92,25 @@ class KeyMapping: NSObject, Codable {
     get {
       let iinaCommandString = isIINACommand ? "#@iina " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      return "\(iinaCommandString)\(rawKey) \(privateRawAction)\(commentString)"
+      return "\(iinaCommandString)\(rawKey) \(rawAction)\(commentString)"
     }
   }
 
   init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil, bindingID: Int? = nil) {
     self.bindingID = bindingID
-    self.isIINACommand = isIINACommand
-    self.privateRawAction = rawAction
-    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
-      self.isIINACommand = true
-      self.privateRawAction = trimmedAction
-    }
+
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-    self.comment = comment
+
+    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
+      self.isIINACommand = true
+      self.rawAction = trimmedAction
+    } else {
+      self.isIINACommand = isIINACommand
+      self.rawAction = rawAction
+    }
     self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+    self.comment = comment
   }
 
   private static func removeIINAPrefix(from rawAction: String) -> String? {
@@ -146,8 +129,13 @@ class KeyMapping: NSObject, Codable {
     return rawKey == other.rawKey && rawAction == other.rawAction
   }
 
-  func copy(bindingID: Int?) -> KeyMapping {
-    return KeyMapping(rawKey: self.rawKey, rawAction: self.rawAction, isIINACommand: self.isIINACommand, comment: self.comment, bindingID: bindingID)
+  // Makes a duplicate of this object, but will also override any non-nil parameter
+  func clone(rawKey: String? = nil, rawAction: String? = nil, bindingID: Int? = nil) -> KeyMapping {
+    return KeyMapping(rawKey: rawKey ?? self.rawKey,
+                      rawAction: rawAction ?? self.rawAction,
+                      isIINACommand: self.isIINACommand,
+                      comment: self.comment,
+                      bindingID: bindingID ?? self.bindingID)
   }
 }
 
@@ -162,21 +150,12 @@ class PluginKeyMapping: KeyMapping {
   init(rawKey: String, pluginName: String, menuItem: NSMenuItem, comment: String? = nil, bindingID: Int? = nil) {
     self.menuItem = menuItem
     // Kludge here: storing plugin name info in rawAction, then making sure we don't try to execute it.
-    let rawAction = "Plugin > \(pluginName) > \(menuItem.title)"
-    super.init(rawKey: rawKey, rawAction: rawAction, isIINACommand: true, comment: comment, bindingID: bindingID)
+    let comment = "Plugin > \(pluginName) > \(menuItem.title)"
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: comment, bindingID: bindingID)
   }
 
   required init(from decoder: Decoder) throws {
     Logger.fatal("init(from:) is not supported for PluginKeyMapping")
-  }
-
-  override var rawAction: String {
-    get {
-      return super.rawAction
-    }
-    set {
-      Logger.fatal("setting rawAction is not supported for PluginKeyMapping")
-    }
   }
 
   override var readableAction: String {

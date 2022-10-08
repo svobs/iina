@@ -600,8 +600,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // When done:
     pluginErrorNotice.isHidden = (failureList.count == 0)
 
-    Logger.log("Updated \(pluginBindings.count) key equivalents in the Plugin menu (\(failureList.count) were conflicts)")
-
+    Logger.log("Updated Plugin menu keyEquivalents for \(pluginBindings.count) items, including \(failureList.count) conflicts")
   }
 
   @discardableResult

@@ -33,7 +33,7 @@ class EditableTableView: NSTableView {
       case "ENTER", "KP_ENTER":
         if selectedRow >= 0 && selectedRow < numberOfRows {
           Logger.log("TableView.KeyDown: ENTER on row \(selectedRow)")
-          editCell(rowIndex: selectedRow, columnIndex: editableTextColumnIndexes[0])
+          editCell(row: selectedRow, column: editableTextColumnIndexes[0])
           return
         }
       default:
@@ -87,8 +87,8 @@ class EditableTableView: NSTableView {
     if let event = event, event.type == .leftMouseDown {
       // stop old editor
       if let oldTextField = lastEditedTextField {
-        oldTextField.endEditing()
         self.lastEditedTextField = nil
+        oldTextField.endEditing()
       }
 
       if let editableTextField = responder as? EditableTextField {
@@ -97,8 +97,8 @@ class EditableTableView: NSTableView {
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
+          // qualifies so far!
           prepareTextFieldForEdit(editableTextField, row: clickedRow, column: clickedColumn)
-          // approved!
           return true
         }
       }
@@ -108,19 +108,12 @@ class EditableTableView: NSTableView {
   }
 
   private func prepareTextFieldForEdit(_ textField: EditableTextField, row: Int, column: Int) {
-    // Use a closure to bind row and column to the callback function:
-    let cb = { return self.editableDelegate?.userDidDoubleClickOnCell(row: row, column: column) ?? false }
-    textField.userDidDoubleClickOnCell = cb
-    textField.editCell = { self.editCell(rowIndex: row, columnIndex: column) }
-
-    // Use a closure to bind row and column to the callback function:
-    let cb2: ((String) -> Bool)? = { newValue in
-      return self.editableDelegate?.textDidEndEditing(newValue: newValue, row: row, column: column) ?? false
+    guard let editableDelegate = self.editableDelegate else {
+      // it's valid for a table not to use this functionality
+      return
     }
-    textField.editDidEndWithNewText = cb2
-
-    textField.stringValueOrig = textField.stringValue
-    textField.parentTable = self
+    textField.activeEdit = ActiveCellEdit(parentTable: self, delegate: editableDelegate,
+                                          stringValueOrig: textField.stringValue, row: row, column: column)
 
     // keep track of it for later
     lastEditedTextField = textField
@@ -160,8 +153,8 @@ class EditableTableView: NSTableView {
 
     // Close old editor (if any):
     if let oldTextField = lastEditedTextField {
-      oldTextField.endEditing()
       self.lastEditedTextField = nil
+      oldTextField.endEditing()
     }
 
     if rowIndex != selectedRow {
@@ -172,14 +165,14 @@ class EditableTableView: NSTableView {
     let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false)
     if let cellView = view as? NSTableCellView {
       if let editableTextField = cellView.textField as? EditableTextField {
-        self.prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
+        prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
         self.window?.makeFirstResponder(editableTextField)
       }
     }
   }
 
   // Convenience method
-  func editCell(rowIndex: Int, columnIndex: Int) {
+  func editCell(row rowIndex: Int, column columnIndex: Int) {
     self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
   }
 
@@ -189,7 +182,7 @@ class EditableTableView: NSTableView {
         return indexIndex
       }
     }
-    Logger.log("Failed to find index in editableTextColumnIndexes: \(columnIndex)", level: .error)
+    Logger.log("Failed to find index in editableTextColumnIndexes (\(editableTextColumnIndexes)): \(columnIndex)", level: .error)
     return nil
   }
 
@@ -209,18 +202,10 @@ class EditableTableView: NSTableView {
 
   // Thanks to:
   // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
-  // Returns true if another editor was opened for another cell which means no
-  // further action needed to end editing.
-  func editNextCellAfterEditEnd(_ notification: Notification) -> Bool {
-    guard
-      let view = notification.object as? NSView,
-      let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
-      let textMovement = NSTextMovement(rawValue: textMovementInt) else { return false }
-
+  // Returns true if it resulted in another editor being opened [asychronously], false if not.
+  @discardableResult
+  func editAnotherCellAfterEditEnd(oldRow rowIndex: Int, oldColumn columnIndex: Int, _ textMovement: NSTextMovement) -> Bool {
     let isInterRowTabEditingEnabled = Preference.bool(for: .enableInterRowTabEditingInKeyBindingsTable)
-
-    let columnIndex = column(for: view)
-    let rowIndex = row(for: view)
 
     var newRowIndex: Int
     var newColIndex: Int
@@ -267,7 +252,7 @@ class EditableTableView: NSTableView {
     }
 
     DispatchQueue.main.async {
-      self.editCell(rowIndex: newRowIndex, columnIndex: newColIndex)
+      self.editCell(row: newRowIndex, column: newColIndex)
     }
     // handled
     return true

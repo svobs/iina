@@ -8,9 +8,8 @@
 
 import Foundation
 
-// Adds optional methods for use in conjunctio with `EditableTableView`
+// Adds optional methods for use in conjunction with `EditableTableView`
 // (which will itself hopefully become an extension of `NSTableView` at some point).
-// NOTE: this was originally planned to be an extesion of NSTableViewDelegate, but it simply wasn't working.
 protocol EditableTableViewDelegate {
   func textDidEndEditing(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
 
@@ -63,7 +62,8 @@ extension EditableTableViewDelegate {
   }
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    return true
+    Logger.log("EditableTableViewDelegate.userDidDoubleClickOnCell(): null default method was called!", level: .warning)
+    return false
   }
 
   func isCutEnabled() -> Bool {
