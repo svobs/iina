@@ -51,8 +51,16 @@ class TableChange {
     self.completionHandler = completionHandler
   }
 
-  // Subclasses should call this after they have copmleted their code.
+  // Subclasses should override executeStructureUpdates() instead of this
   func execute(on tableView: EditableTableView) {
+    // encapsulate animation transaction in this function
+    tableView.beginUpdates()
+    defer {
+      tableView.endUpdates()
+    }
+
+    executeStructureUpdates(on: tableView)
+
     if let newSelectedRows = self.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here.
@@ -63,8 +71,12 @@ class TableChange {
     }
 
     if let completionHandler = completionHandler {
+      Logger.log("Executing completion handler", level: .verbose)
       completionHandler(self)
     }
+  }
+
+  func executeStructureUpdates(on tableView: EditableTableView) {
   }
 }
 
@@ -81,12 +93,7 @@ class TableChangeByStringElement: TableChange {
    Attempts to be a generic mechanism for updating the table's contents with an animation and
    avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
    */
-  override func execute(on tableView: EditableTableView) {
-    // encapsulate animation transaction in this function
-    tableView.beginUpdates()
-    defer {
-      tableView.endUpdates()
-    }
+  override func executeStructureUpdates(on tableView: EditableTableView) {
 
     switch self.changeType {
       case .selectionChangeOnly:
@@ -109,8 +116,6 @@ class TableChangeByStringElement: TableChange {
       case .wholeTableDiff:
         Logger.fatal("Not yet supported: wholeTableDiff for TableChangeByStringElement")
     }
-
-    super.execute(on: tableView)
   }
 
   private func renameAndMoveOneRow(_ tableView: EditableTableView) {
@@ -205,11 +210,7 @@ class TableChangeByRowIndex: TableChange {
     super.init(changeType, completionHandler: completionHandler)
   }
 
-  override func execute(on tableView: EditableTableView) {
-    tableView.beginUpdates()
-    defer {
-      tableView.endUpdates()
-    }
+  override func executeStructureUpdates(on tableView: EditableTableView) {
 
     switch changeType {
       case .selectionChangeOnly:
