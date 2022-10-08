@@ -23,6 +23,8 @@ import Foundation
  future, while `TableChangeByStringElement` (the oldest) can probably be removed with some future refactoring.
  */
 class TableChange {
+  typealias CompletionHandler = (TableChange) -> Void
+
   enum ChangeType {
     case selectionChangeOnly
     case addRows
@@ -41,11 +43,29 @@ class TableChange {
 
   var newSelectedRows: IndexSet? = nil
 
-  fileprivate init(_ changeType: ChangeType) {
+  // A method which, if supplied, is called at the end of execute()
+  let completionHandler: TableChange.CompletionHandler?
+
+  fileprivate init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler?) {
     self.changeType = changeType
+    self.completionHandler = completionHandler
   }
 
-  func execute(on tableView: EditableTableView) {}
+  // Subclasses should call this after they have copmleted their code.
+  func execute(on tableView: EditableTableView) {
+    if let newSelectedRows = self.newSelectedRows {
+      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+      // To select added rows, will need an explicit call here.
+      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
+      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+      // Make sure the table gets focus:
+      tableView.window!.makeFirstResponder(tableView)
+    }
+
+    if let completionHandler = completionHandler {
+      completionHandler(self)
+    }
+  }
 }
 
 // To describe the changes, relies on each row of the table being a simple String.
@@ -53,8 +73,8 @@ class TableChangeByStringElement: TableChange {
   var oldRows: [String] = []
   var newRows: [String]? = nil
 
-  override init(_ changeType: ChangeType) {
-    super.init(changeType)
+  override init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
+    super.init(changeType, completionHandler: completionHandler)
   }
 
   /*
@@ -90,12 +110,7 @@ class TableChangeByStringElement: TableChange {
         Logger.fatal("Not yet supported: wholeTableDiff for TableChangeByStringElement")
     }
 
-    if let newSelectedRows = self.newSelectedRows {
-      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
-      // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
-      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
-      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-    }
+    super.execute(on: tableView)
   }
 
   private func renameAndMoveOneRow(_ tableView: EditableTableView) {
@@ -186,8 +201,8 @@ class TableChangeByRowIndex: TableChange {
   // Used by ChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
 
-  override init(_ changeType: ChangeType) {
-    super.init(changeType)
+  override init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
+    super.init(changeType, completionHandler: completionHandler)
   }
 
   override func execute(on tableView: EditableTableView) {
@@ -238,24 +253,16 @@ class TableChangeByRowIndex: TableChange {
           }
         }
     }
-
-    if let newSelectedRows = self.newSelectedRows {
-      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
-      // To select added rows, will need an explicit call here even if oldSelection and newSelection are the same.
-      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
-      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-      // Make sure the table gets focus:
-      tableView.window!.makeFirstResponder(tableView)
-    }
   }
 
-  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>) -> TableChangeByRowIndex where R:Hashable {
+  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>,
+                           completionHandler: TableChange.CompletionHandler? = nil) -> TableChangeByRowIndex where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
-      return TableChangeByRowIndex(.reloadAll)
+      return TableChangeByRowIndex(.reloadAll, completionHandler: completionHandler)
     }
 
-    let tableChange = TableChangeByRowIndex(.wholeTableDiff)
+    let tableChange = TableChangeByRowIndex(.wholeTableDiff, completionHandler: completionHandler)
     tableChange.toRemove = IndexSet()
     tableChange.toInsert = IndexSet()
     tableChange.toMove = []

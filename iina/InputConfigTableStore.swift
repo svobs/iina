@@ -251,7 +251,7 @@ class InputConfigTableStore {
 
   // Replaces the current state with the given params, and fires listeners.
   private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType) {
-    let configTableChange = TableChangeByStringElement(changeType)
+    let configTableChange = TableChangeByStringElement(changeType, completionHandler: nil)
     configTableChange.oldRows = configTableRows
 
     let currentConfigNameChanged = !self.currentConfigName.equalsIgnoreCase(currentConfigNameNew)

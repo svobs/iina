@@ -104,7 +104,8 @@ class ActiveBindingTableStore {
 
   // Returns the index of the first element which was ultimately inserted;
   // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
-  func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping]) -> Int {
+  func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping],
+                         afterComplete: TableChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
 
@@ -115,7 +116,7 @@ class ActiveBindingTableStore {
       clearFilter()
     }
 
-    let tableChange = TableChangeByRowIndex(.addRows)
+    let tableChange = TableChangeByRowIndex(.addRows, completionHandler: afterComplete)
     tableChange.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
     tableChange.newSelectedRows = tableChange.toInsert!
 
@@ -130,8 +131,9 @@ class ActiveBindingTableStore {
   }
 
   // Returns the index at which it was ultimately inserted
-  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping) -> Int {
-    return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding])
+  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping,
+                        afterComplete: TableChange.CompletionHandler? = nil) -> Int {
+    return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding], afterComplete: afterComplete)
   }
 
   func removeBindings(at indexesToRemove: IndexSet) {

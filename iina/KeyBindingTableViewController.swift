@@ -417,23 +417,27 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     } else {
       rowIndex = self.tableView.numberOfRows - 1
     }
-    insertNewBinding(relativeTo: rowIndex, isAfterNotAt: true)
+    editNewEmptyBinding(relativeTo: rowIndex, isAfterNotAt: true)
   }
 
   // Adds a new binding at the given location then opens an editor for it. The editor with either be inline or using the popup,
   // depending on whether isRaw is true or false, respectively.
   // If isAfterNotAt==true, inserts after the row with given rowIndex. If isAfterNotAt==false, inserts before the row with given rowIndex.
-  private func insertNewBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func editNewEmptyBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "insert binding") else { return }
 
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
     if isRaw {
-      let insertedRowIndex = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: "", rawAction: ""))
-      // The previous line will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
-      tableView.afterNextTableUpdate = {
-        self.tableView.editCell(row: insertedRowIndex, column: 0)
+      // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit.
+      // Also we don't know exactly which row it will end up at, but we know it will be the same as the newly selected row.
+      let afterComplete: TableChange.CompletionHandler = { tableChange in
+        if let newRowIndex = tableChange.newSelectedRows?.first {
+          self.tableView.editCell(row: newRowIndex, column: 0)
+        }
       }
+      let newMapping = KeyMapping(rawKey: "", rawAction: "")
+      let _ = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
 
     } else {
       showEditBindingPopup { key, action in
@@ -752,11 +756,11 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   @objc fileprivate func addNewRowAbove(_ sender: BindingMenuItem) {
-    insertNewBinding(relativeTo: sender.rowIndex, isAfterNotAt: false)
+    editNewEmptyBinding(relativeTo: sender.rowIndex, isAfterNotAt: false)
   }
 
   @objc fileprivate func addNewRowBelow(_ sender: BindingMenuItem) {
-    insertNewBinding(relativeTo: sender.rowIndex, isAfterNotAt: true)
+    editNewEmptyBinding(relativeTo: sender.rowIndex, isAfterNotAt: true)
   }
 
   // Similar to Edit menu operations, but operating on a single non-selected row:

@@ -9,16 +9,15 @@
 import Foundation
 
 class EditableTableView: NSTableView {
+  // Must provide this for EditableTableView extended functionality
+  var editableDelegate: EditableTableViewDelegate? = nil
+
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
-  var afterNextTableUpdate: (() -> Void)? = nil
 
   var editableTextColumnIndexes: [Int] = []
 
   private var lastEditedTextField: EditableTextField? = nil
   private var observers: [NSObjectProtocol] = []
-
-  // Must provide this for EditableTableView extended functionality
-  var editableDelegate: EditableTableViewDelegate? = nil
 
   deinit {
     for observer in observers {
@@ -33,6 +32,10 @@ class EditableTableView: NSTableView {
       case "ENTER", "KP_ENTER":
         if selectedRow >= 0 && selectedRow < numberOfRows {
           Logger.log("TableView.KeyDown: ENTER on row \(selectedRow)")
+          guard !editableTextColumnIndexes.isEmpty else {
+            Logger.log("TableView.KeyDown: editableTextColumnIndexes is empty!", level: .error)
+            return
+          }
           editCell(row: selectedRow, column: editableTextColumnIndexes[0])
           return
         }
@@ -258,26 +261,7 @@ class EditableTableView: NSTableView {
     return true
   }
 
-  func registerTableChangeObserver(forName name: Notification.Name) {
-    observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableDataDidUpdate))
-  }
-
-  // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ChangeType`)
-  private func tableDataDidUpdate(_ notification: Notification) {
-    guard let tableChange = notification.object as? TableChange else {
-      Logger.log("tableDataDidUpdate: invalid object: \(type(of: notification.object))", level: .error)
-      return
-    }
-
-    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
-    tableChange.execute(on: self)
-
-    if let afterNextTableUpdate = self.afterNextTableUpdate {
-      Logger.log("Executing afterNextTableUpdate callback", level: .verbose)
-      self.afterNextTableUpdate = nil // one-time use
-      afterNextTableUpdate()
-    }
-  }
+  // MARK: Special "reload" functions
 
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
   // This will preserve the selection indexes (whereas reloadData() will not)
@@ -293,6 +277,24 @@ class EditableTableView: NSTableView {
     reloadData()
     // Fires change listener...
     selectRowIndexes(selectedRows, byExtendingSelection: false)
+  }
+
+  // MARK: TableChange
+
+  func registerTableChangeObserver(forName name: Notification.Name) {
+    observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableShouldChange))
+  }
+
+  // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ChangeType`).
+  // This notification contains the information needed to make the updates to the table (see: `TableChange`).
+  private func tableShouldChange(_ notification: Notification) {
+    guard let tableChange = notification.object as? TableChange else {
+      Logger.log("tableShouldChange: invalid object: \(type(of: notification.object))", level: .error)
+      return
+    }
+
+    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
+    tableChange.execute(on: self)
   }
 
 }
