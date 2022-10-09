@@ -98,22 +98,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func newConfigFileAction(_ sender: AnyObject) {
-    // prompt
-    Utility.quickPromptPanel("config.new", sheetWindow: view.window) { newName in
-      guard !newName.isEmpty else {
-        Utility.showAlert("config.empty_name", sheetWindow: self.view.window)
-        return
-      }
-
-      self.configTableController!.makeNewConfFile(newName, doAction: { (newFilePath: String) in
-        // - new file
-        if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
-          Utility.showAlert("config.cannot_create", sheetWindow: self.view.window)
-          return false
-        }
-        return true
-      })
-    }
+    configTableController?.createNewConfig()
   }
 
   @IBAction func duplicateConfigFileAction(_ sender: AnyObject) {

@@ -8,12 +8,40 @@
 
 import Foundation
 
+// Convenience function, for debugging
+private func eventTypeText(_ event: NSEvent?) -> String {
+  if let event = event {
+    switch event.type {
+      case .leftMouseDown:
+        return "leftMouseDown"
+      case .leftMouseUp:
+        return "leftMouseUp"
+      case .cursorUpdate:
+        return "cursorUpdate"
+      default:
+        return "\(event.type)"
+    }
+  }
+  return "nil"
+}
+
 class EditableTableView: NSTableView {
   // Must provide this for EditableTableView extended functionality
-  var editableDelegate: EditableTableViewDelegate? = nil
+  var editableDelegate: EditableTableViewDelegate? = nil {
+    didSet {
+      if let editableDelegate = editableDelegate {
+        cellEditTracker = CellEditTracker(parentTable: self, delegate: editableDelegate)
+      } else {
+        cellEditTracker = nil
+      }
+    }
+  }
+
+  private var cellEditTracker: CellEditTracker? = nil
 
   var rowAnimation: NSTableView.AnimationOptions = .slideDown
 
+  // Must provide this for editCell() to work
   var editableTextColumnIndexes: [Int] = []
 
   private var lastEditedTextField: EditableTextField? = nil
@@ -27,23 +55,22 @@ class EditableTableView: NSTableView {
   }
 
   override func keyDown(with event: NSEvent) {
-    let keyChar = KeyCodeHelper.keyMap[event.keyCode]?.0
-    switch keyChar {
-      case "ENTER", "KP_ENTER":
-        if selectedRow >= 0 && selectedRow < numberOfRows {
-          Logger.log("TableView.KeyDown: ENTER on row \(selectedRow)")
-          guard !editableTextColumnIndexes.isEmpty else {
-            Logger.log("TableView.KeyDown: editableTextColumnIndexes is empty!", level: .error)
+    if let keyChar = KeyCodeHelper.keyMap[event.keyCode]?.0 {
+      switch keyChar {
+        case "ENTER", "KP_ENTER":
+          if selectedRow >= 0 && selectedRow < numberOfRows && !editableTextColumnIndexes.isEmpty {
+            Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
+            editCell(row: selectedRow, column: editableTextColumnIndexes[0])
             return
           }
-          editCell(row: selectedRow, column: editableTextColumnIndexes[0])
-          return
-        }
-      default:
-        break
+        default:
+          break
+      }
     }
     super.keyDown(with: event)
   }
+
+  // MARK: Edit menu > Cut, Copy, Paste, Delete
 
   @objc func copy(_ sender: AnyObject?) {
     editableDelegate?.doEditMenuCopy()
@@ -65,9 +92,10 @@ class EditableTableView: NSTableView {
   override func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
     let actionDescription = item.action == nil ? "nil" : "\(item.action!)"
     guard let delegate = self.editableDelegate else {
-      Logger.log("EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\"", level: .error)
+      Logger.log("EditableTableView.validateUserInterfaceItem(): no delegate! Disabling \"\(actionDescription)\"", level: .warning)
       return false
     }
+
     var isAllowed = false
     switch item.action {
       case #selector(copy(_:)):
@@ -86,22 +114,18 @@ class EditableTableView: NSTableView {
     return isAllowed
   }
 
+  // MARK: In-line cell editing
+
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
     if let event = event, event.type == .leftMouseDown {
-      // stop old editor
-      if let oldTextField = lastEditedTextField {
-        self.lastEditedTextField = nil
-        oldTextField.endEditing()
-      }
-
-      if let editableTextField = responder as? EditableTextField {
+      if let editableTextField = responder as? EditableTextField, let cellEditTracker = cellEditTracker {
         // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
         // Workaround: pass everything to the EditableTextField, which does see double-click.
         if let locationInTable = self.window?.contentView?.convert(event.locationInWindow, to: self) {
           let clickedRow = self.row(at: locationInTable)
           let clickedColumn = self.column(at: locationInTable)
-          // qualifies so far!
-          prepareTextFieldForEdit(editableTextField, row: clickedRow, column: clickedColumn)
+          // qualifies!
+          cellEditTracker.changeCurrentCell(to: editableTextField, row: clickedRow, column: clickedColumn)
           return true
         }
       }
@@ -110,37 +134,12 @@ class EditableTableView: NSTableView {
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
-  private func prepareTextFieldForEdit(_ textField: EditableTextField, row: Int, column: Int) {
-    guard let editableDelegate = self.editableDelegate else {
-      // it's valid for a table not to use this functionality
+  override func editColumn(_ columnIndex: Int, row rowIndex: Int, with event: NSEvent?, select: Bool) {
+    Logger.log("editColumn called for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)))", level: .verbose)
+    guard let cellEditTracker = cellEditTracker else {
       return
     }
-    textField.activeEdit = ActiveCellEdit(parentTable: self, delegate: editableDelegate,
-                                          stringValueOrig: textField.stringValue, row: row, column: column)
 
-    // keep track of it for later
-    lastEditedTextField = textField
-  }
-
-  // Convenience function, for debugging
-  private func eventTypeText(_ event: NSEvent?) -> String {
-    if let event = event {
-      switch event.type {
-        case .leftMouseDown:
-          return "leftMouseDown"
-        case .leftMouseUp:
-          return "leftMouseUp"
-        case .cursorUpdate:
-          return "cursorUpdate"
-        default:
-          return "\(event.type)"
-      }
-    }
-    return "nil"
-  }
-
-  override func editColumn(_ columnIndex: Int, row rowIndex: Int, with event: NSEvent?, select: Bool) {
-    Logger.log("Opening in-line editor for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)))")
     guard rowIndex >= 0 && columnIndex >= 0 else {
       Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) or columnIndex (\(columnIndex)) is less than 0", level: .error)
       return
@@ -154,111 +153,32 @@ class EditableTableView: NSTableView {
       return
     }
 
-    // Close old editor (if any):
-    if let oldTextField = lastEditedTextField {
-      self.lastEditedTextField = nil
-      oldTextField.endEditing()
+    guard let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
+       let cellView = view as? NSTableCellView,
+          let editableTextField = cellView.textField as? EditableTextField else {
+      return
     }
 
-    if rowIndex != selectedRow {
+    Logger.log("Opening in-line editor for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)), textField: \(editableTextField))")
+
+    self.scrollRowToVisible(rowIndex)
+    cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
+
+    if select && self.selectedRow != rowIndex {
+      Logger.log("Selecting rowIndex \(rowIndex)", level: .verbose)
       self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    self.scrollRowToVisible(rowIndex)
-    let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false)
-    if let cellView = view as? NSTableCellView {
-      if let editableTextField = cellView.textField as? EditableTextField {
-        prepareTextFieldForEdit(editableTextField, row: rowIndex, column: columnIndex)
-        self.window?.makeFirstResponder(editableTextField)
-      }
+    if let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
+          let cellView = view as? NSTableCellView,
+          let editableTextField = cellView.textField as? EditableTextField {
+      self.window?.makeFirstResponder(editableTextField)
     }
   }
 
   // Convenience method
   func editCell(row rowIndex: Int, column columnIndex: Int) {
     self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
-  }
-
-  private func getIndexOfEditableColumn(_ columnIndex: Int) -> Int? {
-    for (indexIndex, index) in editableTextColumnIndexes.enumerated() {
-      if columnIndex == index {
-        return indexIndex
-      }
-    }
-    Logger.log("Failed to find index in editableTextColumnIndexes (\(editableTextColumnIndexes)): \(columnIndex)", level: .error)
-    return nil
-  }
-
-  private func nextTabColumnIndex(_ columnIndex: Int) -> Int {
-    if let indexIndex = getIndexOfEditableColumn(columnIndex) {
-      return editableTextColumnIndexes[(indexIndex+1) %% editableTextColumnIndexes.count]
-    }
-    return editableTextColumnIndexes[0]
-  }
-
-  private func prevTabColumnIndex(_ columnIndex: Int) -> Int {
-    if let indexIndex = getIndexOfEditableColumn(columnIndex) {
-      return editableTextColumnIndexes[(indexIndex-1) %% editableTextColumnIndexes.count]
-    }
-    return editableTextColumnIndexes[0]
-  }
-
-  // Thanks to:
-  // https://samwize.com/2018/11/13/how-to-tab-to-next-row-in-nstableview-view-based-solution/
-  // Returns true if it resulted in another editor being opened [asychronously], false if not.
-  @discardableResult
-  func editAnotherCellAfterEditEnd(oldRow rowIndex: Int, oldColumn columnIndex: Int, _ textMovement: NSTextMovement) -> Bool {
-    let isInterRowTabEditingEnabled = Preference.bool(for: .enableInterRowTabEditingInKeyBindingsTable)
-
-    var newRowIndex: Int
-    var newColIndex: Int
-    switch textMovement {
-      case .tab:
-        // Snake down the grid, left to right, top down
-        newColIndex = nextTabColumnIndex(columnIndex)
-        if newColIndex <= columnIndex {
-          guard isInterRowTabEditingEnabled else {
-            return false
-          }
-          newRowIndex = rowIndex + 1
-          if newRowIndex >= numberOfRows {
-            return false
-          }
-        } else {
-          newRowIndex = rowIndex
-        }
-      case .backtab:
-        // Snake up the grid, right to left, bottom up
-        newColIndex = prevTabColumnIndex(columnIndex)
-        if newColIndex >= columnIndex {
-          guard isInterRowTabEditingEnabled else {
-            return false
-          }
-          newRowIndex = rowIndex - 1
-          if newRowIndex < 0 {
-            return false
-          }
-        } else {
-          newRowIndex = rowIndex
-        }
-      case .return:
-        guard isInterRowTabEditingEnabled else {
-          return false
-        }
-        // Go to cell directly below
-        newRowIndex = rowIndex + 1
-        if newRowIndex >= numberOfRows {
-          return false
-        }
-        newColIndex = columnIndex
-      default: return false
-    }
-
-    DispatchQueue.main.async {
-      self.editCell(row: newRowIndex, column: newColIndex)
-    }
-    // handled
-    return true
   }
 
   // MARK: Special "reload" functions

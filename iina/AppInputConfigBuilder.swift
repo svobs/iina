@@ -38,6 +38,9 @@ class AppInputConfigBuilder {
 
       let key = binding.keyMapping.normalizedMpvKey
 
+      // Ignore empty bindings added by the prefs UI:
+      guard !key.isEmpty else { continue }
+
       // If multiple bindings map to the same key, favor the last one always.
       if let prevSameKeyBinding = resolverDict[key] {
         prevSameKeyBinding.isEnabled = false

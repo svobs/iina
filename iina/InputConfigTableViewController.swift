@@ -334,6 +334,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
 
   // MARK: Reusable UI actions
 
+  // Action: Delete Config
   @objc public func deleteConfig(_ configName: String) {
     guard let confFilePath = self.requireFilePath(forConfig: configName) else {
       return
@@ -356,6 +357,27 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
 
+  // Action: New Config
+  @objc func createNewConfig() {
+    // prompt
+    Utility.quickPromptPanel("config.new", sheetWindow: tableView.window) { newName in
+      guard !newName.isEmpty else {
+        Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
+        return
+      }
+
+      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+        // - new file
+        if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
+          Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
+          return false
+        }
+        return true
+      })
+    }
+  }
+
+  // Action: Duplicate Config
   @objc func duplicateConfig(_ configName: String) {
     guard let currFilePath = self.requireFilePath(forConfig: configName) else {
       return
@@ -385,8 +407,23 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     }
   }
 
+  private func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
+    let newFilePath =  Utility.buildConfigFilePath(for: newName)
+
+    // - if exists with same name
+    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+      return
+    }
+
+    guard doAction(newFilePath) else {
+      return
+    }
+
+    self.tableStore.addUserConfig(name: newName, filePath: newFilePath)
+  }
+
   /*
-   Imports conf file(s).
+   Action: Import config file(s).
    Checks that each file can be opened and parsed and if any cannot, prints an error and does nothing.
    If any of the imported files would overwrite an existing one, for each conflict the user is asked whether to
    delete the existing; the import is aborted after the first one the user declines.
@@ -452,21 +489,6 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       // update prefs & refresh UI
       self.tableStore.addUserConfigs(configsToAdd)
     }
-  }
-
-  func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
-    let newFilePath =  Utility.buildConfigFilePath(for: newName)
-
-    // - if exists with same name
-    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-      return
-    }
-
-    guard doAction(newFilePath) else {
-      return
-    }
-
-    self.tableStore.addUserConfig(name: newName, filePath: newFilePath)
   }
 
   // Check whether file already exists at `filePath`.
