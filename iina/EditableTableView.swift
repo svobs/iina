@@ -169,10 +169,17 @@ class EditableTableView: NSTableView {
       self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    if let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
-          let cellView = view as? NSTableCellView,
-          let editableTextField = cellView.textField as? EditableTextField {
-      self.window?.makeFirstResponder(editableTextField)
+    // Hypothesis: There seems to be a race condition in NSTableView which can result in half-complete updates to its UI.
+    // If the call to changeCurrentCell() above resulted in another cell editor being closed, those updates needs to be allowed
+    // to complete before proceeding, or they may never complete. In the case here, the last edited cell may still show the
+    // "text editing" cursor until its row is next refreshed. By calling `async` here, we postpone our updates to the end of
+    // the current update queue, which allows previously queued updates to complete.
+    DispatchQueue.main.async {
+      if let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
+         let cellView = view as? NSTableCellView,
+         let editableTextField = cellView.textField as? EditableTextField {
+        self.window?.makeFirstResponder(editableTextField)
+      }
     }
   }
 

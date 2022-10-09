@@ -96,6 +96,8 @@ class CellEditTracker {
     }
   }
 
+  // MARK: Navigation between edited cells
+
   func askUserToApproveDoubleClickEdit() -> Bool {
     if let current = current {
       return self.delegate.userDidDoubleClickOnCell(row: current.row, column: current.column)

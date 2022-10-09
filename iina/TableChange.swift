@@ -64,7 +64,7 @@ class TableChange {
     if let newSelectedRows = self.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here.
-      // Note: need to add an async() here to let the NSTableView "settle" before making further updates.
+      // Note: need to add an async() here to let the NSTableView structure updates "settle" before updating row selection.
       // Otherwise the table can end up with phantom row selections which never go away
       DispatchQueue.main.async {
         Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
