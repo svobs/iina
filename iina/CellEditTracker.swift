@@ -69,7 +69,7 @@ class CellEditTracker {
 
     if let newValue = newValue {
       if newValue != current.stringValueOrig {
-        if self.delegate.textDidEndEditing(newValue: newValue, row: current.row, column: current.column) {
+        if self.delegate.editDidEndWithNewText(newValue: newValue, row: current.row, column: current.column) {
           Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
         } else {
           // a return value of false tells us to revert to the previous value

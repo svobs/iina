@@ -338,7 +338,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     return false
   }
 
-  func userDidEndEditing(_ newValue: String, rowIndex: Int, columnIndex: Int) -> Bool {
+  func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // An error here would be really bad
       Logger.log("Cannot save binding row \(rowIndex): edit is not allowed for this row type! If you see this message please report it.", level: .error)
@@ -432,8 +432,10 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit.
       // Also we don't know exactly which row it will end up at, but we know it will be the same as the newly selected row.
       let afterComplete: TableChange.CompletionHandler = { tableChange in
-        if let newRowIndex = tableChange.newSelectedRows?.first {
-          self.tableView.editCell(row: newRowIndex, column: 0)
+        if let tc = tableChange as? TableChangeByRowIndex {
+          if let newRowIndex = tc.toInsert?.first {
+            self.tableView.editCell(row: newRowIndex, column: 0)
+          }
         }
       }
       let newMapping = KeyMapping(rawKey: "", rawAction: "")

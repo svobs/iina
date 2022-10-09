@@ -64,15 +64,19 @@ class TableChange {
     if let newSelectedRows = self.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here.
-      Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
-      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-      // Make sure the table gets focus:
-      tableView.window!.makeFirstResponder(tableView)
+      // Note: need to add an async() here to let the NSTableView "settle" before making further updates.
+      // Otherwise the table can end up with phantom row selections which never go away
+      DispatchQueue.main.async {
+        Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
+        tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+      }
     }
 
     if let completionHandler = completionHandler {
-      Logger.log("Executing completion handler", level: .verbose)
-      completionHandler(self)
+      DispatchQueue.main.async { // similar to above, let it settle again before possible further changes
+        Logger.log("Executing completion handler", level: .verbose)
+        completionHandler(self)
+      }
     }
   }
 

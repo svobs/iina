@@ -11,7 +11,7 @@ import Foundation
 // Adds optional methods for use in conjunction with `EditableTableView`
 // (which will itself hopefully become an extension of `NSTableView` at some point).
 protocol EditableTableViewDelegate {
-  func textDidEndEditing(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
+  func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
 
   // If true is returned, a row editor will be displayed for editing cell text
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool
@@ -57,7 +57,9 @@ protocol EditableTableViewDelegate {
 
 // Adds null defaults for all protocol methods
 extension EditableTableViewDelegate {
-  func textDidEndEditing(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
+  func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
+    // This method should be overriden, so this message should not be seen
+    Logger.log("EditableTableViewDelegate.editDidEndWithNewText(): null default method was called!", level: .warning)
     return false
   }
 

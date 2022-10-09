@@ -114,7 +114,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
 
   // User finished editing (callback from EditableTextField).
   // Renames current comfig & its file on disk
-  func textDidEndEditing(newValue newName: String, row: Int, column: Int) -> Bool {
+  func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
     guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false

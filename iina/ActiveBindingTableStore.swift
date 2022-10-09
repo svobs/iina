@@ -117,8 +117,9 @@ class ActiveBindingTableStore {
     }
 
     let tableChange = TableChangeByRowIndex(.addRows, completionHandler: afterComplete)
-    tableChange.toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
-    tableChange.newSelectedRows = tableChange.toInsert!
+    let toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
+    tableChange.toInsert = toInsert
+    tableChange.newSelectedRows = toInsert
 
     var bindingRowsAllNew = bindingRowsAll
     for binding in bindingList.reversed() {
