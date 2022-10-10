@@ -22,14 +22,8 @@ class InputConfigFileHandler {
       inputConfigTableStore.changeCurrentConfigToDefault()
       return
     }
-    Logger.log("Loading key bindings config from \"\(configFilePath)\"")
+    Logger.log("Loading bindings config from \"\(configFilePath)\"")
     guard let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
-      // on error
-      Logger.log("Error loading key bindings from config \"\(inputConfigTableStore.currentConfigName)\", at path: \"\(configFilePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: configFilePath).lastPathComponent
-      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-
       inputConfigTableStore.changeCurrentConfigToDefault()
       return
     }

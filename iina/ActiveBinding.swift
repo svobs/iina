@@ -123,4 +123,22 @@ extension ActiveBinding: NSPasteboardWriting, NSPasteboardReading {
         return nil
     }
   }
+
+  static func deserializeList(from pasteboard: NSPasteboard) -> [ActiveBinding] {
+    var rowList: [ActiveBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
+      for obj in objList {
+        if let row = obj as? ActiveBinding {
+          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
+          if row.isEditableByUser {
+            rowList.append(row)
+          }
+        } else {
+          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
+          return [] // return empty list if something was amiss
+        }
+      }
+    }
+    return rowList
+  }
 }

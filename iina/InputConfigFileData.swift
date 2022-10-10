@@ -194,6 +194,12 @@ class InputConfigFileData {
   // Returns nil if cannot read file
   static func loadFile(at path: String) -> InputConfigFileData? {
     guard let reader = StreamReader(path: path) else {
+      // on error
+      Logger.log("Error loading bindings from path: \"\(path)\"", level: .error)
+      let fileName = URL(fileURLWithPath: path).lastPathComponent
+      let alertInfo = AlertInfo(key: "keybinding_config.error", args: [fileName])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+
       return nil
     }
     let result = InputConfigFileData(filePath: path)

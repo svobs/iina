@@ -199,6 +199,13 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     return bindingTableStore.getBindingRow(at: rowIndex)
   }
 
+  /*
+   Applies when this table the drop target
+   */
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    session.draggingFormation = .list
+  }
+
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock.
    TODO: look for a way to animate this so that it's more obvious that something happened.
@@ -208,7 +215,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return
     }
 
-    let rowList = deserializeBindingRows(from: session.draggingPasteboard)
+    let rowList = ActiveBinding.deserializeList(from: session.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return
@@ -235,7 +242,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return []  // deny drop
     }
 
-    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
+    let rowList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return []  // deny drop
@@ -243,6 +250,8 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
 
     // Update that little red number:
     info.numberOfValidItemsForDrop = rowList.count
+    info.draggingFormation = .list
+    info.animatesToDestination = true
 
     // Cannot drop on/into existing rows. Change to below it:
     let isAfterNotAt = dropOperation == .on
@@ -264,9 +273,9 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
   /*
    Accept the drop and execute changes, or reject drop.
    */
-  func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+  @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = deserializeBindingRows(from: info.draggingPasteboard)
+    let rowList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
     Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
@@ -276,6 +285,10 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       Logger.log("Expected dropOperaion==.above but got: \(dropOperation); aborting drop")
       return false
     }
+
+    info.numberOfValidItemsForDrop = rowList.count
+    info.draggingFormation = .list
+    info.animatesToDestination = true
 
     var dragMask = info.draggingSourceOperationMask
     if dragMask == NSDragOperation.every {
@@ -294,24 +307,6 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       }
     }
     return true
-  }
-
-  private func deserializeBindingRows(from pasteboard: NSPasteboard) -> [ActiveBinding] {
-    var rowList: [ActiveBinding] = []
-    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
-      for obj in objList {
-        if let row = obj as? ActiveBinding {
-          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
-          if row.isEditableByUser {
-            rowList.append(row)
-          }
-        } else {
-          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
-          return [] // return empty list if something was amiss
-        }
-      }
-    }
-    return rowList
   }
 }
 
@@ -626,7 +621,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   private func readBindingsFromClipboard() -> [ActiveBinding] {
-    return deserializeBindingRows(from: NSPasteboard.general)
+    return ActiveBinding.deserializeList(from: NSPasteboard.general)
   }
 }
 

@@ -384,9 +384,9 @@ class ActiveBindingTableStore {
   private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
     // or of writing another section's bindings to the "default" section.
-    let defaultSectionBindings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
+    let defaultSectionMappings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
     let inputConfigFileHandler = (NSApp.delegate as! AppDelegate).inputConfigFileHandler
-    guard let defaultSectionBindings = inputConfigFileHandler.saveBindingsToCurrentConfigFile(defaultSectionBindings) else {
+    guard let defaultSectionBindings = inputConfigFileHandler.saveBindingsToCurrentConfigFile(defaultSectionMappings) else {
       return
     }
 

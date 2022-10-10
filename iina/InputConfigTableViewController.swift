@@ -36,7 +36,7 @@ class InputConfigTableViewController: NSObject {
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
-      tableView.registerForDraggedTypes([.fileURL])
+      tableView.registerForDraggedTypes([.fileURL, .string, .iinaActiveBinding])
       tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -202,6 +202,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
     Logger.log("User dragged to the trash: \(userConfigList[0])", level: .verbose)
 
+    session.draggingFormation = .list
     self.deleteConfig(userConfigList[0])
   }
 
@@ -211,9 +212,21 @@ extension InputConfigTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
+    info.draggingFormation = .list
+    info.animatesToDestination = true
+
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
 
     if newFilePathList.isEmpty {
+      let bindingList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+      if !bindingList.isEmpty {
+        Logger.log("Droppping \(bindingList.count) bindings")
+        if dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
+          // Drop bindings into another user config
+          info.numberOfValidItemsForDrop = bindingList.count
+          return NSDragOperation.copy
+        }
+      }
       // no files, or no ".conf" files, or dragging existing items over self
       return []
     }
@@ -226,18 +239,54 @@ extension InputConfigTableViewController: NSTableViewDataSource {
   }
 
   /*
-   Accept the drop and import file(s), or reject drop.
+   Accept the drop and execute it, or reject drop.
    */
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
+    // Option A: drop input config file(s) into table
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
-    Logger.log("User dropped \(newFilePathList.count) new config files into table")
-    guard !newFilePathList.isEmpty else {
+    if !newFilePathList.isEmpty {
+      Logger.log("User dropped \(newFilePathList.count) new config files into table")
+      self.importConfigFiles(newFilePathList)
+      info.numberOfValidItemsForDrop = newFilePathList.count
+      info.animatesToDestination = true
+      info.draggingFormation = .list
+      return true
+    }
+
+    // Option B: drop bindings into user conf file
+    let bindingList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+    if !bindingList.isEmpty, dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
+      Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfigName)\" config")
+      info.numberOfValidItemsForDrop = bindingList.count
+      info.animatesToDestination = true
+      info.draggingFormation = .list
+      return dropBindingsIntoUserConfFile(bindingList, targetConfigName: targetConfigName)
+    }
+
+    return false
+  }
+
+  private func dropBindingsIntoUserConfFile(_ bindingList: [ActiveBinding], targetConfigName: String) -> Bool {
+    guard let configFilePath = requireFilePath(forConfig: targetConfigName),
+          let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
+      // Error. A message has already been logged and displayed to user.
       return false
     }
 
-    self.importConfigFiles(newFilePathList)
-    return true
+    let defaultSectionMappings = bindingList.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
+    var fileMappings = inputConfigFile.parseBindings()
+    fileMappings.append(contentsOf: defaultSectionMappings)
+    inputConfigFile.replaceAllBindings(with: fileMappings)
+    do {
+      try inputConfigFile.saveToDisk()
+      return true
+    } catch {
+      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
+      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+      return false
+    }
   }
 
   private func filterNewFilePaths(from pasteboard: NSPasteboard) -> [String] {
