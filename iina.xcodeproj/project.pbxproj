@@ -169,7 +169,7 @@
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
-		D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */; };
+		D188CB2628D9E95500F166FD /* InputBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* InputBindingTableStore.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
@@ -1501,7 +1501,7 @@
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
-		D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingTableStore.swift; sourceTree = "<group>"; };
+		D188CB2528D9E95500F166FD /* InputBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBindingTableStore.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
@@ -2514,7 +2514,7 @@
 			isa = PBXGroup;
 			children = (
 				D1049C882872CAD6003D47C1 /* InputConfigTableStore.swift */,
-				D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */,
+				D188CB2528D9E95500F166FD /* InputBindingTableStore.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
 				D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */,
@@ -2993,7 +2993,7 @@
 				E3530700214908DD008FE492 /* JavascriptAPIHttp.swift in Sources */,
 				84FBF23E1EF06A90003EA491 /* ThumbnailCache.swift in Sources */,
 				845FB0C71D39462E00C011E0 /* ControlBarView.swift in Sources */,
-				D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */,
+				D188CB2628D9E95500F166FD /* InputBindingTableStore.swift in Sources */,
 				E3513AFB20F120F600F8C347 /* PreferenceViewController.swift in Sources */,
 				D1FD2DD828521AD500CF7B35 /* MPVLogHandler.swift in Sources */,
 				E38BD4AF20054BD9007635FC /* MainWindow.swift in Sources */,
