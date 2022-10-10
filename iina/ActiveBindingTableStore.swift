@@ -367,7 +367,14 @@ class ActiveBindingTableStore {
       return bindingRowsAll
     }
     return bindingRowsAll.filter {
-      $0.keyMapping.rawKey.localizedStandardContains(filterString) || $0.keyMapping.rawAction.localizedStandardContains(filterString)
+      let containsAction: Bool
+      // kludge for PluginKeyMapping...
+      if let pluginMapping = $0.keyMapping as? PluginKeyMapping, let comment = pluginMapping.comment {
+        containsAction = comment.localizedStandardContains(filterString)
+      } else {
+        containsAction = $0.keyMapping.rawAction.localizedStandardContains(filterString)
+      }
+      return $0.keyMapping.rawKey.localizedStandardContains(filterString) || containsAction
     }
   }
 
