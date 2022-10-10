@@ -59,6 +59,18 @@ struct AppData {
   static let chromeExtensionLink = "https://chrome.google.com/webstore/detail/open-in-iina/pdnojahnhpgmdhjdhgphgdcecehkbhfo"
   static let firefoxExtensionLink = "https://addons.mozilla.org/addon/open-in-iina-x"
 
+  static let configFileExtension = "conf"
+
+  // Immmutable default input configs.
+  // TODO: combine into a SortedDictionary when available
+  static let defaultConfigNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
+  static let defaultConfigs: [String: String] = [
+    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
+    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!
+  ]
+
   static let widthWhenNoVideo = 640
   static let heightWhenNoVideo = 360
   static let sizeWhenNoVideo = NSSize(width: widthWhenNoVideo, height: heightWhenNoVideo)
@@ -84,6 +96,7 @@ struct Constants {
     static let pip = NSLocalizedString("menu.pip", comment: "Enter Picture-in-Picture")
     static let exitPIP = NSLocalizedString("menu.exit_pip", comment: "Exit Picture-in-Picture")
     static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
+    static let keyBinding = "Binding"
     static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
   }
   struct Time {
@@ -108,10 +121,19 @@ extension Notification.Name {
   static let iinaMediaTitleChanged = Notification.Name("IINAMediaTitleChanged")
   static let iinaVFChanged = Notification.Name("IINAVfChanged")
   static let iinaAFChanged = Notification.Name("IINAAfChanged")
-  static let iinaKeyBindingInputChanged = Notification.Name("IINAkeyBindingInputChanged")
+  // An error occurred in the key bindings page and needs to be displayed:
+  static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
+  // Supports auto-complete for key binding editing:
+  static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
+  // There was a change to the Input Config table: the list of user input configs
+  // had additions, subtractions, renames, or the selection changed
+  static let iinaInputConfigTableShouldUpdate = Notification.Name("IINAInputConfigTableShouldUpdate")
+  // There was a change to the Key Bindings table contents
+  static let iinaKeyBindingsTableShouldUpdate = Notification.Name("IINAKeyBindingsTableShouldUpdate")
+  // Requests that the search field above the Key Bindings table change its text to the contained string
+  static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")
-  static let iinaKeyBindingChanged = Notification.Name("iinaKeyBindingChanged")
   static let iinaPluginChanged = Notification.Name("IINAPluginChanged")
 }

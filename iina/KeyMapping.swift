@@ -8,148 +8,161 @@
 
 import Foundation
 
-class KeyMapping: NSObject {
+// Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
+class KeyMapping: NSObject, Codable {
 
-  static private let modifierOrder: [String: Int] = [
-    "Ctrl": 0,
-    "Alt": 1,
-    "Shift": 2,
-    "Meta": 3
-  ]
+  let bindingID: Int?
 
-  @objc var keyForDisplay: String {
+  let isIINACommand: Bool
+
+  // MARK: Key
+
+  let rawKey: String
+
+  let normalizedMpvKey: String
+
+  var normalizedMacKey: String? {
     get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? key : prettyKey
-    }
-    set {
-      key = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
-    }
-  }
-  
-  @objc var actionForDisplay: String {
-    get {
-      return Preference.bool(for: .displayKeyBindingRawValues) ? readableAction : prettyCommand
-    }
-    set {
-      rawAction = newValue
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))
+      guard let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) else {
+        return nil
+      }
+      return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
     }
   }
 
-  var isIINACommand: Bool
-
-  var key: String
-
-  var action: [String]
-
-  private var privateRawAction: String
-
-  var rawAction: String {
-    set {
-      if newValue.hasPrefix("@iina") {
-        privateRawAction = newValue[newValue.index(newValue.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        isIINACommand = true
+  // For UI
+  var prettyKey: String {
+    get {
+      if let normalizedMacKey = normalizedMacKey {
+        return normalizedMacKey
       } else {
-        privateRawAction = newValue
-        action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        isIINACommand = false
+        return normalizedMpvKey
       }
     }
-    get {
-      return privateRawAction
-    }
   }
 
-  var comment: String?
+  // MARK: Action
 
-  @objc var readableAction: String {
+  let action: [String]
+
+  // The action with @iina removed (if applicable), but otherwise not formatted
+  let rawAction: String
+
+  // Similar to rawAction, but the tokens will always be separated by exactly one space
+  var readableAction: String {
     get {
       let joined = action.joined(separator: " ")
       return isIINACommand ? ("@iina " + joined) : joined
     }
   }
 
-  var prettyKey: String {
-    get {
-      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: self.key, usePrintableKeyName: true) {
-        return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
-      } else {
-        return key
-      }
-    }
-  }
-
-  @objc var prettyCommand: String {
+  // The human-language description of the action
+  var readableCommand: String {
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
   }
 
-  init(key: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
-    // normalize different letter cases for modifier keys
-    var normalizedKey = key
-    ["Ctrl", "Meta", "Alt", "Shift"].forEach { keyword in
-      normalizedKey = normalizedKey.replacingOccurrences(of: keyword, with: keyword, options: .caseInsensitive)
+  // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
+  // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
+  var destinationSection: String? {
+    get {
+      if action.count > 1 && action[0].count > 0 && action[0][action[0].startIndex] == "{" {
+        if let endIndex = action[0].firstIndex(of: "}") {
+          let inner = action[0][action[0].index(after: action[0].startIndex)..<endIndex]
+          return inner.trimmingCharacters(in: .whitespaces)
+        }
+      }
+      return nil
     }
-    var keyIsPlus = false
-    if normalizedKey.hasSuffix("+") {
-      keyIsPlus = true
-      normalizedKey = String(normalizedKey.dropLast())
+  }
+
+  // The MPV comment
+  var comment: String?
+
+  // Convenience method. Returns true if action is "ignore"
+  var isIgnored: Bool {
+    return rawAction == MPVCommand.ignore.rawValue
+  }
+
+  // Serialized form, suitable for writing to a single line of mpv's input.conf
+  var confFileFormat: String {
+    get {
+      let iinaCommandString = isIINACommand ? "#@iina " : ""
+      let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+      return "\(iinaCommandString)\(rawKey) \(rawAction)\(commentString)"
     }
-    normalizedKey = normalizedKey.components(separatedBy: "+")
-      .sorted { KeyMapping.modifierOrder[$0, default: 9] < KeyMapping.modifierOrder[$1, default: 9] }
-      .joined(separator: "+")
-    if keyIsPlus {
-      normalizedKey += "+"
+  }
+
+  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil, bindingID: Int? = nil) {
+    self.bindingID = bindingID
+
+    self.rawKey = rawKey
+    self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
+
+    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
+      self.isIINACommand = true
+      self.rawAction = trimmedAction
+    } else {
+      self.isIINACommand = isIINACommand
+      self.rawAction = rawAction
     }
-    self.key = normalizedKey
-    self.privateRawAction = rawAction
     self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-    self.isIINACommand = isIINACommand
     self.comment = comment
   }
 
-  static func parseInputConf(at path: String) -> [KeyMapping]? {
-    let reader = StreamReader(path: path)
-    var mapping: [KeyMapping] = []
-    while var line: String = reader?.nextLine() {      // ignore empty lines
-      var isIINACommand = false
-      if line.isEmpty { continue }
-      if line.hasPrefix("#@iina") {
-        // extended syntax
-        isIINACommand = true
-        line = String(line[line.index(line.startIndex, offsetBy: "#@iina".count)...])
-      } else if line.hasPrefix("#") {
-        // ignore comment
-        continue
-      }
-      // remove inline comment
-      if let sharpIndex = line.firstIndex(of: "#") {
-        line = String(line[...line.index(before: sharpIndex)])
-      }
-      // split
-      let splitted = line.split(maxSplits: 1, whereSeparator: { $0 == " " || $0 == "\t"})
-      if splitted.count < 2 {
-        Logger.log("Skipped corrupted line in input.conf: \(line)", level: .warning)
-        continue  // no command, wrong format
-      }
-      let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)
-      let action = String(splitted[1]).trimmingCharacters(in: .whitespaces)
-
-      mapping.append(KeyMapping(key: key, rawAction: action, isIINACommand: isIINACommand, comment: nil))
+  private static func removeIINAPrefix(from rawAction: String) -> String? {
+    if rawAction.hasPrefix("@iina") {
+      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
+    } else {
+      return nil
     }
-    return mapping
   }
 
-  static func generateConfData(from mappings: [KeyMapping]) -> String {
-    var result = "# Generated by IINA\n\n"
-    mappings.forEach { km in
-      if km.isIINACommand {
-        result += "#@iina \(km.key) \(km.action.joined(separator: " "))\n"
-      } else {
-        result += "\(km.key) \(km.action.joined(separator: " "))\n"
-      }
+  public override var description: String {
+    return "KeyMapping(\"\(rawKey)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
+  }
+
+  func rawEquals(_ other: KeyMapping) -> Bool {
+    return rawKey == other.rawKey && rawAction == other.rawAction
+  }
+
+  // Makes a duplicate of this object, but will also override any non-nil parameter
+  func clone(rawKey: String? = nil, rawAction: String? = nil, bindingID: Int? = nil) -> KeyMapping {
+    return KeyMapping(rawKey: rawKey ?? self.rawKey,
+                      rawAction: rawAction ?? self.rawAction,
+                      isIINACommand: self.isIINACommand,
+                      comment: self.comment,
+                      bindingID: bindingID ?? self.bindingID)
+  }
+}
+
+// This class is a little bit of a hurried kludge, so that bindings set from IINA plugins could go everywhere
+// that mpv's bindings can go, but with each also containing a reference to their associated menu item for later use.
+class PluginKeyMapping: KeyMapping {
+  let menuItem: NSMenuItem
+  let pluginName: String
+  
+  init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
+    self.menuItem = menuItem
+    self.pluginName = pluginName
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, bindingID: bindingID)
+  }
+
+  required init(from decoder: Decoder) throws {
+    Logger.fatal("init(from:) is not supported for PluginKeyMapping")
+  }
+
+  override var comment: String? {
+    get {
+      "Plugin > \(pluginName) > \"\(menuItem.title)\""
+    } set {
     }
-    return result
+  }
+
+  override var readableAction: String {
+    return rawAction
+  }
+
+  override var readableCommand: String {
+    return rawAction
   }
 }
