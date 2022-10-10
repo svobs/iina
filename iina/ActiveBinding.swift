@@ -27,13 +27,12 @@ class ActiveBinding: NSObject, Codable {
    Will be one of:
    - "default", if origin == .confFile
    - The input section name, if origin == .libmpv
-   - The plugin name, if origin == .iinaPlugin
+   - The Plugins section name, if origin == .iinaPlugin
    */
   var srcSectionName: String
 
   /*
-   FIXME: change this to NSMenuItem, and remove the field from PluginKeyMapping
-   Will be true for all `iinPlugin` and some `confFile`
+   Will be true for all origin == `.iinaPlugin` and some `.confFile`.
    */
   var isMenuItem: Bool
 
@@ -67,14 +66,8 @@ class ActiveBinding: NSObject, Codable {
     self.init(row.keyMapping, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
   }
 
-  // Plugin bindings only
-  static func makeActiveBindingForPlugin(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) -> ActiveBinding {
-    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
-    return ActiveBinding(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
-  }
-
   override var description: String {
-    "<\(origin == .iinaPlugin ? "Plugin:": "")\(srcSectionName)> \(keyMapping.normalizedMpvKey) -> \(keyMapping.readableAction)"
+    "<\(pluginKeyMapping == nil ? srcSectionName : "Plugin: \(pluginKeyMapping!.pluginName)")> \(keyMapping.normalizedMpvKey) -> \(keyMapping.readableAction)"
   }
 
   // Hashable protocol conformance, to enable diffing
@@ -93,6 +86,10 @@ class ActiveBinding: NSObject, Codable {
     return other.origin == self.origin
       && other.srcSectionName == self.srcSectionName
       && other.keyMapping.confFileFormat == self.keyMapping.confFileFormat
+  }
+
+  var pluginKeyMapping: PluginKeyMapping? {
+    return self.keyMapping as? PluginKeyMapping
   }
 }
 

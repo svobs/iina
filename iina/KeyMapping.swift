@@ -9,11 +9,19 @@
 import Foundation
 
 protocol InputKey {
-  // TODO!
+  var rawKey: String { get }
+
+  var normalizedMpvKey: String  { get }
+
+  var normalizedMacKey: String? { get }
+
+  var prettyKey: String { get }
+
+  var comment: String? { get }
 }
 
 // Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
-class KeyMapping: NSObject, Codable {
+class KeyMapping: NSObject, Codable, InputKey {
 
   let bindingID: Int?
 
@@ -141,17 +149,13 @@ class KeyMapping: NSObject, Codable {
 
 // This class is a little bit of a hurried kludge, so that bindings set from IINA plugins could go everywhere
 // that mpv's bindings can go, but with each also containing a reference to their associated menu item for later use.
-// TODO: a better design would be to create a `InputKey` protocol which only defines all the `key` methods,
-// then rename the `KeyMapping` class above to `MpvMapping` which adds methods for `action`, `comment`, etc.
 class PluginKeyMapping: KeyMapping {
-  // TODO: move this into ActiveBinding
   let menuItem: NSMenuItem
   let pluginName: String
 
   init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
     self.menuItem = menuItem
     self.pluginName = pluginName
-    // Kludge here: storing plugin name info in rawAction, then making sure we don't try to execute it.
     super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, bindingID: bindingID)
   }
 
@@ -161,7 +165,7 @@ class PluginKeyMapping: KeyMapping {
 
   override var comment: String? {
     get {
-      "Plugin > \(pluginName) > \(menuItem.title)"
+      "Plugin > \(pluginName) > \"\(menuItem.title)\""
     } set {
     }
   }
