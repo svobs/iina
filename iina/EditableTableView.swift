@@ -108,6 +108,8 @@ class EditableTableView: NSTableView {
         isAllowed = delegate.isPasteEnabled()
       case #selector(delete(_:)):
         isAllowed = delegate.isDeleteEnabled()
+      case #selector(selectAll(_:)):
+        isAllowed = delegate.isSelectAllEnabled()
       default:
         Logger.log("EditableTableView.validateUserInterfaceItem(): defaulting isAllowed=false for \"\(actionDescription)\"", level: .verbose)
         return false

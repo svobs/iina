@@ -52,6 +52,8 @@ protocol EditableTableViewDelegate {
 
   func isDeleteEnabled() -> Bool
 
+  func isSelectAllEnabled() -> Bool
+
   // Edit menu action handlers. Delegates should override these if they want to support the standard operations.
 
   func doEditMenuCut()
@@ -61,6 +63,8 @@ protocol EditableTableViewDelegate {
   func doEditMenuPaste()
 
   func doEditMenuDelete()
+
+  // No need for selectAll - it's trivial and NSTableView provides it
 }
 
 // Adds null defaults for all protocol methods
@@ -99,6 +103,10 @@ extension EditableTableViewDelegate {
 
   func isDeleteEnabled() -> Bool {
     false
+  }
+
+  func isSelectAllEnabled() -> Bool {
+    true
   }
 
   func doEditMenuCut() {}

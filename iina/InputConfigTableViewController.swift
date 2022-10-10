@@ -12,6 +12,7 @@ import Cocoa
 
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
+  private let DRAGGING_FORMATION: NSDraggingFormation = .list
 
   private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigTableStore!
@@ -202,7 +203,8 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
     Logger.log("User dragged to the trash: \(userConfigList[0])", level: .verbose)
 
-    session.draggingFormation = .list
+    session.draggingFormation = DRAGGING_FORMATION
+    session.animatesToStartingPositionsOnCancelOrFail = true
     self.deleteConfig(userConfigList[0])
   }
 
@@ -212,7 +214,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    info.draggingFormation = .list
+    info.draggingFormation = DRAGGING_FORMATION
     info.animatesToDestination = true
 
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
@@ -220,7 +222,6 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     if newFilePathList.isEmpty {
       let bindingList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
       if !bindingList.isEmpty {
-        Logger.log("Droppping \(bindingList.count) bindings")
         if dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
           // Drop bindings into another user config
           info.numberOfValidItemsForDrop = bindingList.count
@@ -250,7 +251,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       self.importConfigFiles(newFilePathList)
       info.numberOfValidItemsForDrop = newFilePathList.count
       info.animatesToDestination = true
-      info.draggingFormation = .list
+      info.draggingFormation = DRAGGING_FORMATION
       return true
     }
 
@@ -260,7 +261,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfigName)\" config")
       info.numberOfValidItemsForDrop = bindingList.count
       info.animatesToDestination = true
-      info.draggingFormation = .list
+      info.draggingFormation = DRAGGING_FORMATION
       return dropBindingsIntoUserConfFile(bindingList, targetConfigName: targetConfigName)
     }
 

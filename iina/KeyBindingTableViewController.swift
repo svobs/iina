@@ -11,6 +11,7 @@ import Foundation
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
+  private let DRAGGING_FORMATION: NSDraggingFormation = .list
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: EditableTableView!
@@ -74,6 +75,17 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
 
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
     selectionDidChangeHandler()
+  }
+
+  // Disalllow certain row indexes to be selected when user tries to perform a selection
+  @objc func tableView(_ tableView: NSTableView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
+    var approvedSelectionIndexes = IndexSet()
+    for index in proposedSelectionIndexes {
+      if let row = bindingTableStore.getBindingRow(at: index), row.isEditableByUser {
+        approvedSelectionIndexes.insert(index)
+      }
+    }
+    return approvedSelectionIndexes
   }
 
   /**
@@ -199,13 +211,6 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     return bindingTableStore.getBindingRow(at: rowIndex)
   }
 
-  /*
-   Applies when this table the drop target
-   */
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-    session.draggingFormation = .list
-  }
-
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock.
    TODO: look for a way to animate this so that it's more obvious that something happened.
@@ -250,8 +255,11 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
 
     // Update that little red number:
     info.numberOfValidItemsForDrop = rowList.count
-    info.draggingFormation = .list
-    info.animatesToDestination = true
+
+    info.draggingFormation = DRAGGING_FORMATION
+
+    // Do not animate the drop; we have the row animations already
+    info.animatesToDestination = false
 
     // Cannot drop on/into existing rows. Change to below it:
     let isAfterNotAt = dropOperation == .on
@@ -276,18 +284,18 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
     let rowList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
-    Logger.log("User dropped \(rowList.count) binding rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
+    Logger.log("User dropped \(rowList.count) binding rows into KeyBinding table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
     }
 
     guard dropOperation == .above else {
-      Logger.log("Expected dropOperaion==.above but got: \(dropOperation); aborting drop")
+      Logger.log("KeyBindingTableView: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
       return false
     }
 
     info.numberOfValidItemsForDrop = rowList.count
-    info.draggingFormation = .list
+    info.draggingFormation = DRAGGING_FORMATION
     info.animatesToDestination = true
 
     var dragMask = info.draggingSourceOperationMask
@@ -557,12 +565,13 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuCut() {
-    copyToClipboard()
-    removeSelectedBindings()
+    if copyToClipboard() {
+      removeSelectedBindings()
+    }
   }
 
   func doEditMenuCopy() {
-    copyToClipboard()
+    _ = copyToClipboard()
   }
 
   func doEditMenuPaste() {
@@ -575,9 +584,10 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // If `rowsToCopy` is specified, copies it to the Clipboard.
   // If it is not specified, uses the currently selected rows
-  private func copyToClipboard(rowsToCopy: [ActiveBinding]? = nil) {
+  // Returns `true` if it copied at least 1 row; `false` if not
+  private func copyToClipboard(rowsToCopy: [ActiveBinding]? = nil) -> Bool {
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
-      return
+      return false
     }
     let rows: [ActiveBinding]
     if let rowsToCopy = rowsToCopy {
@@ -588,12 +598,13 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
     if rows.isEmpty {
       Logger.log("No bindings to copy: not touching clipboard", level: .verbose)
-      return
+      return false
     }
 
     NSPasteboard.general.clearContents()
     NSPasteboard.general.writeObjects(rows)
     Logger.log("Copied \(rows.count) bindings to the clipboard", level: .verbose)
+    return true
   }
 
   // If desiredInsertIndex != nil, try to insert after it.
@@ -792,12 +803,13 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
   // Similar to Edit menu operations, but operating on a single non-selected row:
   @objc fileprivate func cutRow(_ sender: BindingMenuItem) {
-    copyToClipboard(rowsToCopy: [sender.row])
-    bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
+    if copyToClipboard(rowsToCopy: [sender.row]) {
+      bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
+    }
   }
 
   @objc fileprivate func copyRow(_ sender: BindingMenuItem) {
-    copyToClipboard(rowsToCopy: [sender.row])
+    _ = copyToClipboard(rowsToCopy: [sender.row])
   }
 
   @objc fileprivate func pasteAfterIndex(_ sender: BindingMenuItem) {
