@@ -67,6 +67,9 @@ class CellEditTracker {
       return
     }
 
+    // Don't tab to the next value if there is an error; stay where we are
+    var allowContinuedNavigation: Bool = true
+
     if let newValue = newValue {
       if newValue != current.stringValueOrig {
         if self.delegate.editDidEndWithNewText(newValue: newValue, row: current.row, column: current.column) {
@@ -75,6 +78,7 @@ class CellEditTracker {
           // a return value of false tells us to revert to the previous value
           Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\"", level: .verbose)
           textField.stringValue = current.stringValueOrig
+          allowContinuedNavigation = false
         }
       }
     }
@@ -89,7 +93,7 @@ class CellEditTracker {
     textField.needsDisplay = true
 
     // Tab / return navigation (if provided): start asynchronously so we can return
-    if let textMovement = textMovement {
+    if let textMovement = textMovement, allowContinuedNavigation {
       DispatchQueue.main.async {
         self.editAnotherCellAfterEditEnd(oldRow: current.row, oldColumn: current.column, textMovement)
       }

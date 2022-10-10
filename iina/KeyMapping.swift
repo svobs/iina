@@ -8,20 +8,8 @@
 
 import Foundation
 
-protocol InputKey {
-  var rawKey: String { get }
-
-  var normalizedMpvKey: String  { get }
-
-  var normalizedMacKey: String? { get }
-
-  var prettyKey: String { get }
-
-  var comment: String? { get }
-}
-
 // Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
-class KeyMapping: NSObject, Codable, InputKey {
+class KeyMapping: NSObject, Codable {
 
   let bindingID: Int?
 
@@ -152,7 +140,7 @@ class KeyMapping: NSObject, Codable, InputKey {
 class PluginKeyMapping: KeyMapping {
   let menuItem: NSMenuItem
   let pluginName: String
-
+  
   init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
     self.menuItem = menuItem
     self.pluginName = pluginName

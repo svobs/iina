@@ -367,14 +367,8 @@ class InputBindingTableStore {
       return bindingRowsAll
     }
     return bindingRowsAll.filter {
-      let containsAction: Bool
-      // kludge for PluginKeyMapping...
-      if let pluginMapping = $0.keyMapping as? PluginKeyMapping, let comment = pluginMapping.comment {
-        containsAction = comment.localizedStandardContains(filterString)
-      } else {
-        containsAction = $0.keyMapping.rawAction.localizedStandardContains(filterString)
-      }
-      return $0.keyMapping.rawKey.localizedStandardContains(filterString) || containsAction
+      return $0.getKeyColumnDisplay(raw: true).localizedStandardContains(filterString)
+        || $0.getActionColumnDisplay(raw: true).localizedStandardContains(filterString)
     }
   }
 

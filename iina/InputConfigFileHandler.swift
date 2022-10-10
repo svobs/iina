@@ -8,6 +8,7 @@
 
 import Foundation
 
+// Encapsulates load/save functionality for the *current* config file
 class InputConfigFileHandler {
   private unowned var inputConfigTableStore: InputConfigTableStore {
     (NSApp.delegate as! AppDelegate).inputConfigTableStore

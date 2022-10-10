@@ -89,6 +89,19 @@ class InputBinding: NSObject, Codable {
       && other.keyMapping.confFileFormat == self.keyMapping.confFileFormat
   }
 
+  func getKeyColumnDisplay(raw: Bool) -> String {
+    return raw ? keyMapping.rawKey : keyMapping.prettyKey
+  }
+
+  func getActionColumnDisplay(raw: Bool) -> String {
+    if origin == .iinaPlugin {
+      // IINA plugins do not map directly to mpv commands
+      return pluginKeyMapping?.comment ?? ""
+    } else {
+      return raw ? keyMapping.rawAction : keyMapping.readableCommand
+    }
+  }
+
   var pluginKeyMapping: PluginKeyMapping? {
     return self.keyMapping as? PluginKeyMapping
   }

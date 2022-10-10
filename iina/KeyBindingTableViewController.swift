@@ -102,25 +102,16 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
       return nil
     }
     let columnName = identifier.rawValue
-    let binding = bindingRow.keyMapping
 
     switch columnName {
       case "keyColumn":
-        let stringValue = isRaw ? binding.rawKey : binding.prettyKey
+        let stringValue = bindingRow.getKeyColumnDisplay(raw: isRaw)
         setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
         return cell
 
       case "actionColumn":
-        let stringValue: String
-        if bindingRow.origin == .iinaPlugin {
-          // IINA plugins do not map directly to mpv commands
-          stringValue = bindingRow.keyMapping.comment ?? ""
-        } else {
-          stringValue = isRaw ? binding.rawAction : binding.readableCommand
-        }
-
-        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
-
+        let stringValue = bindingRow.getActionColumnDisplay(raw: isRaw)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, italic: !bindingRow.isEditableByUser)
         return cell
 
       case "statusColumn":
@@ -163,20 +154,51 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     }
   }
 
-  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool) {
+  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool, italic: Bool = false) {
     guard let textField = cell.textField else { return }
 
+    if isEnabled {
+      setText(of: textField, to: stringValue, italic: italic)
+    } else {
+      setText(of: textField, to: stringValue, textColor: NSColor.systemRed, strikethrough: true, italic: italic)
+    }
+  }
+
+  private func setText(of textField: NSTextField, to stringValue: String,
+                       textColor: NSColor? = nil,
+                       strikethrough: Bool = false,
+                       italic: Bool = false) {
     let attrString = NSMutableAttributedString(string: stringValue)
 
-    if isEnabled {
-      textField.textColor = NSColor.controlTextColor
+    if let textColor = textColor {
+      textField.textColor = textColor
     } else {
-      textField.textColor = NSColor.systemRed
+      textField.textColor = NSColor.controlTextColor
+    }
 
+    if strikethrough {
       let strikethroughAttr = [NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue]
       attrString.addAttributes(strikethroughAttr, range: NSRange(location: 0, length: attrString.length))
     }
+
+    if italic {
+      addItalic(to: attrString, from: textField.font)
+    }
     textField.attributedStringValue = attrString
+  }
+
+  private func addItalic(to attrString: NSMutableAttributedString, from font: NSFont?) {
+    if let italicFont = makeItalic(font) {
+      attrString.addAttributes([NSAttributedString.Key.font: italicFont], range: NSRange(location: 0, length: attrString.length))
+    }
+  }
+
+  private func makeItalic(_ font: NSFont?) -> NSFont? {
+    if let font = font {
+      let italicDescriptor: NSFontDescriptor = font.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+      return NSFont(descriptor: italicDescriptor, size: 0)
+    }
+    return nil
   }
 
   private var isRaw: Bool {
@@ -208,7 +230,11 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    return bindingTableStore.getBindingRow(at: rowIndex)
+    let row = bindingTableStore.getBindingRow(at: rowIndex)
+    if let row = row, row.isEditableByUser {
+      return row
+    }
+    return nil
   }
 
   /**
@@ -672,13 +698,13 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   private func addItalicDisabledItem(to menu: NSMenu, for row: InputBinding, withIndex rowIndex: Int, title: String) {
-    let attrTitle = NSMutableAttributedString(string: title)
-    // FIXME: make italic
-//        let font = NSFont.systemFont(ofSize: 12)
-//        attrTitle.addAttribute(NSAttributedString.Key.font, value: font, range: NSRange(location: 0, length: attrTitle.length))
     let item = BindingMenuItem(row, rowIndex: rowIndex, title: title, action: nil, target: self)
-    item.attributedTitle = attrTitle
     item.isEnabled = false
+
+    let attrString = NSMutableAttributedString(string: title)
+    addItalic(to: attrString, from: menu.font)
+    item.attributedTitle = attrString
+
     menu.addItem(item)
   }
 
@@ -690,7 +716,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     guard let clickedRow = bindingTableStore.getBindingRow(at: tableView.clickedRow) else { return }
 
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
-      let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a default config"
+      let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a built-in config"
       addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
       return
     }
@@ -725,7 +751,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
           Logger.log("Unrecognized binding origin for rowIndex \(clickedIndex): \(clickedRow.origin)", level: .error)
           culprit = "<unknown>"
       }
-      let title = "Cannot modify row: \"\(inputConfigTableStore.currentConfigName)\" it was set by \(culprit)"
+      let title = "Cannot modify binding: it is owned by \(culprit)"
       addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
     }
 
