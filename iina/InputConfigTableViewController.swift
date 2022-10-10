@@ -285,7 +285,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return true
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return false
     }

@@ -61,7 +61,7 @@ class KeyBindingTableViewController: NSObject {
 
   // Display error alert for errors:
   private func errorDidOccur(_ notification: Notification) {
-    guard let alertInfo = notification.object as? AlertInfo else {
+    guard let alertInfo = notification.object as? Utility.AlertInfo else {
       Logger.log("Notification.iinaKeyBindingErrorOccurred: cannot display error: invalid object: \(type(of: notification.object))", level: .error)
       return
     }

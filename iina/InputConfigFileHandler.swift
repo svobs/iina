@@ -38,7 +38,7 @@ class InputConfigFileHandler {
   // Input Config File: Save
   public func saveBindingsToCurrentConfigFile(_ defaultSectionBindings: [KeyMapping]) -> [KeyMapping]? {
     guard let configFilePath = inputConfigTableStore.currentConfigFilePath else {
-      let alertInfo = AlertInfo(key: "error_finding_file", args: ["config"])
+      let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return nil
     }
@@ -52,7 +52,7 @@ class InputConfigFileHandler {
       let canonicalPathLoaded = URL(fileURLWithPath: currentConfigData.filePath).resolvingSymlinksInPath().path
       guard canonicalPathCurrent == canonicalPathLoaded else {
         Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
-        let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+        let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
         NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
         return nil
       }
@@ -63,7 +63,7 @@ class InputConfigFileHandler {
 
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
     return nil
