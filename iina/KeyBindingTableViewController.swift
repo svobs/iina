@@ -106,12 +106,12 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     switch columnName {
       case "keyColumn":
         let stringValue = bindingRow.getKeyColumnDisplay(raw: isRaw)
-        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin)
         return cell
 
       case "actionColumn":
         let stringValue = bindingRow.getActionColumnDisplay(raw: isRaw)
-        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, italic: !bindingRow.isEditableByUser)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin, italic: !bindingRow.isEditableByUser)
         return cell
 
       case "statusColumn":
@@ -130,16 +130,18 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
             switch bindingRow.origin {
               case .iinaPlugin:
                 imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
+                imageView.contentTintColor = NSColor.systemMint
               case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
+                imageView.contentTintColor = NSColor.systemMint
               default:
                 if bindingRow.isMenuItem {
                   imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
                 } else {
                   imageView.image = nil
                 }
+                imageView.contentTintColor = NSColor.controlTextColor
             }
-            imageView.contentTintColor = NSColor.controlTextColor
           } else {
             // FIXME: find icons to use so that all versions are supported
             imageView.isHidden = true
@@ -154,11 +156,11 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     }
   }
 
-  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool, italic: Bool = false) {
+  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool, origin: InputBindingOrigin, italic: Bool = false) {
     guard let textField = cell.textField else { return }
 
     if isEnabled {
-      setText(of: textField, to: stringValue, italic: italic)
+      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : NSColor.systemMint, italic: italic)
     } else {
       setText(of: textField, to: stringValue, textColor: NSColor.systemRed, strikethrough: true, italic: italic)
     }

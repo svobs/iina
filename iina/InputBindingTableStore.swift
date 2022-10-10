@@ -429,6 +429,9 @@ class InputBindingTableStore {
     self.appInputConfig = appInputConfigNew
     updateFilteredBindings()
 
+    // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
+    ultimateTableChange.reloadAllExistingRows = true
+
     // Notify Key Bindings table of update:
     let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: ultimateTableChange)
     Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(ultimateTableChange.changeType)", level: .verbose)

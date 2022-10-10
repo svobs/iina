@@ -43,6 +43,9 @@ class TableChange {
 
   var newSelectedRows: IndexSet? = nil
 
+  // If true, reload all existing rows after executing the primary differences (to cover the case that one of them may have changed)
+  var reloadAllExistingRows: Bool = false
+
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableChange.CompletionHandler?
 
@@ -77,6 +80,10 @@ class TableChange {
         Logger.log("Executing completion handler", level: .verbose)
         completionHandler(self)
       }
+    }
+
+    if reloadAllExistingRows && self.changeType != .reloadAll {
+      tableView.reloadExistingRows()
     }
   }
 

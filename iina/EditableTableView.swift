@@ -197,7 +197,10 @@ class EditableTableView: NSTableView {
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
   // This will preserve the selection indexes (whereas reloadData() will not)
   func reloadExistingRows() {
+    let selectedRows = self.selectedRowIndexes
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
+    // Fires change listener...
+    selectRowIndexes(selectedRows, byExtendingSelection: false)
   }
 
   // The default implementation of reloadData() removes the selection. This method restores it.
