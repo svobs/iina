@@ -51,7 +51,8 @@ class ActiveBindingTableStore {
   }
 
   // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
-  func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false) -> Int {
+  func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false,
+                    afterComplete: TableChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
@@ -93,7 +94,7 @@ class ActiveBindingTableStore {
     }
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
-    let tableChange = TableChangeByRowIndex(.moveRows)
+    let tableChange = TableChangeByRowIndex(.moveRows, completionHandler: afterComplete)
     Logger.log("MovePairs: \(moveIndexPairs)", level: .verbose)
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
@@ -102,10 +103,9 @@ class ActiveBindingTableStore {
     return insertIndex
   }
 
-  // Returns the index of the first element which was ultimately inserted;
   // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping],
-                         afterComplete: TableChange.CompletionHandler? = nil) -> Int {
+                         afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
 
@@ -128,13 +128,12 @@ class ActiveBindingTableStore {
     }
 
     saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)
-    return insertIndex
   }
 
   // Returns the index at which it was ultimately inserted
   func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping,
-                        afterComplete: TableChange.CompletionHandler? = nil) -> Int {
-    return insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding], afterComplete: afterComplete)
+                        afterComplete: TableChange.CompletionHandler? = nil) {
+    insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding], afterComplete: afterComplete)
   }
 
   func removeBindings(at indexesToRemove: IndexSet) {

@@ -448,10 +448,10 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
     if isRaw {
-      // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit.
-      // Also we don't know exactly which row it will end up at, but we know it will be the same as the newly selected row.
+      // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
       let afterComplete: TableChange.CompletionHandler = { tableChange in
         if let tc = tableChange as? TableChangeByRowIndex {
+          // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableChange object
           if let insertedRowIndex = tc.toInsert?.first {
             self.tableView.editCell(row: insertedRowIndex, column: 0)
           }
@@ -464,17 +464,9 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       showEditBindingPopup { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        let afterComplete: TableChange.CompletionHandler = { tableChange in
-          if let tc = tableChange as? TableChangeByRowIndex {
-            if let insertedRowIndex = tc.toInsert?.first {
-              self.tableView.scrollRowToVisible(insertedRowIndex)
-              self.tableView.window?.makeFirstResponder(self.tableView)
-            }
-          }
-        }
-
         let newMapping = KeyMapping(rawKey: key, rawAction: action)
-        let insertedRowIndex = self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
+        self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping,
+                                                afterComplete: self.scrollToFirstInserted)
       }
     }
   }
@@ -504,9 +496,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     // Make sure to use copy() to clone the object here
     let newMappings: [KeyMapping] = rowList.map { $0.keyMapping.clone() }
 
-    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings)
-
-    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+    bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings,
+                                                                    afterComplete: scrollToFirstInserted)
   }
 
   // e.g., drag & drop "move" operation
@@ -519,8 +510,19 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       return
     }
 
-    let firstInsertedRowIndex = bindingTableStore.moveBindings(editableBindings, to: rowIndex, isAfterNotAt: isAfterNotAt)
+    let firstInsertedRowIndex = bindingTableStore.moveBindings(editableBindings, to: rowIndex, isAfterNotAt: isAfterNotAt,
+                                                               afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+  }
+
+  // Each TableUpdate executes asynchronously, but we need to wait for it to complete in order to do any further work on
+  // inserted rows.
+  private func scrollToFirstInserted(_ tableChange: TableChange) {
+    if let tc = tableChange as? TableChangeByRowIndex {
+      if let firstInsertedRowIndex = tc.toInsert?.first {
+        self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+      }
+    }
   }
 
   func removeSelectedBindings() {
@@ -618,9 +620,9 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       insertAfterIndex = bindingTableStore.bindingRowCount
     }
     let mappingsToInsert = rowsToPaste.map { $0.keyMapping }
-    let firstInsertedRowIndex = bindingTableStore.insertNewBindings(relativeTo: insertAfterIndex, isAfterNotAt: true, mappingsToInsert)
-    Logger.log("Pasted \(mappingsToInsert.count) bindings to index \(firstInsertedRowIndex)")
-    self.tableView.scrollRowToVisible(firstInsertedRowIndex)
+    Logger.log("Pasting \(mappingsToInsert.count) bindings after index \(insertAfterIndex)")
+    bindingTableStore.insertNewBindings(relativeTo: insertAfterIndex, isAfterNotAt: true, mappingsToInsert,
+                                        afterComplete: self.scrollToFirstInserted)
   }
 
   private func readBindingsFromClipboard() -> [ActiveBinding] {
