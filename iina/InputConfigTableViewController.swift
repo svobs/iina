@@ -37,7 +37,7 @@ class InputConfigTableViewController: NSObject {
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
-      tableView.registerForDraggedTypes([.fileURL, .string, .iinaActiveBinding])
+      tableView.registerForDraggedTypes([.fileURL, .string, .iinaInputBinding])
       tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -220,7 +220,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
 
     if newFilePathList.isEmpty {
-      let bindingList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+      let bindingList = InputBinding.deserializeList(from: info.draggingPasteboard)
       if !bindingList.isEmpty {
         if dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
           // Drop bindings into another user config
@@ -256,7 +256,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
 
     // Option B: drop bindings into user conf file
-    let bindingList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+    let bindingList = InputBinding.deserializeList(from: info.draggingPasteboard)
     if !bindingList.isEmpty, dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfigName)\" config")
       info.numberOfValidItemsForDrop = bindingList.count
@@ -268,7 +268,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     return false
   }
 
-  private func dropBindingsIntoUserConfFile(_ bindingList: [ActiveBinding], targetConfigName: String) -> Bool {
+  private func dropBindingsIntoUserConfFile(_ bindingList: [InputBinding], targetConfigName: String) -> Bool {
     guard let configFilePath = requireFilePath(forConfig: targetConfigName),
           let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
       // Error. A message has already been logged and displayed to user.

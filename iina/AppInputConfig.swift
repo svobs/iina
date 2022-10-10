@@ -78,14 +78,14 @@ class AppInputConfig {
 
   // MARK: Single instance
 
-  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `ActiveBindingTableStore` should be kept
+  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `InputBindingTableStore` should be kept
   // consistent with this one as much as possible, but some brief inconsistencies may be acceptable due to the asynchronous nature of UI.
-  let bindingCandidateList: [ActiveBinding]
+  let bindingCandidateList: [InputBinding]
 
   // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
   // Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
   // For lookup use `resolveMpvKey()` or `resolveKeyEvent()` from the active player's input config.
-  let resolverDict: [String: ActiveBinding]
+  let resolverDict: [String: InputBinding]
 
   // (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
   // The index into `bindingCandidateList` of the first binding in the "default" section.
@@ -97,7 +97,7 @@ class AppInputConfig {
   // or simply `bindingCandidateList.count` if there are no sections after it.
   let defaultSectionEndIndex: Int
 
-  init(bindingCandidateList: [ActiveBinding], resolverDict: [String: ActiveBinding], defaultSectionStartIndex: Int, defaultSectionEndIndex: Int) {
+  init(bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], defaultSectionStartIndex: Int, defaultSectionEndIndex: Int) {
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
     self.defaultSectionStartIndex = defaultSectionStartIndex

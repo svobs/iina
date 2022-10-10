@@ -168,7 +168,7 @@
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
-		D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* ActiveBinding.swift */; };
+		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* ActiveBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
@@ -1500,7 +1500,7 @@
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
-		D188CB2128D6DE1900F166FD /* ActiveBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBinding.swift; sourceTree = "<group>"; };
+		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* ActiveBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveBindingTableStore.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
@@ -1935,7 +1935,7 @@
 				D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */,
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
-				D188CB2128D6DE1900F166FD /* ActiveBinding.swift */,
+				D188CB2128D6DE1900F166FD /* InputBinding.swift */,
 				D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */,
 				D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */,
 				D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */,
@@ -2906,7 +2906,7 @@
 				D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */,
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
-				D188CB2228D6DE1900F166FD /* ActiveBinding.swift in Sources */,
+				D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
 				84795C371E0825AD0059A648 /* GifGenerator.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,

@@ -575,8 +575,8 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updatePluginMenuKeyEquivalents(from pluginBindings: [ActiveBinding]) {
-    var failureList: [ActiveBinding] = []
+  func updatePluginMenuKeyEquivalents(from pluginBindings: [InputBinding]) {
+    var failureList: [InputBinding] = []
     for pluginBinding in pluginBindings {
       guard pluginBinding.origin == .iinaPlugin else { continue }
       guard let keyMapping = pluginBinding.keyMapping as? PluginKeyMapping else { continue }
@@ -775,10 +775,10 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updateKeyEquivalentsFrom(_ candidateBindings: [ActiveBinding]) {
+  func updateKeyEquivalentsFrom(_ candidateBindings: [InputBinding]) {
 
-    var mpvBindings: [ActiveBinding] = []
-    var pluginBindings: [ActiveBinding] = []
+    var mpvBindings: [InputBinding] = []
+    var pluginBindings: [InputBinding] = []
 
     for binding in candidateBindings {
       switch binding.origin {

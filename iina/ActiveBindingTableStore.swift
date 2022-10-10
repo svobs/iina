@@ -1,5 +1,5 @@
 //
-//  ActiveBindingTableStore.swift
+//  InputBindingTableStore.swift
 //  iina
 //
 //  Created by Matt Svoboda on 9/20/22.
@@ -15,7 +15,7 @@ import Foundation
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
  This class is downstream from `AppInputConfig.current` and should be notified of any changes to it.
  */
-class ActiveBindingTableStore {
+class InputBindingTableStore {
 
   // MARK: State
 
@@ -26,12 +26,12 @@ class ActiveBindingTableStore {
   private var appInputConfig = AppInputConfig.current
 
   // The current unfiltered list of table rows
-  private var bindingRowsAll: [ActiveBinding] {
+  private var bindingRowsAll: [InputBinding] {
     appInputConfig.bindingCandidateList
   }
 
   // The table rows currently displayed, which will change depending on the current filterString
-  private var bindingRowsFiltered: [ActiveBinding] = []
+  private var bindingRowsFiltered: [InputBinding] = []
 
   // Should be kept current with the value which the user enters in the search box:
   private var filterString: String = ""
@@ -43,14 +43,14 @@ class ActiveBindingTableStore {
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> ActiveBinding? {
+  func getBindingRow(at index: Int) -> InputBinding? {
     guard index >= 0 && index < bindingRowsFiltered.count else {
       return nil
     }
     return bindingRowsFiltered[index]
   }
 
-  // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
+  // TOOD: clean up this API at some point so that it takes [InputBinding] instead of [KeyMapping] like the others
   func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false,
                     afterComplete: TableChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
@@ -64,9 +64,9 @@ class ActiveBindingTableStore {
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
-    var beforeInsert: [ActiveBinding] = []
-    var afterInsert: [ActiveBinding] = []
-    var movedRows: [ActiveBinding] = []
+    var beforeInsert: [InputBinding] = []
+    var afterInsert: [InputBinding] = []
+    var movedRows: [InputBinding] = []
     var moveIndexPairs: [(Int, Int)] = []
     var newSelectedRows = IndexSet()
     var moveFromOffset = 0
@@ -103,7 +103,7 @@ class ActiveBindingTableStore {
     return insertIndex
   }
 
-  // TOOD: clean up this API at some point so that it takes [ActiveBinding] instead of [KeyMapping] like the others
+  // TOOD: clean up this API at some point so that it takes [InputBinding] instead of [KeyMapping] like the others
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping],
                          afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
@@ -123,8 +123,8 @@ class ActiveBindingTableStore {
 
     var bindingRowsAllNew = bindingRowsAll
     for binding in bindingList.reversed() {
-      // We can get away with making these assumptions about ActiveBinding fields, because only the "default" section can be modified by the user
-      bindingRowsAllNew.insert(ActiveBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
+      // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
+      bindingRowsAllNew.insert(InputBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
     }
 
     saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)
@@ -148,7 +148,7 @@ class ActiveBindingTableStore {
       return
     }
 
-    var remainingRowsUnfiltered: [ActiveBinding] = []
+    var remainingRowsUnfiltered: [InputBinding] = []
     for row in bindingRowsAll {
       if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
       } else {
@@ -168,7 +168,7 @@ class ActiveBindingTableStore {
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    var remainingRowsUnfiltered: [ActiveBinding] = []
+    var remainingRowsUnfiltered: [InputBinding] = []
     var indexesToRemove = IndexSet()
     for (rowIndex, row) in bindingRowsAll.enumerated() {
       if let id = row.keyMapping.bindingID {
@@ -276,16 +276,16 @@ class ActiveBindingTableStore {
     if filteredIndex == bindingRowsFiltered.count {
       let filteredRowAtIndex = bindingRowsFiltered[filteredIndex - 1]
 
-      guard let unfilteredIndex = findUnfilteredIndexOfActiveBinding(filteredRowAtIndex) else {
+      guard let unfilteredIndex = findUnfilteredIndexOfInputBinding(filteredRowAtIndex) else {
         return nil
       }
       return unfilteredIndex + 1
     }
     let filteredRowAtIndex = bindingRowsFiltered[filteredIndex]
-    return findUnfilteredIndexOfActiveBinding(filteredRowAtIndex)
+    return findUnfilteredIndexOfInputBinding(filteredRowAtIndex)
   }
 
-  private func findUnfilteredIndexOfActiveBinding(_ row: ActiveBinding) -> Int? {
+  private func findUnfilteredIndexOfInputBinding(_ row: InputBinding) -> Int? {
     if let bindingID = row.keyMapping.bindingID {
       for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
         if unfilteredRow.keyMapping.bindingID == bindingID {
@@ -298,7 +298,7 @@ class ActiveBindingTableStore {
     return nil
   }
 
-  static private func resolveBindingIDs(from rows: [ActiveBinding]) -> Set<Int> {
+  static private func resolveBindingIDs(from rows: [InputBinding]) -> Set<Int> {
     return rows.reduce(into: Set<Int>(), { (ids, row) in
       if let bindingID = row.keyMapping.bindingID {
         ids.insert(bindingID)
@@ -306,7 +306,7 @@ class ActiveBindingTableStore {
     })
   }
 
-  private func resolveBindingIDs(from rowIndexes: IndexSet, excluding isExcluded: ((ActiveBinding) -> Bool)? = nil) -> Set<Int> {
+  private func resolveBindingIDs(from rowIndexes: IndexSet, excluding isExcluded: ((InputBinding) -> Bool)? = nil) -> Set<Int> {
     var idSet = Set<Int>()
     for rowIndex in rowIndexes {
       if let row = getBindingRow(at: rowIndex) {
@@ -324,7 +324,7 @@ class ActiveBindingTableStore {
   }
 
   // Inverse of previous function
-  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, in rows: [ActiveBinding]) -> IndexSet {
+  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, in rows: [InputBinding]) -> IndexSet {
     var indexSet = IndexSet()
     for targetID in bindingIDs {
       for (rowIndex, row) in rows.enumerated() {
@@ -359,10 +359,10 @@ class ActiveBindingTableStore {
   }
 
   private func updateFilteredBindings() {
-    bindingRowsFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAll, by: filterString)
+    bindingRowsFiltered = InputBindingTableStore.filter(bindingRowsAll: bindingRowsAll, by: filterString)
   }
 
-  private static func filter(bindingRowsAll: [ActiveBinding], by filterString: String) -> [ActiveBinding] {
+  private static func filter(bindingRowsAll: [InputBinding], by filterString: String) -> [InputBinding] {
     if filterString.isEmpty {
       return bindingRowsAll
     }
@@ -383,12 +383,12 @@ class ActiveBindingTableStore {
   /*
    Must execute sequentially:
    1. Save conf file, get updated default section rows
-   2. Send updated default section bindings to ActiveBindingController. It will recalculate all bindings and re-bind appropriately, then
+   2. Send updated default section bindings to InputBindingController. It will recalculate all bindings and re-bind appropriately, then
       returns the updated set of all bindings to us.
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [ActiveBinding], _ tableChange: TableChangeByRowIndex) {
+  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChangeByRowIndex) {
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
     // or of writing another section's bindings to the "default" section.
     let defaultSectionMappings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
@@ -401,9 +401,9 @@ class ActiveBindingTableStore {
   }
 
   /*
-   Send to ActiveBindingController to ingest. It will return the updated list of all rows.
+   Send to InputBindingController to ingest. It will return the updated list of all rows.
    Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
-   This is needed so that animations can work. But ActiveBindingController builds the actual row data,
+   This is needed so that animations can work. But InputBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
   func pushDefaultSectionChange(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
@@ -444,7 +444,7 @@ class ActiveBindingTableStore {
   private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChangeByRowIndex {
     let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
     // Remember, the displayed table contents must reflect the *filtered* state.
-    let bindingRowsAllNewFiltered = ActiveBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
+    let bindingRowsAllNewFiltered = InputBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
     return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
 }

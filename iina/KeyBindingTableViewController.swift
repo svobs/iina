@@ -19,7 +19,7 @@ class KeyBindingTableViewController: NSObject {
     return (NSApp.delegate as! AppDelegate).inputConfigTableStore
   }
 
-  private var bindingTableStore: ActiveBindingTableStore {
+  private var bindingTableStore: InputBindingTableStore {
     return (NSApp.delegate as! AppDelegate).bindingTableStore
   }
 
@@ -44,7 +44,7 @@ class KeyBindingTableViewController: NSObject {
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
-      tableView.registerForDraggedTypes([.string, .iinaActiveBinding])
+      tableView.registerForDraggedTypes([.string, .iinaInputBinding])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -183,11 +183,11 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     return Preference.bool(for: .displayKeyBindingRawValues)
   }
 
-  private var selectedRows: [ActiveBinding] {
+  private var selectedRows: [InputBinding] {
     Array(tableView.selectedRowIndexes.compactMap( { bindingTableStore.getBindingRow(at: $0) }))
   }
 
-  private var selectedEditableRows: [ActiveBinding] {
+  private var selectedEditableRows: [InputBinding] {
     self.selectedRows.filter({ $0.isEditableByUser })
   }
 }
@@ -220,7 +220,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return
     }
 
-    let rowList = ActiveBinding.deserializeList(from: session.draggingPasteboard)
+    let rowList = InputBinding.deserializeList(from: session.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return
@@ -247,7 +247,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return []  // deny drop
     }
 
-    let rowList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+    let rowList = InputBinding.deserializeList(from: info.draggingPasteboard)
 
     guard !rowList.isEmpty else {
       return []  // deny drop
@@ -283,7 +283,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = ActiveBinding.deserializeList(from: info.draggingPasteboard)
+    let rowList = InputBinding.deserializeList(from: info.draggingPasteboard)
     Logger.log("User dropped \(rowList.count) binding rows into KeyBinding table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
@@ -495,7 +495,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   // e.g., drag & drop "copy" operation
-  private func copyBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func copyBindingRows(from rowList: [InputBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     // Make sure to use copy() to clone the object here
     let newMappings: [KeyMapping] = rowList.map { $0.keyMapping.clone() }
 
@@ -504,7 +504,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   // e.g., drag & drop "move" operation
-  private func moveBindingRows(from rowList: [ActiveBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func moveBindingRows(from rowList: [InputBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
 
     let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.keyMapping }
@@ -585,11 +585,11 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // If `rowsToCopy` is specified, copies it to the Clipboard.
   // If it is not specified, uses the currently selected rows
   // Returns `true` if it copied at least 1 row; `false` if not
-  private func copyToClipboard(rowsToCopy: [ActiveBinding]? = nil) -> Bool {
+  private func copyToClipboard(rowsToCopy: [InputBinding]? = nil) -> Bool {
     guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
       return false
     }
-    let rows: [ActiveBinding]
+    let rows: [InputBinding]
     if let rowsToCopy = rowsToCopy {
       rows = rowsToCopy.filter({ $0.isEditableByUser })
     } else {
@@ -631,8 +631,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
                                         afterComplete: self.scrollToFirstInserted)
   }
 
-  private func readBindingsFromClipboard() -> [ActiveBinding] {
-    return ActiveBinding.deserializeList(from: NSPasteboard.general)
+  private func readBindingsFromClipboard() -> [InputBinding] {
+    return InputBinding.deserializeList(from: NSPasteboard.general)
   }
 }
 
@@ -641,10 +641,10 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 extension KeyBindingTableViewController: NSMenuDelegate {
 
   fileprivate class BindingMenuItem: NSMenuItem {
-    let row: ActiveBinding
+    let row: InputBinding
     let rowIndex: Int
 
-    public init(_ row: ActiveBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?, enabled: Bool = true) {
+    public init(_ row: InputBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?, enabled: Bool = true) {
       self.row = row
       self.rowIndex = rowIndex
       super.init(title: title, action: selector, keyEquivalent: "")
@@ -657,7 +657,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  private func addItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String, action: Selector?, target: AnyObject? = nil, enabled: Bool = true) {
+  private func addItem(to menu: NSMenu, for row: InputBinding, withIndex rowIndex: Int, title: String, action: Selector?, target: AnyObject? = nil, enabled: Bool = true) {
     let finalTarget: AnyObject
     if let target = target {
       finalTarget = target
@@ -671,7 +671,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     menu.addItem(item)
   }
 
-  private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String) {
+  private func addItalicDisabledItem(to menu: NSMenu, for row: InputBinding, withIndex rowIndex: Int, title: String) {
     let attrTitle = NSMutableAttributedString(string: title)
     // FIXME: make italic
 //        let font = NSFont.systemFont(ofSize: 12)
@@ -703,7 +703,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   // For right-click on a single row which is not currently selected.
-  private func populate(contextMenu: NSMenu, for clickedRow: ActiveBinding, clickedIndex: Int) {
+  private func populate(contextMenu: NSMenu, for clickedRow: InputBinding, clickedIndex: Int) {
     let isRowEditable = clickedRow.isEditableByUser
     if isRowEditable {
       // Edit
@@ -756,7 +756,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   // For right-click on selected row(s)
-  private func populate(contextMenu: NSMenu, for selectedRowIndexes: IndexSet, clickedIndex: Int, clickedRow: ActiveBinding) {
+  private func populate(contextMenu: NSMenu, for selectedRowIndexes: IndexSet, clickedIndex: Int, clickedRow: InputBinding) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in

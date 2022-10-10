@@ -1,5 +1,5 @@
 //
-//  ActiveBinding.swift
+//  InputBinding.swift
 //  iina
 //
 //  Created by Matt Svoboda on 9/17/22.
@@ -9,15 +9,16 @@
 /*
  Contains metadata for a single input binding (a mapping: {key combination or sequence / mouse input / etc} -> {action}) for use by the IINA app.
 
- The intent of this class was to decorate an otherwise naive `KeyMapping` object with additional metadata such as
+ The intent of this class was to decorate an otherwise naive `KeyMapping` object with additional metadata such as its origin, whether it
+ is also attached to a menu item, its origin, etc, which are populated during the conflict resolution process and can be output to the UI.
 
  All of the sources of key bindings (mpv config file, IINA plugin, etc) are flattened into one standard list so that comflicts between bindings
  can be resolved player window or the menubar (and also to distinguish it from `KeyMapping` and other objects).
- If multiple active bindings are specified with the same input trigger, only one can be enabled, and the others' have property `isEnabled`==false.
+ If multiple bindings are specified with the same key, only one can be enabled, and the others' have property `isEnabled` set to false.
 
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
-class ActiveBinding: NSObject, Codable {
+class InputBinding: NSObject, Codable {
   // Will be nil for plugin bindings.
   var keyMapping: KeyMapping
 
@@ -62,7 +63,7 @@ class ActiveBinding: NSObject, Codable {
 
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
       guard let data = propertyList as? Data,
-          let row = try? PropertyListDecoder().decode(ActiveBinding.self, from: data) else { return nil }
+          let row = try? PropertyListDecoder().decode(InputBinding.self, from: data) else { return nil }
     self.init(row.keyMapping, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
   }
 
@@ -80,7 +81,7 @@ class ActiveBinding: NSObject, Codable {
 
   // Equatable protocol conformance, to enable diffing
   override func isEqual(_ object: Any?) -> Bool {
-    guard let other = object as? ActiveBinding else {
+    guard let other = object as? InputBinding else {
       return false
     }
     return other.origin == self.origin
@@ -95,37 +96,37 @@ class ActiveBinding: NSObject, Codable {
 
 // Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
 extension NSPasteboard.PasteboardType {
-  static let iinaActiveBinding = NSPasteboard.PasteboardType("com.colliderli.iina.ActiveBinding")
+  static let iinaInputBinding = NSPasteboard.PasteboardType("com.colliderli.iina.InputBinding")
 }
 
-extension ActiveBinding: NSPasteboardWriting, NSPasteboardReading {
+extension InputBinding: NSPasteboardWriting, NSPasteboardReading {
   static func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
-    return [.iinaActiveBinding]
+    return [.iinaInputBinding]
   }
   static func readingOptions(forType type: NSPasteboard.PasteboardType, pasteboard: NSPasteboard) -> NSPasteboard.ReadingOptions {
     return .asData
   }
 
   func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
-    return [.string, .iinaActiveBinding]
+    return [.string, .iinaInputBinding]
   }
 
   func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
     switch type {
       case .string:
         return NSString(utf8String: self.keyMapping.confFileFormat)
-      case .iinaActiveBinding:
+      case .iinaInputBinding:
         return try? PropertyListEncoder().encode(self)
       default:
         return nil
     }
   }
 
-  static func deserializeList(from pasteboard: NSPasteboard) -> [ActiveBinding] {
-    var rowList: [ActiveBinding] = []
-    if let objList = pasteboard.readObjects(forClasses: [ActiveBinding.self], options: nil) {
+  static func deserializeList(from pasteboard: NSPasteboard) -> [InputBinding] {
+    var rowList: [InputBinding] = []
+    if let objList = pasteboard.readObjects(forClasses: [InputBinding.self], options: nil) {
       for obj in objList {
-        if let row = obj as? ActiveBinding {
+        if let row = obj as? InputBinding {
           // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
           if row.isEditableByUser {
             rowList.append(row)
