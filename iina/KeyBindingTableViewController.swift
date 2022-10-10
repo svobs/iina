@@ -664,7 +664,11 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     } else {
       finalTarget = self
     }
-    menu.addItem(BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, target: finalTarget, enabled: enabled))
+    // If we supply a non-nil action, AppKit will ignore the enabled status and will check `validateUserInterfaceItem()`
+    // (which we haven't coded and would rather avoid doing so), so just set it to nil and avoid the headache.
+    let finalAction = enabled ? action : nil
+    let item = BindingMenuItem(row, rowIndex: rowIndex, title: title, action: finalAction, target: finalTarget, enabled: enabled)
+    menu.addItem(item)
   }
 
   private func addItalicDisabledItem(to menu: NSMenu, for row: ActiveBinding, withIndex rowIndex: Int, title: String) {
@@ -713,7 +717,8 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       let culprit: String
       switch clickedRow.origin {
         case .iinaPlugin:
-          culprit = "the IINA plugin \"\(clickedRow.srcSectionName)\""
+          let pluginName = (clickedRow.keyMapping as? PluginKeyMapping)?.pluginName ?? "<ERROR>"
+          culprit = "the IINA plugin \"\(pluginName)\""
         case .libmpv:
           culprit = "a Lua script or other mpv interface"
         default:
@@ -728,19 +733,25 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     contextMenu.addItem(NSMenuItem.separator())
 
     // Cut, Copy, Paste, Delete
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut", action: #selector(self.cutRow(_:)), enabled: isRowEditable)
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy", action: #selector(self.copyRow(_:)), enabled: isRowEditable)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut ", action: #selector(self.cutRow(_:)), enabled: isRowEditable)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy ", action: #selector(self.copyRow(_:)), enabled: isRowEditable)
     let pastableBindings = readBindingsFromClipboard()
     let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
     addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.pasteAfterIndex(_:)), enabled: !pastableBindings.isEmpty)
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete", action: #selector(self.removeRow(_:)), enabled: isRowEditable)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete ", action: #selector(self.removeRow(_:)), enabled: isRowEditable)
 
     // ---
     contextMenu.addItem(NSMenuItem.separator())
 
     // Add
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
+    if isRowEditable {
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
+    } else {
+      // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
+      let direction = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) <= clickedIndex ? "Above" : "Below"
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(direction)", action: #selector(self.addNewRowBelow(_:)))
+    }
 
   }
 

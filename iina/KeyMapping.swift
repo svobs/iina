@@ -146,16 +146,24 @@ class KeyMapping: NSObject, Codable {
 class PluginKeyMapping: KeyMapping {
   // TODO: move this into ActiveBinding
   let menuItem: NSMenuItem
+  let pluginName: String
 
-  init(rawKey: String, pluginName: String, menuItem: NSMenuItem, comment: String? = nil, bindingID: Int? = nil) {
+  init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
     self.menuItem = menuItem
+    self.pluginName = pluginName
     // Kludge here: storing plugin name info in rawAction, then making sure we don't try to execute it.
-    let comment = "Plugin > \(pluginName) > \(menuItem.title)"
-    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: comment, bindingID: bindingID)
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, bindingID: bindingID)
   }
 
   required init(from decoder: Decoder) throws {
     Logger.fatal("init(from:) is not supported for PluginKeyMapping")
+  }
+
+  override var comment: String? {
+    get {
+      "Plugin > \(pluginName) > \(menuItem.title)"
+    } set {
+    }
   }
 
   override var readableAction: String {
