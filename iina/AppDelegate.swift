@@ -19,6 +19,7 @@ fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
 fileprivate let AlternativeMenuItemTag = 1
 
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 

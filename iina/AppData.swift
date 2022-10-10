@@ -132,10 +132,6 @@ extension Notification.Name {
   static let iinaKeyBindingsTableShouldUpdate = Notification.Name("IINAKeyBindingsTableShouldUpdate")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
-  // A change to the active set of key bindings was made, but was not initiated
-  // from the Key Bindings Prefs UI. In practice this means that either the
-  // Plugin menu was updated, or a Lua script changed the active player's bindings.
-//  static let iinaAppActiveKeyBindingsChanged = Notification.Name("IINAAppActiveKeyBindingsChanged")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

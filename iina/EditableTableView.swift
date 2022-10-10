@@ -8,23 +8,6 @@
 
 import Foundation
 
-// Convenience function, for debugging
-private func eventTypeText(_ event: NSEvent?) -> String {
-  if let event = event {
-    switch event.type {
-      case .leftMouseDown:
-        return "leftMouseDown"
-      case .leftMouseUp:
-        return "leftMouseUp"
-      case .cursorUpdate:
-        return "cursorUpdate"
-      default:
-        return "\(event.type)"
-    }
-  }
-  return "nil"
-}
-
 class EditableTableView: NSTableView {
   // Must provide this for EditableTableView extended functionality
   var editableDelegate: EditableTableViewDelegate? = nil {
@@ -192,6 +175,23 @@ class EditableTableView: NSTableView {
     self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
   }
 
+  // Convenience function, for debugging
+  private func eventTypeText(_ event: NSEvent?) -> String {
+    if let event = event {
+      switch event.type {
+        case .leftMouseDown:
+          return "leftMouseDown"
+        case .leftMouseUp:
+          return "leftMouseUp"
+        case .cursorUpdate:
+          return "cursorUpdate"
+        default:
+          return "\(event.type)"
+      }
+    }
+    return "nil"
+  }
+
   // MARK: Special "reload" functions
 
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
@@ -199,16 +199,6 @@ class EditableTableView: NSTableView {
   func reloadExistingRows() {
     let selectedRows = self.selectedRowIndexes
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
-    // Fires change listener...
-    selectRowIndexes(selectedRows, byExtendingSelection: false)
-  }
-
-  // The default implementation of reloadData() removes the selection. This method restores it.
-  // NOTE: this will result in an unncessary call to NSTableViewDelegate.tableViewSelectionDidChange().
-  // Wherever possible, update via the underlying datasource using a `TableChange` object.
-  func reloadDataKeepingSelectedIndexes() {
-    let selectedRows = self.selectedRowIndexes
-    reloadData()
     // Fires change listener...
     selectRowIndexes(selectedRows, byExtendingSelection: false)
   }
