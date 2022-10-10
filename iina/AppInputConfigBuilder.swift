@@ -77,8 +77,11 @@ class AppInputConfigBuilder {
       var countOfDefaultSectionBindings: Int = 0
       var countOfWeakSectionBindings: Int = 0
 
-      // Iterate from top to the bottom of the "stack":
-      for enabledSectionMeta in sectionStack.sectionsEnabled {
+      // Iterate from bottom to the top of the "stack":
+      for enabledSectionMeta in sectionStack.sectionsEnabled.reversed() {
+        if AppInputConfig.logBindingsRebuild {
+          log("RebuildBindings: examining enabled section: \"\(enabledSectionMeta.name)\"", level: .error)
+        }
         guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
           // indicates serious internal error
           log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
@@ -92,6 +95,10 @@ class AppInputConfigBuilder {
         }
 
         addAllBindings(from: inputSection, to: &linkedList)
+
+        if AppInputConfig.logBindingsRebuild {
+          log("RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))", level: .verbose)
+        }
 
         if enabledSectionMeta.isExclusive {
           log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
@@ -121,10 +128,10 @@ class AppInputConfigBuilder {
         log("RebuildBindings: skipping \(inputSection.name) as it has no bindings", level: .verbose)
       }
     } else {
-      if AppInputConfig.logBindingsRebuild {
-        log("RebuildBindings: adding from \(inputSection)", level: .verbose)
-      }
       if inputSection.isForce {
+        if AppInputConfig.logBindingsRebuild {
+          log("RebuildBindings: adding bindings from \(inputSection) to tail of list, level: .verbose)", level: .verbose)
+        }
         // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
         for keyMapping in inputSection.keyMappingList {
           let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
@@ -132,6 +139,9 @@ class AppInputConfigBuilder {
         }
       } else {
         // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
+        if AppInputConfig.logBindingsRebuild {
+          log("RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order", level: .verbose)
+        }
         for keyMapping in inputSection.keyMappingList.reversed() {
           let activeBinding = buildNewInputBinding(from: keyMapping, section: inputSection)
           linkedList.prepend(activeBinding)
@@ -162,13 +172,15 @@ class AppInputConfigBuilder {
         // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
         binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
+        Logger.log("Modified binding to remove redundant section specifier (\"\(destinationSectionName)\") for key: \(keyMapping.rawKey)", level: .verbose)
       } else {
-        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\": \(keyMapping.rawKey)", level: .verbose)
+        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\" for key: \(keyMapping.rawKey)", level: .verbose)
         binding.displayMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
         return binding
       }
     }
     binding.isEnabled = true
+    Logger.log("Adding binding for key: \(keyMapping.rawKey)", level: .verbose)
     return binding
   }
 
