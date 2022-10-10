@@ -59,9 +59,11 @@ class EditableTableView: NSTableView {
       switch keyChar {
         case "ENTER", "KP_ENTER":
           if selectedRow >= 0 && selectedRow < numberOfRows && !editableTextColumnIndexes.isEmpty {
-            Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
-            editCell(row: selectedRow, column: editableTextColumnIndexes[0])
-            return
+            if let delegate = self.editableDelegate, delegate.userDidPressEnterOnRow(selectedRow) {
+              Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
+              editCell(row: selectedRow, column: editableTextColumnIndexes[0])
+              return
+            }
           }
         default:
           break

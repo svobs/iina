@@ -16,6 +16,8 @@ protocol EditableTableViewDelegate {
   // If true is returned, a row editor will be displayed for editing cell text
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool
 
+  func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool
+
   /*
    OK, this is how standard cut, copy, paste, & delete work. Don't forget again!
 

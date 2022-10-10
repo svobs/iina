@@ -338,6 +338,25 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     return false
   }
 
+  func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
+    guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
+
+    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
+      Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
+      return false
+    }
+
+    if isRaw {
+      Logger.log("Opening in-line editor for row \(rowIndex)", level: .verbose)
+      // Use in-line editor
+      return true
+    }
+
+    editWithPopup(rowIndex: rowIndex)
+    // Deny in-line editor from opening
+    return false
+  }
+
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // An error here would be really bad
@@ -433,8 +452,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       // Also we don't know exactly which row it will end up at, but we know it will be the same as the newly selected row.
       let afterComplete: TableChange.CompletionHandler = { tableChange in
         if let tc = tableChange as? TableChangeByRowIndex {
-          if let newRowIndex = tc.toInsert?.first {
-            self.tableView.editCell(row: newRowIndex, column: 0)
+          if let insertedRowIndex = tc.toInsert?.first {
+            self.tableView.editCell(row: insertedRowIndex, column: 0)
           }
         }
       }
@@ -445,8 +464,17 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       showEditBindingPopup { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
-        let insertedRowIndex = self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, KeyMapping(rawKey: key, rawAction: action))
-        self.tableView.scrollRowToVisible(insertedRowIndex)
+        let afterComplete: TableChange.CompletionHandler = { tableChange in
+          if let tc = tableChange as? TableChangeByRowIndex {
+            if let insertedRowIndex = tc.toInsert?.first {
+              self.tableView.scrollRowToVisible(insertedRowIndex)
+              self.tableView.window?.makeFirstResponder(self.tableView)
+            }
+          }
+        }
+
+        let newMapping = KeyMapping(rawKey: key, rawAction: action)
+        let insertedRowIndex = self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
       }
     }
   }

@@ -112,6 +112,13 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
     return false
   }
 
+  func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
+    if let configName = tableStore.getConfigRow(at: rowIndex), !tableStore.isDefaultConfig(configName) {
+      return true
+    }
+    return false
+  }
+
   // User finished editing (callback from EditableTextField).
   // Renames current comfig & its file on disk
   func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
