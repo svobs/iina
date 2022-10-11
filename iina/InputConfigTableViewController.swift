@@ -177,6 +177,13 @@ extension InputConfigTableViewController: NSTableViewDataSource {
   // MARK: Drag & Drop
 
   /*
+   Drag start: define which operations are allowed
+   */
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    return .copy
+  }
+
+  /*
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
@@ -244,6 +251,11 @@ extension InputConfigTableViewController: NSTableViewDataSource {
    Accept the drop and execute it, or reject drop.
    */
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+    let dragMask = info.draggingSourceOperationMask
+    guard dragMask.contains(.copy) else {
+      Logger.log("Rejecting drop: got unexpected drag mask: \(dragMask)")
+      return false
+    }
 
     // Option A: drop input config file(s) into table
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
@@ -271,7 +283,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
   private func dropBindingsIntoUserConfFile(_ bindingList: [InputBinding], targetConfigName: String) -> Bool {
     guard let configFilePath = requireFilePath(forConfig: targetConfigName),
-          let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
+          let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
       // Error. A message has already been logged and displayed to user.
       return false
     }
@@ -499,7 +511,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       for filePath in fileList {
         let url = URL(fileURLWithPath: filePath)
 
-        guard InputConfigFileData.loadFile(at: filePath) != nil else {
+        guard InputConfigFile.loadFile(at: filePath) != nil else {
           let fileName = url.lastPathComponent
           DispatchQueue.main.async {
             Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)

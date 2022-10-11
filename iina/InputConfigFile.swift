@@ -1,5 +1,5 @@
 //
-//  InputConfigFileData.swift
+//  InputConfigFile.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.08.10.
@@ -9,7 +9,7 @@
 import Foundation
 
 // Represents an input config file which has been loaded into memory.
-class InputConfigFileData {
+class InputConfigFile {
   // At least one of its fields should be non-nil.
   // Only Lines with non-nil `rawFileContent` are present in the file on disk.
   // A Line struct can include additional in-memory state (if `bindingOverride` is non-nil) which is not present on disk.
@@ -49,7 +49,7 @@ class InputConfigFileData {
         let bindingNew = binding.clone(bindingID: lineIndex)
         bindingList.append(bindingNew)
         linesNew.append(Line(line.rawFileContent, bindingOverride: bindingNew))
-      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFileData.parseRawLine(rawFileContent, lineIndex) {
+      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFile.parseRawLine(rawFileContent, lineIndex) {
         bindingList.append(binding)
         linesNew.append(line)
       }
@@ -61,13 +61,13 @@ class InputConfigFileData {
 
   private func parseLine(_ lineIndex: Int) -> KeyMapping? {
     if let rawLine = lines[lineIndex].rawFileContent {
-      return InputConfigFileData.parseRawLine(rawLine, lineIndex)
+      return InputConfigFile.parseRawLine(rawLine, lineIndex)
     }
     return nil
   }
 
   // Returns a KeyMapping if successful, nil if line has no mapping or is not correct format
-  fileprivate static func parseRawLine(_ rawLine: String, _ lineIndex: Int? = nil) -> KeyMapping? {
+  static func parseRawLine(_ rawLine: String, _ lineIndex: Int? = nil) -> KeyMapping? {
     var content = rawLine
     var isIINACommand = false
     if content.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -115,7 +115,7 @@ class InputConfigFileData {
     newLines.append(Line(""))
     for newBinding in newBindings {
       let rawLine = newBinding.confFileFormat
-      if InputConfigFileData.parseRawLine(rawLine) == nil {
+      if InputConfigFile.parseRawLine(rawLine) == nil {
         Logger.log("While serializing bindings: looks like an active edit: \(newBinding)", level: .verbose)
         if let lineIndex = newBinding.bindingID,
            lineIndex <= self.lines.count,
@@ -192,7 +192,7 @@ class InputConfigFileData {
   }
 
   // Returns nil if cannot read file
-  static func loadFile(at path: String) -> InputConfigFileData? {
+  static func loadFile(at path: String) -> InputConfigFile? {
     guard let reader = StreamReader(path: path) else {
       // on error
       Logger.log("Error loading bindings from path: \"\(path)\"", level: .error)
@@ -202,7 +202,7 @@ class InputConfigFileData {
 
       return nil
     }
-    let result = InputConfigFileData(filePath: path)
+    let result = InputConfigFile(filePath: path)
 
     while let rawFileContent: String = reader.nextLine() {      // ignore empty lines
       result.lines.append(Line(rawFileContent))

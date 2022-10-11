@@ -13,7 +13,7 @@ class InputConfigFileHandler {
   private unowned var inputConfigTableStore: InputConfigTableStore {
     (NSApp.delegate as! AppDelegate).inputConfigTableStore
   }
-  private var currentConfigFileData: InputConfigFileData? = nil
+  private var currentConfigFileData: InputConfigFile? = nil
 
   // Input Config File: Load
   // Triggered any time `currentConfigName` is changed
@@ -24,7 +24,7 @@ class InputConfigFileHandler {
       return
     }
     Logger.log("Loading bindings config from \"\(configFilePath)\"")
-    guard let inputConfigFile = InputConfigFileData.loadFile(at: configFilePath) else {
+    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
       inputConfigTableStore.changeCurrentConfigToDefault()
       return
     }

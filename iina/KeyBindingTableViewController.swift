@@ -229,6 +229,20 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
   // MARK: Drag & Drop
 
   /*
+   Drag start: define which operations are allowed, and in which contexts
+   */
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    switch(context) {
+      case .withinApplication:
+        return .copy.union(.move)
+      case .outsideApplication:
+        return .copy
+      default:
+        return .copy
+    }
+  }
+
+  /*
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
@@ -327,22 +341,25 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     info.animatesToDestination = true
 
     var dragMask = info.draggingSourceOperationMask
-    if dragMask == NSDragOperation.every {
+    if dragMask.contains(.every) || dragMask.contains(.generic) {
       dragMask = DEFAULT_DRAG_OPERATION
     }
 
     // Return immediately, and import (or fail to) asynchronously
-    DispatchQueue.main.async {
-      switch dragMask {
-        case .copy:
-          self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-        case .move:
-          self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
-        default:
-          Logger.log("Unexpected drag operatiom: \(dragMask)")
+    if dragMask.contains(.copy) {
+      DispatchQueue.main.async {
+        self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
       }
+      return true
+    } else if dragMask.contains(.move) {
+      DispatchQueue.main.async {
+        self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+      }
+      return true
+    } else {
+      Logger.log("Rejecting drop: got unexpected drag mask: \(dragMask)")
+      return false
     }
-    return true
   }
 }
 

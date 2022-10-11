@@ -170,7 +170,7 @@
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* InputBindingTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* InputBindingTableStore.swift */; };
-		D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */; };
+		D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFile.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
@@ -1502,7 +1502,7 @@
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* InputBindingTableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBindingTableStore.swift; sourceTree = "<group>"; };
-		D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFileData.swift; sourceTree = "<group>"; };
+		D19AF88328A3CBCE009B598C /* InputConfigFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFile.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
@@ -1932,7 +1932,7 @@
 				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
 				D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */,
-				D19AF88328A3CBCE009B598C /* InputConfigFileData.swift */,
+				D19AF88328A3CBCE009B598C /* InputConfigFile.swift */,
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
 				D188CB2128D6DE1900F166FD /* InputBinding.swift */,
@@ -2963,7 +2963,7 @@
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
-				D19AF88428A3CBCE009B598C /* InputConfigFileData.swift in Sources */,
+				D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,

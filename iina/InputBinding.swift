@@ -50,10 +50,10 @@ class InputBinding: NSObject, Codable {
     self.isEnabled = isEnabled
   }
 
-  convenience init(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) {
-    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
-    self.init(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
-  }
+//  convenience init(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) {
+//    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
+//    self.init(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
+//  }
 
   var isEditableByUser: Bool {
     get {
@@ -136,20 +136,48 @@ extension InputBinding: NSPasteboardWriting, NSPasteboardReading {
   }
 
   static func deserializeList(from pasteboard: NSPasteboard) -> [InputBinding] {
-    var rowList: [InputBinding] = []
-    if let objList = pasteboard.readObjects(forClasses: [InputBinding.self], options: nil) {
-      for obj in objList {
-        if let row = obj as? InputBinding {
-          // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
-          if row.isEditableByUser {
-            rowList.append(row)
+    // Looks for encoded objects first
+    if let objList = pasteboard.readObjects(forClasses: [InputBinding.self], options: nil), !objList.isEmpty {
+      return deserializeObjectList(objList)
+    }
+
+    // Next looks for strings
+    return deserializeStrings(from: pasteboard)
+  }
+
+  static private func deserializeObjectList(_ objList: [Any]) -> [InputBinding] {
+    var bindingList: [InputBinding] = []
+    for obj in objList {
+      if let row = obj as? InputBinding {
+        // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
+        if row.isEditableByUser {
+          bindingList.append(row)
+        }
+      } else {
+        Logger.log("Found something unexpected from the pasteboard, aborting deserialization: \(type(of: obj))")
+        return [] // return empty list if something was amiss
+      }
+    }
+    return bindingList
+  }
+
+  static private func deserializeStrings(from pasteboard: NSPasteboard) -> [InputBinding] {
+    var bindingList: [InputBinding] = []
+    for element in pasteboard.pasteboardItems! {
+      if let str = element.string(forType: NSPasteboard.PasteboardType(rawValue: "public.utf8-plain-text")) {
+        for rawLine in str.split(separator: "\n") {
+          if let mapping = InputConfigFile.parseRawLine(String(rawLine)) {
+            // If the user dropped a huge e-book into IINA by mistake, try to stop it from blowing up
+            if bindingList.count > AppData.maxParsedBindingsFromStringAllowed {
+              Logger.log("Pasteboard exceeds max allowed bindings from string (\(AppData.maxParsedBindingsFromStringAllowed)): aborting", level: .error)
+              return []
+            }
+            let binding = InputBinding(mapping, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true)
+            bindingList.append(binding)
           }
-        } else {
-          Logger.log("Found something unexpected from the pasteboard, aborting: \(type(of: obj))", level: .error)
-          return [] // return empty list if something was amiss
         }
       }
     }
-    return rowList
+    return bindingList
   }
 }
