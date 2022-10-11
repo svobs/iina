@@ -286,10 +286,6 @@ struct Preference {
      */
     static let tableEditKeyNavContinuesBetweenRows = Key("tableEditKeyNavContinuesBetweenRows")
 
-    /* When writing key bindings to disk: `false` will overwrite entire conf file, deleting comments and empty lines;
-     `true` will try to keep them */
-    static let retainIgnoredLinesInInputConfigFiles = Key("retainIgnoredLinesInInputConfigFiles")
-
     /** unused */
     // static let resizeFrameBuffer = Key("resizeFrameBuffer")
 
@@ -821,7 +817,6 @@ struct Preference {
     .displayKeyBindingRawValues: false,
     .acceptRawTextDragsAsKeyBindings: true,
     .tableEditKeyNavContinuesBetweenRows: false,
-    .retainIgnoredLinesInInputConfigFiles: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
     .userDefinedConfDir: "~/.config/mpv/",
