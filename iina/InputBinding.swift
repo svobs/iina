@@ -141,8 +141,11 @@ extension InputBinding: NSPasteboardWriting, NSPasteboardReading {
       return deserializeObjectList(objList)
     }
 
-    // Next looks for strings
-    return deserializeStrings(from: pasteboard)
+    // Next looks for strings (if currently allowed)
+    if Preference.bool(for: .acceptRawTextDragsAsKeyBindings) {
+      return deserializeStrings(from: pasteboard)
+    }
+    return []
   }
 
   static private func deserializeObjectList(_ objList: [Any]) -> [InputBinding] {

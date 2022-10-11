@@ -273,6 +273,10 @@ struct Preference {
 
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
+    /* If true, a selection of raw text can be dragged from an input config file and dropped as a list of input bindings wherever input bindings
+     can be dropped. */
+    static let acceptRawTextDragsAsKeyBindings = Key("acceptRawTextDragsAsKeyBindings")
+
     /* If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
      When this pref is `true`:
      * When editing the last column of a row, pressing TAB accepts changes and opens a new editor in the first column of the next row.
@@ -280,7 +284,7 @@ struct Preference {
      * When editing any column, pressing RETURN will accept changes and open an editor in the same column of the next row.
      When this pref is `false` (default), each of the above actions will accept changes but will not open a new editor.
      */
-    static let enableInterRowTabEditingInKeyBindingsTable = Key("enableInterRowTabEditingInKeyBindingsTable")
+    static let tableEditKeyNavContinuesBetweenRows = Key("tableEditKeyNavContinuesBetweenRows")
 
     /* When writing key bindings to disk: `false` will overwrite entire conf file, deleting comments and empty lines;
      `true` will try to keep them */
@@ -815,7 +819,8 @@ struct Preference {
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .logKeyBindingsRebuild: false,
     .displayKeyBindingRawValues: false,
-    .enableInterRowTabEditingInKeyBindingsTable: false,
+    .acceptRawTextDragsAsKeyBindings: true,
+    .tableEditKeyNavContinuesBetweenRows: false,
     .retainIgnoredLinesInInputConfigFiles: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,

@@ -90,7 +90,6 @@ class InputConfigFile {
     // split
     let splitted = content.split(maxSplits: 1, whereSeparator: { $0 == " " || $0 == "\t"})
     if splitted.count < 2 {
-      Logger.log("Could not parse line from input config: \"\(rawLine)\"", level: .warning)
       return nil  // no command, wrong format
     }
     let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)

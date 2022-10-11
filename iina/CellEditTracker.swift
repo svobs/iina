@@ -141,7 +141,7 @@ class CellEditTracker {
   // Returns true if it resulted in another editor being opened [asychronously], false if not.
   @discardableResult
   func editAnotherCellAfterEditEnd(oldRow rowIndex: Int, oldColumn columnIndex: Int, _ textMovement: NSTextMovement) -> Bool {
-    let isInterRowTabEditingEnabled = Preference.bool(for: .enableInterRowTabEditingInKeyBindingsTable)
+    let isInterRowTabEditingEnabled = Preference.bool(for: .tableEditKeyNavContinuesBetweenRows)
 
     var newRowIndex: Int
     var newColIndex: Int
