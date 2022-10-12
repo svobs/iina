@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let nonConfColor = NSColor.systemBlue
+
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
   private let COLUMN_INDEX_ACTION = 2
@@ -130,13 +132,13 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
             switch bindingRow.origin {
               case .iinaPlugin:
                 imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
-                imageView.contentTintColor = NSColor.systemMint
+                imageView.contentTintColor = nonConfColor
               case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
-                imageView.contentTintColor = NSColor.systemMint
+                imageView.contentTintColor = nonConfColor
               case .savedFilter:
                 imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
-                imageView.contentTintColor = NSColor.systemMint
+                imageView.contentTintColor = nonConfColor
               default:
                 if bindingRow.menuItem != nil {
                   imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
@@ -163,7 +165,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     guard let textField = cell.textField else { return }
 
     if isEnabled {
-      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : NSColor.systemMint, italic: italic)
+      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : nonConfColor, italic: italic)
     } else {
       setText(of: textField, to: stringValue, textColor: NSColor.systemRed, strikethrough: true, italic: italic)
     }
