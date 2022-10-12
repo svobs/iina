@@ -736,7 +736,16 @@ class MenuController: NSObject, NSMenuDelegate {
   func updateSavedFilters(forType type: String, from filters: [SavedFilter]) {
     let isVideo = type == MPVProperty.vf
     var keyMappings: [KeyMapping] = []
-    let sectionName = isVideo ? SharedInputSection.VIDEO_FILTERS_SECTION_NAME : SharedInputSection.AUDIO_FILTERS_SECTION_NAME
+
+    let sectionName: String
+    let filterTypeString: String
+    if isVideo {
+      sectionName = SharedInputSection.VIDEO_FILTERS_SECTION_NAME
+      filterTypeString = "Toggle video filter"
+    } else {
+      sectionName = SharedInputSection.AUDIO_FILTERS_SECTION_NAME
+      filterTypeString = "Toggle audio filter"
+    }
 
     let menu: NSMenu! = isVideo ? savedVideoFiltersMenu : savedAudioFiltersMenu
     menu.removeAllItems()
@@ -751,7 +760,8 @@ class MenuController: NSObject, NSMenuDelegate {
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {
-        keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: filter.name))
+        let description = "\(filterTypeString): \(filter.name)"
+        keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: description))
       }
     }
 
