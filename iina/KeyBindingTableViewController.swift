@@ -8,7 +8,10 @@
 
 import Foundation
 
-fileprivate let nonConfColor = NSColor.systemBlue
+fileprivate let nonConfTextColor = NSColor.systemGreen
+fileprivate let pluginIconColor = NSColor.systemGreen
+fileprivate let libmpvIconColor = NSColor.systemGreen
+fileprivate let filterIconColor = NSColor.systemGreen
 
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
@@ -132,13 +135,13 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
             switch bindingRow.origin {
               case .iinaPlugin:
                 imageView.image = NSImage(systemSymbolName: "powerplug.fill", accessibilityDescription: nil)!
-                imageView.contentTintColor = nonConfColor
+                imageView.contentTintColor = pluginIconColor
               case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
-                imageView.contentTintColor = nonConfColor
+                imageView.contentTintColor = libmpvIconColor
               case .savedFilter:
                 imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
-                imageView.contentTintColor = nonConfColor
+                imageView.contentTintColor = filterIconColor
               default:
                 if bindingRow.menuItem != nil {
                   imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
@@ -165,7 +168,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     guard let textField = cell.textField else { return }
 
     if isEnabled {
-      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : nonConfColor, italic: italic)
+      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : nonConfTextColor, italic: italic)
     } else {
       setText(of: textField, to: stringValue, textColor: NSColor.systemRed, strikethrough: true, italic: italic)
     }
