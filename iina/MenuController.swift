@@ -171,6 +171,8 @@ class MenuController: NSObject, NSMenuDelegate {
   @IBOutlet weak var inspector: NSMenuItem!
   @IBOutlet weak var miniPlayer: NSMenuItem!
 
+  /// If `true` then all menu items are disabled.
+  private var isDisabled = false
 
   // MARK: - Construct Menus
 
@@ -686,6 +688,9 @@ class MenuController: NSObject, NSMenuDelegate {
   func menuWillOpen(_ menu: NSMenu) {
     Logger.log("Updating menu: \(menu.title)", level: .verbose)
 
+    // If all menu items are disabled do not update the menus.
+    guard !isDisabled else { return }
+
     switch menu {
     case fileMenu:
       updateOpenMenuItems()
@@ -774,7 +779,6 @@ class MenuController: NSObject, NSMenuDelegate {
     // Two general groups to be processed:
     // - Save filters & Plugin menu bindings have already had their values & enablement determined: just need to update their menu items.
     // - MPV bindings need some additional checks to see if they can be associated with menu items.
-    var keyEquivalents: [InputBinding] = []
     var mpvBindings: [InputBinding] = []
 
     var pluginKeyConflicts: [InputBinding] = []
@@ -783,13 +787,13 @@ class MenuController: NSObject, NSMenuDelegate {
       switch binding.origin {
         case .iinaPlugin:
           // include disabled bindings: need to set their menu item key equivs to nil
-          keyEquivalents.append(binding)
+          updateKeyEquivalent(from: binding)
           if !binding.isEnabled {
             pluginKeyConflicts.append(binding)
           }
         case .savedFilter:
           // include disabled bindings: need to set their menu item key equivs to nil
-          keyEquivalents.append(binding)
+          updateKeyEquivalent(from: binding)
         case .confFile:
           if binding.isEnabled { // don't care about disabled bindings here
             mpvBindings.append(binding)
@@ -801,14 +805,11 @@ class MenuController: NSObject, NSMenuDelegate {
     // Show Plugin menu error notice if there are binding conflicts:
     pluginErrorNotice.isHidden = (pluginKeyConflicts.count == 0)
 
-    updateMenuItems(from: keyEquivalents)
-
-    associateKeyEquivalents(with: mpvBindings)
+    matchKeyEquivalents(with: mpvBindings)
   }
 
-  private func updateMenuItems(from bindings: [InputBinding]) {
-    for binding in bindings {
-      guard let menuItem = binding.menuItem else { continue }
+  private func updateKeyEquivalent(from binding: InputBinding) {
+      guard let menuItem = binding.menuItem else { return }
 
       if binding.isEnabled {
         if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: binding.keyMapping.normalizedMpvKey) {
@@ -828,11 +829,9 @@ class MenuController: NSObject, NSMenuDelegate {
           Logger.log("Nulled out keyEquivalent for \"\(menuItem.title)\"", level: .verbose)
         }
       }
-    }
-    Logger.log("Updated keyEquivalents for \(bindings.count) menu items ", level: .verbose)
   }
 
-  private func associateKeyEquivalents(with mpvBindings: [InputBinding]) {
+  private func matchKeyEquivalents(with mpvBindings: [InputBinding]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -923,6 +922,27 @@ class MenuController: NSObject, NSMenuDelegate {
         menuItem.keyEquivalent = ""
         menuItem.keyEquivalentModifierMask = []
       }
+    }
+  }
+
+  /// Disable all menu items.
+  ///
+  /// This method is used during application termination to stop any further input from the user.
+  func disableAllMenus() {
+    isDisabled = true
+    disableAllMenuItems(NSApp.mainMenu!)
+  }
+
+  /// Disable all menu items in the given menu and any submenus.
+  ///
+  /// This method recursively descends through the entire tree of menu items disabling all items.
+  /// - Parameter menu: Menu to disable
+  private func disableAllMenuItems(_ menu: NSMenu) {
+    for item in menu.items {
+      if item.hasSubmenu {
+        disableAllMenuItems(item.submenu!)
+      }
+      item.isEnabled = false
     }
   }
 }

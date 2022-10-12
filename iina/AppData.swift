@@ -137,4 +137,6 @@ extension Notification.Name {
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")
   static let iinaPluginChanged = Notification.Name("IINAPluginChanged")
+  static let iinaPlayerStopped = Notification.Name("iinaPlayerStopped")
+  static let iinaPlayerShutdown = Notification.Name("iinaPlayerShutdown")
 }
