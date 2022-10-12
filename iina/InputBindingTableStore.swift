@@ -124,7 +124,7 @@ class InputBindingTableStore {
     var bindingRowsAllNew = bindingRowsAll
     for binding in bindingList.reversed() {
       // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-      bindingRowsAllNew.insert(InputBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true), at: insertIndex)
+      bindingRowsAllNew.insert(InputBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME), at: insertIndex)
     }
 
     saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)

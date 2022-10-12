@@ -158,11 +158,12 @@ class AppInputConfigBuilder {
    */
   private func buildNewInputBinding(from keyMapping: KeyMapping, section: InputSection) -> InputBinding {
     // Set `isMenuItem` to `false` always: let `MenuController` decide which to include later
-    let binding = InputBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isMenuItem: false, isEnabled: false)
+    let binding = InputBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isEnabled: true)
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       binding.displayMessage = "IINA does not use default-level (\"weak\") bindings"
+      binding.isEnabled = false
       return binding
     }
 
@@ -176,10 +177,10 @@ class AppInputConfigBuilder {
       } else {
         Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\" for key: \(keyMapping.rawKey)", level: .verbose)
         binding.displayMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
+        binding.isEnabled = false
         return binding
       }
     }
-    binding.isEnabled = true
     Logger.log("Adding binding for key: \(keyMapping.rawKey)", level: .verbose)
     return binding
   }
@@ -188,7 +189,7 @@ class AppInputConfigBuilder {
   private func fillInPartialSequences(_ activeBindingsDict: inout [String: InputBinding]) {
     var addedCount = 0
     for (keySequence, binding) in activeBindingsDict {
-      if keySequence.contains("-") {
+      if binding.isEnabled && keySequence.contains("-") {
         let keySequenceSplit = KeyCodeHelper.splitAndNormalizeMpvString(keySequence)
         if keySequenceSplit.count >= 2 && keySequenceSplit.count <= 4 {
           var partial = ""
@@ -200,7 +201,7 @@ class AppInputConfigBuilder {
             }
             if partial != keySequence && !activeBindingsDict.keys.contains(partial) {
               let partialBinding = KeyMapping(rawKey: partial, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: "(partial sequence)")
-              activeBindingsDict[partial] = InputBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isMenuItem: binding.isMenuItem, isEnabled: binding.isEnabled)
+              activeBindingsDict[partial] = InputBinding(partialBinding, origin: binding.origin, srcSectionName: binding.srcSectionName, isEnabled: true)
               addedCount += 1
             }
           }

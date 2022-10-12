@@ -579,21 +579,20 @@ class MenuController: NSObject, NSMenuDelegate {
     var failureList: [InputBinding] = []
     for pluginBinding in pluginBindings {
       guard pluginBinding.origin == .iinaPlugin else { continue }
-      guard let keyMapping = pluginBinding.keyMapping as? PluginKeyMapping else { continue }
+      guard let menuItem = pluginBinding.menuItem else { continue }
 
       if pluginBinding.isEnabled {
-        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: keyMapping.normalizedMpvKey) {
-          pluginBinding.isMenuItem = true
-          keyMapping.menuItem.keyEquivalent = kEqv
-          keyMapping.menuItem.keyEquivalentModifierMask = kMdf
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: pluginBinding.keyMapping.normalizedMpvKey) {
+          menuItem.keyEquivalent = kEqv
+          menuItem.keyEquivalentModifierMask = kMdf
         } else {
-          Logger.log("Failed to get MacOS key equivalent for \"\(keyMapping.normalizedMpvKey)\"", level: .error)
+          Logger.log("Failed to get MacOS key equivalent for \"\(pluginBinding.keyMapping.normalizedMpvKey)\"", level: .error)
         }
       } else {
         // Conflict! Key binding already reserved
         failureList.append(pluginBinding)
-        keyMapping.menuItem.keyEquivalent = ""
-        keyMapping.menuItem.keyEquivalentModifierMask = []
+        menuItem.keyEquivalent = ""
+        menuItem.keyEquivalentModifierMask = []
       }
     }
 
@@ -789,6 +788,8 @@ class MenuController: NSObject, NSMenuDelegate {
           if binding.isEnabled { // don't care about disabled bindings here
             mpvBindings.append(binding)
           }
+        default:
+          break
       }
     }
 
@@ -875,7 +876,7 @@ class MenuController: NSObject, NSMenuDelegate {
             menuItem.representedObject = value
           }
           bound = true
-          bindingRow.isMenuItem = true  // so we can indicate it in UI
+          bindingRow.associatedMenuItem = menuItem  // so we can indicate it in UI
           bindingRow.displayMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
           break
         }

@@ -11,6 +11,7 @@ import Foundation
 enum InputBindingOrigin: Codable {
   case confFile    // Input config file (can include @iina commands or mpv commands)
   case iinaPlugin  // Plugin menu key equivalent
+  case videoFilter // Video filter key equivalent
   case libmpv      // Set by input sections transmitted over libmpv (almost always Lua scripts, but could include other RPC clients)
 }
 

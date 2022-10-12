@@ -76,7 +76,7 @@ class KeyMapping: NSObject, Codable {
   }
 
   // The MPV comment
-  var comment: String?
+  let comment: String?
 
   // Convenience method. Returns true if action is "ignore"
   var isIgnored: Bool {
@@ -109,6 +109,13 @@ class KeyMapping: NSObject, Codable {
     self.comment = comment
   }
 
+  required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+    guard let data = propertyList as? Data,
+          let row = try? PropertyListDecoder().decode(KeyMapping.self, from: data) else { return nil }
+    self.init(rawKey: row.rawKey, rawAction: row.rawAction, isIINACommand: row.isIINACommand, comment: row.comment, bindingID: row.bindingID)
+  }
+
+
   private static func removeIINAPrefix(from rawAction: String) -> String? {
     if rawAction.hasPrefix("@iina") {
       return rawAction[rawAction.index(rawAction.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
@@ -135,8 +142,82 @@ class KeyMapping: NSObject, Codable {
   }
 }
 
+// Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
+extension NSPasteboard.PasteboardType {
+  static let iinaKeyMapping = NSPasteboard.PasteboardType("com.colliderli.iina.KeyMapping")
+}
+
+extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
+  static func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+    return [.iinaKeyMapping]
+  }
+  static func readingOptions(forType type: NSPasteboard.PasteboardType, pasteboard: NSPasteboard) -> NSPasteboard.ReadingOptions {
+    return .asData
+  }
+
+  func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+    return [.string, .iinaKeyMapping]
+  }
+
+  func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
+    switch type {
+      case .string:
+        return NSString(utf8String: self.confFileFormat)
+      case .iinaKeyMapping:
+        return try? PropertyListEncoder().encode(self)
+      default:
+        return nil
+    }
+  }
+
+  static func deserializeList(from pasteboard: NSPasteboard) -> [KeyMapping] {
+    // Looks for encoded objects first
+    if let objList = pasteboard.readObjects(forClasses: [KeyMapping.self], options: nil), !objList.isEmpty {
+      return deserializeObjectList(objList)
+    }
+
+    // Next looks for strings (if currently allowed)
+    if Preference.bool(for: .acceptRawTextDragsAsKeyBindings) {
+      return deserializeText(from: pasteboard)
+    }
+    return []
+  }
+
+  static private func deserializeObjectList(_ objList: [Any]) -> [KeyMapping] {
+    var mappingList: [KeyMapping] = []
+    for obj in objList {
+      if let row = obj as? KeyMapping {
+        mappingList.append(row)
+      } else {
+        Logger.log("Found something unexpected from the pasteboard, aborting deserialization: \(type(of: obj))")
+        return [] // return empty list if something was amiss
+      }
+    }
+    return mappingList
+  }
+
+  static private func deserializeText(from pasteboard: NSPasteboard) -> [KeyMapping] {
+    var mappingList: [KeyMapping] = []
+    for element in pasteboard.pasteboardItems! {
+      if let str = element.string(forType: NSPasteboard.PasteboardType(rawValue: "public.utf8-plain-text")) {
+        for rawLine in str.split(separator: "\n") {
+          if let mapping = InputConfigFile.parseRawLine(String(rawLine)) {
+            // If the user dropped a huge e-book into IINA by mistake, try to stop it from blowing up
+            if mappingList.count > AppData.maxParsedBindingsFromStringAllowed {
+              Logger.log("Pasteboard exceeds max allowed bindings from string (\(AppData.maxParsedBindingsFromStringAllowed)): aborting", level: .error)
+              return []
+            }
+            mappingList.append(mapping)
+          }
+        }
+      }
+    }
+    return mappingList
+  }
+}
+
 // This class is a little bit of a hurried kludge, so that bindings set from IINA plugins could go everywhere
-// that mpv's bindings can go, but with each also containing a reference to their associated menu item for later use.
+// that mpv's bindings can go, but instead of an action string each contains a reference to a menu item in the Plugin menu.
 class PluginKeyMapping: KeyMapping {
   let menuItem: NSMenuItem
   let pluginName: String
@@ -144,18 +225,21 @@ class PluginKeyMapping: KeyMapping {
   init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
     self.menuItem = menuItem
     self.pluginName = pluginName
-    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, bindingID: bindingID)
+
+    // Store description in `comment`
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: "Plugin > \(pluginName) > \"\(menuItem.title)\"", bindingID: bindingID)
   }
 
   required init(from decoder: Decoder) throws {
     Logger.fatal("init(from:) is not supported for PluginKeyMapping")
   }
 
-  override var comment: String? {
-    get {
-      "Plugin > \(pluginName) > \"\(menuItem.title)\""
-    } set {
-    }
+  required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+    fatalError("init(pasteboardPropertyList:ofType:) is not supported for PluginKeyMapping")
+  }
+
+  public override var description: String {
+    return "PluginKeyMapping(\"\(rawKey)\" -> \"\(pluginName)\":\"\(menuItem.title)\""
   }
 
   override var readableAction: String {

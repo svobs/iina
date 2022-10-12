@@ -18,7 +18,7 @@
 
  An instance of this class encapsulates all the data needed to display a single row/line in the Key Bindings table.
  */
-class InputBinding: NSObject, Codable {
+class InputBinding: NSObject {
   // Will be nil for plugin bindings.
   var keyMapping: KeyMapping
 
@@ -31,44 +31,54 @@ class InputBinding: NSObject, Codable {
    - The Plugins section name, if origin == .iinaPlugin
    */
   var srcSectionName: String
-
-  /*
-   Will be true for all origin == `.iinaPlugin` and some `.confFile`.
-   */
-  var isMenuItem: Bool
-
   var isEnabled: Bool
+
+  // Menu item, if any, which was matched with the KeyMapping
+  var associatedMenuItem: NSMenuItem? = nil
 
   // for use in UI only
   var displayMessage: String = ""
 
-  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, isMenuItem: Bool, isEnabled: Bool) {
+  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, menuItem: NSMenuItem? = nil, isEnabled: Bool = true) {
     self.keyMapping = keyMapping
     self.origin = origin
     self.srcSectionName = srcSectionName
-    self.isMenuItem = isMenuItem
     self.isEnabled = isEnabled
   }
 
-//  convenience init(rawKey: String, menuItem: NSMenuItem, pluginName: String, isEnabled: Bool) {
-//    let keyMapping = PluginKeyMapping(rawKey: rawKey, pluginName: pluginName, menuItem: menuItem)
-//    self.init(keyMapping, origin: .iinaPlugin, srcSectionName: pluginName, isMenuItem: true, isEnabled: isEnabled)
-//  }
-
+  // Only mpv bindings in the "default" section can be copied
   var isEditableByUser: Bool {
     get {
       self.origin == .confFile
     }
   }
 
-  required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
-      guard let data = propertyList as? Data,
-          let row = try? PropertyListDecoder().decode(InputBinding.self, from: data) else { return nil }
-    self.init(row.keyMapping, origin: row.origin, srcSectionName: row.srcSectionName, isMenuItem: row.isMenuItem, isEnabled: row.isEnabled)
+  // Only mpv bindings can be copied
+  var canBeCopied: Bool {
+    get {
+      self.origin == .confFile || self.origin == .libmpv
+    }
+  }
+
+  private var menuItemMapping: PluginKeyMapping? {
+    return self.keyMapping as? PluginKeyMapping
+  }
+
+  /*
+   Will be non-nil for all origin == `.iinaPlugin`, `.videoFilter`, and some `.conf`
+   */
+  var menuItem: NSMenuItem? {
+    get {
+      if let menuItemMapping = self.menuItemMapping {
+        return menuItemMapping.menuItem
+      } else {
+        return associatedMenuItem
+      }
+    }
   }
 
   override var description: String {
-    "<\(pluginKeyMapping == nil ? srcSectionName : "Plugin: \(pluginKeyMapping!.pluginName)")> \(keyMapping.normalizedMpvKey) -> \(keyMapping.readableAction)"
+    return "{\(srcSectionName)} \(keyMapping)"
   }
 
   // Hashable protocol conformance, to enable diffing
@@ -96,91 +106,9 @@ class InputBinding: NSObject, Codable {
   func getActionColumnDisplay(raw: Bool) -> String {
     if origin == .iinaPlugin {
       // IINA plugins do not map directly to mpv commands
-      return pluginKeyMapping?.comment ?? ""
+      return keyMapping.comment ?? ""
     } else {
       return raw ? keyMapping.rawAction : keyMapping.readableCommand
     }
-  }
-
-  var pluginKeyMapping: PluginKeyMapping? {
-    return self.keyMapping as? PluginKeyMapping
-  }
-}
-
-// Register custom pasteboard type for KeyBinding (for drag&drop, and possibly eventually copy&paste)
-extension NSPasteboard.PasteboardType {
-  static let iinaInputBinding = NSPasteboard.PasteboardType("com.colliderli.iina.InputBinding")
-}
-
-extension InputBinding: NSPasteboardWriting, NSPasteboardReading {
-  static func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
-    return [.iinaInputBinding]
-  }
-  static func readingOptions(forType type: NSPasteboard.PasteboardType, pasteboard: NSPasteboard) -> NSPasteboard.ReadingOptions {
-    return .asData
-  }
-
-  func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
-    return [.string, .iinaInputBinding]
-  }
-
-  func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
-    switch type {
-      case .string:
-        return NSString(utf8String: self.keyMapping.confFileFormat)
-      case .iinaInputBinding:
-        return try? PropertyListEncoder().encode(self)
-      default:
-        return nil
-    }
-  }
-
-  static func deserializeList(from pasteboard: NSPasteboard) -> [InputBinding] {
-    // Looks for encoded objects first
-    if let objList = pasteboard.readObjects(forClasses: [InputBinding.self], options: nil), !objList.isEmpty {
-      return deserializeObjectList(objList)
-    }
-
-    // Next looks for strings (if currently allowed)
-    if Preference.bool(for: .acceptRawTextDragsAsKeyBindings) {
-      return deserializeStrings(from: pasteboard)
-    }
-    return []
-  }
-
-  static private func deserializeObjectList(_ objList: [Any]) -> [InputBinding] {
-    var bindingList: [InputBinding] = []
-    for obj in objList {
-      if let row = obj as? InputBinding {
-        // make extra sure we didn't copy incorrect data. This could conceivable happen if user copied from text.
-        if row.isEditableByUser {
-          bindingList.append(row)
-        }
-      } else {
-        Logger.log("Found something unexpected from the pasteboard, aborting deserialization: \(type(of: obj))")
-        return [] // return empty list if something was amiss
-      }
-    }
-    return bindingList
-  }
-
-  static private func deserializeStrings(from pasteboard: NSPasteboard) -> [InputBinding] {
-    var bindingList: [InputBinding] = []
-    for element in pasteboard.pasteboardItems! {
-      if let str = element.string(forType: NSPasteboard.PasteboardType(rawValue: "public.utf8-plain-text")) {
-        for rawLine in str.split(separator: "\n") {
-          if let mapping = InputConfigFile.parseRawLine(String(rawLine)) {
-            // If the user dropped a huge e-book into IINA by mistake, try to stop it from blowing up
-            if bindingList.count > AppData.maxParsedBindingsFromStringAllowed {
-              Logger.log("Pasteboard exceeds max allowed bindings from string (\(AppData.maxParsedBindingsFromStringAllowed)): aborting", level: .error)
-              return []
-            }
-            let binding = InputBinding(mapping, origin: .confFile, srcSectionName: DefaultInputSection.NAME, isMenuItem: false, isEnabled: true)
-            bindingList.append(binding)
-          }
-        }
-      }
-    }
-    return bindingList
   }
 }

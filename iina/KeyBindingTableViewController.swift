@@ -44,7 +44,7 @@ class KeyBindingTableViewController: NSObject {
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+. Default to "move"
-      tableView.registerForDraggedTypes([.string, .iinaInputBinding])
+      tableView.registerForDraggedTypes([.string, .iinaKeyMapping])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -134,8 +134,11 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
               case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
                 imageView.contentTintColor = NSColor.systemMint
+              case .videoFilter:
+                imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
+                imageView.contentTintColor = NSColor.systemMint
               default:
-                if bindingRow.isMenuItem {
+                if bindingRow.menuItem != nil {
                   imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
                 } else {
                   imageView.image = nil
@@ -247,8 +250,8 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let row = bindingTableStore.getBindingRow(at: rowIndex)
-    if let row = row, row.isEditableByUser {
-      return row
+    if let row = row, row.canBeCopied {
+      return row.keyMapping
     }
     return nil
   }
@@ -262,22 +265,15 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return
     }
 
-    let rowList = InputBinding.deserializeList(from: session.draggingPasteboard)
+    let rmappingList = KeyMapping.deserializeList(from: session.draggingPasteboard)
 
-    guard !rowList.isEmpty else {
+    guard !rmappingList.isEmpty else {
       return
     }
 
-    Logger.log("User dragged to the trash: \(rowList)", level: .verbose)
+    Logger.log("User dragged to the trash: \(rmappingList)", level: .verbose)
 
-    rowList.forEach {
-      if !$0.isEditableByUser {
-        Logger.log("Ignoring drop: dragged list contains at least one row which is read-only: \(rowList)", level: .verbose)
-        return
-      }
-    }
-
-    bindingTableStore.removeBindings(withIDs: rowList.map{$0.keyMapping.bindingID!})
+    bindingTableStore.removeBindings(withIDs: rmappingList.map{$0.bindingID!})
   }
 
   /*
@@ -289,14 +285,14 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return []  // deny drop
     }
 
-    let rowList = InputBinding.deserializeList(from: info.draggingPasteboard)
+    let mappingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
 
-    guard !rowList.isEmpty else {
+    guard !mappingList.isEmpty else {
       return []  // deny drop
     }
 
     // Update that little red number:
-    info.numberOfValidItemsForDrop = rowList.count
+    info.numberOfValidItemsForDrop = mappingList.count
 
     info.draggingFormation = DRAGGING_FORMATION
 
@@ -325,7 +321,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = InputBinding.deserializeList(from: info.draggingPasteboard)
+    let rowList = KeyMapping.deserializeList(from: info.draggingPasteboard)
     Logger.log("User dropped \(rowList.count) binding rows into KeyBinding table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
     guard !rowList.isEmpty else {
       return false
@@ -348,12 +344,12 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     // Return immediately, and import (or fail to) asynchronously
     if dragMask.contains(.copy) {
       DispatchQueue.main.async {
-        self.copyBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        self.copyMappings(from: rowList, to: rowIndex, isAfterNotAt: false)
       }
       return true
     } else if dragMask.contains(.move) {
       DispatchQueue.main.async {
-        self.moveBindingRows(from: rowList, to: rowIndex, isAfterNotAt: false)
+        self.moveMappings(from: rowList, to: rowIndex, isAfterNotAt: false)
       }
       return true
     } else {
@@ -540,25 +536,23 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   // e.g., drag & drop "copy" operation
-  private func copyBindingRows(from rowList: [InputBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func copyMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
+    guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
+    guard !mappingList.isEmpty else { return }
+
     // Make sure to use copy() to clone the object here
-    let newMappings: [KeyMapping] = rowList.map { $0.keyMapping.clone() }
+    let newMappings: [KeyMapping] = mappingList.map { $0.clone() }
 
     bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings,
                                                                     afterComplete: scrollToFirstInserted)
   }
 
   // e.g., drag & drop "move" operation
-  private func moveBindingRows(from rowList: [InputBinding], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func moveMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
+    guard !mappingList.isEmpty else { return }
 
-    let editableBindings: [KeyMapping] = rowList.filter { $0.isEditableByUser }.map { $0.keyMapping }
-    guard !editableBindings.isEmpty else {
-      Logger.log("Aborting move: none of the \(rowList.count) dragged bindings is editable")
-      return
-    }
-
-    let firstInsertedRowIndex = bindingTableStore.moveBindings(editableBindings, to: rowIndex, isAfterNotAt: isAfterNotAt,
+    let firstInsertedRowIndex = bindingTableStore.moveBindings(mappingList, to: rowIndex, isAfterNotAt: isAfterNotAt,
                                                                afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
@@ -646,8 +640,10 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       return false
     }
 
+    let mappings = rows.map { $0.keyMapping }
+
     NSPasteboard.general.clearContents()
-    NSPasteboard.general.writeObjects(rows)
+    NSPasteboard.general.writeObjects(mappings)
     Logger.log("Copied \(rows.count) bindings to the clipboard", level: .verbose)
     return true
   }
@@ -657,8 +653,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // Else just use the end of the table.
   // `bindingTableStore` will then do a bunch of its own logic and probably end up putting it somewhere else.
   private func pasteFromClipboard(after desiredInsertIndex: Int? = nil) {
-    let rowsToPaste = readBindingsFromClipboard()
-    guard !rowsToPaste.isEmpty else {
+    let mappingsToInsert = readBindingsFromClipboard()
+    guard !mappingsToInsert.isEmpty else {
       Logger.log("Aborting Paste action because there is nothing to paste", level: .warning)
       return
     }
@@ -670,14 +666,13 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     } else {
       insertAfterIndex = bindingTableStore.bindingRowCount
     }
-    let mappingsToInsert = rowsToPaste.map { $0.keyMapping }
     Logger.log("Pasting \(mappingsToInsert.count) bindings after index \(insertAfterIndex)")
     bindingTableStore.insertNewBindings(relativeTo: insertAfterIndex, isAfterNotAt: true, mappingsToInsert,
                                         afterComplete: self.scrollToFirstInserted)
   }
 
-  private func readBindingsFromClipboard() -> [InputBinding] {
-    return InputBinding.deserializeList(from: NSPasteboard.general)
+  private func readBindingsFromClipboard() -> [KeyMapping] {
+    return KeyMapping.deserializeList(from: NSPasteboard.general)
   }
 }
 
