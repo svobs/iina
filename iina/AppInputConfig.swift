@@ -45,7 +45,7 @@ class AppInputConfig {
     let newAppBindings = builder.build()
 
     // This will update all standard menu item bindings, and also update the isMenuItem status of each:
-    (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalentsFrom(newAppBindings.bindingCandidateList)
+    (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalents(from: newAppBindings.bindingCandidateList)
 
     AppInputConfig.current = newAppBindings
 

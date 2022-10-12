@@ -11,7 +11,7 @@ import Foundation
 enum InputBindingOrigin: Codable {
   case confFile    // Input config file (can include @iina commands or mpv commands)
   case iinaPlugin  // Plugin menu key equivalent
-  case videoFilter // Video filter key equivalent
+  case savedFilter // Key equivalent for saved video or audio filter
   case libmpv      // Set by input sections transmitted over libmpv (almost always Lua scripts, but could include other RPC clients)
 }
 
@@ -65,31 +65,25 @@ class MPVInputSection: InputSection {
   }
 }
 
-// The 'default' section contains the bindings loaded from the currently
-// selected input config file, and will be shared for all `PlayerCore` instances.
-class DefaultInputSection: MPVInputSection {
-  static let NAME = "default"
-  init() {
-    super.init(name: DefaultInputSection.NAME, [], isForce: true, origin: .confFile)
+class SharedInputSection: MPVInputSection {
+  // The 'default' section contains the bindings loaded from the currently
+  // selected input config file, and will be shared for all `PlayerCore` instances.
+  static let DEFAULT_SECTION_NAME = "default"
+
+  static let VIDEO_FILTERS_SECTION_NAME = "IINA Video Filters"
+  static let AUDIO_FILTERS_SECTION_NAME = "IINA Audio Filters"
+
+  // One section to store the key equivalents for all the IINA plugins.
+  // Only one instance of this exists for the whole IINA app.
+  // Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
+  static let PLUGINS_SECTION_NAME = "IINA Plugins"
+
+  init(name: String, isForce: Bool, origin: InputBindingOrigin) {
+    super.init(name: name, [], isForce: isForce, origin: origin)
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key mappings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
-    self.keyMappingList = keyMappingList
-  }
-}
-
-// One section to store the key equivalents for all the IINA plugins.
-// Only one instance of this exists for the whole IINA app.
-// Its `keyMappingList` will be regenerated each time the Plugin menu is updated.
-class PluginsInputSection: MPVInputSection {
-  static let NAME = "plugins"
-  init() {
-    super.init(name: PluginsInputSection.NAME, [], isForce: false, origin: .iinaPlugin)
-  }
-
-  func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing key mappings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
+    Logger.log("Replacing all bindings in \"\(name)\" section with \(keyMappingList.count) entries", level: .verbose)
     self.keyMappingList = keyMappingList
   }
 }

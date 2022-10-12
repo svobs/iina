@@ -50,17 +50,16 @@ class InputBindingTableStore {
     return bindingRowsFiltered[index]
   }
 
-  // TOOD: clean up this API at some point so that it takes [InputBinding] instead of [KeyMapping] like the others
-  func moveBindings(_ bindingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false,
+  func moveBindings(_ mappingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false,
                     afterComplete: TableChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Movimg \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
+    Logger.log("Movimg \(mappingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       clearFilter()
     }
 
-    let movedBindingIDs = Set(bindingList.map { $0.bindingID! })
+    let movedBindingIDs = Set(mappingList.map { $0.bindingID! })
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
@@ -103,11 +102,10 @@ class InputBindingTableStore {
     return insertIndex
   }
 
-  // TOOD: clean up this API at some point so that it takes [InputBinding] instead of [KeyMapping] like the others
-  func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ bindingList: [KeyMapping],
+  func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Inserting \(bindingList.count) bindings \(isAfterNotAt ? "after" : "to") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
+    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
 
     if isFiltered() {
       // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
@@ -117,23 +115,23 @@ class InputBindingTableStore {
     }
 
     let tableChange = TableChangeByRowIndex(.addRows, completionHandler: afterComplete)
-    let toInsert = IndexSet(insertIndex..<(insertIndex+bindingList.count))
+    let toInsert = IndexSet(insertIndex..<(insertIndex+mappingList.count))
     tableChange.toInsert = toInsert
     tableChange.newSelectedRows = toInsert
 
     var bindingRowsAllNew = bindingRowsAll
-    for binding in bindingList.reversed() {
+    for mapping in mappingList.reversed() {
       // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-      bindingRowsAllNew.insert(InputBinding(binding, origin: .confFile, srcSectionName: DefaultInputSection.NAME), at: insertIndex)
+      bindingRowsAllNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
     saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)
   }
 
   // Returns the index at which it was ultimately inserted
-  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ binding: KeyMapping,
+  func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ mapping: KeyMapping,
                         afterComplete: TableChange.CompletionHandler? = nil) {
-    insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [binding], afterComplete: afterComplete)
+    insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [mapping], afterComplete: afterComplete)
   }
 
   func removeBindings(at indexesToRemove: IndexSet) {
@@ -189,15 +187,15 @@ class InputBindingTableStore {
     saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
   }
 
-  func updateBinding(at index: Int, to binding: KeyMapping) {
-    Logger.log("Updating binding at index \(index) to: \(binding)", level: .verbose)
+  func updateBinding(at index: Int, to mapping: KeyMapping) {
+    Logger.log("Updating binding at index \(index) to: \(mapping)", level: .verbose)
 
     guard let existingRow = getBindingRow(at: index), existingRow.isEditableByUser else {
       Logger.log("Cannot update binding at index \(index); aborting", level: .error)
       return
     }
 
-    existingRow.keyMapping = binding
+    existingRow.keyMapping = mapping
 
     let tableChange = TableChangeByRowIndex(.updateRows)
 
@@ -353,7 +351,7 @@ class InputBindingTableStore {
   }
 
   func filterBindings(_ searchString: String) {
-    Logger.log("Updating Bindings Table filter: \"\(searchString)\"", level: .verbose)
+    Logger.log("Updating Bindings UI filter to \"\(searchString)\"", level: .verbose)
     self.filterString = searchString
     appInputConfigDidChange(appInputConfig)
   }

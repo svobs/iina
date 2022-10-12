@@ -536,7 +536,7 @@ class MenuController: NSObject, NSMenuDelegate {
     pluginMenu.addItem(pluginErrorNotice)
     pluginErrorNotice.isHidden = true
 
-    var keyMappings: [PluginKeyMapping] = []
+    var keyMappings: [MenuItemMapping] = []
 
     pluginMenu.addItem(withTitle: "Manage Plugins…")
     pluginMenu.addItem(.separator())
@@ -575,38 +575,11 @@ class MenuController: NSObject, NSMenuDelegate {
     }
   }
 
-  func updatePluginMenuKeyEquivalents(from pluginBindings: [InputBinding]) {
-    var failureList: [InputBinding] = []
-    for pluginBinding in pluginBindings {
-      guard pluginBinding.origin == .iinaPlugin else { continue }
-      guard let menuItem = pluginBinding.menuItem else { continue }
-
-      if pluginBinding.isEnabled {
-        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: pluginBinding.keyMapping.normalizedMpvKey) {
-          menuItem.keyEquivalent = kEqv
-          menuItem.keyEquivalentModifierMask = kMdf
-        } else {
-          Logger.log("Failed to get MacOS key equivalent for \"\(pluginBinding.keyMapping.normalizedMpvKey)\"", level: .error)
-        }
-      } else {
-        // Conflict! Key binding already reserved
-        failureList.append(pluginBinding)
-        menuItem.keyEquivalent = ""
-        menuItem.keyEquivalentModifierMask = []
-      }
-    }
-
-    // When done:
-    pluginErrorNotice.isHidden = (failureList.count == 0)
-
-    Logger.log("Updated Plugin menu keyEquivalents for \(pluginBindings.count) items, including \(failureList.count) conflicts")
-  }
-
   @discardableResult
   private func add(menuItemDef item: JavascriptPluginMenuItem,
                    to menu: NSMenu,
                    for plugin: JavascriptPluginInstance,
-                   keyMappings: inout [PluginKeyMapping]) -> NSMenuItem {
+                   keyMappings: inout [MenuItemMapping]) -> NSMenuItem {
     if (item.isSeparator) {
       let item = NSMenuItem.separator()
       menu.addItem(item)
@@ -629,7 +602,8 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
       // Store the item with its pair - the PlayerInputConfig will set the binding & deal with conflicts
-      keyMappings.append(PluginKeyMapping(rawKey: rawKey, pluginName: plugin.plugin.name, menuItem: menuItem))
+      let actionString = "Plugin > \(plugin.plugin.name) > \"\(menuItem.title)\""
+      keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: plugin.plugin.name, menuItem: menuItem, actionDescription: actionString))
     }
     if !item.items.isEmpty {
       menuItem.submenu = NSMenu()
@@ -761,30 +735,52 @@ class MenuController: NSObject, NSMenuDelegate {
 
   func updateSavedFilters(forType type: String, from filters: [SavedFilter]) {
     let isVideo = type == MPVProperty.vf
+    var keyMappings: [KeyMapping] = []
+    let sectionName = isVideo ? SharedInputSection.VIDEO_FILTERS_SECTION_NAME : SharedInputSection.AUDIO_FILTERS_SECTION_NAME
+
     let menu: NSMenu! = isVideo ? savedVideoFiltersMenu : savedAudioFiltersMenu
     menu.removeAllItems()
     for filter in filters {
       let menuItem = NSMenuItem()
       menuItem.title = filter.name
       menuItem.action = isVideo ? #selector(MainWindowController.menuToggleVideoFilterString(_:)) : #selector(MainWindowController.menuToggleAudioFilterString(_:))
-      menuItem.keyEquivalent = filter.shortcutKey
+      menuItem.keyEquivalent = ""
       menuItem.keyEquivalentModifierMask = filter.shortcutKeyModifiers
       menuItem.representedObject = filter.filterString
       menu.addItem(menuItem)
+
+      let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
+      if !rawKey.isEmpty {
+        keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: filter.name))
+      }
     }
+
+    InputSectionStack.replaceBindings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
-  func updateKeyEquivalentsFrom(_ candidateBindings: [InputBinding]) {
+  // MARK: Setting key equivalents
 
+  func updateKeyEquivalents(from candidateBindings: [InputBinding]) {
+    // Two general groups to be processed:
+    // - Save filters & Plugin menu bindings have already had their values & enablement determined: just need to update their menu items.
+    // - MPV bindings need some additional checks to see if they can be associated with menu items.
+    var keyEquivalents: [InputBinding] = []
     var mpvBindings: [InputBinding] = []
-    var pluginBindings: [InputBinding] = []
+
+    var pluginKeyConflicts: [InputBinding] = []
 
     for binding in candidateBindings {
       switch binding.origin {
         case .iinaPlugin:
           // include disabled bindings: need to set their menu item key equivs to nil
-          pluginBindings.append(binding)
-        case .confFile, .libmpv:
+          keyEquivalents.append(binding)
+          if !binding.isEnabled {
+            pluginKeyConflicts.append(binding)
+          }
+        case .savedFilter:
+          // include disabled bindings: need to set their menu item key equivs to nil
+          keyEquivalents.append(binding)
+        case .confFile:
           if binding.isEnabled { // don't care about disabled bindings here
             mpvBindings.append(binding)
           }
@@ -792,9 +788,41 @@ class MenuController: NSObject, NSMenuDelegate {
           break
       }
     }
+    // Show Plugin menu error notice if there are binding conflicts:
+    pluginErrorNotice.isHidden = (pluginKeyConflicts.count == 0)
 
-    updatePluginMenuKeyEquivalents(from: pluginBindings)
+    updateMenuItems(from: keyEquivalents)
 
+    associateKeyEquivalents(with: mpvBindings)
+  }
+
+  private func updateMenuItems(from bindings: [InputBinding]) {
+    for binding in bindings {
+      guard let menuItem = binding.menuItem else { continue }
+
+      if binding.isEnabled {
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: binding.keyMapping.normalizedMpvKey) {
+          menuItem.keyEquivalent = kEqv
+          menuItem.keyEquivalentModifierMask = kMdf
+          if AppInputConfig.logBindingsRebuild {
+            Logger.log("Updated keyEquivalent for \"\(binding.keyMapping.normalizedMpvKey)\" -> \"\(menuItem.title)\"", level: .verbose)
+          }
+        } else {
+          Logger.log("Failed to get MacOS key equivalent for \"\(binding.keyMapping.normalizedMpvKey)\"", level: .error)
+        }
+      } else {
+        // Conflict! Key binding already reserved
+        menuItem.keyEquivalent = ""
+        menuItem.keyEquivalentModifierMask = []
+        if AppInputConfig.logBindingsRebuild {
+          Logger.log("Nulled out keyEquivalent for \"\(menuItem.title)\"", level: .verbose)
+        }
+      }
+    }
+    Logger.log("Updated keyEquivalents for \(bindings.count) menu items ", level: .verbose)
+  }
+
+  private func associateKeyEquivalents(with mpvBindings: [InputBinding]) {
     var settings: [(NSMenuItem, Bool, [String], Bool, ClosedRange<Double>?, String?)] = [
       (deleteCurrentFile, true, ["delete-current-file"], false, nil, nil),
       (savePlaylist, true, ["save-playlist"], false, nil, nil),
@@ -863,9 +891,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
     settings.forEach { (menuItem, isIINACmd, actions, normalizeLastNum, numRange, l10nKey) in
       var bound = false
-      for bindingRow in mpvBindings {
-        guard bindingRow.isEnabled else { continue }
-        let kb = bindingRow.keyMapping
+      for binding in mpvBindings {
+        guard binding.isEnabled else { continue }
+        let kb = binding.keyMapping
         guard kb.isIINACommand == isIINACmd else { continue }
         let (sameAction, value) = sameKeyAction(kb.action, actions, normalizeLastNum, numRange)
         if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
@@ -876,8 +904,8 @@ class MenuController: NSObject, NSMenuDelegate {
             menuItem.representedObject = value
           }
           bound = true
-          bindingRow.associatedMenuItem = menuItem  // so we can indicate it in UI
-          bindingRow.displayMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
+          binding.associatedMenuItem = menuItem  // so we can indicate it in UI
+          binding.displayMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
           break
         }
       }

@@ -78,7 +78,7 @@ class AppInputConfigBuilder {
       var countOfWeakSectionBindings: Int = 0
 
       // Iterate from bottom to the top of the "stack":
-      for enabledSectionMeta in sectionStack.sectionsEnabled.reversed() {
+      for enabledSectionMeta in sectionStack.sectionsEnabled {
         if AppInputConfig.logBindingsRebuild {
           log("RebuildBindings: examining enabled section: \"\(enabledSectionMeta.name)\"", level: .error)
         }
@@ -88,7 +88,7 @@ class AppInputConfigBuilder {
           continue
         }
 
-        if inputSection.origin == .confFile && inputSection.name == DefaultInputSection.NAME {
+        if inputSection.origin == .confFile && inputSection.name == SharedInputSection.DEFAULT_SECTION_NAME {
           countOfDefaultSectionBindings = inputSection.keyMappingList.count
         } else if !inputSection.isForce {
           countOfWeakSectionBindings += inputSection.keyMappingList.count
@@ -176,7 +176,7 @@ class AppInputConfigBuilder {
         Logger.log("Modified binding to remove redundant section specifier (\"\(destinationSectionName)\") for key: \(keyMapping.rawKey)", level: .verbose)
       } else {
         Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\" for key: \(keyMapping.rawKey)", level: .verbose)
-        binding.displayMessage = "Adding to input sections other than \"\(DefaultInputSection.NAME)\" is not supported"
+        binding.displayMessage = "Adding bindings to other input sections is not supported"
         binding.isEnabled = false
         return binding
       }

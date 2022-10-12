@@ -29,6 +29,7 @@ class InputBinding: NSObject {
    - "default", if origin == .confFile
    - The input section name, if origin == .libmpv
    - The Plugins section name, if origin == .iinaPlugin
+   - The Video or Audio Filters section name, if origin == .savedFilter
    */
   var srcSectionName: String
   var isEnabled: Bool
@@ -60,12 +61,12 @@ class InputBinding: NSObject {
     }
   }
 
-  private var menuItemMapping: PluginKeyMapping? {
-    return self.keyMapping as? PluginKeyMapping
+  private var menuItemMapping: MenuItemMapping? {
+    return self.keyMapping as? MenuItemMapping
   }
 
   /*
-   Will be non-nil for all origin == `.iinaPlugin`, `.videoFilter`, and some `.conf`
+   Will be non-nil for all origin == `.iinaPlugin`, `.savedFilter`, and some `.conf`
    */
   var menuItem: NSMenuItem? {
     get {
@@ -104,9 +105,9 @@ class InputBinding: NSObject {
   }
 
   func getActionColumnDisplay(raw: Bool) -> String {
-    if origin == .iinaPlugin {
-      // IINA plugins do not map directly to mpv commands
-      return keyMapping.comment ?? ""
+    if let menuItemMapping = menuItemMapping {
+      // These don't map directly to mpv commands, but have a description stored in the comment
+      return menuItemMapping.comment ?? ""
     } else {
       return raw ? keyMapping.rawAction : keyMapping.readableCommand
     }

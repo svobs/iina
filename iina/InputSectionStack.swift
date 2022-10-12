@@ -37,33 +37,45 @@ class InputSectionStack {
   // Contains static sections which occupy the bottom of every stack.
   // Sort of like a prototype, but a change to any of these sections will immediately affects all players.
   static let shared = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
-                                        initialEnabledSections: [DefaultInputSection(), PluginsInputSection()])
+                                        initialEnabledSections: [
+                                        SharedInputSection(name: SharedInputSection.DEFAULT_SECTION_NAME, isForce: true, origin: .confFile),
+                                        SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
+                                        SharedInputSection(name: SharedInputSection.VIDEO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
+                                        SharedInputSection(name: SharedInputSection.PLUGINS_SECTION_NAME, isForce: false, origin: .iinaPlugin)
+                                        ])
 
-  static func replaceDefaultSectionBindings(_ bindings: [KeyMapping]) {
+  // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
+  // If this method returns `true`, the caller is expected to call `AppInputConfig.rebuildCurrent()`, either synchronously or asynx.
+  @discardableResult
+  static func replaceBindings(forSharedSectionName: String, with mappings: [KeyMapping], onlyIfDifferent: Bool = false) -> Bool {
+    var doReplace = true
     dq.sync {
-      if let defaultSection = shared.sectionsDefined[DefaultInputSection.NAME] as? DefaultInputSection {
-        defaultSection.setKeyMappingList(bindings)
-      }
-    }
-  }
+      if let sharedSection = shared.sectionsDefined[forSharedSectionName] as? SharedInputSection {
 
-  static func replacePluginsSectionBindings(_ bindings: [KeyMapping]) -> Bool {
-    var changed = false
-    dq.sync {
-      if let pluginsSection = shared.sectionsDefined[PluginsInputSection.NAME] as? PluginsInputSection {
-        // Try to minimize duplicate work by detecting when there is no change.
-        let existingCount = pluginsSection.keyMappingList.count
-        let newCount = bindings.count
-        // TODO: get more sophisticated than this simple check
-        if !(existingCount == 0 && newCount == 0) {
-          changed = true
-          // Seting this triggers a rebuild of all active bindings:
-          pluginsSection.setKeyMappingList(bindings)
+        if onlyIfDifferent {
+          let existingCount = sharedSection.keyMappingList.count
+          let newCount = mappings.count
+          // TODO: get more sophisticated than this simple case
+          let didChange = !(existingCount == 0 && newCount == 0)
+          doReplace = didChange
+        }
+
+        if doReplace {
+          sharedSection.setKeyMappingList(mappings)
         }
       }
     }
-    Logger.log("Input section \"\(PluginsInputSection.NAME)\" changed = \(changed)")
-    return changed
+    return doReplace
+  }
+
+  @discardableResult
+  static func replaceDefaultSectionBindings(_ mappings: [KeyMapping]) -> Bool {
+    return self.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: mappings)
+  }
+
+  // Try to minimize duplicate work by detecting when there is no change.
+  static func replacePluginsSectionBindings(_ mappings: [KeyMapping]) -> Bool {
+    return self.replaceBindings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
   }
 
   // MARK: Single player instance
@@ -93,8 +105,11 @@ class InputSectionStack {
     }
 
     for section in sections {
+      if AppInputConfig.logBindingsRebuild {
+        log("CreateStack: Adding initial enabled section: \"\(section.name)\"", level: .verbose)
+      }
       self.sectionsDefined[section.name] = section
-      self.sectionsEnabled.prepend(EnabledSectionMeta(name: section.name, isExclusive: false))
+      self.sectionsEnabled.append(EnabledSectionMeta(name: section.name, isExclusive: false))
     }
   }
 
@@ -194,7 +209,7 @@ class InputSectionStack {
       // This may alter the section's position in the stack, which changes precedence.
       sectionsEnabled.remove({ $0.name == sectionName })
 
-      sectionsEnabled.prepend(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
+      sectionsEnabled.append(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
       log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
     }
   }

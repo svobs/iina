@@ -216,30 +216,30 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
   }
 }
 
-// This class is a little bit of a hurried kludge, so that bindings set from IINA plugins could go everywhere
-// that mpv's bindings can go, but instead of an action string each contains a reference to a menu item in the Plugin menu.
-class PluginKeyMapping: KeyMapping {
+// This class is a little bit of a hurried kludge, so that bindings for menu items could go everywhere that mpv's bindings can go,
+// but instead of an action string each contains a reference to a menu item.
+class MenuItemMapping: KeyMapping {
   let menuItem: NSMenuItem
-  let pluginName: String
+  let sourceName: String
   
-  init(rawKey: String, pluginName: String, menuItem: NSMenuItem, bindingID: Int? = nil) {
+  init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String, bindingID: Int? = nil) {
     self.menuItem = menuItem
-    self.pluginName = pluginName
+    self.sourceName = sourceName
 
     // Store description in `comment`
-    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: "Plugin > \(pluginName) > \"\(menuItem.title)\"", bindingID: bindingID)
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: actionDescription, bindingID: bindingID)
   }
 
   required init(from decoder: Decoder) throws {
-    Logger.fatal("init(from:) is not supported for PluginKeyMapping")
+    Logger.fatal("init(from:) is not supported for MenuItemMapping")
   }
 
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
-    fatalError("init(pasteboardPropertyList:ofType:) is not supported for PluginKeyMapping")
+    fatalError("init(pasteboardPropertyList:ofType:) is not supported for MenuItemMapping")
   }
 
   public override var description: String {
-    return "PluginKeyMapping(\"\(rawKey)\" -> \"\(pluginName)\":\"\(menuItem.title)\""
+    return "MenuItemMapping(\"\(rawKey)\" -> \"\(sourceName)\":\"\(menuItem.title)\""
   }
 
   override var readableAction: String {

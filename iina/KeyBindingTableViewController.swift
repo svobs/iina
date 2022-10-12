@@ -134,7 +134,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
               case .libmpv:
                 imageView.image = NSImage(systemSymbolName: "applescript.fill", accessibilityDescription: nil)!
                 imageView.contentTintColor = NSColor.systemMint
-              case .videoFilter:
+              case .savedFilter:
                 imageView.image = NSImage(systemSymbolName: "camera.filters", accessibilityDescription: nil)!
                 imageView.contentTintColor = NSColor.systemMint
               default:
@@ -250,7 +250,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let row = bindingTableStore.getBindingRow(at: rowIndex)
-    if let row = row, row.canBeCopied {
+    if let row = row, row.isEditableByUser {
       return row.keyMapping
     }
     return nil
@@ -757,8 +757,11 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       let culprit: String
       switch clickedRow.origin {
         case .iinaPlugin:
-          let pluginName = (clickedRow.keyMapping as? PluginKeyMapping)?.pluginName ?? "<ERROR>"
-          culprit = "the IINA plugin \"\(pluginName)\""
+          let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
+          culprit = "the IINA plugin \"\(sourceName)\""
+        case .savedFilter:
+          let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
+          culprit = "the saved filter \"\(sourceName)\""
         case .libmpv:
           culprit = "a Lua script or other mpv interface"
         default:

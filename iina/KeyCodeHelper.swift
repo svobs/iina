@@ -23,6 +23,9 @@ fileprivate let modifierOrder: [String: Int] = [
 ]
 
 fileprivate let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
+fileprivate let modifierFlagsToMpv: [(NSEvent.ModifierFlags, String)] = [(.control, CTRL_KEY), (.option, ALT_KEY), (.shift, SHIFT_KEY), (.command, META_KEY)]
+
+fileprivate let whitespacesAndNulls = CharacterSet.whitespaces.union(CharacterSet(["\0"]))
 
 class KeyCodeHelper {
 
@@ -420,6 +423,7 @@ class KeyCodeHelper {
     return normalizedList.joined(separator: "-")
   }
 
+  // Converts an mpv-formatted key string to a (key, modifiers) pair suitable for assignment to a MacOS menu item.
   // IMPORTANT: `mpvKeyCode` must be normalized first! Use KeyCodeHelper.normalizeMpv().
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
     let splitted = mpvKeyCode.components(separatedBy: "+")
@@ -443,6 +447,7 @@ class KeyCodeHelper {
     return (key, modifiers)
   }
 
+  // Formats a MacOS (key, modifiers) pair into a MacOS-formatted display string.
   static func readableString(fromKey key: String, modifiers: NSEvent.ModifierFlags) -> String {
     var key = key
     var modifiers = modifiers
@@ -453,6 +458,19 @@ class KeyCodeHelper {
     return modifierSymbols.map { modifiers.contains($0.0) ? $0.1 : "" }
       .joined()
       .appending(key)
+  }
+
+  static func macOSToMpv(key: String, modifiers: NSEvent.ModifierFlags) -> String {
+    var mpvTokens: [String] = []
+    for (modifierFlag, mpvModifier) in modifierFlagsToMpv {
+      if modifiers.contains(modifierFlag) {
+        mpvTokens.append(mpvModifier)
+      }
+    }
+    // TODO: investigate why saved filters have trailing null chars in their `shortcutKey` field
+    let cleanKey = key.trimmingCharacters(in: whitespacesAndNulls)
+    mpvTokens.append(cleanKey)
+    return mpvTokens.joined(separator: "+")
   }
 }
 
