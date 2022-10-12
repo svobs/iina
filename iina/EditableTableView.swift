@@ -104,7 +104,7 @@ class EditableTableView: NSTableView {
   // MARK: In-line cell editing
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-    if let event = event, event.type == .leftMouseDown {
+    if let event = event, event.type == .leftMouseDown, event.modifierFlags.isEmpty {
       if let editableTextField = responder as? EditableTextField, let cellEditTracker = cellEditTracker {
         // Unortunately, the event with event.clickCount==2 does not seem to present itself here.
         // Workaround: pass everything to the EditableTextField, which does see double-click.
