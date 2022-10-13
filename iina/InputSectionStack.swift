@@ -45,7 +45,7 @@ class InputSectionStack {
                                         ])
 
   // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
-  // If this method returns `true`, the caller is expected to call `AppInputConfig.rebuildCurrent()`, either synchronously or asynx.
+  // If this method returns `true`, the caller is expected to call `AppInputConfig.rebuildCurrent()`, either synchronously or async.
   @discardableResult
   static func replaceBindings(forSharedSectionName: String, with mappings: [KeyMapping], onlyIfDifferent: Bool = false) -> Bool {
     var doReplace = true
@@ -66,11 +66,6 @@ class InputSectionStack {
       }
     }
     return doReplace
-  }
-
-  @discardableResult
-  static func replaceDefaultSectionBindings(_ mappings: [KeyMapping]) -> Bool {
-    return self.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: mappings)
   }
 
   // Try to minimize duplicate work by detecting when there is no change.

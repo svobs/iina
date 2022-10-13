@@ -398,18 +398,10 @@ class InputBindingTableStore {
    This is needed so that animations can work. But InputBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func pushDefaultSectionChange(_ defaultSectionBindings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
-    InputSectionStack.replaceDefaultSectionBindings(defaultSectionBindings)
+  func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
+    InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: defaultSectionMappings)
 
-    DispatchQueue.main.async {
-      let appInputConfigNew = AppInputConfig.rebuildCurrent(thenNotifyPrefsUI: false)
-      guard appInputConfigNew.bindingCandidateList.count >= defaultSectionBindings.count else {
-        Logger.log("Something went wrong: output binding count (\(appInputConfigNew.bindingCandidateList.count)) is less than input bindings count (\(defaultSectionBindings.count))", level: .error)
-        return
-      }
-
-      self.appInputConfigDidChange(appInputConfigNew, tableChange)
-    }
+    AppInputConfig.rebuildCurrent(withBindingsTableChange: tableChange)
   }
 
   /*

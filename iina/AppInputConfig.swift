@@ -28,51 +28,35 @@ class AppInputConfig {
    When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
    as notifies the other callbacks supplied here as needed.
 
-   Should be run on the main thread. For other threads, see `rebuildCurrentAsync()`.
-
-   Generally speaking, if the return value of this method is not used, then `thenNotifyPrefsUI` shold be set to true.
-   It should only be false if called synchronously by the Key Bindings UI.
+   The param `withBindingsTableChange` allows for finer-grained updates to the Key Bindings table in the Preferences UI.
+   It is optional and only used when called directly from the table itself.
    */
-  @discardableResult
-  static func rebuildCurrent(thenNotifyPrefsUI: Bool = true) -> AppInputConfig {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
-
-    guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-      Logger.fatal("rebuildCurrent(): no active player!")
-    }
-
-    let builder = activePlayerInputConfig.makeAppInputConfigBuilder()
-    let newAppBindings = builder.build()
-
-    // This will update all standard menu item bindings, and also update the isMenuItem status of each:
-    (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalents(from: newAppBindings.bindingCandidateList)
-
-    AppInputConfig.current = newAppBindings
-
-    if thenNotifyPrefsUI {
-      // Notify Key Bindings table in prefs UI
-      (NSApp.delegate as! AppDelegate).bindingTableStore.appInputConfigDidChange(newAppBindings)
-    }
-
-    return newAppBindings
-  }
-
-  // Same as `rebuildCurrent()`, but kicks off an async task and notifies Key Bindings table
-  static func rebuildCurrentAsync() {
-    dispatchPrecondition(condition: .notOnQueue(DispatchQueue.main))
-
+  static func rebuildCurrent(withBindingsTableChange tableChange: TableChangeByRowIndex? = nil) {
     let rebuildVersion = AppInputConfig.lastBuildVersion + 1
     Logger.log("Requesting app active bindings rebuild (v\(rebuildVersion))", level: .verbose)
 
     DispatchQueue.main.async {
-      // Optimization: drop all but the most recent request
-      if AppInputConfig.lastBuildVersion >= rebuildVersion {
+      // Optimization: drop all but the most recent request (although never drop an explicit TableChange request)
+      if tableChange == nil && AppInputConfig.lastBuildVersion >= rebuildVersion {
         return
       }
       AppInputConfig.lastBuildVersion = rebuildVersion
       Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
 
-      rebuildCurrent(thenNotifyPrefsUI: true)
+      guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
+        Logger.fatal("rebuildCurrent(): no active player!")
+      }
+
+      let builder = activePlayerInputConfig.makeAppInputConfigBuilder()
+      let appInputConfig = builder.build()
+
+      // This will update all standard menu item bindings, and also update the isMenuItem status of each:
+      (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalents(from: appInputConfig.bindingCandidateList)
+
+      AppInputConfig.current = appInputConfig
+
+      // Notify Key Bindings table in prefs UI
+      (NSApp.delegate as! AppDelegate).bindingTableStore.appInputConfigDidChange(appInputConfig, tableChange)
     }
   }
 

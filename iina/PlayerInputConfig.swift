@@ -109,17 +109,17 @@ class PlayerInputConfig {
 
   func defineSection(_ inputSection: MPVInputSection) {
     sectionStack.defineSection(inputSection)
-    AppInputConfig.rebuildCurrentAsync()
+    AppInputConfig.rebuildCurrent()
   }
 
   func enableSection(_ sectionName: String, _ flags: [String]) {
     sectionStack.enableSection(sectionName, flags)
-    AppInputConfig.rebuildCurrentAsync()
+    AppInputConfig.rebuildCurrent()
   }
 
   func disableSection(_ sectionName: String) {
     sectionStack.disableSection(sectionName)
-    AppInputConfig.rebuildCurrentAsync()
+    AppInputConfig.rebuildCurrent()
   }
 
   // MARK: Key resolution
