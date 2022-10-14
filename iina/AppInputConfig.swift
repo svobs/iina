@@ -13,6 +13,10 @@ class AppInputConfig {
   
   // MARK: Static
 
+  static let inputConfigFileHandler = InputConfigFileHandler()
+  static let inputConfigTableStore = InputConfigTableStore()
+  static let bindingTableStore = InputBindingTableStore()
+
   static var logBindingsRebuild: Bool {
     Preference.bool(for: .logKeyBindingsRebuild)
   }
@@ -40,6 +44,10 @@ class AppInputConfig {
       if tableChange == nil && AppInputConfig.lastBuildVersion >= rebuildVersion {
         return
       }
+      if AppInputConfig.lastBuildVersion == 0 {
+        // Initial load
+        inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
+      }
       AppInputConfig.lastBuildVersion = rebuildVersion
       Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
 
@@ -56,7 +64,7 @@ class AppInputConfig {
       AppInputConfig.current = appInputConfig
 
       // Notify Key Bindings table in prefs UI
-      (NSApp.delegate as! AppDelegate).bindingTableStore.appInputConfigDidChange(appInputConfig, tableChange)
+      AppInputConfig.bindingTableStore.appInputConfigDidChange(appInputConfig, tableChange)
     }
   }
 

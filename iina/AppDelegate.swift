@@ -88,13 +88,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @IBOutlet weak var dockMenu: NSMenu!
 
-  // Input bindings
-  let inputConfigFileHandler = InputConfigFileHandler()
-  let inputConfigTableStore = InputConfigTableStore()
-  let bindingTableStore = InputBindingTableStore()
-
   private func getReady() {
-    inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
+    AppInputConfig.rebuildCurrent()
     menuController.bindMenuItems()
     isReady = true
   }

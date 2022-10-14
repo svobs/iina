@@ -44,7 +44,7 @@ class InputConfigTableStore {
       Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
       Preference.set(newValue, for: .currentInputConfigName)
 
-      (NSApp.delegate as! AppDelegate).inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
+      AppInputConfig.inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
     }
   }
 

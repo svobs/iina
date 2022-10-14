@@ -128,6 +128,8 @@ class JavascriptPlugin: NSObject {
         if let plugin = JavascriptPlugin(filename: path.lastPathComponent, externalURL: isDev ? path : nil) {
           if identifiers.contains(plugin.identifier) {
             Logger.log("Another plugin is already installed with identifier \"\(plugin.identifier)\"", level: .error)
+            // This code can run at startup and is called by the PlayerCore constructor during a static variable init.
+            // Launch the modal window in a new task so that it does not block and lock up the whole app.
             DispatchQueue.main.async {
               Utility.showAlert("duplicated_plugin_id", comment: nil, arguments: [plugin.identifier])
               plugin.identifier += ".\(UUID().uuidString)"

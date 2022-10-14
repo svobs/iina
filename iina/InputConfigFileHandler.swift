@@ -11,7 +11,7 @@ import Foundation
 // Encapsulates load/save functionality for the *current* config file
 class InputConfigFileHandler {
   private unowned var inputConfigTableStore: InputConfigTableStore {
-    (NSApp.delegate as! AppDelegate).inputConfigTableStore
+    AppInputConfig.inputConfigTableStore
   }
   private var currentConfigFileData: InputConfigFile? = nil
 
@@ -32,7 +32,7 @@ class InputConfigFileHandler {
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
     // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
-    (NSApp.delegate as! AppDelegate).bindingTableStore.pushDefaultSectionChange(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
+    AppInputConfig.bindingTableStore.pushDefaultSectionChange(defaultSectionBindings, TableChangeByRowIndex(.reloadAll))
   }
 
   // Input Config File: Save

@@ -28,11 +28,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private var inputConfigTableStore: InputConfigTableStore {
-    return (NSApp.delegate as! AppDelegate).inputConfigTableStore
+    return AppInputConfig.inputConfigTableStore
   }
 
   private var bindingTableStore: InputBindingTableStore {
-    return (NSApp.delegate as! AppDelegate).bindingTableStore
+    return AppInputConfig.bindingTableStore
   }
 
   private var configTableController: InputConfigTableViewController? = nil
