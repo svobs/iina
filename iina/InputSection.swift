@@ -22,9 +22,10 @@ protocol InputSection: CustomStringConvertible {
   var keyMappingList: [KeyMapping] { get }
 
   /*
-   If true, indicates that all bindings in `keyMappingList` are "force" (AKA "strong")
-   in the mpv vocabulary: each will always override any previous binding with the same key.
-   If false, indicates that they are all "weak": each will only be enabled if no previous binding with the same key has been set
+   - If true, indicates that all bindings in `keyMappingList` are "force" (AKA "strong")
+     according to the mpv vocabulary: each will always override any previous binding with the same key.
+   - If false, indicates that they are all "weak" (AKA "default", AKA "builtin"): each will only be enabled
+     if no previous binding with the same key has been set.
    */
   var isForce: Bool { get }
 
