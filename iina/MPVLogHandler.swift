@@ -157,7 +157,7 @@ class MPVLogHandler {
     }
 
     let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
-    Logger.log("define-section: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
+    Logger.log("Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       let keyMappingList = section.keyMappingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }
       let bindingsString: String
@@ -190,7 +190,7 @@ class MPVLogHandler {
     let name = String(msg[nameRange])
     let flags = parseFlags(String(msg[flagsRange]))
 
-    Logger.log("enable-section: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
+    Logger.log("Got 'enable-section' from mpv: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
     player.inputConfig.enableSection(name, flags)
     return true
   }
