@@ -9,25 +9,22 @@
 import Foundation
 import Carbon
 
-// mpv modifiers in normal form:
-fileprivate let CTRL_KEY = "Ctrl"
-fileprivate let ALT_KEY = "Alt"
-fileprivate let SHIFT_KEY = "Shift"
-fileprivate let META_KEY = "Meta"
-
-fileprivate let modifierOrder: [String: Int] = [
-  CTRL_KEY: 0,
-  ALT_KEY: 1,
-  SHIFT_KEY: 2,
-  META_KEY: 3
-]
-
-fileprivate let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
-fileprivate let modifierFlagsToMpv: [(NSEvent.ModifierFlags, String)] = [(.control, CTRL_KEY), (.option, ALT_KEY), (.shift, SHIFT_KEY), (.command, META_KEY)]
-
-fileprivate let whitespacesAndNulls = CharacterSet.whitespaces.union(CharacterSet(["\0"]))
-
 class KeyCodeHelper {
+  // mpv modifiers in normal form:
+  static let CTRL_KEY = "Ctrl"
+  static let ALT_KEY = "Alt"
+  static let SHIFT_KEY = "Shift"
+  static let META_KEY = "Meta"
+
+  fileprivate static let modifierOrder: [String: Int] = [
+    CTRL_KEY: 0,
+    ALT_KEY: 1,
+    SHIFT_KEY: 2,
+    META_KEY: 3
+  ]
+
+  static let modifierSymbols: [(NSEvent.ModifierFlags, String)] = [(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")]
+  static let modifierFlagsToMpv: [(NSEvent.ModifierFlags, String)] = [(.control, CTRL_KEY), (.option, ALT_KEY), (.shift, SHIFT_KEY), (.command, META_KEY)]
 
   static let keyMap: [UInt16 : (String, String?)] = [
     0x00: ("a", "A"),
@@ -467,8 +464,11 @@ class KeyCodeHelper {
         mpvTokens.append(mpvModifier)
       }
     }
-    // TODO: investigate why saved filters have trailing null chars in their `shortcutKey` field
-    let cleanKey = key.trimmingCharacters(in: whitespacesAndNulls)
+
+    // MacOS key equivalents always display single characters in uppercase, but mpv will interpret this as adding "Shift".
+    // If there is supposed to be a Shift key pressed, it will have been in the modifier flags above,
+    // and converted to explicit "+Shift".
+    let cleanKey = key.count == 1 ? key.lowercased() : key
     mpvTokens.append(cleanKey)
     return mpvTokens.joined(separator: "+")
   }

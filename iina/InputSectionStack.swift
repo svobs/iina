@@ -45,9 +45,9 @@ class InputSectionStack {
                                         ])
 
   // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
-  // If this method returns `true`, the caller is expected to call `AppInputConfig.rebuildCurrent()`, either synchronously or async.
-  @discardableResult
-  static func replaceBindings(forSharedSectionName: String, with mappings: [KeyMapping], onlyIfDifferent: Bool = false) -> Bool {
+  static func replaceBindings(forSharedSectionName: String, with mappings: [KeyMapping],
+                              onlyIfDifferent: Bool = false,
+                              doRebuildAfter: Bool = true) {
     var doReplace = true
     dq.sync {
       if let sharedSection = shared.sectionsDefined[forSharedSectionName] as? SharedInputSection {
@@ -62,15 +62,17 @@ class InputSectionStack {
 
         if doReplace {
           sharedSection.setKeyMappingList(mappings)
+          if doRebuildAfter {
+            AppInputConfig.rebuildCurrent()
+          }
         }
       }
     }
-    return doReplace
   }
 
   // Try to minimize duplicate work by detecting when there is no change.
-  static func replacePluginsSectionBindings(_ mappings: [KeyMapping]) -> Bool {
-    return self.replaceBindings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
+  static func replacePluginsSectionBindings(_ mappings: [KeyMapping]) {
+    self.replaceBindings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
   }
 
   // MARK: Single player instance

@@ -8,10 +8,10 @@
 
 import Foundation
 
-fileprivate let nonConfTextColor = NSColor.systemGreen
-fileprivate let pluginIconColor = NSColor.systemGreen
-fileprivate let libmpvIconColor = NSColor.systemGreen
-fileprivate let filterIconColor = NSColor.systemGreen
+fileprivate let nonConfTextColor = NSColor.systemBlue
+fileprivate let pluginIconColor = NSColor.systemBlue
+fileprivate let libmpvIconColor = NSColor.systemBlue
+fileprivate let filterIconColor = NSColor.systemBlue
 
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0

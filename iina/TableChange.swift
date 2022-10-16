@@ -288,7 +288,7 @@ class TableChangeByRowIndex: TableChange {
      https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
      */
     let steps = newRows.difference(from: oldRows).steps
-    Logger.log("Building table diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    Logger.log("Computing table animation: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
     for step in steps {
       switch step {
         case let .remove(_, index):

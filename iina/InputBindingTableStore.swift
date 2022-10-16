@@ -399,7 +399,9 @@ class InputBindingTableStore {
    and the two must match or else visual bugs will result.
    */
   func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
-    InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: defaultSectionMappings)
+    InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME,
+                                      with: defaultSectionMappings,
+                                      doRebuildAfter: false)
 
     AppInputConfig.rebuildCurrent(withBindingsTableChange: tableChange)
   }

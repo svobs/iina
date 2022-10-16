@@ -572,9 +572,7 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log("Found \(keyMappings.count) key equivalents in Plugin menu items", level: .verbose)
 
     // This will kick off a series of updates set any key equivalents and update them as needed
-    if InputSectionStack.replacePluginsSectionBindings(keyMappings) {
-      AppInputConfig.rebuildCurrent()
-    }
+    InputSectionStack.replacePluginsSectionBindings(keyMappings)
   }
 
   @discardableResult
@@ -759,9 +757,13 @@ class MenuController: NSObject, NSMenuDelegate {
       menuItem.title = filter.name
       menuItem.action = isVideo ? #selector(MainWindowController.menuToggleVideoFilterString(_:)) : #selector(MainWindowController.menuToggleAudioFilterString(_:))
       menuItem.keyEquivalent = ""
-      menuItem.keyEquivalentModifierMask = filter.shortcutKeyModifiers
       menuItem.representedObject = filter.filterString
       menu.addItem(menuItem)
+
+      if AppInputConfig.logBindingsRebuild {
+        let readableKey = KeyCodeHelper.readableString(fromKey: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
+        Logger.log("Updating menu item for \(isVideo ? "video" : "audio") filter \"\(filter.name)\" (key=\(readableKey))")
+      }
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {

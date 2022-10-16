@@ -136,6 +136,7 @@ class JavascriptPlugin: NSObject {
             }
           }
           identifiers.insert(plugin.identifier)
+          Logger.log("Finished loading plugin: \"\(plugin.identifier)\"")
           return plugin
         } else {
           Logger.log("Failed to load plugin: \"\(path)\"", level: .error)
@@ -294,7 +295,7 @@ class JavascriptPlugin: NSObject {
   init?(filename: String, externalURL: URL? = nil) {
     // find package
     let url = externalURL ?? Utility.pluginsURL.appendingPathComponent(filename)
-    Logger.log("Loading JS plugin from \(url.path)")
+    Logger.log("Loading JS plugin from \"\(url.path)\"")
     guard url.isFileURL && url.isExistingDirectory else {
       Logger.log("The plugin package doesn't exist.", level: .error)
       return nil
