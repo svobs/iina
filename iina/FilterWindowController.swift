@@ -249,7 +249,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     currentSavedFilter = savedFilters[row]
     editFilterNameTextField.stringValue = currentSavedFilter!.name
     editFilterStringTextField.stringValue = currentSavedFilter!.filterString
-    editFilterKeyRecordView.currentRawKey = currentSavedFilter!.shortcutKey
+    editFilterKeyRecordView.currentKey = currentSavedFilter!.shortcutKey
     editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter!.shortcutKeyModifiers
     editFilterKeyRecordViewLabel.stringValue = currentSavedFilter!.readableShortCutKey
     window!.beginSheet(editFilterSheet)
