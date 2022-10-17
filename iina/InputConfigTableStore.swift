@@ -161,7 +161,7 @@ class InputConfigTableStore {
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
-    Logger.log("Adding user configs: \"\(userConfigsToAdd))")
+    Logger.log("Adding user configs: \(userConfigsToAdd)")
     guard let firstConfig = userConfigsToAdd.first else {
       return
     }
@@ -187,7 +187,7 @@ class InputConfigTableStore {
 
     if isCurrentConfig {
       guard let configIndex = configTableRows.firstIndex(of: configName) else {
-        Logger.log("Cannot find '\(configName)' in table!", level: .error)
+        Logger.log("Cannot find \"\(configName)\" in table!", level: .error)
         return
       }
       // Are we the last entry? If so, after deletion the next entry up should be selected. If not, select the next one down
@@ -196,7 +196,7 @@ class InputConfigTableStore {
 
     var userConfDictUpdated = userConfigDict
     guard userConfDictUpdated.removeValue(forKey: configName) != nil else {
-      Logger.log("Cannot remove config '\(configName)': it is not a user config!", level: .error)
+      Logger.log("Cannot remove config \"\(configName)\": it is not a user config!", level: .error)
       return
     }
     applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName, .removeRows)
@@ -211,12 +211,12 @@ class InputConfigTableStore {
     }
 
     guard userConfDictUpdated[newName] == nil else {
-      Logger.log("Cannot rename current config: a config already exists named: '\(newName)'", level: .error)
+      Logger.log("Cannot rename current config: a config already exists named: \"\(newName)\"", level: .error)
       return false
     }
 
     guard userConfDictUpdated.removeValue(forKey: currentConfigName) != nil else {
-      Logger.log("Cannot rename current config '\(currentConfigName)': it is not a user config!", level: .error)
+      Logger.log("Cannot rename current config \"\(currentConfigName)\": it is not a user config!", level: .error)
       return false
     }
 
@@ -244,7 +244,7 @@ class InputConfigTableStore {
 
     configTableRowsNew.append(contentsOf: userConfigNameList)
 
-    Logger.log("Rebuilt Config table rows (current='\(currentConfigName)'): \(configTableRowsNew)", level: .verbose)
+    Logger.log("Rebuilt Config table rows (current=\"\(currentConfigName)\"): \(configTableRowsNew)", level: .verbose)
 
     return configTableRowsNew
   }
@@ -257,9 +257,9 @@ class InputConfigTableStore {
     let currentConfigNameChanged = !self.currentConfigName.equalsIgnoreCase(currentConfigNameNew)
 
     if let userConfigDictNew = userConfigDictNew {
-      Logger.log("Saving prefs: currentInputConfigName='\(currentConfigNameNew)', inputConfigs='\(userConfigDictNew)'", level: .verbose)
+      Logger.log("Saving prefs: currentInputConfigName=\"\(currentConfigNameNew)\", inputConfigs=\(userConfigDictNew)", level: .verbose)
       guard userConfigDictNew[currentConfigNameNew] != nil else {
-        Logger.log("Cannot update: '\(userConfigDictNew)' not found in supplied config dict (\(userConfigDictNew))", level: .error)
+        Logger.log("Cannot update: \"\(currentConfigNameNew)\" not found in supplied config dict (\(userConfigDictNew))", level: .error)
         return
       }
       self.userConfigDict = userConfigDictNew

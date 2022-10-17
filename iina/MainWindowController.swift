@@ -2567,6 +2567,7 @@ class MainWindowController: PlayerWindowController {
   }
 
   func showSettingsSidebar(tab: QuickSettingViewController.TabViewType? = nil, force: Bool = false, hideIfAlreadyShown: Bool = true) {
+    Logger.log("showSettingsSidebar(): tab=\(tab?.name ?? "nil"), force=\(force), hideIfAlreadyShown=\(hideIfAlreadyShown)")
     if !force && sidebarAnimationState == .willShow || sidebarAnimationState == .willHide {
       return  // do not interrput other actions while it is animating
     }

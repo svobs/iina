@@ -513,7 +513,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
         guard InputConfigFile.loadFile(at: filePath) != nil else {
           let fileName = url.lastPathComponent
           DispatchQueue.main.async {
-            Logger.log("Error reading config file '\(filePath)'; aborting import", level: .error)
+            Logger.log("Error reading config file \"\(filePath)\"; aborting import", level: .error)
             Utility.showAlert("keybinding_config.error", arguments: [fileName], sheetWindow: self.tableView.window)
           }
           // Do not import any files if we can't parse one.
@@ -526,7 +526,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
         DispatchQueue.main.sync {  // block because we need user input to proceed
           guard self.handlePossibleExistingFile(filePath: newFilePath) else {
             // Do not proceed if user does not want to delete.
-            Logger.log("Aborting config file import: user did not delete file: \(newFilePath)", level: .verbose)
+            Logger.log("Aborting config file import: user did not delete file: \"\(newFilePath)\"")
             return
           }
         }
@@ -537,11 +537,11 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       var failedNameSet = Set<String>()
       for (newName, (filePath, newFilePath)) in createdConfigDict {
         do {
-          Logger.log("Import: copying: '\(filePath)' -> '\(newFilePath)'", level: .verbose)
+          Logger.log("Import: copying: \"\(filePath)\" -> \"\(newFilePath)\"")
           try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
         } catch let error {
           DispatchQueue.main.async {
-            Logger.log("Import: failed to copy: '\(filePath)' -> '\(newFilePath)': \(error.localizedDescription)", level: .error)
+            Logger.log("Import: failed to copy: \"\(filePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
             Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
           }
           failedNameSet.insert(newName)
@@ -553,7 +553,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       guard !configsToAdd.isEmpty else {
         return
       }
-      Logger.log("Successfully imported: \(configsToAdd.count)' input config files")
+      Logger.log("Successfully imported: \(configsToAdd.count) input config files")
 
       // update prefs & refresh UI
       self.tableStore.addUserConfigs(configsToAdd)
