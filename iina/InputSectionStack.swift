@@ -17,7 +17,7 @@ import Foundation
  */
 class InputSectionStack {
   // More than one of these is probably excessive, since there will only ever be one active player at a time making changes
-  static let dq = DispatchQueue.global(qos: .userInitiated)
+  static let dq = DispatchQueue(label: "com.collider.iina.input-bindings", qos: .userInteractive)
 
   // For storage in `sectionsEnabled`
   struct EnabledSectionMeta {
