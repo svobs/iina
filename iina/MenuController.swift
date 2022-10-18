@@ -621,7 +621,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
       // Store the item with its pair - the PlayerInputConfig will set the binding & deal with conflicts
-      let actionString = "Plugin > \(plugin.plugin.name) > \"\(menuItem.title)\""
+      let actionString = "\(plugin.plugin.name) → \"\(menuItem.title)\""
       keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: plugin.plugin.name, menuItem: menuItem, actionDescription: actionString))
     }
     if !item.items.isEmpty {
@@ -786,7 +786,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {
-        let description = "\(filterTypeString): \(filter.name)"
+        let description = "\(filterTypeString): \"\(filter.name)\""
         keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: description))
       }
     }

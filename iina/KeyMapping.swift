@@ -239,7 +239,7 @@ class MenuItemMapping: KeyMapping {
   }
 
   public override var description: String {
-    return "MenuItemMapping(\"\(rawKey)\" -> \"\(sourceName)\":\"\(menuItem.title)\""
+    return "MenuItemMapping(\"\(rawKey)\" → \"\(sourceName)\":\"\(menuItem.title)\""
   }
 
   override var readableAction: String {
