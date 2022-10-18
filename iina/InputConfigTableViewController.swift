@@ -261,10 +261,13 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
     if !newFilePathList.isEmpty {
       Logger.log("User dropped \(newFilePathList.count) new config files into table")
-      self.importConfigFiles(newFilePathList)
       info.numberOfValidItemsForDrop = newFilePathList.count
       info.animatesToDestination = true
       info.draggingFormation = DRAGGING_FORMATION
+      // Try not to block animation for I/O or user prompts
+      DispatchQueue.main.async {
+        self.importConfigFiles(newFilePathList)
+      }
       return true
     }
 
@@ -275,17 +278,21 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       info.numberOfValidItemsForDrop = bindingList.count
       info.animatesToDestination = true
       info.draggingFormation = DRAGGING_FORMATION
-      return dropBindingsIntoUserConfFile(bindingList, targetConfigName: targetConfigName)
+      // Try not to block UI. Failures should be rare here anyway
+      DispatchQueue.main.async {
+        self.dropBindingsIntoUserConfFile(bindingList, targetConfigName: targetConfigName)
+      }
+      return true
     }
 
     return false
   }
 
-  private func dropBindingsIntoUserConfFile(_ defaultSectionMappings: [KeyMapping], targetConfigName: String) -> Bool {
+  private func dropBindingsIntoUserConfFile(_ defaultSectionMappings: [KeyMapping], targetConfigName: String) {
     guard let configFilePath = requireFilePath(forConfig: targetConfigName),
           let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
       // Error. A message has already been logged and displayed to user.
-      return false
+      return
     }
 
     var fileMappings = inputConfigFile.parseBindings()
@@ -293,12 +300,10 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     inputConfigFile.replaceAllBindings(with: fileMappings)
     do {
       try inputConfigFile.saveToDisk()
-      return true
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return false
     }
   }
 
@@ -523,11 +528,16 @@ extension InputConfigTableViewController:  NSMenuDelegate {
         let newName = url.deletingPathExtension().lastPathComponent
         let newFilePath =  Utility.buildConfigFilePath(for: newName)
 
-        DispatchQueue.main.sync {  // block because we need user input to proceed
-          guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-            // Do not proceed if user does not want to delete.
-            Logger.log("Aborting config file import: user did not delete file: \"\(newFilePath)\"")
-            return
+        if filePath == newFilePath {
+          // Edge case
+          Logger.log("File is already present in input_conf directory but was missing from config list; adding it: \"\(filePath)\"")
+        } else {
+          DispatchQueue.main.sync {  // block because we need user input to proceed
+            guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+              // Do not proceed if user does not want to delete.
+              Logger.log("Aborting config file import: user did not delete file: \"\(newFilePath)\"")
+              return
+            }
           }
         }
         createdConfigDict[newName] = (filePath, newFilePath)
@@ -536,15 +546,17 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       // Copy files one by one. Allow copy errors but keep track of which failed
       var failedNameSet = Set<String>()
       for (newName, (filePath, newFilePath)) in createdConfigDict {
-        do {
-          Logger.log("Import: copying: \"\(filePath)\" -> \"\(newFilePath)\"")
-          try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
-        } catch let error {
-          DispatchQueue.main.async {
-            Logger.log("Import: failed to copy: \"\(filePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
-            Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+        if filePath != newFilePath {
+          do {
+            Logger.log("Import: copying: \"\(filePath)\" -> \"\(newFilePath)\"")
+            try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+          } catch let error {
+            DispatchQueue.main.async {
+              Logger.log("Import: failed to copy: \"\(filePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
+              Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+            }
+            failedNameSet.insert(newName)
           }
-          failedNameSet.insert(newName)
         }
       }
 
