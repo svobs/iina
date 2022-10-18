@@ -99,6 +99,16 @@ struct Constants {
     static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
     static let keyBinding = "Binding"
     static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
+    static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Panel")
+    static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Panel")
+    static let playlistPanel = NSLocalizedString("menu.playlist", comment: "Show Playlist Panel")
+    static let hidePlaylistPanel = NSLocalizedString("menu.hide_playlist", comment: "Hide Playlist Panel")
+    static let videoPanel = NSLocalizedString("menu.video", comment: "Show Video Panel")
+    static let hideVideoPanel = NSLocalizedString("menu.hide_video", comment: "Hide Video Panel")
+    static let audioPanel = NSLocalizedString("menu.audio", comment: "Show Audio Panel")
+    static let hideAudioPanel = NSLocalizedString("menu.hide_audio", comment: "Hide Audio Panel")
+    static let subtitlesPanel = NSLocalizedString("menu.subtitles", comment: "Show Subtitles Panel")
+    static let hideSubtitlesPanel = NSLocalizedString("menu.hide_subtitles", comment: "Hide Subtitles Panel")
   }
   struct Time {
     static let infinite = VideoTime(999, 0, 0)
