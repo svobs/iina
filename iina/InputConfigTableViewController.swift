@@ -13,6 +13,7 @@ import Cocoa
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
+  private let enableInlineCreate = false
 
   private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigStore!
@@ -59,9 +60,9 @@ class InputConfigTableViewController: NSObject {
       tableStore.changeCurrentConfigToDefault()
       return
     }
-    
+
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-    let printedIndexesMsg = "Selected rows are now: \(self.tableView.selectedRowIndexes.reduce("[", { "\($0) \($1)"  })) ]"
+    let printedIndexesMsg = "Selected indexes are now: \(self.tableView.selectedRowIndexes.map{$0})"
     Logger.log("Selected row: '\(configName)' (index \(index)). \(printedIndexesMsg)", level: .verbose)
   }
 }
@@ -123,6 +124,43 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   // User finished editing (callback from EditableTextField).
   // Renames current comfig & its file on disk
   func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
+    if self.tableStore.isAddingNewConfigInline { // New file
+      let succeeded = self.completeInlineAdd(newName: newName)
+      if !succeeded {
+        tableStore.cancelInlineAdd()
+      }
+      return succeeded
+
+    } else { // Renaming existing file
+      return self.moveFileAndRenameCurrentConfig(newName: newName)
+    }
+  }
+
+  private func completeInlineAdd(newName: String) -> Bool {
+    guard !self.tableStore.configTableRows.contains(newName) else {
+      // Disallow overwriting another entry in list
+      Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
+      return false
+    }
+
+    let newFilePath =  Utility.buildConfigFilePath(for: newName)
+
+    // Overwrite of unrecognized file which is not in IINA's list is ok as long as we prompt the user first
+    guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+      return false  // cancel
+    }
+
+    // Make new empty file
+    if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
+      Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
+      return false
+    }
+    tableStore.completeInlineAdd(configName: newName, filePath: newFilePath)
+    return true
+  }
+
+  private func moveFileAndRenameCurrentConfig(newName: String) -> Bool {
+    // Validate name change
     guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
@@ -130,14 +168,14 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
 
     Logger.log("User renamed current config to \"\(newName)\" in editor", level: .verbose)
 
-    guard let oldFilePath = self.tableStore.currentConfigFilePath else {
-      Logger.log("Failed to find file for current config! Aborting rename", level: .error)
-      return false
-    }
-
     guard !self.tableStore.configTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
+      return false
+    }
+
+    guard let oldFilePath = self.tableStore.currentConfigFilePath else {
+      Logger.log("Failed to find file for current config! Aborting rename", level: .error)
       return false
     }
 
@@ -162,6 +200,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
     // Update config lists and update UI
     return tableStore.renameCurrentConfig(newName: newName)
   }
+
 }
 
 // MARK: NSTableViewDataSource
@@ -433,21 +472,33 @@ extension InputConfigTableViewController:  NSMenuDelegate {
 
   // Action: New Config
   @objc func createNewConfig() {
-    // prompt
-    Utility.quickPromptPanel("config.new", sheetWindow: tableView.window) { newName in
-      guard !newName.isEmpty else {
-        Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
-        return
-      }
-
-      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
-        // - new file
-        if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
-          Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
-          return false
+    if enableInlineCreate {
+      // Add a new config with no name, and immediately open an editor for it.
+      // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
+      let _ = tableStore.addNewUserConfigInline(completionHandler: { tableChange in
+        if let tc = tableChange as? TableChangeByStringElement {
+          if let selectedRowIndex = tc.newSelectedRows?.first {
+            self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
+          }
         }
-        return true
       })
+    } else {
+      // Open modal dialog and prompt user
+      Utility.quickPromptPanel("config.new", sheetWindow: tableView.window) { newName in
+        guard !newName.isEmpty else {
+          Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
+          return
+        }
+
+        self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+          // - new file
+          if !FileManager.default.createFile(atPath: newFilePath, contents: nil, attributes: nil) {
+            Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
+            return false
+          }
+          return true
+        })
+      }
     }
   }
 
@@ -493,7 +544,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       return
     }
 
-    self.tableStore.addUserConfig(name: newName, filePath: newFilePath)
+    self.tableStore.addUserConfig(configName: newName, filePath: newFilePath)
   }
 
   /*

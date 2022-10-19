@@ -54,7 +54,7 @@ class KeyBindingTableViewController: NSObject {
       tableView.draggingDestinationFeedbackStyle = .regular
     }
 
-    tableView.scrollRowToVisible(0)
+//    tableView.scrollRowToVisible(0)
   }
 
   deinit {

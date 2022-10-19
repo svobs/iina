@@ -132,11 +132,11 @@ class EditableTableView: NSTableView {
       return
     }
     guard rowIndex < numberOfRows else {
-      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) cannot be less than numberOfRows (\(numberOfRows))", level: .error)
+      Logger.log("Discarding request to edit cell: rowIndex (\(rowIndex)) cannot be >= numberOfRows (\(numberOfRows))", level: .error)
       return
     }
     guard columnIndex < numberOfColumns else {
-      Logger.log("Discarding request to edit cell: columnIndex (\(columnIndex)) cannot be less than numberOfColumns (\(numberOfColumns))", level: .error)
+      Logger.log("Discarding request to edit cell: columnIndex (\(columnIndex)) cannot be >= numberOfColumns (\(numberOfColumns))", level: .error)
       return
     }
 

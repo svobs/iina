@@ -41,7 +41,10 @@ class InputConfigStore {
       }
       return currentConfig
     } set {
-      Logger.log("Current input config changed: '\(self.currentConfigName)' -> '\(newValue)'")
+      guard !currentConfigName.equalsIgnoreCase(newValue) else {
+        return
+      }
+      Logger.log("Current input config changed: '\(currentConfigName)' -> '\(newValue)'")
       Preference.set(newValue, for: .currentInputConfigName)
 
       AppInputConfig.inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
@@ -74,6 +77,11 @@ class InputConfigStore {
    Contains names of all user configs, which are also the identifiers in the UI table.
    */
   private(set) var configTableRows: [String] = []
+
+  // When true, a blank "fake" row has been created which doesn't map to anything, and the normal
+  // rules of the table are bent a little bit to accomodate it, until the user finishes naming it.
+  // The row will also be selected, but `currentConfigName` should not change until the user submits
+  private(set) var isAddingNewConfigInline: Bool = false
 
   init() {
     configTableRows = buildConfigTableRows()
@@ -125,6 +133,14 @@ class InputConfigStore {
       Logger.log("Cannot change current config: invalid index: \(newIndex)", level: .error)
       return
     }
+    if isAddingNewConfigInline {
+      if configNameNew == "" {
+        return
+      } else {
+        cancelInlineAdd(newCurrentConfig: configNameNew)
+        return
+      }
+    }
     changeCurrentConfig(configNameNew)
   }
 
@@ -153,11 +169,46 @@ class InputConfigStore {
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
   // Posts update notification
-  func addUserConfig(name: String, filePath: String) {
-    Logger.log("Adding user config: \"\(name)\" (filePath: \(filePath))")
+  func addUserConfig(configName: String, filePath: String) {
+    Logger.log("Adding user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
-    userConfDictUpdated[name] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: name, .addRows)
+    userConfDictUpdated[configName] = filePath
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, .addRows)
+  }
+
+  func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {
+    guard !isAddingNewConfigInline else {
+      Logger.log("Already adding new user config inline (discarding request)")
+      return
+    }
+    Logger.log("Adding blank row for naming new user config")
+    isAddingNewConfigInline = true
+    applyConfigTableChange(currentConfigNameNew: currentConfigName, .addRows, completionHandler: completionHandler)
+  }
+
+  func completeInlineAdd(configName: String, filePath: String,
+                         completionHandler: TableChange.CompletionHandler? = nil) {
+    guard isAddingNewConfigInline else {
+      Logger.log("completeInlineAdd() called but isAddingNewConfigInline is false!", level: .error)
+      return
+    }
+    isAddingNewConfigInline = false
+
+    Logger.log("Completing inline add of user config: \"\(configName)\" (filePath: \(filePath))")
+    var userConfDictUpdated = userConfigDict
+    userConfDictUpdated[configName] = filePath
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, .selectionChangeOnly,
+                           completionHandler: completionHandler)
+  }
+
+  func cancelInlineAdd(newCurrentConfig: String? = nil) {
+    guard isAddingNewConfigInline else {
+      Logger.log("cancelInlineAdd() called but isAddingNewConfigInline is false!", level: .error)
+      return
+    }
+    isAddingNewConfigInline = false
+    Logger.log("Cancelling inline add", level: .verbose)
+    applyConfigTableChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName, .removeRows)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -244,17 +295,17 @@ class InputConfigStore {
 
     configTableRowsNew.append(contentsOf: userConfigNameList)
 
+    if isAddingNewConfigInline {
+      configTableRowsNew.append("")
+    }
+
     Logger.log("Rebuilt Config table rows (current=\"\(currentConfigName)\"): \(configTableRowsNew)", level: .verbose)
 
     return configTableRowsNew
   }
 
   // Replaces the current state with the given params, and fires listeners.
-  private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType) {
-    let configTableChange = TableChangeByStringElement(changeType, completionHandler: nil)
-    configTableChange.oldRows = configTableRows
-
-    let currentConfigNameChanged = !self.currentConfigName.equalsIgnoreCase(currentConfigNameNew)
+  private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
 
     if let userConfigDictNew = userConfigDictNew {
       Logger.log("Saving prefs: currentInputConfigName=\"\(currentConfigNameNew)\", inputConfigs=\(userConfigDictNew)", level: .verbose)
@@ -265,16 +316,23 @@ class InputConfigStore {
       self.userConfigDict = userConfigDictNew
     }
 
-    if currentConfigNameChanged {
-      // Keep in mind that if a failure happens this may end up changing currentConfigName to a different value than what goes in here.
-      // This will also trigger a file load a Key Bindings Table update
-      currentConfigName = currentConfigNameNew
-    }
+    currentConfigName = currentConfigNameNew
+
+    let configTableChange = TableChangeByStringElement(changeType, completionHandler: completionHandler)
+    configTableChange.scrollToFirstSelectedRow = true
+    configTableChange.oldRows = configTableRows
 
     configTableRows = buildConfigTableRows()
     configTableChange.newRows = configTableRows
-    if let currentConfigIndex = configTableRows.firstIndex(of: self.currentConfigName) {
-      configTableChange.newSelectedRows = IndexSet(integer: currentConfigIndex)
+
+    if isAddingNewConfigInline { // special case: creating an all-new config
+      // Select the new blank row, which will be the last one:
+      configTableChange.newSelectedRows = IndexSet(integer: configTableRows.count - 1)
+    } else {
+      // Always keep the current config selected
+      if let currentConfigIndex = configTableRows.firstIndex(of: self.currentConfigName) {
+        configTableChange.newSelectedRows = IndexSet(integer: currentConfigIndex)
+      }
     }
 
     // Finally, fire notification. This covers row selection too

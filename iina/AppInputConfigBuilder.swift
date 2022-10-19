@@ -161,7 +161,9 @@ class AppInputConfigBuilder {
     let binding = InputBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isEnabled: true)
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
-      Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
+      if AppInputConfig.logBindingsRebuild {
+        Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
+      }
       binding.displayMessage = "IINA does not use default-level (\"weak\") bindings"
       binding.isEnabled = false
       return binding
@@ -181,7 +183,9 @@ class AppInputConfigBuilder {
         return binding
       }
     }
-    Logger.log("Adding binding for key: \(keyMapping.rawKey)", level: .verbose)
+    if AppInputConfig.logBindingsRebuild {
+      Logger.log("Adding binding for key: \(keyMapping.rawKey)", level: .verbose)
+    }
     return binding
   }
 

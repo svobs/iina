@@ -43,6 +43,8 @@ class TableChange {
 
   var newSelectedRows: IndexSet? = nil
 
+  var scrollToFirstSelectedRow: Bool = false
+
   // If true, reload all existing rows after executing the primary differences (to cover the case that one of them may have changed)
   var reloadAllExistingRows: Bool = false
 
@@ -70,9 +72,13 @@ class TableChange {
       // Note: need to add an async() here to let the NSTableView structure updates "settle" before updating row selection.
       // Otherwise the table can end up with phantom row selections which never go away
       DispatchQueue.main.async {
-        Logger.log("Updating table selection to indexes: \(newSelectedRows.reduce("[", { "\($0) \($1)"  })) ]", level: .verbose)
+        Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
         tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
       }
+    }
+
+    if reloadAllExistingRows && self.changeType != .reloadAll {
+      tableView.reloadExistingRows()
     }
 
     if let completionHandler = completionHandler {
@@ -82,8 +88,8 @@ class TableChange {
       }
     }
 
-    if reloadAllExistingRows && self.changeType != .reloadAll {
-      tableView.reloadExistingRows()
+    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
+      tableView.scrollRowToVisible(firstSelectedRow)
     }
   }
 
