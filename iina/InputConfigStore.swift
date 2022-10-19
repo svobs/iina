@@ -164,7 +164,7 @@ class InputConfigStore {
 
     Logger.log("Changing current config to: \"\(configNameNew)\"", level: .verbose)
 
-    applyConfigTableChange(currentConfigNameNew: configNameNew, .selectionChangeOnly)
+    applyConfigTableChange(currentConfigNameNew: configNameNew)
   }
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
@@ -173,7 +173,7 @@ class InputConfigStore {
     Logger.log("Adding user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, .addRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName)
   }
 
   func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {
@@ -183,7 +183,7 @@ class InputConfigStore {
     }
     Logger.log("Adding blank row for naming new user config")
     isAddingNewConfigInline = true
-    applyConfigTableChange(currentConfigNameNew: currentConfigName, .addRows, completionHandler: completionHandler)
+    applyConfigTableChange(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(configName: String, filePath: String,
@@ -197,7 +197,7 @@ class InputConfigStore {
     Logger.log("Completing inline add of user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, .selectionChangeOnly,
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName,
                            completionHandler: completionHandler)
   }
 
@@ -208,7 +208,7 @@ class InputConfigStore {
     }
     isAddingNewConfigInline = false
     Logger.log("Cancelling inline add", level: .verbose)
-    applyConfigTableChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName, .removeRows)
+    applyConfigTableChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -227,7 +227,7 @@ class InputConfigStore {
         newCurrentConfig = name
       }
     }
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig, .addRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig)
   }
 
   func removeConfig(_ configName: String) {
@@ -250,7 +250,7 @@ class InputConfigStore {
       Logger.log("Cannot remove config \"\(configName)\": it is not a user config!", level: .error)
       return
     }
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName, .removeRows)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName)
   }
 
   func renameCurrentConfig(newName: String) -> Bool {
@@ -274,7 +274,7 @@ class InputConfigStore {
     let newFilePath = Utility.buildConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newName, .renameAndMoveOneRow)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newName)
 
     return true
   }
@@ -305,7 +305,8 @@ class InputConfigStore {
   }
 
   // Replaces the current state with the given params, and fires listeners.
-  private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String, _ changeType: TableChange.ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
+  private func applyConfigTableChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String,
+                                      completionHandler: TableChange.CompletionHandler? = nil) {
 
     if let userConfigDictNew = userConfigDictNew {
       Logger.log("Saving prefs: currentInputConfigName=\"\(currentConfigNameNew)\", inputConfigs=\(userConfigDictNew)", level: .verbose)
@@ -318,12 +319,12 @@ class InputConfigStore {
 
     currentConfigName = currentConfigNameNew
 
-    let configTableChange = TableChangeByStringElement(changeType, completionHandler: completionHandler)
+    let oldRows = configTableRows
+    let newRows = buildConfigTableRows()
+    let configTableChange = TableChangeByRowIndex.buildDiff(oldRows: oldRows, newRows: newRows, completionHandler: completionHandler)
     configTableChange.scrollToFirstSelectedRow = true
-    configTableChange.oldRows = configTableRows
 
-    configTableRows = buildConfigTableRows()
-    configTableChange.newRows = configTableRows
+    configTableRows = newRows
 
     if isAddingNewConfigInline { // special case: creating an all-new config
       // Select the new blank row, which will be the last one:

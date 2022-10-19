@@ -476,10 +476,8 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       // Add a new config with no name, and immediately open an editor for it.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       let _ = tableStore.addNewUserConfigInline(completionHandler: { tableChange in
-        if let tc = tableChange as? TableChangeByStringElement {
-          if let selectedRowIndex = tc.newSelectedRows?.first {
-            self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
-          }
+        if let selectedRowIndex = tableChange.newSelectedRows?.first {
+          self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
         }
       })
     } else {

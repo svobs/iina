@@ -14,13 +14,8 @@ import Foundation
  the response to some external update. All of thiis is needed in order to make AppKit animations work.
 
  In order to facilitate table animations, and to get around some AppKit limitations such as the tendency
- for it to lose track of the row selection, much work is needed to keep track of state. The subclasses of this object
- attempt to automate as much of this as possible and hopefully end up with something which can reduce the effort needed
- in the future.
-
- Sticky Note: It's useful to understand this each subclass & enums represent several design iterations, which started
- rough but improved each time. Thus, `wholeTableDiff` (as the most recent) can be thought of as the most useful for the
- future, while `TableChangeByStringElement` (the oldest) can probably be removed with some future refactoring.
+ for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
+ This objects attempts to provide as much of this as possible and provide future reusability.
  */
 class TableChange {
   typealias CompletionHandler = (TableChange) -> Void
@@ -30,7 +25,6 @@ class TableChange {
     case addRows
     case removeRows
     case moveRows
-    case renameAndMoveOneRow
     case updateRows
     // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
     // use this only when absolutely needed:
@@ -97,124 +91,6 @@ class TableChange {
   }
 }
 
-// To describe the changes, relies on each row of the table being a simple String.
-class TableChangeByStringElement: TableChange {
-  var oldRows: [String] = []
-  var newRows: [String]? = nil
-
-  override init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
-    super.init(changeType, completionHandler: completionHandler)
-  }
-
-  /*
-   Attempts to be a generic mechanism for updating the table's contents with an animation and
-   avoiding unnecessary calls to listeners such as tableViewSelectionDidChange()
-   */
-  override func executeStructureUpdates(on tableView: EditableTableView) {
-
-    switch self.changeType {
-      case .selectionChangeOnly:
-        fallthrough
-      case .renameAndMoveOneRow:
-        renameAndMoveOneRow(tableView)
-      case .addRows:
-        addRows(tableView)
-      case .removeRows:
-        removeRows(tableView)
-      case .updateRows:
-        // Just redraw all of them. This is a very inexpensive operation
-        tableView.reloadExistingRows()
-      case .moveRows:
-        Logger.fatal("Not yet supported: moveRows for TableChangeByStringElement")
-      case .reloadAll:
-        // Try not to use this much, if at all
-        Logger.log("TableChangeByStringElement: ReloadAll", level: .verbose)
-        tableView.reloadData()
-      case .wholeTableDiff:
-        Logger.fatal("Not yet supported: wholeTableDiff for TableChangeByStringElement")
-    }
-  }
-
-  private func renameAndMoveOneRow(_ tableView: EditableTableView) {
-    guard let newRowsArray = self.newRows else {
-      return
-    }
-    guard newRowsArray.count == self.oldRows.count else {
-      return
-    }
-    var oldRowsSet = Set(self.oldRows)
-    let oldSet = oldRowsSet.subtracting(newRowsArray)
-    guard oldSet.count == 1 else {
-      return
-    }
-    guard let oldName = oldSet.first else {
-      return
-    }
-    oldRowsSet.remove(oldName)
-    let newSet = oldRowsSet.symmetricDifference(newRowsArray)
-    guard newSet.count == 1 else {
-      return
-    }
-    guard let newName = newSet.first else {
-      return
-    }
-
-    guard let oldIndex = self.oldRows.firstIndex(of: oldName) else {
-      return
-    }
-    guard let newIndex = newRowsArray.firstIndex(of: newName) else {
-      return
-    }
-
-    Logger.log("Moving row from index \(oldIndex) to index \(newIndex)", level: .verbose)
-    tableView.moveRow(at: oldIndex, to: newIndex)
-  }
-
-  private func addRows(_ tableView: EditableTableView) {
-    guard let newRowsArray = self.newRows else {
-      return
-    }
-    var addedRowsSet = Set(newRowsArray)
-    assert (addedRowsSet.count == newRowsArray.count)
-    addedRowsSet.subtract(self.oldRows)
-    Logger.log("Set of rows to add = \(addedRowsSet)", level: .verbose)
-
-    // Find start indexes of each span of added rows
-    var tableIndex = 0
-    var indexesOfInserts = IndexSet()
-    for newRow in newRowsArray {
-      if addedRowsSet.contains(newRow) {
-        indexesOfInserts.insert(tableIndex)
-      }
-      tableIndex += 1
-    }
-    guard !indexesOfInserts.isEmpty else {
-      Logger.log("TableChangeByStringElement: \(newRowsArray.count) adds but no inserts!", level: .error)
-      return
-    }
-    Logger.log("Inserting \(indexesOfInserts.count) indexes into table")
-    tableView.insertRows(at: indexesOfInserts, withAnimation: tableView.rowAnimation)
-  }
-
-  private func removeRows(_ tableView: EditableTableView) {
-    guard let newRowsArray = self.newRows else {
-      return
-    }
-    var removedRowsSet = Set(self.oldRows)
-    assert (removedRowsSet.count == self.oldRows.count)
-    removedRowsSet.subtract(newRowsArray)
-
-    var indexesOfRemoves = IndexSet()
-    for (oldRowIndex, oldRow) in self.oldRows.enumerated() {
-      if removedRowsSet.contains(oldRow) {
-        indexesOfRemoves.insert(oldRowIndex)
-      }
-    }
-    Logger.log("Removing rows from table (IDs: \(removedRowsSet); \(indexesOfRemoves.count) indexes)", level: .verbose)
-    tableView.removeRows(at: indexesOfRemoves, withAnimation: tableView.rowAnimation)
-  }
-}
-
 // Uses IndexSets of integer-based row indexes to describe the changes
 class TableChangeByRowIndex: TableChange {
   var toInsert: IndexSet? = nil
@@ -232,8 +108,6 @@ class TableChangeByRowIndex: TableChange {
     switch changeType {
       case .selectionChangeOnly:
         fallthrough
-      case .renameAndMoveOneRow:
-        Logger.fatal("Not yet supported: renameAndMoveOneRow for TableChangeByRowIndex")
       case .moveRows:
         if let movePairs = self.toMove {
           for (oldIndex, newIndex) in movePairs {
