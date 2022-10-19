@@ -774,7 +774,7 @@ class MenuController: NSObject, NSMenuDelegate {
     for filter in filters {
       let menuItem = NSMenuItem()
       menuItem.title = filter.name
-      menuItem.action = isVideo ? #selector(MainMenuActionHandler.menuToggleVideoFilterString(_:)) : #selector(MainMenuActionHandler.menuToggleAudioFilterString(_:))
+      menuItem.action = isVideo ? #selector(PlayerWindowController.menuToggleVideoFilterString(_:)) : #selector(PlayerWindowController.menuToggleAudioFilterString(_:))
       menuItem.keyEquivalent = ""
       menuItem.representedObject = filter.filterString
       menu.addItem(menuItem)
