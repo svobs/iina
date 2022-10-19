@@ -15,10 +15,10 @@ class InputConfigTableViewController: NSObject {
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
 
   private unowned var tableView: EditableTableView!
-  private unowned var tableStore: InputConfigTableStore!
+  private unowned var tableStore: InputConfigStore!
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigTableStore) {
+  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigStore) {
     self.tableView = inputConfigTableView
     self.tableStore = tableStore
 

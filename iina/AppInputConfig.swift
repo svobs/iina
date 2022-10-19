@@ -14,8 +14,8 @@ class AppInputConfig {
   // MARK: Static
 
   static let inputConfigFileHandler = InputConfigFileHandler()
-  static let inputConfigTableStore = InputConfigTableStore()
-  static let bindingTableStore = InputBindingTableStore()
+  static let inputConfigTableStore = InputConfigStore()
+  static let bindingTableStore = InputBindingStore()
 
   static var logBindingsRebuild: Bool {
     Preference.bool(for: .logKeyBindingsRebuild)
@@ -70,7 +70,7 @@ class AppInputConfig {
 
   // MARK: Single instance
 
-  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `InputBindingTableStore` should be kept
+  // The list of all bindings including those with duplicate keys. The list `bindingRowsAll` of `InputBindingStore` should be kept
   // consistent with this one as much as possible, but some brief inconsistencies may be acceptable due to the asynchronous nature of UI.
   let bindingCandidateList: [InputBinding]
 

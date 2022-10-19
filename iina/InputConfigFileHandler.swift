@@ -10,7 +10,7 @@ import Foundation
 
 // Encapsulates load/save functionality for the *current* config file
 class InputConfigFileHandler {
-  private unowned var inputConfigTableStore: InputConfigTableStore {
+  private unowned var inputConfigTableStore: InputConfigStore {
     AppInputConfig.inputConfigTableStore
   }
   private var currentConfigFileData: InputConfigFile? = nil

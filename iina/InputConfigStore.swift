@@ -14,7 +14,7 @@ import Foundation
  animations, but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  */
-class InputConfigTableStore {
+class InputConfigStore {
 
   // Actual persisted data #1
   private var userConfigDict: [String: String] {

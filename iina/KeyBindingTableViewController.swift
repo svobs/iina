@@ -20,11 +20,11 @@ class KeyBindingTableViewController: NSObject {
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: EditableTableView!
-  private var inputConfigTableStore: InputConfigTableStore {
+  private var inputConfigTableStore: InputConfigStore {
     return AppInputConfig.inputConfigTableStore
   }
 
-  private var bindingTableStore: InputBindingTableStore {
+  private var bindingTableStore: InputBindingStore {
     return AppInputConfig.bindingTableStore
   }
 

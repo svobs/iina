@@ -1,5 +1,5 @@
 //
-//  InputBindingTableStore.swift
+//  InputBindingStore.swift
 //  iina
 //
 //  Created by Matt Svoboda on 9/20/22.
@@ -15,7 +15,7 @@ import Foundation
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
  This class is downstream from `AppInputConfig.current` and should be notified of any changes to it.
  */
-class InputBindingTableStore {
+class InputBindingStore {
 
   // MARK: State
 
@@ -357,7 +357,7 @@ class InputBindingTableStore {
   }
 
   private func updateFilteredBindings() {
-    bindingRowsFiltered = InputBindingTableStore.filter(bindingRowsAll: bindingRowsAll, by: filterString)
+    bindingRowsFiltered = InputBindingStore.filter(bindingRowsAll: bindingRowsAll, by: filterString)
   }
 
   private static func filter(bindingRowsAll: [InputBinding], by filterString: String) -> [InputBinding] {
@@ -433,7 +433,7 @@ class InputBindingTableStore {
   private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChangeByRowIndex {
     let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
     // Remember, the displayed table contents must reflect the *filtered* state.
-    let bindingRowsAllNewFiltered = InputBindingTableStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
+    let bindingRowsAllNewFiltered = InputBindingStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
     return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
 }
