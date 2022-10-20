@@ -166,6 +166,24 @@
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
+		D17EDBE5290158C8000644B0 /* RingBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDBE2290158C8000644B0 /* RingBufferTests.swift */; };
+		D17EDBE6290158C8000644B0 /* KeyCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDBE3290158C8000644B0 /* KeyCodeTests.swift */; };
+		D17EDBE7290158C8000644B0 /* ModuloTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDBE4290158C8000644B0 /* ModuloTests.swift */; };
+		D17EDC3329016747000644B0 /* TestExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDC2E29016747000644B0 /* TestExtensions.swift */; };
+		D17EDC3429016747000644B0 /* KeySequence_UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDC2F29016747000644B0 /* KeySequence_UITests.swift */; };
+		D17EDC3529016747000644B0 /* TestConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDC3029016747000644B0 /* TestConstants.swift */; };
+		D17EDC3629016747000644B0 /* KeyBinding_UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDC3129016747000644B0 /* KeyBinding_UITests.swift */; };
+		D17EDC3729016747000644B0 /* InitialWindow_UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17EDC3229016747000644B0 /* InitialWindow_UITests.swift */; };
+		D17EDC3F29016A45000644B0 /* QVGA-White.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3A29016A45000644B0 /* QVGA-White.mp4 */; };
+		D17EDC4029016A45000644B0 /* QVGA-White.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3A29016A45000644B0 /* QVGA-White.mp4 */; };
+		D17EDC4129016A45000644B0 /* QVGA-Red.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3B29016A45000644B0 /* QVGA-Red.mp4 */; };
+		D17EDC4229016A45000644B0 /* QVGA-Red.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3B29016A45000644B0 /* QVGA-Red.mp4 */; };
+		D17EDC4329016A45000644B0 /* QVGA-Green.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3C29016A45000644B0 /* QVGA-Green.mp4 */; };
+		D17EDC4429016A45000644B0 /* QVGA-Green.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3C29016A45000644B0 /* QVGA-Green.mp4 */; };
+		D17EDC4529016A45000644B0 /* QVGA-Black.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3D29016A45000644B0 /* QVGA-Black.mp4 */; };
+		D17EDC4629016A45000644B0 /* QVGA-Black.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3D29016A45000644B0 /* QVGA-Black.mp4 */; };
+		D17EDC4729016A45000644B0 /* QVGA-Blue.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3E29016A45000644B0 /* QVGA-Blue.mp4 */; };
+		D17EDC4829016A45000644B0 /* QVGA-Blue.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D17EDC3E29016A45000644B0 /* QVGA-Blue.mp4 */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
@@ -334,6 +352,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = E3DE8DC91FD8166A0021921C;
 			remoteInfo = "iina-cli";
+		};
+		D17EDBDD290158B5000644B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84EB1ECE1D2F51D3004FA5A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 84EB1ED51D2F51D3004FA5A1;
+			remoteInfo = iina;
+		};
+		D17EDC282901667D000644B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84EB1ECE1D2F51D3004FA5A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 84EB1ED51D2F51D3004FA5A1;
+			remoteInfo = iina;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -1498,6 +1530,21 @@
 		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
+		D17EDBD9290158B5000644B0 /* IINA-Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IINA-Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D17EDBE2290158C8000644B0 /* RingBufferTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBufferTests.swift; sourceTree = "<group>"; };
+		D17EDBE3290158C8000644B0 /* KeyCodeTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyCodeTests.swift; sourceTree = "<group>"; };
+		D17EDBE4290158C8000644B0 /* ModuloTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuloTests.swift; sourceTree = "<group>"; };
+		D17EDC222901667D000644B0 /* IINA-UI-Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IINA-UI-Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D17EDC2E29016747000644B0 /* TestExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestExtensions.swift; sourceTree = "<group>"; };
+		D17EDC2F29016747000644B0 /* KeySequence_UITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeySequence_UITests.swift; sourceTree = "<group>"; };
+		D17EDC3029016747000644B0 /* TestConstants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestConstants.swift; sourceTree = "<group>"; };
+		D17EDC3129016747000644B0 /* KeyBinding_UITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyBinding_UITests.swift; sourceTree = "<group>"; };
+		D17EDC3229016747000644B0 /* InitialWindow_UITests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InitialWindow_UITests.swift; sourceTree = "<group>"; };
+		D17EDC3A29016A45000644B0 /* QVGA-White.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "QVGA-White.mp4"; sourceTree = "<group>"; };
+		D17EDC3B29016A45000644B0 /* QVGA-Red.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "QVGA-Red.mp4"; sourceTree = "<group>"; };
+		D17EDC3C29016A45000644B0 /* QVGA-Green.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "QVGA-Green.mp4"; sourceTree = "<group>"; };
+		D17EDC3D29016A45000644B0 /* QVGA-Black.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "QVGA-Black.mp4"; sourceTree = "<group>"; };
+		D17EDC3E29016A45000644B0 /* QVGA-Blue.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "QVGA-Blue.mp4"; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
@@ -1852,6 +1899,20 @@
 				E3719D1B28430FA6004E6633 /* libavutil.56.dylib in Frameworks */,
 				B4E446F725CB54EF0069F06E /* Mustache in Frameworks */,
 				E3719CF328430FA6004E6633 /* libswscale.5.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D17EDBD6290158B5000644B0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D17EDC1F2901667D000644B0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2436,6 +2497,9 @@
 				84EB1ED81D2F51D3004FA5A1 /* iina */,
 				E3DE8DCB1FD8166A0021921C /* iina-cli */,
 				49542976216C34950058F680 /* OpenInIINA */,
+				D17EDBDA290158B5000644B0 /* IINA-Tests */,
+				D17EDC2D29016747000644B0 /* IINA-UI-Tests */,
+				D17EDC3829016A45000644B0 /* TestResources */,
 				84EB1ED71D2F51D3004FA5A1 /* Products */,
 				8461BA641E42344D008BB852 /* Executables */,
 				848290731D95978100C3C76C /* Frameworks */,
@@ -2451,6 +2515,8 @@
 				84EB1ED61D2F51D3004FA5A1 /* IINA.app */,
 				E3DE8DCA1FD8166A0021921C /* iina-cli */,
 				49542973216C34950058F680 /* OpenInIINA.appex */,
+				D17EDBD9290158B5000644B0 /* IINA-Tests.xctest */,
+				D17EDC222901667D000644B0 /* IINA-UI-Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2508,6 +2574,48 @@
 				84FF84701D2FF698001B318A /* client.h */,
 			);
 			path = mpv;
+			sourceTree = "<group>";
+		};
+		D17EDBDA290158B5000644B0 /* IINA-Tests */ = {
+			isa = PBXGroup;
+			children = (
+				D17EDBE3290158C8000644B0 /* KeyCodeTests.swift */,
+				D17EDBE4290158C8000644B0 /* ModuloTests.swift */,
+				D17EDBE2290158C8000644B0 /* RingBufferTests.swift */,
+			);
+			path = "IINA-Tests";
+			sourceTree = "<group>";
+		};
+		D17EDC2D29016747000644B0 /* IINA-UI-Tests */ = {
+			isa = PBXGroup;
+			children = (
+				D17EDC2E29016747000644B0 /* TestExtensions.swift */,
+				D17EDC2F29016747000644B0 /* KeySequence_UITests.swift */,
+				D17EDC3029016747000644B0 /* TestConstants.swift */,
+				D17EDC3129016747000644B0 /* KeyBinding_UITests.swift */,
+				D17EDC3229016747000644B0 /* InitialWindow_UITests.swift */,
+			);
+			path = "IINA-UI-Tests";
+			sourceTree = "<group>";
+		};
+		D17EDC3829016A45000644B0 /* TestResources */ = {
+			isa = PBXGroup;
+			children = (
+				D17EDC3929016A45000644B0 /* Videos */,
+			);
+			path = TestResources;
+			sourceTree = "<group>";
+		};
+		D17EDC3929016A45000644B0 /* Videos */ = {
+			isa = PBXGroup;
+			children = (
+				D17EDC3A29016A45000644B0 /* QVGA-White.mp4 */,
+				D17EDC3B29016A45000644B0 /* QVGA-Red.mp4 */,
+				D17EDC3C29016A45000644B0 /* QVGA-Green.mp4 */,
+				D17EDC3D29016A45000644B0 /* QVGA-Black.mp4 */,
+				D17EDC3E29016A45000644B0 /* QVGA-Blue.mp4 */,
+			);
+			path = Videos;
 			sourceTree = "<group>";
 		};
 		D1DC3D36287191E90052B062 /* KeyBinding */ = {
@@ -2631,6 +2739,42 @@
 			productReference = 84EB1ED61D2F51D3004FA5A1 /* IINA.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D17EDBD8290158B5000644B0 /* IINA-Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D17EDBE1290158B5000644B0 /* Build configuration list for PBXNativeTarget "IINA-Tests" */;
+			buildPhases = (
+				D17EDBD5290158B5000644B0 /* Sources */,
+				D17EDBD6290158B5000644B0 /* Frameworks */,
+				D17EDBD7290158B5000644B0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D17EDBDE290158B5000644B0 /* PBXTargetDependency */,
+			);
+			name = "IINA-Tests";
+			productName = "IINA-Tests";
+			productReference = D17EDBD9290158B5000644B0 /* IINA-Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D17EDC212901667D000644B0 /* IINA-UI-Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D17EDC2A2901667D000644B0 /* Build configuration list for PBXNativeTarget "IINA-UI-Tests" */;
+			buildPhases = (
+				D17EDC1E2901667D000644B0 /* Sources */,
+				D17EDC1F2901667D000644B0 /* Frameworks */,
+				D17EDC202901667D000644B0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D17EDC292901667D000644B0 /* PBXTargetDependency */,
+			);
+			name = "IINA-UI-Tests";
+			productName = "IINA-UI-Tests";
+			productReference = D17EDC222901667D000644B0 /* IINA-UI-Tests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		E3DE8DC91FD8166A0021921C /* iina-cli */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E3DE8DD01FD8166A0021921C /* Build configuration list for PBXNativeTarget "iina-cli" */;
@@ -2654,7 +2798,7 @@
 		84EB1ECE1D2F51D3004FA5A1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1010;
+				LastSwiftUpdateCheck = 1400;
 				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = lhc;
 				TargetAttributes = {
@@ -2668,6 +2812,14 @@
 						DevelopmentTeam = 67CQ77V27R;
 						LastSwiftMigration = 1020;
 						ProvisioningStyle = Automatic;
+					};
+					D17EDBD8290158B5000644B0 = {
+						CreatedOnToolsVersion = 14.0.1;
+						TestTargetID = 84EB1ED51D2F51D3004FA5A1;
+					};
+					D17EDC212901667D000644B0 = {
+						CreatedOnToolsVersion = 14.0.1;
+						TestTargetID = 84EB1ED51D2F51D3004FA5A1;
 					};
 					E3DE8DC91FD8166A0021921C = {
 						CreatedOnToolsVersion = 9.1;
@@ -2727,6 +2879,8 @@
 				84EB1ED51D2F51D3004FA5A1 /* iina */,
 				E3DE8DC91FD8166A0021921C /* iina-cli */,
 				49542972216C34950058F680 /* OpenInIINA */,
+				D17EDBD8290158B5000644B0 /* IINA-Tests */,
+				D17EDC212901667D000644B0 /* IINA-UI-Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -2790,6 +2944,30 @@
 				8418A2F5213F5791003166AC /* OpenURLWindowController.xib in Resources */,
 				8400D5DE1E1AB32A006785F5 /* PrefGeneralViewController.xib in Resources */,
 				8400D5C61E1AB2F1006785F5 /* MainWindowController.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D17EDBD7290158B5000644B0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D17EDC4129016A45000644B0 /* QVGA-Red.mp4 in Resources */,
+				D17EDC3F29016A45000644B0 /* QVGA-White.mp4 in Resources */,
+				D17EDC4529016A45000644B0 /* QVGA-Black.mp4 in Resources */,
+				D17EDC4729016A45000644B0 /* QVGA-Blue.mp4 in Resources */,
+				D17EDC4329016A45000644B0 /* QVGA-Green.mp4 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D17EDC202901667D000644B0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D17EDC4229016A45000644B0 /* QVGA-Red.mp4 in Resources */,
+				D17EDC4029016A45000644B0 /* QVGA-White.mp4 in Resources */,
+				D17EDC4629016A45000644B0 /* QVGA-Black.mp4 in Resources */,
+				D17EDC4829016A45000644B0 /* QVGA-Blue.mp4 in Resources */,
+				D17EDC4429016A45000644B0 /* QVGA-Green.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3008,6 +3186,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D17EDBD5290158B5000644B0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D17EDBE5290158C8000644B0 /* RingBufferTests.swift in Sources */,
+				D17EDBE6290158C8000644B0 /* KeyCodeTests.swift in Sources */,
+				D17EDBE7290158C8000644B0 /* ModuloTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D17EDC1E2901667D000644B0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D17EDC3729016747000644B0 /* InitialWindow_UITests.swift in Sources */,
+				D17EDC3429016747000644B0 /* KeySequence_UITests.swift in Sources */,
+				D17EDC3529016747000644B0 /* TestConstants.swift in Sources */,
+				D17EDC3329016747000644B0 /* TestExtensions.swift in Sources */,
+				D17EDC3629016747000644B0 /* KeyBinding_UITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E3DE8DC61FD8166A0021921C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3029,6 +3229,16 @@
 			isa = PBXTargetDependency;
 			target = E3DE8DC91FD8166A0021921C /* iina-cli */;
 			targetProxy = 497747ED20D287C1004B243A /* PBXContainerItemProxy */;
+		};
+		D17EDBDE290158B5000644B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 84EB1ED51D2F51D3004FA5A1 /* iina */;
+			targetProxy = D17EDBDD290158B5000644B0 /* PBXContainerItemProxy */;
+		};
+		D17EDC292901667D000644B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 84EB1ED51D2F51D3004FA5A1 /* iina */;
+			targetProxy = D17EDC282901667D000644B0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -4503,6 +4713,120 @@
 			};
 			name = Release;
 		};
+		D17EDBDF290158B5000644B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/deps/include",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.colliderli.iina.IINA-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IINA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IINA";
+			};
+			name = Debug;
+		};
+		D17EDBE0290158B5000644B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/deps/include",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.colliderli.iina.IINA-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IINA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IINA";
+			};
+			name = Release;
+		};
+		D17EDC2B2901667D000644B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.colliderli.iina.IINA-UI-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = iina;
+			};
+			name = Debug;
+		};
+		D17EDC2C2901667D000644B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.colliderli.iina.IINA-UI-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = iina;
+			};
+			name = Release;
+		};
 		E3DE8DCE1FD8166A0021921C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -4576,6 +4900,24 @@
 			buildConfigurations = (
 				84EB1EFA1D2F51D3004FA5A1 /* Debug */,
 				84EB1EFB1D2F51D3004FA5A1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D17EDBE1290158B5000644B0 /* Build configuration list for PBXNativeTarget "IINA-Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D17EDBDF290158B5000644B0 /* Debug */,
+				D17EDBE0290158B5000644B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D17EDC2A2901667D000644B0 /* Build configuration list for PBXNativeTarget "IINA-UI-Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D17EDC2B2901667D000644B0 /* Debug */,
+				D17EDC2C2901667D000644B0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
