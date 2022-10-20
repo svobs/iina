@@ -38,7 +38,7 @@ class CellEditTracker {
       } else {
         Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))")
         // Clean up state here:
-        endEdit(for: prev.textField)
+        endEdit(for: prev.textField, newValue: prev.textField.stringValue)
       }
     } else {
       Logger.log("CellEditTracker: changing cell to (\(row), \(column))")
@@ -70,16 +70,14 @@ class CellEditTracker {
     // Don't tab to the next value if there is an error; stay where we are
     var allowContinuedNavigation: Bool = true
 
-    if let newValue = newValue {
-      if newValue != current.stringValueOrig {
-        if self.delegate.editDidEndWithNewText(newValue: newValue, row: current.row, column: current.column) {
-          Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
-        } else {
-          // a return value of false tells us to revert to the previous value
-          Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\"", level: .verbose)
-          textField.stringValue = current.stringValueOrig
-          allowContinuedNavigation = false
-        }
+    if let newValue = newValue, newValue != current.stringValueOrig {
+      if self.delegate.editDidEndWithNewText(newValue: newValue, row: current.row, column: current.column) {
+        Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
+      } else {
+        // a return value of false tells us to revert to the previous value
+        Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\"", level: .verbose)
+        textField.stringValue = current.stringValueOrig
+        allowContinuedNavigation = false
       }
     }
 
