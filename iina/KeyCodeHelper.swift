@@ -310,6 +310,9 @@ class KeyCodeHelper {
 
   // See mpv/input/keycodes.c: mp_input_get_keys_from_string()
   public static func splitKeystrokes(_ keystrokes: String) -> [String] {
+    if keystrokes == "+" {
+      return [keystrokes]
+    }
     var unparsedRemainder = Substring(keystrokes)
     var splitKeystrokeList: [String] = []
 
@@ -424,7 +427,14 @@ class KeyCodeHelper {
   // Converts an mpv-formatted key string to a (key, modifiers) pair suitable for assignment to a MacOS menu item.
   // IMPORTANT: `mpvKeyCode` must be normalized first! Use `KeyCodeHelper.normalizeMpv()`.
   static func macOSKeyEquivalent(from mpvKeyCode: String, usePrintableKeyName: Bool = false) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
-    let splitted = mpvKeyCode.components(separatedBy: "+")
+    if mpvKeyCode == "default-bindings" {
+      return nil
+    }
+    let keystrokeList = splitKeystrokes(mpvKeyCode)
+    if keystrokeList.count > 1 {
+      Logger.log("macOSKeyEquivalent(): found more than one keystroke in input string: \"\(mpvKeyCode)\"", level: .error)
+    }
+    let splitted = keystrokeList[0].components(separatedBy: "+")
     var key: String
     var modifiers: NSEvent.ModifierFlags = []
     guard !splitted.isEmpty else { return nil }
@@ -456,6 +466,25 @@ class KeyCodeHelper {
     return modifierSymbols.map { modifiers.contains($0.0) ? $0.1 : "" }
       .joined()
       .appending(key)
+  }
+
+  // Formats a string of one or more keystrokes from mpv form to Mac form
+  // IMPORTANT: `mpvKeyCode` must be normalized first! Use `KeyCodeHelper.normalizeMpv()`.
+  static func normalizedMacKeySequence(from normalizedMpvKeySequence: String) -> String {
+    if normalizedMpvKeySequence == "default-bindings" {
+      return normalizedMpvKeySequence
+    }
+    var macKeyList: [String] = []
+    let keystrokes = splitKeystrokes(normalizedMpvKeySequence)
+    for keystroke in keystrokes {
+      if let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: keystroke, usePrintableKeyName: true) {
+        macKeyList.append(KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers))
+      } else {
+        // Probabaly a weird key. Just pass it through
+        macKeyList.append(keystroke)
+      }
+    }
+    return macKeyList.joined(separator: ", ")
   }
 
   static func macOSToMpv(key: String, modifiers: NSEvent.ModifierFlags) -> String {
