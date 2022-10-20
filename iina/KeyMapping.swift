@@ -23,10 +23,7 @@ class KeyMapping: NSObject, Codable {
 
   var normalizedMacKey: String? {
     get {
-      guard let (keyChar, modifiers) = KeyCodeHelper.macOSKeyEquivalent(from: normalizedMpvKey, usePrintableKeyName: true) else {
-        return nil
-      }
-      return KeyCodeHelper.readableString(fromKey: keyChar, modifiers: modifiers)
+      return KeyCodeHelper.normalizedMacKeySequence(from: normalizedMpvKey)
     }
   }
 

@@ -24,7 +24,7 @@ class EditableTextField: NSTextField, NSTextFieldDelegate {
 
       Logger.log("Got a double-cick", level: .verbose)
       let approved = editTracker.askUserToApproveDoubleClickEdit()
-      Logger.log("Double-click approved = \(approved)", level: .verbose)
+      Logger.log("Double-click approved: \(approved)", level: .verbose)
       if approved {
         self.window?.makeFirstResponder(self)
       }
