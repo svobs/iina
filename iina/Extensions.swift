@@ -462,6 +462,17 @@ extension CharacterSet {
 
 extension NSMenuItem {
   static let dummy = NSMenuItem(title: "Dummy", action: nil, keyEquivalent: "")
+
+  var menuPathDescription: String {
+    var ancestors: [String] = [self.title]
+    var parent = self.parent
+    while let parentItem = parent {
+      ancestors.append(parentItem.title)
+      parent = parentItem.parent
+    }
+    return ancestors.reversed().joined(separator: " → ")
+  }
+
 }
 
 

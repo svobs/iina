@@ -621,7 +621,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
       // Store the item with its pair - the PlayerInputConfig will set the binding & deal with conflicts
-      let actionString = "\(plugin.plugin.name) → \"\(menuItem.title)\""
+      let actionString = "\(plugin.plugin.name) → \(menuItem.title)"
       keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: plugin.plugin.name, menuItem: menuItem, actionDescription: actionString))
     }
     if !item.items.isEmpty {
@@ -836,6 +836,7 @@ class MenuController: NSObject, NSMenuDelegate {
         if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: binding.keyMapping.normalizedMpvKey) {
           menuItem.keyEquivalent = kEqv
           menuItem.keyEquivalentModifierMask = kMdf
+          binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
           if AppInputConfig.logBindingsRebuild {
             Logger.log("Updated keyEquivalent for \"\(binding.keyMapping.normalizedMpvKey)\" -> \"\(menuItem.title)\"", level: .verbose)
           }
@@ -935,7 +936,7 @@ class MenuController: NSObject, NSMenuDelegate {
           }
           bound = true
           binding.associatedMenuItem = menuItem  // so we can indicate it in UI
-          binding.displayMessage = "This key binding will activate the menu item: \"\(menuItem.title)\""
+          binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
           break
         }
       }
