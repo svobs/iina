@@ -297,15 +297,13 @@ class KeyCodeHelper {
 
   private static func getNextSeparatorIndex(_ unparsedRemainder: Substring) -> String.Index? {
     if let dashIndex = unparsedRemainder.firstIndex(of: "-") {
-      if let indexBeyondEnd = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.endIndex) {
-        // apparently "limitedBy" above doesn't work as advertised; have to check again
-        if indexBeyondEnd < unparsedRemainder.endIndex {
-          if unparsedRemainder[indexBeyondEnd] == "-" {
-            return indexBeyondEnd
-          }
+      if let indexBeyondEnd = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.index(before: unparsedRemainder.endIndex)) {
+        if unparsedRemainder[indexBeyondEnd] == "-" {
+          return indexBeyondEnd
         }
         return dashIndex
       }
+      // found a single dash, which means it's a key, not a separator. fall through
     }
     return nil
   }
