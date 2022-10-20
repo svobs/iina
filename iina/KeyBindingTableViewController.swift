@@ -48,7 +48,7 @@ class KeyBindingTableViewController: NSObject {
     tableView.registerTableChangeObserver(forName: .iinaKeyBindingsTableShouldUpdate)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
-      // Enable drag & drop for MacOS 10.13+. Default to "move"
+      // Default to "move":
       tableView.registerForDraggedTypes([.string, .iinaKeyMapping])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
@@ -144,7 +144,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
                 imageView.contentTintColor = filterIconColor
               default:
                 if bindingRow.menuItem != nil {
-                  imageView.image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: nil)!
+                  imageView.image = NSImage(systemSymbolName: "menubar.rectangle", accessibilityDescription: nil)!
                 } else {
                   imageView.image = nil
                 }
