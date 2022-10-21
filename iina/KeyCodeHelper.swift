@@ -256,6 +256,24 @@ class KeyCodeHelper {
     return utf8View.count == 1 && utf8View.first! > 32 && utf8View.first! < 127
   }
 
+  static func escapeReservedMpvKeys(_ rawKey: String) -> String? {
+    // "#" and " " are not valid for `rawKey` because are reserved as tokens when parsing the conf file.
+    // Try to help the user out a little bit before rejecting
+    if rawKey == " " {
+      return "SPACE"
+    }
+    var keystrokes: [String] = KeyCodeHelper.splitKeystrokes(rawKey.trimmingCharacters(in: .whitespaces))
+    for (i, rawKey) in keystrokes.enumerated() {
+      if rawKey == " " {
+        keystrokes[i] = "SPACE"
+      }
+      if rawKey == "#" {
+        keystrokes[i] = "SHARP"
+      }
+    }
+    return keystrokes.joined(separator: "-")
+  }
+
   static func mpvKeyCode(from event: NSEvent) -> String {
     var keyString = ""
     let keyChar: String
@@ -264,14 +282,12 @@ class KeyCodeHelper {
 
     if let char = event.charactersIgnoringModifiers, isPrintable(char) {
       keyChar = char
-      let (_, rawKeyChar) = event.readableKeyDescription
-      if rawKeyChar != char {
-        modifiers.remove(.shift)
-      }
+      // The char in `charactersIgnoringModifiers` should always include shift info.
+      modifiers.remove(.shift)
     } else {
       // find the key from key code
       guard let keyName = KeyCodeHelper.keyMap[keyCode] else {
-        Logger.log("Undefined key code?", level: .warning)
+        Logger.log("Undefined key code: \"\(keyCode)\"", level: .warning)
         return ""
       }
       keyChar = keyName.0
@@ -316,9 +332,6 @@ class KeyCodeHelper {
 
   // See mpv/input/keycodes.c: mp_input_get_keys_from_string()
   public static func splitKeystrokes(_ keystrokes: String) -> [String] {
-    if keystrokes == "+" {
-      return [keystrokes]
-    }
     var unparsedRemainder = Substring(keystrokes)
     var splitKeystrokeList: [String] = []
 
@@ -355,7 +368,7 @@ class KeyCodeHelper {
     splitted.dropLast().forEach { k in
       // Modifiers have first letter capitalized. All other special chars are capitalized
       if k.equalsIgnoreCase(SHIFT_KEY) {
-        // For alphabetic chars, remove the "Shift+" and replace with actual uppercase char
+        // For chars with upper & lower cases, remove the "Shift+" and replace with actual uppercase char
         if key.count == 1, key.lowercased() != key.uppercased() {
           key = key.uppercased()
         } else {
@@ -562,48 +575,3 @@ fileprivate let NSEventKeyCodeMapping: [Int: String] = [
   kVK_ANSI_KeypadMinus: "-",
   kVK_ANSI_KeypadEquals: "="
 ]
-
-extension NSEvent {
-  var readableKeyDescription: (String, String) {
-    get {
-
-      let rawKeyCharacter: String
-      if let char = NSEventKeyCodeMapping[Int(self.keyCode)] {
-        rawKeyCharacter = char
-      } else {
-        let inputSource = TISCopyCurrentASCIICapableKeyboardLayoutInputSource().takeUnretainedValue()
-        if let layoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) {
-          let dataRef = unsafeBitCast(layoutData, to: CFData.self)
-          let keyLayout = unsafeBitCast(CFDataGetBytePtr(dataRef), to: UnsafePointer<UCKeyboardLayout>.self)
-          var deadKeyState = UInt32(0)
-          let maxLength = 4
-          var actualLength = 0
-          var actualString = [UniChar](repeating: 0, count: maxLength)
-          let error = UCKeyTranslate(keyLayout,
-                                     UInt16(self.keyCode),
-                                     UInt16(kUCKeyActionDisplay),
-                                     UInt32((0 >> 8) & 0xFF),
-                                     UInt32(LMGetKbdType()),
-                                     OptionBits(kUCKeyTranslateNoDeadKeysBit),
-                                     &deadKeyState,
-                                     maxLength,
-                                     &actualLength,
-                                     &actualString)
-          if error == 0 {
-            rawKeyCharacter = String(utf16CodeUnits: &actualString, count: maxLength).uppercased()
-
-          } else {
-            rawKeyCharacter = KeyCodeHelper.keyMap[self.keyCode]?.0 ?? ""
-          }
-        } else {
-          rawKeyCharacter = KeyCodeHelper.keyMap[self.keyCode]?.0 ?? ""
-        }
-      }
-
-      return (([(.control, "⌃"), (.option, "⌥"), (.shift, "⇧"), (.command, "⌘")] as [(NSEvent.ModifierFlags, String)])
-        .map { self.modifierFlags.contains($0.0) ? $0.1 : "" }
-        .joined()
-        .appending(rawKeyCharacter), rawKeyCharacter)
-    }
-  }
-}

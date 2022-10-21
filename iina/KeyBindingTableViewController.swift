@@ -423,7 +423,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     let key, action: String?
     switch columnIndex {
       case COLUMN_INDEX_KEY:
-        key = newValue
+        key = KeyCodeHelper.escapeReservedMpvKeys(newValue)
         action = nil
       case COLUMN_INDEX_ACTION:
         key = nil
