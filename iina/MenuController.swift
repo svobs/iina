@@ -165,7 +165,6 @@ class MenuController: NSObject, NSMenuDelegate {
   // Plugin
   @IBOutlet weak var pluginMenu: NSMenu!
   @IBOutlet weak var pluginMenuItem: NSMenuItem!
-  var pluginMenuNeedsUpdate = false
   // Window
   @IBOutlet weak var customTouchBar: NSMenuItem!
   @IBOutlet weak var inspector: NSMenuItem!
