@@ -211,9 +211,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // See overridden functions for 10.14-
   }
 
-  // MARK: - Mouse / Trackpad events
-
-
+  // MARK: - Key events
+  
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
     if keyBinding.isIINACommand {
@@ -258,6 +257,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       super.keyDown(with: event)
     }
   }
+
+  // MARK: - Mouse / Trackpad events
 
   override func mouseUp(with event: NSEvent) {
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
@@ -414,8 +415,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       NowPlayingInfoManager.updateInfo(withTitle: true)
     }
-    AppInputConfig.rebuildCurrent()
-    
+    (NSApp.delegate as? AppDelegate)?.menuController?.updatePluginMenu()
+
     NotificationCenter.default.post(name: .iinaMainWindowChanged, object: true)
   }
   

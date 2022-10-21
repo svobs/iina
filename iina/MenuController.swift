@@ -706,7 +706,6 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // If all menu items are disabled do not update the menus.
     guard !isDisabled else { return }
-
     switch menu {
     case fileMenu:
       updateOpenMenuItems()
@@ -793,7 +792,7 @@ class MenuController: NSObject, NSMenuDelegate {
     InputSectionStack.replaceBindings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
-  // MARK: Setting key equivalents
+  // MARK: Set key equivalents
 
   func updateKeyEquivalents(from candidateBindings: [InputBinding]) {
     // Two general groups to be processed:
