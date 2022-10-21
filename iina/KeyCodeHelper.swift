@@ -295,17 +295,23 @@ class KeyCodeHelper {
     return keyString
   }
 
-  private static func getNextSeparatorIndex(_ unparsedRemainder: Substring) -> String.Index? {
-    if let dashIndex = unparsedRemainder.firstIndex(of: "-") {
-      if let indexBeyondEnd = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.index(before: unparsedRemainder.endIndex)) {
-        if unparsedRemainder[indexBeyondEnd] == "-" {
-          return indexBeyondEnd
+  // Finds and returns the end index of the next key in the string
+  private static func getNextEndIndex(_ unparsedRemainder: Substring) -> String.Index? {
+    if let dashIndex = unparsedRemainder.firstIndex(of: "-"),
+     let indexBeyondDash = unparsedRemainder.index(dashIndex, offsetBy: 1, limitedBy: unparsedRemainder.index(before: unparsedRemainder.endIndex)) { // There is a '-' somewhere, and there is at least 1 char after it
+      if dashIndex == unparsedRemainder.startIndex {
+        guard unparsedRemainder[indexBeyondDash] == "-" else {
+          return nil
         }
+        // Next char is '-' and should be treated like a key, but needs to be terminated
+        return indexBeyondDash
+      } else {
+        // The '-' should be treated like a separator char
         return dashIndex
       }
-      // found a single dash, which means it's a key, not a separator. fall through
     }
-    return nil
+    // No '-' in string, or it is the only char in the string: use whole string as the next key
+    return unparsedRemainder.endIndex
   }
 
   // See mpv/input/keycodes.c: mp_input_get_keys_from_string()
@@ -317,10 +323,9 @@ class KeyCodeHelper {
     var splitKeystrokeList: [String] = []
 
     while !unparsedRemainder.isEmpty && splitKeystrokeList.count < MP_MAX_KEY_DOWN {
-      var endIndex = unparsedRemainder.endIndex
-
-      if let dashIndex = getNextSeparatorIndex(unparsedRemainder), dashIndex != unparsedRemainder.startIndex {
-        endIndex = dashIndex
+      guard let endIndex = getNextEndIndex(unparsedRemainder) else {
+        Logger.log("Could not split keystrokes; not a valid sequence: \"\(keystrokes)\"", level: .warning)
+        return [keystrokes]
       }
 
       let ks = String(unparsedRemainder[unparsedRemainder.startIndex..<endIndex])
