@@ -98,7 +98,7 @@ class KeyCodeTests: XCTestCase {
   func testDashes_Invalid() throws {
     let result = KeyCodeHelper.splitKeystrokes("-+-----")
     XCTAssertEqual(result.count, 1)
-    if result.count == 4 {
+    if result.count == 1 {
       XCTAssertEqual(result[0], "-+-----")
     }
   }
@@ -108,6 +108,26 @@ class KeyCodeTests: XCTestCase {
     XCTAssertEqual(result.count, 1)
     if result.count == 1 {
       XCTAssertEqual(result[0], "Meta+-")
+    }
+  }
+
+  func testMinusD() throws {
+    let result = KeyCodeHelper.splitKeystrokes("--d")
+    XCTAssertEqual(result.count, 2)
+    if result.count == 2 {
+      XCTAssertEqual(result[0], "-")
+      XCTAssertEqual(result[1], "d")
+    }
+  }
+
+  func testMinusDMinusD() throws {
+    let result = KeyCodeHelper.splitKeystrokes("--d---d")
+    XCTAssertEqual(result.count, 4)
+    if result.count == 1 {
+      XCTAssertEqual(result[0], "-")
+      XCTAssertEqual(result[1], "d")
+      XCTAssertEqual(result[2], "-")
+      XCTAssertEqual(result[3], "d")
     }
   }
 }
