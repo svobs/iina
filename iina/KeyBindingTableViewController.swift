@@ -406,18 +406,6 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     return false
   }
 
-  func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    // FIXME: Disabled because this breaks "Inline create" functionality.
-    // Figure out why there is an extra `controlTextDidEndEditing` being sent.
-    /*
-    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else { return }
-
-    if row.keyMapping.rawKey == "" && row.keyMapping.rawAction == "" {
-      bindingTableStore.removeBindings(at: IndexSet(integer: rowIndex))
-    }
-     */
-  }
-
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // An error here would be really bad

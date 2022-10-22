@@ -13,7 +13,7 @@ import Cocoa
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
-  private let enableInlineCreate = false  // see note at `editDidEndWithNoChange()` below
+  private let enableInlineCreate = true
 
   private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigStore!
@@ -122,13 +122,10 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    // FIXME: Disabled because this breaks "Inline create" functionality.
-    // Figure out why there is an extra `controlTextDidEndEditing` being sent.
-    /*
     if self.tableStore.isAddingNewConfigInline {
+      // If user didn't enter a name, just remove the row
       tableStore.cancelInlineAdd()
     }
-     */
   }
 
   // User finished editing (callback from EditableTextField).

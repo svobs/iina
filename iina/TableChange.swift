@@ -58,46 +58,40 @@ class TableChange {
 
   // Subclasses should override executeStructureUpdates() instead of this
   func execute(on tableView: EditableTableView) {
-    // encapsulate animation transaction in this function
-    tableView.beginUpdates()
-    defer {
-      tableView.endUpdates()
-    }
+    NSAnimationContext.runAnimationGroup({context in
+      // Encapsulate all animations in this function inside a transaction.
+      tableView.beginUpdates()
+      executeStructureUpdates(on: tableView)
 
-    executeStructureUpdates(on: tableView)
-
-    if let newSelectedRows = self.newSelectedRows {
-      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
-      // To select added rows, will need an explicit call here.
-      // Note: need to add an async() here to let the NSTableView structure updates "settle" before updating row selection.
-      // Otherwise the table can end up with phantom row selections which never go away
-      DispatchQueue.main.async {
+      if let newSelectedRows = self.newSelectedRows {
+        // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+        // To select added rows, will need an explicit call here.
         Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
         tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-
-        self.executeAfterRowSelection(on: tableView)
       }
-    } else {
-      executeAfterRowSelection(on: tableView)
-    }
-  }
 
-  private func executeAfterRowSelection(on tableView: EditableTableView) {
-    if reloadAllExistingRows && self.changeType != .reloadAll {
-      tableView.reloadExistingRows()
-    }
+      if reloadAllExistingRows && self.changeType != .reloadAll {
+        tableView.reloadExistingRows()
+      }
 
-    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
-      tableView.scrollRowToVisible(firstSelectedRow)
-    }
+      if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
+        tableView.scrollRowToVisible(firstSelectedRow)
+      }
 
-    if let completionHandler = completionHandler {
-      DispatchQueue.main.async { // similar to above, let it settle again before possible further changes
-        Logger.log("Executing completion handler", level: .verbose)
-        completionHandler(self)
+      tableView.endUpdates()
+    },
+    completionHandler: {
+      // Put things like "inline editing after adding a row" here, so
+      // it will wait until after the animations are complete. Doing so
+      // avoids issues such as unexpected notifications being fired from animations
+      if let completionHandler = self.completionHandler {
+        DispatchQueue.main.async {
+          Logger.log("Executing completion handler", level: .verbose)
+          completionHandler(self)
+        }
       }
     }
-  }
+  )
 
   func executeStructureUpdates(on tableView: EditableTableView) {
 
