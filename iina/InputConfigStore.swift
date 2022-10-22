@@ -322,7 +322,7 @@ class InputConfigStore {
       newRows.append("")
     }
 
-    let configTableChange = TableChangeByRowIndex.buildDiff(oldRows: oldRows, newRows: newRows, completionHandler: completionHandler)
+    let configTableChange = TableChange.buildDiff(oldRows: oldRows, newRows: newRows, completionHandler: completionHandler)
     configTableChange.scrollToFirstSelectedRow = true
 
     configTableRows = newRows

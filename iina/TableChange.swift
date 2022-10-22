@@ -35,6 +35,12 @@ class TableChange {
 
   let changeType: ChangeType
 
+  var toInsert: IndexSet? = nil
+  var toRemove: IndexSet? = nil
+  var toUpdate: IndexSet? = nil
+  // Used by ChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
+  var toMove: [(Int, Int)]? = nil
+
   var newSelectedRows: IndexSet? = nil
 
   var scrollToFirstSelectedRow: Bool = false
@@ -45,7 +51,7 @@ class TableChange {
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableChange.CompletionHandler?
 
-  fileprivate init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler?) {
+  init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
     self.changeType = changeType
     self.completionHandler = completionHandler
   }
@@ -94,22 +100,6 @@ class TableChange {
   }
 
   func executeStructureUpdates(on tableView: EditableTableView) {
-  }
-}
-
-// Uses IndexSets of integer-based row indexes to describe the changes
-class TableChangeByRowIndex: TableChange {
-  var toInsert: IndexSet? = nil
-  var toRemove: IndexSet? = nil
-  var toUpdate: IndexSet? = nil
-  // Used by ChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
-  var toMove: [(Int, Int)]? = nil
-
-  override init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
-    super.init(changeType, completionHandler: completionHandler)
-  }
-
-  override func executeStructureUpdates(on tableView: EditableTableView) {
 
     switch changeType {
       case .selectionChangeOnly:
@@ -134,15 +124,15 @@ class TableChangeByRowIndex: TableChange {
         tableView.reloadExistingRows()
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("TableChangeByRowIndex: ReloadAll", level: .verbose)
+        Logger.log("TableChange: ReloadAll", level: .verbose)
         tableView.reloadData()
       case .wholeTableDiff:
-        Logger.log("TableChangeByRowIndex: executing diff", level: .verbose)
+        Logger.log("TableChange: executing diff", level: .verbose)
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
            let movePairs = self.toMove {
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          Logger.log("TableChangeByRowIndex: diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
+          Logger.log("TableChange: diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
           tableView.removeRows(at: toRemove, withAnimation: tableView.rowAnimation)
           tableView.insertRows(at: toInsert, withAnimation: tableView.rowAnimation)
           for (oldIndex, newIndex) in movePairs {
@@ -154,13 +144,13 @@ class TableChangeByRowIndex: TableChange {
   }
 
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>,
-                           completionHandler: TableChange.CompletionHandler? = nil) -> TableChangeByRowIndex where R:Hashable {
+                           completionHandler: TableChange.CompletionHandler? = nil) -> TableChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
-      return TableChangeByRowIndex(.reloadAll, completionHandler: completionHandler)
+      return TableChange(.reloadAll, completionHandler: completionHandler)
     }
 
-    let tableChange = TableChangeByRowIndex(.wholeTableDiff, completionHandler: completionHandler)
+    let tableChange = TableChange(.wholeTableDiff, completionHandler: completionHandler)
     tableChange.toRemove = IndexSet()
     tableChange.toInsert = IndexSet()
     tableChange.toMove = []

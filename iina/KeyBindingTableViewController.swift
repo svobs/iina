@@ -511,11 +511,9 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     if isRaw {
       // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
       let afterComplete: TableChange.CompletionHandler = { tableChange in
-        if let tc = tableChange as? TableChangeByRowIndex {
-          // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableChange object
-          if let insertedRowIndex = tc.toInsert?.first {
-            self.tableView.editCell(row: insertedRowIndex, column: 0)
-          }
+        // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableChange object
+        if let insertedRowIndex = tableChange.toInsert?.first {
+          self.tableView.editCell(row: insertedRowIndex, column: 0)
         }
       }
       let newMapping = KeyMapping(rawKey: "", rawAction: "")
@@ -577,10 +575,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // Each TableUpdate executes asynchronously, but we need to wait for it to complete in order to do any further work on
   // inserted rows.
   private func scrollToFirstInserted(_ tableChange: TableChange) {
-    if let tc = tableChange as? TableChangeByRowIndex {
-      if let firstInsertedRowIndex = tc.toInsert?.first {
-        self.tableView.scrollRowToVisible(firstInsertedRowIndex)
-      }
+    if let firstInsertedRowIndex = tableChange.toInsert?.first {
+      self.tableView.scrollRowToVisible(firstInsertedRowIndex)
     }
   }
 

@@ -35,7 +35,7 @@ class AppInputConfig {
    The param `withBindingsTableChange` allows for finer-grained updates to the Key Bindings table in the Preferences UI.
    It is optional and only used when called directly from the table's data store.
    */
-  static func rebuildCurrent(withBindingsTableChange tableChange: TableChangeByRowIndex? = nil) {
+  static func rebuildCurrent(withBindingsTableChange tableChange: TableChange? = nil) {
     let rebuildVersion = AppInputConfig.lastBuildVersion + 1
     Logger.log("Requesting app active bindings rebuild (v\(rebuildVersion))", level: .verbose)
 

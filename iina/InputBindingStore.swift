@@ -93,7 +93,7 @@ class InputBindingStore {
     }
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
-    let tableChange = TableChangeByRowIndex(.moveRows, completionHandler: afterComplete)
+    let tableChange = TableChange(.moveRows, completionHandler: afterComplete)
     Logger.log("MovePairs: \(moveIndexPairs)", level: .verbose)
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
@@ -114,7 +114,7 @@ class InputBindingStore {
       clearFilter()
     }
 
-    let tableChange = TableChangeByRowIndex(.addRows, completionHandler: afterComplete)
+    let tableChange = TableChange(.addRows, completionHandler: afterComplete)
     let toInsert = IndexSet(insertIndex..<(insertIndex+mappingList.count))
     tableChange.toInsert = toInsert
     tableChange.newSelectedRows = toInsert
@@ -155,7 +155,7 @@ class InputBindingStore {
       }
     }
 
-    let tableChange = TableChangeByRowIndex(.removeRows)
+    let tableChange = TableChange(.removeRows)
     tableChange.toRemove = indexesToRemove
 
     saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
@@ -180,7 +180,7 @@ class InputBindingStore {
       remainingRowsUnfiltered.append(row)
     }
 
-    let tableChange = TableChangeByRowIndex(.removeRows)
+    let tableChange = TableChange(.removeRows)
     tableChange.toRemove = indexesToRemove
 
     Logger.log("Of \(idsToRemove.count) requested, (\(indexesToRemove.count) bindings will actually be removed", level: .verbose)
@@ -197,7 +197,7 @@ class InputBindingStore {
 
     existingRow.keyMapping = mapping
 
-    let tableChange = TableChangeByRowIndex(.updateRows)
+    let tableChange = TableChange(.updateRows)
 
     tableChange.toUpdate = IndexSet(integer: index)
 
@@ -380,7 +380,7 @@ class InputBindingStore {
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChangeByRowIndex) {
+  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
     // or of writing another section's bindings to the "default" section.
     let defaultSectionMappings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
@@ -398,7 +398,7 @@ class InputBindingStore {
    This is needed so that animations can work. But InputBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChangeByRowIndex? = nil) {
+  func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChange? = nil) {
     InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME,
                                       with: defaultSectionMappings,
                                       doRebuildAfter: false)
@@ -412,7 +412,7 @@ class InputBindingStore {
    - Push update to the Key Bindings table in the UI so it can be animated.
    Expected to be run on the main thread.
   */
-  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChangeByRowIndex? = nil) {
+  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChange? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases:
@@ -430,10 +430,10 @@ class InputBindingStore {
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChangeByRowIndex {
+  private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChange {
     let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
     // Remember, the displayed table contents must reflect the *filtered* state.
     let bindingRowsAllNewFiltered = InputBindingStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
-    return TableChangeByRowIndex.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
+    return TableChange.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
 }
