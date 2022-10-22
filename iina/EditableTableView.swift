@@ -121,6 +121,14 @@ class EditableTableView: NSTableView {
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
+  override func becomeFirstResponder() -> Bool {
+    // If user types ESC key while is FieldEditor, it goes straight here instead of notifying its text field.
+    if let cellEditTracker = cellEditTracker {
+      cellEditTracker.endEdit()
+    }
+    return true
+  }
+
   // Convenience method
   func editCell(row rowIndex: Int, column columnIndex: Int) {
     guard let cellEditTracker = cellEditTracker else {
@@ -152,21 +160,11 @@ class EditableTableView: NSTableView {
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
 
     if self.selectedRow != rowIndex {
-      Logger.log("Selecting rowIndex \(rowIndex)", level: .verbose)
+      Logger.log("Selecting edit row: \(rowIndex)", level: .verbose)
       self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    // There may be a race condition in NSTableView which can result in an incomplete update.
-    // If the call to changeCurrentCell() above resulted in another cell editor being closed, the last edited cell may still show the
-    // "text editing" cursor until its row is next refreshed. By calling `async` here, we postpone our updates to the end of
-    // the current update queue, which allows previously queued updates to complete.
-    DispatchQueue.main.async {
-      if let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
-         let cellView = view as? NSTableCellView,
-         let editableTextField = cellView.textField as? EditableTextField {
-        self.window?.makeFirstResponder(editableTextField)
-      }
-    }
+    self.window?.makeFirstResponder(editableTextField)
   }
 
   // Convenience function, for debugging

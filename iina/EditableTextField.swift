@@ -22,7 +22,7 @@ class EditableTextField: NSTextField {
         return
       }
 
-      Logger.log("Got a double-cick", level: .verbose)
+      Logger.log("EditableTextField: Got a double-cick", level: .verbose)
       let approved = editTracker.askUserToApproveDoubleClickEdit()
       Logger.log("Double-click approved: \(approved)", level: .verbose)
       if approved {
@@ -36,7 +36,7 @@ class EditableTextField: NSTextField {
 
   override func becomeFirstResponder() -> Bool {
     if let editTracker = editTracker {
-      editTracker.startEdit(for: self)
+      editTracker.startEdit()
     } else {
       Logger.log("Table textField \(self) had becomeFirstResponder() called without editTracker being set first!", level: .error)
     }

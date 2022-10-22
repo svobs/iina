@@ -63,14 +63,14 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
        let textMovement = NSTextMovement(rawValue: textMovementInt) {
 
-      self.endEdit(for: current.textField)
+      self.endEdit()
 
       DispatchQueue.main.async {
         // Start asynchronously so we can return
         self.editAnotherCellAfterEditEnd(oldRow: current.row, oldColumn: current.column, textMovement)
       }
     } else {
-      self.endEdit(for: current.textField, closeEditorExplicitly: false)
+      self.endEdit(closeEditorExplicitly: false)
     }
   }
 
@@ -82,7 +82,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       } else {
         Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))")
         // Make sure old editor is closed and saved if appropriate:
-        endEdit(for: prev.textField)
+        endEdit()
       }
     } else {
       Logger.log("CellEditTracker: changing cell to (\(row), \(column))", level: .verbose)
@@ -93,11 +93,12 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     textField.editTracker = self
   }
 
-  func startEdit(for textField: EditableTextField) {
+  func startEdit() {
     guard let current = current else {
       return
     }
 
+    let textField = current.textField
     Logger.log("START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
     self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: true)
     textField.isEditable = true
@@ -126,10 +127,11 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   }
 
   @discardableResult
-  func endEdit(for textField: EditableTextField, closeEditorExplicitly: Bool = true) -> Bool {
+  func endEdit(closeEditorExplicitly: Bool = true) -> Bool {
     guard let current = current, current.editInProgress else { return false }
 
-    Logger.log("END   Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
+    let textField = current.textField
+    Logger.log("END Edit   [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
 
     let shouldContinue = commitChanges(to: current)
 
