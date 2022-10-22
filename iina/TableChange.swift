@@ -68,11 +68,21 @@ class TableChange {
       DispatchQueue.main.async {
         Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
         tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-      }
-    }
 
+        self.executeAfterRowSelection(on: tableView)
+      }
+    } else {
+      executeAfterRowSelection(on: tableView)
+    }
+  }
+
+  private func executeAfterRowSelection(on tableView: EditableTableView) {
     if reloadAllExistingRows && self.changeType != .reloadAll {
       tableView.reloadExistingRows()
+    }
+
+    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
+      tableView.scrollRowToVisible(firstSelectedRow)
     }
 
     if let completionHandler = completionHandler {
@@ -80,10 +90,6 @@ class TableChange {
         Logger.log("Executing completion handler", level: .verbose)
         completionHandler(self)
       }
-    }
-
-    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
-      tableView.scrollRowToVisible(firstSelectedRow)
     }
   }
 

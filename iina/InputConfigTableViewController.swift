@@ -13,7 +13,7 @@ import Cocoa
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
-  private let enableInlineCreate = false
+  private let enableInlineCreate = false  // see note at `editDidEndWithNoChange()` below
 
   private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigStore!
@@ -119,6 +119,15 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
       return true
     }
     return false
+  }
+
+  func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
+    // FIXME: Disabled because this breaks "Add new row inline" functionality.
+    // If a new row is created and then a cell editor is opened right away, an unnecessary call to
+    // `controlTextDidEndEditing` in `CellEditTracker` is made.
+//    if self.tableStore.isAddingNewConfigInline {
+//      tableStore.cancelInlineAdd()
+//    }
   }
 
   // User finished editing (callback from EditableTextField).

@@ -177,11 +177,11 @@ class InputConfigStore {
   }
 
   func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {
-    guard !isAddingNewConfigInline else {
-      Logger.log("Already adding new user config inline (discarding request)")
-      return
+    if isAddingNewConfigInline {
+      Logger.log("Already adding new user config inline; will reselect it")
+    } else {
+      Logger.log("Adding blank row for naming new user config")
     }
-    Logger.log("Adding blank row for naming new user config")
     isAddingNewConfigInline = true
     applyConfigTableChange(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
   }
@@ -295,10 +295,6 @@ class InputConfigStore {
 
     configTableRowsNew.append(contentsOf: userConfigNameList)
 
-    if isAddingNewConfigInline {
-      configTableRowsNew.append("")
-    }
-
     Logger.log("Rebuilt Config table rows (current=\"\(currentConfigName)\"): \(configTableRowsNew)", level: .verbose)
 
     return configTableRowsNew
@@ -320,7 +316,12 @@ class InputConfigStore {
     currentConfigName = currentConfigNameNew
 
     let oldRows = configTableRows
-    let newRows = buildConfigTableRows()
+    var newRows = buildConfigTableRows()
+    if isAddingNewConfigInline {
+      // Add blank row to be edited to the end
+      newRows.append("")
+    }
+
     let configTableChange = TableChangeByRowIndex.buildDiff(oldRows: oldRows, newRows: newRows, completionHandler: completionHandler)
     configTableChange.scrollToFirstSelectedRow = true
 
