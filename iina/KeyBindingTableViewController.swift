@@ -407,14 +407,15 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    // FIXME: Disabled because this breaks "Add new row inline" functionality.
-    // If a new row is created and then a cell editor is opened right away, an unnecessary call to
-    // `controlTextDidEndEditing` in `CellEditTracker` is made.
-//    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else { return }
-//
-//    if row.keyMapping.rawKey == "" && row.keyMapping.rawAction == "" {
-//      bindingTableStore.removeBindings(at: IndexSet(integer: rowIndex))
-//    }
+    // FIXME: Disabled because this breaks "Inline create" functionality.
+    // Figure out why there is an extra `controlTextDidEndEditing` being sent.
+    /*
+    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else { return }
+
+    if row.keyMapping.rawKey == "" && row.keyMapping.rawAction == "" {
+      bindingTableStore.removeBindings(at: IndexSet(integer: rowIndex))
+    }
+     */
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {

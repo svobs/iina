@@ -122,16 +122,17 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    // FIXME: Disabled because this breaks "Add new row inline" functionality.
-    // If a new row is created and then a cell editor is opened right away, an unnecessary call to
-    // `controlTextDidEndEditing` in `CellEditTracker` is made.
-//    if self.tableStore.isAddingNewConfigInline {
-//      tableStore.cancelInlineAdd()
-//    }
+    // FIXME: Disabled because this breaks "Inline create" functionality.
+    // Figure out why there is an extra `controlTextDidEndEditing` being sent.
+    /*
+    if self.tableStore.isAddingNewConfigInline {
+      tableStore.cancelInlineAdd()
+    }
+     */
   }
 
   // User finished editing (callback from EditableTextField).
-  // Renames current comfig & its file on disk
+  // Renames current config & its file on disk
   func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
     if self.tableStore.isAddingNewConfigInline { // New file
       let succeeded = self.completeInlineAdd(newName: newName)
