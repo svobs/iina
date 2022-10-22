@@ -59,28 +59,8 @@ class TableChange {
   // Subclasses should override executeStructureUpdates() instead of this
   func execute(on tableView: EditableTableView) {
     NSAnimationContext.runAnimationGroup({context in
-      // Encapsulate all animations in this function inside a transaction.
-      tableView.beginUpdates()
-      executeStructureUpdates(on: tableView)
-
-      if let newSelectedRows = self.newSelectedRows {
-        // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
-        // To select added rows, will need an explicit call here.
-        Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
-        tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
-      }
-
-      if reloadAllExistingRows && self.changeType != .reloadAll {
-        tableView.reloadExistingRows()
-      }
-
-      if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
-        tableView.scrollRowToVisible(firstSelectedRow)
-      }
-
-      tableView.endUpdates()
-    },
-    completionHandler: {
+      self.executeInAnimationGroup(tableView, context)
+    }, completionHandler: {
       // Put things like "inline editing after adding a row" here, so
       // it will wait until after the animations are complete. Doing so
       // avoids issues such as unexpected notifications being fired from animations
@@ -90,10 +70,33 @@ class TableChange {
           completionHandler(self)
         }
       }
-    }
-  )
+    })
+  }
 
-  func executeStructureUpdates(on tableView: EditableTableView) {
+  private func executeInAnimationGroup(_ tableView: EditableTableView, _ context: NSAnimationContext) {
+    // Encapsulate all animations in this function inside a transaction.
+    tableView.beginUpdates()
+    executeStructureUpdates(on: tableView)
+
+    if let newSelectedRows = self.newSelectedRows {
+      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+      // To select added rows, will need an explicit call here.
+      Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
+      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+    }
+
+    if reloadAllExistingRows && self.changeType != .reloadAll {
+      tableView.reloadExistingRows()
+    }
+
+    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
+      tableView.scrollRowToVisible(firstSelectedRow)
+    }
+
+    tableView.endUpdates()
+  }
+
+  private func executeStructureUpdates(on tableView: EditableTableView) {
 
     switch changeType {
       case .selectionChangeOnly:
