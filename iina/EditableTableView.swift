@@ -121,8 +121,8 @@ class EditableTableView: NSTableView {
     return super.validateProposedFirstResponder(responder, for: event)
   }
 
-  override func editColumn(_ columnIndex: Int, row rowIndex: Int, with event: NSEvent?, select: Bool) {
-    Logger.log("editColumn called for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)))", level: .verbose)
+  // Convenience method
+  func editCell(row rowIndex: Int, column columnIndex: Int) {
     guard let cellEditTracker = cellEditTracker else {
       return
     }
@@ -146,19 +146,18 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log("Opening in-line editor for row \(rowIndex), column \(columnIndex) (event: \(eventTypeText(event)), textField: \(editableTextField))")
+    Logger.log("EditableTableView: Opening inline editor for row \(rowIndex), column \(columnIndex), textField: \(editableTextField)", level: .verbose)
 
     self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)
 
-    if select && self.selectedRow != rowIndex {
+    if self.selectedRow != rowIndex {
       Logger.log("Selecting rowIndex \(rowIndex)", level: .verbose)
       self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    // Hypothesis: There seems to be a race condition in NSTableView which can result in half-complete updates to its UI.
-    // If the call to changeCurrentCell() above resulted in another cell editor being closed, those updates needs to be allowed
-    // to complete before proceeding, or they may never complete. In the case here, the last edited cell may still show the
+    // There may be a race condition in NSTableView which can result in an incomplete update.
+    // If the call to changeCurrentCell() above resulted in another cell editor being closed, the last edited cell may still show the
     // "text editing" cursor until its row is next refreshed. By calling `async` here, we postpone our updates to the end of
     // the current update queue, which allows previously queued updates to complete.
     DispatchQueue.main.async {
@@ -168,11 +167,6 @@ class EditableTableView: NSTableView {
         self.window?.makeFirstResponder(editableTextField)
       }
     }
-  }
-
-  // Convenience method
-  func editCell(row rowIndex: Int, column columnIndex: Int) {
-    self.editColumn(columnIndex, row: rowIndex, with: nil, select: true)
   }
 
   // Convenience function, for debugging

@@ -13,6 +13,8 @@ import Foundation
 protocol EditableTableViewDelegate {
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool
 
+  func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int)
+
   // The user double-clicked on the cell with the given row & coumn indexes.
   // If true is returned, an in-line editor will be opened for editing the cell text.
   // If false is returned, no action will be taken.
@@ -73,6 +75,9 @@ extension EditableTableViewDelegate {
     // If in-line editing is enabled, then this method should be overriden, so this message should never be seen.
     Logger.log("EditableTableViewDelegate.editDidEndWithNewText(): null default method was called!", level: .warning)
     return false
+  }
+
+  func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
   }
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {

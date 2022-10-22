@@ -396,7 +396,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     }
 
     if isRaw {
-      Logger.log("Opening in-line editor for row \(rowIndex)", level: .verbose)
+      Logger.log("Opening inline editor for row \(rowIndex)", level: .verbose)
       // Use in-line editor
       return true
     }
@@ -404,6 +404,14 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     editWithPopup(rowIndex: rowIndex)
     // Deny in-line editor from opening
     return false
+  }
+
+  func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
+    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else { return }
+    
+    if row.keyMapping.rawKey == "" && row.keyMapping.rawAction == "" {
+      bindingTableStore.removeBindings(at: IndexSet(integer: rowIndex))
+    }
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {

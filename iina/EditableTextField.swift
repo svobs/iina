@@ -11,7 +11,7 @@ import Foundation
 /*
  Should only be used within cells of `EditableTableView`.
  */
-class EditableTextField: NSTextField, NSTextFieldDelegate {
+class EditableTextField: NSTextField {
   var editTracker: CellEditTracker? = nil
 
   override func mouseDown(with event: NSEvent) {
@@ -41,23 +41,5 @@ class EditableTextField: NSTextField, NSTextFieldDelegate {
       Logger.log("Table textField \(self) had becomeFirstResponder() called without editTracker being set first!", level: .error)
     }
     return true
-  }
-
-  override func textDidEndEditing(_ notification: Notification) {
-    guard let editTracker = editTracker else {
-      Logger.log("textDidEndEditing(): no active edit!", level: .error)
-      return
-    }
-
-    // Tab / etc navigation, if any, will show up in the notification
-    let textMovement: NSTextMovement?
-    if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int {
-      textMovement = NSTextMovement(rawValue: textMovementInt)
-    } else {
-      textMovement = nil
-    }
-
-    // This will handle saviung/discarding newValue, do editor disposal, and possibly start a new edit
-    editTracker.endEdit(for: self, newValue: stringValue, with: textMovement)
   }
 }

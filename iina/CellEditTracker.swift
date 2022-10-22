@@ -10,17 +10,17 @@ import Foundation
 
 // Plays the role of mediator: coordinates between EditableTableView and its EditableTextFields, to manage
 // in-line cell editing.
-class CellEditTracker {
+class CellEditTracker: NSObject, NSTextFieldDelegate {
   // Stores info for the currently focused cell, whether or not the cell is being edited
   private struct CurrentFocus {
     let textField: EditableTextField
     let stringValueOrig: String
     let row: Int
     let column: Int
+    // If true, `current` has had `startEdit()` called but not `endEdit()`:
+    let editInProgress: Bool
   }
   private var current: CurrentFocus? = nil
-  // If true, `current` has had `startEdit()` called but not `endEdit()`:
-  private var editInProgress = false
 
   private let parentTable: EditableTableView
   private let delegate: EditableTableViewDelegate
@@ -30,6 +30,50 @@ class CellEditTracker {
     self.delegate = delegate
   }
 
+  private func getTextMovementName(from notification: Notification) -> String {
+    guard let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int else {
+      return "nil"
+    }
+
+    let tm = NSTextMovement(rawValue: textMovementInt)
+    switch tm {
+      case .return:
+        return "return"
+      case .backtab:
+        return "backtab"
+      case .cancel:
+        return "cancel"
+      case .other:
+        return "other"
+      case .tab:
+        return "tab"
+      default:
+        return "{\(textMovementInt)}"
+    }
+  }
+
+  @objc func controlTextDidEndEditing(_ notification: Notification) {
+    Logger.log("DidEndEditing (nextNav: \(getTextMovementName(from: notification)))", level: .verbose)
+
+    guard let current = self.current else {
+      return
+    }
+
+    // Tab / return navigation (if any) will show up in the notification
+    if let textMovementInt = notification.userInfo?["NSTextMovement"] as? Int,
+       let textMovement = NSTextMovement(rawValue: textMovementInt) {
+
+      self.endEdit(for: current.textField)
+
+      DispatchQueue.main.async {
+        // Start asynchronously so we can return
+        self.editAnotherCellAfterEditEnd(oldRow: current.row, oldColumn: current.column, textMovement)
+      }
+    } else {
+      self.endEdit(for: current.textField, closeEditorExplicitly: false)
+    }
+  }
+
   func changeCurrentCell(to textField: EditableTextField, row: Int, column: Int) {
     // Close old editor, if any:
     if let prev = self.current {
@@ -37,14 +81,15 @@ class CellEditTracker {
         return
       } else {
         Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))")
-        // Clean up state here:
-        endEdit(for: prev.textField, newValue: prev.textField.stringValue)
+        // Make sure old editor is closed and saved if appropriate:
+        endEdit(for: prev.textField)
       }
     } else {
-      Logger.log("CellEditTracker: changing cell to (\(row), \(column))")
+      Logger.log("CellEditTracker: changing cell to (\(row), \(column))", level: .verbose)
     }
     // keep track of it all
-    self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: row, column: column)
+    self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: row, column: column, editInProgress: false)
+    textField.delegate = self
     textField.editTracker = self
   }
 
@@ -52,53 +97,57 @@ class CellEditTracker {
     guard let current = current else {
       return
     }
-    self.endEdit(for: current.textField)
 
-    Logger.log("BeginEditing(\(current.row), \(current.column))", level: .verbose)
-    self.editInProgress = true
+    Logger.log("START Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
+    self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: true)
     textField.isEditable = true
     textField.isSelectable = true
     textField.selectText(nil)  // creates editor
     textField.needsDisplay = true
   }
 
-  func endEdit(for textField: EditableTextField, newValue: String? = nil, with textMovement: NSTextMovement? = nil) {
-    guard let current = current, editInProgress else {
-      return
-    }
-
-    // Don't tab to the next value if there is an error; stay where we are
-    var allowContinuedNavigation: Bool = true
-
-    if let newValue = newValue, newValue != current.stringValueOrig {
-      if self.delegate.editDidEndWithNewText(newValue: newValue, row: current.row, column: current.column) {
+  @discardableResult
+  private func commitChanges(to current: CurrentFocus) -> Bool {
+    if current.textField.stringValue != current.stringValueOrig {
+      if self.delegate.editDidEndWithNewText(newValue: current.textField.stringValue, row: current.row, column: current.column) {
         Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
+        return true
       } else {
         // a return value of false tells us to revert to the previous value
         Logger.log("editDidEndWithNewText() returned FALSE: reverting displayed value to \"\(current.stringValueOrig)\"", level: .verbose)
-        textField.stringValue = current.stringValueOrig
-        allowContinuedNavigation = false
+        current.textField.stringValue = current.stringValueOrig
+        return false
       }
+    } else {
+      Logger.log("endEdit() calling editDidEndWithNoChange()", level: .verbose)
+      self.delegate.editDidEndWithNoChange(row: current.row, column: current.column)
     }
-
-    Logger.log("EndEditing(\(current.row), \(current.column))", level: .verbose)
-    self.editInProgress = false
-    textField.window?.endEditing(for: textField)
-    // Resign first responder status and give focus back to table row selection:
-    textField.window?.makeFirstResponder(self.parentTable)
-    textField.isEditable = false
-    textField.isSelectable = false
-    textField.needsDisplay = true
-
-    // Tab / return navigation (if provided): start asynchronously so we can return
-    if let textMovement = textMovement, allowContinuedNavigation {
-      DispatchQueue.main.async {
-        self.editAnotherCellAfterEditEnd(oldRow: current.row, oldColumn: current.column, textMovement)
-      }
-    }
+    return true
   }
 
-  // MARK: Navigation between edited cells
+  @discardableResult
+  func endEdit(for textField: EditableTextField, closeEditorExplicitly: Bool = true) -> Bool {
+    guard let current = current, current.editInProgress else { return false }
+
+    Logger.log("END   Edit [\(current.row), \(current.column)] \"\(textField.stringValue)\"", level: .verbose)
+
+    let shouldContinue = commitChanges(to: current)
+
+    self.current = CurrentFocus(textField: textField, stringValueOrig: textField.stringValue, row: current.row, column: current.column, editInProgress: false)
+
+    if closeEditorExplicitly {
+      textField.window?.endEditing(for: textField)
+      // Resign first responder status and give focus back to table row selection:
+      textField.window?.makeFirstResponder(self.parentTable)
+      textField.isEditable = false
+      textField.isSelectable = false
+      textField.needsDisplay = true
+    }
+
+    return shouldContinue
+  }
+
+  // MARK: Intercellular edit navigation
 
   func askUserToApproveDoubleClickEdit() -> Bool {
     if let current = current {
