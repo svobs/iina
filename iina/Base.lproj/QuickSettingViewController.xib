@@ -957,69 +957,6 @@
                                                                         <real value="3.4028234663852886e+38"/>
                                                                     </customSpacing>
                                                                 </stackView>
-                                                                <box fixedFrame="YES" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="idN-MJ-xIl">
-                                                                    <rect key="frame" x="12" y="848" width="320" height="134"/>
-                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                    <view key="contentView" id="jvD-df-TE9">
-                                                                        <rect key="frame" x="1" y="1" width="318" height="132"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                        <subviews>
-                                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="8Qz-dT-CZN" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                <rect key="frame" x="12" y="48" width="294" height="36"/>
-                                                                                <constraints>
-                                                                                    <constraint firstAttribute="height" constant="36" id="cPY-ru-caw"/>
-                                                                                </constraints>
-                                                                                <userDefinedRuntimeAttributes>
-                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.deinterlace"/>
-                                                                                </userDefinedRuntimeAttributes>
-                                                                            </customView>
-                                                                            <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="E2b-cC-4dI">
-                                                                                <rect key="frame" x="12" y="85" width="306" height="5"/>
-                                                                            </box>
-                                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="guA-Cu-2R3" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                <rect key="frame" x="12" y="92" width="294" height="36"/>
-                                                                                <constraints>
-                                                                                    <constraint firstAttribute="height" constant="36" id="LTo-KK-6oG"/>
-                                                                                </constraints>
-                                                                                <userDefinedRuntimeAttributes>
-                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hwdec"/>
-                                                                                </userDefinedRuntimeAttributes>
-                                                                            </customView>
-                                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="7SX-mY-KBg" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                <rect key="frame" x="12" y="4" width="294" height="36"/>
-                                                                                <constraints>
-                                                                                    <constraint firstAttribute="height" constant="36" id="569-uk-PWj"/>
-                                                                                </constraints>
-                                                                                <userDefinedRuntimeAttributes>
-                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hdr"/>
-                                                                                </userDefinedRuntimeAttributes>
-                                                                            </customView>
-                                                                            <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="np8-ss-aJP">
-                                                                                <rect key="frame" x="12" y="41" width="306" height="5"/>
-                                                                            </box>
-                                                                        </subviews>
-                                                                        <constraints>
-                                                                            <constraint firstAttribute="bottom" secondItem="7SX-mY-KBg" secondAttribute="bottom" constant="4" id="7KJ-NV-zLM"/>
-                                                                            <constraint firstAttribute="trailing" secondItem="E2b-cC-4dI" secondAttribute="trailing" id="JET-8d-eGZ"/>
-                                                                            <constraint firstAttribute="trailing" secondItem="np8-ss-aJP" secondAttribute="trailing" id="QbT-J2-uzS"/>
-                                                                            <constraint firstItem="8Qz-dT-CZN" firstAttribute="leading" secondItem="7SX-mY-KBg" secondAttribute="leading" id="RFq-Kp-wxd"/>
-                                                                            <constraint firstItem="np8-ss-aJP" firstAttribute="top" secondItem="8Qz-dT-CZN" secondAttribute="bottom" constant="4" id="RSP-ne-vgt"/>
-                                                                            <constraint firstItem="E2b-cC-4dI" firstAttribute="top" secondItem="guA-Cu-2R3" secondAttribute="bottom" constant="4" id="ais-Gy-aga"/>
-                                                                            <constraint firstItem="7SX-mY-KBg" firstAttribute="top" secondItem="8Qz-dT-CZN" secondAttribute="bottom" constant="8" id="e3T-lF-7UT"/>
-                                                                            <constraint firstItem="E2b-cC-4dI" firstAttribute="leading" secondItem="jvD-df-TE9" secondAttribute="leading" constant="12" id="e9X-Ev-3bq"/>
-                                                                            <constraint firstItem="guA-Cu-2R3" firstAttribute="leading" secondItem="8Qz-dT-CZN" secondAttribute="leading" id="jpO-Ds-fGw"/>
-                                                                            <constraint firstItem="8Qz-dT-CZN" firstAttribute="trailing" secondItem="7SX-mY-KBg" secondAttribute="trailing" id="lfi-du-Vpt"/>
-                                                                            <constraint firstItem="guA-Cu-2R3" firstAttribute="centerX" secondItem="jvD-df-TE9" secondAttribute="centerX" id="oUy-jV-ngn"/>
-                                                                            <constraint firstItem="guA-Cu-2R3" firstAttribute="top" secondItem="jvD-df-TE9" secondAttribute="top" constant="4" id="odq-2K-fbf"/>
-                                                                            <constraint firstItem="7SX-mY-KBg" firstAttribute="leading" secondItem="E2b-cC-4dI" secondAttribute="leading" id="pKW-oq-T4t"/>
-                                                                            <constraint firstItem="8Qz-dT-CZN" firstAttribute="top" secondItem="guA-Cu-2R3" secondAttribute="bottom" constant="8" id="sMR-Rz-fqh"/>
-                                                                            <constraint firstItem="np8-ss-aJP" firstAttribute="leading" secondItem="jvD-df-TE9" secondAttribute="leading" constant="12" id="uxK-td-Jbw"/>
-                                                                            <constraint firstItem="guA-Cu-2R3" firstAttribute="trailing" secondItem="8Qz-dT-CZN" secondAttribute="trailing" id="zHb-2M-KYF"/>
-                                                                        </constraints>
-                                                                    </view>
-                                                                    <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                                                    <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
-                                                                </box>
                                                             </subviews>
                                                         </customView>
                                                     </subviews>
@@ -1044,19 +981,19 @@
                                 </subviews>
                             </view>
                         </tabViewItem>
-                        <tabViewItem label="Audio" identifier="2" id="bzk-c2-LH5" userLabel="Audio Tab">
+                        <tabViewItem label="Audio" identifier="2" id="bzk-c2-LH5" userLabel="AudioTab Tab">
                             <view key="view" id="Dxl-wa-zgc" userLabel="Audio Tab Content View">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="1789"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wXn-sV-AmG">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="1789"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="1774"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="724"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="1269" width="360" height="505"/>
+                                                    <rect key="frame" x="0.0" y="219" width="360" height="505"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb">
                                                             <rect key="frame" x="0.0" y="0.0" width="360" height="505"/>
@@ -1073,7 +1010,7 @@
                                                                     <rect key="frame" x="0.0" y="385" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
@@ -1604,11 +1541,11 @@
                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                         </clipView>
                                         <scroller key="horizontalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="klo-Db-oQE">
-                                            <rect key="frame" x="0.0" y="1774" width="360" height="15"/>
+                                            <rect key="frame" x="0.0" y="724" width="360" height="15"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="17z-n6-rH9">
-                                            <rect key="frame" x="360" y="0.0" width="15" height="1774"/>
+                                            <rect key="frame" x="360" y="0.0" width="15" height="724"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
@@ -1621,16 +1558,16 @@
                                 </constraints>
                             </view>
                         </tabViewItem>
-                        <tabViewItem label="Subtitle" identifier="" id="jND-MZ-sKB" userLabel="Subtitles Tab">
+                        <tabViewItem label="Subtitle" identifier="" id="jND-MZ-sKB" userLabel="SubtitlesTab Tab">
                             <view key="view" id="MrM-2b-7ob">
                                 <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-IY-poi">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5">
-                                            <rect key="frame" x="0.0" y="0.0" width="345" height="739"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="-93" width="360" height="832"/>
@@ -1642,7 +1579,7 @@
                                                                     <rect key="frame" x="0.0" y="298" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="dJV-R0-O3M">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -1798,7 +1735,7 @@
                                                                     <rect key="frame" x="0.0" y="182" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EKn-MX-Fao">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -2438,7 +2375,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="3ZS-ug-kkq">
-                                            <rect key="frame" x="345" y="0.0" width="15" height="739"/>
+                                            <rect key="frame" x="360" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
@@ -2451,13 +2388,13 @@
                                 </constraints>
                             </view>
                         </tabViewItem>
-                        <tabViewItem label="Plugin" identifier="" id="eE3-9i-hpU" userLabel="Plugin Tab">
+                        <tabViewItem label="Plugin" identifier="" id="eE3-9i-hpU" userLabel="PluginTab Tab">
                             <view key="view" id="rcL-IN-kt1">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="1789"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="GeS-T1-vtB">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="1789"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                     </customView>
                                 </subviews>
                                 <constraints>
