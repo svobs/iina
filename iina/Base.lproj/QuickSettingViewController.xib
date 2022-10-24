@@ -22,6 +22,7 @@
                 <outlet property="audioEqSlider6" destination="TKd-tg-Xtc" id="Mjz-0q-wc5"/>
                 <outlet property="audioEqSlider7" destination="nNf-gg-4tL" id="2dM-rS-3OH"/>
                 <outlet property="audioEqSlider8" destination="JaQ-EH-K1U" id="NZP-1Y-Q4q"/>
+                <outlet property="audioEqSlider9" destination="gbd-xf-hGS" id="yjy-wE-LJd"/>
                 <outlet property="audioTabBtn" destination="3Fk-ey-FhK" id="I1P-Dg-gtv"/>
                 <outlet property="audioTableView" destination="FLg-2m-Zaq" id="rId-Io-Y2B"/>
                 <outlet property="brightnessSlider" destination="eFW-a3-kWx" id="BTl-mg-ShV"/>
