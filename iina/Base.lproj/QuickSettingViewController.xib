@@ -318,11 +318,11 @@
                                                                                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                                                         <prototypeCellViews>
                                                                                                             <tableCellView id="QLv-Qp-hCf">
-                                                                                                                <rect key="frame" x="50" y="1" width="308" height="17"/>
+                                                                                                                <rect key="frame" x="50" y="1" width="293" height="17"/>
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="r2o-di-dN5">
-                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="308" height="17"/>
+                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="293" height="17"/>
                                                                                                                         <constraints>
                                                                                                                             <constraint firstAttribute="height" constant="17" id="Ai3-GM-1Yw"/>
                                                                                                                         </constraints>
@@ -439,7 +439,7 @@
                                                                                 </gridCell>
                                                                             </gridCells>
                                                                         </gridView>
-                                                                        <gridView xPlacement="leading" yPlacement="bottom" rowAlignment="none" rowSpacing="12" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="afn-uh-zSj" userLabel="CropSection Grid View">
+                                                                        <gridView horizontalCompressionResistancePriority="400" xPlacement="leading" yPlacement="bottom" rowAlignment="none" rowSpacing="12" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="afn-uh-zSj" userLabel="CropSection Grid View">
                                                                             <rect key="frame" x="20" y="525" width="320" height="48"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="height" constant="48" id="AAn-ri-xPO"/>
@@ -468,9 +468,9 @@
                                                                                 <gridCell row="FE9-AG-Kd9" column="bro-F5-gyP" id="DCR-e4-mif"/>
                                                                                 <gridCell row="JGE-Jc-1tP" column="4MQ-eM-SgD" id="WFg-d4-7Ph">
                                                                                     <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
-                                                                                        <rect key="frame" x="-2" y="-1" width="244" height="23"/>
+                                                                                        <rect key="frame" x="-2" y="-1" width="237" height="23"/>
                                                                                         <constraints>
-                                                                                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="tTp-B3-gF5"/>
+                                                                                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="230" id="tTp-B3-gF5"/>
                                                                                         </constraints>
                                                                                         <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fillProportionally" style="rounded" trackingMode="selectOne" id="SxB-cw-MYx" userLabel="CropChooser Segmented Cell">
                                                                                             <font key="font" metaFont="system"/>
@@ -490,7 +490,7 @@
                                                                                 </gridCell>
                                                                                 <gridCell row="JGE-Jc-1tP" column="bro-F5-gyP" id="g1m-fV-fGn">
                                                                                     <button key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
-                                                                                        <rect key="frame" x="241" y="-7" width="86" height="33"/>
+                                                                                        <rect key="frame" x="234" y="-7" width="93" height="33"/>
                                                                                         <buttonCell key="cell" type="push" title="Custom..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vFD-HU-RVz">
                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                             <font key="font" metaFont="system"/>
@@ -702,10 +702,10 @@
                                                                                                     <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hwdec"/>
                                                                                                 </userDefinedRuntimeAttributes>
                                                                                             </customView>
-                                                                                            <box verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
+                                                                                            <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
                                                                                                 <rect key="frame" x="0.0" y="83" width="296" height="5"/>
                                                                                             </box>
-                                                                                            <customView horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                            <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="45" width="296" height="36"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
@@ -714,10 +714,10 @@
                                                                                                     <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.deinterlace"/>
                                                                                                 </userDefinedRuntimeAttributes>
                                                                                             </customView>
-                                                                                            <box verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
+                                                                                            <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
                                                                                                 <rect key="frame" x="0.0" y="38" width="296" height="5"/>
                                                                                             </box>
-                                                                                            <customView horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                            <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="0.0" width="296" height="36"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="height" constant="36" id="YSa-1m-THM"/>
@@ -960,9 +960,6 @@
                                                                         </stackView>
                                                                     </subviews>
                                                                     <edgeInsets key="edgeInsets" left="0.0" right="0.0" top="20" bottom="20"/>
-                                                                    <constraints>
-                                                                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="330" id="eGd-NL-2kU"/>
-                                                                    </constraints>
                                                                     <visibilityPriorities>
                                                                         <integer value="1000"/>
                                                                         <integer value="1000"/>
@@ -1024,21 +1021,19 @@
                                                 </view>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="4nk-ck-PrD"/>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="leading" secondItem="8Es-YX-dNf" secondAttribute="leading" id="GY8-wi-aRg"/>
                                                 <constraint firstAttribute="bottom" secondItem="ZGz-La-n9c" secondAttribute="bottom" id="KCt-wf-pjo"/>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" id="QX6-9q-Dx8"/>
                                             </constraints>
                                         </clipView>
                                         <constraints>
-                                            <constraint firstAttribute="trailing" secondItem="ykw-rb-M9D" secondAttribute="trailing" id="8yl-LW-a8p"/>
-                                            <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="SHU-hX-9MT" secondAttribute="leading" id="BPB-Ui-yFj"/>
+                                            <constraint firstItem="ZGz-La-n9c" firstAttribute="trailing" secondItem="Vtu-Wx-ydk" secondAttribute="leading" constant="1" id="W49-2x-Y58"/>
                                         </constraints>
                                         <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="tk3-fh-4Dl">
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.47619047619047616" horizontal="NO" id="Vtu-Wx-ydk">
                                             <rect key="frame" x="345" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
@@ -1638,7 +1633,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="-93" width="360" height="832"/>
@@ -1650,7 +1645,7 @@
                                                                     <rect key="frame" x="0.0" y="298" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="dJV-R0-O3M">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -1806,7 +1801,7 @@
                                                                     <rect key="frame" x="0.0" y="182" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EKn-MX-Fao">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
