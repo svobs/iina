@@ -153,7 +153,7 @@
                             </scroller>
                         </scrollView>
                         <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Uvg-kn-ZiM" userLabel="BelowPluginsTabs Horizontal Line">
-                            <rect key="frame" x="0.0" y="-2" width="360" height="5"/>
+                            <rect key="frame" x="0.0" y="-3" width="360" height="5"/>
                         </box>
                     </subviews>
                     <constraints>
@@ -163,7 +163,7 @@
                         <constraint firstItem="Uvg-kn-ZiM" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="NHW-B4-oO2"/>
                         <constraint firstItem="dfw-cq-GHm" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="top" id="Y8j-lM-l7o"/>
                         <constraint firstAttribute="height" constant="36" identifier="pluginTabsViewHeightConstraint" id="ZRN-u2-VBd"/>
-                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="bottom" constant="-1" id="ckb-ws-Jbz"/>
+                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="bottom" id="ckb-ws-Jbz"/>
                         <constraint firstAttribute="trailing" secondItem="dfw-cq-GHm" secondAttribute="trailing" id="mqw-9f-ZMt"/>
                     </constraints>
                 </customView>
@@ -182,16 +182,16 @@
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                             <subviews>
                                                 <view ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="760"/>
                                                     <subviews>
-                                                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj">
-                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                                        <customView ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj">
+                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="760"/>
                                                             <subviews>
-                                                                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                                                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
+                                                                    <rect key="frame" x="0.0" y="1" width="360" height="759"/>
                                                                     <subviews>
-                                                                        <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="4mG-fZ-Zyi" userLabel="VideoTrackSection Vertical Stack">
-                                                                            <rect key="frame" x="0.0" y="619" width="360" height="100"/>
+                                                                        <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4mG-fZ-Zyi" userLabel="VideoTrackSection Vertical Stack">
+                                                                            <rect key="frame" x="0.0" y="639" width="360" height="100"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ng5-FC-tts" userLabel="Video track Label">
                                                                                     <rect key="frame" x="-2" y="84" width="83" height="16"/>
@@ -316,7 +316,7 @@
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="r2o-di-dN5">
-                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="308" height="17"/>
+                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="318" height="17"/>
                                                                                                                         <constraints>
                                                                                                                             <constraint firstAttribute="height" constant="17" id="Ai3-GM-1Yw"/>
                                                                                                                         </constraints>
@@ -368,7 +368,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <gridView ambiguous="YES" xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="PgC-G6-Pat" userLabel="AspectRatioSection Grid View">
-                                                                            <rect key="frame" x="0.0" y="552" width="332" height="47"/>
+                                                                            <rect key="frame" x="0.0" y="573" width="332" height="46"/>
                                                                             <constraints>
                                                                                 <constraint firstItem="XAI-y0-tcy" firstAttribute="height" secondItem="Ljl-w6-gIf" secondAttribute="height" id="Uok-VB-mx5"/>
                                                                             </constraints>
@@ -383,7 +383,7 @@
                                                                             <gridCells>
                                                                                 <gridCell row="7co-Ng-NVE" column="r7R-1Y-w00" id="7Bf-2e-tnD">
                                                                                     <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CUa-0e-DwY" userLabel="Aspect ratio Label">
-                                                                                        <rect key="frame" x="-2" y="31" width="88" height="16"/>
+                                                                                        <rect key="frame" x="-2" y="30" width="88" height="16"/>
                                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Aspect ratio:" id="AiH-PV-YHQ">
                                                                                             <font key="font" metaFont="systemBold"/>
                                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -393,7 +393,7 @@
                                                                                 </gridCell>
                                                                                 <gridCell row="7co-Ng-NVE" column="UdD-wr-vjb" id="Onn-kh-lrR"/>
                                                                                 <gridCell row="bjT-1s-aSe" column="r7R-1Y-w00" id="6MJ-07-9IR">
-                                                                                    <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="Ljl-w6-gIf" userLabel="AspectRatio Segmented Control">
+                                                                                    <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ljl-w6-gIf" userLabel="AspectRatio Segmented Control">
                                                                                         <rect key="frame" x="-2" y="-1" width="268" height="24"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="43J-t3-UhR"/>
@@ -415,7 +415,7 @@
                                                                                     </segmentedControl>
                                                                                 </gridCell>
                                                                                 <gridCell row="bjT-1s-aSe" column="UdD-wr-vjb" id="d6M-7B-psj">
-                                                                                    <textField key="contentView" identifier="customAspectRatio" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XAI-y0-tcy" userLabel="CustomAspectRatio Text Field">
+                                                                                    <textField key="contentView" identifier="customAspectRatio" verticalHuggingPriority="750" ambiguous="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XAI-y0-tcy" userLabel="CustomAspectRatio Text Field">
                                                                                         <rect key="frame" x="272" y="0.0" width="60" height="22"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" constant="60" id="JnW-kS-XvK"/>
@@ -433,7 +433,7 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <gridView ambiguous="YES" xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="afn-uh-zSj" userLabel="CropSection Grid View">
-                                                                            <rect key="frame" x="0.0" y="486" width="360" height="46"/>
+                                                                            <rect key="frame" x="0.0" y="507" width="360" height="46"/>
                                                                             <constraints>
                                                                                 <constraint firstItem="ItN-JT-puN" firstAttribute="height" secondItem="sPT-jd-T7a" secondAttribute="height" id="QNR-0F-CNQ"/>
                                                                             </constraints>
@@ -458,7 +458,7 @@
                                                                                 </gridCell>
                                                                                 <gridCell row="FE9-AG-Kd9" column="bro-F5-gyP" id="DCR-e4-mif"/>
                                                                                 <gridCell row="JGE-Jc-1tP" column="4MQ-eM-SgD" id="WFg-d4-7Ph">
-                                                                                    <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
+                                                                                    <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
                                                                                         <rect key="frame" x="-2" y="-1" width="249" height="24"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="tTp-B3-gF5"/>
@@ -480,7 +480,7 @@
                                                                                     </segmentedControl>
                                                                                 </gridCell>
                                                                                 <gridCell row="JGE-Jc-1tP" column="bro-F5-gyP" id="g1m-fV-fGn">
-                                                                                    <button key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
+                                                                                    <button key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
                                                                                         <rect key="frame" x="246" y="-7" width="93" height="34"/>
                                                                                         <buttonCell key="cell" type="push" title="Custom..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vFD-HU-RVz">
                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -493,8 +493,8 @@
                                                                                 </gridCell>
                                                                             </gridCells>
                                                                         </gridView>
-                                                                        <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zg3-ol-yEx" userLabel="Rotation Section Vertical Stack">
-                                                                            <rect key="frame" x="0.0" y="420" width="168" height="46"/>
+                                                                        <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="zg3-ol-yEx" userLabel="Rotation Section Vertical Stack">
+                                                                            <rect key="frame" x="0.0" y="441" width="168" height="46"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7vv-En-VYY" userLabel="RotationLabel Text Field">
                                                                                     <rect key="frame" x="-2" y="30" width="64" height="16"/>
@@ -529,8 +529,8 @@
                                                                                 <real value="3.4028234663852886e+38"/>
                                                                             </customSpacing>
                                                                         </stackView>
-                                                                        <gridView ambiguous="YES" xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="heJ-eE-GoP" userLabel="SpeedSection Grid View">
-                                                                            <rect key="frame" x="20" y="334" width="320" height="66"/>
+                                                                        <gridView xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="heJ-eE-GoP" userLabel="SpeedSection Grid View">
+                                                                            <rect key="frame" x="20" y="355" width="320" height="66"/>
                                                                             <rows>
                                                                                 <gridRow id="7Qo-Jk-pFM" userLabel="Row 0 Label"/>
                                                                                 <gridRow id="5YT-vl-Xis"/>
@@ -541,7 +541,7 @@
                                                                             </columns>
                                                                             <gridCells>
                                                                                 <gridCell row="7Qo-Jk-pFM" column="vI7-hO-2uz" id="Ofz-te-Qxj">
-                                                                                    <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d4r-sL-0Vo" userLabel="SpeedLabel Text Field">
+                                                                                    <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d4r-sL-0Vo" userLabel="SpeedLabel Text Field">
                                                                                         <rect key="frame" x="-2" y="50" width="50" height="16"/>
                                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Speed:" id="1KQ-oZ-A2x">
                                                                                             <font key="font" metaFont="systemBold"/>
@@ -673,13 +673,13 @@
                                                                                 </gridCell>
                                                                             </gridCells>
                                                                         </gridView>
-                                                                        <box autoresizesSubviews="NO" ambiguous="YES" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
-                                                                            <rect key="frame" x="0.0" y="176" width="330" height="138"/>
+                                                                        <box autoresizesSubviews="NO" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
+                                                                            <rect key="frame" x="0.0" y="197" width="330" height="138"/>
                                                                             <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
                                                                                 <rect key="frame" x="1" y="1" width="328" height="136"/>
                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <subviews>
-                                                                                    <gridView ambiguous="YES" xPlacement="fill" yPlacement="bottom" rowAlignment="none" rowSpacing="4" columnSpacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="KNf-fk-CQH">
+                                                                                    <gridView xPlacement="fill" yPlacement="bottom" rowAlignment="none" rowSpacing="4" columnSpacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="KNf-fk-CQH">
                                                                                         <rect key="frame" x="11" y="3" width="306" height="126"/>
                                                                                         <rows>
                                                                                             <gridRow id="gxC-gd-6qQ"/>
@@ -693,7 +693,7 @@
                                                                                         </columns>
                                                                                         <gridCells>
                                                                                             <gridCell row="gxC-gd-6qQ" column="OAK-8Z-tCI" id="9Wo-FY-vLU">
-                                                                                                <customView key="contentView" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                                <customView key="contentView" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                     <rect key="frame" x="0.0" y="90" width="306" height="36"/>
                                                                                                     <constraints>
                                                                                                         <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
@@ -704,12 +704,12 @@
                                                                                                 </customView>
                                                                                             </gridCell>
                                                                                             <gridCell row="5IX-lU-Gsc" column="OAK-8Z-tCI" id="uac-Yc-KnK">
-                                                                                                <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
+                                                                                                <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
                                                                                                     <rect key="frame" x="0.0" y="83" width="306" height="5"/>
                                                                                                 </box>
                                                                                             </gridCell>
                                                                                             <gridCell row="t87-50-Tc1" column="OAK-8Z-tCI" id="Sbp-g5-sMm">
-                                                                                                <customView key="contentView" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                                <customView key="contentView" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                     <rect key="frame" x="0.0" y="45" width="306" height="36"/>
                                                                                                     <constraints>
                                                                                                         <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
@@ -720,7 +720,7 @@
                                                                                                 </customView>
                                                                                             </gridCell>
                                                                                             <gridCell row="1EP-IF-DiN" column="OAK-8Z-tCI" id="Olm-UR-OOr">
-                                                                                                <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
+                                                                                                <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
                                                                                                     <rect key="frame" x="0.0" y="38" width="306" height="5"/>
                                                                                                 </box>
                                                                                             </gridCell>
@@ -747,6 +747,9 @@
                                                                             </constraints>
                                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
+                                                                        </box>
+                                                                        <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="7PK-hh-Xx5">
+                                                                            <rect key="frame" x="0.0" y="174" width="96" height="5"/>
                                                                         </box>
                                                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LqI-53-R0W" userLabel="EqualizerSliders Stack View">
                                                                             <rect key="frame" x="0.0" y="20" width="360" height="136"/>
@@ -959,8 +962,10 @@
                                                                         <integer value="1000"/>
                                                                         <integer value="1000"/>
                                                                         <integer value="1000"/>
+                                                                        <integer value="1000"/>
                                                                     </visibilityPriorities>
                                                                     <customSpacing>
+                                                                        <real value="3.4028234663852886e+38"/>
                                                                         <real value="3.4028234663852886e+38"/>
                                                                         <real value="3.4028234663852886e+38"/>
                                                                         <real value="3.4028234663852886e+38"/>
@@ -973,7 +978,7 @@
                                                             </subviews>
                                                             <constraints>
                                                                 <constraint firstItem="heJ-eE-GoP" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="9n7-Ds-4Pa"/>
-                                                                <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="739" id="ADX-Jz-K2i"/>
+                                                                <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="750" id="ADX-Jz-K2i"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="C9h-dV-uJF"/>
                                                                 <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="DT6-xM-5CS"/>
                                                                 <constraint firstAttribute="trailing" secondItem="ykw-rb-M9D" secondAttribute="trailing" id="GUI-oO-wpx"/>
@@ -993,12 +998,16 @@
                                                 </view>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="4nk-ck-PrD"/>
+                                                <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="4nk-ck-PrD"/>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="leading" secondItem="8Es-YX-dNf" secondAttribute="leading" id="GY8-wi-aRg"/>
-                                                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="ZGz-La-n9c" secondAttribute="bottom" id="KCt-wf-pjo"/>
+                                                <constraint firstAttribute="bottom" secondItem="ZGz-La-n9c" secondAttribute="bottom" id="KCt-wf-pjo"/>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" id="QX6-9q-Dx8"/>
                                             </constraints>
                                         </clipView>
+                                        <constraints>
+                                            <constraint firstAttribute="trailing" secondItem="ykw-rb-M9D" secondAttribute="trailing" id="8yl-LW-a8p"/>
+                                            <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="SHU-hX-9MT" secondAttribute="leading" id="BPB-Ui-yFj"/>
+                                        </constraints>
                                         <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="tk3-fh-4Dl">
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
