@@ -571,7 +571,7 @@
                                                                                         <rect key="frame" x="0.0" y="0.0" width="244" height="42"/>
                                                                                         <subviews>
                                                                                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3EN-WD-QNI" userLabel="SpeedSliderIndicator">
-                                                                                                <rect key="frame" x="72" y="29" width="19" height="13"/>
+                                                                                                <rect key="frame" x="71" y="29" width="19" height="13"/>
                                                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="1x" usesSingleLineMode="YES" id="ldQ-YL-IEp">
                                                                                                     <font key="font" metaFont="system" size="10"/>
                                                                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -635,7 +635,7 @@
                                                                                             <constraint firstAttribute="bottom" secondItem="Nhb-Co-xbZ" secondAttribute="bottom" id="iwc-ox-8MG"/>
                                                                                             <constraint firstItem="UWh-M9-5Nw" firstAttribute="centerX" secondItem="5v4-Te-950" secondAttribute="centerX" id="kUs-AJ-wRQ"/>
                                                                                             <constraint firstItem="mjX-Jf-925" firstAttribute="firstBaseline" secondItem="Nhb-Co-xbZ" secondAttribute="firstBaseline" id="pcC-I5-fWK"/>
-                                                                                            <constraint firstItem="3EN-WD-QNI" firstAttribute="centerX" secondItem="wBg-Dk-cUX" secondAttribute="centerX" id="qTf-o6-Mef"/>
+                                                                                            <constraint firstItem="3EN-WD-QNI" firstAttribute="centerX" secondItem="UWh-M9-5Nw" secondAttribute="leading" constant="80" id="qTf-o6-Mef"/>
                                                                                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="tge-rE-dms"/>
                                                                                             <constraint firstItem="Nhb-Co-xbZ" firstAttribute="top" secondItem="UWh-M9-5Nw" secondAttribute="bottom" constant="1" id="vt5-Yi-wDm"/>
                                                                                             <constraint firstItem="UWh-M9-5Nw" firstAttribute="centerX" secondItem="5v4-Te-950" secondAttribute="centerX" id="wwT-hu-VAC"/>
@@ -654,7 +654,7 @@
                                                                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                                 </textFieldCell>
                                                                                             </textField>
-                                                                                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" misplaced="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
+                                                                                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
                                                                                                 <rect key="frame" x="0.0" y="0.0" width="50" height="30"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="width" constant="50" id="B3n-IT-9Ik"/>
@@ -1038,7 +1038,7 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.66666666666666674" horizontal="NO" id="Vtu-Wx-ydk">
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
                                             <rect key="frame" x="345" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
@@ -1635,10 +1635,10 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-IY-poi">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="-93" width="360" height="832"/>
@@ -1650,7 +1650,7 @@
                                                                     <rect key="frame" x="0.0" y="298" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="dJV-R0-O3M">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -1806,7 +1806,7 @@
                                                                     <rect key="frame" x="0.0" y="182" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EKn-MX-Fao">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -2446,7 +2446,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="3ZS-ug-kkq">
-                                            <rect key="frame" x="344" y="0.0" width="16" height="739"/>
+                                            <rect key="frame" x="360" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
