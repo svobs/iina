@@ -187,6 +187,12 @@
                                                         <customView ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj">
                                                             <rect key="frame" x="0.0" y="0.0" width="360" height="760"/>
                                                             <subviews>
+                                                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="Invisible Inset Guide">
+                                                                    <rect key="frame" x="20" y="0.0" width="320" height="0.0"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="height" id="4UC-le-Tmg"/>
+                                                                    </constraints>
+                                                                </customView>
                                                                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
                                                                     <rect key="frame" x="0.0" y="1" width="360" height="759"/>
                                                                     <subviews>
@@ -194,7 +200,7 @@
                                                                             <rect key="frame" x="0.0" y="639" width="360" height="100"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ng5-FC-tts" userLabel="Video track Label">
-                                                                                    <rect key="frame" x="-2" y="84" width="83" height="16"/>
+                                                                                    <rect key="frame" x="18" y="84" width="324" height="16"/>
                                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Video track:" id="VzC-tM-KT7">
                                                                                         <font key="font" metaFont="systemBold"/>
                                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -312,11 +318,11 @@
                                                                                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                                                         <prototypeCellViews>
                                                                                                             <tableCellView id="QLv-Qp-hCf">
-                                                                                                                <rect key="frame" x="50" y="1" width="318" height="17"/>
+                                                                                                                <rect key="frame" x="50" y="1" width="308" height="17"/>
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="r2o-di-dN5">
-                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="318" height="17"/>
+                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="308" height="17"/>
                                                                                                                         <constraints>
                                                                                                                             <constraint firstAttribute="height" constant="17" id="Ai3-GM-1Yw"/>
                                                                                                                         </constraints>
@@ -368,7 +374,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <gridView ambiguous="YES" xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="PgC-G6-Pat" userLabel="AspectRatioSection Grid View">
-                                                                            <rect key="frame" x="0.0" y="573" width="332" height="46"/>
+                                                                            <rect key="frame" x="20" y="573" width="320" height="46"/>
                                                                             <constraints>
                                                                                 <constraint firstItem="XAI-y0-tcy" firstAttribute="height" secondItem="Ljl-w6-gIf" secondAttribute="height" id="Uok-VB-mx5"/>
                                                                             </constraints>
@@ -394,7 +400,7 @@
                                                                                 <gridCell row="7co-Ng-NVE" column="UdD-wr-vjb" id="Onn-kh-lrR"/>
                                                                                 <gridCell row="bjT-1s-aSe" column="r7R-1Y-w00" id="6MJ-07-9IR">
                                                                                     <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ljl-w6-gIf" userLabel="AspectRatio Segmented Control">
-                                                                                        <rect key="frame" x="-2" y="-1" width="268" height="24"/>
+                                                                                        <rect key="frame" x="-2" y="-1" width="256" height="24"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="43J-t3-UhR"/>
                                                                                         </constraints>
@@ -416,7 +422,7 @@
                                                                                 </gridCell>
                                                                                 <gridCell row="bjT-1s-aSe" column="UdD-wr-vjb" id="d6M-7B-psj">
                                                                                     <textField key="contentView" identifier="customAspectRatio" verticalHuggingPriority="750" ambiguous="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XAI-y0-tcy" userLabel="CustomAspectRatio Text Field">
-                                                                                        <rect key="frame" x="272" y="0.0" width="60" height="22"/>
+                                                                                        <rect key="frame" x="260" y="0.0" width="60" height="22"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" constant="60" id="JnW-kS-XvK"/>
                                                                                         </constraints>
@@ -433,7 +439,7 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <gridView ambiguous="YES" xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="afn-uh-zSj" userLabel="CropSection Grid View">
-                                                                            <rect key="frame" x="0.0" y="507" width="360" height="46"/>
+                                                                            <rect key="frame" x="20" y="507" width="320" height="46"/>
                                                                             <constraints>
                                                                                 <constraint firstItem="ItN-JT-puN" firstAttribute="height" secondItem="sPT-jd-T7a" secondAttribute="height" id="QNR-0F-CNQ"/>
                                                                             </constraints>
@@ -459,7 +465,7 @@
                                                                                 <gridCell row="FE9-AG-Kd9" column="bro-F5-gyP" id="DCR-e4-mif"/>
                                                                                 <gridCell row="JGE-Jc-1tP" column="4MQ-eM-SgD" id="WFg-d4-7Ph">
                                                                                     <segmentedControl key="contentView" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
-                                                                                        <rect key="frame" x="-2" y="-1" width="249" height="24"/>
+                                                                                        <rect key="frame" x="-2" y="-1" width="244" height="24"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="tTp-B3-gF5"/>
                                                                                         </constraints>
@@ -481,7 +487,7 @@
                                                                                 </gridCell>
                                                                                 <gridCell row="JGE-Jc-1tP" column="bro-F5-gyP" id="g1m-fV-fGn">
                                                                                     <button key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
-                                                                                        <rect key="frame" x="246" y="-7" width="93" height="34"/>
+                                                                                        <rect key="frame" x="241" y="-7" width="86" height="34"/>
                                                                                         <buttonCell key="cell" type="push" title="Custom..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vFD-HU-RVz">
                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                             <font key="font" metaFont="system"/>
@@ -494,7 +500,7 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="zg3-ol-yEx" userLabel="Rotation Section Vertical Stack">
-                                                                            <rect key="frame" x="0.0" y="441" width="168" height="46"/>
+                                                                            <rect key="frame" x="20" y="441" width="320" height="46"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7vv-En-VYY" userLabel="RotationLabel Text Field">
                                                                                     <rect key="frame" x="-2" y="30" width="64" height="16"/>
@@ -674,13 +680,13 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <box autoresizesSubviews="NO" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
-                                                                            <rect key="frame" x="0.0" y="197" width="330" height="138"/>
+                                                                            <rect key="frame" x="20" y="197" width="320" height="138"/>
                                                                             <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
-                                                                                <rect key="frame" x="1" y="1" width="328" height="136"/>
+                                                                                <rect key="frame" x="1" y="1" width="318" height="136"/>
                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <subviews>
                                                                                     <gridView xPlacement="fill" yPlacement="bottom" rowAlignment="none" rowSpacing="4" columnSpacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="KNf-fk-CQH">
-                                                                                        <rect key="frame" x="11" y="3" width="306" height="126"/>
+                                                                                        <rect key="frame" x="11" y="3" width="296" height="126"/>
                                                                                         <rows>
                                                                                             <gridRow id="gxC-gd-6qQ"/>
                                                                                             <gridRow id="5IX-lU-Gsc"/>
@@ -694,7 +700,7 @@
                                                                                         <gridCells>
                                                                                             <gridCell row="gxC-gd-6qQ" column="OAK-8Z-tCI" id="9Wo-FY-vLU">
                                                                                                 <customView key="contentView" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                    <rect key="frame" x="0.0" y="90" width="306" height="36"/>
+                                                                                                    <rect key="frame" x="0.0" y="90" width="296" height="36"/>
                                                                                                     <constraints>
                                                                                                         <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
                                                                                                     </constraints>
@@ -705,12 +711,12 @@
                                                                                             </gridCell>
                                                                                             <gridCell row="5IX-lU-Gsc" column="OAK-8Z-tCI" id="uac-Yc-KnK">
                                                                                                 <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
-                                                                                                    <rect key="frame" x="0.0" y="83" width="306" height="5"/>
+                                                                                                    <rect key="frame" x="0.0" y="83" width="296" height="5"/>
                                                                                                 </box>
                                                                                             </gridCell>
                                                                                             <gridCell row="t87-50-Tc1" column="OAK-8Z-tCI" id="Sbp-g5-sMm">
                                                                                                 <customView key="contentView" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                    <rect key="frame" x="0.0" y="45" width="306" height="36"/>
+                                                                                                    <rect key="frame" x="0.0" y="45" width="296" height="36"/>
                                                                                                     <constraints>
                                                                                                         <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
                                                                                                     </constraints>
@@ -721,12 +727,12 @@
                                                                                             </gridCell>
                                                                                             <gridCell row="1EP-IF-DiN" column="OAK-8Z-tCI" id="Olm-UR-OOr">
                                                                                                 <box key="contentView" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
-                                                                                                    <rect key="frame" x="0.0" y="38" width="306" height="5"/>
+                                                                                                    <rect key="frame" x="0.0" y="38" width="296" height="5"/>
                                                                                                 </box>
                                                                                             </gridCell>
                                                                                             <gridCell row="dhC-A1-YZU" column="OAK-8Z-tCI" id="Rkl-90-8ai">
                                                                                                 <customView key="contentView" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                    <rect key="frame" x="0.0" y="0.0" width="306" height="36"/>
+                                                                                                    <rect key="frame" x="0.0" y="0.0" width="296" height="36"/>
                                                                                                     <constraints>
                                                                                                         <constraint firstAttribute="height" constant="36" id="YSa-1m-THM"/>
                                                                                                     </constraints>
@@ -749,10 +755,10 @@
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
                                                                         </box>
                                                                         <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="7PK-hh-Xx5">
-                                                                            <rect key="frame" x="0.0" y="174" width="96" height="5"/>
+                                                                            <rect key="frame" x="20" y="174" width="320" height="5"/>
                                                                         </box>
                                                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LqI-53-R0W" userLabel="EqualizerSliders Stack View">
-                                                                            <rect key="frame" x="0.0" y="20" width="360" height="136"/>
+                                                                            <rect key="frame" x="20" y="20" width="320" height="136"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="QqK-iZ-rFX" userLabel="EqualizerLabel Text Field">
                                                                                     <rect key="frame" x="-2" y="120" width="69" height="16"/>
@@ -763,7 +769,7 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <gridView xPlacement="leading" yPlacement="center" rowAlignment="none" rowSpacing="8" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="jBL-DF-Vik" userLabel="EqualizerSliders Grid View">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="112"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="320" height="112"/>
                                                                                     <rows>
                                                                                         <gridRow id="f4U-Xi-gvr" userLabel="Row 1 Contrast"/>
                                                                                         <gridRow id="Y6O-ri-wKa" userLabel="Row 2 Gamma"/>
@@ -789,7 +795,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="f4U-Xi-gvr" column="Hcb-lR-6QL" id="Jak-Kf-Ouj">
                                                                                             <slider key="contentView" identifier="contrastSlider" horizontalHuggingPriority="100" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mTb-L6-55O" userLabel="Contrast Slider">
-                                                                                                <rect key="frame" x="61" y="94" width="278" height="20"/>
+                                                                                                <rect key="frame" x="61" y="94" width="238" height="20"/>
                                                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="above" sliderType="linear" id="hgz-bN-WeD"/>
                                                                                                 <connections>
                                                                                                     <action selector="equalizerSliderAction:" target="-2" id="Nvx-FI-qAc"/>
@@ -798,7 +804,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="f4U-Xi-gvr" column="hjE-GA-OX0" id="2ct-nT-OfJ">
                                                                                             <button key="contentView" verticalHuggingPriority="750" tag="1" translatesAutoresizingMaskIntoConstraints="NO" id="KVl-YU-9O3" userLabel="Contrast Square Button">
-                                                                                                <rect key="frame" x="345" y="97" width="15" height="15"/>
+                                                                                                <rect key="frame" x="305" y="97" width="15" height="15"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" inset="2" id="NIq-6H-Orr">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -820,7 +826,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="Y6O-ri-wKa" column="Hcb-lR-6QL" id="Vb4-OL-LJs">
                                                                                             <slider key="contentView" identifier="gammaSlider" horizontalHuggingPriority="100" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fLl-8b-pj0" userLabel="Gamma Slider">
-                                                                                                <rect key="frame" x="61" y="70" width="278" height="20"/>
+                                                                                                <rect key="frame" x="61" y="70" width="238" height="20"/>
                                                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="above" sliderType="linear" id="4De-8a-gIx"/>
                                                                                                 <connections>
                                                                                                     <action selector="equalizerSliderAction:" target="-2" id="eBS-E6-XBk"/>
@@ -829,7 +835,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="Y6O-ri-wKa" column="hjE-GA-OX0" id="hcK-Dh-X7b">
                                                                                             <button key="contentView" verticalHuggingPriority="750" tag="3" translatesAutoresizingMaskIntoConstraints="NO" id="fGZ-vI-EP8" userLabel="Gamma Square Button">
-                                                                                                <rect key="frame" x="345" y="73" width="15" height="15"/>
+                                                                                                <rect key="frame" x="305" y="73" width="15" height="15"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" inset="2" id="7sd-9d-D6H">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -851,7 +857,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="kwO-Nv-IVi" column="Hcb-lR-6QL" id="sTj-jz-G77">
                                                                                             <slider key="contentView" identifier="brightnessSlider" horizontalHuggingPriority="100" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eFW-a3-kWx" userLabel="Brightness Slider">
-                                                                                                <rect key="frame" x="61" y="46" width="278" height="20"/>
+                                                                                                <rect key="frame" x="61" y="46" width="238" height="20"/>
                                                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="above" sliderType="linear" id="7Km-3j-0F1"/>
                                                                                                 <accessibility identifier="brightnessLabel"/>
                                                                                                 <connections>
@@ -861,7 +867,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="kwO-Nv-IVi" column="hjE-GA-OX0" id="UjX-6v-aid">
                                                                                             <button key="contentView" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cjG-f1-Mkg" userLabel="Brightness Square Button">
-                                                                                                <rect key="frame" x="345" y="49" width="15" height="15"/>
+                                                                                                <rect key="frame" x="305" y="49" width="15" height="15"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" inset="2" id="63a-cd-eXa">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -883,7 +889,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="fzc-jt-WBc" column="Hcb-lR-6QL" id="NBO-tE-0ky">
                                                                                             <slider key="contentView" identifier="saturationSlider" horizontalHuggingPriority="100" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VlS-Jo-4C0" userLabel="Saturation Slider">
-                                                                                                <rect key="frame" x="61" y="22" width="278" height="20"/>
+                                                                                                <rect key="frame" x="61" y="22" width="238" height="20"/>
                                                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="above" sliderType="linear" id="XWl-TS-6CD"/>
                                                                                                 <connections>
                                                                                                     <action selector="equalizerSliderAction:" target="-2" id="lqV-jM-722"/>
@@ -892,7 +898,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="fzc-jt-WBc" column="hjE-GA-OX0" id="GDI-px-5yd">
                                                                                             <button key="contentView" verticalHuggingPriority="750" tag="2" translatesAutoresizingMaskIntoConstraints="NO" id="lgg-zH-OLr" userLabel="Saturation Square Button">
-                                                                                                <rect key="frame" x="345" y="25" width="15" height="15"/>
+                                                                                                <rect key="frame" x="305" y="25" width="15" height="15"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" inset="2" id="D5D-O8-MdN">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -914,7 +920,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="xO1-ld-quh" column="Hcb-lR-6QL" id="NcT-65-ijR">
                                                                                             <slider key="contentView" identifier="hueSlider" horizontalHuggingPriority="100" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mKB-Mu-l5Y" userLabel="Hue Slider">
-                                                                                                <rect key="frame" x="61" y="-2" width="278" height="20"/>
+                                                                                                <rect key="frame" x="61" y="-2" width="238" height="20"/>
                                                                                                 <sliderCell key="cell" controlSize="small" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="above" sliderType="linear" id="Bwq-Om-Y6s"/>
                                                                                                 <connections>
                                                                                                     <action selector="equalizerSliderAction:" target="-2" id="Lkh-f1-UR2"/>
@@ -923,7 +929,7 @@
                                                                                         </gridCell>
                                                                                         <gridCell row="xO1-ld-quh" column="hjE-GA-OX0" id="bN0-yE-shY">
                                                                                             <button key="contentView" verticalHuggingPriority="750" tag="4" translatesAutoresizingMaskIntoConstraints="NO" id="W7J-wR-UH3" userLabel="Hue Square Button">
-                                                                                                <rect key="frame" x="345" y="1" width="15" height="15"/>
+                                                                                                <rect key="frame" x="305" y="1" width="15" height="15"/>
                                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRefreshFreestandingTemplate" imagePosition="overlaps" alignment="center" inset="2" id="Mrx-t0-wfm">
                                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                     <font key="font" metaFont="system"/>
@@ -936,6 +942,10 @@
                                                                                     </gridCells>
                                                                                 </gridView>
                                                                             </subviews>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="trailing" secondItem="jBL-DF-Vik" secondAttribute="trailing" id="3fc-iU-jf9"/>
+                                                                                <constraint firstItem="jBL-DF-Vik" firstAttribute="leading" secondItem="LqI-53-R0W" secondAttribute="leading" id="diq-RA-fpH"/>
+                                                                            </constraints>
                                                                             <visibilityPriorities>
                                                                                 <integer value="1000"/>
                                                                                 <integer value="1000"/>
@@ -949,10 +959,6 @@
                                                                     <edgeInsets key="edgeInsets" left="0.0" right="0.0" top="20" bottom="20"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="330" id="eGd-NL-2kU"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="jBL-DF-Vik" secondAttribute="trailing" id="fjp-g3-YWu"/>
-                                                                        <constraint firstItem="XAI-y0-tcy" firstAttribute="trailing" secondItem="ItN-JT-puN" secondAttribute="trailing" id="g7t-Zh-pEc"/>
-                                                                        <constraint firstItem="jBL-DF-Vik" firstAttribute="leading" secondItem="HAp-c6-UK0" secondAttribute="leading" id="iVf-2k-0uL"/>
-                                                                        <constraint firstItem="EE5-XO-oYI" firstAttribute="trailing" secondItem="XAI-y0-tcy" secondAttribute="trailing" id="xVj-JQ-hcs"/>
                                                                     </constraints>
                                                                     <visibilityPriorities>
                                                                         <integer value="1000"/>
@@ -977,13 +983,30 @@
                                                                 </stackView>
                                                             </subviews>
                                                             <constraints>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="Ng5-FC-tts" secondAttribute="trailing" id="3Uf-Vg-KXE"/>
                                                                 <constraint firstItem="heJ-eE-GoP" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="9n7-Ds-4Pa"/>
                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="750" id="ADX-Jz-K2i"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="PgC-G6-Pat" secondAttribute="trailing" id="Acu-XM-ACG"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="C9h-dV-uJF"/>
                                                                 <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="DT6-xM-5CS"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="Duj-S1-MXK"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="2ye-g4-fz5" secondAttribute="leading" id="Dvh-Q9-5TN"/>
                                                                 <constraint firstAttribute="trailing" secondItem="ykw-rb-M9D" secondAttribute="trailing" id="GUI-oO-wpx"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="LqI-53-R0W" secondAttribute="trailing" id="Gw8-B9-f6u"/>
                                                                 <constraint firstAttribute="trailing" secondItem="HAp-c6-UK0" secondAttribute="trailing" id="N6T-wq-gr3"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="Nur-Nw-ygL"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="zg3-ol-yEx" secondAttribute="trailing" id="O40-PW-zoO"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="afn-uh-zSj" secondAttribute="leading" id="Pk5-wH-hiA"/>
+                                                                <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="7PK-hh-Xx5" secondAttribute="trailing" id="QfI-uC-kou"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="zg3-ol-yEx" secondAttribute="leading" id="V7t-rj-OzL"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="afn-uh-zSj" secondAttribute="trailing" id="Z9Q-rP-Mt1"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="7PK-hh-Xx5" secondAttribute="leading" id="awv-mu-5mG"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="LqI-53-R0W" secondAttribute="leading" id="bd5-h7-pi1"/>
                                                                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="heJ-eE-GoP" secondAttribute="trailing" constant="20" id="c8j-mi-lxb"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="Ng5-FC-tts" secondAttribute="leading" id="e93-za-6yI"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="2ye-g4-fz5" secondAttribute="trailing" id="kYW-h7-WnM"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="PgC-G6-Pat" secondAttribute="leading" id="ogH-fx-JZo"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="ohb-og-cNW"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="height" secondItem="qgt-NU-zFj" secondAttribute="height" id="qql-Ah-Hgp"/>
                                                             </constraints>
@@ -1012,7 +1035,7 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.95238095238095233" horizontal="NO" id="Vtu-Wx-ydk">
                                             <rect key="frame" x="344" y="0.0" width="16" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
@@ -1035,7 +1058,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="234" width="360" height="505"/>
@@ -1055,7 +1078,7 @@
                                                                     <rect key="frame" x="0.0" y="385" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
