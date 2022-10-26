@@ -91,6 +91,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   var observers: [NSObjectProtocol] = []
 
+  @IBOutlet weak var videoTabScrollView: NSScrollView!
+  @IBOutlet weak var videoTabContentViewWidthConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var videoTabBtn: NSButton!
   @IBOutlet weak var audioTabBtn: NSButton!
@@ -215,6 +217,11 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       self.subTableView.reloadData()
       self.secSubTableView.reloadData()
     }
+
+    observers.append(NotificationCenter.default.addObserver(forName: NSScroller.preferredScrollerStyleDidChangeNotification, object: nil,
+                                               queue: nil) {  _ in self.updateVideoTabWidthConstraint() })
+
+    updateVideoTabWidthConstraint()
   }
 
   // MARK: - Validate UI
@@ -442,6 +449,18 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       hdrSwitch.isEnabled = available
       hdrSwitch.checked = available && player.info.hdrEnabled
     }
+  }
+
+  func updateVideoTabWidthConstraint() {
+    // Need manual adjustment to remove extra space created when "Show scroll bars"="Always" in MacOS settings:
+    var newWidth = videoTabScrollView.documentVisibleRect.width
+    if videoTabScrollView.scrollerStyle == .legacy {
+      if let vScroller = videoTabScrollView.verticalScroller {
+        newWidth -= vScroller.frame.width
+      }
+    }
+    Logger.log("Setting max width of settings panel to: \(newWidth)")
+    videoTabContentViewWidthConstraint.constant = newWidth
   }
 
   // MARK: - Switch tab

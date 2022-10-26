@@ -67,6 +67,8 @@
                 <outlet property="switchHorizontalLine2" destination="qYi-uQ-6qo" id="doE-zM-QU3"/>
                 <outlet property="tabView" destination="udA-m2-eJb" id="zL4-73-AVP"/>
                 <outlet property="videoTabBtn" destination="Ma8-6g-tVw" id="d0g-Fi-gzz"/>
+                <outlet property="videoTabContentViewWidthConstraint" destination="dNk-Lh-iup" id="akQ-uX-1zS"/>
+                <outlet property="videoTabScrollView" destination="SHU-hX-9MT" id="rfn-TE-DKT"/>
                 <outlet property="videoTableView" destination="rsV-qL-l7b" id="A8k-AU-noQ"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
@@ -179,7 +181,7 @@
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
                                         <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="345" height="739"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="360" height="781"/>
@@ -318,11 +320,11 @@
                                                                                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                                                         <prototypeCellViews>
                                                                                                             <tableCellView id="QLv-Qp-hCf">
-                                                                                                                <rect key="frame" x="50" y="1" width="278" height="17"/>
+                                                                                                                <rect key="frame" x="50" y="1" width="308" height="17"/>
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="r2o-di-dN5">
-                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="278" height="17"/>
+                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="308" height="17"/>
                                                                                                                         <constraints>
                                                                                                                             <constraint firstAttribute="height" constant="17" id="Ai3-GM-1Yw"/>
                                                                                                                         </constraints>
@@ -1040,7 +1042,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="345" y="0.0" width="15" height="739"/>
+                                            <rect key="frame" x="344" y="0.0" width="16" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
@@ -1061,11 +1063,11 @@
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wXn-sV-AmG">
                                         <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="724"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="226" width="360" height="498"/>
+                                                    <rect key="frame" x="0.0" y="241" width="360" height="498"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb">
                                                             <rect key="frame" x="0.0" y="0.0" width="360" height="498"/>
@@ -1082,7 +1084,7 @@
                                                                     <rect key="frame" x="0.0" y="378" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
@@ -1638,8 +1640,8 @@
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-IY-poi">
                                         <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="-101" width="360" height="840"/>
@@ -1651,7 +1653,7 @@
                                                                     <rect key="frame" x="0.0" y="302" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="dJV-R0-O3M">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
@@ -1807,7 +1809,7 @@
                                                                     <rect key="frame" x="0.0" y="182" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EKn-MX-Fao">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
