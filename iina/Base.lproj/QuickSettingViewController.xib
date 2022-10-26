@@ -318,11 +318,11 @@
                                                                                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                                                         <prototypeCellViews>
                                                                                                             <tableCellView id="QLv-Qp-hCf">
-                                                                                                                <rect key="frame" x="50" y="1" width="308" height="17"/>
+                                                                                                                <rect key="frame" x="50" y="1" width="278" height="17"/>
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="r2o-di-dN5">
-                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="308" height="17"/>
+                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="278" height="17"/>
                                                                                                                         <constraints>
                                                                                                                             <constraint firstAttribute="height" constant="17" id="Ai3-GM-1Yw"/>
                                                                                                                         </constraints>
@@ -687,10 +687,10 @@
                                                                         <box autoresizesSubviews="NO" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
                                                                             <rect key="frame" x="20" y="225" width="320" height="134"/>
                                                                             <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
-                                                                                <rect key="frame" x="12" y="4" width="296" height="126"/>
+                                                                                <rect key="frame" x="0.0" y="0.0" width="320" height="134"/>
                                                                                 <subviews>
                                                                                     <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fcz-zG-akd">
-                                                                                        <rect key="frame" x="0.0" y="0.0" width="296" height="126"/>
+                                                                                        <rect key="frame" x="12" y="4" width="296" height="126"/>
                                                                                         <subviews>
                                                                                             <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="90" width="296" height="36"/>
@@ -703,6 +703,9 @@
                                                                                             </customView>
                                                                                             <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
                                                                                                 <rect key="frame" x="0.0" y="83" width="296" height="5"/>
+                                                                                                <constraints>
+                                                                                                    <constraint firstAttribute="height" constant="1" id="VCN-km-lXD"/>
+                                                                                                </constraints>
                                                                                             </box>
                                                                                             <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="45" width="296" height="36"/>
@@ -715,6 +718,9 @@
                                                                                             </customView>
                                                                                             <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
                                                                                                 <rect key="frame" x="0.0" y="38" width="296" height="5"/>
+                                                                                                <constraints>
+                                                                                                    <constraint firstAttribute="height" constant="1" id="02u-v8-cpb"/>
+                                                                                                </constraints>
                                                                                             </box>
                                                                                             <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="0.0" width="296" height="36"/>
@@ -743,17 +749,17 @@
                                                                                     </stackView>
                                                                                 </subviews>
                                                                                 <constraints>
-                                                                                    <constraint firstItem="Fcz-zG-akd" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" id="4sr-eZ-MKu"/>
-                                                                                    <constraint firstItem="Fcz-zG-akd" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" id="Ldr-dS-8Dc"/>
-                                                                                    <constraint firstAttribute="bottom" secondItem="Fcz-zG-akd" secondAttribute="bottom" id="PYY-Cp-npK"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="Fcz-zG-akd" secondAttribute="trailing" id="nxA-wo-Y1T"/>
+                                                                                    <constraint firstItem="Fcz-zG-akd" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="4" id="4sr-eZ-MKu"/>
+                                                                                    <constraint firstItem="Fcz-zG-akd" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="Ldr-dS-8Dc"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="Fcz-zG-akd" secondAttribute="bottom" constant="4" id="PYY-Cp-npK"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="Fcz-zG-akd" secondAttribute="trailing" constant="12" id="nxA-wo-Y1T"/>
                                                                                 </constraints>
                                                                             </view>
                                                                             <constraints>
-                                                                                <constraint firstAttribute="trailing" secondItem="Fcz-zG-akd" secondAttribute="trailing" constant="12" id="LQB-7y-KX3"/>
-                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="leading" secondItem="2ye-g4-fz5" secondAttribute="leading" constant="12" id="cye-D1-cVE"/>
-                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="top" secondItem="2ye-g4-fz5" secondAttribute="top" constant="4" id="iTn-vX-STG"/>
-                                                                                <constraint firstAttribute="bottom" secondItem="Fcz-zG-akd" secondAttribute="bottom" constant="4" id="jlM-pi-dXF"/>
+                                                                                <constraint firstAttribute="trailing" secondItem="Fcz-zG-akd" secondAttribute="trailing" constant="12" id="55C-Xe-B0u"/>
+                                                                                <constraint firstAttribute="bottom" secondItem="Fcz-zG-akd" secondAttribute="bottom" constant="4" id="GBG-uW-PAF"/>
+                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="leading" secondItem="2ye-g4-fz5" secondAttribute="leading" constant="12" id="OGq-eq-dQy"/>
+                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="top" secondItem="2ye-g4-fz5" secondAttribute="top" constant="4" id="VpT-na-cfQ"/>
                                                                             </constraints>
                                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
@@ -996,23 +1002,24 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="zg3-ol-yEx" secondAttribute="trailing" id="O40-PW-zoO"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="afn-uh-zSj" secondAttribute="leading" id="Pk5-wH-hiA"/>
                                                                 <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
+                                                                <constraint firstAttribute="bottom" secondItem="HAp-c6-UK0" secondAttribute="bottom" id="Uge-AQ-77N"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="zg3-ol-yEx" secondAttribute="leading" id="V7t-rj-OzL"/>
                                                                 <constraint firstAttribute="trailing" secondItem="7PK-hh-Xx5" secondAttribute="trailing" id="VDa-w4-VLj"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="QqK-iZ-rFX" secondAttribute="trailing" id="WDo-jZ-BGY"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="afn-uh-zSj" secondAttribute="trailing" id="Z9Q-rP-Mt1"/>
                                                                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="heJ-eE-GoP" secondAttribute="trailing" constant="20" id="c8j-mi-lxb"/>
+                                                                <constraint firstAttribute="width" priority="800" constant="360" id="dNk-Lh-iup"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="Ng5-FC-tts" secondAttribute="leading" id="e93-za-6yI"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="2ye-g4-fz5" secondAttribute="trailing" id="kYW-h7-WnM"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="PgC-G6-Pat" secondAttribute="leading" id="ogH-fx-JZo"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="ohb-og-cNW"/>
-                                                                <constraint firstItem="HAp-c6-UK0" firstAttribute="height" secondItem="qgt-NU-zFj" secondAttribute="height" id="qql-Ah-Hgp"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="jBL-DF-Vik" secondAttribute="leading" id="wwV-6Y-8z6"/>
+                                                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="330" id="xfy-lu-jWH"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="jBL-DF-Vik" secondAttribute="trailing" id="zZa-cV-u19"/>
                                                             </constraints>
                                                         </customView>
                                                     </subviews>
                                                     <constraints>
-                                                        <constraint firstItem="qgt-NU-zFj" firstAttribute="width" secondItem="ZGz-La-n9c" secondAttribute="width" id="XOv-5H-6st"/>
                                                         <constraint firstItem="qgt-NU-zFj" firstAttribute="leading" secondItem="ZGz-La-n9c" secondAttribute="leading" id="eIb-sE-kBI"/>
                                                         <constraint firstAttribute="bottom" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="j5y-B2-4gd"/>
                                                         <constraint firstAttribute="trailing" secondItem="qgt-NU-zFj" secondAttribute="trailing" id="op3-Wo-tEo"/>
@@ -1031,7 +1038,7 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.47619047619047616" horizontal="NO" id="Vtu-Wx-ydk">
                                             <rect key="frame" x="345" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
