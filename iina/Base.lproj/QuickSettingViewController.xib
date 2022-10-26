@@ -1047,7 +1047,7 @@
                             </view>
                         </tabViewItem>
                         <tabViewItem label="Audio" identifier="2" id="bzk-c2-LH5" userLabel="AudioTab Tab View Item">
-                            <view key="view" id="Dxl-wa-zgc" userLabel="Audio Tab Content View">
+                            <view key="view" id="Dxl-wa-zgc" userLabel="AudioTab View">
                                 <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
