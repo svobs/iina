@@ -559,7 +559,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <gridView xPlacement="fill" yPlacement="center" rowAlignment="none" rowSpacing="1" columnSpacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="heJ-eE-GoP" userLabel="SpeedSection Grid View">
-                                                                            <rect key="frame" x="20" y="379" width="320" height="77"/>
+                                                                            <rect key="frame" x="20" y="381" width="320" height="75"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="280" id="Hci-E3-iVC"/>
                                                                             </constraints>
@@ -574,7 +574,7 @@
                                                                             <gridCells>
                                                                                 <gridCell row="7Qo-Jk-pFM" column="vI7-hO-2uz" id="Ofz-te-Qxj">
                                                                                     <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d4r-sL-0Vo" userLabel="SpeedLabel Text Field">
-                                                                                        <rect key="frame" x="-2" y="52" width="250" height="16"/>
+                                                                                        <rect key="frame" x="-2" y="51" width="250" height="16"/>
                                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Speed:" id="1KQ-oZ-A2x">
                                                                                             <font key="font" metaFont="systemBold"/>
                                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -707,9 +707,9 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <box boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
-                                                                            <rect key="frame" x="20" y="225" width="320" height="134"/>
+                                                                            <rect key="frame" x="20" y="225" width="320" height="136"/>
                                                                             <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
-                                                                                <rect key="frame" x="1" y="1" width="318" height="132"/>
+                                                                                <rect key="frame" x="1" y="1" width="318" height="134"/>
                                                                                 <subviews>
                                                                                     <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                         <rect key="frame" x="12" y="94" width="294" height="36"/>
@@ -770,6 +770,9 @@
                                                                                     <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="wYl-G5-e2I"/>
                                                                                 </constraints>
                                                                             </view>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="height" constant="136" id="Zvi-5S-PFo"/>
+                                                                            </constraints>
                                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
                                                                         </box>
@@ -1026,7 +1029,6 @@
                                                                 <constraint firstAttribute="width" constant="360" id="5cD-TD-yuW"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="jBL-DF-Vik" secondAttribute="leading" id="85d-Hp-Wbh"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="8Rl-FH-KCN"/>
-                                                                <constraint firstItem="2ye-g4-fz5" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="8jh-gW-hoM"/>
                                                                 <constraint firstAttribute="trailing" secondItem="7PK-hh-Xx5" secondAttribute="trailing" id="9Xj-pF-qIZ"/>
                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="750" id="ADX-Jz-K2i"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="sPT-jd-T7a" secondAttribute="leading" id="ANc-I0-1bL"/>
@@ -1041,9 +1043,9 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="7vv-En-VYY" secondAttribute="leading" id="L9k-Sc-K2z"/>
                                                                 <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="LpJ-uq-UQ4"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="Nur-Nw-ygL"/>
-                                                                <constraint firstAttribute="width" relation="lessThanOrEqual" constant="360" id="O6b-jm-6G2"/>
                                                                 <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
-                                                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="330" id="R5M-oY-ksX"/>
+                                                                <constraint firstAttribute="trailing" secondItem="2ye-g4-fz5" secondAttribute="trailing" constant="20" id="Tb3-Ip-Y7h"/>
+                                                                <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="UPg-Xb-MLf"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="cjG-f1-Mkg" secondAttribute="trailing" id="UUD-KL-V6D"/>
                                                                 <constraint firstAttribute="bottom" secondItem="HAp-c6-UK0" secondAttribute="bottom" id="Uge-AQ-77N"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="Ljl-w6-gIf" secondAttribute="leading" id="d6c-tL-1ym"/>
@@ -1054,7 +1056,6 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="bza-SA-tXE" secondAttribute="leading" id="o6Q-jG-zhw"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="hhH-Re-mkg" secondAttribute="trailing" id="uJ8-Fu-dKx"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="oAm-jJ-3kE" secondAttribute="leading" id="xBD-yd-LVV"/>
-                                                                <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="xUg-m1-hKT"/>
                                                             </constraints>
                                                         </customView>
                                                     </subviews>
