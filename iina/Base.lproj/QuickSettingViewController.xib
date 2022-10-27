@@ -79,10 +79,10 @@
             <rect key="frame" x="0.0" y="0.0" width="350" height="823"/>
             <subviews>
                 <stackView distribution="fillEqually" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="200" verticalStackHuggingPriority="250" horizontalHuggingPriority="200" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dNi-Ib-2vd" userLabel="TabButtons Stack View">
-                    <rect key="frame" x="20" y="775" width="330" height="48"/>
+                    <rect key="frame" x="20" y="775" width="310" height="48"/>
                     <subviews>
                         <button horizontalHuggingPriority="252" verticalHuggingPriority="750" imageHugsTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ma8-6g-tVw" userLabel="VideoTab Button">
-                            <rect key="frame" x="0.0" y="15" width="105" height="18"/>
+                            <rect key="frame" x="0.0" y="15" width="98" height="18"/>
                             <buttonCell key="cell" type="square" title="VIDEO" bezelStyle="shadowlessSquare" image="tab_video" imagePosition="leading" alignment="center" imageScaling="proportionallyDown" inset="2" id="lQt-I0-jHO">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="systemBold"/>
@@ -92,7 +92,7 @@
                             </connections>
                         </button>
                         <button horizontalHuggingPriority="251" verticalHuggingPriority="750" tag="1" imageHugsTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3Fk-ey-FhK" userLabel="AudioTab Buttom">
-                            <rect key="frame" x="113" y="15" width="104" height="18"/>
+                            <rect key="frame" x="106" y="15" width="98" height="18"/>
                             <buttonCell key="cell" type="square" title="AUDIO" bezelStyle="shadowlessSquare" image="tab_audio" imagePosition="leading" alignment="center" imageScaling="proportionallyDown" inset="2" id="cpm-5o-a2c">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="systemBold"/>
@@ -102,7 +102,7 @@
                             </connections>
                         </button>
                         <button horizontalHuggingPriority="253" verticalHuggingPriority="750" tag="2" imageHugsTitle="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rH3-pU-mFc" userLabel="SubtitlesTab Button">
-                            <rect key="frame" x="225" y="15" width="105" height="18"/>
+                            <rect key="frame" x="212" y="15" width="98" height="18"/>
                             <buttonCell key="cell" type="square" title="SUBTITLES" bezelStyle="shadowlessSquare" image="tab_sub" imagePosition="leading" alignment="center" imageScaling="proportionallyDown" inset="2" id="NxO-to-jcI">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="systemBold"/>
@@ -265,7 +265,7 @@
                                                                                                             </tableCellView>
                                                                                                         </prototypeCellViews>
                                                                                                     </tableColumn>
-                                                                                                    <tableColumn identifier="TrackId" width="22" minWidth="10" maxWidth="3.4028234663852886e+38" id="Rm0-nB-ZDI">
+                                                                                                    <tableColumn identifier="TrackId" width="22" minWidth="22" maxWidth="3.4028234663852886e+38" id="Rm0-nB-ZDI">
                                                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left">
                                                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
@@ -711,7 +711,7 @@
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="134"/>
                                                                                 <subviews>
                                                                                     <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="800" verticalClippingResistancePriority="80" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fcz-zG-akd">
-                                                                                        <rect key="frame" x="12" y="4" width="336" height="126"/>
+                                                                                        <rect key="frame" x="12" y="6" width="336" height="126"/>
                                                                                         <subviews>
                                                                                             <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                                 <rect key="frame" x="0.0" y="90" width="336" height="36"/>
@@ -2527,7 +2527,7 @@
             <constraints>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="trailing" secondItem="Hz6-mo-xeY" secondAttribute="trailing" constant="20" id="55S-FG-sbw"/>
                 <constraint firstItem="iNg-R1-bXw" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="701-yY-7hN"/>
-                <constraint firstAttribute="trailing" secondItem="dNi-Ib-2vd" secondAttribute="trailing" id="Ul3-qM-JEr"/>
+                <constraint firstAttribute="trailing" secondItem="dNi-Ib-2vd" secondAttribute="trailing" constant="20" id="Ul3-qM-JEr"/>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="VjD-2S-qZr"/>
                 <constraint firstItem="udA-m2-eJb" firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" id="Z18-rW-4G3"/>
                 <constraint firstItem="udA-m2-eJb" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="aAs-ug-WAK"/>
