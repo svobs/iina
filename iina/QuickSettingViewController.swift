@@ -248,6 +248,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateVideoTabControl() {
+    updateVideoTabWidthConstraint()
     if let index = AppData.aspectsInPanel.firstIndex(of: player.info.unsureAspect) {
       aspectSegment.selectedSegment = index
     } else {
@@ -450,17 +451,18 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       hdrSwitch.checked = available && player.info.hdrEnabled
     }
   }
-
+ 
   func updateVideoTabWidthConstraint() {
     // Need manual adjustment to remove extra space created when "Show scroll bars"="Always" in MacOS settings:
-    var newWidth = videoTabScrollView.documentVisibleRect.width
+    var newWidth: CGFloat = 335
     if videoTabScrollView.scrollerStyle == .legacy {
       if let vScroller = videoTabScrollView.verticalScroller {
         newWidth -= vScroller.frame.width
       }
     }
-    Logger.log("Setting max width of settings panel to: \(newWidth)")
+    Logger.log("Setting max width of settings panel to: \(newWidth) (was: \(videoTabContentViewWidthConstraint.constant))")
     videoTabContentViewWidthConstraint.constant = newWidth
+    videoTabScrollView.needsLayout = true
   }
 
   // MARK: - Switch tab
