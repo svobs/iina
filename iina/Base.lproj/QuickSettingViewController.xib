@@ -76,7 +76,7 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" customClass="QuickSettingView" customModule="IINA" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="380" height="823"/>
+            <rect key="frame" x="0.0" y="0.0" width="360" height="823"/>
             <subviews>
                 <stackView distribution="fillEqually" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="200" verticalStackHuggingPriority="250" horizontalHuggingPriority="200" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="dNi-Ib-2vd" userLabel="TabButtons Stack View">
                     <rect key="frame" x="20" y="775" width="340" height="48"/>
@@ -130,16 +130,16 @@
                     <rect key="frame" x="0.0" y="772" width="380" height="5"/>
                 </box>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="iNg-R1-bXw" userLabel="PluginTabs View">
-                    <rect key="frame" x="0.0" y="739" width="380" height="36"/>
+                    <rect key="frame" x="0.0" y="739" width="360" height="36"/>
                     <subviews>
                         <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="dfw-cq-GHm" userLabel="PluginsTabs Scroll View">
-                            <rect key="frame" x="0.0" y="0.0" width="380" height="36"/>
+                            <rect key="frame" x="0.0" y="0.0" width="360" height="36"/>
                             <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Q9c-dH-CRI" userLabel="PluginsTabs Clip View">
-                                <rect key="frame" x="0.0" y="0.0" width="380" height="36"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="36"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view id="PF8-CN-LtV">
-                                        <rect key="frame" x="0.0" y="0.0" width="365" height="21"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="345" height="21"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     </view>
                                 </subviews>
@@ -159,32 +159,32 @@
                         </box>
                     </subviews>
                     <constraints>
-                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" id="74v-8g-HeT"/>
-                        <constraint firstAttribute="bottom" secondItem="dfw-cq-GHm" secondAttribute="bottom" id="DBW-bI-ICl"/>
-                        <constraint firstItem="dfw-cq-GHm" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="Dfn-E4-5qj"/>
+                        <constraint firstItem="dfw-cq-GHm" firstAttribute="leading" secondItem="Uvg-kn-ZiM" secondAttribute="leading" id="2zp-Ws-ETu"/>
+                        <constraint firstItem="dfw-cq-GHm" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="top" id="5Ny-3k-soM"/>
+                        <constraint firstItem="Uvg-kn-ZiM" firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" constant="20" id="74v-8g-HeT"/>
+                        <constraint firstAttribute="bottom" secondItem="dfw-cq-GHm" secondAttribute="bottom" id="GvI-sm-Iax"/>
                         <constraint firstItem="Uvg-kn-ZiM" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="NHW-B4-oO2"/>
-                        <constraint firstItem="dfw-cq-GHm" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="top" id="Y8j-lM-l7o"/>
                         <constraint firstAttribute="height" constant="36" identifier="pluginTabsViewHeightConstraint" id="ZRN-u2-VBd"/>
                         <constraint firstItem="Uvg-kn-ZiM" firstAttribute="top" secondItem="iNg-R1-bXw" secondAttribute="bottom" id="ckb-ws-Jbz"/>
-                        <constraint firstAttribute="trailing" secondItem="dfw-cq-GHm" secondAttribute="trailing" id="mqw-9f-ZMt"/>
+                        <constraint firstAttribute="trailing" secondItem="dfw-cq-GHm" secondAttribute="trailing" id="mco-9k-U23"/>
                     </constraints>
                 </customView>
                 <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="udA-m2-eJb" userLabel="AllTabs Tab View">
-                    <rect key="frame" x="0.0" y="0.0" width="380" height="739"/>
+                    <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                     <font key="font" metaFont="system"/>
                     <tabViewItems>
                         <tabViewItem label="Video" identifier="1" id="CYP-el-A6A" userLabel="VideoTab Tab View Item">
                             <view key="view" id="NRI-ba-KMd" userLabel="VideoTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="380" height="739"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="380" height="739"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="365" height="739"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="345" height="739"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="350" height="782"/>
+                                                    <rect key="frame" x="0.0" y="-23" width="350" height="782"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj" userLabel="VideoTabContent View">
                                                             <rect key="frame" x="0.0" y="0.0" width="350" height="782"/>
@@ -209,7 +209,7 @@
                                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                     </textFieldCell>
                                                                                 </textField>
-                                                                                <scrollView focusRingType="none" borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ykw-rb-M9D" userLabel="VideoTrackTable Scroll View">
+                                                                                <scrollView focusRingType="none" horizontalHuggingPriority="900" horizontalCompressionResistancePriority="200" borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ykw-rb-M9D" userLabel="VideoTrackTable Scroll View">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="350" height="76"/>
                                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="jek-w4-LTf" userLabel="VideoTrackTable Clip View">
                                                                                         <rect key="frame" x="0.0" y="0.0" width="350" height="76"/>
@@ -656,7 +656,7 @@
                                                                                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
                                                                                                 <rect key="frame" x="0.0" y="0.0" width="58" height="30"/>
                                                                                                 <constraints>
-                                                                                                    <constraint firstAttribute="width" priority="900" constant="50" id="B3n-IT-9Ik"/>
+                                                                                                    <constraint firstAttribute="width" priority="900" constant="58" id="B3n-IT-9Ik"/>
                                                                                                 </constraints>
                                                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="Mav-NA-RfN" userLabel="SpeedEdit Rounded Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                                                                     <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="55S-dl-9lV">
@@ -1029,15 +1029,14 @@
                                                                 <constraint firstAttribute="width" priority="400" constant="350" id="8AE-q1-rqE"/>
                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="750" id="ADX-Jz-K2i"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="C9h-dV-uJF"/>
-                                                                <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="DT6-xM-5CS"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="Duj-S1-MXK"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="2ye-g4-fz5" secondAttribute="leading" id="Dvh-Q9-5TN"/>
-                                                                <constraint firstItem="ykw-rb-M9D" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qgt-NU-zFj" secondAttribute="trailing" id="GUI-oO-wpx"/>
+                                                                <constraint firstItem="ykw-rb-M9D" firstAttribute="trailing" secondItem="qgt-NU-zFj" secondAttribute="trailing" id="GUI-oO-wpx"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="Nur-Nw-ygL"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="zg3-ol-yEx" secondAttribute="trailing" id="O40-PW-zoO"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="afn-uh-zSj" secondAttribute="leading" id="Pk5-wH-hiA"/>
                                                                 <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
-                                                                <constraint firstAttribute="width" relation="lessThanOrEqual" priority="501" constant="380" id="Tzl-sN-6pc"/>
+                                                                <constraint firstAttribute="width" relation="lessThanOrEqual" priority="501" constant="350" id="Tzl-sN-6pc"/>
                                                                 <constraint firstAttribute="bottom" secondItem="HAp-c6-UK0" secondAttribute="bottom" id="Uge-AQ-77N"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="zg3-ol-yEx" secondAttribute="leading" id="V7t-rj-OzL"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="heJ-eE-GoP" secondAttribute="trailing" id="Wt6-g9-bSJ"/>
@@ -1063,17 +1062,18 @@
                                             </subviews>
                                             <constraints>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="leading" secondItem="8Es-YX-dNf" secondAttribute="leading" id="GY8-wi-aRg"/>
-                                                <constraint firstAttribute="bottom" secondItem="ZGz-La-n9c" secondAttribute="bottom" id="KCt-wf-pjo"/>
-                                                <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" id="QX6-9q-Dx8"/>
-                                                <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="d7r-rT-3ad"/>
+                                                <constraint firstAttribute="bottom" secondItem="ZGz-La-n9c" secondAttribute="bottom" constant="-23" id="KCt-wf-pjo"/>
+                                                <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" constant="-20" id="QX6-9q-Dx8"/>
+                                                <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" constant="-5" id="d7r-rT-3ad"/>
+                                                <constraint firstItem="ykw-rb-M9D" firstAttribute="width" secondItem="8Es-YX-dNf" secondAttribute="width" constant="5" id="etx-5Z-mNa"/>
                                             </constraints>
                                         </clipView>
                                         <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="tk3-fh-4Dl">
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="365" y="0.0" width="15" height="739"/>
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="Vtu-Wx-ydk">
+                                            <rect key="frame" x="345" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
@@ -2514,9 +2514,9 @@
                 </tabView>
             </subviews>
             <constraints>
-                <constraint firstItem="L78-cf-BxB" firstAttribute="trailing" secondItem="Hz6-mo-xeY" secondAttribute="trailing" id="55S-FG-sbw"/>
+                <constraint firstItem="L78-cf-BxB" firstAttribute="trailing" secondItem="Hz6-mo-xeY" secondAttribute="trailing" constant="20" id="55S-FG-sbw"/>
                 <constraint firstItem="iNg-R1-bXw" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="701-yY-7hN"/>
-                <constraint firstAttribute="trailing" secondItem="dNi-Ib-2vd" secondAttribute="trailing" constant="20" id="Ul3-qM-JEr"/>
+                <constraint firstAttribute="trailing" secondItem="dNi-Ib-2vd" secondAttribute="trailing" id="Ul3-qM-JEr"/>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="top" secondItem="dNi-Ib-2vd" secondAttribute="bottom" id="VjD-2S-qZr"/>
                 <constraint firstItem="udA-m2-eJb" firstAttribute="trailing" secondItem="iNg-R1-bXw" secondAttribute="trailing" id="Z18-rW-4G3"/>
                 <constraint firstItem="udA-m2-eJb" firstAttribute="leading" secondItem="iNg-R1-bXw" secondAttribute="leading" id="aAs-ug-WAK"/>
@@ -2527,7 +2527,7 @@
                 <constraint firstItem="iNg-R1-bXw" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="j0a-1p-fwe"/>
                 <constraint firstItem="dNi-Ib-2vd" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="qd3-0i-qbr"/>
                 <constraint firstItem="L78-cf-BxB" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="tzm-Ub-xUS"/>
-                <constraint firstAttribute="width" constant="380" id="wbT-t0-p1J"/>
+                <constraint firstAttribute="width" constant="360" id="wbT-t0-p1J"/>
             </constraints>
             <point key="canvasLocation" x="101" y="441.5"/>
         </customView>
