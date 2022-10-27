@@ -240,6 +240,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateControlsState() {
+    UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
     updateVideoTabControl()
     updateAudioTabControl()
     updateSubTabControl()
@@ -453,18 +454,16 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   func updateVideoTabWidthConstraint() {
-    // Need manual adjustment to remove extra space created when "Show scroll bars"="Always" in MacOS settings:
-//    var newWidth: CGFloat = 335
-    var newWidth = videoTabScrollView.documentVisibleRect.width
+    // Need manual adjustment to remove extra space created when "Show scroll bars"="Always" in MacOS settings:\
+    var newWidth = MainWindowController.SettingsWidth
     if videoTabScrollView.scrollerStyle == .legacy {
       if let vScroller = videoTabScrollView.verticalScroller {
         newWidth -= vScroller.frame.width
-//        newWidth = 300
       }
     }
-//    Logger.log("Setting max width of settings panel to: \(newWidth) (was: \(videoTabContentViewWidthConstraint.constant))")
-//    videoTabContentViewWidthConstraint.constant = newWidth
-//    videoTabScrollView.needsLayout = true
+    Logger.log("Setting max width of settings panel to: \(newWidth) (was: \(videoTabContentViewWidthConstraint.constant))")
+    videoTabContentViewWidthConstraint.constant = newWidth
+    videoTabScrollView.needsLayout = true
   }
 
   // MARK: - Switch tab
