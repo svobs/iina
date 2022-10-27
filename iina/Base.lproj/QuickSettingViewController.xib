@@ -181,16 +181,16 @@
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
                                         <rect key="frame" x="0.0" y="0.0" width="350" height="739"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="350" height="739"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="335" height="739"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="375" height="782"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="782"/>
                                                     <subviews>
                                                         <customView horizontalHuggingPriority="200" translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj" userLabel="VideoTabContent View">
                                                             <rect key="frame" x="0.0" y="0.0" width="360" height="782"/>
                                                             <subviews>
                                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="Panel Insets [Invisible Guide]">
-                                                                    <rect key="frame" x="20" y="0.0" width="320" height="0.0"/>
+                                                                    <rect key="frame" x="20" y="782" width="320" height="0.0"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" id="4UC-le-Tmg"/>
                                                                     </constraints>
@@ -355,7 +355,6 @@
                                                                                     </clipView>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="76" id="QlN-U3-ekO"/>
-                                                                                        <constraint firstAttribute="width" relation="lessThanOrEqual" constant="360" id="t4y-iN-Olx"/>
                                                                                     </constraints>
                                                                                     <edgeInsets key="contentInsets" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
                                                                                     <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="XXI-Cy-jma">
@@ -665,7 +664,7 @@
                                                                                                 <rect key="frame" x="0.0" y="0.0" width="58" height="30"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="40" id="7hA-BF-XsA"/>
-                                                                                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="80" id="9Af-YE-cIO"/>
+                                                                                                    <constraint firstAttribute="width" relation="lessThanOrEqual" priority="999" constant="100" id="9Af-YE-cIO"/>
                                                                                                     <constraint firstAttribute="width" priority="900" constant="60" id="B3n-IT-9Ik"/>
                                                                                                 </constraints>
                                                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="Mav-NA-RfN" userLabel="SpeedEdit Rounded Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
@@ -700,7 +699,6 @@
                                                                                             <constraint firstItem="sIs-a1-rGR" firstAttribute="leading" secondItem="w13-si-nTf" secondAttribute="leading" id="KeA-7N-VQT"/>
                                                                                             <constraint firstItem="sIs-a1-rGR" firstAttribute="top" secondItem="w13-si-nTf" secondAttribute="top" id="Nrc-vl-Qcm"/>
                                                                                             <constraint firstItem="ftl-yD-3Pp" firstAttribute="firstBaseline" secondItem="sIs-a1-rGR" secondAttribute="firstBaseline" id="ObG-5x-D27"/>
-                                                                                            <constraint firstItem="ftl-yD-3Pp" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="fBC-sB-3LV"/>
                                                                                             <constraint firstAttribute="bottom" secondItem="sIs-a1-rGR" secondAttribute="bottom" id="vIs-Ku-V9Y"/>
                                                                                         </constraints>
                                                                                     </customView>
@@ -712,7 +710,7 @@
                                                                             <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="134"/>
                                                                                 <subviews>
-                                                                                    <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fcz-zG-akd">
+                                                                                    <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="800" verticalClippingResistancePriority="80" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fcz-zG-akd">
                                                                                         <rect key="frame" x="12" y="4" width="336" height="126"/>
                                                                                         <subviews>
                                                                                             <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
@@ -1032,6 +1030,7 @@
                                                             <constraints>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="ItN-JT-puN" secondAttribute="trailing" id="0GJ-lj-FcS"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="jBL-DF-Vik" secondAttribute="trailing" id="10b-eq-LpB"/>
+                                                                <constraint firstItem="ftl-yD-3Pp" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="1TT-9C-9Bc"/>
                                                                 <constraint firstAttribute="width" constant="360" id="5cD-TD-yuW"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="jBL-DF-Vik" secondAttribute="leading" id="85d-Hp-Wbh"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="8Rl-FH-KCN"/>
@@ -1048,7 +1047,7 @@
                                                                 <constraint firstItem="7PK-hh-Xx5" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="Jzr-fh-JS0"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="7vv-En-VYY" secondAttribute="leading" id="L9k-Sc-K2z"/>
                                                                 <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="LpJ-uq-UQ4"/>
-                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="Nur-Nw-ygL"/>
+                                                                <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="Nur-Nw-ygL"/>
                                                                 <constraint firstAttribute="width" relation="lessThanOrEqual" constant="360" id="O6b-jm-6G2"/>
                                                                 <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="330" id="R5M-oY-ksX"/>
@@ -1068,7 +1067,7 @@
                                                     <constraints>
                                                         <constraint firstItem="qgt-NU-zFj" firstAttribute="leading" secondItem="ZGz-La-n9c" secondAttribute="leading" id="eIb-sE-kBI"/>
                                                         <constraint firstAttribute="bottom" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="j5y-B2-4gd"/>
-                                                        <constraint firstAttribute="trailing" secondItem="qgt-NU-zFj" secondAttribute="trailing" constant="15" id="op3-Wo-tEo"/>
+                                                        <constraint firstAttribute="trailing" secondItem="qgt-NU-zFj" secondAttribute="trailing" id="op3-Wo-tEo"/>
                                                         <constraint firstItem="qgt-NU-zFj" firstAttribute="top" secondItem="ZGz-La-n9c" secondAttribute="top" id="xOG-oE-tIi"/>
                                                     </constraints>
                                                 </view>
@@ -1076,7 +1075,7 @@
                                             <constraints>
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="leading" secondItem="8Es-YX-dNf" secondAttribute="leading" id="GY8-wi-aRg"/>
                                                 <constraint firstAttribute="bottom" secondItem="ZGz-La-n9c" secondAttribute="bottom" id="KCt-wf-pjo"/>
-                                                <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" constant="-43" id="QX6-9q-Dx8"/>
+                                                <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" id="QX6-9q-Dx8"/>
                                                 <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="d7r-rT-3ad"/>
                                             </constraints>
                                         </clipView>
@@ -1084,8 +1083,8 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="334" y="0.0" width="16" height="739"/>
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.46511627906976749" horizontal="NO" id="Vtu-Wx-ydk">
+                                            <rect key="frame" x="335" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
