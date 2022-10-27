@@ -196,7 +196,7 @@
                                                                         <constraint firstAttribute="height" id="4UC-le-Tmg"/>
                                                                     </constraints>
                                                                 </customView>
-                                                                <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="20" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="900" verticalClippingResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
+                                                                <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="20" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="900" verticalClippingResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
                                                                     <rect key="frame" x="0.0" y="0.0" width="360" height="800"/>
                                                                     <subviews>
                                                                         <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="4mG-fZ-Zyi" userLabel="VideoTrackSection Vertical Stack">
