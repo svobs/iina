@@ -182,14 +182,14 @@
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="380" height="739"/>
                                             <subviews>
-                                                <view misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="380" height="782"/>
+                                                <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                                    <rect key="frame" x="0.0" y="0.0" width="350" height="782"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj" userLabel="VideoTabContent View">
                                                             <rect key="frame" x="0.0" y="0.0" width="350" height="782"/>
                                                             <subviews>
-                                                                <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="Panel Insets [Invisible Guide]">
-                                                                    <rect key="frame" x="20" y="0.0" width="350" height="0.0"/>
+                                                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="Panel Insets [Invisible Guide]">
+                                                                    <rect key="frame" x="20" y="0.0" width="310" height="0.0"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" id="4UC-le-Tmg"/>
                                                                     </constraints>
