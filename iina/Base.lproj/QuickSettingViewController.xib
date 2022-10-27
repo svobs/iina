@@ -182,7 +182,7 @@
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
                                         <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="345" height="739"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="360" height="800"/>
@@ -428,7 +428,7 @@
                                                                                     </segmentedControl>
                                                                                 </gridCell>
                                                                                 <gridCell row="bjT-1s-aSe" column="UdD-wr-vjb" id="d6M-7B-psj">
-                                                                                    <textField key="contentView" identifier="customAspectRatio" horizontalHuggingPriority="750" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hhH-Re-mkg" userLabel="CustomAspectRatio Text Field">
+                                                                                    <textField key="contentView" identifier="customAspectRatio" horizontalHuggingPriority="750" verticalHuggingPriority="749" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hhH-Re-mkg" userLabel="CustomAspectRatio Text Field">
                                                                                         <rect key="frame" x="260" y="0.0" width="60" height="21"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="width" priority="500" constant="60" id="HWJ-He-IvM"/>
@@ -708,13 +708,13 @@
                                                                         </gridView>
                                                                         <box boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
                                                                             <rect key="frame" x="20" y="225" width="320" height="136"/>
-                                                                            <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
+                                                                            <view key="contentView" id="bBc-PP-gHz" userLabel="Switches Box View">
                                                                                 <rect key="frame" x="1" y="1" width="318" height="134"/>
+                                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <subviews>
                                                                                     <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                                         <rect key="frame" x="12" y="94" width="294" height="36"/>
                                                                                         <constraints>
-                                                                                            <constraint firstAttribute="width" constant="294" id="0X8-gp-WWb"/>
                                                                                             <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
                                                                                         </constraints>
                                                                                         <userDefinedRuntimeAttributes>
@@ -747,31 +747,18 @@
                                                                                     </customView>
                                                                                 </subviews>
                                                                                 <constraints>
-                                                                                    <constraint firstAttribute="trailing" secondItem="qYi-uQ-6qo" secondAttribute="trailing" constant="12" id="5Ho-HU-lBM"/>
+                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="centerX" secondItem="bBc-PP-gHz" secondAttribute="centerX" id="6ZL-6R-OnF"/>
                                                                                     <constraint firstItem="SMb-H5-j6h" firstAttribute="top" secondItem="PyM-xa-vx9" secondAttribute="bottom" constant="4" id="6sV-DZ-PFM"/>
-                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="FxR-NT-3lS"/>
-                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="centerX" secondItem="bBc-PP-gHz" secondAttribute="centerX" id="J1G-J1-w7B"/>
                                                                                     <constraint firstItem="7z5-cT-Huj" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="4" id="JGb-er-EAi"/>
-                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="KUb-WK-53F"/>
-                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="PMV-Mk-Wg2"/>
                                                                                     <constraint firstItem="U8P-fW-N3q" firstAttribute="top" secondItem="qYi-uQ-6qo" secondAttribute="bottom" constant="4" id="Rty-lU-Zfh"/>
                                                                                     <constraint firstItem="PyM-xa-vx9" firstAttribute="top" secondItem="7z5-cT-Huj" secondAttribute="bottom" constant="4" id="VWq-0g-aJF"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="U8P-fW-N3q" secondAttribute="trailing" constant="12" id="cC4-0A-905"/>
-                                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="cVW-Jk-NXW"/>
-                                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="fyj-gp-lEM"/>
-                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="hhs-yq-vvn"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="SMb-H5-j6h" secondAttribute="trailing" constant="12" id="kpb-xT-QIi"/>
                                                                                     <constraint firstItem="qYi-uQ-6qo" firstAttribute="top" secondItem="SMb-H5-j6h" secondAttribute="bottom" constant="4" id="lka-0H-kjw"/>
-                                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="oba-VV-xpw"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" constant="12" id="p71-9V-vct"/>
-                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="syt-Qa-V4V"/>
                                                                                     <constraint firstAttribute="bottom" secondItem="U8P-fW-N3q" secondAttribute="bottom" constant="4" id="wPq-Fz-H2Z"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="7z5-cT-Huj" secondAttribute="trailing" constant="12" id="wYA-CP-iwh"/>
-                                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="wYl-G5-e2I"/>
                                                                                 </constraints>
                                                                             </view>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="height" constant="136" id="Zvi-5S-PFo"/>
+                                                                                <constraint firstAttribute="width" relation="lessThanOrEqual" constant="320" id="uV2-Tu-q5K"/>
                                                                             </constraints>
                                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
@@ -1024,8 +1011,11 @@
                                                             </subviews>
                                                             <constraints>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="ItN-JT-puN" secondAttribute="trailing" id="0GJ-lj-FcS"/>
+                                                                <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" constant="13" id="0KS-RR-SIp"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="jBL-DF-Vik" secondAttribute="trailing" id="10b-eq-LpB"/>
                                                                 <constraint firstItem="ftl-yD-3Pp" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="1TT-9C-9Bc"/>
+                                                                <constraint firstItem="qYi-uQ-6qo" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="-13" id="4Ek-hK-j1h"/>
+                                                                <constraint firstItem="SMb-H5-j6h" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" constant="13" id="4lw-wc-Rjp"/>
                                                                 <constraint firstAttribute="width" constant="360" id="5cD-TD-yuW"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="jBL-DF-Vik" secondAttribute="leading" id="85d-Hp-Wbh"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="8Rl-FH-KCN"/>
@@ -1035,6 +1025,7 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="5v4-Te-950" secondAttribute="leading" id="Bad-dN-mgD"/>
                                                                 <constraint firstItem="HAp-c6-UK0" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="C9h-dV-uJF"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="Kzg-Uw-tpM" secondAttribute="leading" id="Cf4-UR-YrT"/>
+                                                                <constraint firstItem="U8P-fW-N3q" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="-13" id="Dch-MD-4lm"/>
                                                                 <constraint firstAttribute="trailing" secondItem="HAp-c6-UK0" secondAttribute="trailing" id="DdX-b0-M4p"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="Duj-S1-MXK"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="CUa-0e-DwY" secondAttribute="leading" id="G3N-Sx-e8z"/>
@@ -1042,8 +1033,10 @@
                                                                 <constraint firstItem="7PK-hh-Xx5" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="Jzr-fh-JS0"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="7vv-En-VYY" secondAttribute="leading" id="L9k-Sc-K2z"/>
                                                                 <constraint firstItem="ykw-rb-M9D" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" id="LpJ-uq-UQ4"/>
+                                                                <constraint firstItem="qYi-uQ-6qo" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" constant="13" id="NMH-wx-LfE"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="qgt-NU-zFj" secondAttribute="top" id="Nur-Nw-ygL"/>
                                                                 <constraint firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="20" id="QLI-Ui-doY"/>
+                                                                <constraint firstItem="PyM-xa-vx9" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="-13" id="QYK-hM-14X"/>
                                                                 <constraint firstAttribute="trailing" secondItem="2ye-g4-fz5" secondAttribute="trailing" constant="20" id="Tb3-Ip-Y7h"/>
                                                                 <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="qgt-NU-zFj" secondAttribute="leading" constant="20" id="UPg-Xb-MLf"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="cjG-f1-Mkg" secondAttribute="trailing" id="UUD-KL-V6D"/>
@@ -1053,8 +1046,12 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="d4r-sL-0Vo" secondAttribute="leading" id="fwI-wv-p9g"/>
                                                                 <constraint firstAttribute="trailing" secondItem="ykw-rb-M9D" secondAttribute="trailing" id="hRz-cy-CRY"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="QqK-iZ-rFX" secondAttribute="leading" id="i4n-ZP-m1X"/>
+                                                                <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" constant="13" id="kji-hp-HNM"/>
+                                                                <constraint firstItem="SMb-H5-j6h" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="-13" id="m9c-v3-frd"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="bza-SA-tXE" secondAttribute="leading" id="o6Q-jG-zhw"/>
+                                                                <constraint firstItem="7z5-cT-Huj" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" constant="13" id="sQN-aQ-Hfq"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="hhH-Re-mkg" secondAttribute="trailing" id="uJ8-Fu-dKx"/>
+                                                                <constraint firstItem="7z5-cT-Huj" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" constant="-13" id="x78-wH-7QN"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="oAm-jJ-3kE" secondAttribute="leading" id="xBD-yd-LVV"/>
                                                             </constraints>
                                                         </customView>
@@ -1080,7 +1077,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.32786885245901642" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="344" y="0.0" width="16" height="739"/>
+                                            <rect key="frame" x="345" y="0.0" width="15" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
