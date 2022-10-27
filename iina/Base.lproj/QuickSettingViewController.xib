@@ -181,25 +181,25 @@
                                     <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
                                         <rect key="frame" x="0.0" y="0.0" width="350" height="739"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="335" height="739"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="350" height="739"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTabContent Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="782"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="800"/>
                                                     <subviews>
                                                         <customView horizontalHuggingPriority="200" translatesAutoresizingMaskIntoConstraints="NO" id="qgt-NU-zFj" userLabel="VideoTabContent View">
-                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="782"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="800"/>
                                                             <subviews>
                                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="Panel Insets [Invisible Guide]">
-                                                                    <rect key="frame" x="20" y="782" width="320" height="0.0"/>
+                                                                    <rect key="frame" x="20" y="800" width="320" height="0.0"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" id="4UC-le-Tmg"/>
                                                                     </constraints>
                                                                 </customView>
-                                                                <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" spacing="20" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" verticalClippingResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="782"/>
+                                                                <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="20" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="900" verticalClippingResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HAp-c6-UK0" userLabel="SectionList Vertical Stack">
+                                                                    <rect key="frame" x="0.0" y="0.0" width="360" height="800"/>
                                                                     <subviews>
                                                                         <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="4mG-fZ-Zyi" userLabel="VideoTrackSection Vertical Stack">
-                                                                            <rect key="frame" x="0.0" y="662" width="360" height="100"/>
+                                                                            <rect key="frame" x="0.0" y="680" width="360" height="100"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ng5-FC-tts" userLabel="Video track Label">
                                                                                     <rect key="frame" x="18" y="84" width="83" height="16"/>
@@ -377,7 +377,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <gridView xPlacement="fill" yPlacement="center" rowAlignment="none" rowSpacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="PgC-G6-Pat" userLabel="AspectRatioSection Grid View">
-                                                                            <rect key="frame" x="20" y="594" width="320" height="48"/>
+                                                                            <rect key="frame" x="20" y="612" width="320" height="48"/>
                                                                             <constraints>
                                                                                 <constraint firstItem="hhH-Re-mkg" firstAttribute="height" secondItem="Ljl-w6-gIf" secondAttribute="height" id="5Ac-LW-Z7Q"/>
                                                                                 <constraint firstAttribute="height" constant="48" id="S7M-kn-Kw4"/>
@@ -448,7 +448,7 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <gridView xPlacement="fill" yPlacement="center" rowAlignment="none" rowSpacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="afn-uh-zSj" userLabel="CropSection Grid View">
-                                                                            <rect key="frame" x="20" y="526" width="320" height="48"/>
+                                                                            <rect key="frame" x="20" y="544" width="320" height="48"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="height" constant="48" id="AAn-ri-xPO"/>
                                                                                 <constraint firstItem="ItN-JT-puN" firstAttribute="height" secondItem="sPT-jd-T7a" secondAttribute="height" id="QNR-0F-CNQ"/>
@@ -516,10 +516,10 @@
                                                                             </gridCells>
                                                                         </gridView>
                                                                         <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="zg3-ol-yEx" userLabel="Rotation Section Vertical Stack">
-                                                                            <rect key="frame" x="20" y="458" width="160" height="48"/>
+                                                                            <rect key="frame" x="20" y="476" width="180" height="48"/>
                                                                             <subviews>
                                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7vv-En-VYY" userLabel="RotationLabel Text Field">
-                                                                                    <rect key="frame" x="-2" y="32" width="164" height="16"/>
+                                                                                    <rect key="frame" x="-2" y="32" width="184" height="16"/>
                                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Rotation:" id="to3-rc-Agv">
                                                                                         <font key="font" metaFont="systemBold"/>
                                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -527,9 +527,9 @@
                                                                                     </textFieldCell>
                                                                                 </textField>
                                                                                 <segmentedControl verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="bza-SA-tXE" userLabel="Rotation Segmented Control">
-                                                                                    <rect key="frame" x="-2" y="-1" width="164" height="24"/>
+                                                                                    <rect key="frame" x="-2" y="-1" width="184" height="24"/>
                                                                                     <constraints>
-                                                                                        <constraint firstAttribute="width" constant="160" id="jc3-ax-36K"/>
+                                                                                        <constraint firstAttribute="width" relation="lessThanOrEqual" constant="180" id="jc3-ax-36K"/>
                                                                                     </constraints>
                                                                                     <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fillEqually" style="rounded" trackingMode="selectOne" id="z1L-0N-dfK">
                                                                                         <font key="font" metaFont="cellTitle"/>
@@ -558,7 +558,7 @@
                                                                             </customSpacing>
                                                                         </stackView>
                                                                         <gridView xPlacement="fill" yPlacement="center" rowAlignment="none" rowSpacing="1" columnSpacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="heJ-eE-GoP" userLabel="SpeedSection Grid View">
-                                                                            <rect key="frame" x="20" y="379" width="320" height="59"/>
+                                                                            <rect key="frame" x="20" y="379" width="320" height="77"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="280" id="Hci-E3-iVC"/>
                                                                             </constraints>
@@ -573,7 +573,7 @@
                                                                             <gridCells>
                                                                                 <gridCell row="7Qo-Jk-pFM" column="vI7-hO-2uz" id="Ofz-te-Qxj">
                                                                                     <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d4r-sL-0Vo" userLabel="SpeedLabel Text Field">
-                                                                                        <rect key="frame" x="-2" y="43" width="250" height="16"/>
+                                                                                        <rect key="frame" x="-2" y="52" width="250" height="16"/>
                                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Speed:" id="1KQ-oZ-A2x">
                                                                                             <font key="font" metaFont="systemBold"/>
                                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -705,79 +705,70 @@
                                                                                 </gridCell>
                                                                             </gridCells>
                                                                         </gridView>
-                                                                        <box autoresizesSubviews="NO" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
-                                                                            <rect key="frame" x="0.0" y="225" width="360" height="134"/>
-                                                                            <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
-                                                                                <rect key="frame" x="0.0" y="0.0" width="360" height="134"/>
+                                                                        <box boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
+                                                                            <rect key="frame" x="20" y="225" width="320" height="134"/>
+                                                                            <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bBc-PP-gHz" userLabel="Switches Box View">
+                                                                                <rect key="frame" x="1" y="1" width="318" height="132"/>
                                                                                 <subviews>
-                                                                                    <stackView distribution="equalSpacing" orientation="vertical" alignment="centerX" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalClippingResistancePriority="800" verticalClippingResistancePriority="80" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fcz-zG-akd">
-                                                                                        <rect key="frame" x="12" y="6" width="336" height="126"/>
-                                                                                        <subviews>
-                                                                                            <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                <rect key="frame" x="0.0" y="90" width="336" height="36"/>
-                                                                                                <constraints>
-                                                                                                    <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
-                                                                                                </constraints>
-                                                                                                <userDefinedRuntimeAttributes>
-                                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hwdec"/>
-                                                                                                </userDefinedRuntimeAttributes>
-                                                                                            </customView>
-                                                                                            <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
-                                                                                                <rect key="frame" x="0.0" y="83" width="336" height="5"/>
-                                                                                            </box>
-                                                                                            <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                <rect key="frame" x="0.0" y="45" width="336" height="36"/>
-                                                                                                <constraints>
-                                                                                                    <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
-                                                                                                </constraints>
-                                                                                                <userDefinedRuntimeAttributes>
-                                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.deinterlace"/>
-                                                                                                </userDefinedRuntimeAttributes>
-                                                                                            </customView>
-                                                                                            <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
-                                                                                                <rect key="frame" x="0.0" y="38" width="336" height="5"/>
-                                                                                            </box>
-                                                                                            <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
-                                                                                                <rect key="frame" x="0.0" y="0.0" width="336" height="36"/>
-                                                                                                <constraints>
-                                                                                                    <constraint firstAttribute="height" constant="36" id="YSa-1m-THM"/>
-                                                                                                </constraints>
-                                                                                                <userDefinedRuntimeAttributes>
-                                                                                                    <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hdr"/>
-                                                                                                </userDefinedRuntimeAttributes>
-                                                                                            </customView>
-                                                                                        </subviews>
-                                                                                        <visibilityPriorities>
-                                                                                            <integer value="1000"/>
-                                                                                            <integer value="1000"/>
-                                                                                            <integer value="1000"/>
-                                                                                            <integer value="1000"/>
-                                                                                            <integer value="1000"/>
-                                                                                        </visibilityPriorities>
-                                                                                        <customSpacing>
-                                                                                            <real value="3.4028234663852886e+38"/>
-                                                                                            <real value="3.4028234663852886e+38"/>
-                                                                                            <real value="3.4028234663852886e+38"/>
-                                                                                            <real value="3.4028234663852886e+38"/>
-                                                                                            <real value="3.4028234663852886e+38"/>
-                                                                                        </customSpacing>
-                                                                                    </stackView>
+                                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                        <rect key="frame" x="12" y="94" width="294" height="36"/>
+                                                                                        <constraints>
+                                                                                            <constraint firstAttribute="width" constant="294" id="0X8-gp-WWb"/>
+                                                                                            <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
+                                                                                        </constraints>
+                                                                                        <userDefinedRuntimeAttributes>
+                                                                                            <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hwdec"/>
+                                                                                        </userDefinedRuntimeAttributes>
+                                                                                    </customView>
+                                                                                    <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9">
+                                                                                        <rect key="frame" x="12" y="87" width="294" height="5"/>
+                                                                                    </box>
+                                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                        <rect key="frame" x="12" y="49" width="294" height="36"/>
+                                                                                        <constraints>
+                                                                                            <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
+                                                                                        </constraints>
+                                                                                        <userDefinedRuntimeAttributes>
+                                                                                            <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.deinterlace"/>
+                                                                                        </userDefinedRuntimeAttributes>
+                                                                                    </customView>
+                                                                                    <box horizontalHuggingPriority="200" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
+                                                                                        <rect key="frame" x="12" y="42" width="294" height="5"/>
+                                                                                    </box>
+                                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                                        <rect key="frame" x="12" y="4" width="294" height="36"/>
+                                                                                        <constraints>
+                                                                                            <constraint firstAttribute="height" constant="36" id="YSa-1m-THM"/>
+                                                                                        </constraints>
+                                                                                        <userDefinedRuntimeAttributes>
+                                                                                            <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hdr"/>
+                                                                                        </userDefinedRuntimeAttributes>
+                                                                                    </customView>
                                                                                 </subviews>
                                                                                 <constraints>
-                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="9tM-ir-fPO"/>
-                                                                                    <constraint firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" constant="12" id="fQp-um-DL0"/>
-                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="4" id="ieG-b0-9aL"/>
-                                                                                    <constraint firstAttribute="bottom" secondItem="U8P-fW-N3q" secondAttribute="bottom" constant="4" id="o6J-oH-EAL"/>
-                                                                                    <constraint firstItem="Fcz-zG-akd" firstAttribute="centerY" secondItem="bBc-PP-gHz" secondAttribute="centerY" id="qFN-vR-VI8"/>
-                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="t1v-u5-eT1"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="qYi-uQ-6qo" secondAttribute="trailing" constant="12" id="5Ho-HU-lBM"/>
+                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="top" secondItem="PyM-xa-vx9" secondAttribute="bottom" constant="4" id="6sV-DZ-PFM"/>
+                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="FxR-NT-3lS"/>
+                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="centerX" secondItem="bBc-PP-gHz" secondAttribute="centerX" id="J1G-J1-w7B"/>
+                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="4" id="JGb-er-EAi"/>
+                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="KUb-WK-53F"/>
+                                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="PMV-Mk-Wg2"/>
+                                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="top" secondItem="qYi-uQ-6qo" secondAttribute="bottom" constant="4" id="Rty-lU-Zfh"/>
+                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="top" secondItem="7z5-cT-Huj" secondAttribute="bottom" constant="4" id="VWq-0g-aJF"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="U8P-fW-N3q" secondAttribute="trailing" constant="12" id="cC4-0A-905"/>
+                                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="cVW-Jk-NXW"/>
+                                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="fyj-gp-lEM"/>
+                                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="hhs-yq-vvn"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="SMb-H5-j6h" secondAttribute="trailing" constant="12" id="kpb-xT-QIi"/>
+                                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="top" secondItem="SMb-H5-j6h" secondAttribute="bottom" constant="4" id="lka-0H-kjw"/>
+                                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="oba-VV-xpw"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" constant="12" id="p71-9V-vct"/>
+                                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="centerX" secondItem="7z5-cT-Huj" secondAttribute="centerX" id="syt-Qa-V4V"/>
+                                                                                    <constraint firstAttribute="bottom" secondItem="U8P-fW-N3q" secondAttribute="bottom" constant="4" id="wPq-Fz-H2Z"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="7z5-cT-Huj" secondAttribute="trailing" constant="12" id="wYA-CP-iwh"/>
+                                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="wYl-G5-e2I"/>
                                                                                 </constraints>
                                                                             </view>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="trailing" secondItem="Fcz-zG-akd" secondAttribute="trailing" constant="12" id="55C-Xe-B0u"/>
-                                                                                <constraint firstAttribute="bottom" secondItem="Fcz-zG-akd" secondAttribute="bottom" constant="4" id="GBG-uW-PAF"/>
-                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="leading" secondItem="2ye-g4-fz5" secondAttribute="leading" constant="12" id="OGq-eq-dQy"/>
-                                                                                <constraint firstItem="Fcz-zG-akd" firstAttribute="top" secondItem="2ye-g4-fz5" secondAttribute="top" constant="4" id="VpT-na-cfQ"/>
-                                                                            </constraints>
                                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
                                                                         </box>
@@ -1034,6 +1025,7 @@
                                                                 <constraint firstAttribute="width" constant="360" id="5cD-TD-yuW"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="jBL-DF-Vik" secondAttribute="leading" id="85d-Hp-Wbh"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="8Rl-FH-KCN"/>
+                                                                <constraint firstItem="2ye-g4-fz5" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="8jh-gW-hoM"/>
                                                                 <constraint firstAttribute="trailing" secondItem="7PK-hh-Xx5" secondAttribute="trailing" id="9Xj-pF-qIZ"/>
                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="750" id="ADX-Jz-K2i"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="sPT-jd-T7a" secondAttribute="leading" id="ANc-I0-1bL"/>
@@ -1061,11 +1053,13 @@
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="bza-SA-tXE" secondAttribute="leading" id="o6Q-jG-zhw"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="trailing" secondItem="hhH-Re-mkg" secondAttribute="trailing" id="uJ8-Fu-dKx"/>
                                                                 <constraint firstItem="seu-WU-cTV" firstAttribute="leading" secondItem="oAm-jJ-3kE" secondAttribute="leading" id="xBD-yd-LVV"/>
+                                                                <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="xUg-m1-hKT"/>
                                                             </constraints>
                                                         </customView>
                                                     </subviews>
                                                     <constraints>
                                                         <constraint firstItem="qgt-NU-zFj" firstAttribute="leading" secondItem="ZGz-La-n9c" secondAttribute="leading" id="eIb-sE-kBI"/>
+                                                        <constraint firstAttribute="height" constant="800" id="gow-dG-bw1"/>
                                                         <constraint firstAttribute="bottom" secondItem="qgt-NU-zFj" secondAttribute="bottom" id="j5y-B2-4gd"/>
                                                         <constraint firstAttribute="trailing" secondItem="qgt-NU-zFj" secondAttribute="trailing" id="op3-Wo-tEo"/>
                                                         <constraint firstItem="qgt-NU-zFj" firstAttribute="top" secondItem="ZGz-La-n9c" secondAttribute="top" id="xOG-oE-tIi"/>
@@ -1083,8 +1077,8 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.46511627906976749" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="335" y="0.0" width="15" height="739"/>
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.81967213114754101" horizontal="NO" id="Vtu-Wx-ydk">
+                                            <rect key="frame" x="334" y="0.0" width="16" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
