@@ -647,17 +647,17 @@
                                                                                         <rect key="frame" x="250" y="6" width="70" height="30"/>
                                                                                         <subviews>
                                                                                             <textField verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ftl-yD-3Pp">
-                                                                                                <rect key="frame" x="50" y="12" width="22" height="16"/>
-                                                                                                <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="x" id="dD9-6c-nPz">
+                                                                                                <rect key="frame" x="48" y="8" width="24" height="16"/>
+                                                                                                <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="x" id="dD9-6c-nPz">
                                                                                                     <font key="font" metaFont="system"/>
                                                                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                                 </textFieldCell>
                                                                                             </textField>
                                                                                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
-                                                                                                <rect key="frame" x="0.0" y="0.0" width="50" height="30"/>
+                                                                                                <rect key="frame" x="0.0" y="5" width="50" height="21"/>
                                                                                                 <constraints>
-                                                                                                    <constraint firstAttribute="width" constant="50" id="B3n-IT-9Ik"/>
+                                                                                                    <constraint firstAttribute="width" priority="500" constant="50" id="B3n-IT-9Ik"/>
                                                                                                 </constraints>
                                                                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="Mav-NA-RfN" userLabel="SpeedEdit Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                                                                     <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="55S-dl-9lV">
@@ -673,13 +673,11 @@
                                                                                             </textField>
                                                                                         </subviews>
                                                                                         <constraints>
-                                                                                            <constraint firstItem="ftl-yD-3Pp" firstAttribute="leading" secondItem="sIs-a1-rGR" secondAttribute="trailing" constant="2" id="CVb-fb-ADz"/>
+                                                                                            <constraint firstItem="ftl-yD-3Pp" firstAttribute="leading" secondItem="sIs-a1-rGR" secondAttribute="trailing" id="CVb-fb-ADz"/>
                                                                                             <constraint firstItem="sIs-a1-rGR" firstAttribute="centerY" secondItem="w13-si-nTf" secondAttribute="centerY" id="EBr-wo-Fow"/>
                                                                                             <constraint firstItem="sIs-a1-rGR" firstAttribute="leading" secondItem="w13-si-nTf" secondAttribute="leading" id="KeA-7N-VQT"/>
-                                                                                            <constraint firstItem="sIs-a1-rGR" firstAttribute="top" secondItem="w13-si-nTf" secondAttribute="top" id="Nrc-vl-Qcm"/>
                                                                                             <constraint firstItem="ftl-yD-3Pp" firstAttribute="firstBaseline" secondItem="sIs-a1-rGR" secondAttribute="firstBaseline" id="ObG-5x-D27"/>
                                                                                             <constraint firstItem="ftl-yD-3Pp" firstAttribute="trailing" secondItem="w13-si-nTf" secondAttribute="trailing" id="fBC-sB-3LV"/>
-                                                                                            <constraint firstAttribute="bottom" secondItem="sIs-a1-rGR" secondAttribute="bottom" id="vIs-Ku-V9Y"/>
                                                                                         </constraints>
                                                                                     </customView>
                                                                                 </gridCell>
@@ -1329,10 +1327,7 @@
                                                                     <rect key="frame" x="264" y="239" width="76" height="21"/>
                                                                     <subviews>
                                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qiz-tS-aWT" userLabel="CustomAudioDelay Text Field">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="50" height="21"/>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="width" constant="50" id="4pm-Oe-uc6"/>
-                                                                            </constraints>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="65" height="21"/>
                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="EHa-PR-jHw" userLabel="SpeedEdit Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                                                 <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="C53-E5-t2Z">
                                                                                     <real key="minimum" value="0.01"/>
@@ -1346,8 +1341,8 @@
                                                                             </connections>
                                                                         </textField>
                                                                         <textField verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ImH-jg-Agp" userLabel="s">
-                                                                            <rect key="frame" x="50" y="3" width="28" height="16"/>
-                                                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="s" id="1VY-EN-1mi">
+                                                                            <rect key="frame" x="63" y="3" width="15" height="16"/>
+                                                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="s" id="1VY-EN-1mi">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1360,7 +1355,7 @@
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="centerY" secondItem="zdZ-mc-niR" secondAttribute="centerY" id="6ds-LB-436"/>
                                                                         <constraint firstItem="ImH-jg-Agp" firstAttribute="trailing" secondItem="zdZ-mc-niR" secondAttribute="trailing" id="DQA-aa-07m"/>
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="leading" secondItem="zdZ-mc-niR" secondAttribute="leading" id="WVg-R0-0Rr"/>
-                                                                        <constraint firstItem="ImH-jg-Agp" firstAttribute="leading" secondItem="Qiz-tS-aWT" secondAttribute="trailing" constant="2" id="aBB-wD-ze7"/>
+                                                                        <constraint firstItem="ImH-jg-Agp" firstAttribute="leading" secondItem="Qiz-tS-aWT" secondAttribute="trailing" id="aBB-wD-ze7"/>
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="top" secondItem="zdZ-mc-niR" secondAttribute="top" id="mRN-eC-AwX"/>
                                                                     </constraints>
                                                                 </customView>
@@ -1616,7 +1611,7 @@
                                                                 <constraint firstItem="IHl-Ks-v7I" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="Uha-r6-SHs"/>
                                                                 <constraint firstItem="zdZ-mc-niR" firstAttribute="centerY" secondItem="j85-rj-toQ" secondAttribute="centerY" id="WbI-TU-oZa"/>
                                                                 <constraint firstItem="KKr-0Y-831" firstAttribute="top" secondItem="j85-rj-toQ" secondAttribute="bottom" constant="20" id="YFM-EH-jIy"/>
-                                                                <constraint firstItem="dB1-5J-5YU" firstAttribute="centerY" secondItem="IHl-Ks-v7I" secondAttribute="centerY" id="Ym6-Rk-xwx"/>
+                                                                <constraint firstItem="dB1-5J-5YU" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="top" id="Ym6-Rk-xwx"/>
                                                                 <constraint firstItem="TA9-9G-tIE" firstAttribute="leading" secondItem="ZPW-fz-5Oi" secondAttribute="leading" id="alo-ld-qH9"/>
                                                                 <constraint firstItem="PLF-x4-bMC" firstAttribute="leading" secondItem="my2-5o-bNb" secondAttribute="leading" id="dRT-Ri-a9H"/>
                                                                 <constraint firstItem="ZPW-fz-5Oi" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="e0g-tm-BF8"/>
@@ -1676,10 +1671,10 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-IY-poi">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5">
-                                            <rect key="frame" x="0.0" y="0.0" width="375" height="739"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="739"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="pm4-x9-WJ5" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="-93" width="360" height="832"/>
@@ -1691,7 +1686,7 @@
                                                                     <rect key="frame" x="0.0" y="298" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="dJV-R0-O3M">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="2vU-hm-gGB">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -1847,7 +1842,7 @@
                                                                     <rect key="frame" x="0.0" y="182" width="360" height="72"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EKn-MX-Fao">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
-                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="Jve-qX-Agy">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="72"/>
@@ -2487,7 +2482,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="3ZS-ug-kkq">
-                                            <rect key="frame" x="360" y="0.0" width="15" height="739"/>
+                                            <rect key="frame" x="344" y="0.0" width="16" height="739"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
