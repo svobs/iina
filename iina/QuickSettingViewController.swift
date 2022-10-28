@@ -91,8 +91,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   var observers: [NSObjectProtocol] = []
 
-  @IBOutlet weak var videoTabScrollView: NSScrollView!
-  @IBOutlet weak var videoTabContentViewWidthConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var videoTabBtn: NSButton!
   @IBOutlet weak var audioTabBtn: NSButton!
@@ -217,11 +215,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       self.subTableView.reloadData()
       self.secSubTableView.reloadData()
     }
-
-    observers.append(NotificationCenter.default.addObserver(forName: NSScroller.preferredScrollerStyleDidChangeNotification, object: nil,
-                                               queue: nil) {  _ in self.updateVideoTabWidthConstraint() })
-
-    updateVideoTabWidthConstraint()
   }
 
   // MARK: - Validate UI
@@ -240,7 +233,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateControlsState() {
-    UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
     updateVideoTabControl()
     updateAudioTabControl()
     updateSubTabControl()
@@ -249,7 +241,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateVideoTabControl() {
-    updateVideoTabWidthConstraint()
     if let index = AppData.aspectsInPanel.firstIndex(of: player.info.unsureAspect) {
       aspectSegment.selectedSegment = index
     } else {
@@ -451,19 +442,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       hdrSwitch.isEnabled = available
       hdrSwitch.checked = available && player.info.hdrEnabled
     }
-  }
-
-  func updateVideoTabWidthConstraint() {
-    // Need manual adjustment to remove extra space created when "Show scroll bars"="Always" in MacOS settings:\
-    var newWidth = MainWindowController.SettingsWidth
-    if videoTabScrollView.scrollerStyle == .legacy {
-      if let vScroller = videoTabScrollView.verticalScroller {
-        newWidth -= vScroller.frame.width
-      }
-    }
-    Logger.log("Setting max width of settings panel to: \(newWidth) (was: \(videoTabContentViewWidthConstraint.constant))")
-    videoTabContentViewWidthConstraint.constant = newWidth
-    videoTabScrollView.needsLayout = true
   }
 
   // MARK: - Switch tab

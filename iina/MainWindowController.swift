@@ -32,6 +32,10 @@ fileprivate let TitleBarHeightWithOSCInFullScreen: CGFloat = 24 + 10
 fileprivate let OSCTopMainViewMarginTop: CGFloat = 26
 fileprivate let OSCTopMainViewMarginTopInFullScreen: CGFloat = 6
 
+fileprivate let SettingsWidth: CGFloat = 360
+fileprivate let PlaylistMinWidth: CGFloat = 240
+fileprivate let PlaylistMaxWidth: CGFloat = 400
+
 fileprivate let InteractiveModeBottomViewHeight: CGFloat = 60
 
 fileprivate let UIAnimationDuration = 0.25
@@ -48,9 +52,6 @@ fileprivate extension NSStackView.VisibilityPriority {
 
 
 class MainWindowController: PlayerWindowController {
-  static let SettingsWidth: CGFloat = 360
-  static let PlaylistMinWidth: CGFloat = 240
-  static let PlaylistMaxWidth: CGFloat = 400
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("MainWindowController")
@@ -841,7 +842,7 @@ class MainWindowController: PlayerWindowController {
       // resize sidebar
       let currentLocation = event.locationInWindow
       let newWidth = window!.frame.width - currentLocation.x - 2
-      sideBarWidthConstraint.constant = newWidth.clamped(to:  MainWindowController.PlaylistMinWidth...MainWindowController.PlaylistMaxWidth)
+      sideBarWidthConstraint.constant = newWidth.clamped(to: PlaylistMinWidth...PlaylistMaxWidth)
     } else if !fsState.isFullscreen {
       // move the window by dragging
       isDragging = true
