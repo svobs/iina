@@ -182,8 +182,8 @@
                                 <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
-                                    <scrollView misplaced="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="738"/>
+                                    <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SHU-hX-9MT" userLabel="VideoTab Scroll View">
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
                                         <clipView key="contentView" ambiguous="YES" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Es-YX-dNf" userLabel="VideoTab Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
                                             <subviews>
@@ -610,9 +610,6 @@
                                                                                         </textField>
                                                                                         <textField horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
                                                                                             <rect key="frame" x="244" y="14" width="65" height="21"/>
-                                                                                            <constraints>
-                                                                                                <constraint firstAttribute="width" priority="500" constant="50" id="B3n-IT-9Ik"/>
-                                                                                            </constraints>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="Mav-NA-RfN" userLabel="SpeedEdit Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                                                                 <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="55S-dl-9lV">
                                                                                                     <real key="minimum" value="0.01"/>
@@ -1016,13 +1013,14 @@
                                                 <constraint firstItem="ZGz-La-n9c" firstAttribute="top" secondItem="8Es-YX-dNf" secondAttribute="top" id="QX6-9q-Dx8"/>
                                                 <constraint firstAttribute="trailing" secondItem="ZGz-La-n9c" secondAttribute="trailing" id="d7r-rT-3ad"/>
                                             </constraints>
+                                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                         </clipView>
                                         <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="tk3-fh-4Dl">
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="Vtu-Wx-ydk">
-                                            <rect key="frame" x="360" y="0.0" width="15" height="738"/>
+                                            <rect key="frame" x="344" y="0.0" width="16" height="738"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
@@ -1681,7 +1679,7 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-IY-poi" userLabel="SubtitlesTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="738"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="epy-wp-Ja5" userLabel="SubtitlesTab Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2516,7 +2514,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.96808510638297873" horizontal="NO" id="3ZS-ug-kkq">
-                                            <rect key="frame" x="360" y="0.0" width="15" height="738"/>
+                                            <rect key="frame" x="344" y="0.0" width="16" height="738"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                     </scrollView>
