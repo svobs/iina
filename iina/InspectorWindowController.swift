@@ -33,6 +33,7 @@ class InspectorWindowController: NSWindowController, NSTableViewDelegate, NSTabl
   @IBOutlet weak var vdecoderField: NSTextField!
   @IBOutlet weak var vcolorspaceField: NSTextField!
   @IBOutlet weak var vprimariesField: NSTextField!
+  @IBOutlet weak var vPixelFormat: NSTextField!
 
   @IBOutlet weak var voField: NSTextField!
   @IBOutlet weak var vsizeField: NSTextField!
@@ -202,12 +203,32 @@ class InspectorWindowController: NSWindowController, NSTableViewDelegate, NSTabl
       self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
       if PlayerCore.lastActive.mainWindow.loaded && controller.fileLoaded {
-        let colorspace = PlayerCore.lastActive.mainWindow.videoView.videoLayer.colorspace?.name;
-        self.vcolorspaceField.stringValue = colorspace == nil ? "Unspecified (SDR)" : String(colorspace!) + " (HDR)"
+        if let colorspace = PlayerCore.lastActive.mainWindow.videoView.videoLayer.colorspace, #available(macOS 10.15, *) {
+          var isHdr: Bool
+          if #available(macOS 11.0, *) {
+            isHdr = CGColorSpaceUsesITUR_2100TF(colorspace)
+          } else {
+            isHdr = colorspace.isHDR()
+          }
+          self.vcolorspaceField.stringValue = "\(colorspace.name!) (\(isHdr ? "H" : "S")DR)"
+        } else {
+          self.vcolorspaceField.stringValue = "Unspecified (SDR)"
+        }
       } else {
         self.vcolorspaceField.stringValue = "N/A"
       }
       self.setLabelColor(self.vcolorspaceField, by: controller.fileLoaded)
+
+      if PlayerCore.lastActive.mainWindow.loaded && controller.fileLoaded {
+        if let hwPf = controller.getString(MPVProperty.videoParamsHwPixelformat) {
+          self.vPixelFormat.stringValue = "\(hwPf) (HW)"
+        } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
+          self.vPixelFormat.stringValue = "\(swPf) (SW)"
+        } else {
+          self.vPixelFormat.stringValue = "N/A"
+        }
+      }
+      self.setLabelColor(self.vPixelFormat, by: controller.fileLoaded)
     }
   }
 
