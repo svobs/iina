@@ -1045,19 +1045,19 @@
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="244" width="360" height="494"/>
+                                                    <rect key="frame" x="0.0" y="240" width="360" height="498"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb" userLabel="AudioTab CONTENT VIEW">
-                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="494"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="360" height="498"/>
                                                             <subviews>
                                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="TA9-9G-tIE" userLabel="PANEL EDGE INSETS">
-                                                                    <rect key="frame" x="20" y="474" width="320" height="0.0"/>
+                                                                    <rect key="frame" x="20" y="478" width="320" height="0.0"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" id="jt3-qe-0KY"/>
                                                                     </constraints>
                                                                 </customView>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E4v-kh-61H">
-                                                                    <rect key="frame" x="18" y="458" width="324" height="16"/>
+                                                                    <rect key="frame" x="18" y="462" width="324" height="16"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio track:" id="x39-62-7KC">
                                                                         <font key="font" metaFont="systemBold"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1065,7 +1065,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qal-0X-4kS" userLabel="AudioTrackTable Scroll View">
-                                                                    <rect key="frame" x="0.0" y="374" width="360" height="76"/>
+                                                                    <rect key="frame" x="0.0" y="378" width="360" height="76"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="76"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1218,7 +1218,7 @@
                                                                     </scroller>
                                                                 </scrollView>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kvu-fg-olx">
-                                                                    <rect key="frame" x="18" y="338" width="324" height="16"/>
+                                                                    <rect key="frame" x="18" y="342" width="324" height="16"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="External audio:" id="Lnu-kz-cql">
                                                                         <font key="font" metaFont="systemBold"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1226,7 +1226,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XdF-fV-DCz">
-                                                                    <rect key="frame" x="13" y="301" width="334" height="32"/>
+                                                                    <rect key="frame" x="13" y="305" width="334" height="32"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="305" id="J6K-sf-QKi"/>
                                                                     </constraints>
@@ -1239,7 +1239,7 @@
                                                                     </connections>
                                                                 </button>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZPW-fz-5Oi">
-                                                                    <rect key="frame" x="18" y="271" width="324" height="16"/>
+                                                                    <rect key="frame" x="18" y="275" width="324" height="16"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio delay:" id="AKs-VQ-fKF">
                                                                         <font key="font" metaFont="systemBold"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1247,7 +1247,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <customView autoresizesSubviews="NO" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="j85-rj-toQ" userLabel="AudioDelaySlider Container View">
-                                                                    <rect key="frame" x="20" y="220" width="320" height="47"/>
+                                                                    <rect key="frame" x="20" y="224" width="320" height="47"/>
                                                                     <subviews>
                                                                         <slider horizontalHuggingPriority="1" verticalHuggingPriority="700" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="gJr-l6-WQ2" userLabel="AudioDelaySlider Horizontal Tick Slider">
                                                                             <rect key="frame" x="-2" y="10" width="244" height="25"/>
@@ -1341,10 +1341,10 @@
                                                                     </constraints>
                                                                 </customView>
                                                                 <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="KKr-0Y-831">
-                                                                    <rect key="frame" x="0.0" y="197" width="360" height="5"/>
+                                                                    <rect key="frame" x="0.0" y="201" width="360" height="5"/>
                                                                 </box>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="IHl-Ks-v7I" userLabel="Equalizer Label">
-                                                                    <rect key="frame" x="18" y="163" width="324" height="16"/>
+                                                                    <rect key="frame" x="18" y="167" width="324" height="16"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Equalizer" id="iS4-Zr-9Ig">
                                                                         <font key="font" metaFont="systemBold"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1352,7 +1352,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <button translatesAutoresizingMaskIntoConstraints="NO" id="dB1-5J-5YU" userLabel="ResetAudioEQ Square Button">
-                                                                    <rect key="frame" x="324" y="160.5" width="16" height="21"/>
+                                                                    <rect key="frame" x="324" y="164.5" width="16" height="21"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" constant="16" id="T2d-bE-Rq1"/>
                                                                         <constraint firstAttribute="height" constant="16" id="xEH-z6-Ltg"/>
@@ -1468,25 +1468,25 @@
                                                                     </customSpacing>
                                                                 </stackView>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jUH-hL-3U3" userLabel="+12 dB Text Field">
-                                                                    <rect key="frame" x="303" y="141" width="41" height="14"/>
-                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="+12 dB" id="4BZ-H1-GEU">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                    <rect key="frame" x="301" y="141" width="41" height="14"/>
+                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="+12 dB" id="4BZ-H1-GEU">
+                                                                        <font key="font" metaFont="smallSystem"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="izd-aj-gqV" userLabel="0 dB Text Field">
-                                                                    <rect key="frame" x="303" y="90" width="29" height="14"/>
-                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="0 dB" id="lBn-YS-jL7">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                    <rect key="frame" x="313" y="90" width="29" height="14"/>
+                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="0 dB" id="lBn-YS-jL7">
+                                                                        <font key="font" metaFont="smallSystem"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Wkv-a4-uiD" userLabel="-12 dB Text Field">
                                                                     <rect key="frame" x="303" y="39" width="39" height="14"/>
-                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="-12 dB" id="Lpw-ws-Ezh">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="-12 dB" id="Lpw-ws-Ezh">
+                                                                        <font key="font" metaFont="smallSystem"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
@@ -1574,8 +1574,9 @@
                                                             </subviews>
                                                             <constraints>
                                                                 <constraint firstItem="gbd-xf-hGS" firstAttribute="centerX" secondItem="eOZ-KM-xLa" secondAttribute="centerX" id="0eU-JU-3Np"/>
+                                                                <constraint firstItem="izd-aj-gqV" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="xtT-Or-HjR" secondAttribute="leading" constant="8" id="1do-g0-ogb"/>
+                                                                <constraint firstItem="izd-aj-gqV" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" priority="900" id="1xH-vk-y7P"/>
                                                                 <constraint firstItem="EDx-YH-ofM" firstAttribute="top" secondItem="pHR-ym-VeQ" secondAttribute="bottom" constant="8" id="3GI-bd-VUa"/>
-                                                                <constraint firstItem="Wkv-a4-uiD" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="4Xc-DH-MLg"/>
                                                                 <constraint firstItem="dKk-CE-yY0" firstAttribute="centerX" secondItem="Qhv-oC-xzP" secondAttribute="centerX" constant="1" id="6U0-bD-UHn"/>
                                                                 <constraint firstItem="XdF-fV-DCz" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="8OK-le-NFN"/>
                                                                 <constraint firstItem="TA9-9G-tIE" firstAttribute="leading" secondItem="E4v-kh-61H" secondAttribute="leading" id="9So-jf-b5w"/>
@@ -1590,7 +1591,6 @@
                                                                 <constraint firstItem="j15-F0-7GR" firstAttribute="centerX" secondItem="npn-V6-hjZ" secondAttribute="centerX" id="Km4-rZ-GeG"/>
                                                                 <constraint firstItem="uUe-VB-wyv" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="La7-D2-OgL"/>
                                                                 <constraint firstItem="Wkv-a4-uiD" firstAttribute="bottom" secondItem="xtT-Or-HjR" secondAttribute="bottom" id="MaV-fd-img"/>
-                                                                <constraint firstItem="izd-aj-gqV" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="Mij-Gt-CBj"/>
                                                                 <constraint firstItem="gfz-yF-41J" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="Mwa-bq-dus"/>
                                                                 <constraint firstItem="kvu-fg-olx" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="OAI-WO-gae"/>
                                                                 <constraint firstItem="dB1-5J-5YU" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="OHg-XE-6c8"/>
@@ -1602,18 +1602,18 @@
                                                                 <constraint firstItem="j15-F0-7GR" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="RvX-Nr-Tiv"/>
                                                                 <constraint firstItem="Qal-0X-4kS" firstAttribute="leading" secondItem="my2-5o-bNb" secondAttribute="leading" id="SwW-S7-LX2"/>
                                                                 <constraint firstItem="IHl-Ks-v7I" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="Uha-r6-SHs"/>
-                                                                <constraint firstItem="Wkv-a4-uiD" firstAttribute="leading" secondItem="jUH-hL-3U3" secondAttribute="leading" id="WCM-vY-Ba1"/>
                                                                 <constraint firstItem="j85-rj-toQ" firstAttribute="width" secondItem="TA9-9G-tIE" secondAttribute="width" id="Wed-Pj-j0R"/>
-                                                                <constraint firstItem="xtT-Or-HjR" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="bottom" constant="8" id="XfD-0d-53x"/>
+                                                                <constraint firstItem="xtT-Or-HjR" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="bottom" constant="12" id="XfD-0d-53x"/>
                                                                 <constraint firstItem="KKr-0Y-831" firstAttribute="top" secondItem="j85-rj-toQ" secondAttribute="bottom" constant="20" id="YFM-EH-jIy"/>
-                                                                <constraint firstItem="dB1-5J-5YU" firstAttribute="top" secondItem="IHl-Ks-v7I" secondAttribute="top" id="Ym6-Rk-xwx"/>
-                                                                <constraint firstItem="Wkv-a4-uiD" firstAttribute="leading" secondItem="xtT-Or-HjR" secondAttribute="trailing" constant="8" id="Zgg-St-FzR"/>
+                                                                <constraint firstItem="dB1-5J-5YU" firstAttribute="centerY" secondItem="IHl-Ks-v7I" secondAttribute="centerY" id="Ym6-Rk-xwx"/>
+                                                                <constraint firstItem="Wkv-a4-uiD" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="xtT-Or-HjR" secondAttribute="trailing" id="Zgg-St-FzR"/>
                                                                 <constraint firstItem="TA9-9G-tIE" firstAttribute="top" secondItem="my2-5o-bNb" secondAttribute="top" constant="20" id="aLW-0J-VPR"/>
                                                                 <constraint firstItem="TA9-9G-tIE" firstAttribute="leading" secondItem="ZPW-fz-5Oi" secondAttribute="leading" id="alo-ld-qH9"/>
                                                                 <constraint firstItem="ImH-jg-Agp" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="bO7-1x-a1O"/>
+                                                                <constraint firstItem="Wkv-a4-uiD" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" priority="900" id="dYP-Us-6bj"/>
                                                                 <constraint firstItem="dKk-CE-yY0" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="dw4-5m-LIU"/>
                                                                 <constraint firstItem="ZPW-fz-5Oi" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" id="e0g-tm-BF8"/>
-                                                                <constraint firstItem="jUH-hL-3U3" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="TA9-9G-tIE" secondAttribute="trailing" constant="8" id="f4B-e4-9IW"/>
+                                                                <constraint firstItem="jUH-hL-3U3" firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" priority="900" id="f4B-e4-9IW"/>
                                                                 <constraint firstItem="eOZ-KM-xLa" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="fUd-pm-IiH"/>
                                                                 <constraint firstItem="aOD-Qz-oE3" firstAttribute="top" secondItem="EDx-YH-ofM" secondAttribute="top" id="gOd-gW-hDD"/>
                                                                 <constraint firstItem="XdF-fV-DCz" firstAttribute="top" secondItem="kvu-fg-olx" secondAttribute="bottom" constant="10" id="gud-hM-Hf0"/>
@@ -1623,8 +1623,8 @@
                                                                 <constraint firstAttribute="trailing" secondItem="Qal-0X-4kS" secondAttribute="trailing" id="lda-T8-U6J"/>
                                                                 <constraint firstAttribute="trailing" secondItem="TA9-9G-tIE" secondAttribute="trailing" constant="20" id="nPX-nn-l3H"/>
                                                                 <constraint firstItem="izd-aj-gqV" firstAttribute="centerY" secondItem="xtT-Or-HjR" secondAttribute="centerY" id="nqS-iu-yym"/>
-                                                                <constraint firstItem="izd-aj-gqV" firstAttribute="leading" secondItem="jUH-hL-3U3" secondAttribute="leading" id="o09-br-Sac"/>
                                                                 <constraint firstItem="ZPW-fz-5Oi" firstAttribute="top" secondItem="XdF-fV-DCz" secondAttribute="bottom" constant="21" id="pbW-gp-age"/>
+                                                                <constraint firstItem="jUH-hL-3U3" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="xtT-Or-HjR" secondAttribute="leading" constant="8" id="rSH-0T-1ru"/>
                                                                 <constraint firstItem="pHR-ym-VeQ" firstAttribute="leading" secondItem="TA9-9G-tIE" secondAttribute="leading" id="rTs-z0-HWj"/>
                                                                 <constraint firstItem="jUH-hL-3U3" firstAttribute="top" secondItem="xtT-Or-HjR" secondAttribute="top" id="rir-xy-gWG"/>
                                                                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ZPW-fz-5Oi" secondAttribute="trailing" id="tRW-zx-YUE"/>
@@ -2513,7 +2513,7 @@
                                             <rect key="frame" x="-100" y="-100" width="360" height="16"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
-                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.96808510638297873" horizontal="NO" id="3ZS-ug-kkq">
+                                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="3ZS-ug-kkq">
                                             <rect key="frame" x="344" y="0.0" width="16" height="738"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
