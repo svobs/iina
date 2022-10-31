@@ -996,6 +996,7 @@ class MPVController: NSObject {
 
     case MPVProperty.videoParamsGamma:
       if #available(macOS 10.15, *) {
+        Logger.log("Caught mpv property \"\(name)\" (in \(player.subsystem.rawValue)): requesting EDR refresh")
         player.refreshEdrMode()
       }
 

@@ -193,6 +193,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     if #available(macOS 10.15, *) {
       addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification, object: nil) { [unowned self] noti in
+        Logger.log("Received \(noti.name): requesting EDR refresh", subsystem: videoView.hdrSubsystem)
         player.refreshEdrMode()
       }
     }

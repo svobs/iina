@@ -315,27 +315,30 @@ extension VideoView {
       NSScreen.log("Refreshing HDR for \(player.subsystem.rawValue) @ display\(displayId)", screen)
     }
 
-    let isEDRAvailable: Bool
+    let isHDRWanted: Bool
     // Must decide between either SDR or HDR: always one or the other.
     if let videoHdrInfo = getVideoHDRInfo() {
-      isEDRAvailable = shouldEnableHDR(videoHdrInfo.isHdr)
+      isHDRWanted = shouldEnableHDR(videoHdrInfo.isHdr)
 
-      if isEDRAvailable {
+      if isHDRWanted {
         activateHDR(videoHdrInfo)  // Use HDR
       }
     } else {
-      isEDRAvailable = false
+      isHDRWanted = false
     }
 
-    if !isEDRAvailable {
+    if !isHDRWanted {
       setICCProfile(displayId)  // Use SDR
     }
 
-    player.mainWindow.quickSettingView.setHdrAvailability(to: isEDRAvailable)
+    if isHDRWanted != player.info.hdrAvailable {
+      player.mainWindow.quickSettingView.setHdrAvailability(to: isHDRWanted)
+    }
   }
 
   private func shouldEnableHDR(_ isVideoHDR: Bool) -> Bool {
     if !player.info.hdrEnabled {
+      Logger.log("User disabled HDR in the player window", subsystem: hdrSubsystem)
       return false
     }
 
