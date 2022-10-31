@@ -283,6 +283,9 @@ class VideoView: NSView {
       videoLayer.wantsExtendedDynamicRangeContent = false
       player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
       player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "")
+      player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
     }
   }
 }
@@ -291,92 +294,156 @@ class VideoView: NSView {
 
 @available(macOS 10.15, *)
 extension VideoView {
+  private struct VideoHDRInfo {
+    let colorspaceName: CFString
+    let isHdr: Bool
+    let gamma: String
+    let primaries: String
+  }
+
   func refreshEdrMode() {
     guard player.mainWindow.loaded else { return }
     guard player.mpv.fileLoaded else { return }
     guard let displayId = currentDisplay else { return };
-    let edrEnabled = requestEdrMode()
-    let edrAvailable = edrEnabled != false
-    if player.info.hdrAvailable != edrAvailable {
-      player.mainWindow.quickSettingView.setHdrAvailability(to: edrAvailable)
+
+    let isEDRAvailable: Bool
+    // Must decide between either SDR or HDR: always one or the other.
+    if let videoHdrInfo = getVideoHDRInfo() {
+      isEDRAvailable = shouldEnableHDR(videoHdrInfo.isHdr)
+
+      if isEDRAvailable {
+        activateHDR(videoHdrInfo)  // Use HDR
+      }
+    } else {
+      isEDRAvailable = false
     }
-    if edrEnabled != true { setICCProfile(displayId) }
+
+    if !isEDRAvailable {
+      setICCProfile(displayId)  // Use SDR
+    }
+
+    player.mainWindow.quickSettingView.setHdrAvailability(to: isEDRAvailable)
   }
 
-  func requestEdrMode() -> Bool? {
-    guard let mpv = player.mpv else { return false }
-
-    guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      Logger.log("HDR primaries and gamma not available", level: .debug, subsystem: hdrSubsystem);
-      return false;
+  private func shouldEnableHDR(_ isVideoHDR: Bool) -> Bool {
+    if !player.info.hdrEnabled {
+      return false
     }
 
-    var name: CFString? = nil;
+    if isVideoHDR {
+      if !isEDRSupportedByDisplay() {
+        Logger.log("HDR video was found but the display does not support EDR mode", subsystem: hdrSubsystem)
+        return false
+      }
+      // fallthrough
+
+    } else if !Preference.bool(for: .allowHdrModeForSdrVideos) {
+      Logger.log("HDR video not allowed for SDR videos", subsystem: hdrSubsystem)
+      return false
+    }
+
+    return true
+  }
+
+  private func isEDRSupportedByDisplay() -> Bool {
+    (window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0) > 1.0
+  }
+
+  private func getVideoHDRInfo() -> VideoHDRInfo? {
+    guard let primaries = player.mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = player.mpv.getString(MPVProperty.videoParamsGamma) else {
+      Logger.log("HDR primaries and gamma not available", subsystem: hdrSubsystem)
+      return nil
+    }
+
+    var name: CFString
+    var isHdr = false
     switch primaries {
-    case "display-p3":
-      switch gamma {
-      case "pq":
-        if #available(macOS 10.15.4, *) {
-          name = CGColorSpace.displayP3_PQ
-        } else {
-          name = CGColorSpace.displayP3_PQ_EOTF
+      case "display-p3":
+        switch gamma {
+          case "pq":
+            if #available(macOS 10.15.4, *) {
+              name = CGColorSpace.displayP3_PQ
+            } else {
+              name = CGColorSpace.displayP3_PQ_EOTF
+            }
+          case "hlg":
+            name = CGColorSpace.displayP3_HLG
+          default:
+            name = CGColorSpace.displayP3
         }
-      case "hlg":
-        name = CGColorSpace.displayP3_HLG
+        isHdr = true
+
+      case "bt.2020":
+        switch gamma {
+          case "pq":
+            if #available(macOS 11.0, *) {
+              name = CGColorSpace.itur_2100_PQ
+            } else if #available(macOS 10.15.4, *) {
+              name = CGColorSpace.itur_2020_PQ
+            } else {
+              name = CGColorSpace.itur_2020_PQ_EOTF
+            }
+          case "hlg":
+            if #available(macOS 11.0, *) {
+              name = CGColorSpace.itur_2100_HLG
+            } else if #available(macOS 10.15.6, *) {
+              name = CGColorSpace.itur_2020_HLG
+            } else {
+              fallthrough
+            }
+          default:
+            name = CGColorSpace.itur_2020
+        }
+        isHdr = true
+
+      case "bt.709":
+        switch gamma {
+          case "pq":
+            if #available(macOS 12.0, *) {
+              name = CGColorSpace.itur_709_PQ;
+            } else {
+              fallthrough
+            }
+          default:
+            name = CGColorSpace.itur_709
+        }
+
       default:
-        name = CGColorSpace.displayP3
-      }
-
-    case "bt.2020":
-      switch gamma {
-      case "pq":
-        if #available(macOS 11.0, *) {
-          name = CGColorSpace.itur_2100_PQ
-        } else if #available(macOS 10.15.4, *) {
-          name = CGColorSpace.itur_2020_PQ
-        } else {
-          name = CGColorSpace.itur_2020_PQ_EOTF
-        }
-      case "hlg":
-        if #available(macOS 11.0, *) {
-          name = CGColorSpace.itur_2100_HLG
-        } else if #available(macOS 10.15.6, *) {
-          name = CGColorSpace.itur_2020_HLG
-        } else {
-          fallthrough
-        }
-      default:
-        name = CGColorSpace.itur_2020
-      }
-
-    case "bt.709":
-      return false; // SDR
-
-    default:
-      Logger.log("Unknown HDR color space information gamma=\(gamma) primaries=\(primaries)", level: .debug, subsystem: hdrSubsystem);
-      return false;
+        Logger.log("Unknown HDR color space information gamma=\(gamma) primaries=\(primaries)", subsystem: hdrSubsystem)
+        return nil
     }
 
-    guard (window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0) > 1.0 else {
-      Logger.log("HDR video was found but the display does not support EDR mode", level: .debug, subsystem: hdrSubsystem);
-      return false;
+    return VideoHDRInfo(colorspaceName: name, isHdr: isHdr, gamma: gamma, primaries: primaries)
+  }
+
+  private func activateHDR(_ videoInfo: VideoHDRInfo) {
+    Logger.log("Setting HDR colorspace=\"\(videoInfo.colorspaceName)\" isHDR=\(videoInfo.isHdr) gamma=\"\(videoInfo.gamma)\" primaries=\"\(videoInfo.primaries)\"")
+
+    guard videoLayer.colorspace?.name != videoInfo.colorspaceName else {
+      Logger.log("HDR mode already enabled, skipping", subsystem: hdrSubsystem)
+      return
     }
 
-    guard player.info.hdrEnabled else { return nil }
-
-    if videoLayer.colorspace?.name == name {
-      Logger.log("HDR mode has been enabled, skipping", level: .debug, subsystem: hdrSubsystem);
-      return true;
-    }
-
-    Logger.log("Will activate HDR color space instead of using ICC profile", level: .debug, subsystem: hdrSubsystem);
-
+    Logger.log("Will activate HDR color space instead of using ICC profile", subsystem: hdrSubsystem)
     videoLayer.wantsExtendedDynamicRangeContent = true
-    videoLayer.colorspace = CGColorSpace(name: name!)
-    mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
-    mpv.setString(MPVOption.GPURendererOptions.targetTrc, gamma)
-    mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
-    return true;
+
+    videoLayer.colorspace = CGColorSpace(name: videoInfo.colorspaceName)
+    player.mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
+    player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, videoInfo.gamma)
+    player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, videoInfo.primaries)
+    player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, true)
+
+    if Preference.bool(for: .enableToneMapping) {
+      let targetPeak = Preference.integer(for: .toneMappingTargetPeak)
+      let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))!.mpvString
+
+      Logger.log("Will enable tone mapping target-peak=\(targetPeak) algorithm=\(algorithm)", subsystem: hdrSubsystem)
+      player.mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)
+      player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, algorithm)
+    } else {
+      player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
+      player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "")
+    }
   }
 }
 
@@ -386,7 +453,7 @@ fileprivate func displayLinkCallback(
   _ flagsIn: CVOptionFlags,
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
-  let mpv = unsafeBitCast(context, to: MPVController.self)
-  mpv.mpvReportSwap()
-  return kCVReturnSuccess
-}
+    let mpv = unsafeBitCast(context, to: MPVController.self)
+    mpv.mpvReportSwap()
+    return kCVReturnSuccess
+  }

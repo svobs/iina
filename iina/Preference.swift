@@ -150,7 +150,11 @@ struct Preference {
     static let hardwareDecoder = Key("hardwareDecoder")
     static let forceDedicatedGPU = Key("forceDedicatedGPU")
     static let loadIccProfile = Key("loadIccProfile")
-    static let enableHdrSupport = Key("enableHdrSupport")
+    static let enableHdrModeByDefault = Key("enableHdrModeByDefault")
+    static let allowHdrModeForSdrVideos = Key("allowHdrModeForSdrVideos")
+    static let enableToneMapping = Key("enableToneMapping")
+    static let toneMappingTargetPeak = Key("toneMappingTargetPeak")
+    static let toneMappingAlgorithm = Key("toneMappingAlgorithm")
 
     static let audioThreads = Key("audioThreads")
     static let audioLanguage = Key("audioLanguage")
@@ -440,10 +444,10 @@ struct Preference {
     var string: String {
       get {
         switch self {
-        case .no: return "no"
-        case .exact: return "exact"
-        case .fuzzy: return "fuzzy"
-        case .all: return "all"
+          case .no: return "no"
+          case .exact: return "exact"
+          case .fuzzy: return "fuzzy"
+          case .all: return "all"
         }
       }
     }
@@ -463,9 +467,9 @@ struct Preference {
     var string: String {
       get {
         switch self {
-        case .yes: return "yes"
-        case .force : return "force"
-        case .strip: return "strip"
+          case .yes: return "yes"
+          case .force : return "force"
+          case .strip: return "strip"
         }
       }
     }
@@ -485,9 +489,9 @@ struct Preference {
     var stringForX: String {
       get {
         switch self {
-        case .top: return "left"
-        case .center: return "center"
-        case .bottom: return "right"
+          case .top: return "left"
+          case .center: return "center"
+          case .bottom: return "right"
         }
       }
     }
@@ -495,9 +499,9 @@ struct Preference {
     var stringForY: String {
       get {
         switch self {
-        case .top: return "top"
-        case .center: return "center"
-        case .bottom: return "bottom"
+          case .top: return "top"
+          case .center: return "center"
+          case .bottom: return "bottom"
         }
       }
     }
@@ -518,10 +522,10 @@ struct Preference {
     var string: String {
       get {
         switch self {
-        case .lavf: return "lavf"
-        case .tcp: return "tcp"
-        case .udp: return "udp"
-        case .http: return "http"
+          case .lavf: return "lavf"
+          case .tcp: return "tcp"
+          case .udp: return "udp"
+          case .http: return "http"
         }
       }
     }
@@ -531,10 +535,8 @@ struct Preference {
     case png = 0
     case jpg
     case jpeg
-    case ppm
-    case pgm
-    case pgmyuv
-    case tga
+    case webp
+    case jxl
 
     static var defaultValue = ScreenshotFormat.png
 
@@ -545,13 +547,11 @@ struct Preference {
     var string: String {
       get {
         switch self {
-        case .png: return "png"
-        case .jpg: return "jpg"
-        case .jpeg: return "jpeg"
-        case .ppm: return "ppm"
-        case .pgm: return "pgm"
-        case .pgmyuv: return "pgmyuv"
-        case .tga: return "tga"
+          case .png: return "png"
+          case .jpg: return "jpg"
+          case .jpeg: return "jpeg"
+          case .webp: return "webp"
+          case .jxl: return "jxl"
         }
       }
     }
@@ -570,14 +570,44 @@ struct Preference {
 
     var mpvString: String {
       switch self {
-      case .disabled: return "no"
-      case .auto: return "auto"
-      case .autoCopy: return "auto-copy"
+        case .disabled: return "no"
+        case .auto: return "auto"
+        case .autoCopy: return "auto-copy"
       }
     }
 
     var localizedDescription: String {
       return NSLocalizedString("hwdec." + mpvString, comment: mpvString)
+    }
+  }
+
+  enum ToneMappingAlgorithmOption: Int, InitializingFromKey {
+    case auto = 0
+    case clip
+    case mobius
+    case reinhard
+    case hable
+    case bt_2390
+    case gamma
+    case linear
+
+    static var defaultValue = ToneMappingAlgorithmOption.auto
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var mpvString: String {
+      switch self {
+        case .auto: return "auto"
+        case .clip: return "clip"
+        case .mobius: return "mobius"
+        case .reinhard: return "reinhard"
+        case .hable: return "hable"
+        case .bt_2390: return "bt.2390"
+        case .gamma: return "gamma"
+        case .linear: return "linear"
+      }
     }
   }
 
@@ -608,11 +638,11 @@ struct Preference {
 
     var ratio: Double {
       switch self {
-      case .fitScreen: return -1
-      case .videoSize05: return 0.5
-      case .videoSize10: return 1
-      case .videoSize15: return 1.5
-      case .videoSize20: return 2
+        case .fitScreen: return -1
+        case .videoSize05: return 0.5
+        case .videoSize10: return 1
+        case .videoSize15: return 1.5
+        case .videoSize20: return 2
       }
     }
   }
@@ -639,24 +669,24 @@ struct Preference {
 
     func image() -> NSImage {
       switch self {
-      case .settings: return NSImage(named: NSImage.actionTemplateName)!
-      case .playlist: return #imageLiteral(resourceName: "playlist")
-      case .pip: return #imageLiteral(resourceName: "pip")
-      case .fullScreen: return #imageLiteral(resourceName: "fullscreen")
-      case .musicMode: return #imageLiteral(resourceName: "toggle-album-art")
-      case .subTrack: return #imageLiteral(resourceName: "sub-track")
+        case .settings: return NSImage(named: NSImage.actionTemplateName)!
+        case .playlist: return #imageLiteral(resourceName: "playlist")
+        case .pip: return #imageLiteral(resourceName: "pip")
+        case .fullScreen: return #imageLiteral(resourceName: "fullscreen")
+        case .musicMode: return #imageLiteral(resourceName: "toggle-album-art")
+        case .subTrack: return #imageLiteral(resourceName: "sub-track")
       }
     }
 
     func description() -> String {
       let key: String
       switch self {
-      case .settings: key = "settings"
-      case .playlist: key = "playlist"
-      case .pip: key = "pip"
-      case .fullScreen: key = "full_screen"
-      case .musicMode: key = "music_mode"
-      case .subTrack: key = "sub_track"
+        case .settings: key = "settings"
+        case .playlist: key = "playlist"
+        case .pip: key = "pip"
+        case .fullScreen: key = "full_screen"
+        case .musicMode: key = "music_mode"
+        case .subTrack: key = "sub_track"
       }
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
@@ -732,7 +762,11 @@ struct Preference {
     .hardwareDecoder: HardwareDecoderOption.auto.rawValue,
     .forceDedicatedGPU: false,
     .loadIccProfile: true,
-    .enableHdrSupport: true,
+    .enableHdrModeByDefault: true,
+    .allowHdrModeForSdrVideos: false,
+    .enableToneMapping: false,
+    .toneMappingTargetPeak: 0,
+    .toneMappingAlgorithm: "auto",
     .audioThreads: 0,
     .audioLanguage: "",
     .maxVolume: 100,
@@ -799,7 +833,6 @@ struct Preference {
     .userOptions: [],
     .useUserDefinedConfDir: false,
     .userDefinedConfDir: "~/.config/mpv/",
-    .iinaEnablePluginSystem: false,
 
     .keepOpenOnFileEnd: true,
     .quitWhenNoOpenedWindow: false,

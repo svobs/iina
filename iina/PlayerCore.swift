@@ -217,7 +217,7 @@ class PlayerCore: NSObject {
     if shouldAutoLoad {
       info.shouldAutoLoadFiles = true
     }
-    info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
+    info.hdrEnabled = Preference.bool(for: .enableHdrModeByDefault)
     let path = isNetwork ? url.absoluteString : url.path
     openMainWindow(path: path, url: url, isNetwork: isNetwork)
   }
@@ -1604,7 +1604,7 @@ class PlayerCore: NSObject {
   func syncUI(_ option: SyncUIOption) {
     // if window not loaded, ignore
     guard mainWindow.loaded else { return }
-    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
+//    Logger.log("Syncing UI \(option)", level: .verbose, subsystem: subsystem)
 
     switch option {
 
