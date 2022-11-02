@@ -189,16 +189,16 @@
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="ZGz-La-n9c" userLabel="VideoTab Flipped CONTENT VIEW" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="67" width="354" height="760"/>
+                                                    <rect key="frame" x="0.0" y="66" width="354" height="761"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="seu-WU-cTV" userLabel="HORIZONTAL-INSETS">
-                                                            <rect key="frame" x="20" y="740" width="314" height="0.0"/>
+                                                            <rect key="frame" x="20" y="741" width="314" height="0.0"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="height" id="4UC-le-Tmg"/>
                                                             </constraints>
                                                         </customView>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ng5-FC-tts" userLabel="Video track Label">
-                                                            <rect key="frame" x="18" y="724" width="318" height="16"/>
+                                                            <rect key="frame" x="18" y="725" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Video track:" id="VzC-tM-KT7">
                                                                 <font key="font" metaFont="systemBold"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -206,7 +206,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <scrollView focusRingType="none" borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ykw-rb-M9D" userLabel="VideoTrackTable Scroll View">
-                                                            <rect key="frame" x="0.0" y="640" width="354" height="76"/>
+                                                            <rect key="frame" x="0.0" y="641" width="354" height="76"/>
                                                             <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="jek-w4-LTf" userLabel="VideoTrackTable Clip View">
                                                                 <rect key="frame" x="0.0" y="0.0" width="354" height="76"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -362,7 +362,7 @@
                                                             </scroller>
                                                         </scrollView>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="CUa-0e-DwY" userLabel="Aspect ratio Label">
-                                                            <rect key="frame" x="18" y="604" width="318" height="16"/>
+                                                            <rect key="frame" x="18" y="605" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Aspect ratio:" id="AiH-PV-YHQ">
                                                                 <font key="font" metaFont="systemBold"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -370,7 +370,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <segmentedControl horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="Ljl-w6-gIf" userLabel="AspectRatio Segmented Control">
-                                                            <rect key="frame" x="18" y="573" width="250" height="24"/>
+                                                            <rect key="frame" x="18" y="574" width="250" height="24"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="240" id="43J-t3-UhR"/>
                                                             </constraints>
@@ -390,7 +390,7 @@
                                                             </connections>
                                                         </segmentedControl>
                                                         <textField identifier="customAspectRatio" horizontalHuggingPriority="500" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XAI-y0-tcy" userLabel="CustomAspectRatio Text Field">
-                                                            <rect key="frame" x="274" y="575" width="60" height="21"/>
+                                                            <rect key="frame" x="274" y="576" width="60" height="21"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="width" priority="900" constant="60" id="JnW-kS-XvK"/>
                                                             </constraints>
@@ -404,7 +404,7 @@
                                                             </connections>
                                                         </textField>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oAm-jJ-3kE" userLabel="CropLabel Text Field">
-                                                            <rect key="frame" x="18" y="538" width="318" height="16"/>
+                                                            <rect key="frame" x="18" y="539" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Crop:" id="m9e-IB-IDJ">
                                                                 <font key="font" metaFont="systemBold"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -412,7 +412,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <segmentedControl horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
-                                                            <rect key="frame" x="18" y="507" width="234" height="24"/>
+                                                            <rect key="frame" x="18" y="508" width="234" height="24"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="230" id="tTp-B3-gF5"/>
                                                             </constraints>
@@ -432,7 +432,7 @@
                                                             </connections>
                                                         </segmentedControl>
                                                         <button horizontalHuggingPriority="251" verticalHuggingPriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
-                                                            <rect key="frame" x="251" y="502" width="90" height="32"/>
+                                                            <rect key="frame" x="251" y="503" width="90" height="32"/>
                                                             <buttonCell key="cell" type="push" title="Custom..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vFD-HU-RVz">
                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                 <font key="font" metaFont="system"/>
@@ -442,7 +442,7 @@
                                                             </connections>
                                                         </button>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7vv-En-VYY" userLabel="RotationLabel Text Field">
-                                                            <rect key="frame" x="18" y="472" width="318" height="16"/>
+                                                            <rect key="frame" x="18" y="473" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Rotation:" id="to3-rc-Agv">
                                                                 <font key="font" metaFont="systemBold"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -450,7 +450,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <segmentedControl verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="bza-SA-tXE" userLabel="Rotation Segmented Control">
-                                                            <rect key="frame" x="18" y="441" width="172" height="24"/>
+                                                            <rect key="frame" x="18" y="442" width="172" height="24"/>
                                                             <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fillEqually" style="rounded" trackingMode="selectOne" id="z1L-0N-dfK">
                                                                 <font key="font" metaFont="system"/>
                                                                 <segments>
@@ -465,7 +465,7 @@
                                                             </connections>
                                                         </segmentedControl>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d4r-sL-0Vo" userLabel="SpeedLabel Text Field">
-                                                            <rect key="frame" x="18" y="406" width="318" height="16"/>
+                                                            <rect key="frame" x="18" y="407" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Speed:" id="1KQ-oZ-A2x">
                                                                 <font key="font" metaFont="systemBold"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -473,7 +473,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <customView autoresizesSubviews="NO" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="5v4-Te-950" userLabel="SpeedSlider Container View">
-                                                            <rect key="frame" x="20" y="360" width="314" height="42"/>
+                                                            <rect key="frame" x="20" y="361" width="314" height="42"/>
                                                             <subviews>
                                                                 <slider horizontalHuggingPriority="1" verticalHuggingPriority="700" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="UWh-M9-5Nw" userLabel="SpeedSlider Horizontal Tick Slider">
                                                                     <rect key="frame" x="-2" y="10" width="240" height="20"/>
@@ -577,12 +577,12 @@
                                                             </constraints>
                                                         </customView>
                                                         <box autoresizesSubviews="NO" boxType="custom" cornerRadius="6" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="2ye-g4-fz5" userLabel="Switches Box">
-                                                            <rect key="frame" x="20" y="207" width="314" height="133"/>
+                                                            <rect key="frame" x="20" y="207" width="314" height="134"/>
                                                             <view key="contentView" id="bBc-PP-gHz" userLabel="Switches Box View">
-                                                                <rect key="frame" x="1" y="1" width="312" height="131"/>
+                                                                <rect key="frame" x="1" y="1" width="312" height="132"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
-                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="7z5-cT-Huj" userLabel="HWDecoding Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                         <rect key="frame" x="12" y="92" width="288" height="36"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" constant="36" id="g7u-92-6a2"/>
@@ -591,10 +591,10 @@
                                                                             <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.hwdec"/>
                                                                         </userDefinedRuntimeAttributes>
                                                                     </customView>
-                                                                    <box horizontalHuggingPriority="751" verticalHuggingPriority="751" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9" userLabel="Horizontal Line 1">
-                                                                        <rect key="frame" x="12" y="86" width="288" height="4"/>
+                                                                    <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="PyM-xa-vx9" userLabel="Horizontal Line 1">
+                                                                        <rect key="frame" x="12" y="86" width="288" height="5"/>
                                                                     </box>
-                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="SMb-H5-j6h" userLabel="Deinterlace Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                         <rect key="frame" x="12" y="48" width="288" height="36"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" constant="36" id="4kX-XS-rz3"/>
@@ -603,10 +603,10 @@
                                                                             <userDefinedRuntimeAttribute type="string" keyPath="title" value="quicksetting.deinterlace"/>
                                                                         </userDefinedRuntimeAttributes>
                                                                     </customView>
-                                                                    <box horizontalHuggingPriority="751" verticalHuggingPriority="751" horizontalCompressionResistancePriority="500" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
-                                                                        <rect key="frame" x="12" y="42" width="288" height="4"/>
+                                                                    <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="qYi-uQ-6qo" userLabel="Horizontal Line 2">
+                                                                        <rect key="frame" x="12" y="42" width="288" height="5"/>
                                                                     </box>
-                                                                    <customView horizontalHuggingPriority="200" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
+                                                                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="U8P-fW-N3q" userLabel="HDR Switch" customClass="Switch" customModule="IINA" customModuleProvider="target">
                                                                         <rect key="frame" x="12" y="4" width="288" height="36"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" constant="36" id="YSa-1m-THM"/>
@@ -617,27 +617,28 @@
                                                                     </customView>
                                                                 </subviews>
                                                                 <constraints>
-                                                                    <constraint firstAttribute="bottom" secondItem="qYi-uQ-6qo" secondAttribute="bottom" constant="44" id="3CZ-dw-Npn"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="U8P-fW-N3q" secondAttribute="trailing" constant="12" id="4z1-4a-C9L"/>
-                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="bottom" secondItem="bBc-PP-gHz" secondAttribute="bottom" constant="-4" id="6lN-OM-fnO"/>
-                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="trailing" secondItem="7z5-cT-Huj" secondAttribute="trailing" id="7ss-LT-GEy"/>
-                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="7z5-cT-Huj" secondAttribute="leading" id="BJu-9M-SXG"/>
-                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="P5z-aP-feG"/>
-                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="PrJ-66-lyC"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="SMb-H5-j6h" secondAttribute="trailing" constant="12" id="Svs-iE-7sc"/>
+                                                                    <constraint firstAttribute="bottom" secondItem="U8P-fW-N3q" secondAttribute="bottom" constant="4" id="6lN-OM-fnO"/>
+                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="leading" secondItem="7z5-cT-Huj" secondAttribute="leading" id="7Ja-DA-CwF"/>
+                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="top" secondItem="7z5-cT-Huj" secondAttribute="bottom" constant="8" id="Fjd-9M-zZt"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="SMb-H5-j6h" secondAttribute="leading" id="GRQ-Bt-V3i"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="PyM-xa-vx9" secondAttribute="leading" id="I97-3I-Tnn"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="trailing" secondItem="SMb-H5-j6h" secondAttribute="trailing" id="MXl-9i-Z7z"/>
+                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" id="W6Y-bH-eCi"/>
                                                                     <constraint firstItem="7z5-cT-Huj" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="4" id="X2a-Cb-juO"/>
-                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="YPa-IC-bVG"/>
-                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="ZWg-rR-roT"/>
-                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="48" id="aVE-FQ-rmM"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" constant="12" id="d0o-3q-Ejh"/>
-                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="fgs-ZY-aa8"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="qYi-uQ-6qo" secondAttribute="trailing" constant="12" id="fq9-8e-pYf"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="7z5-cT-Huj" secondAttribute="trailing" constant="12" id="gTg-Wd-4BS"/>
-                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="top" secondItem="bBc-PP-gHz" secondAttribute="top" constant="44" id="m7d-hi-f3k"/>
-                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="top" secondItem="PyM-xa-vx9" secondAttribute="bottom" constant="44" id="xBx-AB-SrR"/>
-                                                                    <constraint firstAttribute="bottom" secondItem="SMb-H5-j6h" secondAttribute="bottom" constant="48" id="xP2-KI-5ob"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="top" secondItem="qYi-uQ-6qo" secondAttribute="bottom" constant="4" id="ZPR-3B-WSW"/>
+                                                                    <constraint firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" constant="12" id="Zny-ol-SPy"/>
+                                                                    <constraint firstItem="SMb-H5-j6h" firstAttribute="trailing" secondItem="7z5-cT-Huj" secondAttribute="trailing" id="bTG-eY-qrc"/>
+                                                                    <constraint firstItem="7z5-cT-Huj" firstAttribute="centerX" secondItem="bBc-PP-gHz" secondAttribute="centerX" id="bVd-8a-j88"/>
+                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="leading" secondItem="bBc-PP-gHz" secondAttribute="leading" constant="12" id="cAs-bS-FEB"/>
+                                                                    <constraint firstItem="PyM-xa-vx9" firstAttribute="bottom" secondItem="7z5-cT-Huj" secondAttribute="bottom" constant="4" id="mXv-Bz-bFd"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="top" secondItem="SMb-H5-j6h" secondAttribute="bottom" constant="8" id="t4C-3L-HEY"/>
+                                                                    <constraint firstItem="qYi-uQ-6qo" firstAttribute="leading" secondItem="PyM-xa-vx9" secondAttribute="leading" id="tkm-Ze-qkw"/>
+                                                                    <constraint firstItem="U8P-fW-N3q" firstAttribute="trailing" secondItem="PyM-xa-vx9" secondAttribute="trailing" id="yTh-eK-yhj"/>
                                                                 </constraints>
                                                             </view>
+                                                            <constraints>
+                                                                <constraint firstAttribute="height" constant="134" id="mMk-SO-lBd"/>
+                                                            </constraints>
                                                             <color key="borderColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                             <color key="fillColor" red="0.99999600649999998" green="1" blue="1" alpha="0.10000000000000001" colorSpace="custom" customColorSpace="sRGB"/>
                                                         </box>
@@ -865,7 +866,6 @@
                                                         <constraint firstItem="CUa-0e-DwY" firstAttribute="top" secondItem="ykw-rb-M9D" secondAttribute="bottom" constant="20" id="18w-9C-Htc"/>
                                                         <constraint firstItem="iAC-lz-PuL" firstAttribute="leading" secondItem="pam-gJ-b3R" secondAttribute="trailing" constant="8" id="29l-xI-5MV"/>
                                                         <constraint firstItem="d4r-sL-0Vo" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="2jO-JJ-N1O"/>
-                                                        <constraint firstItem="bBc-PP-gHz" firstAttribute="top" secondItem="5v4-Te-950" secondAttribute="bottom" constant="20" id="3Qc-2z-6j0"/>
                                                         <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="44Q-AK-wMR"/>
                                                         <constraint firstItem="Kzg-Uw-tpM" firstAttribute="top" secondItem="QqK-iZ-rFX" secondAttribute="bottom" constant="20" id="9DE-4W-Fjh"/>
                                                         <constraint firstItem="Ng5-FC-tts" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="ATc-Y8-5g4"/>
@@ -947,17 +947,17 @@
                         </tabViewItem>
                         <tabViewItem label="Audio" identifier="2" id="bzk-c2-LH5" userLabel="AudioTab Tab View Item">
                             <view key="view" id="Dxl-wa-zgc" userLabel="AudioTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
+                                <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wXn-sV-AmG" userLabel="AudioTab Scroll View">
-                                        <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl" userLabel="AudioTab Clip View">
-                                            <rect key="frame" x="0.0" y="0.0" width="360" height="738"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="240" width="360" height="498"/>
+                                                    <rect key="frame" x="0.0" y="329" width="360" height="498"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="my2-5o-bNb" userLabel="AudioTab CONTENT VIEW">
                                                             <rect key="frame" x="0.0" y="0.0" width="360" height="498"/>
@@ -1282,7 +1282,7 @@
                                                                     <subviews>
                                                                         <slider horizontalHuggingPriority="750" verticalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="pHR-ym-VeQ">
                                                                             <rect key="frame" x="-2" y="-2" width="20" height="120"/>
-                                                                            <sliderCell key="cell" controlSize="small" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="left" numberOfTickMarks="13" sliderType="linear" id="Twm-2U-8ou"/>
+                                                                            <sliderCell key="cell" controlSize="small" state="on" alignment="left" minValue="-12" maxValue="12" doubleValue="3.4939236111111125" tickMarkPosition="left" numberOfTickMarks="13" sliderType="linear" id="Twm-2U-8ou"/>
                                                                             <connections>
                                                                                 <action selector="audioEqSliderAction:" target="-2" id="ywO-zh-sWU"/>
                                                                             </connections>
