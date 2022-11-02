@@ -168,8 +168,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let button = NSImageView()
       button.image = buttonType.image()
       button.translatesAutoresizingMaskIntoConstraints = false
-      let buttonWidth = buttons.count == 5 ? "20" : "24"
-      Utility.quickConstraints(["H:[btn(\(buttonWidth))]", "V:[btn(24)]"], ["btn": button])
+      Utility.quickConstraints(["H:[btn(22)]", "V:[btn(22)]"], ["btn": button])
       oscToolbarStackView.addView(button, in: .trailing)
     }
   }
