@@ -330,7 +330,9 @@ class MPVController: NSObject {
       mpv_set_option_string(mpv, "config", "yes")
       let status = mpv_set_option_string(mpv, MPVOption.ProgramBehavior.configDir, userConfDir)
       if status < 0 {
-        Utility.showAlert("extra_option.config_folder", arguments: [userConfDir])
+        DispatchQueue.main.async {
+          Utility.showAlert("extra_option.config_folder", arguments: [userConfDir])
+        }
       }
     }
 
@@ -340,12 +342,16 @@ class MPVController: NSObject {
         userOptions.forEach { op in
           let status = mpv_set_option_string(mpv, op[0], op[1])
           if status < 0 {
-            Utility.showAlert("extra_option.error", arguments:
-                                [op[0], op[1], status])
+            DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+              Utility.showAlert("extra_option.error", arguments:
+                                  [op[0], op[1], status])
+            }
           }
         }
       } else {
-        Utility.showAlert("extra_option.cannot_read")
+        DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+          Utility.showAlert("extra_option.cannot_read")
+        }
       }
     }
 

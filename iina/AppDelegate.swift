@@ -191,10 +191,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log("App launched")
 
-    if !isReady {
-      getReady()
-    }
-
     // show alpha in color panels
     NSColorPanel.shared.showsAlpha = true
 
@@ -214,6 +210,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         RemoteCommandController.setup()
         NowPlayingInfoManager.updateInfo(state: .unknown)
       }
+    }
+
+    if !isReady {
+      getReady()
     }
 
     // if have pending open request
