@@ -106,12 +106,11 @@ Gw
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <stackView orientation="horizontal" alignment="top" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="11" width="118" height="0.0"/>
+                                    <rect key="frame" x="118" y="11" width="0.0" height="0.0"/>
                                 </stackView>
                             </subviews>
                             <constraints>
                                 <constraint firstAttribute="trailing" secondItem="63i-B1-8o0" secondAttribute="trailing" id="1XZ-jY-ky3"/>
-                                <constraint firstItem="63i-B1-8o0" firstAttribute="leading" secondItem="Xci-wI-yo3" secondAttribute="leading" id="36o-Rk-uHe"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerY" secondItem="Xci-wI-yo3" secondAttribute="centerY" id="Ss1-cI-VQq"/>
                             </constraints>
                         </view>
