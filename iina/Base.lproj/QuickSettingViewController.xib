@@ -412,7 +412,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <segmentedControl horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" translatesAutoresizingMaskIntoConstraints="NO" id="sPT-jd-T7a" userLabel="CropChooser Segmented Control">
-                                                            <rect key="frame" x="18" y="508" width="234" height="24"/>
+                                                            <rect key="frame" x="18" y="508" width="318" height="24"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="230" id="tTp-B3-gF5"/>
                                                             </constraints>
@@ -425,22 +425,13 @@
                                                                     <segment label="16:10" tag="3"/>
                                                                     <segment label="21:9" tag="4"/>
                                                                     <segment label="5:4"/>
+                                                                    <segment label="Custom..."/>
                                                                 </segments>
                                                             </segmentedCell>
                                                             <connections>
                                                                 <action selector="cropChangedAction:" target="-2" id="94g-N6-rTB"/>
                                                             </connections>
                                                         </segmentedControl>
-                                                        <button horizontalHuggingPriority="251" verticalHuggingPriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="ItN-JT-puN" userLabel="Custom Crop Button">
-                                                            <rect key="frame" x="251" y="503" width="90" height="32"/>
-                                                            <buttonCell key="cell" type="push" title="Custom..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vFD-HU-RVz">
-                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                <font key="font" metaFont="system"/>
-                                                            </buttonCell>
-                                                            <connections>
-                                                                <action selector="cropBtnAction:" target="-2" id="5b5-dQ-OPB"/>
-                                                            </connections>
-                                                        </button>
                                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7vv-En-VYY" userLabel="RotationLabel Text Field">
                                                             <rect key="frame" x="18" y="473" width="318" height="16"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Rotation:" id="to3-rc-Agv">
@@ -866,6 +857,7 @@
                                                         <constraint firstItem="CUa-0e-DwY" firstAttribute="top" secondItem="ykw-rb-M9D" secondAttribute="bottom" constant="20" id="18w-9C-Htc"/>
                                                         <constraint firstItem="iAC-lz-PuL" firstAttribute="leading" secondItem="pam-gJ-b3R" secondAttribute="trailing" constant="8" id="29l-xI-5MV"/>
                                                         <constraint firstItem="d4r-sL-0Vo" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="2jO-JJ-N1O"/>
+                                                        <constraint firstItem="sPT-jd-T7a" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="2ul-1b-OX5"/>
                                                         <constraint firstItem="2ye-g4-fz5" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="44Q-AK-wMR"/>
                                                         <constraint firstItem="Kzg-Uw-tpM" firstAttribute="top" secondItem="QqK-iZ-rFX" secondAttribute="bottom" constant="20" id="9DE-4W-Fjh"/>
                                                         <constraint firstItem="Ng5-FC-tts" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="ATc-Y8-5g4"/>
@@ -892,7 +884,6 @@
                                                         <constraint firstItem="iAC-lz-PuL" firstAttribute="top" secondItem="pam-gJ-b3R" secondAttribute="top" id="WDy-ol-Zpc"/>
                                                         <constraint firstItem="7PK-hh-Xx5" firstAttribute="top" secondItem="2ye-g4-fz5" secondAttribute="bottom" constant="20" id="WHx-2i-Qb8"/>
                                                         <constraint firstItem="sPT-jd-T7a" firstAttribute="leading" secondItem="seu-WU-cTV" secondAttribute="leading" id="WhF-R9-ItL"/>
-                                                        <constraint firstItem="ItN-JT-puN" firstAttribute="firstBaseline" secondItem="sPT-jd-T7a" secondAttribute="firstBaseline" id="ZUk-fR-P67"/>
                                                         <constraint firstItem="d4r-sL-0Vo" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="aI1-cp-e3U"/>
                                                         <constraint firstItem="seu-WU-cTV" firstAttribute="top" secondItem="ZGz-La-n9c" secondAttribute="top" constant="20" id="aal-Nb-2Z5"/>
                                                         <constraint firstItem="QqK-iZ-rFX" firstAttribute="top" secondItem="7PK-hh-Xx5" secondAttribute="bottom" constant="20" id="agN-ia-1uy"/>
@@ -915,8 +906,6 @@
                                                         <constraint firstItem="oAm-jJ-3kE" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="xkj-ic-q9D"/>
                                                         <constraint firstItem="7PK-hh-Xx5" firstAttribute="leading" secondItem="ZGz-La-n9c" secondAttribute="leading" id="y5p-Be-83s"/>
                                                         <constraint firstItem="CUa-0e-DwY" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="yE8-pS-Zgy"/>
-                                                        <constraint firstItem="ItN-JT-puN" firstAttribute="leading" secondItem="sPT-jd-T7a" secondAttribute="trailing" constant="8" id="zpS-Pj-XaO"/>
-                                                        <constraint firstItem="ItN-JT-puN" firstAttribute="trailing" secondItem="seu-WU-cTV" secondAttribute="trailing" id="zyF-oo-Rm3"/>
                                                     </constraints>
                                                 </view>
                                             </subviews>
