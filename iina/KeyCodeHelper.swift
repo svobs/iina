@@ -409,7 +409,7 @@ class KeyCodeHelper {
   }
 
   /*
-   MPV accepts several forms for the same keystroke. This ensures that it is reduced to a single standardized form
+   Several forms for the same keystroke are accepted by mpv. This ensures that it is reduced to a single standardized form
    (such that it can be used in a set or map, and which matches what `mpvKeyCode()` returns).
 
    Definitions used here:

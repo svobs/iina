@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let IINA_PREFIX = "#@iina"
+
 // Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
 class KeyMapping: NSObject, Codable {
 
@@ -49,7 +51,7 @@ class KeyMapping: NSObject, Codable {
   var readableAction: String {
     get {
       let joined = action.joined(separator: " ")
-      return isIINACommand ? ("@iina " + joined) : joined
+      return isIINACommand ? ("\(IINA_PREFIX) " + joined) : joined
     }
   }
 
@@ -83,7 +85,7 @@ class KeyMapping: NSObject, Codable {
   // Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
     get {
-      let iinaCommandString = isIINACommand ? "#@iina " : ""
+      let iinaCommandString = isIINACommand ? "\(IINA_PREFIX) " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
       return "\(iinaCommandString)\(rawKey) \(rawAction)\(commentString)"
     }
@@ -114,8 +116,8 @@ class KeyMapping: NSObject, Codable {
 
 
   private static func removeIINAPrefix(from rawAction: String) -> String? {
-    if rawAction.hasPrefix("@iina") {
-      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
+    if rawAction.hasPrefix(IINA_PREFIX) {
+      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: IINA_PREFIX.count)...].trimmingCharacters(in: .whitespaces)
     } else {
       return nil
     }

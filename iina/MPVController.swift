@@ -130,6 +130,8 @@ class MPVController: NSObject {
     MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
     MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
+    MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
     MPVProperty.idleActive: MPV_FORMAT_FLAG
   ]
 
@@ -1035,14 +1037,18 @@ class MPVController: NSObject {
         player.mainWindow.rotation = rotation
       }
 
+    case MPVProperty.videoParamsPrimaries:
+      fallthrough;
+
+    case MPVProperty.videoParamsGamma:
+      if #available(macOS 10.15, *) {
+        player.refreshEdrMode()
+      }
+
     case MPVOption.TrackSelection.vid:
       player.info.vid = Int(getInt(MPVOption.TrackSelection.vid))
       player.postNotification(.iinaVIDChanged)
       player.sendOSD(.track(player.info.currentTrack(.video) ?? .noneVideoTrack))
-
-      if #available(macOS 10.15, *) {
-        player.refreshEdrMode()
-      }
 
     case MPVOption.TrackSelection.aid:
       player.info.aid = Int(getInt(MPVOption.TrackSelection.aid))
@@ -1468,8 +1474,5 @@ fileprivate func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: Unsaf
 fileprivate func mpvUpdateCallback(_ ctx: UnsafeMutableRawPointer?) {
   let layer = bridge(ptr: ctx!) as ViewLayer
   guard !layer.blocked else { return }
-
-  layer.mpvGLQueue.async {
-    layer.draw()
-  }
+  layer.draw()
 }
