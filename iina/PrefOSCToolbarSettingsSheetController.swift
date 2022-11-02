@@ -135,7 +135,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
       let item = PrefOSCToolbarCurrentItem(buttonType: buttonType, superView: self)
       item.translatesAutoresizingMaskIntoConstraints = false
       self.addView(item, in: .trailing)
-      Utility.quickConstraints(["H:[btn(24)]", "V:[btn(24)]"], ["btn": item])
+      Utility.quickConstraints(["H:[btn(22)]", "V:[btn(22)]"], ["btn": item])
     }
   }
 
