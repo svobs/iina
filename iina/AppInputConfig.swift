@@ -14,8 +14,8 @@ class AppInputConfig {
   // MARK: Static
 
   static let inputConfigFileHandler = InputConfigFileHandler()
-  static let inputConfigTableStore = InputConfigStore()
-  static let bindingTableStore = InputBindingStore()
+  static let inputConfigStore = InputConfigStore()
+  static let inputBindingStore = InputBindingStore()
 
   static var logBindingsRebuild: Bool {
     Preference.bool(for: .logKeyBindingsRebuild)
@@ -64,7 +64,7 @@ class AppInputConfig {
       AppInputConfig.current = appInputConfig
 
       // Notify Key Bindings table in prefs UI
-      AppInputConfig.bindingTableStore.appInputConfigDidChange(appInputConfig, tableChange)
+      AppInputConfig.inputBindingStore.appInputConfigDidChange(appInputConfig, tableChange)
     }
   }
 

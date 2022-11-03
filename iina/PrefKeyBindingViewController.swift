@@ -27,12 +27,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return false
   }
 
-  private var inputConfigTableStore: InputConfigStore {
-    return AppInputConfig.inputConfigTableStore
+  private var configStore: InputConfigStore {
+    return AppInputConfig.inputConfigStore
   }
 
-  private var bindingTableStore: InputBindingStore {
-    return AppInputConfig.bindingTableStore
+  private var bindingStore: InputBindingStore {
+    return AppInputConfig.inputBindingStore
   }
 
   private var configTableController: InputConfigTableViewController? = nil
@@ -65,7 +65,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     super.viewDidLoad()
 
     kbTableController = KeyBindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
-    configTableController = InputConfigTableViewController(inputConfigTableView, inputConfigTableStore)
+    configTableController = InputConfigTableViewController(inputConfigTableView, configStore)
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
@@ -102,15 +102,15 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func duplicateConfigFileAction(_ sender: AnyObject) {
-    configTableController?.duplicateConfig(inputConfigTableStore.currentConfigName)
+    configTableController?.duplicateConfig(configStore.currentConfigName)
   }
 
   @IBAction func showInFinderFileAction(_ sender: AnyObject) {
-    configTableController?.showInFinder(inputConfigTableStore.currentConfigName)
+    configTableController?.showInFinder(configStore.currentConfigName)
   }
 
   @IBAction func deleteConfigFileAction(_ sender: AnyObject) {
-    configTableController?.deleteConfig(inputConfigTableStore.currentConfigName)
+    configTableController?.deleteConfig(configStore.currentConfigName)
   }
 
   @IBAction func importConfigBtnAction(_ sender: Any) {
@@ -129,13 +129,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    bindingTableStore.filterBindings(sender.stringValue)
+    bindingStore.filterBindings(sender.stringValue)
   }
 
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isEditEnabledForCurrentConfig = inputConfigTableStore.isEditEnabledForCurrentConfig
+    let isEditEnabledForCurrentConfig = configStore.isEditEnabledForCurrentConfig
     [showInFinderFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = isEditEnabledForCurrentConfig
     }
@@ -146,6 +146,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = inputConfigTableStore.isEditEnabledForCurrentConfig && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = configStore.isEditEnabledForCurrentConfig && kbTableView.selectedRow != -1
   }
 }

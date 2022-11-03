@@ -20,12 +20,12 @@ class KeyBindingTableViewController: NSObject {
   private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: EditableTableView!
-  private var inputConfigTableStore: InputConfigStore {
-    return AppInputConfig.inputConfigTableStore
+  private var configStore: InputConfigStore {
+    return AppInputConfig.inputConfigStore
   }
 
-  private var bindingTableStore: InputBindingStore {
-    return AppInputConfig.bindingTableStore
+  private var bindingStore: InputBindingStore {
+    return AppInputConfig.inputBindingStore
   }
 
   private var selectionDidChangeHandler: () -> Void
@@ -86,7 +86,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
   @objc func tableView(_ tableView: NSTableView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
     var approvedSelectionIndexes = IndexSet()
     for index in proposedSelectionIndexes {
-      if let row = bindingTableStore.getBindingRow(at: index), row.isEditableByUser {
+      if let row = bindingStore.getBindingRow(at: index), row.isEditableByUser {
         approvedSelectionIndexes.insert(index)
       }
     }
@@ -97,7 +97,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
    Make cell view when asked
    */
   @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let bindingRow = bindingTableStore.getBindingRow(at: row) else {
+    guard let bindingRow = bindingStore.getBindingRow(at: row) else {
       return nil
     }
 
@@ -216,7 +216,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
   }
 
   private var selectedRows: [InputBinding] {
-    Array(tableView.selectedRowIndexes.compactMap( { bindingTableStore.getBindingRow(at: $0) }))
+    Array(tableView.selectedRowIndexes.compactMap( { bindingStore.getBindingRow(at: $0) }))
   }
 
   private var selectedEditableRows: [InputBinding] {
@@ -231,7 +231,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    Tell AppKit the number of rows when it asks
    */
   @objc func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingTableStore.bindingRowCount
+    return bindingStore.bindingRowCount
   }
 
   // MARK: Drag & Drop
@@ -254,7 +254,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    let row = bindingTableStore.getBindingRow(at: rowIndex)
+    let row = bindingStore.getBindingRow(at: rowIndex)
     if let row = row, row.isEditableByUser {
       return row.keyMapping
     }
@@ -266,7 +266,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    TODO: look for a way to animate this so that it's more obvious that something happened.
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
+    guard configStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
       return
     }
 
@@ -278,7 +278,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
 
     Logger.log("User dragged to the trash: \(rmappingList)", level: .verbose)
 
-    bindingTableStore.removeBindings(withIDs: rmappingList.map{$0.bindingID!})
+    bindingStore.removeBindings(withIDs: rmappingList.map{$0.bindingID!})
   }
 
   /*
@@ -286,7 +286,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
+    guard configStore.isEditEnabledForCurrentConfig else {
       return []  // deny drop
     }
 
@@ -308,7 +308,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     let isAfterNotAt = dropOperation == .on
     // Can only make changes to the "default" section. If the drop cursor is not already inside it,
     // then we'll change it to the nearest valid index in the "default" section.
-    let dropTargetRow = bindingTableStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
+    let dropTargetRow = bindingStore.getClosestValidInsertIndex(from: rowIndex, isAfterNotAt: isAfterNotAt)
 
     tableView.setDropRow(dropTargetRow, dropOperation: .above)
 
@@ -371,7 +371,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit cell") else { return false }
 
-    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
       Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
       return false
     }
@@ -390,7 +390,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
 
-    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
       Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
       return false
     }
@@ -407,13 +407,13 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
-    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
       // An error here would be really bad
       Logger.log("Cannot save binding row \(rowIndex): edit is not allowed for this row type! If you see this message please report it.", level: .error)
       return false
     }
 
-    guard let editedRow = bindingTableStore.getBindingRow(at: rowIndex) else {
+    guard let editedRow = bindingStore.getBindingRow(at: rowIndex) else {
       Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
@@ -434,7 +434,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     }
 
     let newVersion = editedRow.keyMapping.clone(rawKey: key, rawAction: action)
-    bindingTableStore.updateBinding(at: rowIndex, to: newVersion)
+    bindingStore.updateBinding(at: rowIndex, to: newVersion)
     return true
   }
 
@@ -446,7 +446,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
     Logger.log("Edit requested for row \(rowIndex), col \(columnIndex)")
 
-    guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
       // Should never see this message
       Logger.log("Cannot edit binding row \(rowIndex): edit is not allowed for this row! Aborting", level: .error)
       return
@@ -464,14 +464,14 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
-    guard let row = bindingTableStore.getBindingRow(at: rowIndex) else {
+    guard let row = bindingStore.getBindingRow(at: rowIndex) else {
       return
     }
 
     showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
       let newVersion = row.keyMapping.clone(rawKey: key, rawAction: action)
-      self.bindingTableStore.updateBinding(at: rowIndex, to: newVersion)
+      self.bindingStore.updateBinding(at: rowIndex, to: newVersion)
     }
   }
 
@@ -505,14 +505,14 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
         }
       }
       let newMapping = KeyMapping(rawKey: "", rawAction: "")
-      let _ = bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
+      let _ = bindingStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
 
     } else {
       showEditBindingPopup { key, action in
         guard !key.isEmpty && !action.isEmpty else { return }
 
         let newMapping = KeyMapping(rawKey: key, rawAction: action)
-        self.bindingTableStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping,
+        self.bindingStore.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping,
                                                 afterComplete: self.scrollToFirstInserted)
       }
     }
@@ -546,7 +546,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     // Make sure to use copy() to clone the object here
     let newMappings: [KeyMapping] = mappingList.map { $0.clone() }
 
-    bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings,
+    bindingStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings,
                                                                     afterComplete: scrollToFirstInserted)
   }
 
@@ -555,7 +555,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
     guard !mappingList.isEmpty else { return }
 
-    let firstInsertedRowIndex = bindingTableStore.moveBindings(mappingList, to: rowIndex, isAfterNotAt: isAfterNotAt,
+    let firstInsertedRowIndex = bindingStore.moveBindings(mappingList, to: rowIndex, isAfterNotAt: isAfterNotAt,
                                                                afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
@@ -569,11 +569,11 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func removeSelectedBindings() {
-    bindingTableStore.removeBindings(at: tableView.selectedRowIndexes)
+    bindingStore.removeBindings(at: tableView.selectedRowIndexes)
   }
 
   private func requireCurrentConfigIsEditable(forAction action: String) -> Bool {
-    if inputConfigTableStore.isEditEnabledForCurrentConfig {
+    if configStore.isEditEnabledForCurrentConfig {
       return true
     }
 
@@ -589,7 +589,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // Each menu item should be disabled if it cannot operate on at least one item.
 
   func isCopyEnabled() -> Bool {
-    return inputConfigTableStore.isEditEnabledForCurrentConfig && !selectedEditableRows.isEmpty
+    return configStore.isEditEnabledForCurrentConfig && !selectedEditableRows.isEmpty
   }
 
   func isCutEnabled() -> Bool {
@@ -601,7 +601,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func isPasteEnabled() -> Bool {
-    return !readBindingsFromClipboard().isEmpty
+    return configStore.isEditEnabledForCurrentConfig && !readBindingsFromClipboard().isEmpty
   }
 
   func doEditMenuCut() {
@@ -631,7 +631,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // If it is not specified, uses the currently selected rows
   // Returns `true` if it copied at least 1 row; `false` if not
   private func copyToClipboard(rowsToCopy: [InputBinding]? = nil) -> Bool {
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
+    guard configStore.isEditEnabledForCurrentConfig else {
       return false
     }
     let rows: [InputBinding]
@@ -661,7 +661,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
       return
     }
     Logger.log("Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)")
-    bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert,
+    bindingStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert,
                                         afterComplete: self.scrollToFirstInserted)
   }
 
@@ -721,10 +721,10 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     contextMenu.removeAllItems()
 
     let clickedIndex = tableView.clickedRow
-    guard let clickedRow = bindingTableStore.getBindingRow(at: tableView.clickedRow) else { return }
+    guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow) else { return }
 
-    guard inputConfigTableStore.isEditEnabledForCurrentConfig else {
-      let title = "Cannot make changes: \"\(inputConfigTableStore.currentConfigName)\" is a built-in config"
+    guard configStore.isEditEnabledForCurrentConfig else {
+      let title = "Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config"
       addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
       return
     }
@@ -781,7 +781,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
     } else {
       // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-      let isAfterNotAt = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
+      let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
       let directionLabel = isAfterNotAt ? "Below" : "Above"
       let selector = isAfterNotAt ? #selector(self.pasteBelow(_:)) : #selector(self.pasteAbove(_:))
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) \(directionLabel)", action: selector)
@@ -797,7 +797,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
     } else {
       // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-      let isAfterNotAt = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
+      let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
       let directionLabel = isAfterNotAt ? "Below" : "Above"
       let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(directionLabel)", action: selector)
@@ -810,7 +810,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
-      return !bindingTableStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
+      return !bindingStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
     }
     let modifiableCount = selectedRowsCount - readOnlyCount
 
@@ -841,13 +841,13 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
 
       let firstIndexBeforeSelection = max((tableView.selectedRowIndexes.first ?? 0) - 1, 0)
-      if bindingTableStore.getClosestValidInsertIndex(from: firstIndexBeforeSelection) <= firstIndexBeforeSelection {
+      if bindingStore.getClosestValidInsertIndex(from: firstIndexBeforeSelection) <= firstIndexBeforeSelection {
         addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Above", action: #selector(self.pasteAbove(_:)))
         addedOne = true
       }
 
       let firstIndexAfterSelection = (tableView.selectedRowIndexes.last ?? tableView.numberOfRows - 1) + 1
-      if bindingTableStore.getClosestValidInsertIndex(from: firstIndexAfterSelection) >= firstIndexAfterSelection {
+      if bindingStore.getClosestValidInsertIndex(from: firstIndexAfterSelection) >= firstIndexAfterSelection {
         addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
         addedOne = true
       }
@@ -862,7 +862,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
-    let closestInsertIndexAfterSelection = bindingTableStore.getClosestValidInsertIndex(from: preferredInsertIndex)
+    let closestInsertIndexAfterSelection = bindingStore.getClosestValidInsertIndex(from: preferredInsertIndex)
     let direction = closestInsertIndexAfterSelection <= referenceIndex ? "Above" : "Below"
     return "\(makePasteMenuItemTitle(itemCount: itemCount)) \(direction)"
   }
@@ -894,7 +894,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   // Similar to Edit menu operations, but operating on a single non-selected row:
   @objc fileprivate func cutRow(_ sender: BindingMenuItem) {
     if copyToClipboard(rowsToCopy: [sender.row]) {
-      bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
+      bindingStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
     }
   }
 
@@ -911,6 +911,6 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   @objc fileprivate func removeRow(_ sender: BindingMenuItem) {
-    bindingTableStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
+    bindingStore.removeBindings(at: IndexSet(integer: sender.rowIndex))
   }
 }
