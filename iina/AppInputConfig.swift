@@ -37,7 +37,7 @@ class AppInputConfig {
    */
   static func rebuildCurrent(withBindingsTableChange tableChange: TableChange? = nil) {
     let rebuildVersion = AppInputConfig.lastBuildVersion + 1
-    Logger.log("Requesting app active bindings rebuild (v\(rebuildVersion))", level: .verbose)
+    Logger.log("Requesting app input bindings rebuild (v\(rebuildVersion))", level: .verbose)
 
     DispatchQueue.main.async {
       // Optimization: drop all but the most recent request (although never drop an explicit TableChange request)
@@ -49,10 +49,10 @@ class AppInputConfig {
         inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
       }
       AppInputConfig.lastBuildVersion = rebuildVersion
-      Logger.log("Rebuilding app active bindings (v\(rebuildVersion))", level: .verbose)
+      Logger.log("Rebuilding app input bindings (v\(rebuildVersion))", level: .verbose)
 
       guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
-        Logger.fatal("rebuildCurrent(): no active player!")
+        Logger.fatal("AppInputConfig.rebuildCurrent(): no active player!")
       }
 
       let builder = activePlayerInputConfig.makeAppInputConfigBuilder()

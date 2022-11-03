@@ -615,7 +615,12 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuPaste() {
-    pasteFromClipboard()
+    // default to *after* current selection
+    if let desiredInsertIndex = self.tableView.selectedRowIndexes.last {
+      pasteFromClipboard(relativeTo: desiredInsertIndex, isAfterNotAt: true)
+    } else {
+      pasteFromClipboard(relativeTo: self.tableView.numberOfRows, isAfterNotAt: true)
+    }
   }
 
   func doEditMenuDelete() {
@@ -649,26 +654,14 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     return true
   }
 
-  // If desiredInsertIndex != nil, try to insert after it.
-  // Else if there are selected rows, try to insert after them.
-  // Else just use the end of the table.
-  // `bindingTableStore` will then do a bunch of its own logic and probably end up putting it somewhere else.
-  private func pasteFromClipboard(after desiredInsertIndex: Int? = nil) {
+  private func pasteFromClipboard(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
     let mappingsToInsert = readBindingsFromClipboard()
     guard !mappingsToInsert.isEmpty else {
       Logger.log("Aborting Paste action because there is nothing to paste", level: .warning)
       return
     }
-    var insertAfterIndex: Int
-    if let desiredInsertIndex = desiredInsertIndex {
-      insertAfterIndex = desiredInsertIndex
-    } else if let lastSelectedIndex = tableView.selectedRowIndexes.last {
-      insertAfterIndex = lastSelectedIndex
-    } else {
-      insertAfterIndex = bindingTableStore.bindingRowCount
-    }
-    Logger.log("Pasting \(mappingsToInsert.count) bindings after index \(insertAfterIndex)")
-    bindingTableStore.insertNewBindings(relativeTo: insertAfterIndex, isAfterNotAt: true, mappingsToInsert,
+    Logger.log("Pasting \(mappingsToInsert.count) bindings \(isAfterNotAt ? "after" : "at") index \(rowIndex)")
+    bindingTableStore.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, mappingsToInsert,
                                         afterComplete: self.scrollToFirstInserted)
   }
 
@@ -743,7 +736,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  // For right-click on a single row which is not currently selected.
+  // For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func populate(contextMenu: NSMenu, for clickedRow: InputBinding, clickedIndex: Int) {
     let isRowEditable = clickedRow.isEditableByUser
     if isRowEditable {
@@ -781,20 +774,33 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy ", action: #selector(self.copyRow(_:)), enabled: isRowEditable)
     let pastableBindings = readBindingsFromClipboard()
     let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.pasteAfterIndex(_:)), enabled: !pastableBindings.isEmpty)
+    if pastableBindings.isEmpty {
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Paste", action: #selector(self.pasteBelow(_:)), enabled: false)
+    } else if isRowEditable {
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Above", action: #selector(self.pasteAbove(_:)))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
+    } else {
+      // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
+      let isAfterNotAt = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
+      let directionLabel = isAfterNotAt ? "Below" : "Above"
+      let selector = isAfterNotAt ? #selector(self.pasteBelow(_:)) : #selector(self.pasteAbove(_:))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) \(directionLabel)", action: selector)
+    }
     addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete ", action: #selector(self.removeRow(_:)), enabled: isRowEditable)
 
     // ---
     contextMenu.addItem(NSMenuItem.separator())
 
-    // Add
+    // Add New: follow same logic as Paste
     if isRowEditable {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
     } else {
       // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-      let direction = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) <= clickedIndex ? "Above" : "Below"
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(direction)", action: #selector(self.addNewRowBelow(_:)))
+      let isAfterNotAt = bindingTableStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
+      let directionLabel = isAfterNotAt ? "Below" : "Above"
+      let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(directionLabel)", action: selector)
     }
 
   }
@@ -825,15 +831,44 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       // and will enable/disable each action appropriately
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.cut(_:)), target: self.tableView)
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.copy(_:)), target: self.tableView)
-      let pastableBindings = readBindingsFromClipboard()
+    }
+    // Paste is enabled even if no selected rows are editable
+    let pastableBindings = readBindingsFromClipboard()
+    if pastableBindings.isEmpty {
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Paste", action: #selector(self.pasteBelow(_:)), enabled: false)
+    } else {
+      var addedOne = false
       let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: pasteTitle, action: #selector(self.tableView.paste(_:)), target: self.tableView)
+
+      let firstIndexBeforeSelection = max((tableView.selectedRowIndexes.first ?? 0) - 1, 0)
+      if bindingTableStore.getClosestValidInsertIndex(from: firstIndexBeforeSelection) <= firstIndexBeforeSelection {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Above", action: #selector(self.pasteAbove(_:)))
+        addedOne = true
+      }
+
+      let firstIndexAfterSelection = (tableView.selectedRowIndexes.last ?? tableView.numberOfRows - 1) + 1
+      if bindingTableStore.getClosestValidInsertIndex(from: firstIndexAfterSelection) >= firstIndexAfterSelection {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
+        addedOne = true
+      }
+
+      if !addedOne {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle)", action: #selector(self.pasteBelow(_:)))
+      }
+    }
+    if modifiableCount > 0 {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.delete(_:)), target: self.tableView)
     }
   }
 
+  private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
+    let closestInsertIndexAfterSelection = bindingTableStore.getClosestValidInsertIndex(from: preferredInsertIndex)
+    let direction = closestInsertIndexAfterSelection <= referenceIndex ? "Above" : "Below"
+    return "\(makePasteMenuItemTitle(itemCount: itemCount)) \(direction)"
+  }
+
   private func makePasteMenuItemTitle(itemCount: Int) -> String {
-    itemCount == 0 ? "Paste" : "Paste \(itemCount) \(Constants.String.keyBinding)s"
+    return itemCount == 0 ? "Paste" : "Paste \(itemCount) \(Constants.String.keyBinding)\(itemCount == 1 ? "" : "s")"
   }
 
   @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {
@@ -867,8 +902,12 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     _ = copyToClipboard(rowsToCopy: [sender.row])
   }
 
-  @objc fileprivate func pasteAfterIndex(_ sender: BindingMenuItem) {
-    pasteFromClipboard(after: sender.rowIndex)
+  @objc fileprivate func pasteAbove(_ sender: BindingMenuItem) {
+    pasteFromClipboard(relativeTo: sender.rowIndex, isAfterNotAt: false)
+  }
+
+  @objc fileprivate func pasteBelow(_ sender: BindingMenuItem) {
+    pasteFromClipboard(relativeTo: sender.rowIndex, isAfterNotAt: true)
   }
 
   @objc fileprivate func removeRow(_ sender: BindingMenuItem) {

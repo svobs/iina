@@ -77,6 +77,8 @@ class Utility {
       alert.informativeText = String(format: format)
     }
 
+    Logger.log("Showing alert: \"\(alert.informativeText)\"")
+
     alert.alertStyle = style
     if let sheetWindow = sheetWindow {
       alert.beginSheetModal(for: sheetWindow)
