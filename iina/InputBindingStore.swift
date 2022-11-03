@@ -19,6 +19,9 @@ class InputBindingStore {
 
   // MARK: State
 
+  // The current input config file, loaded into momory
+  private var currentConfigFileData: InputConfigFile? = nil
+
   // The current state of the AppInputConfig on which the state of this table is based.
   // While in almost all cases this should be identical to AppInputConfig.current, it is way simpler and more performant
   // to allow some tiny amount of drift. We treat each AppInputConfig object as a read-only version of the application state,
@@ -139,7 +142,7 @@ class InputBindingStore {
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    let idsToRemove = resolveBindingIDs(from: indexesToRemove, excluding: { !$0.isEditableByUser })
+    let idsToRemove = resolveBindingIDs(from: indexesToRemove, excluding: { !$0.canBeModified })
 
     if idsToRemove.isEmpty {
       Logger.log("Aborting remove operation: none of the rows can be modified")
@@ -171,7 +174,7 @@ class InputBindingStore {
     for (rowIndex, row) in bindingRowsAll.enumerated() {
       if let id = row.keyMapping.bindingID {
         // Non-editable rows probably do not have IDs, but check editable status to be sure
-        if idsToRemove.contains(id) && row.isEditableByUser {
+        if idsToRemove.contains(id) && row.canBeModified {
           indexesToRemove.insert(rowIndex)
           continue
         }
@@ -190,7 +193,7 @@ class InputBindingStore {
   func updateBinding(at index: Int, to mapping: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(mapping)", level: .verbose)
 
-    guard let existingRow = getBindingRow(at: index), existingRow.isEditableByUser else {
+    guard let existingRow = getBindingRow(at: index), existingRow.canBeModified else {
       Logger.log("Cannot update binding at index \(index); aborting", level: .error)
       return
     }
@@ -222,10 +225,7 @@ class InputBindingStore {
   // MARK: Various support functions
 
   func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
-    guard let row = self.getBindingRow(at: rowIndex) else {
-      return false
-    }
-    return row.origin == .confFile
+    self.getBindingRow(at: rowIndex)?.canBeModified ?? false
   }
 
   func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
@@ -384,8 +384,7 @@ class InputBindingStore {
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
     // or of writing another section's bindings to the "default" section.
     let defaultSectionMappings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    let inputConfigFileHandler = AppInputConfig.inputConfigFileHandler
-    guard let defaultSectionBindings = inputConfigFileHandler.saveBindingsToCurrentConfigFile(defaultSectionMappings) else {
+    guard let defaultSectionBindings = saveBindingsToCurrentConfigFile(defaultSectionMappings) else {
       return
     }
 
@@ -393,12 +392,14 @@ class InputBindingStore {
   }
 
   /*
-   Send to InputBindingController to ingest. It will return the updated list of all rows.
+   Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
+   It will notify us asynchronously when it is done.
+
    Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
    This is needed so that animations can work. But InputBindingController builds the actual row data,
    and the two must match or else visual bugs will result.
    */
-  func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChange? = nil) {
+  private func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChange? = nil) {
     InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME,
                                       with: defaultSectionMappings,
                                       doRebuildAfter: false)
@@ -436,4 +437,49 @@ class InputBindingStore {
     let bindingRowsAllNewFiltered = InputBindingStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
     return TableChange.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
   }
+
+  // MARK: Config File load/save
+
+  func currenConfigFileDidChange(_ inputConfigFile: InputConfigFile) {
+    currentConfigFileData = inputConfigFile
+
+    let defaultSectionBindings = inputConfigFile.parseBindings()
+    // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
+    pushDefaultSectionChange(defaultSectionBindings, TableChange(.reloadAll))
+  }
+
+  // Input Config File: Save
+  private func saveBindingsToCurrentConfigFile(_ defaultSectionBindings: [KeyMapping]) -> [KeyMapping]? {
+    guard let configFilePath = AppInputConfig.inputConfigStore.currentConfigFilePath else {
+      let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+      return nil
+    }
+    Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    do {
+      guard let currentConfigData = self.currentConfigFileData else {
+        Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
+        return nil
+      }
+      let canonicalPathCurrent = URL(fileURLWithPath: configFilePath).resolvingSymlinksInPath().path
+      let canonicalPathLoaded = URL(fileURLWithPath: currentConfigData.filePath).resolvingSymlinksInPath().path
+      guard canonicalPathCurrent == canonicalPathLoaded else {
+        Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
+        let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
+        NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+        return nil
+      }
+
+      currentConfigData.replaceAllBindings(with: defaultSectionBindings)
+      try currentConfigData.saveToDisk()
+      return currentConfigData.parseBindings()  // gets updated line numbers
+
+    } catch {
+      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+    }
+    return nil
+  }
+
 }

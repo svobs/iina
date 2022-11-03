@@ -13,7 +13,6 @@ class AppInputConfig {
   
   // MARK: Static
 
-  static let inputConfigFileHandler = InputConfigFileHandler()
   static let inputConfigStore = InputConfigStore()
   static let inputBindingStore = InputBindingStore()
 
@@ -46,7 +45,7 @@ class AppInputConfig {
       }
       if AppInputConfig.lastBuildVersion == 0 {
         // Initial load
-        inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
+        inputConfigStore.loadBindingsFromCurrentConfigFile()
       }
       AppInputConfig.lastBuildVersion = rebuildVersion
       Logger.log("Rebuilding app input bindings (v\(rebuildVersion))", level: .verbose)

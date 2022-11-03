@@ -47,7 +47,7 @@ class InputConfigStore {
       Logger.log("Current input config changed: '\(currentConfigName)' -> '\(newValue)'")
       Preference.set(newValue, for: .currentInputConfigName)
 
-      AppInputConfig.inputConfigFileHandler.loadBindingsFromCurrentConfigFile()
+      loadBindingsFromCurrentConfigFile()
     }
   }
 
@@ -339,5 +339,22 @@ class InputConfigStore {
 
     // Finally, fire notification. This covers row selection too
     NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableChange))
+  }
+
+  // MARK: Input Config File: Load
+  // Triggered any time `currentConfigName` is changed
+  public func loadBindingsFromCurrentConfigFile() {
+    guard let configFilePath = currentConfigFilePath else {
+      Logger.log("Could not find file for current config (\"\(currentConfigName)\"); falling back to default config", level: .error)
+      changeCurrentConfigToDefault()
+      return
+    }
+    Logger.log("Loading bindings config from \"\(configFilePath)\"")
+    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
+      changeCurrentConfigToDefault()
+      return
+    }
+
+    AppInputConfig.inputBindingStore.currenConfigFileDidChange(inputConfigFile)
   }
 }

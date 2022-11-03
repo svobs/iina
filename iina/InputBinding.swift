@@ -47,8 +47,8 @@ class InputBinding: NSObject {
     self.isEnabled = isEnabled
   }
 
-  // Only mpv bindings in the "default" section can be copied
-  var isEditableByUser: Bool {
+  // Only mpv bindings in the "default" section can be modified or deleted
+  var canBeModified: Bool {
     get {
       self.origin == .confFile
     }

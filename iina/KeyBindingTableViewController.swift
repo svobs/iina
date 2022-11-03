@@ -86,7 +86,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
   @objc func tableView(_ tableView: NSTableView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
     var approvedSelectionIndexes = IndexSet()
     for index in proposedSelectionIndexes {
-      if let row = bindingStore.getBindingRow(at: index), row.isEditableByUser {
+      if let row = bindingStore.getBindingRow(at: index), row.canBeModified {
         approvedSelectionIndexes.insert(index)
       }
     }
@@ -116,7 +116,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
 
       case "actionColumn":
         let stringValue = bindingRow.getActionColumnDisplay(raw: isRaw)
-        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin, italic: !bindingRow.isEditableByUser)
+        setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin, italic: !bindingRow.canBeModified)
         return cell
 
       case "statusColumn":
@@ -219,8 +219,12 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     Array(tableView.selectedRowIndexes.compactMap( { bindingStore.getBindingRow(at: $0) }))
   }
 
-  private var selectedEditableRows: [InputBinding] {
-    self.selectedRows.filter({ $0.isEditableByUser })
+  private var selectedCopiableRows: [InputBinding] {
+    self.selectedRows.filter({ $0.canBeCopied })
+  }
+
+  private var selectedModifiableRows: [InputBinding] {
+    self.selectedRows.filter({ $0.canBeModified })
   }
 }
 
@@ -255,7 +259,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let row = bindingStore.getBindingRow(at: rowIndex)
-    if let row = row, row.isEditableByUser {
+    if let row = row, row.canBeModified {
       return row.keyMapping
     }
     return nil
@@ -585,19 +589,19 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // MARK: Cut, copy, paste, delete support.
 
-  // Only selected table items which have `isEditableByUser==true` can be included.
+  // Only selected table items which have `canBeModified==true` can be included.
   // Each menu item should be disabled if it cannot operate on at least one item.
 
   func isCopyEnabled() -> Bool {
-    return configStore.isEditEnabledForCurrentConfig && !selectedEditableRows.isEmpty
+    return !selectedCopiableRows.isEmpty
   }
 
   func isCutEnabled() -> Bool {
-    return isCopyEnabled()
+    return isDeleteEnabled()
   }
 
   func isDeleteEnabled() -> Bool {
-    return isCopyEnabled()
+    return configStore.isEditEnabledForCurrentConfig && !selectedModifiableRows.isEmpty
   }
 
   func isPasteEnabled() -> Bool {
@@ -636,9 +640,9 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     }
     let rows: [InputBinding]
     if let rowsToCopy = rowsToCopy {
-      rows = rowsToCopy.filter({ $0.isEditableByUser })
+      rows = rowsToCopy.filter({ $0.canBeCopied })
     } else {
-      rows = self.selectedEditableRows
+      rows = self.selectedCopiableRows
     }
 
     if rows.isEmpty {
@@ -738,7 +742,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
   // For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func populate(contextMenu: NSMenu, for clickedRow: InputBinding, clickedIndex: Int) {
-    let isRowEditable = clickedRow.isEditableByUser
+    let isRowEditable = clickedRow.canBeModified
     if isRowEditable {
       // Edit
       if isRaw {
