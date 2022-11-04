@@ -839,23 +839,24 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.cut(_:)), target: self.tableView)
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.copy(_:)), target: self.tableView)
     }
-    // Paste is enabled even if no selected rows are editable
+
     let pastableBindings = readBindingsFromClipboard()
     if pastableBindings.isEmpty {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Paste", action: #selector(self.pasteBelow(_:)), enabled: false)
     } else {
+      // Paste is enabled if there are bindings in the clipboard, and doesn't matter if selected rows are editable
       var addedOne = false
       let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
 
-      let firstIndexBeforeSelection = max((tableView.selectedRowIndexes.first ?? 0) - 1, 0)
-      if bindingStore.getClosestValidInsertIndex(from: firstIndexBeforeSelection) <= firstIndexBeforeSelection {
-        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Above", action: #selector(self.pasteAbove(_:)))
+      let firstSelectedIndex = (tableView.selectedRowIndexes.first ?? 0)
+      if bindingStore.getClosestValidInsertIndex(from: firstSelectedIndex) <= firstSelectedIndex {
+        addItem(to: contextMenu, for: clickedRow, withIndex: firstSelectedIndex, title: "\(pasteTitle) Above", action: #selector(self.pasteAbove(_:)))
         addedOne = true
       }
 
-      let firstIndexAfterSelection = (tableView.selectedRowIndexes.last ?? tableView.numberOfRows - 1) + 1
-      if bindingStore.getClosestValidInsertIndex(from: firstIndexAfterSelection) >= firstIndexAfterSelection {
-        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
+      let lastSelectedIndex = tableView.selectedRowIndexes.last ?? tableView.numberOfRows
+      if bindingStore.getClosestValidInsertIndex(from: lastSelectedIndex, isAfterNotAt: true) >= lastSelectedIndex {
+        addItem(to: contextMenu, for: clickedRow, withIndex: lastSelectedIndex, title: "\(pasteTitle) Below", action: #selector(self.pasteBelow(_:)))
         addedOne = true
       }
 
