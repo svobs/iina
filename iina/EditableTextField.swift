@@ -42,10 +42,18 @@ class EditableTextField: NSTextField {
     }
     return true
   }
+
+  override var textColor: NSColor? {
+    didSet {
+      if let cell = self.cell as? EditableTextFieldCell {
+        cell.textColorOrig = textColor
+      }
+    }
+  }
 }
 
 class EditableTextFieldCell: NSTextFieldCell {
-  private var textColorOrig: NSColor? = nil
+  var textColorOrig: NSColor? = nil
 
   // When the background changes (as a result of selection/deselection), change text color appropriately.
   // This is needed to account for custom text coloring.
@@ -60,15 +68,6 @@ class EditableTextFieldCell: NSTextFieldCell {
           fallthrough
         default:
           Logger.log("Unsupported background style: \(backgroundStyle)")
-      }
-    }
-  }
-
-  override var textColor: NSColor? {
-    didSet {
-      // Can get here either from the call above, or when the row is being redrawn
-      if backgroundStyle == .normal {
-        textColorOrig = textColor  // save for later
       }
     }
   }
