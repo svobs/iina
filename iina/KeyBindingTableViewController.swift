@@ -8,10 +8,10 @@
 
 import Foundation
 
-fileprivate let nonConfTextColor = NSColor.systemBlue
-fileprivate let pluginIconColor = NSColor.systemBlue
-fileprivate let libmpvIconColor = NSColor.systemBlue
-fileprivate let filterIconColor = NSColor.systemBlue
+fileprivate let nonConfTextColor = NSColor.linkColor
+fileprivate let pluginIconColor = NSColor.linkColor
+fileprivate let libmpvIconColor = NSColor.linkColor
+fileprivate let filterIconColor = NSColor.linkColor
 
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
@@ -100,6 +100,10 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     guard let bindingRow = bindingStore.getBindingRow(at: row) else {
       return nil
     }
+
+    // TODO
+//    let isRowSelected: Bool = tableView.selectedRowIndexes.contains(row)
+//    imageView.contentTintColor = NSColor.controlTextColor
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -635,9 +639,6 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // If it is not specified, uses the currently selected rows
   // Returns `true` if it copied at least 1 row; `false` if not
   private func copyToClipboard(rowsToCopy: [InputBinding]? = nil) -> Bool {
-    guard configStore.isEditEnabledForCurrentConfig else {
-      return false
-    }
     let rows: [InputBinding]
     if let rowsToCopy = rowsToCopy {
       rows = rowsToCopy.filter({ $0.canBeCopied })
@@ -806,17 +807,15 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(directionLabel)", action: selector)
     }
-
   }
 
-  // For right-click on selected row(s)
+  // For right-click on selected rows
   private func populate(contextMenu: NSMenu, for selectedRowIndexes: IndexSet, clickedIndex: Int, clickedRow: InputBinding) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
       return !bindingStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
     }
-    let modifiableCount = selectedRowsCount - readOnlyCount
 
     if readOnlyCount > 0 {
       let readOnlyDisclaimer: String
@@ -828,6 +827,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       }
       addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: readOnlyDisclaimer)
     }
+    let modifiableCount = tableView.selectedRowIndexes.count - readOnlyCount
 
     // Cut, Copy, Paste, Delete
     if modifiableCount > 0 {
