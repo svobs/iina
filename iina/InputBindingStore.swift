@@ -20,7 +20,14 @@ class InputBindingStore {
   // MARK: State
 
   // The current input config file, loaded into momory
-  private var currentConfigFileData: InputConfigFile? = nil
+  private var currentConfigFile: InputConfigFile? = nil
+
+  private var canModifyCurrentConfig: Bool {
+    if let currentConfigFile = currentConfigFile, !currentConfigFile.isReadOnly {
+      return true
+    }
+    return false
+  }
 
   // The current state of the AppInputConfig on which the state of this table is based.
   // While in almost all cases this should be identical to AppInputConfig.current, it is way simpler and more performant
@@ -109,6 +116,10 @@ class InputBindingStore {
                          afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
+    guard canModifyCurrentConfig else {
+      Logger.log("Aborting: cannot modify current config!", level: .error)
+      return
+    }
 
     if isFiltered() {
       // If a filter is active, disable it. Otherwise the new row may be hidden by the filter, which might confuse the user.
@@ -138,7 +149,11 @@ class InputBindingStore {
   }
 
   func removeBindings(at indexesToRemove: IndexSet) {
-    Logger.log("Removing bindings (\(indexesToRemove))", level: .verbose)
+    Logger.log("Removing bindings (\(indexesToRemove.map{$0}))", level: .verbose)
+    guard canModifyCurrentConfig else {
+      Logger.log("Aborting: cannot modify current config!", level: .error)
+      return
+    }
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
@@ -166,6 +181,10 @@ class InputBindingStore {
 
   func removeBindings(withIDs idsToRemove: [Int]) {
     Logger.log("Removing bindings with IDs (\(idsToRemove))", level: .verbose)
+    guard canModifyCurrentConfig else {
+      Logger.log("Aborting: cannot modify current config!", level: .error)
+      return
+    }
 
     // If there is an active filter, the indexes reflect filtered rows.
     // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
@@ -192,6 +211,10 @@ class InputBindingStore {
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(mapping)", level: .verbose)
+    guard canModifyCurrentConfig else {
+      Logger.log("Aborting: cannot modify current config!", level: .error)
+      return
+    }
 
     guard let existingRow = getBindingRow(at: index), existingRow.canBeModified else {
       Logger.log("Cannot update binding at index \(index); aborting", level: .error)
@@ -441,7 +464,7 @@ class InputBindingStore {
   // MARK: Config File load/save
 
   func currenConfigFileDidChange(_ inputConfigFile: InputConfigFile) {
-    currentConfigFileData = inputConfigFile
+    currentConfigFile = inputConfigFile
 
     let defaultSectionBindings = inputConfigFile.parseBindings()
     // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
@@ -457,7 +480,7 @@ class InputBindingStore {
     }
     Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
-      guard let currentConfigData = self.currentConfigFileData else {
+      guard let currentConfigData = self.currentConfigFile else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }

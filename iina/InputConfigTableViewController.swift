@@ -335,8 +335,11 @@ extension InputConfigTableViewController: NSTableViewDataSource {
   }
 
   private func dropBindingsIntoUserConfFile(_ defaultSectionMappings: [KeyMapping], targetConfigName: String) {
+    let isReadOnly = tableStore.isDefaultConfig(targetConfigName)
+    guard !isReadOnly else { return }
+
     guard let configFilePath = requireFilePath(forConfig: targetConfigName),
-          let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
+          let inputConfigFile = InputConfigFile.loadFile(at: configFilePath, isReadOnly: isReadOnly) else {
       // Error. A message has already been logged and displayed to user.
       return
     }

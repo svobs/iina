@@ -341,7 +341,7 @@ class InputConfigStore {
     NotificationCenter.default.post(Notification(name: .iinaInputConfigTableShouldUpdate, object: configTableChange))
   }
 
-  // MARK: Input Config File: Load
+  // MARK: Config File Load
   // Triggered any time `currentConfigName` is changed
   public func loadBindingsFromCurrentConfigFile() {
     guard let configFilePath = currentConfigFilePath else {
@@ -350,7 +350,7 @@ class InputConfigStore {
       return
     }
     Logger.log("Loading bindings config from \"\(configFilePath)\"")
-    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath) else {
+    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath, isReadOnly: !isEditEnabledForCurrentConfig) else {
       changeCurrentConfigToDefault()
       return
     }

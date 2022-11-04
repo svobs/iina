@@ -101,10 +101,6 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
       return nil
     }
 
-    // TODO
-//    let isRowSelected: Bool = tableView.selectedRowIndexes.contains(row)
-//    imageView.contentTintColor = NSColor.controlTextColor
-
     guard let identifier = tableColumn?.identifier else { return nil }
 
     guard let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView else {
@@ -580,6 +576,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func removeSelectedBindings() {
+    Logger.log("Removing selected bindings", level: .verbose)
     bindingStore.removeBindings(at: tableView.selectedRowIndexes)
   }
 
@@ -713,8 +710,8 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     menu.addItem(item)
   }
 
-  private func addItalicDisabledItem(to menu: NSMenu, for row: InputBinding, withIndex rowIndex: Int, title: String) {
-    let item = BindingMenuItem(row, rowIndex: rowIndex, title: title, action: nil, target: self)
+  private func addItalicDisabledItem(to menu: NSMenu, title: String) {
+    let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
     item.isEnabled = false
 
     let attrString = NSMutableAttributedString(string: title)
@@ -724,18 +721,17 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     menu.addItem(item)
   }
 
+  private func addReadOnlyConfigMenuItem(to contextMenu: NSMenu) {
+    let title = "Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config"
+    addItalicDisabledItem(to: contextMenu, title: title)
+  }
+
   func menuNeedsUpdate(_ contextMenu: NSMenu) {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
     let clickedIndex = tableView.clickedRow
     guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow) else { return }
-
-    guard configStore.isEditEnabledForCurrentConfig else {
-      let title = "Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config"
-      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
-      return
-    }
 
     if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedIndex) {
       populate(contextMenu: contextMenu, for: tableView.selectedRowIndexes, clickedIndex: clickedIndex, clickedRow: clickedRow)
@@ -744,18 +740,14 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  // For right-click on a single row. This may be selected, if it is the only row in the selection.
+  // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func populate(contextMenu: NSMenu, for clickedRow: InputBinding, clickedIndex: Int) {
     let isRowEditable = clickedRow.canBeModified
-    if isRowEditable {
-      // Edit
-      if isRaw {
-        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Key", action: #selector(self.editKeyColumn(_:)))
-        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Action", action: #selector(self.editActionColumn(_:)))
-      } else {
-        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Row...", action: #selector(self.editRow(_:)))
-      }
-    } else {
+
+
+    if !configStore.isEditEnabledForCurrentConfig {
+      addReadOnlyConfigMenuItem(to: contextMenu)
+    } else if !isRowEditable {
       let culprit: String
       switch clickedRow.origin {
         case .iinaPlugin:
@@ -770,8 +762,15 @@ extension KeyBindingTableViewController: NSMenuDelegate {
           Logger.log("Unrecognized binding origin for rowIndex \(clickedIndex): \(clickedRow.origin)", level: .error)
           culprit = "<unknown>"
       }
-      let title = "Cannot modify binding: it is owned by \(culprit)"
-      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title)
+      addItalicDisabledItem(to: contextMenu, title: "Cannot modify binding: it is owned by \(culprit)")
+    } else {
+      // Edit options
+      if isRaw {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Key", action: #selector(self.editKeyColumn(_:)))
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Action", action: #selector(self.editActionColumn(_:)))
+      } else {
+        addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Edit Row...", action: #selector(self.editRow(_:)))
+      }
     }
 
     // ---
@@ -779,7 +778,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
     // Cut, Copy, Paste, Delete
     addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut ", action: #selector(self.cutRow(_:)), enabled: isRowEditable)
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy ", action: #selector(self.copyRow(_:)), enabled: isRowEditable)
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy ", action: #selector(self.copyRow(_:)), enabled: clickedRow.canBeCopied)
     let pastableBindings = readBindingsFromClipboard()
     let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
     if pastableBindings.isEmpty {
@@ -812,36 +811,61 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  // For right-click on selected rows
+  // MULTIPLE: For right-click on selected rows
   private func populate(contextMenu: NSMenu, for selectedRowIndexes: IndexSet, clickedIndex: Int, clickedRow: InputBinding) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
-    let readOnlyCount = tableView.selectedRowIndexes.reduce(0) { readOnlyCount, rowIndex in
-      return !bindingStore.isEditEnabledForBindingRow(rowIndex) ? readOnlyCount + 1 : readOnlyCount
-    }
-
-    if readOnlyCount > 0 {
-      let readOnlyDisclaimer: String
-
-      if readOnlyCount == selectedRowsCount {
-        readOnlyDisclaimer = "\(readOnlyCount) items are read-only"
-      } else {
-        readOnlyDisclaimer = "\(readOnlyCount) of \(selectedRowsCount) items are read-only"
+    var modifiableCount = 0
+    var copyableCount = 0
+    for rowIndex in tableView.selectedRowIndexes {
+      if let bindingRow = bindingStore.getBindingRow(at: rowIndex) {
+        if bindingRow.canBeCopied {
+          copyableCount += 1
+        }
+        if bindingRow.canBeModified {
+          modifiableCount += 1
+        }
       }
-      addItalicDisabledItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: readOnlyDisclaimer)
     }
-    let modifiableCount = tableView.selectedRowIndexes.count - readOnlyCount
+
+    if !configStore.isEditEnabledForCurrentConfig {
+      modifiableCount = 0
+      addReadOnlyConfigMenuItem(to: contextMenu)
+    } else {
+      let readOnlyCount = tableView.selectedRowIndexes.count - modifiableCount
+      if readOnlyCount > 0 {
+        let readOnlyDisclaimer: String
+        if readOnlyCount == selectedRowsCount {
+          readOnlyDisclaimer = "\(readOnlyCount) bindings are read-only"
+        } else {
+          readOnlyDisclaimer = "\(readOnlyCount) of \(selectedRowsCount) bindings are read-only"
+        }
+        addItalicDisabledItem(to: contextMenu, title: readOnlyDisclaimer)
+      } else {
+        addItalicDisabledItem(to: contextMenu, title: "\(selectedRowsCount) bindings selected")
+      }
+    }
+
+    // ---
+    contextMenu.addItem(NSMenuItem.separator())
 
     // Cut, Copy, Paste, Delete
+
+    var title = "Cut"
     if modifiableCount > 0 {
-      // By setting the target to `tableView`, AppKit will know to call its `validateUserInterfaceItem()`
-      // and will enable/disable each action appropriately
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Cut \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.cut(_:)), target: self.tableView)
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Copy \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.copy(_:)), target: self.tableView)
+      title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
+    // By setting target:`tableView`, AppKit, will call `tableView.validateUserInterfaceItem()` to enable/disable each action appropriately
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title, action: #selector(self.tableView.cut(_:)), target: self.tableView)
+
+    title = "Copy"
+    if copyableCount > 0 {
+      title += " \(copyableCount) \(Constants.String.keyBinding)s"
+    }
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title, action: #selector(self.tableView.copy(_:)), target: self.tableView)
 
     let pastableBindings = readBindingsFromClipboard()
-    if pastableBindings.isEmpty {
+    if pastableBindings.isEmpty || !configStore.isEditEnabledForCurrentConfig {
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Paste", action: #selector(self.pasteBelow(_:)), enabled: false)
     } else {
       // Paste is enabled if there are bindings in the clipboard, and doesn't matter if selected rows are editable
@@ -864,9 +888,12 @@ extension KeyBindingTableViewController: NSMenuDelegate {
         addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle)", action: #selector(self.pasteBelow(_:)))
       }
     }
+
+    title = "Delete"
     if modifiableCount > 0 {
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete \(modifiableCount) \(Constants.String.keyBinding)s", action: #selector(self.tableView.delete(_:)), target: self.tableView)
+      title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title, action: #selector(self.tableView.delete(_:)), target: self.tableView)
   }
 
   private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
