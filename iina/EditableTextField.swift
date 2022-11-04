@@ -52,19 +52,23 @@ class EditableTextFieldCell: NSTextFieldCell {
   override var backgroundStyle: NSView.BackgroundStyle {
     didSet {
       switch backgroundStyle {
-        case .normal: // Deselected
-          if let textColorOrig = textColorOrig, textColorOrig != .controlTextColor {
-            textColor = textColorOrig
-          }
+        case .normal:      // Deselected
+          textColor = textColorOrig
         case .emphasized:  // AKA selected
-          if textColorOrig == nil {
-            textColorOrig = textColor  // save for later
-          }
-          textColor = .controlTextColor
+          textColor = nil  // Use standard color
         case .raised, .lowered:
           fallthrough
         default:
           Logger.log("Unsupported background style: \(backgroundStyle)")
+      }
+    }
+  }
+
+  override var textColor: NSColor? {
+    didSet {
+      // Can get here either from the call above, or when the row is being redrawn
+      if backgroundStyle == .normal {
+        textColorOrig = textColor  // save for later
       }
     }
   }
