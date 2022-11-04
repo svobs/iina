@@ -149,7 +149,7 @@ class EditableTableView: NSTableView {
     }
 
     guard let view = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: true),
-       let cellView = view as? NSTableCellView,
+          let cellView = view as? NSTableCellView,
           let editableTextField = cellView.textField as? EditableTextField else {
       return
     }
@@ -212,5 +212,4 @@ class EditableTableView: NSTableView {
     Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     tableChange.execute(on: self)
   }
-
 }

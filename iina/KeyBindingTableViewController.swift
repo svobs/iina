@@ -184,15 +184,18 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
                        italic: Bool = false) {
     let attrString = NSMutableAttributedString(string: stringValue)
 
+    let fgColor: NSColor
     if let textColor = textColor {
-      textField.textColor = textColor
+      // If using custom text colors, need to make sure `EditableTextFieldCell` is specified
+      // as the class of the child cell in Interface Builder.
+      fgColor = textColor
     } else {
-      textField.textColor = NSColor.controlTextColor
+      fgColor = NSColor.controlTextColor
     }
+    textField.textColor = fgColor
 
     if strikethrough {
-      let strikethroughAttr = [NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue]
-      attrString.addAttributes(strikethroughAttr, range: NSRange(location: 0, length: attrString.length))
+      attrString.addAttrib(NSAttributedString.Key.strikethroughStyle, NSUnderlineStyle.single.rawValue)
     }
 
     if italic {
@@ -203,7 +206,7 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
 
   private func addItalic(to attrString: NSMutableAttributedString, from font: NSFont?) {
     if let italicFont = makeItalic(font) {
-      attrString.addAttributes([NSAttributedString.Key.font: italicFont], range: NSRange(location: 0, length: attrString.length))
+      attrString.addAttrib(NSAttributedString.Key.font, italicFont)
     }
   }
 

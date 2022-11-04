@@ -43,3 +43,29 @@ class EditableTextField: NSTextField {
     return true
   }
 }
+
+class EditableTextFieldCell: NSTextFieldCell {
+  private var textColorOrig: NSColor? = nil
+
+  // When the background changes (as a result of selection/deselection), change text color appropriately.
+  // This is needed to account for custom text coloring.
+  override var backgroundStyle: NSView.BackgroundStyle {
+    didSet {
+      switch backgroundStyle {
+        case .normal: // Deselected
+          if let textColorOrig = textColorOrig, textColorOrig != .controlTextColor {
+            textColor = textColorOrig
+          }
+        case .emphasized:  // AKA selected
+          if textColorOrig == nil {
+            textColorOrig = textColor  // save for later
+          }
+          textColor = .controlTextColor
+        case .raised, .lowered:
+          fallthrough
+        default:
+          Logger.log("Unsupported background style: \(backgroundStyle)")
+      }
+    }
+  }
+}
