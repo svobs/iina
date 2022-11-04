@@ -298,7 +298,7 @@
                                         </textFieldCell>
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                         <prototypeCellViews>
-                                            <tableCellView id="8QN-S3-Agb" userLabel="Name TableCellView" customClass="EditableTableCellView" customModule="IINA">
+                                            <tableCellView id="8QN-S3-Agb" userLabel="Name TableCellView">
                                                 <rect key="frame" x="1" y="1" width="156" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
