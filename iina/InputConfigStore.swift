@@ -169,11 +169,11 @@ class InputConfigStore {
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
   // Posts update notification
-  func addUserConfig(configName: String, filePath: String) {
+  func addUserConfig(configName: String, filePath: String, completionHandler: TableChange.CompletionHandler? = nil) {
     Logger.log("Adding user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName)
+    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, completionHandler: completionHandler)
   }
 
   func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {

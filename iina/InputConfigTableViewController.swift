@@ -10,6 +10,10 @@ import Foundation
 import AppKit
 import Cocoa
 
+fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
+  pattern: #"(.*)(?:\scopy(?: (\d+))?)"#, options: []
+)
+
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
@@ -434,7 +438,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.showInFinderFromMenu(_:)), target: self))
 
     // Duplicate
-    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Duplicate...", action: #selector(self.duplicateConfigFromMenu(_:)), target: self))
+    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Duplicate", action: #selector(self.duplicateConfigFromMenu(_:)), target: self))
 
     // ---
     menu.addItem(NSMenuItem.separator())
@@ -515,29 +519,118 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     guard let currFilePath = self.requireFilePath(forConfig: configName) else {
       return
     }
-    
-    // prompt
-    Utility.quickPromptPanel("config.duplicate", sheetWindow: tableView.window) { newName in
-      guard !newName.isEmpty else {
-        Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
-        return
+
+    if enableInlineCreate {
+      // Find a new name for the duplicate, and immediately open an editor for it to change the name.
+      // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
+      if let (newConfigName, newFilePath) = self.duplicateCurrentConfFile() {
+        self.tableStore.addUserConfig(configName: newConfigName, filePath: newFilePath, completionHandler: { tableChange in
+          if let selectedRowIndex = tableChange.newSelectedRows?.first {
+            self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
+          }
+        })
       }
-      guard !self.tableStore.configTableRows.contains(newName) else {
-        Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
-        return
+    } else {
+      // prompt
+      Utility.quickPromptPanel("config.duplicate", sheetWindow: tableView.window) { newName in
+        guard !newName.isEmpty else {
+          Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
+          return
+        }
+        guard !self.tableStore.configTableRows.contains(newName) else {
+          Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
+          return
+        }
+
+        self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
+          // - copy file
+          do {
+            try FileManager.default.copyItem(atPath: currFilePath, toPath: newFilePath)
+            return true
+          } catch let error {
+            Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+            return false
+          }
+        })
+      }
+    }
+  }
+
+  private func duplicateCurrentConfFile() -> (String, String)? {
+    guard let filePath = tableStore.currentConfigFilePath else { return nil }
+
+    guard let (newConfigName, newFilePath) = findNewNameForDuplicate(originalName: tableStore.currentConfigName) else { return nil }
+
+    do {
+      Logger.log("Duplicating file: \"\(filePath)\" -> \"\(newFilePath)\"")
+      try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+      return (newConfigName, newFilePath)
+    } catch let error {
+      DispatchQueue.main.async {
+        Logger.log("Failed to create duplicate: \"\(filePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
+        Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
+      }
+      return nil
+    }
+  }
+
+  // Attempt to match Finder's algorithm for file name of copy
+  private func findNewNameForDuplicate(originalName: String) -> (String, String)? {
+    // Strip any copy suffix off of it. Start with no copy suffix and check upwards to see if there's a gap
+    var (newConfigName, _) = parseBaseAndCopyCount(from: originalName)
+
+    while true {
+      guard let nextName = incrementCopyName(configName: newConfigName) else {
+        return nil
+      }
+      Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
+      newConfigName = nextName
+
+      if tableStore.getFilePath(forConfig: newConfigName) != nil {
+        // Entry with same name already exists in config list
+        continue
       }
 
-      self.makeNewConfFile(newName, doAction: { (newFilePath: String) in
-        // - copy file
-        do {
-          try FileManager.default.copyItem(atPath: currFilePath, toPath: newFilePath)
-          return true
-        } catch let error {
-          Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
-          return false
-        }
-      })
+      let newFilePath =  Utility.buildConfigFilePath(for: newConfigName)
+      if FileManager.default.fileExists(atPath: newFilePath) {
+        // File with same name already exists
+        continue
+      }
+
+      return (newConfigName, newFilePath)
     }
+  }
+
+  private func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
+    return regex.firstMatch(in: msg, options: [], range: NSRange(location: 0, length: msg.count))
+  }
+
+  private func parseBaseAndCopyCount(from name: String) -> (String, Int) {
+    if let match = matchRegex(COPY_COUNT_REGEX, name) {
+      if let baseNameRange = Range(match.range(at: 1), in: name) {
+        // Found
+        let copyCount: Int
+        if let copyCountRange = Range(match.range(at: 2), in: name) {
+          copyCount = Int(String(name[copyCountRange])) ?? 1
+        } else {
+          copyCount = 1   // first "copy" has implicit number
+        }
+        let baseName = String(name[baseNameRange])
+        return (baseName, copyCount)
+      }
+      Logger.log("Failed to parse name: \"\(name)\"", level: .error)
+    }
+    // No match
+    return (name, 0)
+  }
+
+  private func incrementCopyName(configName: String) -> String? {
+    // Check for copy count number first
+    let (baseName, copyCount) = parseBaseAndCopyCount(from: configName)
+    if copyCount == 0 {
+      return "\(baseName) copy"
+    }
+    return "\(baseName) copy \(copyCount + 1)"
   }
 
   private func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
