@@ -16,6 +16,8 @@ fileprivate let SideLeftTag = 0
 fileprivate let SideRightTag = 1
 fileprivate let SideTopTag = 0
 fileprivate let SideBottomTag = 1
+fileprivate let ICON_WIDTH: CGFloat = 22
+fileprivate let ICON_HEIGHT: CGFloat = 22
 
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
@@ -168,7 +170,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let button = NSImageView()
       button.image = buttonType.image()
       button.translatesAutoresizingMaskIntoConstraints = false
-      Utility.quickConstraints(["H:[btn(22)]", "V:[btn(22)]"], ["btn": button])
+      Utility.quickConstraints(["H:[btn(\(ICON_WIDTH))]", "V:[btn(\(ICON_HEIGHT))]"], ["btn": button])
       oscToolbarStackView.addView(button, in: .trailing)
     }
   }
