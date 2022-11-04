@@ -793,21 +793,26 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       let selector = isAfterNotAt ? #selector(self.pasteBelow(_:)) : #selector(self.pasteAbove(_:))
       addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle) \(directionLabel)", action: selector)
     }
-    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Delete ", action: #selector(self.removeRow(_:)), enabled: isRowEditable)
+
+    // ---
+    contextMenu.addItem(NSMenuItem.separator())
+
+    let title = isRowEditable ? "Delete Binding" : "Delete"
+    addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: title, action: #selector(self.removeRow(_:)), enabled: isRowEditable)
 
     // ---
     contextMenu.addItem(NSMenuItem.separator())
 
     // Add New: follow same logic as Paste
     if isRowEditable {
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Insert New \(Constants.String.keyBinding) Above", action: #selector(self.addNewRowAbove(_:)))
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Insert New \(Constants.String.keyBinding) Below", action: #selector(self.addNewRowBelow(_:)))
     } else {
       // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
       let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: clickedIndex) > clickedIndex
       let directionLabel = isAfterNotAt ? "Below" : "Above"
       let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
-      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Add New \(Constants.String.keyBinding) \(directionLabel)", action: selector)
+      addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "Insert New \(Constants.String.keyBinding) \(directionLabel)", action: selector)
     }
   }
 
@@ -828,6 +833,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       }
     }
 
+    // Add disabled italicized message if not all can be operated on
     if !configStore.isEditEnabledForCurrentConfig {
       modifiableCount = 0
       addReadOnlyConfigMenuItem(to: contextMenu)
@@ -841,8 +847,6 @@ extension KeyBindingTableViewController: NSMenuDelegate {
           readOnlyDisclaimer = "\(readOnlyCount) of \(selectedRowsCount) bindings are read-only"
         }
         addItalicDisabledItem(to: contextMenu, title: readOnlyDisclaimer)
-      } else {
-        addItalicDisabledItem(to: contextMenu, title: "\(selectedRowsCount) bindings selected")
       }
     }
 
@@ -888,6 +892,9 @@ extension KeyBindingTableViewController: NSMenuDelegate {
         addItem(to: contextMenu, for: clickedRow, withIndex: clickedIndex, title: "\(pasteTitle)", action: #selector(self.pasteBelow(_:)))
       }
     }
+
+    // ---
+    contextMenu.addItem(NSMenuItem.separator())
 
     title = "Delete"
     if modifiableCount > 0 {
