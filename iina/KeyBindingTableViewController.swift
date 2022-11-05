@@ -17,11 +17,14 @@ fileprivate let libmpvIconColor: NSColor = .controlAccentColor
 @available(macOS 10.14, *)
 fileprivate let filterIconColor: NSColor = .controlAccentColor
 
+fileprivate let COLUMN_INDEX_KEY = 0
+fileprivate let COLUMN_INDEX_ACTION = 2
+fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .list
+fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
+
+fileprivate let BACKSPACE_KEY = String(format: "%c", 0x08)
+
 class KeyBindingTableViewController: NSObject {
-  private let COLUMN_INDEX_KEY = 0
-  private let COLUMN_INDEX_ACTION = 2
-  private let DRAGGING_FORMATION: NSDraggingFormation = .list
-  private let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
   private unowned var tableView: EditableTableView!
   private var configStore: InputConfigStore {
@@ -677,107 +680,30 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
 // MARK: NSMenuDelegate
 
-class ContextMenuBuilder {
-  struct ItemPrep {
-    let target: AnyObject?
-    let key: String?
-    let keyMods: NSEvent.ModifierFlags?
-  }
-  let contextMenu: NSMenu
-  let clickedRow: InputBinding
-  let clickedRowIndex: Int
-  let target: AnyObject?
-
-  private var prep: ItemPrep? = nil
-
-  var currentMenu: NSMenu? = nil
-  var menu: NSMenu {
-    if let currentMenu = currentMenu {
-      return currentMenu
-    }
-    return contextMenu
-  }
-
-  public init(_ contextMenu: NSMenu, clickedRow: InputBinding, clickedRowIndex: Int, target: AnyObject?) {
-    self.contextMenu = contextMenu
-    self.clickedRow = clickedRow
-    self.clickedRowIndex = clickedRowIndex
-    self.target = target
-  }
-
-  func addItalicDisabledItem(_ title: String) {
-    let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-    item.isEnabled = false
-
-    let attrString = NSMutableAttributedString(string: title)
-    attrString.addItalic(from: menu.font)
-    item.attributedTitle = attrString
-
-    menu.addItem(item)
-  }
-
-  func addSeparator() {
-    menu.addItem(NSMenuItem.separator())
-  }
-
-  @discardableResult
-  func prepItem(target targetOverride: AnyObject? = nil, key: String? = nil, keyMods: NSEvent.ModifierFlags? = nil) -> ItemPrep {
-    let prep = ItemPrep(target: targetOverride, key: key, keyMods: keyMods)
-    self.prep = prep
-    return prep
-  }
-
-  @discardableResult
-  func addItem(_ title: String, _ action: Selector? = nil, target targetOverride: AnyObject? = nil, enabled: Bool = true,
-               rowIndex rowIndexOverride: Int? = nil, key: String? = nil, keyMods: NSEvent.ModifierFlags? = nil,
-               _ prepOverride: ItemPrep? = nil) -> NSMenuItem {
-
-    // Favor most recent and most specific values supplied
-    let rowIndex = rowIndexOverride ?? clickedRowIndex
-    let finalKey = key ?? prepOverride?.key ?? prep?.key ?? ""
-    // Important: if not enabled, do not set action or target, or enabled status will be overridden
-    let finalAction = enabled ? action: nil
-    let item = self.buildItem(for: clickedRow, withIndex: rowIndex, title: title, action: finalAction, keyEquivalent: finalKey)
-    menu.addItem(item)
-
-    if enabled {
-      item.target = targetOverride ?? prepOverride?.target ?? prep?.target ?? self.target
-    }
-    if let finalKeyMods = keyMods ?? prepOverride?.keyMods ?? prep?.keyMods {
-      item.keyEquivalentModifierMask = finalKeyMods
-    }
-    item.isEnabled = enabled
-    prep = nil
-
-    return item
-  }
-
-  func buildItem(for row: InputBinding, withIndex rowIndex: Int, title: String, action: Selector?, target: AnyObject? = nil,
-                 keyEquivalent: String = "", keyEquivalentModifierMask: NSEvent.ModifierFlags? = nil) -> NSMenuItem {
-    // If we supply a non-nil action, AppKit will ignore the enabled status and will check `validateUserInterfaceItem()`
-    // (which we haven't coded and would rather avoid doing so), so just set it to nil and avoid the headache.
-    return BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action)
-  }
-}
-
-fileprivate class BindingMenuItem: NSMenuItem {
-  let row: InputBinding
-  let rowIndex: Int
-
-  public init(_ row: InputBinding, rowIndex: Int, title: String, action selector: Selector?, keyEquivalent: String = "") {
-    self.row = row
-    self.rowIndex = rowIndex
-    super.init(title: title, action: selector, keyEquivalent: keyEquivalent)
-  }
-
-  required init(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-}
-
 extension KeyBindingTableViewController: NSMenuDelegate {
 
-  private func addReadOnlyConfigMenuItem(_ bdr: ContextMenuBuilder) {
+  fileprivate class BindingMenuItem: NSMenuItem {
+    let row: InputBinding
+    let rowIndex: Int
+
+    public init(_ row: InputBinding, rowIndex: Int, title: String, action selector: Selector?, keyEquivalent: String = "") {
+      self.row = row
+      self.rowIndex = rowIndex
+      super.init(title: title, action: selector, keyEquivalent: keyEquivalent)
+    }
+
+    required init(coder: NSCoder) {
+      fatalError("init(coder:) has not been implemented")
+    }
+  }
+
+  fileprivate class BindingsMenuBuilder: ContextMenuBuilder<InputBinding> {
+    override func buildItem(for row: InputBinding, withIndex rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
+      return BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, keyEquivalent: keyEquivalent)
+    }
+  }
+
+  private func addReadOnlyConfigMenuItem(_ bdr: BindingsMenuBuilder) {
     bdr.addItalicDisabledItem("Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config")
   }
 
@@ -787,7 +713,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
     let clickedIndex = tableView.clickedRow
     guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow) else { return }
-    let bdr = ContextMenuBuilder(contextMenu, clickedRow: clickedRow, clickedRowIndex: tableView.clickedRow, target: self)
+    let bdr = BindingsMenuBuilder(contextMenu, clickedRow: clickedRow, clickedRowIndex: tableView.clickedRow, target: self)
 
     if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedIndex) {
       populate(bdr, for: tableView.selectedRowIndexes)
@@ -797,7 +723,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
-  private func populateForSingleRow(_ bdr: ContextMenuBuilder) {
+  private func populateForSingleRow(_ bdr: BindingsMenuBuilder) {
     let isRowEditable = configStore.isEditEnabledForCurrentConfig && bdr.clickedRow.canBeModified
 
     if !configStore.isEditEnabledForCurrentConfig {
@@ -852,7 +778,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // ---
     bdr.addSeparator()
 
-    bdr.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable)
+    bdr.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable, key: BACKSPACE_KEY, keyMods: NSEvent.ModifierFlags(rawValue: 0))
 
     // ---
     bdr.addSeparator()
@@ -873,7 +799,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   // MULTIPLE: For right-click on selected rows
-  private func populate(_ bdr: ContextMenuBuilder, for selectedRowIndexes: IndexSet) {
+  private func populate(_ bdr: BindingsMenuBuilder, for selectedRowIndexes: IndexSet) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     var modifiableCount = 0
@@ -950,7 +876,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     if modifiableCount > 0 {
       title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
-    bdr.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView)
+    let item = bdr.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView, key: BACKSPACE_KEY, keyMods: NSEvent.ModifierFlags(rawValue: 0))
   }
 
   private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
