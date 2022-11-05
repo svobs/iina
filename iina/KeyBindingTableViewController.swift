@@ -52,8 +52,7 @@ class KeyBindingTableViewController: NSObject {
     tableView.registerTableChangeObserver(forName: .iinaKeyBindingsTableShouldUpdate)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
-      // Default to "move":
-      tableView.registerForDraggedTypes([.string, .iinaKeyMapping])
+      tableView.registerForDraggedTypes([.iinaKeyMapping])
       tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
@@ -694,10 +693,14 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     let row: InputBinding
     let rowIndex: Int
 
-    public init(_ row: InputBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?, enabled: Bool = true) {
+    public init(_ row: InputBinding, rowIndex: Int, title: String, action selector: Selector?, target: AnyObject?, enabled: Bool = true,
+                keyEquivalent: String = "", keyEquivalentModifierMask: NSEvent.ModifierFlags? = nil) {
       self.row = row
       self.rowIndex = rowIndex
-      super.init(title: title, action: selector, keyEquivalent: "")
+      super.init(title: title, action: selector, keyEquivalent: keyEquivalent)
+      if let keyEquivalentModifierMask = keyEquivalentModifierMask {
+        self.keyEquivalentModifierMask = keyEquivalentModifierMask
+      }
       self.target = target
       self.isEnabled = enabled
     }
@@ -754,7 +757,6 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func populate(contextMenu: NSMenu, for clickedRow: InputBinding, clickedIndex: Int) {
     let isRowEditable = clickedRow.canBeModified
-
 
     if !configStore.isEditEnabledForCurrentConfig {
       addReadOnlyConfigMenuItem(to: contextMenu)

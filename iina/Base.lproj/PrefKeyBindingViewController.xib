@@ -403,8 +403,8 @@
                                 </connections>
                             </button>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="5WK-s3-J9x">
-                                <rect key="frame" x="120" y="0.0" width="54" height="20"/>
-                                <buttonCell key="cell" type="square" title="Duplicate…" bezelStyle="shadowlessSquare" alignment="center" inset="2" id="gpZ-Rh-DMn">
+                                <rect key="frame" x="128" y="0.0" width="46" height="20"/>
+                                <buttonCell key="cell" type="square" title="Duplicate" bezelStyle="shadowlessSquare" alignment="center" inset="2" id="gpZ-Rh-DMn">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="label" size="9"/>
                                 </buttonCell>
@@ -413,7 +413,7 @@
                                 </connections>
                             </button>
                             <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="nTU-Bf-Utf">
-                                <rect key="frame" x="113" y="0.0" width="5" height="20"/>
+                                <rect key="frame" x="121" y="0.0" width="5" height="20"/>
                             </box>
                         </subviews>
                         <constraints>
