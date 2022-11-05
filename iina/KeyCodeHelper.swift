@@ -10,6 +10,12 @@ import Foundation
 import Carbon
 
 class KeyCodeHelper {
+  class KeyEquivalents { // MacOS
+    static let BACKSPACE = String(Character(UnicodeScalar(NSBackspaceCharacter)!))
+    static let DEL = String(Character(UnicodeScalar(NSDeleteCharacter)!))
+    static let ENTER = String(Character(UnicodeScalar(NSEnterCharacter)!))
+    static let RETURN = String(Character(UnicodeScalar(NSNewlineCharacter)!))
+  }
 
   // mpv modifiers in normal form:
   static let CTRL_KEY = "Ctrl"

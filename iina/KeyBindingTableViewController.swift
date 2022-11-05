@@ -22,8 +22,6 @@ fileprivate let COLUMN_INDEX_ACTION = 2
 fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .list
 fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
-fileprivate let BACKSPACE_KEY = String(format: "%c", 0x08)
-
 class KeyBindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
@@ -747,10 +745,10 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     } else {
       // Edit options
       if isRaw {
-        bdr.addItem("Edit Key", #selector(self.editKeyColumn(_:)))
+        bdr.addItem("Edit Key", #selector(self.editKeyColumn(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
         bdr.addItem("Edit Action", #selector(self.editActionColumn(_:)))
       } else {
-        bdr.addItem("Edit Row...", #selector(self.editRow(_:)))
+        bdr.addItem("Edit Row...", #selector(self.editRow(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
       }
     }
 
@@ -778,7 +776,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // ---
     bdr.addSeparator()
 
-    bdr.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable, key: BACKSPACE_KEY, keyMods: NSEvent.ModifierFlags(rawValue: 0))
+    bdr.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
 
     // ---
     bdr.addSeparator()
@@ -876,7 +874,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     if modifiableCount > 0 {
       title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
-    let item = bdr.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView, key: BACKSPACE_KEY, keyMods: NSEvent.ModifierFlags(rawValue: 0))
+    let item = bdr.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
   }
 
   private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
