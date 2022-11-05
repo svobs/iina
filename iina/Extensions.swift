@@ -336,6 +336,20 @@ extension NSMutableAttributedString {
   func addAttrib(_ key: NSAttributedString.Key, _ value: Any) {
     self.addAttributes([key: value], range: NSRange(location: 0, length: self.length))
   }
+
+  func addItalic(from font: NSFont?) {
+    if let italicFont = makeItalic(font) {
+      self.addAttrib(NSAttributedString.Key.font, italicFont)
+    }
+  }
+
+  private func makeItalic(_ font: NSFont?) -> NSFont? {
+    if let font = font {
+      let italicDescriptor: NSFontDescriptor = font.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+      return NSFont(descriptor: italicDescriptor, size: 0)
+    }
+    return nil
+  }
 }
 
 

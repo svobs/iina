@@ -45,7 +45,11 @@ class InputConfigTableViewController: NSObject {
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
-      tableView.registerForDraggedTypes([.fileURL, .string, .iinaKeyMapping])
+      var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.fileURL, .iinaKeyMapping]
+      if Preference.bool(for: .acceptRawTextAsKeyBindings) {
+        acceptableDraggedTypes.append(.string)
+      }
+      tableView.registerForDraggedTypes(acceptableDraggedTypes)
       tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }

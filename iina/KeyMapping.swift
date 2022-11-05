@@ -176,7 +176,7 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
     }
 
     // Next looks for strings (if currently allowed)
-    if Preference.bool(for: .acceptRawTextDragsAsKeyBindings) {
+    if Preference.bool(for: .acceptRawTextAsKeyBindings) {
       return deserializeText(from: pasteboard)
     }
     return []

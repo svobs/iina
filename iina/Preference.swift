@@ -276,7 +276,7 @@ struct Preference {
 
     /* If true, a selection of raw text can be dragged from an input config file and dropped as a list of input bindings wherever input bindings
      can be dropped. */
-    static let acceptRawTextDragsAsKeyBindings = Key("acceptRawTextDragsAsKeyBindings")
+    static let acceptRawTextAsKeyBindings = Key("acceptRawTextAsKeyBindings")
 
     /* If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
      When this pref is `true`:
@@ -817,7 +817,7 @@ struct Preference {
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .logKeyBindingsRebuild: false,
     .displayKeyBindingRawValues: false,
-    .acceptRawTextDragsAsKeyBindings: true,
+    .acceptRawTextAsKeyBindings: false,
     .tableEditKeyNavContinuesBetweenRows: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
