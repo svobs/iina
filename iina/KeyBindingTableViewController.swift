@@ -798,7 +798,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func populateForSingleRow(_ bdr: ContextMenuBuilder) {
-    let isRowEditable = bdr.clickedRow.canBeModified
+    let isRowEditable = configStore.isEditEnabledForCurrentConfig && bdr.clickedRow.canBeModified
 
     if !configStore.isEditEnabledForCurrentConfig {
       addReadOnlyConfigMenuItem(bdr)
@@ -836,7 +836,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     bdr.addItem("Copy", #selector(self.copyRow(_:)), enabled: bdr.clickedRow.canBeCopied, key: "c")
     let pastableBindings = readBindingsFromClipboard()
     let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
-    if pastableBindings.isEmpty {
+    if !configStore.isEditEnabledForCurrentConfig || pastableBindings.isEmpty {
       bdr.addItem("Paste", nil, enabled: false, key: "v")
     } else if isRowEditable {
       bdr.addItem("\(pasteTitle) Above", #selector(self.pasteAbove(_:)))
@@ -858,15 +858,17 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     bdr.addSeparator()
 
     // Add New: follow same logic as Paste
-    if isRowEditable {
-      bdr.addItem("Insert New \(Constants.String.keyBinding) Above", #selector(self.addNewRowAbove(_:)))
-      bdr.addItem("Insert New \(Constants.String.keyBinding) Below", #selector(self.addNewRowBelow(_:)))
-    } else {
-      // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-      let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: bdr.clickedRowIndex) > bdr.clickedRowIndex
-      let directionLabel = isAfterNotAt ? "Below" : "Above"
-      let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
-      bdr.addItem("Insert New \(Constants.String.keyBinding) \(directionLabel)", selector)
+    if configStore.isEditEnabledForCurrentConfig {
+      if isRowEditable {
+        bdr.addItem("Insert New \(Constants.String.keyBinding) Above", #selector(self.addNewRowAbove(_:)))
+        bdr.addItem("Insert New \(Constants.String.keyBinding) Below", #selector(self.addNewRowBelow(_:)))
+      } else {
+        // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
+        let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: bdr.clickedRowIndex) > bdr.clickedRowIndex
+        let directionLabel = isAfterNotAt ? "Below" : "Above"
+        let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
+        bdr.addItem("Insert New \(Constants.String.keyBinding) \(directionLabel)", selector)
+      }
     }
   }
 
