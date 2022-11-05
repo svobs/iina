@@ -307,7 +307,7 @@
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="GN5-eh-pGI"/>
                                                         </constraints>
-                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="evx-8m-PJT" userLabel="Name TextFieldCell">
+                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="evx-8m-PJT" userLabel="Name TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                             <font key="font" usesAppearanceFont="YES"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

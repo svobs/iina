@@ -14,6 +14,9 @@ fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
   pattern: #"(.*)(?:\scopy(?: (\d+))?)"#, options: []
 )
 
+@available(macOS 10.14, *)
+fileprivate let defaultConfigTextColor: NSColor = .controlAccentColor
+
 class InputConfigTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .list
@@ -92,13 +95,17 @@ extension InputConfigTableViewController: NSTableViewDelegate {
       return nil
     }
     let columnName = identifier.rawValue
+    let isDefaultConfig = tableStore.isDefaultConfig(configName)
 
     switch columnName {
       case "nameColumn":
         cell.textField!.stringValue = configName
+        if #available(macOS 10.14, *) {
+          cell.textField!.textColor = isDefaultConfig ? defaultConfigTextColor : .controlTextColor
+        }
         return cell
       case "isDefaultColumn":
-        cell.imageView?.isHidden = !tableStore.isDefaultConfig(configName)
+        cell.imageView?.isHidden = !isDefaultConfig
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
@@ -574,65 +581,6 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     }
   }
 
-  // Attempt to match Finder's algorithm for file name of copy
-  private func findNewNameForDuplicate(originalName: String) -> (String, String)? {
-    // Strip any copy suffix off of it. Start with no copy suffix and check upwards to see if there's a gap
-    var (newConfigName, _) = parseBaseAndCopyCount(from: originalName)
-
-    while true {
-      guard let nextName = incrementCopyName(configName: newConfigName) else {
-        return nil
-      }
-      Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
-      newConfigName = nextName
-
-      if tableStore.getFilePath(forConfig: newConfigName) != nil {
-        // Entry with same name already exists in config list
-        continue
-      }
-
-      let newFilePath =  Utility.buildConfigFilePath(for: newConfigName)
-      if FileManager.default.fileExists(atPath: newFilePath) {
-        // File with same name already exists
-        continue
-      }
-
-      return (newConfigName, newFilePath)
-    }
-  }
-
-  private func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
-    return regex.firstMatch(in: msg, options: [], range: NSRange(location: 0, length: msg.count))
-  }
-
-  private func parseBaseAndCopyCount(from name: String) -> (String, Int) {
-    if let match = matchRegex(COPY_COUNT_REGEX, name) {
-      if let baseNameRange = Range(match.range(at: 1), in: name) {
-        // Found
-        let copyCount: Int
-        if let copyCountRange = Range(match.range(at: 2), in: name) {
-          copyCount = Int(String(name[copyCountRange])) ?? 1
-        } else {
-          copyCount = 1   // first "copy" has implicit number
-        }
-        let baseName = String(name[baseNameRange])
-        return (baseName, copyCount)
-      }
-      Logger.log("Failed to parse name: \"\(name)\"", level: .error)
-    }
-    // No match
-    return (name, 0)
-  }
-
-  private func incrementCopyName(configName: String) -> String? {
-    // Check for copy count number first
-    let (baseName, copyCount) = parseBaseAndCopyCount(from: configName)
-    if copyCount == 0 {
-      return "\(baseName) copy"
-    }
-    return "\(baseName) copy \(copyCount + 1)"
-  }
-
   private func makeNewConfFile(_ newName: String, doAction: (String) -> Bool) {
     let newFilePath =  Utility.buildConfigFilePath(for: newName)
 
@@ -761,4 +709,66 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: tableView.window)
     return nil
   }
+
+  // MARK: Calculate name of duplicate file
+
+  // Attempt to match Finder's algorithm for file name of copy
+  private func findNewNameForDuplicate(originalName: String) -> (String, String)? {
+    // Strip any copy suffix off of it. Start with no copy suffix and check upwards to see if there's a gap
+    var (newConfigName, _) = parseBaseAndCopyCount(from: originalName)
+
+    while true {
+      guard let nextName = incrementCopyName(configName: newConfigName) else {
+        return nil
+      }
+      Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
+      newConfigName = nextName
+
+      if tableStore.getFilePath(forConfig: newConfigName) != nil {
+        // Entry with same name already exists in config list
+        continue
+      }
+
+      let newFilePath =  Utility.buildConfigFilePath(for: newConfigName)
+      if FileManager.default.fileExists(atPath: newFilePath) {
+        // File with same name already exists
+        continue
+      }
+
+      return (newConfigName, newFilePath)
+    }
+  }
+
+  private func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
+    return regex.firstMatch(in: msg, options: [], range: NSRange(location: 0, length: msg.count))
+  }
+
+  private func parseBaseAndCopyCount(from name: String) -> (String, Int) {
+    if let match = matchRegex(COPY_COUNT_REGEX, name) {
+      if let baseNameRange = Range(match.range(at: 1), in: name) {
+        // Found
+        let copyCount: Int
+        if let copyCountRange = Range(match.range(at: 2), in: name) {
+          copyCount = Int(String(name[copyCountRange])) ?? 1
+        } else {
+          copyCount = 1   // first "copy" has implicit number
+        }
+        let baseName = String(name[baseNameRange])
+        return (baseName, copyCount)
+      }
+      Logger.log("Failed to parse name: \"\(name)\"", level: .error)
+    }
+    // No match
+    return (name, 0)
+  }
+
+  private func incrementCopyName(configName: String) -> String? {
+    // Check for copy count number first
+    let (baseName, copyCount) = parseBaseAndCopyCount(from: configName)
+    if copyCount == 0 {
+      return "\(baseName) copy"
+    }
+    return "\(baseName) copy \(copyCount + 1)"
+  }
+
 }

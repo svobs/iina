@@ -8,10 +8,14 @@
 
 import Foundation
 
-fileprivate let nonConfTextColor = NSColor.linkColor
-fileprivate let pluginIconColor = NSColor.linkColor
-fileprivate let libmpvIconColor = NSColor.linkColor
-fileprivate let filterIconColor = NSColor.linkColor
+@available(macOS 10.14, *)
+fileprivate let nonConfTextColor: NSColor = .controlAccentColor
+@available(macOS 10.14, *)
+fileprivate let pluginIconColor: NSColor = .controlAccentColor
+@available(macOS 10.14, *)
+fileprivate let libmpvIconColor: NSColor = .controlAccentColor
+@available(macOS 10.14, *)
+fileprivate let filterIconColor: NSColor = .controlAccentColor
 
 class KeyBindingTableViewController: NSObject {
   private let COLUMN_INDEX_KEY = 0
@@ -168,7 +172,14 @@ extension KeyBindingTableViewController: NSTableViewDelegate {
     guard let textField = cell.textField else { return }
 
     if isEnabled {
-      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : nonConfTextColor, italic: italic)
+      var textColor: NSColor
+      if #available(macOS 10.14, *) {
+        textColor = nonConfTextColor
+      } else {
+        textColor = .linkColor
+      }
+
+      setText(of: textField, to: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : textColor, italic: italic)
     } else {
       setText(of: textField, to: stringValue, textColor: NSColor.systemRed, strikethrough: true, italic: italic)
     }
