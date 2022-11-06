@@ -170,6 +170,10 @@ class InputConfigFile {
     let result = InputConfigFile(filePath: path, isReadOnly: isReadOnly)
 
     while let rawFileContent: String = reader.nextLine() {      // ignore empty lines
+      if result.lines.count >= AppData.maxConfigFileLinesAccepted {
+        Logger.log("Maximum number of lines (\(AppData.maxConfigFileLinesAccepted)) exceeded: stopping load of file: \"\(path)\"")
+        return nil
+      }
       result.lines.append(Line(rawFileContent))
     }
     return result

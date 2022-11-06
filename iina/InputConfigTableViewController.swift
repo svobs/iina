@@ -24,11 +24,13 @@ class InputConfigTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
   private unowned var tableStore: InputConfigStore!
+  private unowned var kbTableViewController: KeyBindingTableViewController
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigStore) {
+  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigStore, _ kbTableViewController: KeyBindingTableViewController) {
     self.tableView = inputConfigTableView
     self.tableStore = tableStore
+    self.kbTableViewController = kbTableViewController
 
     super.init()
 
@@ -223,6 +225,61 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
     return tableStore.renameCurrentConfig(newName: newName)
   }
 
+  // MARK: Cut, copy, paste, delete support.
+
+  // Only selected table items which have `canBeModified==true` can be included.
+  // Each menu item should be disabled if it cannot operate on at least one item.
+
+  func isCopyEnabled() -> Bool {
+    return true // can always copy current file
+  }
+
+  func isCutEnabled() -> Bool {
+    return false
+  }
+
+  func isDeleteEnabled() -> Bool {
+    return !tableStore.isEditEnabledForCurrentConfig
+  }
+
+  func isPasteEnabled() -> Bool {
+    // can paste either config files or key bindings
+    return !readConfigFilesFromClipboard().isEmpty || kbTableViewController.isPasteEnabled()
+  }
+
+  func doEditMenuCopy() {
+    // Convert current file to URL and put it in clipboard
+    guard let filePath = tableStore.currentConfigFilePath else { return }
+    let url = NSURL(fileURLWithPath: filePath)
+
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.writeObjects([url])
+    Logger.log("Copied to the clipboard: \"\(url)\"", level: .verbose)
+  }
+  
+  func doEditMenuPaste() {
+    // Config files?
+    let confFilePathList = readConfigFilesFromClipboard()
+    if !confFilePathList.isEmpty {
+      // Try not to block animation for I/O or user prompts
+      DispatchQueue.main.async {
+        self.importConfigFiles(confFilePathList, renameDuplicates: true)
+      }
+      return
+    }
+
+    // Maybe key bindings. Paste bindings into current config, if any:
+    kbTableViewController.doEditMenuPaste()
+  }
+
+  func doEditMenuDelete() {
+    // Delete current user config
+    deleteConfig(tableStore.currentConfigName)
+  }
+
+  private func readConfigFilesFromClipboard() -> [String] {
+    InputConfigTableViewController.extractConfFileList(from: NSPasteboard.general)
+  }
 }
 
 // MARK: NSTableViewDataSource
@@ -264,7 +321,8 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return
     }
 
-    let userConfigList = filterCurrentUserConfigs(from: session.draggingPasteboard)
+    let userConfigList = InputConfigTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
+      tableStore.getUserConfigName(forFilePath: $0) }
 
     guard userConfigList.count == 1 else {
       return
@@ -286,26 +344,26 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     info.draggingFormation = DRAGGING_FORMATION
     info.animatesToDestination = true
 
-    let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
+    // Check for conf files
+    let confFileCount = InputConfigTableViewController.extractConfFileList(from: info.draggingPasteboard).count
+    if confFileCount > 0 {
+      // Update that little red number:
+      info.numberOfValidItemsForDrop = confFileCount
 
-    if newFilePathList.isEmpty {
-      let mappingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
-      if !mappingList.isEmpty {
-        if dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
-          // Drop bindings into another user config
-          info.numberOfValidItemsForDrop = mappingList.count
-          return NSDragOperation.copy
-        }
-      }
-      // no files, or no ".conf" files, or dragging existing items over self
-      return []
+      tableView.setDropRow(-1, dropOperation: .above)
+      return NSDragOperation.copy
     }
 
-    // Update that little red number:
-    info.numberOfValidItemsForDrop = newFilePathList.count
+    // Check for key bindings
+    let bindingCount = KeyMapping.deserializeList(from: info.draggingPasteboard).count
+    if bindingCount > 0 && dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
+      // Drop bindings into another user config
+      info.numberOfValidItemsForDrop = bindingCount
+      return NSDragOperation.copy
+    }
 
-    tableView.setDropRow(-1, dropOperation: .above)
-    return NSDragOperation.copy
+    // Either no bindings, no ".conf" files, or is dragging table items over the table
+    return []
   }
 
   /*
@@ -319,15 +377,15 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
 
     // Option A: drop input config file(s) into table
-    let newFilePathList = filterNewFilePaths(from: info.draggingPasteboard)
-    if !newFilePathList.isEmpty {
-      Logger.log("User dropped \(newFilePathList.count) new config files into table")
-      info.numberOfValidItemsForDrop = newFilePathList.count
+    let confFilePathList = InputConfigTableViewController.extractConfFileList(from: info.draggingPasteboard)
+    if !confFilePathList.isEmpty {
+      Logger.log("User dropped \(confFilePathList.count) config files into table")
+      info.numberOfValidItemsForDrop = confFilePathList.count
       info.animatesToDestination = true
       info.draggingFormation = DRAGGING_FORMATION
       // Try not to block animation for I/O or user prompts
       DispatchQueue.main.async {
-        self.importConfigFiles(newFilePathList)
+        self.importConfigFiles(confFilePathList, renameDuplicates: true)
       }
       return true
     }
@@ -371,44 +429,15 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
   }
 
-  private func filterNewFilePaths(from pasteboard: NSPasteboard) -> [String] {
-    var newFilePathList: [String] = []
-
-    if let filePathList = InputConfigTableViewController.extractFileList(from: pasteboard) {
-
-      for filePath in filePathList {
-        // Filter out files which are already in the table, and files which don't end in ".conf"
-        if filePath.lowercasedPathExtension == AppData.configFileExtension && tableStore.getUserConfigName(forFilePath: filePath) == nil &&
-            !AppData.defaultConfigs.values.contains(filePath) {
-          newFilePathList.append(filePath)
-        }
-      }
-    }
-
-    return newFilePathList
-  }
-
-  private func filterCurrentUserConfigs(from pasteboard: NSPasteboard) -> [String] {
-    var userConfigList: [String] = []
-
-    if let filePathList = InputConfigTableViewController.extractFileList(from: pasteboard) {
-
-      for filePath in filePathList {
-        if let configName = tableStore.getUserConfigName(forFilePath: filePath) {
-          userConfigList.append(configName)
-        }
-      }
-    }
-
-    return userConfigList
-  }
-
-  private static func extractFileList(from pasteboard: NSPasteboard) -> [String]? {
+  private static func extractConfFileList(from pasteboard: NSPasteboard) -> [String] {
     var fileList: [String] = []
 
     pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.forEach {
       if let url = $0 as? URL {
-        fileList.append(url.path)
+        let filePath = url.path
+        if filePath.lowercasedPathExtension == AppData.configFileExtension {
+          fileList.append(url.path)
+        }
       }
     }
     return fileList
@@ -570,7 +599,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   private func duplicateCurrentConfFile() -> (String, String)? {
     guard let filePath = tableStore.currentConfigFilePath else { return nil }
 
-    guard let (newConfigName, newFilePath) = findNewNameForDuplicate(originalName: tableStore.currentConfigName) else { return nil }
+    let (newConfigName, newFilePath) = findNewNameForDuplicate(originalName: tableStore.currentConfigName)
 
     do {
       Logger.log("Duplicating file: \"\(filePath)\" -> \"\(newFilePath)\"")
@@ -603,12 +632,14 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   /*
    Action: Import config file(s).
    Checks that each file can be opened and parsed and if any cannot, prints an error and does nothing.
-   If any of the imported files would overwrite an existing one, for each conflict the user is asked whether to
-   delete the existing; the import is aborted after the first one the user declines.
+   If any of the imported files would overwrite an existing one:
+   - If `renameDuplicates` is true, a new name is chosen automatically for each.
+   - If `renameDuplicates` is false, for each conflict, the user is asked whether to delete the existing.
+     If the user declines any of them, the import is immediately cancelled before it changes any data.
 
    If successful, adds new rows to the UI, with the last added row being selected as the new current config.
    */
-  func importConfigFiles(_ fileList: [String]) {
+  func importConfigFiles(_ fileList: [String], renameDuplicates: Bool = false) {
     // Return immediately, and import (or fail to) asynchronously
     DispatchQueue.global(qos: .userInitiated).async {
       Logger.log("Importing input config files: \(fileList)", level: .verbose)
@@ -629,8 +660,13 @@ extension InputConfigTableViewController:  NSMenuDelegate {
           // This probably means the user doesn't know what they are doing, or something is very wrong
           return
         }
-        let newName = url.deletingPathExtension().lastPathComponent
-        let newFilePath =  Utility.buildConfigFilePath(for: newName)
+        var newName = url.deletingPathExtension().lastPathComponent
+        let newFilePath: String
+        if renameDuplicates {
+          (newName, newFilePath) = self.findNewNameForDuplicate(originalName: newName)
+        } else {
+          newFilePath =  Utility.buildConfigFilePath(for: newName)
+        }
 
         if filePath == newFilePath {
           // Edge case
@@ -717,14 +753,12 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   // MARK: Calculate name of duplicate file
 
   // Attempt to match Finder's algorithm for file name of copy
-  private func findNewNameForDuplicate(originalName: String) -> (String, String)? {
+  private func findNewNameForDuplicate(originalName: String) -> (String, String) {
     // Strip any copy suffix off of it. Start with no copy suffix and check upwards to see if there's a gap
     var (newConfigName, _) = parseBaseAndCopyCount(from: originalName)
 
     while true {
-      guard let nextName = incrementCopyName(configName: newConfigName) else {
-        return nil
-      }
+      let nextName = incrementCopyName(configName: newConfigName)
       Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
       newConfigName = nextName
 
@@ -766,7 +800,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     return (name, 0)
   }
 
-  private func incrementCopyName(configName: String) -> String? {
+  private func incrementCopyName(configName: String) -> String {
     // Check for copy count number first
     let (baseName, copyCount) = parseBaseAndCopyCount(from: configName)
     if copyCount == 0 {

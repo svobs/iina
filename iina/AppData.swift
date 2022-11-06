@@ -70,7 +70,8 @@ struct AppData {
     "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
     "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!
   ]
-  static let maxParsedBindingsFromStringAllowed = 1000
+  // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
+  static let maxConfigFileLinesAccepted = 10000
 
   static let widthWhenNoVideo = 640
   static let heightWhenNoVideo = 360
