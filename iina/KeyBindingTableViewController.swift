@@ -671,7 +671,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
                                         afterComplete: self.scrollToFirstInserted)
   }
 
-  private func readBindingsFromClipboard() -> [KeyMapping] {
+  func readBindingsFromClipboard() -> [KeyMapping] {
     return KeyMapping.deserializeList(from: NSPasteboard.general)
   }
 }
@@ -696,7 +696,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   fileprivate class BindingsMenuBuilder: ContextMenuBuilder<InputBinding> {
-    override func buildItem(for row: InputBinding, withIndex rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
+    override func buildItem(for row: InputBinding, rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
       return BindingMenuItem(row, rowIndex: rowIndex, title: title, action: action, keyEquivalent: keyEquivalent)
     }
   }
@@ -709,19 +709,19 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    let clickedIndex = tableView.clickedRow
+    let clickedRowIndex = tableView.clickedRow
     guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow) else { return }
     let mb = BindingsMenuBuilder(contextMenu, clickedRow: clickedRow, clickedRowIndex: tableView.clickedRow, target: self)
 
-    if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedIndex) {
-      populate(mb, for: tableView.selectedRowIndexes)
+    if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedRowIndex) {
+      buildMenu(mb, for: tableView.selectedRowIndexes)
     } else {
-      populateForSingleRow(mb)
+      buildMenuForSingleRow(mb)
     }
   }
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
-  private func populateForSingleRow(_ mb: BindingsMenuBuilder) {
+  private func buildMenuForSingleRow(_ mb: BindingsMenuBuilder) {
     let isRowEditable = configStore.isEditEnabledForCurrentConfig && mb.clickedRow.canBeModified
 
     if !configStore.isEditEnabledForCurrentConfig {
@@ -797,7 +797,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
   }
 
   // MULTIPLE: For right-click on selected rows
-  private func populate(_ mb: BindingsMenuBuilder, for selectedRowIndexes: IndexSet) {
+  private func buildMenu(_ mb: BindingsMenuBuilder, for selectedRowIndexes: IndexSet) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     var modifiableCount = 0

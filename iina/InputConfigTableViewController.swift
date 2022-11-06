@@ -248,15 +248,9 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuCopy() {
-    // Convert current file to URL and put it in clipboard
-    guard let filePath = tableStore.currentConfigFilePath else { return }
-    let url = NSURL(fileURLWithPath: filePath)
-
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.writeObjects([url])
-    Logger.log("Copied to the clipboard: \"\(url)\"", level: .verbose)
+    return copyConfigFileToClipboard(configName: tableStore.currentConfigName)
   }
-  
+
   func doEditMenuPaste() {
     // Config files?
     let confFilePathList = readConfigFilesFromClipboard()
@@ -280,6 +274,17 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   private func readConfigFilesFromClipboard() -> [String] {
     InputConfigTableViewController.extractConfFileList(from: NSPasteboard.general)
   }
+
+  // Convert config file path to URL and put it in clipboard
+  private func copyConfigFileToClipboard(configName: String) {
+    guard let filePath = tableStore.getFilePath(forConfig: configName) else { return }
+    let url = NSURL(fileURLWithPath: filePath)
+
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.writeObjects([url])
+    Logger.log("Copied to the clipboard: \"\(url)\"", level: .verbose)
+  }
+
 }
 
 // MARK: NSTableViewDataSource
@@ -344,6 +349,11 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     info.draggingFormation = DRAGGING_FORMATION
     info.animatesToDestination = true
 
+    if let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView {
+      // Don't allow drops onto self
+      return []
+    }
+
     // Check for conf files
     let confFileCount = InputConfigTableViewController.extractConfFileList(from: info.draggingPasteboard).count
     if confFileCount > 0 {
@@ -362,7 +372,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return NSDragOperation.copy
     }
 
-    // Either no bindings, no ".conf" files, or is dragging table items over the table
+    // Either no bindings or no config files
     return []
   }
 
@@ -407,7 +417,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     return false
   }
 
-  private func dropBindingsIntoUserConfFile(_ defaultSectionMappings: [KeyMapping], targetConfigName: String) {
+  private func dropBindingsIntoUserConfFile(_ bindings: [KeyMapping], targetConfigName: String) {
     let isReadOnly = tableStore.isDefaultConfig(targetConfigName)
     guard !isReadOnly else { return }
 
@@ -418,7 +428,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
 
     var fileMappings = inputConfigFile.parseBindings()
-    fileMappings.append(contentsOf: defaultSectionMappings)
+    fileMappings.append(contentsOf: bindings)
     inputConfigFile.replaceAllBindings(with: fileMappings)
     do {
       try inputConfigFile.saveToDisk()
@@ -451,10 +461,9 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   fileprivate class InputConfMenuItem: NSMenuItem {
     let configName: String
 
-    public init(configName: String, title: String, action selector: Selector?, target: AnyObject?) {
+    public init(configName: String, title: String, action selector: Selector?, key: String) {
       self.configName = configName
-      super.init(title: title, action: selector, keyEquivalent: "")
-      self.target = target
+      super.init(title: title, action: selector, keyEquivalent: key)
     }
 
     required init(coder: NSCoder) {
@@ -462,32 +471,91 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     }
   }
 
-  @objc func menuNeedsUpdate(_ menu: NSMenu) {
-    // This will prevent menu from showing if no items are added
-    menu.removeAllItems()
+  fileprivate class ConfigMenuBuilder: ContextMenuBuilder<String> {
+    override func buildItem(for row: String, rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
+      return InputConfMenuItem(configName: row, title: title, action: action, key: keyEquivalent)
+    }
+  }
 
-    guard let clickedConfigName = tableStore.getConfigRow(at: tableView.clickedRow) else {
+  @objc func menuNeedsUpdate(_ contextMenu: NSMenu) {
+    // This will prevent menu from showing if no items are added
+    contextMenu.removeAllItems()
+
+    guard let clickedConfigName = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
+    let mb = ConfigMenuBuilder(contextMenu, clickedRow: clickedConfigName, clickedRowIndex: -1, target: self)
+
+    buildMenu(mb)
+  }
+
+  private func buildMenu(_ mb: ConfigMenuBuilder) {
+    // Show in Finder
+    mb.addItem("Reveal in Finder", #selector(self.showInFinderFromMenu(_:)))
+
+    // Duplicate
+    mb.addItem("Duplicate", #selector(self.duplicateConfigFromMenu(_:)))
+
+    // ---
+    mb.addSeparator()
+
+    mb.addItem("Copy", #selector(self.copyConfigFromContextMenu(_:)), mb.proto.copy)
+
+    if isPasteEnabled() {
+      var pasteTitle = ""
+      let configCount = readConfigFilesFromClipboard().count
+      if configCount > 0 {
+        pasteTitle = makePasteMenuItemTitle(configCount, Constants.String.config)
+      } else {
+        let bindingCount = kbTableViewController.readBindingsFromClipboard().count
+        if bindingCount > 0 {
+          pasteTitle = makePasteMenuItemTitle(configCount, Constants.String.keyBinding)
+        }
+      }
+      if !pasteTitle.isEmpty {
+        mb.addItem(pasteTitle, #selector(self.pasteFromContextMenu(_:)), mb.proto.paste)
+      }
+    } else {  // disabled
+      mb.addItem("Paste", nil, enabled: false, mb.proto.paste)
+    }
+
+    // Delete
+    mb.addItem("Delete", #selector(self.deleteConfigFromContextMenu(_:)), mb.proto.delete)
+  }
+
+  private func makePasteMenuItemTitle(_ itemCount: Int, _ singleUnit: String) -> String {
+    return itemCount == 0 ? "Paste" : "Paste \(itemCount == 1 ? "\(singleUnit)" : "\(itemCount) \(singleUnit)s")"
+  }
+
+  @objc fileprivate func copyConfigFromContextMenu(_ sender: InputConfMenuItem) {
+    self.copyConfigFileToClipboard(configName: sender.configName)
+  }
+
+  @objc fileprivate func pasteFromContextMenu(_ sender: InputConfMenuItem) {
+    // Config files?
+    let confFilePathList = readConfigFilesFromClipboard()
+    if !confFilePathList.isEmpty {
+      // Try not to block animation for I/O or user prompts
+      DispatchQueue.main.async {
+        self.importConfigFiles(confFilePathList, renameDuplicates: true)
+      }
       return
     }
 
-    buildMenu(menu, clickedConfigName: clickedConfigName)
+    // Maybe key bindings
+    let mappingsToInsert = kbTableViewController.readBindingsFromClipboard()
+    if !mappingsToInsert.isEmpty {
+      let destConfigName = sender.configName
+      Logger.log("User chose to paste \(mappingsToInsert.count) bindings into \"\(destConfigName)\"")
+      if destConfigName == tableStore.currentConfigName {
+        // If currently open config file, this will paste under the current selection
+        kbTableViewController.doEditMenuPaste()
+      } else {
+        // If other files, append at end
+        dropBindingsIntoUserConfFile(mappingsToInsert, targetConfigName: destConfigName)
+      }
+    }
   }
 
-  private func buildMenu(_ menu: NSMenu, clickedConfigName: String) {
-    // Show in Finder
-    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Reveal in Finder", action: #selector(self.showInFinderFromMenu(_:)), target: self))
-
-    // Duplicate
-    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Duplicate", action: #selector(self.duplicateConfigFromMenu(_:)), target: self))
-
-    // ---
-    menu.addItem(NSMenuItem.separator())
-
-    // Delete
-    menu.addItem(InputConfMenuItem(configName: clickedConfigName, title: "Delete", action: #selector(self.deleteConfigFromMenu(_:)), target: self))
-  }
-
-  @objc fileprivate func deleteConfigFromMenu(_ sender: InputConfMenuItem) {
+  @objc fileprivate func deleteConfigFromContextMenu(_ sender: InputConfMenuItem) {
     self.deleteConfig(sender.configName)
   }
 

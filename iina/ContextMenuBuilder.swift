@@ -13,23 +13,24 @@ class ContextMenuBuilder<RowType> {
     let target: AnyObject?
     let key: String?
     let keyMods: NSEvent.ModifierFlags?
+    let baseTitle: String?
   }
 
   class ProtoFactory {
     var cut: Prototype {
-      return Prototype(target: nil, key: "x", keyMods: .command)
+      return Prototype(target: nil, key: "x", keyMods: .command, baseTitle: "Cut")
     }
 
     var copy: Prototype {
-      return Prototype(target: nil, key: "c", keyMods: .command)
+      return Prototype(target: nil, key: "c", keyMods: .command, baseTitle: "Copy")
     }
 
     var paste: Prototype {
-      return Prototype(target: nil, key: "v", keyMods: .command)
+      return Prototype(target: nil, key: "v", keyMods: .command, baseTitle: "Paste")
     }
 
     var delete: Prototype {
-      return Prototype(target: nil, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
+      return Prototype(target: nil, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [], baseTitle: "Delete")
     }
   }
   let proto = ProtoFactory()
@@ -52,6 +53,7 @@ class ContextMenuBuilder<RowType> {
     self.contextMenu = contextMenu
     self.clickedRow = clickedRow
     self.clickedRowIndex = clickedRowIndex
+
     self.target = target
   }
 
@@ -70,13 +72,27 @@ class ContextMenuBuilder<RowType> {
     menu.addItem(NSMenuItem.separator())
   }
 
+  // Deprecated already!
   @discardableResult
   func protoNext(target targetOverride: AnyObject? = nil,
                  key keyOverride: String? = nil,
                  keyMods keyModsOverride: NSEvent.ModifierFlags? = nil) -> Prototype {
-    let proto = Prototype(target: targetOverride, key: keyOverride, keyMods: keyModsOverride)
+    let proto = Prototype(target: targetOverride, key: keyOverride, keyMods: keyModsOverride, baseTitle: nil)
     self.protoNext = proto
     return proto
+  }
+
+  func buildTitle(_ proto: Prototype, _ itemCount: Int, singleUnit: String, pluralUnit: String) -> String {
+    if let opName = proto.baseTitle {
+      if itemCount == 0 {
+        return opName
+      }
+      if itemCount == 1 {
+        return "\(opName) \(singleUnit)"
+      }
+      return "\(opName) \(itemCount) \(pluralUnit)"
+    }
+    Logger.fatal("Cannot build menu: no base title given!")
   }
 
   @discardableResult
@@ -84,13 +100,14 @@ class ContextMenuBuilder<RowType> {
                rowIndex rowIndexOverride: Int? = nil, key: String? = nil, keyMods: NSEvent.ModifierFlags? = nil,
                _ protoOverride: Prototype? = nil) -> NSMenuItem {
 
+
     // Favor most recent and most specific values supplied
     let rowIndex = rowIndexOverride ?? clickedRowIndex
     let finalKey = key ?? protoOverride?.key ?? self.protoNext?.key ?? ""
     // If we supply a non-nil action, AppKit will ignore the enabled status and will check `validateUserInterfaceItem()`
     // on the target (which we haven't coded and would rather avoid doing so), so just set it to nil and avoid the headache.
     let finalAction = enabled ? action: nil
-    let item = self.buildItem(for: clickedRow, withIndex: rowIndex, title: title, action: finalAction, keyEquivalent: finalKey)
+    let item = self.buildItem(for: clickedRow, rowIndex: rowIndex, title: title, action: finalAction, keyEquivalent: finalKey)
     menu.addItem(item)
 
     if enabled {
@@ -106,7 +123,7 @@ class ContextMenuBuilder<RowType> {
   }
 
   // Subclasses should override this
-  func buildItem(for row: RowType, withIndex rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
+  func buildItem(for row: RowType, rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
     return NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
   }
 }
