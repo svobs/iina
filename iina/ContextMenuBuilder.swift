@@ -9,17 +9,36 @@
 import Foundation
 
 class ContextMenuBuilder<RowType> {
-  struct ItemPrep {
+  struct Prototype {
     let target: AnyObject?
     let key: String?
     let keyMods: NSEvent.ModifierFlags?
   }
+
+  class ProtoFactory {
+    var cut: Prototype {
+      return Prototype(target: nil, key: "x", keyMods: .command)
+    }
+
+    var copy: Prototype {
+      return Prototype(target: nil, key: "c", keyMods: .command)
+    }
+
+    var paste: Prototype {
+      return Prototype(target: nil, key: "v", keyMods: .command)
+    }
+
+    var delete: Prototype {
+      return Prototype(target: nil, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
+    }
+  }
+  let proto = ProtoFactory()
   let contextMenu: NSMenu
   let clickedRow: RowType
   let clickedRowIndex: Int
   let target: AnyObject?
 
-  private var prep: ItemPrep? = nil
+  private var protoNext: Prototype? = nil
 
   var currentMenu: NSMenu? = nil
   var menu: NSMenu {
@@ -52,20 +71,22 @@ class ContextMenuBuilder<RowType> {
   }
 
   @discardableResult
-  func prepItem(target targetOverride: AnyObject? = nil, key: String? = nil, keyMods: NSEvent.ModifierFlags? = nil) -> ItemPrep {
-    let prep = ItemPrep(target: targetOverride, key: key, keyMods: keyMods)
-    self.prep = prep
-    return prep
+  func protoNext(target targetOverride: AnyObject? = nil,
+                 key keyOverride: String? = nil,
+                 keyMods keyModsOverride: NSEvent.ModifierFlags? = nil) -> Prototype {
+    let proto = Prototype(target: targetOverride, key: keyOverride, keyMods: keyModsOverride)
+    self.protoNext = proto
+    return proto
   }
 
   @discardableResult
   func addItem(_ title: String, _ action: Selector? = nil, target targetOverride: AnyObject? = nil, enabled: Bool = true,
                rowIndex rowIndexOverride: Int? = nil, key: String? = nil, keyMods: NSEvent.ModifierFlags? = nil,
-               _ prepOverride: ItemPrep? = nil) -> NSMenuItem {
+               _ protoOverride: Prototype? = nil) -> NSMenuItem {
 
     // Favor most recent and most specific values supplied
     let rowIndex = rowIndexOverride ?? clickedRowIndex
-    let finalKey = key ?? prepOverride?.key ?? prep?.key ?? ""
+    let finalKey = key ?? protoOverride?.key ?? self.protoNext?.key ?? ""
     // If we supply a non-nil action, AppKit will ignore the enabled status and will check `validateUserInterfaceItem()`
     // on the target (which we haven't coded and would rather avoid doing so), so just set it to nil and avoid the headache.
     let finalAction = enabled ? action: nil
@@ -73,13 +94,13 @@ class ContextMenuBuilder<RowType> {
     menu.addItem(item)
 
     if enabled {
-      item.target = targetOverride ?? prepOverride?.target ?? prep?.target ?? self.target
+      item.target = targetOverride ?? protoOverride?.target ?? self.protoNext?.target ?? self.target
     }
-    if let finalKeyMods = keyMods ?? prepOverride?.keyMods ?? prep?.keyMods {
+    if let finalKeyMods = keyMods ?? protoOverride?.keyMods ?? self.protoNext?.keyMods {
       item.keyEquivalentModifierMask = finalKeyMods
     }
     item.isEnabled = enabled
-    prep = nil
+    self.protoNext = nil
 
     return item
   }

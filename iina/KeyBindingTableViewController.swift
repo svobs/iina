@@ -701,8 +701,8 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  private func addReadOnlyConfigMenuItem(_ bdr: BindingsMenuBuilder) {
-    bdr.addItalicDisabledItem("Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config")
+  private func addReadOnlyConfigMenuItem(_ mb: BindingsMenuBuilder) {
+    mb.addItalicDisabledItem("Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config")
   }
 
   func menuNeedsUpdate(_ contextMenu: NSMenu) {
@@ -711,93 +711,93 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
     let clickedIndex = tableView.clickedRow
     guard let clickedRow = bindingStore.getBindingRow(at: tableView.clickedRow) else { return }
-    let bdr = BindingsMenuBuilder(contextMenu, clickedRow: clickedRow, clickedRowIndex: tableView.clickedRow, target: self)
+    let mb = BindingsMenuBuilder(contextMenu, clickedRow: clickedRow, clickedRowIndex: tableView.clickedRow, target: self)
 
     if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedIndex) {
-      populate(bdr, for: tableView.selectedRowIndexes)
+      populate(mb, for: tableView.selectedRowIndexes)
     } else {
-      populateForSingleRow(bdr)
+      populateForSingleRow(mb)
     }
   }
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
-  private func populateForSingleRow(_ bdr: BindingsMenuBuilder) {
-    let isRowEditable = configStore.isEditEnabledForCurrentConfig && bdr.clickedRow.canBeModified
+  private func populateForSingleRow(_ mb: BindingsMenuBuilder) {
+    let isRowEditable = configStore.isEditEnabledForCurrentConfig && mb.clickedRow.canBeModified
 
     if !configStore.isEditEnabledForCurrentConfig {
-      addReadOnlyConfigMenuItem(bdr)
+      addReadOnlyConfigMenuItem(mb)
     } else if !isRowEditable {
       let culprit: String
-      switch bdr.clickedRow.origin {
+      switch mb.clickedRow.origin {
         case .iinaPlugin:
-          let sourceName = (bdr.clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
+          let sourceName = (mb.clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
           culprit = "the IINA plugin \"\(sourceName)\""
         case .savedFilter:
-          let sourceName = (bdr.clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
+          let sourceName = (mb.clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
           culprit = "the saved filter \"\(sourceName)\""
         case .libmpv:
           culprit = "a Lua script or other mpv interface"
         default:
-          Logger.log("Unrecognized binding origin for rowIndex \(bdr.clickedRowIndex): \(bdr.clickedRow.origin)", level: .error)
+          Logger.log("Unrecognized binding origin for rowIndex \(mb.clickedRowIndex): \(mb.clickedRow.origin)", level: .error)
           culprit = "<unknown>"
       }
-      bdr.addItalicDisabledItem("Cannot modify binding: it is owned by \(culprit)")
+      mb.addItalicDisabledItem("Cannot modify binding: it is owned by \(culprit)")
     } else {
       // Edit options
       if isRaw {
-        bdr.addItem("Edit Key", #selector(self.editKeyColumn(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
-        bdr.addItem("Edit Action", #selector(self.editActionColumn(_:)))
+        mb.addItem("Edit Key", #selector(self.editKeyColumn(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
+        mb.addItem("Edit Action", #selector(self.editActionColumn(_:)))
       } else {
-        bdr.addItem("Edit Row...", #selector(self.editRow(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
+        mb.addItem("Edit Row...", #selector(self.editRow(_:)), key: KeyCodeHelper.KeyEquivalents.RETURN, keyMods: [])
       }
     }
 
     // ---
-    bdr.addSeparator()
+    mb.addSeparator()
 
     // Cut, Copy, Paste, Delete
-    bdr.addItem("Cut", #selector(self.cutRow(_:)), enabled: isRowEditable, key: "x")
-    bdr.addItem("Copy", #selector(self.copyRow(_:)), enabled: bdr.clickedRow.canBeCopied, key: "c")
+    mb.addItem("Cut", #selector(self.cutRow(_:)), enabled: isRowEditable, mb.proto.cut)
+    mb.addItem("Copy", #selector(self.copyRow(_:)), enabled: mb.clickedRow.canBeCopied, mb.proto.copy)
     let pastableBindings = readBindingsFromClipboard()
     let pasteTitle = makePasteMenuItemTitle(itemCount: pastableBindings.count)
     if !configStore.isEditEnabledForCurrentConfig || pastableBindings.isEmpty {
-      bdr.addItem("Paste", nil, enabled: false, key: "v")
+      mb.addItem("Paste", nil, enabled: false, mb.proto.paste)
     } else if isRowEditable {
-      bdr.addItem("\(pasteTitle) Above", #selector(self.pasteAbove(_:)))
-      bdr.addItem("\(pasteTitle) Below", #selector(self.pasteBelow(_:)), key: "v")
+      mb.addItem("\(pasteTitle) Above", #selector(self.pasteAbove(_:)))
+      mb.addItem("\(pasteTitle) Below", #selector(self.pasteBelow(_:)), mb.proto.paste)
     } else {
       // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-      let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: bdr.clickedRowIndex) > bdr.clickedRowIndex
+      let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: mb.clickedRowIndex) > mb.clickedRowIndex
       let directionLabel = isAfterNotAt ? "Below" : "Above"
       let selector = isAfterNotAt ? #selector(self.pasteBelow(_:)) : #selector(self.pasteAbove(_:))
-      bdr.addItem("\(pasteTitle) \(directionLabel)", selector, key: "v")
+      mb.addItem("\(pasteTitle) \(directionLabel)", selector, key: "v")
     }
 
     // ---
-    bdr.addSeparator()
+    mb.addSeparator()
 
-    bdr.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
+    mb.addItem(isRowEditable ? "Delete Binding" : "Delete", #selector(self.removeRow(_:)), enabled: isRowEditable, mb.proto.delete)
 
     // ---
-    bdr.addSeparator()
+    mb.addSeparator()
 
     // Add New: follow same logic as Paste
     if configStore.isEditEnabledForCurrentConfig {
       if isRowEditable {
-        bdr.addItem("Insert New \(Constants.String.keyBinding) Above", #selector(self.addNewRowAbove(_:)))
-        bdr.addItem("Insert New \(Constants.String.keyBinding) Below", #selector(self.addNewRowBelow(_:)))
+        mb.addItem("Insert New \(Constants.String.keyBinding) Above", #selector(self.addNewRowAbove(_:)))
+        mb.addItem("Insert New \(Constants.String.keyBinding) Below", #selector(self.addNewRowBelow(_:)))
       } else {
         // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
-        let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: bdr.clickedRowIndex) > bdr.clickedRowIndex
+        let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: mb.clickedRowIndex) > mb.clickedRowIndex
         let directionLabel = isAfterNotAt ? "Below" : "Above"
         let selector = isAfterNotAt ? #selector(self.addNewRowBelow(_:)) : #selector(self.addNewRowAbove(_:))
-        bdr.addItem("Insert New \(Constants.String.keyBinding) \(directionLabel)", selector)
+        mb.addItem("Insert New \(Constants.String.keyBinding) \(directionLabel)", selector)
       }
     }
   }
 
   // MULTIPLE: For right-click on selected rows
-  private func populate(_ bdr: BindingsMenuBuilder, for selectedRowIndexes: IndexSet) {
+  private func populate(_ mb: BindingsMenuBuilder, for selectedRowIndexes: IndexSet) {
     let selectedRowsCount = tableView.selectedRowIndexes.count
 
     var modifiableCount = 0
@@ -816,7 +816,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // Add disabled italicized message if not all can be operated on
     if !configStore.isEditEnabledForCurrentConfig {
       modifiableCount = 0
-      addReadOnlyConfigMenuItem(bdr)
+      addReadOnlyConfigMenuItem(mb)
     } else {
       let readOnlyCount = tableView.selectedRowIndexes.count - modifiableCount
       if readOnlyCount > 0 {
@@ -826,12 +826,12 @@ extension KeyBindingTableViewController: NSMenuDelegate {
         } else {
           readOnlyDisclaimer = "\(readOnlyCount) of \(selectedRowsCount) bindings are read-only"
         }
-        bdr.addItalicDisabledItem(readOnlyDisclaimer)
+        mb.addItalicDisabledItem(readOnlyDisclaimer)
       }
     }
 
     // ---
-    bdr.addSeparator()
+    mb.addSeparator()
 
     // Cut, Copy, Paste, Delete
 
@@ -840,16 +840,16 @@ extension KeyBindingTableViewController: NSMenuDelegate {
       title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
     // By setting target:`tableView`, AppKit, will call `tableView.validateUserInterfaceItem()` to enable/disable each action appropriately
-    bdr.addItem(title, #selector(self.tableView.cut(_:)), target: self.tableView, key: "x")
+    mb.addItem(title, #selector(self.tableView.cut(_:)), target: self.tableView, mb.proto.cut)
 
     title = "Copy"
     if copyableCount > 0 {
       title += " \(copyableCount) \(Constants.String.keyBinding)s"
     }
-    bdr.addItem(title, #selector(self.tableView.copy(_:)), target: self.tableView, key: "c")
+    mb.addItem(title, #selector(self.tableView.copy(_:)), target: self.tableView, mb.proto.copy)
 
     if !isPasteEnabled() {
-      bdr.addItem("Paste", #selector(self.tableView.paste(_:)), target: self.tableView, key: "v")
+      mb.addItem("Paste", #selector(self.tableView.paste(_:)), target: self.tableView, mb.proto.paste)
     } else {
       // Paste is enabled if there are bindings in the clipboard, and doesn't matter if selected rows are editable
       var addedOne = false
@@ -857,24 +857,24 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
       let firstSelectedIndex = (tableView.selectedRowIndexes.first ?? 0)
       if bindingStore.getClosestValidInsertIndex(from: firstSelectedIndex) <= firstSelectedIndex {
-        bdr.addItem("\(pasteTitle) Above", #selector(self.pasteAbove(_:)), rowIndex: firstSelectedIndex)
+        mb.addItem("\(pasteTitle) Above", #selector(self.pasteAbove(_:)), rowIndex: firstSelectedIndex)
         addedOne = true
       }
 
       let lastSelectedIndex = tableView.selectedRowIndexes.last ?? tableView.numberOfRows
       if !addedOne || bindingStore.getClosestValidInsertIndex(from: lastSelectedIndex, isAfterNotAt: true) >= lastSelectedIndex {
-        bdr.addItem("\(pasteTitle) Below", #selector(self.pasteBelow(_:)), rowIndex: lastSelectedIndex, key: "v")
+        mb.addItem("\(pasteTitle) Below", #selector(self.pasteBelow(_:)), rowIndex: lastSelectedIndex, mb.proto.paste)
       }
     }
 
     // ---
-    bdr.addSeparator()
+    mb.addSeparator()
 
     title = "Delete"
     if modifiableCount > 0 {
       title += " \(modifiableCount) \(Constants.String.keyBinding)s"
     }
-    let item = bdr.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView, key: KeyCodeHelper.KeyEquivalents.BACKSPACE, keyMods: [])
+    mb.addItem(title, #selector(self.tableView.delete(_:)), target: self.tableView, mb.proto.delete)
   }
 
   private func makePasteMenuItemTitle(itemCount: Int, preferredInsertIndex: Int, referenceIndex: Int) -> String {
