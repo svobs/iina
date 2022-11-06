@@ -499,15 +499,17 @@ extension InputConfigTableViewController:  NSMenuDelegate {
 
     mb.addItem("Copy", #selector(self.copyConfigFromContextMenu(_:)), mb.proto.copy)
 
+    let canModifyRow = !self.tableStore.isDefaultConfig(mb.clickedRow)
+
     if isPasteEnabled() {
       var pasteTitle = ""
       let configCount = readConfigFilesFromClipboard().count
       if configCount > 0 {
         pasteTitle = makePasteMenuItemTitle(configCount, Constants.String.config)
-      } else {
+      } else if canModifyRow {
         let bindingCount = kbTableViewController.readBindingsFromClipboard().count
         if bindingCount > 0 {
-          pasteTitle = makePasteMenuItemTitle(configCount, Constants.String.keyBinding)
+          pasteTitle = makePasteMenuItemTitle(bindingCount, Constants.String.keyBinding)
         }
       }
       if !pasteTitle.isEmpty {
@@ -517,8 +519,10 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       mb.addItem("Paste", nil, enabled: false, mb.proto.paste)
     }
 
+    mb.addSeparator()
+
     // Delete
-    mb.addItem("Delete", #selector(self.deleteConfigFromContextMenu(_:)), mb.proto.delete)
+    mb.addItem("Delete", #selector(self.deleteConfigFromContextMenu(_:)), enabled: canModifyRow, mb.proto.delete)
   }
 
   private func makePasteMenuItemTitle(_ itemCount: Int, _ singleUnit: String) -> String {
