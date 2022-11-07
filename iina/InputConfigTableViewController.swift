@@ -409,7 +409,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       info.draggingFormation = DRAGGING_FORMATION
       // Try not to block UI. Failures should be rare here anyway
       DispatchQueue.main.async {
-        self.dropBindingsIntoUserConfFile(bindingList, targetConfigName: targetConfigName)
+        self.appendBindingsToUserConfFile(bindingList, targetConfigName: targetConfigName)
       }
       return true
     }
@@ -417,7 +417,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     return false
   }
 
-  private func dropBindingsIntoUserConfFile(_ bindings: [KeyMapping], targetConfigName: String) {
+  private func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfigName: String) {
     let isReadOnly = tableStore.isDefaultConfig(targetConfigName)
     guard !isReadOnly else { return }
 
@@ -428,6 +428,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
 
     var fileMappings = inputConfigFile.parseBindings()
+    Logger.log("Appending \(bindings.count) bindings to \(fileMappings.count) existing of config: \"\(targetConfigName)\"")
     fileMappings.append(contentsOf: bindings)
     inputConfigFile.replaceAllBindings(with: fileMappings)
     do {
@@ -436,6 +437,11 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+      return
+    }
+
+    if targetConfigName == tableStore.currentConfigName {
+      tableStore.loadBindingsFromCurrentConfigFile()
     }
   }
 
@@ -554,7 +560,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
         kbTableViewController.doEditMenuPaste()
       } else {
         // If other files, append at end
-        dropBindingsIntoUserConfFile(mappingsToInsert, targetConfigName: destConfigName)
+        appendBindingsToUserConfFile(mappingsToInsert, targetConfigName: destConfigName)
       }
     }
   }

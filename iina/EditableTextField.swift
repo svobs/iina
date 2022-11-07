@@ -52,6 +52,13 @@ class EditableTextField: NSTextField {
   }
 }
 
+// This class (so far) exists only for one reason: to make sure that rows with custom colored text
+// will change back to the regular control color when their row is highlighted.
+//
+// To use, just make sure this class name is specified for every text field cell in every column which
+// can have colored text (also that its parent is an `EditableTextField' and the parent table is
+// an `EditableTableView`), and to set the desired color for the text, set the `textColor` property of
+// the parent `EditableTextField`.
 class EditableTextFieldCell: NSTextFieldCell {
   var textColorOrig: NSColor? = nil
 
@@ -60,14 +67,12 @@ class EditableTextFieldCell: NSTextFieldCell {
   override var backgroundStyle: NSView.BackgroundStyle {
     didSet {
       switch backgroundStyle {
-        case .normal:      // Deselected
+        case .normal, .lowered:      // Deselected
           textColor = textColorOrig
-        case .emphasized:  // AKA selected
+        case .emphasized, .raised:  // AKA selected
           textColor = nil  // Use standard color
-        case .raised, .lowered:
-          fallthrough
         default:
-          Logger.log("Unsupported background style: \(backgroundStyle)")
+          Logger.log("Unsupported background style: \(backgroundStyle)", level: .warning	)
       }
     }
   }
