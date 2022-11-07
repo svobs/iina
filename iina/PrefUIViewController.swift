@@ -163,13 +163,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private func updateOSCToolbarButtons() {
     oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
-    let buttons = PrefUIViewController.oscToolbarButtons
-    for buttonType in buttons {
-      let button = NSImageView()
-      button.image = buttonType.image()
-      button.translatesAutoresizingMaskIntoConstraints = false
-      Utility.quickConstraints(["H:[btn(\(Preference.ToolBarButton.frameHeight))]", "V:[btn(\(Preference.ToolBarButton.frameHeight))]"], ["btn": button])
+    for buttonType in PrefUIViewController.oscToolbarButtons {
+      let button = NSButton()
+      OSCToolbarButton.setStyle(of: button, buttonType: buttonType)
       oscToolbarStackView.addView(button, in: .trailing)
+      // Prevent button from changing appearance when being clicked
+      (button.cell! as! NSButtonCell).highlightsBy = NSCell.StyleMask(rawValue: 0)
     }
   }
 
