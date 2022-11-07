@@ -52,13 +52,16 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func mouseDown(with event: NSEvent) {
     let dragItem = NSDraggingItem(pasteboardWriter: self)
     let iconSize = Preference.ToolBarButton.frameHeight
-    dragItem.draggingFrame = NSRect(origin: CGPoint(x: iconImageView.frame.origin.x + 5,
-                                                    y: iconImageView.frame.origin.y + 6),
+    let imageSize = self.buttonType.image().size
+    // Remember that the image is centered inside `iconImageView`, so need to find offset
+    let imageOrigin = CGPoint(x: iconImageView.frame.origin.x + (iconImageView.frame.width - imageSize.width) / 2,
+                              y: iconImageView.frame.origin.y + (iconImageView.frame.height - imageSize.height) / 2)
+    dragItem.draggingFrame = NSRect(origin: imageOrigin,
                                     size: NSSize(width: iconSize, height: iconSize))
     Logger.log("Dragging from AvailableItemsView: \(dragItem.draggingFrame)")
     dragItem.imageComponentsProvider = {
       let imageComponent = NSDraggingImageComponent(key: .icon)
-      let image = self.buttonType.image().tinted(.highlightColor)
+      let image = self.buttonType.image().tinted(.textColor)
       imageComponent.contents = image
       imageComponent.frame = NSRect(origin: .zero, size: NSSize(width: image.size.width, height: image.size.height))
       return [imageComponent]

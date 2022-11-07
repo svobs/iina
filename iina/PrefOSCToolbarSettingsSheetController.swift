@@ -96,7 +96,7 @@ class PrefOSCToolbarCurrentItem: NSButton, NSPasteboardWriting {
     Logger.log("Dragging from toolbar selection: \(dragItem.draggingFrame)")
     dragItem.imageComponentsProvider = {
       let imageComponent = NSDraggingImageComponent(key: .icon)
-      let image = self.buttonType.image().tinted(.highlightColor)
+      let image = self.buttonType.image().tinted(.textColor)
       imageComponent.contents = image
       imageComponent.frame = NSRect(origin: .zero, size: NSSize(width: image.size.width, height: image.size.height))
       return [imageComponent]
