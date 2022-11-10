@@ -681,6 +681,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
 // MARK: NSMenuDelegate
 
+// TODO: delete should select the row after
 extension KeyBindingTableViewController: NSMenuDelegate {
 
   fileprivate class BindingMenuItem: NSMenuItem {

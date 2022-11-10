@@ -483,18 +483,17 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     }
   }
 
+  // Builds context menu each time a row is right-clicked
   @objc func menuNeedsUpdate(_ contextMenu: NSMenu) {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedConfigName: String = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
-    let mib = CascadingMenuItemBuilder(mip: ConfigMenuItemProvider(), .menu(contextMenu), .unit(Unit.config),
-                                .unitCount(1), .targetRow(clickedConfigName), .target(self))
+    guard let clickedRow: String = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
+    let mib = CascadingMenuItemBuilder(mip: ConfigMenuItemProvider(), .menu(contextMenu),
+      .unit(Unit.config), .unitCount(1), .targetRow(clickedRow), .target(self))
 
-    buildMenu(mib, clickedRow: clickedConfigName)
-  }
+    let canModifyRow = !self.tableStore.isDefaultConfig(clickedRow)
 
-  private func buildMenu(_ mib: CascadingMenuItemBuilder, clickedRow: String) {
     // Show in Finder
     mib.addItem("Reveal in Finder", #selector(self.showInFinderFromMenu(_:)))
 
@@ -505,8 +504,6 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     mib.addSeparator()
 
     mib.likeEditCopy().addItem(#selector(self.copyConfigFromContextMenu(_:)))
-
-    let canModifyRow = !self.tableStore.isDefaultConfig(clickedRow)
 
     let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromContextMenu(_:))))
     var didAdd = false
@@ -524,7 +521,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       }
     }
     if !didAdd {  // disabled
-      pasteBuilder.addItem(with: .enabled(false))
+      pasteBuilder.addItem(with: .enabled(false), .unitCount(0))
     }
 
     mib.addSeparator()
