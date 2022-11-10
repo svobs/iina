@@ -11,10 +11,10 @@ import Carbon
 
 class KeyCodeHelper {
   class KeyEquivalents { // MacOS
-    static let BACKSPACE = String(Character(UnicodeScalar(NSBackspaceCharacter)!))
-    static let DEL = String(Character(UnicodeScalar(NSDeleteCharacter)!))
-    static let ENTER = String(Character(UnicodeScalar(NSEnterCharacter)!))
-    static let RETURN = String(Character(UnicodeScalar(NSNewlineCharacter)!))
+    static let BACKSPACE = String(UnicodeScalar(NSBackspaceCharacter)!)
+    static let DEL = String(UnicodeScalar(NSDeleteCharacter)!)
+    static let ENTER = String(UnicodeScalar(NSEnterCharacter)!)
+    static let RETURN = String(UnicodeScalar(NSNewlineCharacter)!)
   }
 
   // mpv modifiers in normal form:
@@ -490,6 +490,11 @@ class KeyCodeHelper {
     return modifierSymbols.map { modifiers.contains($0.0) ? $0.1 : "" }
       .joined()
       .appending(key)
+  }
+
+  static func macString(from modifiers: NSEvent.ModifierFlags) -> String {
+    return modifierSymbols.map { modifiers.contains($0.0) ? $0.1 : "" }
+      .joined()
   }
 
   // Formats a string of one or more keystrokes from mpv form to Mac form

@@ -477,9 +477,9 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     }
   }
 
-  fileprivate class ConfigMenuBuilder: ContextMenuBuilder<String> {
-    override func buildItem(for row: String, rowIndex: Int, title: String, action: Selector?, keyEquivalent: String) -> NSMenuItem {
-      return InputConfMenuItem(configName: row, title: title, action: action, key: keyEquivalent)
+  fileprivate class ConfigMenuItemProvider: MenuItemProvider {
+    func buildItem(_ title: String, action: Selector?, targetRow: Any, key: String, _ cmb: CascadingMenuItemBuilder) throws -> NSMenuItem {
+      return InputConfMenuItem(configName: targetRow as! String, title: title, action: action, key: key)
     }
   }
 
@@ -487,52 +487,50 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedConfigName = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
-    let mb = ConfigMenuBuilder(contextMenu, clickedRow: clickedConfigName, clickedRowIndex: -1, target: self)
+    guard let clickedConfigName: String = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
+    let mib = CascadingMenuItemBuilder(mip: ConfigMenuItemProvider(), .menu(contextMenu), .unit(Unit.config),
+                                .unitCount(1), .targetRow(clickedConfigName), .target(self))
 
-    buildMenu(mb)
+    buildMenu(mib, clickedRow: clickedConfigName)
   }
 
-  private func buildMenu(_ mb: ConfigMenuBuilder) {
+  private func buildMenu(_ mib: CascadingMenuItemBuilder, clickedRow: String) {
     // Show in Finder
-    mb.addItem("Reveal in Finder", #selector(self.showInFinderFromMenu(_:)))
+    mib.addItem("Reveal in Finder", #selector(self.showInFinderFromMenu(_:)))
 
     // Duplicate
-    mb.addItem("Duplicate", #selector(self.duplicateConfigFromMenu(_:)))
+    mib.addItem("Duplicate", #selector(self.duplicateConfigFromMenu(_:)))
 
     // ---
-    mb.addSeparator()
+    mib.addSeparator()
 
-    mb.addItem("Copy", #selector(self.copyConfigFromContextMenu(_:)), mb.proto.copy)
+    mib.likeEditCopy().addItem(#selector(self.copyConfigFromContextMenu(_:)))
 
-    let canModifyRow = !self.tableStore.isDefaultConfig(mb.clickedRow)
+    let canModifyRow = !self.tableStore.isDefaultConfig(clickedRow)
 
+    let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromContextMenu(_:))))
+    var didAdd = false
     if isPasteEnabled() {
-      var pasteTitle = ""
       let configCount = readConfigFilesFromClipboard().count
       if configCount > 0 {
-        pasteTitle = makePasteMenuItemTitle(configCount, Constants.String.config)
+        pasteBuilder.butWith(.unitCount(configCount)).addItem()
+        didAdd = true
       } else if canModifyRow {
         let bindingCount = kbTableViewController.readBindingsFromClipboard().count
         if bindingCount > 0 {
-          pasteTitle = makePasteMenuItemTitle(bindingCount, Constants.String.keyBinding)
+          pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount)).addItem()
+          didAdd = true
         }
       }
-      if !pasteTitle.isEmpty {
-        mb.addItem(pasteTitle, #selector(self.pasteFromContextMenu(_:)), mb.proto.paste)
-      }
-    } else {  // disabled
-      mb.addItem("Paste", nil, enabled: false, mb.proto.paste)
+    }
+    if !didAdd {  // disabled
+      pasteBuilder.addItem(with: .enabled(false))
     }
 
-    mb.addSeparator()
+    mib.addSeparator()
 
     // Delete
-    mb.addItem("Delete", #selector(self.deleteConfigFromContextMenu(_:)), enabled: canModifyRow, mb.proto.delete)
-  }
-
-  private func makePasteMenuItemTitle(_ itemCount: Int, _ singleUnit: String) -> String {
-    return itemCount == 0 ? "Paste" : "Paste \(itemCount == 1 ? "\(singleUnit)" : "\(itemCount) \(singleUnit)s")"
+    mib.likeEditDelete().butWith(.enabled(canModifyRow)).addItem(#selector(self.deleteConfigFromContextMenu(_:)))
   }
 
   @objc fileprivate func copyConfigFromContextMenu(_ sender: InputConfMenuItem) {

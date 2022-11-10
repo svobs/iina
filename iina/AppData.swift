@@ -98,8 +98,6 @@ struct Constants {
     static let pip = NSLocalizedString("menu.pip", comment: "Enter Picture-in-Picture")
     static let exitPIP = NSLocalizedString("menu.exit_pip", comment: "Exit Picture-in-Picture")
     static let custom = NSLocalizedString("menu.crop_custom", comment: "Custom crop size")
-    static let config = "Config"
-    static let keyBinding = "Binding"
     static let findOnlineSubtitles = NSLocalizedString("menu.find_online_sub", comment: "Find Online Subtitles")
     static let chaptersPanel = NSLocalizedString("menu.chapters", comment: "Show Chapters Panel")
     static let hideChaptersPanel = NSLocalizedString("menu.hide_chapters", comment: "Hide Chapters Panel")
@@ -122,6 +120,14 @@ struct Constants {
     static let audioEq = "iina_aeq"
     static let delogo = "iina_delogo"
   }
+}
+
+struct Unit {
+  let singular: String
+  let plural: String
+
+  static let config = Unit(singular: "Config", plural: "Configs")
+  static let keyBinding = Unit(singular: "Binding", plural: "Bindings")
 }
 
 extension Notification.Name {
