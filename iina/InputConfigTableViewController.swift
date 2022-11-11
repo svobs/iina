@@ -495,7 +495,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     let canModifyRow = !self.tableStore.isDefaultConfig(clickedRow)
 
     // Show in Finder
-    mib.addItem("Reveal in Finder", #selector(self.showInFinderFromMenu(_:)))
+    mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)))
 
     // Duplicate
     mib.addItem("Duplicate", #selector(self.duplicateConfigFromMenu(_:)))

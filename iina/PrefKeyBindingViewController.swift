@@ -47,8 +47,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var configHintLabel: NSTextField!
   @IBOutlet weak var addKmBtn: NSButton!
   @IBOutlet weak var removeKmBtn: NSButton!
-  @IBOutlet weak var showInFinderFileBtn: NSButton!
-  @IBOutlet weak var deleteConfigFileBtn: NSButton!
+  @IBOutlet weak var showConfFileBtn: NSButton!
+  @IBOutlet weak var deleteConfFileBtn: NSButton!
   @IBOutlet weak var newConfigBtn: NSButton!
   @IBOutlet weak var duplicateConfigBtn: NSButton!
   @IBOutlet weak var useMediaKeysButton: NSButton!
@@ -106,11 +106,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     configTableController?.duplicateConfig(configStore.currentConfigName)
   }
 
-  @IBAction func showInFinderFileAction(_ sender: AnyObject) {
+  @IBAction func showConfFileAction(_ sender: AnyObject) {
     configTableController?.showInFinder(configStore.currentConfigName)
   }
 
-  @IBAction func deleteConfigFileAction(_ sender: AnyObject) {
+  @IBAction func deleteConfFileAction(_ sender: AnyObject) {
     configTableController?.deleteConfig(configStore.currentConfigName)
   }
 
@@ -137,7 +137,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateEditEnabledStatus() {
     let isEditEnabledForCurrentConfig = configStore.isEditEnabledForCurrentConfig
-    [showInFinderFileBtn, deleteConfigFileBtn, addKmBtn].forEach { btn in
+    [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = isEditEnabledForCurrentConfig
     }
     configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabledForCurrentConfig ? "2" : "1")", comment: "preference.key_binding_hint")

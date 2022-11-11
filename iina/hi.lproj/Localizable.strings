@@ -116,6 +116,16 @@
 "menu.pause" = "रोकें";
 "menu.resume" = "पुनः आरंभ";
 "menu.speed" = "गति: %.2fx";
+"menu.chapters" = "Show Chapters Panel";
+"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.playlist" = "Show Playlist Panel";
+"menu.hide_playlist" = "Hide Playlist Panel";
+"menu.video" = "Show Video Panel";
+"menu.hide_video" = "Hide Video Panel";
+"menu.audio" = "Show Audio Panel";
+"menu.hide_audio" = "Hide Audio Panel";
+"menu.subtitles" = "Show Subtitles Panel";
+"menu.hide_subtitles" = "Hide Subtitles Panel";
 
 "menu.seek_forward" = "आगे कदम %.0fs";
 "menu.seek_backward" = "पीछे जाओ %.0fs";
@@ -145,7 +155,7 @@
 
 "alert.fatal_error" = "घातक त्रुटि: %@ \n एप्लिकेशन अब बाहर निकल जाएगा।";
 "alert.mpv_error" = "आंतरिक गलती %@ (%@) विकल्प सेट करते समय %@।";
-"alert.sleep" = "प्रदर्शन नींद को रोक नहीं सकता!";
+"alert.sleep" = "Cannot prevent display sleep! (0x%0X8)";
 
 "alert.unsupported_audio" = "असमर्थित बाहरी ऑडियो फ़ाइल।";
 "alert.unsupported_sub" = "असमर्थित बाहरी उपशीर्षक।";
@@ -224,6 +234,9 @@
 "alert.clear_watch_later.title" = "स्पष्ट प्लेबैक प्रगति को बचाया";
 "alert.clear_watch_later.message" = "क्या आप सभी सहेजे गए प्लेबैक प्रगति (\"बाद में देखना\" डेटा) को हटाना सुनिश्चित कर रहे हैं?";
 
+"alert.restore_alerts.title" = "Restore Suppressed Alerts";
+"alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
+
 "alert.nothing_to_open" = "कुछ भी नहीं खोलने के लिए।";
 
 "alert.no_video_track" = "कोई वीडियो ट्रैक नहीं है।";
@@ -257,7 +270,7 @@
 "pl_menu.delete_multi" = "चयनित फ़ाइलों को ट्रैश में ले जाएं";
 "pl_menu.delete_after_play" = "प्लेबैक के बाद ट्रैश में जाएं";
 "pl_menu.delete_after_play_multi" = "प्लेबैक के बाद ट्रैश में चयनित फ़ाइलों को स्थानांतरित करें";
-"pl_menu.reveal_in_finder" = "खोजक में पता चलता है";
+"pl_menu.show_in_finder" = "खोजक में पता चलता है";
 "pl_menu.add_file" = "फाइल जोडें…";
 "pl_menu.add_url" = "यू आर एल जोड़िये…";
 "pl_menu.clear_playlist" = "क्लियर प्लेलिस्ट";

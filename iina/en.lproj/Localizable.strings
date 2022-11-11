@@ -175,7 +175,7 @@
 "alert.config.empty_name" = "The name cannot be empty.";
 "alert.config.name_existing" = "The name already exists.";
 "alert.config.file_existing.title" = "File Already Exists";
-"alert.config.file_existing.message" = "This should not happen. Choose OK to overwrite, Cancel to reveal the file in Finder.";
+"alert.config.file_existing.message" = "This should not happen. Choose OK to overwrite, Cancel to show the file in Finder.";
 "alert.config.cannot_create" = "Cannot create config file!\n%@";
 "alert.config.cannot_write" = "Cannot write to config file!";
 
@@ -191,6 +191,8 @@
 "alert.extra_option.config_folder" = "Error setting config directory \"%@\".";
 
 "alert.playlist.error_deleting" = "Error deleting: %@";
+
+"alert.screenshot.error_taking" = "Cannot take a screenshot!";
 
 "alert.sub.no_selected" = "Please select a downloaded subtitle first.";
 "alert.sub_lang_not_set" = "Please set preferred subtitle languages in preferences before using OpenSubtitles. English(eng) will be used this time.";
@@ -270,7 +272,7 @@
 "pl_menu.delete_multi" = "Move Selected Files to Trash";
 "pl_menu.delete_after_play" = "Move to Trash After Playback";
 "pl_menu.delete_after_play_multi" = "Move Selected Files to Trash After Playback";
-"pl_menu.reveal_in_finder" = "Reveal in Finder";
+"pl_menu.show_in_finder" = "Show in Finder";
 "pl_menu.add_file" = "Add File…";
 "pl_menu.add_url" = "Add URL…";
 "pl_menu.clear_playlist" = "Clear Playlist";

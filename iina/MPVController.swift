@@ -960,6 +960,18 @@ class MPVController: NSObject {
     case MPV_EVENT_COMMAND_REPLY:
       let reply = event.pointee.reply_userdata
       if reply == MPVController.UserData.screenshot {
+        let code = event.pointee.error
+        guard code >= 0 else {
+          let error = String(cString: mpv_error_string(code))
+          Logger.log("Cannot take a screenshot, mpv API error: \(error), Return value: \(code)", level: .error)
+          // Unfortunately the mpv API does not provide any details on the failure. The error
+          // code returned maps to "error running command", so all the alert can report is
+          // that we cannot take a screenshot.
+          DispatchQueue.main.async {
+            Utility.showAlert("screenshot.error_taking")
+          }
+          return
+        }
         player.screenshotCallback()
       }
 
@@ -968,8 +980,13 @@ class MPVController: NSObject {
       break
     }
 
-    let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
-    player.events.emit(.init(eventName))
+    // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
+    // plugins from a task in this queue. Accessing EventController data from a thread in this queue
+    // results in data races that can cause a crash. See issue 3986.
+    DispatchQueue.main.async { [self] in
+      let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
+      player.events.emit(.init(eventName))
+    }
   }
 
   private func onVideoParamsChange(_ data: UnsafePointer<mpv_node_list>) {
@@ -1310,23 +1327,28 @@ class MPVController: NSObject {
       }
     }
 
-    let eventName = EventController.Name("mpv.\(name).changed")
-    if player.events.hasListener(for: eventName) {
-      // FIXME: better convert to JSValue before passing to call()
-      let data: Any
-      switch property.format {
-      case MPV_FORMAT_FLAG:
-        data = property.data.bindMemory(to: Bool.self, capacity: 1).pointee
-      case MPV_FORMAT_INT64:
-        data = property.data.bindMemory(to: Int64.self, capacity: 1).pointee
-      case MPV_FORMAT_DOUBLE:
-        data = property.data.bindMemory(to: Double.self, capacity: 1).pointee
-      case MPV_FORMAT_STRING:
-        data = property.data.bindMemory(to: String.self, capacity: 1).pointee
-      default:
-        data = 0
+    // This code is running in the com.colliderli.iina.controller dispatch queue. We must not run
+    // plugins from a task in this queue. Accessing EventController data from a thread in this queue
+    // results in data races that can cause a crash. See issue 3986.
+    DispatchQueue.main.async { [self] in
+      let eventName = EventController.Name("mpv.\(name).changed")
+      if player.events.hasListener(for: eventName) {
+        // FIXME: better convert to JSValue before passing to call()
+        let data: Any
+        switch property.format {
+        case MPV_FORMAT_FLAG:
+          data = property.data.bindMemory(to: Bool.self, capacity: 1).pointee
+        case MPV_FORMAT_INT64:
+          data = property.data.bindMemory(to: Int64.self, capacity: 1).pointee
+        case MPV_FORMAT_DOUBLE:
+          data = property.data.bindMemory(to: Double.self, capacity: 1).pointee
+        case MPV_FORMAT_STRING:
+          data = property.data.bindMemory(to: String.self, capacity: 1).pointee
+        default:
+          data = 0
+        }
+        player.events.emit(eventName, data: data)
       }
-      player.events.emit(eventName, data: data)
     }
   }
 

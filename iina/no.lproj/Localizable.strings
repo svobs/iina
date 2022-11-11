@@ -116,6 +116,16 @@
 "menu.pause" = "Pause";
 "menu.resume" = "Gjenoppta";
 "menu.speed" = "Hastighet: %.2fx";
+"menu.chapters" = "Show Chapters Panel";
+"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.playlist" = "Show Playlist Panel";
+"menu.hide_playlist" = "Hide Playlist Panel";
+"menu.video" = "Show Video Panel";
+"menu.hide_video" = "Hide Video Panel";
+"menu.audio" = "Show Audio Panel";
+"menu.hide_audio" = "Hide Audio Panel";
+"menu.subtitles" = "Show Subtitles Panel";
+"menu.hide_subtitles" = "Hide Subtitles Panel";
 
 "menu.seek_forward" = "Steg fremover: %.0fs";
 "menu.seek_backward" = "Steg bakover: %.0fs";
@@ -145,7 +155,7 @@
 
 "alert.fatal_error" = "Fatal error: %@ \nThe application will exit now.";
 "alert.mpv_error" = "Internal error %@ (%@) when setting option %@.";
-"alert.sleep" = "Cannot prevent display sleep!";
+"alert.sleep" = "Cannot prevent display sleep! (0x%0X8)";
 
 "alert.unsupported_audio" = "Unsupported external audio file.";
 "alert.unsupported_sub" = "Unsupported external subtitle.";
@@ -224,6 +234,9 @@
 "alert.clear_watch_later.title" = "Slett lagret avspillingsfremgang";
 "alert.clear_watch_later.message" = "Er du sikker på at du vil slette avspillingsfremgang (\"Se senere\")?";
 
+"alert.restore_alerts.title" = "Restore Suppressed Alerts";
+"alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
+
 "alert.nothing_to_open" = "Ingenting å åpne.";
 
 "alert.no_video_track" = "Finnes ingen videospor.";
@@ -257,7 +270,7 @@
 "pl_menu.delete_multi" = "Flytt valgte til papirkurv";
 "pl_menu.delete_after_play" = "Flytt til papirkurv etter avspilling";
 "pl_menu.delete_after_play_multi" = "Flytt valgte til papirkurv etter avspilling";
-"pl_menu.reveal_in_finder" = "Vis i Finder";
+"pl_menu.show_in_finder" = "Vis i Finder";
 "pl_menu.add_file" = "Legg til fil…";
 "pl_menu.add_url" = "Legg til URL…";
 "pl_menu.clear_playlist" = "Tøm spilleliste";

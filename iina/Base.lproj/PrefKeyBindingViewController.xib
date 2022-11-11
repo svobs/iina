@@ -10,14 +10,14 @@
             <connections>
                 <outlet property="addKmBtn" destination="f5l-5w-zmm" id="L2K-7M-RLc"/>
                 <outlet property="configHintLabel" destination="tP6-Ua-acA" id="bRT-AA-zL7"/>
-                <outlet property="deleteConfigFileBtn" destination="EpF-t6-PtC" id="3NC-Xb-5kT"/>
+                <outlet property="deleteConfFileBtn" destination="EpF-t6-PtC" id="3NC-Xb-5kT"/>
                 <outlet property="duplicateConfigBtn" destination="5WK-s3-J9x" id="Ri8-b5-d3s"/>
                 <outlet property="inputConfigTableView" destination="AYj-6d-niF" id="mCQ-0s-wf9"/>
                 <outlet property="kbTableView" destination="1Z4-NL-6P3" id="OyE-OE-MSd"/>
                 <outlet property="keyMappingSearchField" destination="x6N-6q-HiV" id="mRh-rd-I8d"/>
                 <outlet property="newConfigBtn" destination="iCp-ho-SlQ" id="LI0-TX-tNs"/>
                 <outlet property="removeKmBtn" destination="uFG-OF-DJ5" id="XWN-Lt-tmc"/>
-                <outlet property="showInFinderFileBtn" destination="KZA-hu-vhZ" id="lVg-3j-Qgp"/>
+                <outlet property="showConfFileBtn" destination="KZA-hu-vhZ" id="lVg-3j-Qgp"/>
                 <outlet property="useMediaKeysButton" destination="LU9-QU-BFL" id="b9B-LC-pyM"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
             </connections>
@@ -197,13 +197,13 @@
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KZA-hu-vhZ">
-                    <rect key="frame" x="1" y="1" width="194" height="32"/>
-                    <buttonCell key="cell" type="push" title="Reveal config file in Finder" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="gDo-JL-a9k">
+                    <rect key="frame" x="1" y="1" width="210" height="32"/>
+                    <buttonCell key="cell" type="push" title="Show the config file in Finder" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="gDo-JL-a9k">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <action selector="showInFinderFileAction:" target="-2" id="NK4-Mj-IlB"/>
+                        <action selector="showConfFileAction:" target="-2" id="IMG-HR-TWq"/>
                     </connections>
                 </button>
                 <box boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="mLe-eI-lIk">
@@ -399,7 +399,7 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="deleteConfigFileAction:" target="-2" id="v3N-VV-gc0"/>
+                                    <action selector="deleteConfFileAction:" target="-2" id="v3N-VV-gc0"/>
                                 </connections>
                             </button>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="5WK-s3-J9x">

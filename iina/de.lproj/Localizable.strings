@@ -116,6 +116,16 @@
 "menu.pause" = "Pause";
 "menu.resume" = "Wiedergabe";
 "menu.speed" = "Geschwindigkeit: %.2fx";
+"menu.chapters" = "Show Chapters Panel";
+"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.playlist" = "Show Playlist Panel";
+"menu.hide_playlist" = "Hide Playlist Panel";
+"menu.video" = "Show Video Panel";
+"menu.hide_video" = "Hide Video Panel";
+"menu.audio" = "Show Audio Panel";
+"menu.hide_audio" = "Hide Audio Panel";
+"menu.subtitles" = "Show Subtitles Panel";
+"menu.hide_subtitles" = "Hide Subtitles Panel";
 
 "menu.seek_forward" = "%.0f s vorspulen";
 "menu.seek_backward" = "%.0f s zurückspulen";
@@ -145,7 +155,7 @@
 
 "alert.fatal_error" = "Schwerwiegender Fehler: %@ \nProgramm wird beendet.";
 "alert.mpv_error" = "Interner Fehler %@ (%@) beim Setzen der Einstellung %@.";
-"alert.sleep" = "Ruhezustand des Monitors konnte nicht verhindert werden.";
+"alert.sleep" = "Cannot prevent display sleep! (0x%0X8)";
 
 "alert.unsupported_audio" = "Externe Audiodatei nicht unterstützt.";
 "alert.unsupported_sub" = "Externe Untertiteldatei nicht untersützt.";
@@ -224,6 +234,9 @@
 "alert.clear_watch_later.title" = "Gesicherten Wiedergabefortschritt löschen";
 "alert.clear_watch_later.message" = "Möchtest du den Wiedergabefortschritt aller Videos löschen?";
 
+"alert.restore_alerts.title" = "Restore Suppressed Alerts";
+"alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
+
 "alert.nothing_to_open" = "Nichts zu öffnen.";
 
 "alert.no_video_track" = "Keine Videospur vorhanden.";
@@ -257,7 +270,7 @@
 "pl_menu.delete_multi" = "Auswahl in den Papierkorb legen";
 "pl_menu.delete_after_play" = "Nach Wiedergabe in den Papierkorb legen";
 "pl_menu.delete_after_play_multi" = "Auswahl nach Wiedergabe in den Papierkorb legen";
-"pl_menu.reveal_in_finder" = "Im Finder anzeigen";
+"pl_menu.show_in_finder" = "Im Finder anzeigen";
 "pl_menu.add_file" = "Datei hinzufügen …";
 "pl_menu.add_url" = "Adresse hinzufügen …";
 "pl_menu.clear_playlist" = "Wiedergabeliste leeren";
