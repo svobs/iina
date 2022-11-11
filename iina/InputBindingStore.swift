@@ -165,16 +165,24 @@ class InputBindingStore {
     }
 
     var remainingRowsUnfiltered: [InputBinding] = []
-    for row in bindingRowsAll {
+    var lastRemovedIndex = 0
+    for (rowIndex, row) in bindingRowsAll.enumerated() {
       if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
+        lastRemovedIndex = rowIndex
       } else {
         // be sure to include rows which do not have IDs
         remainingRowsUnfiltered.append(row)
       }
     }
-
     let tableChange = TableChange(.removeRows)
     tableChange.toRemove = indexesToRemove
+
+    // After removal, select the single row after the last one removed:
+    let countRemoved = bindingRowsAll.count - remainingRowsUnfiltered.count
+    if countRemoved < bindingRowsAll.count {
+      let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
+      tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+    }
 
     saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
   }
