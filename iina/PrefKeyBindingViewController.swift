@@ -136,17 +136,17 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isEditEnabledForCurrentConfig = configStore.isEditEnabledForCurrentConfig
+    let isCurrentConfigReadOnly = configStore.isCurrentConfigReadOnly
     [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
-      btn.isEnabled = isEditEnabledForCurrentConfig
+      btn.isEnabled = !isCurrentConfigReadOnly
     }
-    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isEditEnabledForCurrentConfig ? "2" : "1")", comment: "preference.key_binding_hint")
+    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isCurrentConfigReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
 
     self.updateRemoveButtonEnablement()
   }
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = configStore.isEditEnabledForCurrentConfig && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = !configStore.isCurrentConfigReadOnly && kbTableView.selectedRow != -1
   }
 }

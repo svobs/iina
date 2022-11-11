@@ -277,7 +277,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    TODO: look for a way to animate this so that it's more obvious that something happened.
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard configStore.isEditEnabledForCurrentConfig, operation == NSDragOperation.delete else {
+    guard !configStore.isCurrentConfigReadOnly && operation == NSDragOperation.delete else {
       return
     }
 
@@ -297,7 +297,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard configStore.isEditEnabledForCurrentConfig else {
+    guard !configStore.isCurrentConfigReadOnly else {
       return []  // deny drop
     }
 
@@ -585,7 +585,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   private func requireCurrentConfigIsEditable(forAction action: String) -> Bool {
-    if configStore.isEditEnabledForCurrentConfig {
+    if !configStore.isCurrentConfigReadOnly {
       return true
     }
 
@@ -609,11 +609,11 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return configStore.isEditEnabledForCurrentConfig && !selectedModifiableRows.isEmpty
+    return !configStore.isCurrentConfigReadOnly && !selectedModifiableRows.isEmpty
   }
 
   func isPasteEnabled() -> Bool {
-    return configStore.isEditEnabledForCurrentConfig && !readBindingsFromClipboard().isEmpty
+    return !configStore.isCurrentConfigReadOnly && !readBindingsFromClipboard().isEmpty
   }
 
   func doEditMenuCut() {
@@ -727,9 +727,9 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func buildMenuForSingleRow(_ mib: CascadingMenuItemBuilder, _ clickedRow: InputBinding, _ clickedRowIndex: Int) {
-    let isRowEditable = configStore.isEditEnabledForCurrentConfig && clickedRow.canBeModified
+    let isRowEditable = !configStore.isCurrentConfigReadOnly && clickedRow.canBeModified
 
-    if !configStore.isEditEnabledForCurrentConfig {
+    if configStore.isCurrentConfigReadOnly {
       addReadOnlyConfigMenuItem(mib)
     } else if !isRowEditable {
       let culprit: String
@@ -765,7 +765,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     mib.likeEditCopy().butWith(.action(#selector(self.copyRow(_:))), .enabled(clickedRow.canBeCopied)).addItem()
 
     let clipboardCount = readBindingsFromClipboard().count
-    let isPasteEnabled = configStore.isEditEnabledForCurrentConfig && clipboardCount > 0
+    let isPasteEnabled = !configStore.isCurrentConfigReadOnly && clipboardCount > 0
     let pb = mib.butWith(.unitCount(clipboardCount), .enabled(isPasteEnabled))
     if !isPasteEnabled {
       pb.likeEditPaste().addItem()
@@ -791,7 +791,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     mib.addSeparator()
 
     // Insert New: follow same logic as Paste, except don't show at all if disabled
-    if configStore.isEditEnabledForCurrentConfig {
+    if !configStore.isCurrentConfigReadOnly {
       if isRowEditable {
         mib.addItem(with: .titleFormatSingle(insertNewRowsAbove), .action(#selector(self.addNewRowAbove(_:))))
         mib.addItem(with: .titleFormatSingle(insertNewRowsBelow), .action(#selector(self.addNewRowBelow(_:))))
@@ -825,7 +825,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
 
     // Add disabled italicized message if not all can be operated on
-    if !configStore.isEditEnabledForCurrentConfig {
+    if configStore.isCurrentConfigReadOnly {
       modifiableCount = 0
       addReadOnlyConfigMenuItem(mib)
     } else {

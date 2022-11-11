@@ -87,8 +87,8 @@ class InputConfigStore {
     configTableRows = buildConfigTableRows()
   }
 
-  var isEditEnabledForCurrentConfig: Bool {
-    return !isDefaultConfig(currentConfigName)
+  var isCurrentConfigReadOnly: Bool {
+    return isDefaultConfig(currentConfigName)
   }
 
   func isDefaultConfig(_ configName: String) -> Bool {
@@ -350,7 +350,7 @@ class InputConfigStore {
       return
     }
     Logger.log("Loading bindings config from \"\(configFilePath)\"")
-    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath, isReadOnly: !isEditEnabledForCurrentConfig) else {
+    guard let inputConfigFile = InputConfigFile.loadFile(at: configFilePath, isReadOnly: isCurrentConfigReadOnly) else {
       changeCurrentConfigToDefault()
       return
     }

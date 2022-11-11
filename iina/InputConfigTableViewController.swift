@@ -23,13 +23,13 @@ class InputConfigTableViewController: NSObject {
   private let enableInlineCreate = true
 
   private unowned var tableView: EditableTableView!
-  private unowned var tableStore: InputConfigStore!
+  private unowned var configStore: InputConfigStore!
   private unowned var kbTableViewController: KeyBindingTableViewController
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfigTableView: EditableTableView, _ tableStore: InputConfigStore, _ kbTableViewController: KeyBindingTableViewController) {
+  init(_ inputConfigTableView: EditableTableView, _ configStore: InputConfigStore, _ kbTableViewController: KeyBindingTableViewController) {
     self.tableView = inputConfigTableView
-    self.tableStore = tableStore
+    self.configStore = configStore
     self.kbTableViewController = kbTableViewController
 
     super.init()
@@ -67,10 +67,10 @@ class InputConfigTableViewController: NSObject {
   }
 
   func selectCurrentConfigRow() {
-    let configName = self.tableStore.currentConfigName
-    guard let index = tableStore.configTableRows.firstIndex(of: configName) else {
+    let configName = self.configStore.currentConfigName
+    guard let index = configStore.configTableRows.firstIndex(of: configName) else {
       Logger.log("selectCurrentConfigRow(): Failed to find '\(configName)' in table; falling back to default", level: .error)
-      tableStore.changeCurrentConfigToDefault()
+      configStore.changeCurrentConfigToDefault()
       return
     }
 
@@ -86,14 +86,14 @@ extension InputConfigTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
-    tableStore.changeCurrentConfig(tableView.selectedRow)
+    configStore.changeCurrentConfig(tableView.selectedRow)
   }
 
   /**
    Make cell view when asked
    */
   @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    let configName = tableStore.configTableRows[row]
+    let configName = configStore.configTableRows[row]
 
     guard let identifier = tableColumn?.identifier else { return nil }
 
@@ -101,7 +101,7 @@ extension InputConfigTableViewController: NSTableViewDelegate {
       return nil
     }
     let columnName = identifier.rawValue
-    let isDefaultConfig = tableStore.isDefaultConfig(configName)
+    let isDefaultConfig = configStore.isDefaultConfig(configName)
 
     switch columnName {
       case "nameColumn":
@@ -125,33 +125,33 @@ extension InputConfigTableViewController: NSTableViewDelegate {
 extension InputConfigTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    if let configName = tableStore.getConfigRow(at: rowIndex), !tableStore.isDefaultConfig(configName) {
+    if let configName = configStore.getConfigRow(at: rowIndex), !configStore.isDefaultConfig(configName) {
       return true
     }
     return false
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    if let configName = tableStore.getConfigRow(at: rowIndex), !tableStore.isDefaultConfig(configName) {
+    if let configName = configStore.getConfigRow(at: rowIndex), !configStore.isDefaultConfig(configName) {
       return true
     }
     return false
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    if self.tableStore.isAddingNewConfigInline {
+    if self.configStore.isAddingNewConfigInline {
       // If user didn't enter a name, just remove the row
-      tableStore.cancelInlineAdd()
+      configStore.cancelInlineAdd()
     }
   }
 
   // User finished editing (callback from EditableTextField).
   // Renames current config & its file on disk
   func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
-    if self.tableStore.isAddingNewConfigInline { // New file
+    if self.configStore.isAddingNewConfigInline { // New file
       let succeeded = self.completeInlineAdd(newName: newName)
       if !succeeded {
-        tableStore.cancelInlineAdd()
+        configStore.cancelInlineAdd()
       }
       return succeeded
 
@@ -161,7 +161,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   private func completeInlineAdd(newName: String) -> Bool {
-    guard !self.tableStore.configTableRows.contains(newName) else {
+    guard !self.configStore.configTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -179,26 +179,26 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
       Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
       return false
     }
-    tableStore.completeInlineAdd(configName: newName, filePath: newFilePath)
+    configStore.completeInlineAdd(configName: newName, filePath: newFilePath)
     return true
   }
 
   private func moveFileAndRenameCurrentConfig(newName: String) -> Bool {
     // Validate name change
-    guard !self.tableStore.currentConfigName.equalsIgnoreCase(newName) else {
+    guard !self.configStore.currentConfigName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
     }
 
     Logger.log("User renamed current config to \"\(newName)\" in editor", level: .verbose)
 
-    guard !self.tableStore.configTableRows.contains(newName) else {
+    guard !self.configStore.configTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
     }
 
-    guard let oldFilePath = self.tableStore.currentConfigFilePath else {
+    guard let oldFilePath = self.configStore.currentConfigFilePath else {
       Logger.log("Failed to find file for current config! Aborting rename", level: .error)
       return false
     }
@@ -222,7 +222,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
     }
 
     // Update config lists and update UI
-    return tableStore.renameCurrentConfig(newName: newName)
+    return configStore.renameCurrentConfig(newName: newName)
   }
 
   // MARK: Cut, copy, paste, delete support.
@@ -239,7 +239,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return !tableStore.isEditEnabledForCurrentConfig
+    return !configStore.isCurrentConfigReadOnly
   }
 
   func isPasteEnabled() -> Bool {
@@ -248,7 +248,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuCopy() {
-    return copyConfigFileToClipboard(configName: tableStore.currentConfigName)
+    return copyConfigFileToClipboard(configName: configStore.currentConfigName)
   }
 
   func doEditMenuPaste() {
@@ -268,7 +268,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
 
   func doEditMenuDelete() {
     // Delete current user config
-    deleteConfig(tableStore.currentConfigName)
+    deleteConfig(configStore.currentConfigName)
   }
 
   private func readConfigFilesFromClipboard() -> [String] {
@@ -277,7 +277,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
 
   // Convert config file path to URL and put it in clipboard
   private func copyConfigFileToClipboard(configName: String) {
-    guard let filePath = tableStore.getFilePath(forConfig: configName) else { return }
+    guard let filePath = configStore.getFilePath(forConfig: configName) else { return }
     let url = NSURL(fileURLWithPath: filePath)
 
     NSPasteboard.general.clearContents()
@@ -294,7 +294,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
    Tell NSTableView the number of rows when it asks
    */
   @objc func numberOfRows(in tableView: NSTableView) -> Int {
-    return tableStore.configTableRows.count
+    return configStore.configTableRows.count
   }
 
   // MARK: Drag & Drop
@@ -310,8 +310,8 @@ extension InputConfigTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-    if let configName = tableStore.getConfigRow(at: row),
-       let filePath = tableStore.getFilePath(forConfig: configName) {
+    if let configName = configStore.getConfigRow(at: row),
+       let filePath = configStore.getFilePath(forConfig: configName) {
       return NSURL(fileURLWithPath: filePath)
     }
     return nil
@@ -327,7 +327,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     }
 
     let userConfigList = InputConfigTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
-      tableStore.getUserConfigName(forFilePath: $0) }
+      configStore.getUserConfigName(forFilePath: $0) }
 
     guard userConfigList.count == 1 else {
       return
@@ -366,7 +366,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
     // Check for key bindings
     let bindingCount = KeyMapping.deserializeList(from: info.draggingPasteboard).count
-    if bindingCount > 0 && dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
+    if bindingCount > 0 && dropOperation == .on, let targetConfigName = configStore.getConfigRow(at: row), !configStore.isDefaultConfig(targetConfigName) {
       // Drop bindings into another user config
       info.numberOfValidItemsForDrop = bindingCount
       return NSDragOperation.copy
@@ -402,7 +402,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
     // Option B: drop bindings into user conf file
     let bindingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
-    if !bindingList.isEmpty, dropOperation == .on, let targetConfigName = tableStore.getConfigRow(at: row), !tableStore.isDefaultConfig(targetConfigName) {
+    if !bindingList.isEmpty, dropOperation == .on, let targetConfigName = configStore.getConfigRow(at: row), !configStore.isDefaultConfig(targetConfigName) {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfigName)\" config")
       info.numberOfValidItemsForDrop = bindingList.count
       info.animatesToDestination = true
@@ -418,7 +418,7 @@ extension InputConfigTableViewController: NSTableViewDataSource {
   }
 
   private func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfigName: String) {
-    let isReadOnly = tableStore.isDefaultConfig(targetConfigName)
+    let isReadOnly = configStore.isDefaultConfig(targetConfigName)
     guard !isReadOnly else { return }
 
     guard let configFilePath = requireFilePath(forConfig: targetConfigName),
@@ -440,8 +440,8 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return
     }
 
-    if targetConfigName == tableStore.currentConfigName {
-      tableStore.loadBindingsFromCurrentConfigFile()
+    if targetConfigName == configStore.currentConfigName {
+      configStore.loadBindingsFromCurrentConfigFile()
     }
   }
 
@@ -488,11 +488,11 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedRow: String = tableStore.getConfigRow(at: tableView.clickedRow) else { return }
+    guard let clickedRow: String = configStore.getConfigRow(at: tableView.clickedRow) else { return }
     let mib = CascadingMenuItemBuilder(mip: ConfigMenuItemProvider(), .menu(contextMenu),
       .unit(Unit.config), .unitCount(1), .targetRow(clickedRow), .target(self))
 
-    let canModifyRow = !self.tableStore.isDefaultConfig(clickedRow)
+    let canModifyRow = !self.configStore.isDefaultConfig(clickedRow)
 
     // Show in Finder
     mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)))
@@ -527,7 +527,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     mib.addSeparator()
 
     // Delete
-    mib.likeEditDelete().butWith(.enabled(canModifyRow)).addItem(#selector(self.deleteConfigFromContextMenu(_:)))
+    mib.likeEasyDelete().butWith(.enabled(canModifyRow)).addItem(#selector(self.deleteConfigFromContextMenu(_:)))
   }
 
   @objc fileprivate func copyConfigFromContextMenu(_ sender: InputConfMenuItem) {
@@ -550,7 +550,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     if !mappingsToInsert.isEmpty {
       let destConfigName = sender.configName
       Logger.log("User chose to paste \(mappingsToInsert.count) bindings into \"\(destConfigName)\"")
-      if destConfigName == tableStore.currentConfigName {
+      if destConfigName == configStore.currentConfigName {
         // If currently open config file, this will paste under the current selection
         kbTableViewController.doEditMenuPaste()
       } else {
@@ -586,7 +586,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       Utility.showAlert("error_deleting_file", sheetWindow: tableView.window)
     }
     // update prefs & refresh UI
-    tableStore.removeConfig(configName)
+    configStore.removeConfig(configName)
   }
 
   @objc func showInFinder(_ configName: String) {
@@ -602,7 +602,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
     if enableInlineCreate {
       // Add a new config with no name, and immediately open an editor for it.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
-      let _ = tableStore.addNewUserConfigInline(completionHandler: { tableChange in
+      let _ = configStore.addNewUserConfigInline(completionHandler: { tableChange in
         if let selectedRowIndex = tableChange.newSelectedRows?.first {
           self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
         }
@@ -637,7 +637,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       // Find a new name for the duplicate, and immediately open an editor for it to change the name.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       if let (newConfigName, newFilePath) = self.duplicateCurrentConfFile() {
-        self.tableStore.addUserConfig(configName: newConfigName, filePath: newFilePath, completionHandler: { tableChange in
+        self.configStore.addUserConfig(configName: newConfigName, filePath: newFilePath, completionHandler: { tableChange in
           if let selectedRowIndex = tableChange.newSelectedRows?.first {
             self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
           }
@@ -650,7 +650,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
           Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
           return
         }
-        guard !self.tableStore.configTableRows.contains(newName) else {
+        guard !self.configStore.configTableRows.contains(newName) else {
           Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
           return
         }
@@ -670,9 +670,9 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   }
 
   private func duplicateCurrentConfFile() -> (String, String)? {
-    guard let filePath = tableStore.currentConfigFilePath else { return nil }
+    guard let filePath = configStore.currentConfigFilePath else { return nil }
 
-    let (newConfigName, newFilePath) = findNewNameForDuplicate(originalName: tableStore.currentConfigName)
+    let (newConfigName, newFilePath) = findNewNameForDuplicate(originalName: configStore.currentConfigName)
 
     do {
       Logger.log("Duplicating file: \"\(filePath)\" -> \"\(newFilePath)\"")
@@ -699,7 +699,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       return
     }
 
-    self.tableStore.addUserConfig(configName: newName, filePath: newFilePath)
+    self.configStore.addUserConfig(configName: newName, filePath: newFilePath)
   }
 
   /*
@@ -781,7 +781,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       Logger.log("Successfully imported: \(configsToAdd.count) input config files")
 
       // update prefs & refresh UI
-      self.tableStore.addUserConfigs(configsToAdd)
+      self.configStore.addUserConfigs(configsToAdd)
     }
   }
 
@@ -815,7 +815,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
   }
 
   private func requireFilePath(forConfig configName: String) -> String? {
-    if let confFilePath = self.tableStore.getFilePath(forConfig: configName) {
+    if let confFilePath = self.configStore.getFilePath(forConfig: configName) {
       return confFilePath
     }
 
@@ -835,7 +835,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
       newConfigName = nextName
 
-      if tableStore.getFilePath(forConfig: newConfigName) != nil {
+      if configStore.getFilePath(forConfig: newConfigName) != nil {
         // Entry with same name already exists in config list
         continue
       }
