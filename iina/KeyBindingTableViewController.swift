@@ -327,18 +327,17 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       dragMask = DEFAULT_DRAG_OPERATION
     }
 
-    if dragMask.contains(.move) {
-      for mapping in mappingList {
-        if mapping.bindingID == nil {
-          // Mapping isn't from a conf file: cannot modify it. Deny drop.
-          return []
-        }
-      }
-      return .move
-    } else if dragMask.contains(.copy) {
+    if dragMask.contains(.copy) {
       return .copy
     }
-    return DEFAULT_DRAG_OPERATION
+    // else assume move
+    for mapping in mappingList {
+      if mapping.bindingID == nil {
+        // Mapping isn't from a conf file: cannot modify it. Deny drop.
+        return []
+      }
+    }
+    return .move
   }
 
   /*
