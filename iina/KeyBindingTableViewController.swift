@@ -251,6 +251,8 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    Drag start: define which operations are allowed, and in which contexts
    */
   @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    session.draggingFormation = DRAGGING_FORMATION
+
     switch(context) {
       case .withinApplication:
         return .copy.union(.move)
@@ -266,7 +268,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let row = bindingStore.getBindingRow(at: rowIndex)
-    if let row = row, row.canBeModified {
+    if let row = row, row.canBeCopied {
       return row.keyMapping
     }
     return nil
@@ -296,7 +298,6 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    Validate drop while hovering.
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-
     guard !configStore.isCurrentConfigReadOnly else {
       return []  // deny drop
     }
@@ -310,8 +311,6 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
     // Update that little red number:
     info.numberOfValidItemsForDrop = mappingList.count
 
-    info.draggingFormation = DRAGGING_FORMATION
-
     // Do not animate the drop; we have the row animations already
     info.animatesToDestination = false
 
@@ -323,13 +322,23 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
 
     tableView.setDropRow(dropTargetRow, dropOperation: .above)
 
-    let dragMask = info.draggingSourceOperationMask
-    switch dragMask {
-      case .copy, .move:
-        return dragMask
-      default:
-        return DEFAULT_DRAG_OPERATION
+    var dragMask = info.draggingSourceOperationMask
+    if dragMask.contains(.every) || dragMask.contains(.generic) {
+      dragMask = DEFAULT_DRAG_OPERATION
     }
+
+    if dragMask.contains(.move) {
+      for mapping in mappingList {
+        if mapping.bindingID == nil {
+          // Mapping isn't from a conf file: cannot modify it. Deny drop.
+          return []
+        }
+      }
+      return .move
+    } else if dragMask.contains(.copy) {
+      return .copy
+    }
+    return DEFAULT_DRAG_OPERATION
   }
 
   /*
@@ -364,6 +373,10 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       }
       return true
     } else if dragMask.contains(.move) {
+      // Only allow drags from the same table
+      guard let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView else {
+        return false
+      }
       DispatchQueue.main.async {
         self.moveMappings(from: rowList, to: rowIndex, isAfterNotAt: false)
       }

@@ -354,6 +354,9 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return []
     }
 
+    // Bring this window to the front when things are dragged over it (in the case of drags from the Finder)
+    info.draggingDestinationWindow?.orderFrontRegardless()
+
     // Check for conf files
     let confFileCount = InputConfigTableViewController.extractConfFileList(from: info.draggingPasteboard).count
     if confFileCount > 0 {
