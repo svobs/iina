@@ -392,41 +392,13 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
 extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    guard requireCurrentConfigIsEditable(forAction: "edit cell") else { return false }
-
-    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
-      Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
-      return false
-    }
-
-    if isRaw {
-      Logger.log("Double-click: opening in-line editor for row \(rowIndex)", level: .verbose)
-      // Use in-line editor
-      return true
-    }
-
-    editWithPopup(rowIndex: rowIndex)
-    // Deny in-line editor from opening
-    return false
+    Logger.log("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
+    return edit(rowIndex: rowIndex, columnIndex: columnIndex, startInlineIfNeeded: false)
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
-
-    guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
-      Logger.log("Edit is not allowed for binding row \(rowIndex)", level: .verbose)
-      return false
-    }
-
-    if isRaw {
-      Logger.log("Opening inline editor for row \(rowIndex)", level: .verbose)
-      // Use in-line editor
-      return true
-    }
-
-    editWithPopup(rowIndex: rowIndex)
-    // Deny in-line editor from opening
-    return false
+    Logger.log("Enter key: Edit requested for row \(rowIndex)")
+    return edit(rowIndex: rowIndex, startInlineIfNeeded: false)
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
@@ -464,23 +436,25 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // MARK: Reusable actions
 
   // Edit either inline or with popup, depending on current mode
-  private func edit(rowIndex: Int, columnIndex: Int = 0) {
-    guard requireCurrentConfigIsEditable(forAction: "edit") else { return }
-
-    Logger.log("Edit requested for row \(rowIndex), col \(columnIndex)")
+  @discardableResult
+  private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfNeeded: Bool = true) -> Bool {
+    guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
 
     guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
       // Should never see this message
       Logger.log("Cannot edit binding row \(rowIndex): edit is not allowed for this row! Aborting", level: .error)
-      return
+      return false
     }
 
     if isRaw {
-      // Use in-line editor
-      self.tableView.editCell(row: rowIndex, column: columnIndex)
+      if startInlineIfNeeded {
+        // Use in-line editor
+        self.tableView.editCell(row: rowIndex, column: columnIndex)
+      }
     } else {
       editWithPopup(rowIndex: rowIndex)
     }
+    return true
   }
 
   // Use this if isRaw==false (i.e., not inline editing)

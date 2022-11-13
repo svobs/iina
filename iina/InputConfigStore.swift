@@ -16,6 +16,8 @@ import Foundation
  */
 class InputConfigStore {
 
+  unowned var undoManager: UndoManager? = nil
+
   // Actual persisted data #1
   private var userConfigDict: [String: String] {
     get {

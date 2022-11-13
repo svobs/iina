@@ -17,6 +17,8 @@ import Foundation
  */
 class InputBindingStore {
 
+  unowned var undoManager: UndoManager? = nil
+
   // MARK: State
 
   // The current input config file, loaded into momory

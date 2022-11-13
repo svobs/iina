@@ -84,6 +84,9 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       self.keyMappingSearchField.stringValue = newStringValue
     })
 
+    self.bindingStore.undoManager = self.undoManager
+    self.configStore.undoManager = self.undoManager
+
     configTableController?.selectCurrentConfigRow()
     self.updateEditEnabledStatus()
   }
