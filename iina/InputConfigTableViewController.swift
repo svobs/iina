@@ -430,10 +430,10 @@ extension InputConfigTableViewController: NSTableViewDataSource {
       return
     }
 
-    var fileMappings = inputConfigFile.parseBindings()
+    var fileMappings = inputConfigFile.parseMappings()
     Logger.log("Appending \(bindings.count) bindings to \(fileMappings.count) existing of config: \"\(targetConfigName)\"")
     fileMappings.append(contentsOf: bindings)
-    inputConfigFile.replaceAllBindings(with: fileMappings)
+    inputConfigFile.replaceAllMappings(with: fileMappings)
     do {
       try inputConfigFile.saveToDisk()
     } catch {

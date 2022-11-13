@@ -151,6 +151,9 @@ class PreferenceWindowController: NSWindowController {
   override func windowDidLoad() {
     super.windowDidLoad()
 
+    AppInputConfig.inputConfigStore.undoManager = window!.undoManager
+    AppInputConfig.inputBindingStore.undoManager = window!.undoManager
+
     window?.titlebarAppearsTransparent = true
     window?.titleVisibility = .hidden
     window?.isMovableByWindowBackground = true

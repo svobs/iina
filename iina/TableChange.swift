@@ -31,6 +31,8 @@ class TableChange {
     case reloadAll
     // Can have any number of adds, removes, moves, and updates:
     case wholeTableDiff
+    // Just a placeholder, to be replaced with `wholeTableDiff` but also highlight changes
+    case undoRedo
   }
 
   let changeType: ChangeType
@@ -137,10 +139,12 @@ class TableChange {
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
+      case .undoRedo:
+        Logger.log("TableChange: cannot execute type .undoRedo directly!", level: .error)
     }
   }
 
-  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>,
+  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, isUndoRedo: Bool = false,
                            completionHandler: TableChange.CompletionHandler? = nil) -> TableChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
@@ -173,6 +177,19 @@ class TableChange {
           tableChange.toMove?.append((from, to))
       }
     }
+
+    if isUndoRedo {
+      // If lines were added with no other changes, highlight them; otherwise clear selection.
+      // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
+      tableChange.newSelectedRows = IndexSet()
+      if let toInsert = tableChange.toInsert, let toMove = tableChange.toMove, let toRemove = tableChange.toRemove,
+         toMove.isEmpty && toRemove.isEmpty {
+        for insertedIndex in toInsert {
+          tableChange.newSelectedRows?.insert(insertedIndex)
+        }
+      }
+    }
+
     return tableChange
   }
 }

@@ -357,6 +357,6 @@ class InputConfigStore {
       return
     }
 
-    AppInputConfig.inputBindingStore.currenConfigFileDidChange(inputConfigFile)
+    AppInputConfig.inputBindingStore.currentConfigFileDidChange(inputConfigFile)
   }
 }

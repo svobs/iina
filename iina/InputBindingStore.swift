@@ -110,7 +110,7 @@ class InputBindingStore {
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
 
-    saveAndPushDefaultSectionChange(bindingRowsAllUpdated, tableChange)
+    doChange(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -141,7 +141,7 @@ class InputBindingStore {
       bindingRowsAllNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
-    saveAndPushDefaultSectionChange(bindingRowsAllNew, tableChange)
+    doChange(bindingRowsAllNew, tableChange)
   }
 
   // Returns the index at which it was ultimately inserted
@@ -186,7 +186,7 @@ class InputBindingStore {
       tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
     }
 
-    saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
+    doChange(remainingRowsUnfiltered, tableChange)
   }
 
   func removeBindings(withIDs idsToRemove: [Int]) {
@@ -216,7 +216,7 @@ class InputBindingStore {
     tableChange.toRemove = indexesToRemove
 
     Logger.log("Of \(idsToRemove.count) requested, (\(indexesToRemove.count) bindings will actually be removed", level: .verbose)
-    saveAndPushDefaultSectionChange(remainingRowsUnfiltered, tableChange)
+    doChange(remainingRowsUnfiltered, tableChange)
   }
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
@@ -252,7 +252,7 @@ class InputBindingStore {
     }
 
     tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    saveAndPushDefaultSectionChange(bindingRowsAll, tableChange)
+    doChange(bindingRowsAll, tableChange)
   }
 
   // MARK: Various support functions
@@ -405,23 +405,35 @@ class InputBindingStore {
 
   // MARK: TableChange push & receive with other components
 
+  private func doChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
+    let defaultSectionNew = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
+    self.doChange(defaultSectionNew, tableChange)
+  }
+
   /*
    Must execute sequentially:
    1. Save conf file, get updated default section rows
    2. Send updated default section bindings to InputBindingController. It will recalculate all bindings and re-bind appropriately, then
-      returns the updated set of all bindings to us.
+   returns the updated set of all bindings to us.
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func saveAndPushDefaultSectionChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
+  private func doChange(_ defaultSectionNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
+    if let undoManager = self.undoManager,
+       let defaultSectionOld = InputSectionStack.shared.sectionsDefined[SharedInputSection.DEFAULT_SECTION_NAME]?.keyMappingList {
+
+      undoManager.registerUndo(withTarget: self, handler: { bindingStore in
+        bindingStore.doChange(defaultSectionOld, TableChange(.undoRedo))
+      })
+    }
+
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
     // or of writing another section's bindings to the "default" section.
-    let defaultSectionMappings = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    guard let defaultSectionBindings = saveBindingsToCurrentConfigFile(defaultSectionMappings) else {
+    guard let defaultSectionMappings = saveBindingsToCurrentConfigFile(defaultSectionNew) else {
       return
     }
 
-    pushDefaultSectionChange(defaultSectionBindings, tableChange)
+    pushDefaultSectionChange(defaultSectionMappings, desiredTableChange)
   }
 
   /*
@@ -433,7 +445,7 @@ class InputBindingStore {
    and the two must match or else visual bugs will result.
    */
   private func pushDefaultSectionChange(_ defaultSectionMappings: [KeyMapping], _ tableChange: TableChange? = nil) {
-    InputSectionStack.replaceBindings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME,
+    InputSectionStack.replaceMappings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME,
                                       with: defaultSectionMappings,
                                       doRebuildAfter: false)
 
@@ -446,49 +458,58 @@ class InputBindingStore {
    - Push update to the Key Bindings table in the UI so it can be animated.
    Expected to be run on the main thread.
   */
-  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, _ tableChange: TableChange? = nil) {
+  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, _ desiredTableChange: TableChange? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases:
-    let ultimateTableChange = tableChange ?? buildTableDiff(appInputConfigNew)
+    let tableChange: TableChange
+    if let desiredTableChange = desiredTableChange {
+      if desiredTableChange.changeType == .undoRedo {
+        tableChange = buildTableDiff(appInputConfigNew, isUndoRedo: true)
+      } else {
+        tableChange = desiredTableChange
+      }
+    } else {
+      tableChange = buildTableDiff(appInputConfigNew)
+    }
 
     self.appInputConfig = appInputConfigNew
     updateFilteredBindings()
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
-    ultimateTableChange.reloadAllExistingRows = true
+    tableChange.reloadAllExistingRows = true
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: ultimateTableChange)
-    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(ultimateTableChange.changeType)", level: .verbose)
+    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChange)
+    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(_ appInputConfigNew: AppInputConfig) -> TableChange {
+  private func buildTableDiff(_ appInputConfigNew: AppInputConfig, isUndoRedo: Bool = false) -> TableChange {
     let bindingRowsAllNew = appInputConfigNew.bindingCandidateList
     // Remember, the displayed table contents must reflect the *filtered* state.
     let bindingRowsAllNewFiltered = InputBindingStore.filter(bindingRowsAll: bindingRowsAllNew, by: filterString)
-    return TableChange.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered)
+    return TableChange.buildDiff(oldRows: bindingRowsFiltered, newRows: bindingRowsAllNewFiltered, isUndoRedo: isUndoRedo)
   }
 
   // MARK: Config File load/save
 
-  func currenConfigFileDidChange(_ inputConfigFile: InputConfigFile) {
+  func currentConfigFileDidChange(_ inputConfigFile: InputConfigFile) {
     currentConfigFile = inputConfigFile
 
-    let defaultSectionBindings = inputConfigFile.parseBindings()
+    let defaultSectionMappings = inputConfigFile.parseMappings()
     // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
-    pushDefaultSectionChange(defaultSectionBindings, TableChange(.reloadAll))
+    pushDefaultSectionChange(defaultSectionMappings, TableChange(.reloadAll))
   }
 
   // Input Config File: Save
-  private func saveBindingsToCurrentConfigFile(_ defaultSectionBindings: [KeyMapping]) -> [KeyMapping]? {
+  private func saveBindingsToCurrentConfigFile(_ defaultSectionMappings: [KeyMapping]) -> [KeyMapping]? {
     guard let configFilePath = AppInputConfig.inputConfigStore.currentConfigFilePath else {
       let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return nil
     }
-    Logger.log("Saving \(defaultSectionBindings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    Logger.log("Saving \(defaultSectionMappings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
       guard let currentConfigData = self.currentConfigFile else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
@@ -503,9 +524,9 @@ class InputBindingStore {
         return nil
       }
 
-      currentConfigData.replaceAllBindings(with: defaultSectionBindings)
+      currentConfigData.replaceAllMappings(with: defaultSectionMappings)
       try currentConfigData.saveToDisk()
-      return currentConfigData.parseBindings()  // gets updated line numbers
+      return currentConfigData.parseMappings()  // gets updated line numbers
 
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)

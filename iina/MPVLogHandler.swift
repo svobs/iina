@@ -99,7 +99,7 @@ class MPVLogHandler {
     }
   }
 
-  private func parseBindingsFromDefineSectionContents(_ contentsUnparsed: String) -> [KeyMapping] {
+  private func parseMappingsFromDefineSectionContents(_ contentsUnparsed: String) -> [KeyMapping] {
     var keyMappings: [KeyMapping] = []
     if contentsUnparsed.isEmpty {
       return keyMappings
@@ -156,7 +156,7 @@ class MPVLogHandler {
       }
     }
 
-    let section = MPVInputSection(name: name, parseBindingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
+    let section = MPVInputSection(name: name, parseMappingsFromDefineSectionContents(content), isForce: isForce, origin: .libmpv)
     Logger.log("Got 'define-section' from mpv: \"\(section.name)\", keyMappings=\(section.keyMappingList.count), force=\(section.isForce) ", subsystem: player.subsystem)
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       let keyMappingList = section.keyMappingList.map { ("\t<\(section.name)> \($0.normalizedMpvKey) -> \($0.rawAction)") }

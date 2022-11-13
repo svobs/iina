@@ -45,7 +45,7 @@ class InputSectionStack {
                                         ])
 
   // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
-  static func replaceBindings(forSharedSectionName: String, with mappings: [KeyMapping],
+  static func replaceMappings(forSharedSectionName: String, with mappings: [KeyMapping],
                               onlyIfDifferent: Bool = false,
                               doRebuildAfter: Bool = true) {
     var doReplace = true
@@ -72,7 +72,7 @@ class InputSectionStack {
 
   // Try to minimize duplicate work by detecting when there is no change.
   static func replacePluginsSectionBindings(_ mappings: [KeyMapping]) {
-    self.replaceBindings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
+    self.replaceMappings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
   }
 
   // MARK: Single player instance

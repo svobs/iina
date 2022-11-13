@@ -789,7 +789,7 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
-    InputSectionStack.replaceBindings(forSharedSectionName: sectionName, with: keyMappings)
+    InputSectionStack.replaceMappings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
   // MARK: Set key equivalents
