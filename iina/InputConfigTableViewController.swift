@@ -112,6 +112,9 @@ extension InputConfigTableViewController: NSTableViewDelegate {
         return cell
       case "isDefaultColumn":
         cell.imageView?.isHidden = !isDefaultConfig
+        if #available(macOS 10.14, *) {
+          cell.imageView?.contentTintColor = defaultConfigTextColor
+        }
         return cell
       default:
         Logger.log("Unrecognized column: '\(columnName)'", level: .error)
