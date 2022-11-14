@@ -16,6 +16,10 @@ import Foundation
  */
 class InputConfigStore {
 
+  private class State {
+    // TODO
+  }
+
   unowned var undoManager: UndoManager? = nil
 
   // Actual persisted data #1
@@ -146,7 +150,7 @@ class InputConfigStore {
     changeCurrentConfig(configNameNew)
   }
 
-  // This is the only method other than applyConfigTableChange() which actually changes the real preference data
+  // This is the only method other than applyChange() which actually changes the real preference data
   func changeCurrentConfig(_ configNameNew: String) {
     guard !configNameNew.equalsIgnoreCase(self.currentConfigName) else {
       Logger.log("No need to persist change to current config '\(configNameNew)'; it is already current", level: .verbose)
@@ -166,7 +170,7 @@ class InputConfigStore {
 
     Logger.log("Changing current config to: \"\(configNameNew)\"", level: .verbose)
 
-    applyConfigTableChange(currentConfigNameNew: configNameNew)
+    applyChange(currentConfigNameNew: configNameNew)
   }
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
@@ -175,7 +179,7 @@ class InputConfigStore {
     Logger.log("Adding user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName, completionHandler: completionHandler)
+    applyChange(userConfDictUpdated, currentConfigNameNew: configName, completionHandler: completionHandler)
   }
 
   func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {
@@ -185,7 +189,7 @@ class InputConfigStore {
       Logger.log("Adding blank row for naming new user config")
     }
     isAddingNewConfigInline = true
-    applyConfigTableChange(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
+    applyChange(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(configName: String, filePath: String,
@@ -199,7 +203,7 @@ class InputConfigStore {
     Logger.log("Completing inline add of user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: configName,
+    applyChange(userConfDictUpdated, currentConfigNameNew: configName,
                            completionHandler: completionHandler)
   }
 
@@ -210,7 +214,7 @@ class InputConfigStore {
     }
     isAddingNewConfigInline = false
     Logger.log("Cancelling inline add", level: .verbose)
-    applyConfigTableChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName)
+    applyChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -229,7 +233,7 @@ class InputConfigStore {
         newCurrentConfig = name
       }
     }
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig)
+    applyChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig)
   }
 
   func removeConfig(_ configName: String) {
@@ -252,7 +256,7 @@ class InputConfigStore {
       Logger.log("Cannot remove config \"\(configName)\": it is not a user config!", level: .error)
       return
     }
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName)
+    applyChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName)
   }
 
   func renameCurrentConfig(newName: String) -> Bool {
@@ -276,7 +280,7 @@ class InputConfigStore {
     let newFilePath = Utility.buildConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    applyConfigTableChange(userConfDictUpdated, currentConfigNameNew: newName)
+    applyChange(userConfDictUpdated, currentConfigNameNew: newName)
 
     return true
   }
@@ -300,6 +304,146 @@ class InputConfigStore {
     Logger.log("Rebuilt Config table rows (current=\"\(currentConfigName)\"): \(configTableRowsNew)", level: .verbose)
 
     return configTableRowsNew
+  }
+
+  private func applyChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String,
+                           completionHandler: TableChange.CompletionHandler? = nil,
+                           removedFilesForUndo: [String:String]? = nil) {
+
+    var actionName: String? = nil
+    var undoRemovedFileContentDict: [String:String]? = nil
+
+    // Apply file operations before we update the stored prefs or the UI.
+    // All file operations for undoes are performed here, as well as "rename" and "remove".
+    // For "add" (create/import/duplicate), it's expected that the caller already successfully
+    // created the new file(s) before getting here.
+    if let userConfigDictNew = userConfigDictNew {
+      let userConfigDictOld = self.userConfigDict
+
+      // Figure out which of the 3 basic types of file operations was done by doing a basic diff.
+      // This is a lot easier because Move is only allowed on 1 file at a time.
+      let userConfigsNew = Set(userConfigDictNew.keys)
+      let userConfigsOld = Set(userConfigDictOld.keys)
+
+      let added = userConfigsNew.subtracting(userConfigsOld)
+      let removed = userConfigsOld.subtracting(userConfigsNew)
+      if added.count > 0 && removed.count > 0 {
+        // File renamed/moved
+        actionName = "Rename Config"
+
+        if added.count != 1 || removed.count != 1 {
+          // This shouldn't be possible. Make sure we catch it if it is
+          Logger.fatal("Can't rename more than 1 InputConfig file at a time! (Added: \(added); Removed: \(removed))")
+        }
+        guard let oldName = removed.first, let newName = added.first else { assert(false); return }
+
+        let oldFilePath = Utility.buildConfigFilePath(for: oldName)
+        let newFilePath = Utility.buildConfigFilePath(for: newName)
+        if !FileManager.default.fileExists(atPath: oldFilePath) {
+          Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
+          self.sendErrorAlert(key: "error_finding_file", args: ["config"])
+          return
+        }
+        if FileManager.default.fileExists(atPath: newFilePath) {
+          Logger.log("Can't rename config: file already exists: \"\(newFilePath)\"", level: .error)
+          // TODO: more appropriate message
+          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+          return
+        }
+
+        // - Move file on disk
+        do {
+          Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
+          try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
+        } catch let error {
+          Logger.log("Failed to rename file: \(error)", level: .error)
+          // TODO: more appropriate message
+          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+          return
+        }
+
+      } else if removed.count > 0 {
+        // File(s) removed (This can be more than one if we're undoing a multi-file import)
+        actionName = "Delete Config"
+
+        undoRemovedFileContentDict = [:]
+        for configName in removed {
+          let confFilePath = Utility.buildConfigFilePath(for: configName)
+
+          // Save file contents in memory before removing it. Do not remove a file if it can't be read
+          do {
+            undoRemovedFileContentDict![configName] = try String(contentsOf: URL(fileURLWithPath: confFilePath))
+          } catch {
+            Logger.log("Failed to read file before removal: \"\(confFilePath)\": \(error)", level: .error)
+            self.sendErrorAlert(key: "keybinding_config.error", args: [confFilePath])
+            continue
+          }
+
+          do {
+            try FileManager.default.removeItem(atPath: confFilePath)
+          } catch {
+            let fileName = URL(fileURLWithPath: confFilePath).lastPathComponent
+            let alertInfo = Utility.AlertInfo(key: "error_deleting_file", args: [fileName])
+            NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+            // try to recover, and fall through
+            undoRemovedFileContentDict!.removeValue(forKey: configName)
+          }
+        }
+
+      } else if added.count > 0 {
+        // Files(s) duplicated, created, or imported.
+        // Too many different cases and fancy logic: let the UI controller handle the file stuff...
+        // UNLESS we are in an undo (if `removedFilesForUndo` != nil): then this class must restore deleted files
+        actionName = "Add Config"
+
+        if let removedFilesForUndo = removedFilesForUndo {
+          for configName in added {
+            let confFilePath = Utility.buildConfigFilePath(for: configName)
+            guard let fileContent = removedFilesForUndo[configName] else {
+              // Should never happen
+              Logger.log("Cannot restore deleted file: file content is missing! (config name: \(configName)", level: .error)
+              self.sendErrorAlert(key: "config.cannot_create", args: [confFilePath])
+              continue
+            }
+            do {
+              if FileManager.default.fileExists(atPath: confFilePath) {
+                Logger.log("Cannot restore deleted file: file aleady exists: \(confFilePath)", level: .error)
+                // TODO: more appropriate message
+                self.sendErrorAlert(key: "config.cannot_create", args: [confFilePath])
+                continue
+              }
+              try fileContent.write(toFile: confFilePath, atomically: true, encoding: .utf8)
+            } catch {
+              Logger.log("Failed to restore deleted file \"\(confFilePath)\": \(error)", level: .error)
+              self.sendErrorAlert(key: "config.cannot_create", args: [confFilePath])
+              continue
+            }
+          }
+        }
+      }
+    }
+
+    if let undoManager = self.undoManager {
+      let userConfigDictOld = self.userConfigDict
+      let currentConfigNameOld = self.currentConfigName
+      let undoActionName = actionName ?? "Change Active Config"
+
+      Logger.log("Setting up Undo for \"\(undoActionName)\"", level: .verbose)
+      undoManager.registerUndo(withTarget: self, handler: { configStore in
+        // Don't care about this really, but don't let it get in the way
+        if configStore.isAddingNewConfigInline {
+          configStore.cancelInlineAdd()
+        }
+
+        configStore.applyChange(userConfigDictOld, currentConfigNameNew: currentConfigNameOld, removedFilesForUndo: removedFilesForUndo)
+      })
+
+      undoManager.setActionName(actionName ?? "Change Active Config")
+    } else {
+      Logger.log("InputConfigStore.undoManager is nil", level: .verbose)
+    }
+
+    applyConfigTableChange(userConfigDictNew, currentConfigNameNew: currentConfigNameNew, completionHandler: completionHandler)
   }
 
   // Replaces the current state with the given params, and fires listeners.
@@ -358,5 +502,11 @@ class InputConfigStore {
     }
 
     AppInputConfig.inputBindingStore.currentConfigFileDidChange(inputConfigFile)
+  }
+
+  // Convenience function: show error popup to user
+  private func sendErrorAlert(key alertKey: String, args: [String]) {
+    let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
   }
 }

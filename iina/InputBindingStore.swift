@@ -110,7 +110,7 @@ class InputBindingStore {
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
 
-    doChange(bindingRowsAllUpdated, tableChange)
+    applyChange(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -141,7 +141,7 @@ class InputBindingStore {
       bindingRowsAllNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
-    doChange(bindingRowsAllNew, tableChange)
+    applyChange(bindingRowsAllNew, tableChange)
   }
 
   // Returns the index at which it was ultimately inserted
@@ -186,7 +186,7 @@ class InputBindingStore {
       tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
     }
 
-    doChange(remainingRowsUnfiltered, tableChange)
+    applyChange(remainingRowsUnfiltered, tableChange)
   }
 
   func removeBindings(withIDs idsToRemove: [Int]) {
@@ -216,7 +216,7 @@ class InputBindingStore {
     tableChange.toRemove = indexesToRemove
 
     Logger.log("Of \(idsToRemove.count) requested, (\(indexesToRemove.count) bindings will actually be removed", level: .verbose)
-    doChange(remainingRowsUnfiltered, tableChange)
+    applyChange(remainingRowsUnfiltered, tableChange)
   }
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
@@ -252,7 +252,7 @@ class InputBindingStore {
     }
 
     tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    doChange(bindingRowsAll, tableChange)
+    applyChange(bindingRowsAll, tableChange)
   }
 
   // MARK: Various support functions
@@ -405,9 +405,9 @@ class InputBindingStore {
 
   // MARK: TableChange push & receive with other components
 
-  private func doChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
+  private func applyChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
     let defaultSectionNew = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    self.doChange(defaultSectionNew, tableChange)
+    self.applyChange(defaultSectionNew, tableChange)
   }
 
   /*
@@ -418,12 +418,12 @@ class InputBindingStore {
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  private func doChange(_ defaultSectionNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
+  private func applyChange(_ defaultSectionNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
     if let undoManager = self.undoManager,
        let defaultSectionOld = InputSectionStack.shared.sectionsDefined[SharedInputSection.DEFAULT_SECTION_NAME]?.keyMappingList {
 
       undoManager.registerUndo(withTarget: self, handler: { bindingStore in
-        bindingStore.doChange(defaultSectionOld, TableChange(.undoRedo))
+        bindingStore.applyChange(defaultSectionOld, TableChange(.undoRedo))
       })
     }
 

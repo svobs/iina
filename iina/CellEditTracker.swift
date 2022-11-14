@@ -80,7 +80,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       if row == prev.row && column == prev.column && textField == prev.textField {
         return
       } else {
-        Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))")
+        Logger.log("CellEditTracker: changing cell from (\(prev.row), \(prev.column)) to (\(row), \(column))", level: .verbose)
         // Make sure old editor is closed and saved if appropriate:
         endEdit()
       }

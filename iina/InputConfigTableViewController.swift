@@ -212,16 +212,7 @@ extension InputConfigTableViewController: EditableTableViewDelegate {
       }
     }
 
-    // - Move file on disk
-    do {
-      Logger.log("Attempting to move configFile \"\(oldFilePath)\" to \"\(newFilePath)\"")
-      try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
-    } catch let error {
-      Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window!)
-      return false
-    }
-
-    // Update config lists and update UI
+    // Let configStore rename the file, update config lists and send UI update
     return configStore.renameCurrentConfig(newName: newName)
   }
 
@@ -579,16 +570,11 @@ extension InputConfigTableViewController:  NSMenuDelegate {
 
   // Action: Delete Config
   @objc public func deleteConfig(_ configName: String) {
-    guard let confFilePath = self.requireFilePath(forConfig: configName) else {
+    guard self.requireFilePath(forConfig: configName) != nil else {
       return
     }
 
-    do {
-      try FileManager.default.removeItem(atPath: confFilePath)
-    } catch {
-      Utility.showAlert("error_deleting_file", sheetWindow: tableView.window)
-    }
-    // update prefs & refresh UI
+    // Let this delete the file, update prefs & refresh UI
     configStore.removeConfig(configName)
   }
 
