@@ -19,6 +19,8 @@ import Foundation
  */
 class TableChange {
   typealias CompletionHandler = (TableChange) -> Void
+  // After removal of rows, select the next single row after the last one removed:
+  static let selectNextRowAfterDelete = true
 
   enum ChangeType {
     case selectionChangeOnly
@@ -111,11 +113,11 @@ class TableChange {
         }
       case .addRows:
         if let indexes = self.toInsert {
-          tableView.insertRows(at: indexes, withAnimation: tableView.rowAnimation)
+          tableView.insertRows(at: indexes, withAnimation: tableView.rowInsertAnimation)
         }
       case .removeRows:
         if let indexes = self.toRemove {
-          tableView.removeRows(at: indexes, withAnimation: tableView.rowAnimation)
+          tableView.removeRows(at: indexes, withAnimation: tableView.rowRemoveAnimation)
         }
       case .updateRows:
         // Just redraw all of them. This is a very inexpensive operation, and much easier
@@ -131,8 +133,8 @@ class TableChange {
            let movePairs = self.toMove {
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
           Logger.log("TableChange diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
-          tableView.removeRows(at: toRemove, withAnimation: tableView.rowAnimation)
-          tableView.insertRows(at: toInsert, withAnimation: tableView.rowAnimation)
+          tableView.removeRows(at: toRemove, withAnimation: tableView.rowRemoveAnimation)
+          tableView.insertRows(at: toInsert, withAnimation: tableView.rowInsertAnimation)
           for (oldIndex, newIndex) in movePairs {
             Logger.log("Diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
@@ -177,14 +179,25 @@ class TableChange {
       }
     }
 
-    if isUndoRedo {  // Special styling for undo & redo
-      // If lines were added with no other changes, highlight them; otherwise clear selection.
-      // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
-      tableChange.newSelectedRows = IndexSet()
-      if let toInsert = tableChange.toInsert, let toMove = tableChange.toMove, let toRemove = tableChange.toRemove,
-         toMove.isEmpty && toRemove.isEmpty {
-        for insertedIndex in toInsert {
-          tableChange.newSelectedRows?.insert(insertedIndex)
+    if let toInsert = tableChange.toInsert, let toMove = tableChange.toMove, let toRemove = tableChange.toRemove {
+
+      if TableChange.selectNextRowAfterDelete && toMove.isEmpty && toInsert.isEmpty && !toRemove.isEmpty {
+        // After selected rows are deleted, keep a selection on the table by selecting the next row
+        if let lastRemoveIndex = toRemove.last, toRemove.count < oldRows.count {
+          let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
+          tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+        }
+      }
+
+      if isUndoRedo {  // Special styling for undo & redo
+        if toMove.isEmpty && toRemove.isEmpty && !toInsert.isEmpty {
+          // If lines were added with no other changes, highlight them.
+          // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
+          tableChange.newSelectedRows = IndexSet()
+          // Only inserts: select added lines
+          for insertedIndex in toInsert {
+            tableChange.newSelectedRows?.insert(insertedIndex)
+          }
         }
       }
     }

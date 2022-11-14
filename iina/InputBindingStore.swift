@@ -179,11 +179,13 @@ class InputBindingStore {
     let tableChange = TableChange(.removeRows)
     tableChange.toRemove = indexesToRemove
 
-    // After removal, select the single row after the last one removed:
-    let countRemoved = bindingRowsAll.count - remainingRowsUnfiltered.count
-    if countRemoved < bindingRowsAll.count {
-      let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-      tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+    if TableChange.selectNextRowAfterDelete {
+      // After removal, select the single row after the last one removed:
+      let countRemoved = bindingRowsAll.count - remainingRowsUnfiltered.count
+      if countRemoved < bindingRowsAll.count {
+        let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
+        tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+      }
     }
 
     applyChange(remainingRowsUnfiltered, tableChange)

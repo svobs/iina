@@ -313,7 +313,7 @@ class InputConfigStore {
   // Same as `applyChange`, but with extra params, because it will be called also for undo/redo
   private func applyOrUndoChange(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
                                  completionHandler: TableChange.CompletionHandler? = nil,
-                                 isNewAction: Bool = true, filesRemovedByLastAction: [String:String]? = nil) {
+                                 filesRemovedByLastAction: [String:String]? = nil) {
 
     var actionName: String? = nil  // label of action for Undo (or Redo) menu item
     var filesRemovedByThisAction: [String:String]? = nil
@@ -433,7 +433,7 @@ class InputConfigStore {
       let currentConfigNameOld = self.currentConfigName
       let undoActionName = actionName ?? "Change Active Config"
 
-      Logger.log("Registering for undo: \"\(undoActionName)\", (removed: \(filesRemovedByThisAction?.keys.count ?? 0))", level: .verbose)
+      Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(filesRemovedByThisAction?.keys.count ?? 0))", level: .verbose)
       undoManager.registerUndo(withTarget: self, handler: { configStore in
         // Don't care about this really, but don't let it get in the way
         if configStore.isAddingNewConfigInline {
@@ -441,15 +441,15 @@ class InputConfigStore {
         }
 
         configStore.applyOrUndoChange(userConfigDictOld, currentConfigNameNew: currentConfigNameOld,
-                                      isNewAction: false, filesRemovedByLastAction: filesRemovedByThisAction)
+                                      filesRemovedByLastAction: filesRemovedByThisAction)
       })
 
       if actionName == nil && currentConfigNameOld == currentConfigNameNew {
-        Logger.log("Something seems wrong: no changes to Config table detected", level: .error)
+        Logger.log("Something looks wrong: applyChanges() called, but no changes to Config table detected!", level: .error)
       }
       // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
-      // Don't change the name of it for the redo.
-      if isNewAction {
+      // There's no need to change the name of it for the redo.
+      if !undoManager.isUndoing && !undoManager.isRedoing {
         undoManager.setActionName(actionName ?? "Change Active Config")
       }
 
