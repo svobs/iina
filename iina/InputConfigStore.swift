@@ -153,7 +153,6 @@ class InputConfigStore {
   // This is the only method other than applyChange() which actually changes the real preference data
   func changeCurrentConfig(_ configNameNew: String) {
     guard !configNameNew.equalsIgnoreCase(self.currentConfigName) else {
-      Logger.log("No need to persist change to current config '\(configNameNew)'; it is already current", level: .verbose)
       return
     }
     guard configTableRows.contains(configNameNew) else {
@@ -306,12 +305,18 @@ class InputConfigStore {
     return configTableRowsNew
   }
 
-  private func applyChange(_ userConfigDictNew: [String: String]? = nil, currentConfigNameNew: String,
-                           completionHandler: TableChange.CompletionHandler? = nil,
-                           removedFilesForUndo: [String:String]? = nil) {
+  private func applyChange(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
+                           completionHandler: TableChange.CompletionHandler? = nil) {
+    self.applyOrUndoChange(userConfigDictNew, currentConfigNameNew: currentConfigNameNew, completionHandler: completionHandler)
+  }
 
-    var actionName: String? = nil
-    var undoRemovedFileContentDict: [String:String]? = nil
+  // Same as `applyChange`, but with extra params, because it will be called also for undo/redo
+  private func applyOrUndoChange(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
+                                 completionHandler: TableChange.CompletionHandler? = nil,
+                                 isNewAction: Bool = true, filesRemovedByLastAction: [String:String]? = nil) {
+
+    var actionName: String? = nil  // label of action for Undo (or Redo) menu item
+    var filesRemovedByThisAction: [String:String]? = nil
 
     // Apply file operations before we update the stored prefs or the UI.
     // All file operations for undoes are performed here, as well as "rename" and "remove".
@@ -366,13 +371,13 @@ class InputConfigStore {
         // File(s) removed (This can be more than one if we're undoing a multi-file import)
         actionName = "Delete Config"
 
-        undoRemovedFileContentDict = [:]
+        filesRemovedByThisAction = [:]
         for configName in removed {
           let confFilePath = Utility.buildConfigFilePath(for: configName)
 
           // Save file contents in memory before removing it. Do not remove a file if it can't be read
           do {
-            undoRemovedFileContentDict![configName] = try String(contentsOf: URL(fileURLWithPath: confFilePath))
+            filesRemovedByThisAction![configName] = try String(contentsOf: URL(fileURLWithPath: confFilePath))
           } catch {
             Logger.log("Failed to read file before removal: \"\(confFilePath)\": \(error)", level: .error)
             self.sendErrorAlert(key: "keybinding_config.error", args: [confFilePath])
@@ -386,7 +391,7 @@ class InputConfigStore {
             let alertInfo = Utility.AlertInfo(key: "error_deleting_file", args: [fileName])
             NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
             // try to recover, and fall through
-            undoRemovedFileContentDict!.removeValue(forKey: configName)
+            filesRemovedByThisAction!.removeValue(forKey: configName)
           }
         }
 
@@ -396,10 +401,10 @@ class InputConfigStore {
         // UNLESS we are in an undo (if `removedFilesForUndo` != nil): then this class must restore deleted files
         actionName = "Add Config"
 
-        if let removedFilesForUndo = removedFilesForUndo {
+        if let filesRemovedByLastAction = filesRemovedByLastAction {
           for configName in added {
             let confFilePath = Utility.buildConfigFilePath(for: configName)
-            guard let fileContent = removedFilesForUndo[configName] else {
+            guard let fileContent = filesRemovedByLastAction[configName] else {
               // Should never happen
               Logger.log("Cannot restore deleted file: file content is missing! (config name: \(configName)", level: .error)
               self.sendErrorAlert(key: "config.cannot_create", args: [confFilePath])
@@ -428,19 +433,28 @@ class InputConfigStore {
       let currentConfigNameOld = self.currentConfigName
       let undoActionName = actionName ?? "Change Active Config"
 
-      Logger.log("Setting up Undo for \"\(undoActionName)\"", level: .verbose)
+      Logger.log("Registering for undo: \"\(undoActionName)\", (removed: \(filesRemovedByThisAction?.keys.count ?? 0))", level: .verbose)
       undoManager.registerUndo(withTarget: self, handler: { configStore in
         // Don't care about this really, but don't let it get in the way
         if configStore.isAddingNewConfigInline {
           configStore.cancelInlineAdd()
         }
 
-        configStore.applyChange(userConfigDictOld, currentConfigNameNew: currentConfigNameOld, removedFilesForUndo: removedFilesForUndo)
+        configStore.applyOrUndoChange(userConfigDictOld, currentConfigNameNew: currentConfigNameOld,
+                                      isNewAction: false, filesRemovedByLastAction: filesRemovedByThisAction)
       })
 
-      undoManager.setActionName(actionName ?? "Change Active Config")
+      if actionName == nil && currentConfigNameOld == currentConfigNameNew {
+        Logger.log("Something seems wrong: no changes to Config table detected", level: .error)
+      }
+      // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
+      // Don't change the name of it for the redo.
+      if isNewAction {
+        undoManager.setActionName(actionName ?? "Change Active Config")
+      }
+
     } else {
-      Logger.log("InputConfigStore.undoManager is nil", level: .verbose)
+      Logger.log("Cannot register for undo: InputConfigStore.undoManager is nil", level: .verbose)
     }
 
     applyConfigTableChange(userConfigDictNew, currentConfigNameNew: currentConfigNameNew, completionHandler: completionHandler)

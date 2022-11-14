@@ -126,12 +126,11 @@ class TableChange {
         Logger.log("TableChange: ReloadAll", level: .verbose)
         tableView.reloadData()
       case .wholeTableDiff:
-        Logger.log("TableChange: executing diff", level: .verbose)
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
            let movePairs = self.toMove {
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          Logger.log("TableChange: diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
+          Logger.log("TableChange diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
           tableView.removeRows(at: toRemove, withAnimation: tableView.rowAnimation)
           tableView.insertRows(at: toInsert, withAnimation: tableView.rowAnimation)
           for (oldIndex, newIndex) in movePairs {
@@ -165,7 +164,7 @@ class TableChange {
      https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
      */
     let steps = newRows.difference(from: oldRows).steps
-    Logger.log("Computing table animation: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    Logger.log("Computing table diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
     for step in steps {
       switch step {
         case let .remove(_, index):
@@ -178,7 +177,7 @@ class TableChange {
       }
     }
 
-    if isUndoRedo {
+    if isUndoRedo {  // Special styling for undo & redo
       // If lines were added with no other changes, highlight them; otherwise clear selection.
       // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
       tableChange.newSelectedRows = IndexSet()

@@ -574,7 +574,7 @@ extension InputConfigTableViewController:  NSMenuDelegate {
       return
     }
 
-    // Let this delete the file, update prefs & refresh UI
+    // Let configStore delete the file, update prefs & refresh UI
     configStore.removeConfig(configName)
   }
 

@@ -393,12 +393,12 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     Logger.log("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
-    return edit(rowIndex: rowIndex, columnIndex: columnIndex, startInlineIfNeeded: false)
+    return edit(rowIndex: rowIndex, columnIndex: columnIndex, startInlineIfAllowed: false)
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
     Logger.log("Enter key: Edit requested for row \(rowIndex)")
-    return edit(rowIndex: rowIndex, startInlineIfNeeded: false)
+    return edit(rowIndex: rowIndex, startInlineIfAllowed: false)
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
@@ -437,7 +437,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // Edit either inline or with popup, depending on current mode
   @discardableResult
-  private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfNeeded: Bool = true) -> Bool {
+  private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfAllowed: Bool = true) -> Bool {
     guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
 
     guard bindingStore.isEditEnabledForBindingRow(rowIndex) else {
@@ -447,7 +447,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     }
 
     if isRaw {
-      if startInlineIfNeeded {
+      if startInlineIfAllowed {
         // Use in-line editor
         self.tableView.editCell(row: rowIndex, column: columnIndex)
       }
@@ -833,12 +833,12 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // Cut, Copy, Paste, Delete
 
     // By setting target:`tableView`, AppKit, will call `tableView.validateUserInterfaceItem()` to enable/disable each action appropriately
-    let mbEditOps = mib.butWith(.target(self.tableView))
-    mbEditOps.likeEditCut().addItem(#selector(self.tableView.cut(_:)))
-    mbEditOps.likeEditCopy().addItem(#selector(self.tableView.copy(_:)))
+    let mibEditOps = mib.butWith(.target(self.tableView))
+    mibEditOps.likeEditCut().addItem(#selector(self.tableView.cut(_:)))
+    mibEditOps.likeEditCopy().addItem(#selector(self.tableView.copy(_:)))
 
     // Paste is enabled if file is editable & there are bindings in the clipboard; doesn't matter if selected rows are editable
-    let mbPaste = mib.butWith(.unitCount(readBindingsFromClipboard().count), .enabled(true))
+    let mibPaste = mib.butWith(.unitCount(readBindingsFromClipboard().count), .enabled(true))
     if isPasteEnabled() {
       var shouldAddAbove = false
       var shouldAddBelow = true
@@ -855,21 +855,21 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
       if shouldAddAbove {
         // Can't have two items with the same key equiv. When in doubt give it to "Below" item because that's what Paste defaults to.
-        let mib = shouldAddBelow ? mbPaste.butWith(.key("")) : mbPaste
+        let mib = shouldAddBelow ? mibPaste.butWith(.key("")) : mibPaste
         mib.likePasteAbove().butWith(.targetRowIndex(firstSelectedIndex)).addItem(#selector(self.pasteAbove(_:)))
       }
 
       if shouldAddBelow {
-        mbPaste.likePasteBelow().butWith(.targetRowIndex(lastSelectedIndex)).addItem(#selector(self.pasteBelow(_:)))
+        mibPaste.likePasteBelow().butWith(.targetRowIndex(lastSelectedIndex)).addItem(#selector(self.pasteBelow(_:)))
       }
     } else {
-      mbPaste.likeEditPaste().butWith(.action(nil), .enabled(false)).addItem()
+      mibPaste.likeEditPaste().butWith(.action(nil), .enabled(false)).addItem()
     }
 
     // ---
     mib.addSeparator()
 
-    mbEditOps.likeEasyDelete().addItem(#selector(self.tableView.delete(_:)))
+    mibEditOps.likeEasyDelete().addItem(#selector(self.tableView.delete(_:)))
   }
 
   @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {
