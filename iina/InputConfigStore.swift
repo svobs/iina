@@ -8,75 +8,42 @@
 
 import Foundation
 
+fileprivate let changeCurrentConfigActionName: String = "Change Active Config"
+
 /*
  Encapsulates the user's list of user input config files via stored preferences.
  Used as a data store for an NSTableView with CRUD operations and support for setting up
  animations, but is decoupled from UI code so that everything is cleaner.
  Not thread-safe at present!
  */
-class InputConfigStore {
-
-  private class State {
-    // TODO
-  }
+class InputConfigStore: NSObject {
 
   unowned var undoManager: UndoManager? = nil
 
-  // Actual persisted data #1
-  private var userConfigDict: [String: String] {
-    get {
-      guard let userConfigDict = Preference.dictionary(for: .inputConfigs) else {
-        return [:]
-      }
-      guard let userConfigStringDict = userConfigDict as? [String: String] else {
-        Logger.fatal("Unexpected type for pref: \(Preference.Key.inputConfigs.rawValue): \(type(of: userConfigDict))")
-      }
-      return userConfigStringDict
-    } set {
-      Preference.set(newValue, for: .inputConfigs)
-    }
-  }
+  // Actual persisted data #1. Do not set this directly. Call one of the many CRUD methods below.
+  private(set) var userConfigDict: [String: String]
 
-  // Actual persisted data #2
-  private(set) var currentConfigName: String {
-    get {
-      guard let currentConfig = Preference.string(for: .currentInputConfigName) else {
-        let defaultConfig = AppData.defaultConfigNamesSorted[0]
-        Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
-        return defaultConfig
-      }
-      return currentConfig
-    } set {
-      guard !currentConfigName.equalsIgnoreCase(newValue) else {
-        return
-      }
-      Logger.log("Current input config changed: '\(currentConfigName)' -> '\(newValue)'")
-      Preference.set(newValue, for: .currentInputConfigName)
-
-      loadBindingsFromCurrentConfigFile()
-    }
-  }
+  // Actual persisted data #2. Do not set this directly. Call one of the `changeCurrentConfig()` methods.
+  private(set) var currentConfigName: String
 
   // Looks up the current config, then searches for it first in the user configs, then the default configs,
   // then if still not found, returns nil
   var currentConfigFilePath: String? {
-    get {
-      let currentConfig = currentConfigName
+    let currentConfig = currentConfigName
 
-      if let filePath = userConfigDict[currentConfig] {
-        Logger.log("Found file path for user inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
-        if URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent != currentConfig {
-          Logger.log("InputConfig's name '\(currentConfig)' does not match its filename: \"\(filePath)\"", level: .warning)
-        }
-        return filePath
+    if let filePath = userConfigDict[currentConfig] {
+      Logger.log("Found file path for user inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
+      if URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent != currentConfig {
+        Logger.log("InputConfig's name '\(currentConfig)' does not match its filename: \"\(filePath)\"", level: .warning)
       }
-      if let filePath = AppData.defaultConfigs[currentConfig] {
-        Logger.log("Found file path for default inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
-        return filePath
-      }
-      Logger.log("Cannot find file path for inputConfig: '\(currentConfig)'", level: .error)
-      return nil
+      return filePath
     }
+    if let filePath = AppData.defaultConfigs[currentConfig] {
+      Logger.log("Found file path for default inputConfig '\(currentConfig)': \"\(filePath)\"", level: .verbose)
+      return filePath
+    }
+    Logger.log("Cannot find file path for inputConfig: '\(currentConfig)'", level: .error)
+    return nil
   }
 
   /*
@@ -89,9 +56,60 @@ class InputConfigStore {
   // The row will also be selected, but `currentConfigName` should not change until the user submits
   private(set) var isAddingNewConfigInline: Bool = false
 
-  init() {
+  override init() {
+    if let currentConfig = Preference.string(for: .currentInputConfigName) {
+      self.currentConfigName = currentConfig
+    } else {
+      let defaultConfig = AppData.defaultConfigNamesSorted[0]
+      Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
+      self.currentConfigName = defaultConfig
+    }
+    if let prefDict = Preference.dictionary(for: .inputConfigs), let userConfigStringDict = prefDict as? [String: String] {
+      self.userConfigDict = userConfigStringDict
+    } else {
+      Logger.log("Could not get pref: \(Preference.Key.inputConfigs.rawValue): will use default empty dictionary", level: .warning)
+      self.userConfigDict = [:]
+    }
+    super.init()
     configTableRows = buildConfigTableRows()
+
+    // This will notify that a pref has changed, even if it was changed by another instance of IINA:
+    for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
+      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
+    }
   }
+
+  deinit {
+    // Remove observers for IINA preferences.
+    ObjcUtils.silenced {
+      for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
+        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
+      }
+    }
+  }
+
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    guard let keyPath = keyPath, let change = change else { return }
+
+    DispatchQueue.main.async {  // had some issues with race conditions
+      switch keyPath {
+
+        case Preference.Key.currentInputConfigName.rawValue:
+          guard let currentConfigNameNew = change[.newKey] as? String, currentConfigNameNew != self.currentConfigName else { return }
+          Logger.log("Detected pref update for currentConfig: \"\(currentConfigNameNew)\"", level: .verbose)
+          self.changeCurrentConfig(currentConfigNameNew)  // updates UI in case the update came from an external source
+        case Preference.Key.inputConfigs.rawValue:
+          guard let userConfigDictNew = change[.newKey] as? [String: String] else { return }
+          if !userConfigDictNew.keys.sorted().elementsEqual(self.userConfigDict.keys.sorted()) {
+            Logger.log("Detected pref update for inputConfigs", level: .verbose)
+            self.applyChange(userConfigDictNew, currentConfigNameNew: self.currentConfigName)
+          }
+        default:
+          return
+      }
+    }
+  }
+
 
   var isCurrentConfigReadOnly: Bool {
     return isDefaultConfig(currentConfigName)
@@ -315,15 +333,18 @@ class InputConfigStore {
                                  completionHandler: TableChange.CompletionHandler? = nil,
                                  filesRemovedByLastAction: [String:String]? = nil) {
 
+    var isDifferent: Bool = false
     var actionName: String? = nil  // label of action for Undo (or Redo) menu item
     var filesRemovedByThisAction: [String:String]? = nil
+
+    let userConfigDictOld = self.userConfigDict
+    let currentConfigNameOld = self.currentConfigName
 
     // Apply file operations before we update the stored prefs or the UI.
     // All file operations for undoes are performed here, as well as "rename" and "remove".
     // For "add" (create/import/duplicate), it's expected that the caller already successfully
     // created the new file(s) before getting here.
     if let userConfigDictNew = userConfigDictNew {
-      let userConfigDictOld = self.userConfigDict
 
       // Figure out which of the 3 basic types of file operations was done by doing a basic diff.
       // This is a lot easier because Move is only allowed on 1 file at a time.
@@ -335,6 +356,7 @@ class InputConfigStore {
       if added.count > 0 && removed.count > 0 {
         // File renamed/moved
         actionName = "Rename Config"
+        isDifferent = true
 
         if added.count != 1 || removed.count != 1 {
           // This shouldn't be possible. Make sure we catch it if it is
@@ -344,32 +366,39 @@ class InputConfigStore {
 
         let oldFilePath = Utility.buildConfigFilePath(for: oldName)
         let newFilePath = Utility.buildConfigFilePath(for: newName)
-        if !FileManager.default.fileExists(atPath: oldFilePath) {
-          Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
-          self.sendErrorAlert(key: "error_finding_file", args: ["config"])
-          return
-        }
-        if FileManager.default.fileExists(atPath: newFilePath) {
-          Logger.log("Can't rename config: file already exists: \"\(newFilePath)\"", level: .error)
-          // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
-          return
-        }
 
-        // - Move file on disk
-        do {
-          Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
-          try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
-        } catch let error {
-          Logger.log("Failed to rename file: \(error)", level: .error)
-          // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
-          return
+        let oldExists = FileManager.default.fileExists(atPath: oldFilePath)
+        let newExists = FileManager.default.fileExists(atPath: newFilePath)
+        if !oldExists && newExists {
+          Logger.log("Looks like file has already moved: \"\(oldFilePath)\"")
+        } else {
+          if !oldExists {
+            Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
+            self.sendErrorAlert(key: "error_finding_file", args: ["config"])
+            return
+          } else if newExists {
+            Logger.log("Can't rename config: file already exists: \"\(newFilePath)\"", level: .error)
+            // TODO: more appropriate message
+            self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+            return
+          }
+
+          // - Move file on disk
+          do {
+            Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
+            try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
+          } catch let error {
+            Logger.log("Failed to rename file: \(error)", level: .error)
+            // TODO: more appropriate message
+            self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+            return
+          }
         }
 
       } else if removed.count > 0 {
         // File(s) removed (This can be more than one if we're undoing a multi-file import)
-        actionName = "Delete Config"
+        actionName = Utility.format(.config, removed.count, .delete)
+        isDifferent = true
 
         filesRemovedByThisAction = [:]
         for configName in removed {
@@ -399,7 +428,8 @@ class InputConfigStore {
         // Files(s) duplicated, created, or imported.
         // Too many different cases and fancy logic: let the UI controller handle the file stuff...
         // UNLESS we are in an undo (if `removedFilesForUndo` != nil): then this class must restore deleted files
-        actionName = "Add Config"
+        actionName = Utility.format(.config, added.count, .add)
+        isDifferent = true
 
         if let filesRemovedByLastAction = filesRemovedByLastAction {
           for configName in added {
@@ -428,10 +458,13 @@ class InputConfigStore {
       }
     }
 
+    guard isDifferent || currentConfigNameOld != currentConfigNameNew else {
+      Logger.log("No changes to input config list or current config selection", level: .verbose)
+      return
+    }
+
     if let undoManager = self.undoManager {
-      let userConfigDictOld = self.userConfigDict
-      let currentConfigNameOld = self.currentConfigName
-      let undoActionName = actionName ?? "Change Active Config"
+      let undoActionName = actionName ?? changeCurrentConfigActionName
 
       Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(filesRemovedByThisAction?.keys.count ?? 0))", level: .verbose)
       undoManager.registerUndo(withTarget: self, handler: { configStore in
@@ -444,9 +477,6 @@ class InputConfigStore {
                                       filesRemovedByLastAction: filesRemovedByThisAction)
       })
 
-      if actionName == nil && currentConfigNameOld == currentConfigNameNew {
-        Logger.log("Something looks wrong: applyChanges() called, but no changes to Config table detected!", level: .error)
-      }
       // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
       // There's no need to change the name of it for the redo.
       if !undoManager.isUndoing && !undoManager.isRedoing {
@@ -470,10 +500,18 @@ class InputConfigStore {
         Logger.log("Cannot update: \"\(currentConfigNameNew)\" not found in supplied config dict (\(userConfigDictNew))", level: .error)
         return
       }
-      self.userConfigDict = userConfigDictNew
+      // Update userConfigDict
+      userConfigDict = userConfigDictNew
+      Preference.set(userConfigDictNew, for: .inputConfigs)
     }
 
-    currentConfigName = currentConfigNameNew
+    // Update currentConfigName
+    if !currentConfigName.equalsIgnoreCase(currentConfigNameNew) {
+      Logger.log("Current input config changed: '\(currentConfigName)' -> '\(currentConfigNameNew)'")
+      currentConfigName = currentConfigNameNew  // set before triggering the pref observer
+      Preference.set(currentConfigNameNew, for: .currentInputConfigName)
+      loadBindingsFromCurrentConfigFile()
+    }
 
     let oldRows = configTableRows
     var newRows = buildConfigTableRows()

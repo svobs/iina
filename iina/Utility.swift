@@ -443,6 +443,18 @@ class Utility {
     return realScale >= 1 ? realScale : -1 / realScale
   }
 
+  static func format(_ unit: Unit, _ unitCount: Int, _ format: UnitActionFormat) -> String {
+    // 3 forms: if count==0, count==1, or count>1
+    if unitCount == 0 {
+      return format.none
+    }
+    if unitCount == 1 {  // single
+      return String(format: format.single, unit.singular)
+    }
+    // multiple
+    return String(format: format.multiple, unitCount, unit.plural)
+  }
+
   static func quickConstraints(_ constraints: [String], _ views: [String: NSView]) {
     constraints.forEach { c in
       let cc = NSLayoutConstraint.constraints(withVisualFormat: c, options: [], metrics: nil, views: views)

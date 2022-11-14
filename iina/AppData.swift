@@ -139,7 +139,7 @@ struct UnitActionFormat {
   static let pasteAbove = UnitActionFormat(none: "Paste Above", single: "Paste %@ Above", multiple: "Paste %d %@ Above")
   static let pasteBelow = UnitActionFormat(none: "Paste Below", single: "Paste %@ Below", multiple: "Paste %d %@ Below")
   static let delete = UnitActionFormat(none: "Delete", single: "Delete %@", multiple: "Delete %d %@")
-  static let addNew = UnitActionFormat(none: "Add New", single: "Add New %@", multiple: "Add %d New %@")
+  static let add = UnitActionFormat(none: "Add", single: "Add %@", multiple: "Add %d %@")
   static let insertNewAbove = UnitActionFormat(none: "Insert Above", single: "Insert New %@ Above", multiple: "Insert %d New %@ Above")
   static let insertNewBelow = UnitActionFormat(none: "Insert Below", single: "Insert New %@ Below", multiple: "Insert %d New %@ Below")
 

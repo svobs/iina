@@ -300,17 +300,9 @@ class CascadingMenuItemBuilder {
     // Otherwise build it from unit type and number of units
     let unit: Attribute.UnitType = try requireAttr(.unit)
     let unitCount: Attribute.UnitCountType = getAttr(.unitCount) ?? 0
-
     let format: Attribute.UnitActionFormatType = try requireAttr(.unitActionFormat)
-    // 3 forms: if count==0, count==1, or count>1
-    if unitCount == 0 {
-      return format.none
-    }
-    if unitCount == 1 {  // single
-      return String(format: format.single, unit.singular)
-    }
-    // multiple
-    return String(format: format.multiple, unitCount, unit.plural)
+
+    return Utility.format(unit, unitCount, format)
   }
 
   private func buildAndAddItem() -> NSMenuItem? {

@@ -92,22 +92,19 @@ extension InputConfigTableViewController: NSTableViewDelegate {
   /**
    Make cell view when asked
    */
-  @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    let configName = configStore.configTableRows[row]
-
+  @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row rowIndex: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
-
-    guard let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView else {
-      return nil
-    }
+    guard let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView else { return nil }
     let columnName = identifier.rawValue
+
+    guard let configName = configStore.getConfigRow(at: rowIndex) else { return nil }
     let isDefaultConfig = configStore.isDefaultConfig(configName)
 
     switch columnName {
       case "nameColumn":
-        cell.textField!.stringValue = configName
+        cell.textField?.stringValue = configName
         if #available(macOS 10.14, *) {
-          cell.textField!.textColor = isDefaultConfig ? defaultConfigTextColor : .controlTextColor
+          cell.textField?.textColor = isDefaultConfig ? defaultConfigTextColor : .controlTextColor
         }
         return cell
       case "isDefaultColumn":
