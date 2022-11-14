@@ -22,9 +22,6 @@ fileprivate let COLUMN_INDEX_ACTION = 2
 fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .list
 fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
-fileprivate let insertNewRowsAbove = "Insert New %@ Above"
-fileprivate let insertNewRowsBelow = "Insert New %@ Below"
-
 class KeyBindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
@@ -779,15 +776,15 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     // Insert New: follow same logic as Paste, except don't show at all if disabled
     if !configStore.isCurrentConfigReadOnly {
       if isRowEditable {
-        mib.addItem(with: .titleFormatSingle(insertNewRowsAbove), .action(#selector(self.addNewRowAbove(_:))))
-        mib.addItem(with: .titleFormatSingle(insertNewRowsBelow), .action(#selector(self.addNewRowBelow(_:))))
+        mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewAbove), .action(#selector(self.addNewRowAbove(_:))))
+        mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewBelow), .action(#selector(self.addNewRowBelow(_:))))
       } else {
         // If current row is not editable, a new row can only be added in the direction of the editable rows ("default" section).
         let isAfterNotAt = bindingStore.getClosestValidInsertIndex(from: clickedRowIndex) > clickedRowIndex
         if isAfterNotAt {
-          mib.addItem(with: .titleFormatSingle(insertNewRowsBelow), .action(#selector(self.addNewRowBelow(_:))))
+          mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewBelow), .action(#selector(self.addNewRowBelow(_:))))
         } else {
-          mib.addItem(with: .titleFormatSingle(insertNewRowsAbove), .action(#selector(self.addNewRowAbove(_:))))
+          mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewAbove), .action(#selector(self.addNewRowAbove(_:))))
         }
       }
     }

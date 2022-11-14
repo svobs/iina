@@ -31,9 +31,7 @@ class CascadingMenuItemBuilder {
     case title
     case unit
     case unitCount
-    case titleFormatNone
-    case titleFormatSingle
-    case titleFormatPlural
+    case unitActionFormat
     case menu
     case action
     case enabled
@@ -48,7 +46,7 @@ class CascadingMenuItemBuilder {
     typealias TitleType = String
     typealias UnitType = Unit
     typealias UnitCountType = Int
-    typealias BaseTitleType = String
+    typealias UnitActionFormatType = UnitActionFormat
     typealias MenuType = NSMenu
     typealias ActionType = Selector?
     typealias EnabledIfType = Bool
@@ -58,12 +56,10 @@ class CascadingMenuItemBuilder {
     case targetRowIndex(TargetRowIndexType)
     case key(KeyType)
     case keyMods(KeyModsType)
-    case title(TitleType)  // if `title` is not supplied, then `unitCount`, `unit`, and the 3 formats need to be supplied
+    case title(TitleType)  // if `title` is not supplied, then `unitCount`, `unit`, and `unitActionFormat` need to be supplied
     case unit(Unit)
     case unitCount(UnitCountType)
-    case titleFormatNone(String)
-    case titleFormatSingle(String)
-    case titleFormatPlural(String)
+    case unitActionFormat(UnitActionFormat)
     case menu(MenuType)
     case action(ActionType)
     case enabled(EnabledIfType)
@@ -74,9 +70,7 @@ class CascadingMenuItemBuilder {
         case .key(let val): return val
         case .keyMods(let val): return val
         case .unit(let val): return val
-        case .titleFormatNone(let val): return val
-        case .titleFormatSingle(let val): return val
-        case .titleFormatPlural(let val): return val
+        case .unitActionFormat(let val): return val
         case .menu(let val): return val
         case .targetRow(let val): return val
         case .targetRowIndex(let val): return val
@@ -93,9 +87,7 @@ class CascadingMenuItemBuilder {
         case .key: return .key
         case .keyMods: return .keyMods
         case .unit: return .unit
-        case .titleFormatNone: return .titleFormatNone
-        case .titleFormatSingle: return .titleFormatSingle
-        case .titleFormatPlural: return .titleFormatPlural
+        case .unitActionFormat: return .unitActionFormat
         case .menu: return .menu
         case .targetRow: return .targetRow
         case .targetRowIndex: return .targetRowIndex
@@ -119,7 +111,7 @@ class CascadingMenuItemBuilder {
           if let val = val as? UnitType {
             debugVal = val.singular
           }
-        case .key, .title, .titleFormatNone, .titleFormatSingle, .titleFormatPlural:
+        case .key, .title, .unitActionFormat:
           if let val = val as? String {
             debugVal = "\"\(val)\""
           }
@@ -162,33 +154,27 @@ class CascadingMenuItemBuilder {
   // MARK: MenuItem prototypes
 
   func likeEditCut() -> CascadingMenuItemBuilder {
-    decorateWith(.key("x"), .keyMods(.command),
-                 .titleFormatNone("Cut"), .titleFormatSingle("Cut %@"), .titleFormatPlural("Cut %d %@"))
+    decorateWith(.key("x"), .keyMods(.command), .unitActionFormat(UnitActionFormat.cut))
   }
 
   func likeEditCopy() -> CascadingMenuItemBuilder {
-    decorateWith(.key("c"), .keyMods(.command),
-                 .titleFormatNone("Copy"), .titleFormatSingle("Copy %@"), .titleFormatPlural("Copy %d %@"))
+    decorateWith(.key("c"), .keyMods(.command), .unitActionFormat(UnitActionFormat.copy))
   }
 
   func likeEditPaste() -> CascadingMenuItemBuilder {
-    decorateWith(.key("v"), .keyMods(.command),
-                 .titleFormatNone("Paste"), .titleFormatSingle("Paste %@"), .titleFormatPlural("Paste %d %@"))
+    decorateWith(.key("v"), .keyMods(.command), .unitActionFormat(UnitActionFormat.paste))
   }
 
   func likePasteAbove() -> CascadingMenuItemBuilder {
-    decorateWith(.key("v"), .keyMods(.command),
-                 .titleFormatNone("Paste Above"), .titleFormatSingle("Paste %@ Above"), .titleFormatPlural("Paste %d %@ Above"))
+    decorateWith(.key("v"), .keyMods(.command), .unitActionFormat(UnitActionFormat.pasteAbove))
   }
 
   func likePasteBelow() -> CascadingMenuItemBuilder {
-    decorateWith(.key("v"), .keyMods(.command),
-                 .titleFormatNone("Paste Below"), .titleFormatSingle("Paste %@ Below"), .titleFormatPlural("Paste %d %@ Below"))
+    decorateWith(.key("v"), .keyMods(.command), .unitActionFormat(UnitActionFormat.pasteBelow))
   }
 
   func likeEditDelete() -> CascadingMenuItemBuilder {
-    decorateWith(.key(KeyCodeHelper.KeyEquivalents.BACKSPACE), .keyMods(.command),
-                 .titleFormatNone("Delete"), .titleFormatSingle("Delete %@"), .titleFormatPlural("Delete %d %@"))
+    decorateWith(.key(KeyCodeHelper.KeyEquivalents.BACKSPACE), .keyMods(.command), .unitActionFormat(UnitActionFormat.delete))
   }
 
   func likeEasyDelete() -> CascadingMenuItemBuilder {
@@ -315,17 +301,16 @@ class CascadingMenuItemBuilder {
     let unit: Attribute.UnitType = try requireAttr(.unit)
     let unitCount: Attribute.UnitCountType = getAttr(.unitCount) ?? 0
 
+    let format: Attribute.UnitActionFormatType = try requireAttr(.unitActionFormat)
     // 3 forms: if count==0, count==1, or count>1
     if unitCount == 0 {
-      return try requireAttr(.titleFormatNone)
+      return format.none
     }
     if unitCount == 1 {  // single
-      let titleFormatSingle: String = try requireAttr(.titleFormatSingle)
-      return String(format: titleFormatSingle, unit.singular)
+      return String(format: format.single, unit.singular)
     }
     // multiple
-    let titleFormatPlural: String = try requireAttr(.titleFormatPlural)
-    return String(format: titleFormatPlural, unitCount, unit.plural)
+    return String(format: format.multiple, unitCount, unit.plural)
   }
 
   private func buildAndAddItem() -> NSMenuItem? {

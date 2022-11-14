@@ -129,6 +129,21 @@ struct Unit {
   static let config = Unit(singular: "Config", plural: "Configs")
   static let keyBinding = Unit(singular: "Binding", plural: "Bindings")
 }
+struct UnitActionFormat {
+  let none: String      // action only
+  let single: String    // action, unit.singular
+  let multiple: String  // action, count, unit.plural
+  static let cut = UnitActionFormat(none: "Cut", single: "Cut %@", multiple: "Cut %d %@")
+  static let copy = UnitActionFormat(none: "Copy", single: "Copy %@", multiple: "Copy %d %@")
+  static let paste = UnitActionFormat(none: "Paste", single: "Paste %@", multiple: "Paste %d %@")
+  static let pasteAbove = UnitActionFormat(none: "Paste Above", single: "Paste %@ Above", multiple: "Paste %d %@ Above")
+  static let pasteBelow = UnitActionFormat(none: "Paste Below", single: "Paste %@ Below", multiple: "Paste %d %@ Below")
+  static let delete = UnitActionFormat(none: "Delete", single: "Delete %@", multiple: "Delete %d %@")
+  static let addNew = UnitActionFormat(none: "Add New", single: "Add New %@", multiple: "Add %d New %@")
+  static let insertNewAbove = UnitActionFormat(none: "Insert Above", single: "Insert New %@ Above", multiple: "Insert %d New %@ Above")
+  static let insertNewBelow = UnitActionFormat(none: "Insert Below", single: "Insert New %@ Below", multiple: "Insert %d New %@ Below")
+
+}
 
 extension Notification.Name {
   static let iinaMainWindowChanged = Notification.Name("IINAMainWindowChanged")
