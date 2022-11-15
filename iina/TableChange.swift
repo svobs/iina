@@ -37,6 +37,7 @@ class TableChange {
     case undoRedo
   }
 
+  // Required
   let changeType: ChangeType
 
   var toInsert: IndexSet? = nil
@@ -47,10 +48,16 @@ class TableChange {
 
   var newSelectedRows: IndexSet? = nil
 
+  // MARK: Additoional options
+
   var scrollToFirstSelectedRow: Bool = false
 
   // If true, reload all existing rows after executing the primary differences (to cover the case that one of them may have changed)
   var reloadAllExistingRows: Bool = false
+
+  // Leave nil to use the value from the table
+  var rowInsertAnimation: NSTableView.AnimationOptions? = nil
+  var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
 
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableChange.CompletionHandler?
@@ -101,6 +108,8 @@ class TableChange {
   }
 
   private func executeStructureUpdates(on tableView: EditableTableView) {
+    let insertAnimation = self.rowInsertAnimation ?? tableView.rowInsertAnimation
+    let removeAnimation = self.rowRemoveAnimation ?? tableView.rowRemoveAnimation
 
     switch changeType {
       case .selectionChangeOnly:
@@ -113,11 +122,11 @@ class TableChange {
         }
       case .addRows:
         if let indexes = self.toInsert {
-          tableView.insertRows(at: indexes, withAnimation: tableView.rowInsertAnimation)
+          tableView.insertRows(at: indexes, withAnimation: insertAnimation)
         }
       case .removeRows:
         if let indexes = self.toRemove {
-          tableView.removeRows(at: indexes, withAnimation: tableView.rowRemoveAnimation)
+          tableView.removeRows(at: indexes, withAnimation: removeAnimation)
         }
       case .updateRows:
         // Just redraw all of them. This is a very inexpensive operation, and much easier
@@ -133,8 +142,8 @@ class TableChange {
            let movePairs = self.toMove {
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
           Logger.log("TableChange diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
-          tableView.removeRows(at: toRemove, withAnimation: tableView.rowRemoveAnimation)
-          tableView.insertRows(at: toInsert, withAnimation: tableView.rowInsertAnimation)
+          tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
+          tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {
             Logger.log("Diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)

@@ -9,6 +9,14 @@
 import Foundation
 
 class EditableTableView: NSTableView {
+
+  // Can be overridden by each TableChange if set there
+  var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp
+  var rowRemoveAnimation: NSTableView.AnimationOptions = .slideDown
+
+  // Must provide this for editCell() to work
+  var editableTextColumnIndexes: [Int] = []
+
   // Must provide this for EditableTableView extended functionality
   var editableDelegate: EditableTableViewDelegate? = nil {
     didSet {
@@ -21,13 +29,6 @@ class EditableTableView: NSTableView {
   }
 
   private var cellEditTracker: CellEditTracker? = nil
-
-  var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp
-  var rowRemoveAnimation: NSTableView.AnimationOptions = .slideDown
-
-  // Must provide this for editCell() to work
-  var editableTextColumnIndexes: [Int] = []
-
   private var lastEditedTextField: EditableTextField? = nil
   private var observers: [NSObjectProtocol] = []
 
@@ -36,24 +37,6 @@ class EditableTableView: NSTableView {
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
-  }
-
-  override func keyDown(with event: NSEvent) {
-    if let keyChar = KeyCodeHelper.keyMap[event.keyCode]?.0 {
-      switch keyChar {
-        case "ENTER", "KP_ENTER":
-          if selectedRow >= 0 && selectedRow < numberOfRows && !editableTextColumnIndexes.isEmpty {
-            if let delegate = self.editableDelegate, delegate.userDidPressEnterOnRow(selectedRow) {
-              Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
-              editCell(row: selectedRow, column: editableTextColumnIndexes[0])
-              return
-            }
-          }
-        default:
-          break
-      }
-    }
-    super.keyDown(with: event)
   }
 
   // MARK: Edit menu > Cut, Copy, Paste, Delete
@@ -103,6 +86,24 @@ class EditableTableView: NSTableView {
   }
 
   // MARK: In-line cell editing
+
+  override func keyDown(with event: NSEvent) {
+    if let keyChar = KeyCodeHelper.keyMap[event.keyCode]?.0 {
+      switch keyChar {
+        case "ENTER", "KP_ENTER":
+          if selectedRow >= 0 && selectedRow < numberOfRows && !editableTextColumnIndexes.isEmpty {
+            if let delegate = self.editableDelegate, delegate.userDidPressEnterOnRow(selectedRow) {
+              Logger.log("TableView.KeyDown: \(keyChar) on row \(selectedRow)")
+              editCell(row: selectedRow, column: editableTextColumnIndexes[0])
+              return
+            }
+          }
+        default:
+          break
+      }
+    }
+    super.keyDown(with: event)
+  }
 
   override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
     if let event = event, event.type == .leftMouseDown, event.modifierFlags.isEmpty {
