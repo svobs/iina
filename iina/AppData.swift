@@ -142,7 +142,7 @@ struct UnitActionFormat {
   static let add = UnitActionFormat(none: "Add", single: "Add %@", multiple: "Add %d %@")
   static let insertNewAbove = UnitActionFormat(none: "Insert Above", single: "Insert New %@ Above", multiple: "Insert %d New %@ Above")
   static let insertNewBelow = UnitActionFormat(none: "Insert Below", single: "Insert New %@ Below", multiple: "Insert %d New %@ Below")
-
+  static let move = UnitActionFormat(none: "Move", single: "Move %@", multiple: "Move %d %@")
 }
 
 extension Notification.Name {

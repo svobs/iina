@@ -425,8 +425,28 @@ class InputBindingStore {
        let defaultSectionOld = InputSectionStack.shared.sectionsDefined[SharedInputSection.DEFAULT_SECTION_NAME]?.keyMappingList {
 
       undoManager.registerUndo(withTarget: self, handler: { bindingStore in
+        // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableChange
+        // If moving rows in the table which aren't unique, this solution often guesses the wrong rows to animate
         bindingStore.applyChange(defaultSectionOld, TableChange(.undoRedo))
       })
+
+      // Format the action name for Edit menu display
+      if let desiredTableChange = desiredTableChange, !undoManager.isUndoing && !undoManager.isRedoing {
+        var actionName: String? =  nil
+        switch desiredTableChange.changeType {
+          case .addRows:
+            actionName = Utility.format(.keyBinding, desiredTableChange.toInsert?.count ?? 0, .add)
+          case .removeRows:
+            actionName = Utility.format(.keyBinding, desiredTableChange.toRemove?.count ?? 0, .delete)
+          case .moveRows:
+            actionName = Utility.format(.keyBinding, desiredTableChange.toMove?.count ?? 0, .move)
+          default:
+            break
+        }
+        if let actionName = actionName {
+          undoManager.setActionName(actionName)
+        }
+      }
     }
 
     // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,

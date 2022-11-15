@@ -480,7 +480,7 @@ class InputConfigStore: NSObject {
       // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
       // There's no need to change the name of it for the redo.
       if !undoManager.isUndoing && !undoManager.isRedoing {
-        undoManager.setActionName(actionName ?? "Change Active Config")
+        undoManager.setActionName(undoActionName)
       }
 
     } else {
@@ -496,10 +496,6 @@ class InputConfigStore: NSObject {
 
     if let userConfigDictNew = userConfigDictNew {
       Logger.log("Saving prefs: currentInputConfigName=\"\(currentConfigNameNew)\", inputConfigs=\(userConfigDictNew)", level: .verbose)
-      guard userConfigDictNew[currentConfigNameNew] != nil else {
-        Logger.log("Cannot update: \"\(currentConfigNameNew)\" not found in supplied config dict (\(userConfigDictNew))", level: .error)
-        return
-      }
       // Update userConfigDict
       userConfigDict = userConfigDictNew
       Preference.set(userConfigDictNew, for: .inputConfigs)
