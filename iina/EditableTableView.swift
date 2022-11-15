@@ -22,8 +22,8 @@ class EditableTableView: NSTableView {
 
   private var cellEditTracker: CellEditTracker? = nil
 
-  var rowInsertAnimation: NSTableView.AnimationOptions = .slideDown
-  var rowRemoveAnimation: NSTableView.AnimationOptions = .slideUp
+  var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp
+  var rowRemoveAnimation: NSTableView.AnimationOptions = .slideDown
 
   // Must provide this for editCell() to work
   var editableTextColumnIndexes: [Int] = []
