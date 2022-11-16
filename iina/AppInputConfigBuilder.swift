@@ -24,8 +24,8 @@ class AppInputConfigBuilder {
     Logger.log(msg, level: level, subsystem: sectionStack.subsystem)
   }
 
-  func build() -> AppInputConfig {
-    Logger.log("Starting rebuild of active input bindings", level: .verbose, subsystem: sectionStack.subsystem)
+  func build(version: Int) -> AppInputConfig {
+    Logger.log("Starting rebuild of AppInputConfig v\(version)", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of InputBindings, including redundancies. We're not done setting each's `isEnabled` field though.
     // This also sets `defaultSectionStartIndex` and `defaultSectionEndIndex`.
@@ -57,9 +57,9 @@ class AppInputConfigBuilder {
     // Do this last, after everything has been inserted, so that there is no risk of blocking other bindings from being inserted.
     fillInPartialSequences(&resolverDict)
 
-    let appBindings = AppInputConfig(bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
+    let appBindings = AppInputConfig(version: version, bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
                                      defaultSectionStartIndex: defaultSectionStartIndex!, defaultSectionEndIndex: defaultSectionEndIndex!)
-    Logger.log("Finished rebuild of active input bindings (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
+    Logger.log("Finished rebuild of AppInputConfig (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
     appBindings.logEnabledBindings()
 
     return appBindings

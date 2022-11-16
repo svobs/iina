@@ -310,7 +310,6 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock
-   TODO: look for a way to animate this so that it's more obvious that something happened.   
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     guard operation == NSDragOperation.delete else {
@@ -326,9 +325,10 @@ extension InputConfigTableViewController: NSTableViewDataSource {
 
     Logger.log("User dragged to the trash: \(userConfigList[0])", level: .verbose)
 
-    session.draggingFormation = DRAGGING_FORMATION
-    session.animatesToStartingPositionsOnCancelOrFail = true
-    self.deleteConfig(userConfigList[0])
+    // TODO: this is the wrong animation
+    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0), completionHandler: {
+      self.deleteConfig(userConfigList[0])
+    })
   }
 
   /*

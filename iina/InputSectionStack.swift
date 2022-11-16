@@ -32,49 +32,6 @@ class InputSectionStack {
     let isExclusive: Bool
   }
 
-  // MARK: Shared input sections
-
-  // Contains static sections which occupy the bottom of every stack.
-  // Sort of like a prototype, but a change to any of these sections will immediately affects all players.
-  static let shared = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
-                                        initialEnabledSections: [
-                                        SharedInputSection(name: SharedInputSection.DEFAULT_SECTION_NAME, isForce: true, origin: .confFile),
-                                        SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
-                                        SharedInputSection(name: SharedInputSection.VIDEO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
-                                        SharedInputSection(name: SharedInputSection.PLUGINS_SECTION_NAME, isForce: false, origin: .iinaPlugin)
-                                        ])
-
-  // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
-  static func replaceMappings(forSharedSectionName: String, with mappings: [KeyMapping],
-                              onlyIfDifferent: Bool = false,
-                              doRebuildAfter: Bool = true) {
-    var doReplace = true
-    dq.sync {
-      if let sharedSection = shared.sectionsDefined[forSharedSectionName] as? SharedInputSection {
-
-        if onlyIfDifferent {
-          let existingCount = sharedSection.keyMappingList.count
-          let newCount = mappings.count
-          // TODO: get more sophisticated than this simple case
-          let didChange = !(existingCount == 0 && newCount == 0)
-          doReplace = didChange
-        }
-
-        if doReplace {
-          sharedSection.setKeyMappingList(mappings)
-          if doRebuildAfter {
-            AppInputConfig.rebuildCurrent()
-          }
-        }
-      }
-    }
-  }
-
-  // Try to minimize duplicate work by detecting when there is no change.
-  static func replacePluginsSectionBindings(_ mappings: [KeyMapping]) {
-    self.replaceMappings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: mappings, onlyIfDifferent: true)
-  }
-
   // MARK: Single player instance
 
   /* mpv euivalent:   `struct cmd_bind_section **sections` */
@@ -97,8 +54,7 @@ class InputSectionStack {
     if let initialEnabledSections = initialEnabledSections {
       sections = initialEnabledSections
     } else {
-      // Default to adding the static shared sections
-      sections = InputSectionStack.shared.sectionsEnabled.map( { InputSectionStack.shared.sectionsDefined[$0.name]! })
+      sections = []
     }
 
     for section in sections {
@@ -222,7 +178,7 @@ class InputSectionStack {
 
   private func disableSection_Unsafe(_ sectionName: String) {
     if sectionsDefined[sectionName] != nil {
-      if InputSectionStack.shared.sectionsDefined[sectionName] != nil {
+      if AppInputConfig.sharedSections.filter({ $0.name == sectionName}).count > 0 {
         // Indicates developer error. Never remove default or plugins sections
         Logger.fatal("Can never remove a shared input section!")
       }

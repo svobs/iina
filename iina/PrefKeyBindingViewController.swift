@@ -31,8 +31,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return AppInputConfig.inputConfigStore
   }
 
-  private var bindingStore: InputBindingStore {
-    return AppInputConfig.inputBindingStore
+  private var bindingTableStore: BindingTableState {
+    return BindingTableStateManager.currentState
   }
 
   private var configTableController: InputConfigTableViewController? = nil
@@ -78,7 +78,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
       guard let newStringValue = notification.object as? String else {
-        Logger.log("iinaKeyBindingSearchFieldShouldUpdate: invalid object: \(type(of: notification.object))", level: .error)
+        Logger.log("\(notification.name): invalid object: \(type(of: notification.object))", level: .error)
         return
       }
       self.keyMappingSearchField.stringValue = newStringValue
@@ -130,7 +130,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    bindingStore.filterBindings(sender.stringValue)
+    bindingTableStore.filterBindings(sender.stringValue)
   }
 
   // MARK: - UI

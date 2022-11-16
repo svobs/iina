@@ -590,7 +590,7 @@ class MenuController: NSObject, NSMenuDelegate {
     Logger.log("Found \(keyMappings.count) key equivalents in Plugin menu items", level: .verbose)
 
     // This will kick off a series of updates set any key equivalents and update them as needed
-    InputSectionStack.replacePluginsSectionBindings(keyMappings)
+    AppInputConfig.replaceMappings(forSharedSectionName: SharedInputSection.PLUGINS_SECTION_NAME, with: keyMappings, onlyIfDifferent: true)
   }
 
   @discardableResult
@@ -789,7 +789,7 @@ class MenuController: NSObject, NSMenuDelegate {
       }
     }
 
-    InputSectionStack.replaceMappings(forSharedSectionName: sectionName, with: keyMappings)
+    AppInputConfig.replaceMappings(forSharedSectionName: sectionName, with: keyMappings)
   }
 
   // MARK: Set key equivalents

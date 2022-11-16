@@ -549,7 +549,12 @@ class InputConfigStore: NSObject {
       return
     }
 
-    AppInputConfig.inputBindingStore.currentConfigFileDidChange(inputConfigFile)
+    let userConfMappingsNew = inputConfigFile.parseMappings()
+    // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfigNew in
+      AppInputConfig.bindingTableStateManager.appInputConfigDidChange(appInputConfigNew,
+                                                                      tableChange: TableChange(.reloadAll), newInputConfigFile: inputConfigFile)
+    })
   }
 
   // Convenience function: show error popup to user

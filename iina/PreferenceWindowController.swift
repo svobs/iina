@@ -152,7 +152,7 @@ class PreferenceWindowController: NSWindowController {
     super.windowDidLoad()
 
     AppInputConfig.inputConfigStore.undoManager = window!.undoManager
-    AppInputConfig.inputBindingStore.undoManager = window!.undoManager
+    AppInputConfig.bindingTableStateManager.undoManager = window!.undoManager
 
     window?.titlebarAppearsTransparent = true
     window?.titleVisibility = .hidden

@@ -89,7 +89,8 @@ class PlayerInputConfig {
   init(playerCore: PlayerCore) {
     self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerInputConfig.inputBindingsSubsystem.rawValue)")
 
-    sectionStack = InputSectionStack(subsystem)
+    // Default to adding the static shared sections
+    sectionStack = InputSectionStack(subsystem, initialEnabledSections: AppInputConfig.sharedSections)
   }
 
   deinit {
