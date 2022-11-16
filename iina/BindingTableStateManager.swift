@@ -8,28 +8,33 @@
 
 import Foundation
 
+/*
+ Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
+ */
 class BindingTableStateManager {
   static var currentState = BindingTableState(AppInputConfig.current, filterString: "", inputConfigFile: nil)
 
   unowned var undoManager: UndoManager? = nil
 
-  // MARK: TableChange push & receive with other components
-
   /*
-   Must execute sequentially:
+   Executes a single "action" to the current table state.
+   This is either the "do" of an undoable action, or an undo of that action, or a redo of that undo.
+   Don't use this for changes which aren't undoable, like filter string.
+
+   Currently, all changes are to bindings in the current config file. Must execute sequentially:
    1. Save conf file, get updated default section rows
    2. Send updated default section bindings to InputBindingController. It will recalculate all bindings and re-bind appropriately, then
    returns the updated set of all bindings to us.
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  func applyChange(_ userConfMappingsNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
+  func doAction(_ userConfMappingsNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    // This will cause the UI to reload the table. We will do the op as a separate step, because a "reload" is a sledgehammer which
-    // doesn't support animation and also blows away selections and editors.
     if !BindingTableStateManager.currentState.filterString.isEmpty {
       if let ch = desiredTableChange, ch.changeType == .updateRows || ch.changeType == .addRows {
+        // This will cause the UI to reload the table. We will do the op as a separate step, because a "reload" is a sledgehammer which
+        // doesn't support animation and also blows away selections and editors.
         clearFilter()
       }
     }
@@ -41,7 +46,7 @@ class BindingTableStateManager {
         // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableChange
         // FIXME: also need to use USER BINDINGS
         // If moving rows in the table which aren't unique, this solution often guesses the wrong rows to animate
-        bindingTableStore.applyChange(userConfMappingsOld, TableChange(.undoRedo))
+        bindingTableStore.doAction(userConfMappingsOld, TableChange(.undoRedo))
       })
 
       // Format the action name for Edit menu display
@@ -63,24 +68,24 @@ class BindingTableStateManager {
       }
     }
 
-    // Save to file. Note that all non-"default" rows in this list will be ignored, so there is no chance of corrupting a different section,
-    // or of writing another section's bindings to the "default" section.
-     guard let userConfMappingsNew = saveBindingsToCurrentConfigFile(userConfMappingsNew) else {
+    // Save user's changes to file before doing anything else:
+    guard let userConfMappingsNew = saveBindingsToCurrentConfigFile(userConfMappingsNew) else {
       return
-     }
+    }
 
-     /*
-      Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
-      It will notify us asynchronously when it is done.
+    /*
+     Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
+     It will notify us asynchronously when it is done.
 
-      Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
-      This is needed so that animations can work. But InputBindingController builds the actual row data,
-      and the two must match or else visual bugs will result.
-      */
-     AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfigNew in
-       self.appInputConfigDidChange(appInputConfigNew, tableChange: desiredTableChange)
-     })
-   }
+     Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
+     This is needed so that animations can work. But InputBindingController builds the actual row data,
+     and the two must match or else visual bugs will result.
+     */
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfigNew in
+      self.updateTableState(appInputConfigNew, tableChange: desiredTableChange)
+      return false
+    })
+  }
 
   private func clearFilter() {
     Logger.log("Clearing Key Bindings filter", level: .verbose)
@@ -91,7 +96,7 @@ class BindingTableStateManager {
 
   // No an undoable action; just a UI change
   func filterBindings(newFilterString: String) {
-    appInputConfigDidChange(AppInputConfig.current, newFilterString: newFilterString)
+    updateTableState(AppInputConfig.current, newFilterString: newFilterString)
   }
 
   /*
@@ -100,10 +105,15 @@ class BindingTableStateManager {
    - Push update to the Key Bindings table in the UI so it can be animated.
    Expected to be run on the main thread.
    */
-  func appInputConfigDidChange(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
-                               newFilterString: String? = nil, newInputConfigFile: InputConfigFile? = nil) {
+  func updateTableState(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
+                        newFilterString: String? = nil, newInputConfigFile: InputConfigFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
     let lastState = BindingTableStateManager.currentState
+    if lastState.appInputConfig.version == appInputConfigNew.version
+        && desiredTableChange == nil && newFilterString == nil && newInputConfigFile == nil{
+      Logger.log("updateTableState(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
+      return
+    }
     let currentState = BindingTableState(appInputConfigNew,
                                          filterString: newFilterString ?? lastState.filterString,
                                          inputConfigFile: newInputConfigFile ?? lastState.inputConfigFile)

@@ -186,7 +186,52 @@ class EditableTableView: NSTableView {
     return "nil"
   }
 
-  // MARK: Special "reload" functions
+  // MARK: Misc functions
+
+  func setDraggingImageUsingAllColumns(_ session: NSDraggingSession, _ dragStartScreenPoint: NSPoint, _ rowIndexes: IndexSet) {
+    // All this garbage is needed just to show all the columns when dragging (instead of just the clicked one)
+    session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) {(draggingItem, rowNumber, stop) in
+
+      let rowIndexArray = Array(rowIndexes)
+
+      draggingItem.imageComponentsProvider = {
+        var componentArray: [NSDraggingImageComponent] = []
+
+        draggingItem.draggingFrame = NSRect(x: 0.0, y: 0.0, width: self.frame.width, height: self.rowHeight * CGFloat(rowIndexArray.count))
+
+        guard rowNumber < rowIndexArray.count else { return componentArray }
+        let rowIndex = rowIndexArray[rowNumber]
+
+        var maxRowHeight = self.rowHeight
+        for columnIndex in 0..<self.numberOfColumns {
+          // note: keep `makeIfNecessary==false` to prevent drawing items which aren't on the screen
+          // (a nice performance improvement, but could be improved visually)
+          if let cellView = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false) as? NSTableCellView {
+
+            for comp in cellView.draggingImageComponents {
+              if comp.frame.height > maxRowHeight {
+                maxRowHeight = comp.frame.height
+              }
+
+              componentArray.append(comp)
+            }
+          }
+        }
+
+        var xOffset = 0.0
+        for (compArrIndex, comp) in componentArray.enumerated() {
+          let colWidth = compArrIndex >= self.numberOfColumns ? 0 : self.tableColumns[compArrIndex].width
+          let yAdjustToCenter = (maxRowHeight - comp.frame.height) / 2
+          Logger.log("MaxRowHeight: \(maxRowHeight). yAdjustToCenter: \(yAdjustToCenter)")
+          comp.frame = NSRect(x: xOffset, y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
+          xOffset += colWidth + self.intercellSpacing.width
+        }
+
+        Logger.log("Returning \(componentArray) draggingImageComponents", level: .verbose)
+        return componentArray
+      }
+    }
+  }
 
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
   // This will preserve the selection indexes (whereas reloadData() will not)

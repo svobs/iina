@@ -9,11 +9,12 @@
 import Foundation
 
 /*
- Encapsulates the user's list of user input config files via stored preferences.
+ Represents a snapshot of the state of tbe Key Bindings table, closely tied to an instance of `AppInputConfig.
+ Like `AppInputConfig`, each instance is read-only and is designed to be rebuilt & replaced each time there is a change,
+ to help ensure the integrity of its data. See `BindingTableStateManager` for all changes.
  Provides create/remove/update/delete operations on the table, and also completely handles filtering,  but is decoupled from UI code so that everything is cleaner.
- Not thread-safe at present!
  Should not contain any API calls to UI code. Other classes should call this class's public methods to get & update data.
- This class is downstream from `AppInputConfig.current` and should be notified of any changes to it.
+ This class is downstream from `AppInputConfig.current`
  */
 struct BindingTableState {
 
@@ -24,7 +25,7 @@ struct BindingTableState {
     self.inputConfigFile = inputConfigFile
   }
 
-  // MARK: State
+  // MARK: Data
 
   // The state of the AppInputConfig on which the state of this table is based.
   // While in almost all cases this should be identical to AppInputConfig.current, it is way simpler and more performant
@@ -32,19 +33,19 @@ struct BindingTableState {
   // and each new AppInputConfig is an atomic update which replaces the previously received one via asynchronous updates.
   let appInputConfig: AppInputConfig
 
-  // The table rows currently displayed, which will change depending on the current filterString
-  let bindingRowsFiltered: [InputBinding]
+  // The source user conf file
+  let inputConfigFile: InputConfigFile?
 
   // Should be kept current with the value which the user enters in the search box:
   let filterString: String
+
+  // The table rows currently displayed, which will change depending on the current filterString
+  let bindingRowsFiltered: [InputBinding]
 
   // The current unfiltered list of table rows
   private var bindingRowsAll: [InputBinding] {
     appInputConfig.bindingCandidateList
   }
-
-  // The source user conf file
-  let inputConfigFile: InputConfigFile?
 
   // MARK: Bindings Table CRUD
 
@@ -104,7 +105,7 @@ struct BindingTableState {
     tableChange.toMove = moveIndexPairs
     tableChange.newSelectedRows = newSelectedRows
 
-    applyChange(bindingRowsAllUpdated, tableChange)
+    doAction(bindingRowsAllUpdated, tableChange)
     return insertIndex
   }
 
@@ -128,7 +129,7 @@ struct BindingTableState {
       bindingRowsAllNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
-    applyChange(bindingRowsAllNew, tableChange)
+    doAction(bindingRowsAllNew, tableChange)
   }
 
   // Returns the index at which it was ultimately inserted
@@ -145,7 +146,7 @@ struct BindingTableState {
     }
 
     // If there is an active filter, the indexes reflect filtered rows.
-    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
+    // Get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
     let idsToRemove = resolveBindingIDs(from: indexesToRemove, excluding: { !$0.canBeModified })
 
     if idsToRemove.isEmpty {
@@ -175,37 +176,7 @@ struct BindingTableState {
       }
     }
 
-    applyChange(remainingRowsUnfiltered, tableChange)
-  }
-
-  func removeBindings(withIDs idsToRemove: [Int]) {
-    Logger.log("Removing bindings with IDs (\(idsToRemove))", level: .verbose)
-    guard canModifyCurrentConfig else {
-      Logger.log("Aborting: cannot modify current config!", level: .error)
-      return
-    }
-
-    // If there is an active filter, the indexes reflect filtered rows.
-    // Let's get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    var remainingRowsUnfiltered: [InputBinding] = []
-    var indexesToRemove = IndexSet()
-    for (rowIndex, row) in bindingRowsAll.enumerated() {
-      if let id = row.keyMapping.bindingID {
-        // Non-editable rows probably do not have IDs, but check editable status to be sure
-        if idsToRemove.contains(id) && row.canBeModified {
-          indexesToRemove.insert(rowIndex)
-          continue
-        }
-      }
-      // Be sure to include rows which do not have IDs
-      remainingRowsUnfiltered.append(row)
-    }
-
-    let tableChange = TableChange(.removeRows)
-    tableChange.toRemove = indexesToRemove
-
-    Logger.log("Of \(idsToRemove.count) requested, (\(indexesToRemove.count) bindings will actually be removed", level: .verbose)
-    applyChange(remainingRowsUnfiltered, tableChange)
+    doAction(remainingRowsUnfiltered, tableChange)
   }
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
@@ -234,10 +205,10 @@ struct BindingTableState {
     }
 
     tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    applyChange(bindingRowsAll, tableChange)
+    doAction(bindingRowsAll, tableChange)
   }
 
-  // MARK: Various support functions
+  // MARK: Various utility functions
 
   func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
     self.getBindingRow(at: rowIndex)?.canBeModified ?? false
@@ -356,9 +327,11 @@ struct BindingTableState {
     return indexSet
   }
 
-  private func applyChange(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
+  // Both params should be calculated based on UNFILTERED rows.
+  // Let BindingTableStateManager deal with altering animations with a filter
+  private func doAction(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
     let defaultSectionNew = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    AppInputConfig.bindingTableStateManager.applyChange(defaultSectionNew, tableChange)
+    AppInputConfig.bindingTableStateManager.doAction(defaultSectionNew, tableChange)
   }
 
   private var canModifyCurrentConfig: Bool {
@@ -385,7 +358,7 @@ struct BindingTableState {
     }
     return bindingRowsAll.filter {
       return $0.getKeyColumnDisplay(raw: true).localizedStandardContains(filterString)
-        || $0.getActionColumnDisplay(raw: true).localizedStandardContains(filterString)
+      || $0.getActionColumnDisplay(raw: true).localizedStandardContains(filterString)
     }
   }
 

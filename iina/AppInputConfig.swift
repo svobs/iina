@@ -11,7 +11,8 @@ import Foundation
 // Application-scoped input config (key bindings)
 // The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data
 struct AppInputConfig {
-  typealias CompletionHandler = (AppInputConfig) -> Void
+  // return true to send notifications; false otherwise
+  typealias CompletionHandler = (AppInputConfig) -> Bool
 
   // MARK: Shared input sections
 
@@ -49,7 +50,7 @@ struct AppInputConfig {
         if onlyIfDifferent {
           let existingCount = sharedSection.keyMappingList.count
           let newCount = mappings.count
-          // TODO: get more sophisticated than this simple case
+          // TODO: get more sophisticated than this simple check
           let didChange = !(existingCount == 0 && newCount == 0)
           doReplace = didChange
         }
@@ -91,15 +92,21 @@ struct AppInputConfig {
     Logger.log("Requesting app input bindings rebuild (v\(requestedVersion))", level: .verbose)
 
     DispatchQueue.main.async {
+      var notifyTable = true
       defer {
-        // Always execute this at end if supplied
-        if let completionHandler = completionHandler {
-          completionHandler(AppInputConfig.current)
+        // Always execute this before returning, if supplied
+        if let completionHandler = completionHandler, !completionHandler(AppInputConfig.current) {
+          notifyTable = false
+        }
+        if notifyTable {
+          // Notify Key Bindings table in prefs UI
+          bindingTableStateManager.updateTableState(AppInputConfig.current)
         }
       }
 
       // Optimization: drop all but the most recent request
       if requestedVersion <= AppInputConfig.lastStartedVersion {
+        notifyTable = false
         return
       }
       AppInputConfig.lastStartedVersion = requestedVersion
@@ -119,9 +126,6 @@ struct AppInputConfig {
       (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalents(from: appInputConfigNew.bindingCandidateList)
 
       AppInputConfig.current = appInputConfigNew
-
-      // Notify Key Bindings table in prefs UI
-      bindingTableStateManager.appInputConfigDidChange(AppInputConfig.current)
     }
   }
 

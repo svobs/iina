@@ -308,6 +308,14 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     return nil
   }
 
+  /*
+   Drag start: set session variables.
+   */
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    self.tableView.setDraggingImageUsingAllColumns(session, screenPoint, rowIndexes)
+  }
+
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock
    */
@@ -319,15 +327,14 @@ extension InputConfigTableViewController: NSTableViewDataSource {
     let userConfigList = InputConfigTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
       configStore.getUserConfigName(forFilePath: $0) }
 
-    guard userConfigList.count == 1 else {
-      return
-    }
+    guard userConfigList.count == 1 else { return }
+    let configName = userConfigList[0]
 
-    Logger.log("User dragged to the trash: \(userConfigList[0])", level: .verbose)
+    Logger.log("User dragged to the trash: \(configName)", level: .verbose)
 
     // TODO: this is the wrong animation
     NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0), completionHandler: {
-      self.deleteConfig(userConfigList[0])
+      self.deleteConfig(configName)
     })
   }
 

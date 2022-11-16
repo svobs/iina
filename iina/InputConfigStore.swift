@@ -102,7 +102,7 @@ class InputConfigStore: NSObject {
           guard let userConfigDictNew = change[.newKey] as? [String: String] else { return }
           if !userConfigDictNew.keys.sorted().elementsEqual(self.userConfigDict.keys.sorted()) {
             Logger.log("Detected pref update for inputConfigs", level: .verbose)
-            self.applyChange(userConfigDictNew, currentConfigNameNew: self.currentConfigName)
+            self.doAction(userConfigDictNew, currentConfigNameNew: self.currentConfigName)
           }
         default:
           return
@@ -168,7 +168,7 @@ class InputConfigStore: NSObject {
     changeCurrentConfig(configNameNew)
   }
 
-  // This is the only method other than applyChange() which actually changes the real preference data
+  // This is the only method other than doAction() which actually changes the real preference data
   func changeCurrentConfig(_ configNameNew: String) {
     guard !configNameNew.equalsIgnoreCase(self.currentConfigName) else {
       return
@@ -187,7 +187,7 @@ class InputConfigStore: NSObject {
 
     Logger.log("Changing current config to: \"\(configNameNew)\"", level: .verbose)
 
-    applyChange(currentConfigNameNew: configNameNew)
+    doAction(currentConfigNameNew: configNameNew)
   }
 
   // Adds (or updates) config file with the given name into the user configs list preference, and sets it as the current config.
@@ -196,7 +196,7 @@ class InputConfigStore: NSObject {
     Logger.log("Adding user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyChange(userConfDictUpdated, currentConfigNameNew: configName, completionHandler: completionHandler)
+    doAction(userConfDictUpdated, currentConfigNameNew: configName, completionHandler: completionHandler)
   }
 
   func addNewUserConfigInline(completionHandler: TableChange.CompletionHandler? = nil) {
@@ -206,7 +206,7 @@ class InputConfigStore: NSObject {
       Logger.log("Adding blank row for naming new user config")
     }
     isAddingNewConfigInline = true
-    applyChange(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
+    doAction(currentConfigNameNew: currentConfigName, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(configName: String, filePath: String,
@@ -220,7 +220,7 @@ class InputConfigStore: NSObject {
     Logger.log("Completing inline add of user config: \"\(configName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfigDict
     userConfDictUpdated[configName] = filePath
-    applyChange(userConfDictUpdated, currentConfigNameNew: configName,
+    doAction(userConfDictUpdated, currentConfigNameNew: configName,
                            completionHandler: completionHandler)
   }
 
@@ -231,7 +231,7 @@ class InputConfigStore: NSObject {
     }
     isAddingNewConfigInline = false
     Logger.log("Cancelling inline add", level: .verbose)
-    applyChange(currentConfigNameNew: newCurrentConfig ?? currentConfigName)
+    doAction(currentConfigNameNew: newCurrentConfig ?? currentConfigName)
   }
 
   func addUserConfigs(_ userConfigsToAdd: [String: String]) {
@@ -250,7 +250,7 @@ class InputConfigStore: NSObject {
         newCurrentConfig = name
       }
     }
-    applyChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfig)
+    doAction(userConfDictUpdated, currentConfigNameNew: newCurrentConfig)
   }
 
   func removeConfig(_ configName: String) {
@@ -273,7 +273,7 @@ class InputConfigStore: NSObject {
       Logger.log("Cannot remove config \"\(configName)\": it is not a user config!", level: .error)
       return
     }
-    applyChange(userConfDictUpdated, currentConfigNameNew: newCurrentConfName)
+    doAction(userConfDictUpdated, currentConfigNameNew: newCurrentConfName)
   }
 
   func renameCurrentConfig(newName: String) -> Bool {
@@ -297,7 +297,7 @@ class InputConfigStore: NSObject {
     let newFilePath = Utility.buildConfigFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    applyChange(userConfDictUpdated, currentConfigNameNew: newName)
+    doAction(userConfDictUpdated, currentConfigNameNew: newName)
 
     return true
   }
@@ -323,12 +323,12 @@ class InputConfigStore: NSObject {
     return configTableRowsNew
   }
 
-  private func applyChange(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
+  private func doAction(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
                            completionHandler: TableChange.CompletionHandler? = nil) {
     self.applyOrUndoChange(userConfigDictNew, currentConfigNameNew: currentConfigNameNew, completionHandler: completionHandler)
   }
 
-  // Same as `applyChange`, but with extra params, because it will be called also for undo/redo
+  // Same as `doAction`, but with extra params, because it will be called also for undo/redo
   private func applyOrUndoChange(_ userConfigDictNew: [String:String]? = nil, currentConfigNameNew: String,
                                  completionHandler: TableChange.CompletionHandler? = nil,
                                  filesRemovedByLastAction: [String:String]? = nil) {
@@ -552,8 +552,9 @@ class InputConfigStore: NSObject {
     let userConfMappingsNew = inputConfigFile.parseMappings()
     // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
     AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfigNew in
-      AppInputConfig.bindingTableStateManager.appInputConfigDidChange(appInputConfigNew,
+      AppInputConfig.bindingTableStateManager.updateTableState(appInputConfigNew,
                                                                       tableChange: TableChange(.reloadAll), newInputConfigFile: inputConfigFile)
+      return false
     })
   }
 

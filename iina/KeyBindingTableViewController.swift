@@ -36,6 +36,8 @@ class KeyBindingTableViewController: NSObject {
   private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
+  private var draggedRowIndexes: IndexSet? = nil
+
   init(_ kbTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = kbTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
@@ -272,43 +274,13 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
   }
 
   /*
-   Drag start: now set session variables.
+   Drag start: set session variables.
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-
-    // All this garbage is needed just to show all the columns when dragging (instead of just the clicked one)
-    session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) {(draggingItem, rowNumber, stop) in
-
-      let rowIndexArray = Array(rowIndexes)
-
-      draggingItem.imageComponentsProvider = {
-        var componentArray: [NSDraggingImageComponent] = []
-        var xOffset = 0.0
-
-        draggingItem.draggingFrame = NSRect(x: 0.0, y: 0.0, width: tableView.frame.width, height: tableView.rowHeight * CGFloat(rowIndexArray.count))
-
-        guard rowNumber < rowIndexArray.count else { return componentArray }
-        let rowIndex = rowIndexArray[rowNumber]
-
-        for columnIndex in 0..<tableView.numberOfColumns {
-          let colWidth = tableView.tableColumns[columnIndex].width
-          // note: keep `makeIfNecessary==false` to prevent drawing items which aren't on the screen
-          // (a nice performance improvement, but could be improved visually)
-          if let cellView = tableView.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false) as? NSTableCellView {
-            for comp in cellView.draggingImageComponents {
-              comp.frame = NSRect(x: xOffset, y: 0.0, width: colWidth, height: tableView.rowHeight)
-              componentArray.append(comp)
-            }
-            xOffset += colWidth
-          }
-        }
-        Logger.log("Returning \(componentArray) draggingImageComponents")
-        return componentArray
-      }
-    }
+    self.draggedRowIndexes = rowIndexes
+    self.tableView.setDraggingImageUsingAllColumns(session, screenPoint, rowIndexes)
   }
-  
 
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock.
@@ -324,10 +296,13 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
       return
     }
 
+    guard let draggedRowIndexes = self.draggedRowIndexes,
+            mappings.count == draggedRowIndexes.count else { return }
+
     Logger.log("User dragged to the trash: \(mappings)", level: .verbose)
     // TODO: this is the wrong animation
     NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0), completionHandler: {
-      self.bindingTableStore.removeBindings(withIDs: mappings.compactMap{ $0.bindingID })
+      self.bindingTableStore.removeBindings(at: draggedRowIndexes)
     })
   }
 
