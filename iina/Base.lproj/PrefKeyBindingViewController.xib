@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21507" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21507"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -11,7 +10,7 @@
                 <outlet property="addKmBtn" destination="f5l-5w-zmm" id="L2K-7M-RLc"/>
                 <outlet property="configHintLabel" destination="tP6-Ua-acA" id="bRT-AA-zL7"/>
                 <outlet property="deleteConfFileBtn" destination="EpF-t6-PtC" id="3NC-Xb-5kT"/>
-                <outlet property="duplicateConfigBtn" destination="5WK-s3-J9x" id="Ri8-b5-d3s"/>
+                <outlet property="duplicateConfBtn" destination="5WK-s3-J9x" id="Ri8-b5-d3s"/>
                 <outlet property="inputConfigTableView" destination="AYj-6d-niF" id="mCQ-0s-wf9"/>
                 <outlet property="kbTableView" destination="1Z4-NL-6P3" id="OyE-OE-MSd"/>
                 <outlet property="keyMappingSearchField" destination="x6N-6q-HiV" id="mRh-rd-I8d"/>
@@ -47,7 +46,7 @@
                     <rect key="frame" x="196" y="62" width="491" height="320"/>
                     <clipView key="contentView" id="Hxb-1N-pOY">
                         <rect key="frame" x="1" y="1" width="489" height="318"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="KeyBindingsTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="489" height="295"/>
@@ -69,7 +68,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="nMC-X0-DpK" userLabel="Key TableCellView">
-                                                <rect key="frame" x="1" y="1" width="121" height="18"/>
+                                                <rect key="frame" x="11" y="1" width="121" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wdS-kV-koV" userLabel="Key TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
@@ -107,7 +106,7 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView id="oiC-ty-779" userLabel="Status TableCellView">
-                                                <rect key="frame" x="125" y="1" width="18" height="18"/>
+                                                <rect key="frame" x="135" y="1" width="18" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                 <subviews>
                                                     <imageView identifier="status" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="caJ-NG-b5Y" userLabel="Status Image">
@@ -142,7 +141,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="Fx4-cZ-KSl" userLabel="Action Table Cell View">
-                                                <rect key="frame" x="146" y="1" width="304" height="18"/>
+                                                <rect key="frame" x="156" y="1" width="304" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
@@ -277,7 +276,7 @@
                     <rect key="frame" x="8" y="62" width="180" height="350"/>
                     <clipView key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71">
                         <rect key="frame" x="1" y="1" width="178" height="348"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="InputConfTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="178" height="348"/>
@@ -337,7 +336,7 @@
                                         </textFieldCell>
                                         <prototypeCellViews>
                                             <tableCellView translatesAutoresizingMaskIntoConstraints="NO" id="S8W-AF-Z3k" userLabel="IsDefault TableCellView">
-                                                <rect key="frame" x="160" y="1" width="16" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="16" height="18"/>
                                                 <subviews>
                                                     <imageView identifier="isDefault" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bcd-Sf-UF4" userLabel="Locked Image">
                                                         <rect key="frame" x="2" y="-4.5" width="12.5" height="28"/>
@@ -388,7 +387,7 @@
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="newConfigFileAction:" target="-2" id="zyI-2f-FHa"/>
+                                    <action selector="newConfFileAction:" target="-2" id="zyI-2f-FHa"/>
                                 </connections>
                             </button>
                             <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EpF-t6-PtC">
@@ -409,7 +408,7 @@
                                     <font key="font" metaFont="label" size="9"/>
                                 </buttonCell>
                                 <connections>
-                                    <action selector="duplicateConfigFileAction:" target="-2" id="TJJ-4y-6g0"/>
+                                    <action selector="duplicateConfFileAction:" target="-2" id="TJJ-4y-6g0"/>
                                 </connections>
                             </button>
                             <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="nTU-Bf-Utf">
@@ -440,13 +439,13 @@
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AuR-Lj-Iz4">
-                    <rect key="frame" x="193" y="1" width="206" height="32"/>
+                    <rect key="frame" x="209" y="1" width="206" height="32"/>
                     <buttonCell key="cell" type="push" title="Import an existing config file" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="6cO-C0-33g">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <connections>
-                        <action selector="importConfigBtnAction:" target="-2" id="m3a-yn-NIE"/>
+                        <action selector="importConfBtnAction:" target="-2" id="m3a-yn-NIE"/>
                     </connections>
                 </button>
                 <searchField wantsLayer="YES" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="x6N-6q-HiV">

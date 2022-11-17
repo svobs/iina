@@ -160,9 +160,9 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
-		D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */; };
+		D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* ConfTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* KeyBindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */; };
-		D1049C892872CAD6003D47C1 /* InputConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* InputConfigStore.swift */; };
+		D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* ConfTableState.swift */; };
 		D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */; };
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
@@ -171,10 +171,11 @@
 		D18333BE2834CE620060A4E9 /* PlayerInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
-		D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfigFile.swift */; };
+		D19AF88428A3CBCE009B598C /* InputConfFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFile.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1D87DFC2923A4E500737886 /* BindingTableStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */; };
+		D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */; };
 		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableChange.swift */; };
@@ -1500,9 +1501,9 @@
 		C7DBA5EB1F07C5FD00C2B416 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InitialWindowController.strings; sourceTree = "<group>"; };
 		C7DC79CE1EC63821002DE23B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
-		D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigTableViewController.swift; sourceTree = "<group>"; };
+		D1049C842872C154003D47C1 /* ConfTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingTableViewController.swift; sourceTree = "<group>"; };
-		D1049C882872CAD6003D47C1 /* InputConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigStore.swift; sourceTree = "<group>"; };
+		D1049C882872CAD6003D47C1 /* ConfTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableState.swift; sourceTree = "<group>"; };
 		D11AB83528EEE72A00673A90 /* EditableTableViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableViewDelegate.swift; sourceTree = "<group>"; };
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
@@ -1511,10 +1512,11 @@
 		D18333BD2834CE620060A4E9 /* PlayerInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInputConfig.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
-		D19AF88328A3CBCE009B598C /* InputConfigFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfigFile.swift; sourceTree = "<group>"; };
+		D19AF88328A3CBCE009B598C /* InputConfFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFile.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableStateManager.swift; sourceTree = "<group>"; };
+		D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableStateManager.swift; sourceTree = "<group>"; };
 		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableChange.swift; sourceTree = "<group>"; };
@@ -1955,7 +1957,7 @@
 				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
 				D1FD2DD928521B5900CF7B35 /* MPVLogLevel.swift */,
-				D19AF88328A3CBCE009B598C /* InputConfigFile.swift */,
+				D19AF88328A3CBCE009B598C /* InputConfFile.swift */,
 				D1FD2DDB28533EE700CF7B35 /* InputSection.swift */,
 				D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */,
 				D188CB2128D6DE1900F166FD /* InputBinding.swift */,
@@ -2537,12 +2539,14 @@
 		D1DC3D36287191E90052B062 /* KeyBinding */ = {
 			isa = PBXGroup;
 			children = (
-				D1049C882872CAD6003D47C1 /* InputConfigStore.swift */,
-				D188CB2528D9E95500F166FD /* BindingTableState.swift */,
 				84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */,
 				8400D5E91E1AB337006785F5 /* PrefKeyBindingViewController.xib */,
-				D1049C842872C154003D47C1 /* InputConfigTableViewController.swift */,
+				D1049C842872C154003D47C1 /* ConfTableViewController.swift */,
+				D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */,
+				D1049C882872CAD6003D47C1 /* ConfTableState.swift */,
 				D1049C862872C17F003D47C1 /* KeyBindingTableViewController.swift */,
+				D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */,
+				D188CB2528D9E95500F166FD /* BindingTableState.swift */,
 				840D47991DFEF649000D9A64 /* KeyRecordViewController.swift */,
 				8400D5EC1E1AB33B006785F5 /* KeyRecordViewController.xib */,
 				84F5D4941E44D5230060A838 /* KeyBindingCriterion.swift */,
@@ -2550,7 +2554,6 @@
 				84F5D49F1E44F9DB0060A838 /* KeyBindingItem.swift */,
 				84F5D4A11E4796F50060A838 /* KeyBindingTranslator.swift */,
 				84F5D49C1E44E9A50060A838 /* KeyBinding.strings */,
-				D1D87DFB2923A4E500737886 /* BindingTableStateManager.swift */,
 			);
 			name = KeyBinding;
 			sourceTree = "<group>";
@@ -2891,6 +2894,7 @@
 				84D0FB811F5E5A4000C6A6A7 /* CropBoxViewController.swift in Sources */,
 				84D377631D6B66DE007F7396 /* MPVPlaylistItem.swift in Sources */,
 				E3ECC89E1FE9A6D900BED8C7 /* GeometryDef.swift in Sources */,
+				D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */,
 				E337D5E22411B64A00B5729A /* JavascriptPolyfill.swift in Sources */,
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
 				8400D5C41E17C6D2006785F5 /* AboutWindowController.swift in Sources */,
@@ -2901,7 +2905,7 @@
 				84BEEC421DFEE46200F945CA /* StreamReader.swift in Sources */,
 				E3CAD4AF2146DB47000B373A /* JavascriptAPI.swift in Sources */,
 				84C644601E92BA2700B1410B /* TimeLabelOverflowedView.swift in Sources */,
-				D1049C892872CAD6003D47C1 /* InputConfigStore.swift in Sources */,
+				D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */,
 				E3958565253133E80096811F /* SidebarTabView.swift in Sources */,
 				E3C12F6B201F281F00297964 /* FirstRunManager.swift in Sources */,
 				84EB1F071D2F5E76004FA5A1 /* Utility.swift in Sources */,
@@ -2930,7 +2934,7 @@
 				D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */,
 				519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */,
 				842904E21F0EC01600478376 /* AutoFileMatcher.swift in Sources */,
-				D1049C852872C154003D47C1 /* InputConfigTableViewController.swift in Sources */,
+				D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,
 				84A0BA9E1D2FAD4000BC8DA1 /* MainWindowController.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
@@ -3012,7 +3016,7 @@
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
-				D19AF88428A3CBCE009B598C /* InputConfigFile.swift in Sources */,
+				D19AF88428A3CBCE009B598C /* InputConfFile.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,

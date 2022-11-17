@@ -151,8 +151,11 @@ class PreferenceWindowController: NSWindowController {
   override func windowDidLoad() {
     super.windowDidLoad()
 
-    AppInputConfig.inputConfigStore.undoManager = window!.undoManager
-    AppInputConfig.bindingTableStateManager.undoManager = window!.undoManager
+    if let undoManager = window?.undoManager {
+      let notification = Notification(name: .iinaPrefsWindowHasUndoManager, object: undoManager)
+      Logger.log("Posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+      NotificationCenter.default.post(notification)
+    }
 
     window?.titlebarAppearsTransparent = true
     window?.titleVisibility = .hidden

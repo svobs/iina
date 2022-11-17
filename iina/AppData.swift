@@ -59,19 +59,19 @@ struct AppData {
   static let chromeExtensionLink = "https://chrome.google.com/webstore/detail/open-in-iina/pdnojahnhpgmdhjdhgphgdcecehkbhfo"
   static let firefoxExtensionLink = "https://addons.mozilla.org/addon/open-in-iina-x"
 
-  static let configFileExtension = "conf"
+  static let confFileExtension = "conf"
 
   // Immmutable default input configs.
   // TODO: combine into a SortedDictionary when available
-  static let defaultConfigNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
-  static let defaultConfigs: [String: String] = [
-    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!,
-    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.configFileExtension, inDirectory: "config")!
+  static let defaultConfNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
+  static let defaultConfs: [String: String] = [
+    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!,
+    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.confFileExtension, inDirectory: "config")!,
+    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!,
+    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!
   ]
   // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
-  static let maxConfigFileLinesAccepted = 10000
+  static let maxConfFileLinesAccepted = 10000
 
   static let widthWhenNoVideo = 640
   static let heightWhenNoVideo = 360
@@ -159,13 +159,22 @@ extension Notification.Name {
   static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
   // Supports auto-complete for key binding editing:
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
-  // There was a change to the Input Config table: the list of user input configs
-  // had additions, subtractions, renames, or the selection changed
-  static let iinaInputConfigTableShouldUpdate = Notification.Name("IINAInputConfigTableShouldUpdate")
-  // There was a change to the Key Bindings table contents
-  static let iinaKeyBindingsTableShouldUpdate = Notification.Name("IINAKeyBindingsTableShouldUpdate")
+  // Contains a TableChange which should be applied to the Input Conf table:
+  // user input conf additions, subtractions, a rename, or the selection changed
+  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfigTableShouldUpdate")
+  // Contains a TableChange which should be applied to the Key Bindings table
+  static let iinaBindingsTableShouldChange = Notification.Name("IINAKeyBindingsTableShouldUpdate")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
+  // Here's an UndoManager for you
+  static let iinaPrefsWindowHasUndoManager = Notification.Name("IINAPrefsWindowHasUndoManager")
+  // The AppInputConfig was rebuilt
+  static let iinaAppInputConfigDidChange = Notification.Name("IINAAppInputConfigDidChange")
+  // Same as `iinaAppInputConfigDidChange`, but also the current input conf file finished its
+  // initial load or it finished loading a new file
+  static let iinaSelectedConfFileDidLoad = Notification.Name("IINASelectedConfFileDidLoad")
+  // Request that the current input conf file be loaded
+  static let iinaSelectedConfFileNeedsLoad = Notification.Name("IINASelectedConfFileNeedsLoad")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

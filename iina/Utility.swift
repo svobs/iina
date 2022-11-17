@@ -361,8 +361,8 @@ class Utility {
     return allTypes.first { supportedFileExt[$0]!.contains(ext.lowercased()) }
   }
 
-  static func buildConfigFilePath(for userConfigName: String) -> String {
-    return Utility.userInputConfDirURL.appendingPathComponent(userConfigName).appendingPathExtension(AppData.configFileExtension).path
+  static func buildConfFilePath(for userConfName: String) -> String {
+    return Utility.userInputConfDirURL.appendingPathComponent(userConfName).appendingPathExtension(AppData.confFileExtension).path
   }
 
   static let appSupportDirUrl: URL = {

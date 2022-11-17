@@ -188,8 +188,8 @@ class EditableTableView: NSTableView {
 
   // MARK: Misc functions
 
-  func setDraggingImageUsingAllColumns(_ session: NSDraggingSession, _ dragStartScreenPoint: NSPoint, _ rowIndexes: IndexSet) {
-    // All this garbage is needed just to show all the columns when dragging (instead of just the clicked one)
+  // All this garbage is needed just to show all the columns when dragging (instead of just the clicked one)
+  func setDraggingImageToAllColumns(_ session: NSDraggingSession, _ dragStartScreenPoint: NSPoint, _ rowIndexes: IndexSet) {
     session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) {(draggingItem, rowNumber, stop) in
 
       let rowIndexArray = Array(rowIndexes)
@@ -202,15 +202,33 @@ class EditableTableView: NSTableView {
         guard rowNumber < rowIndexArray.count else { return componentArray }
         let rowIndex = rowIndexArray[rowNumber]
 
+        // First pass: collect components and size information
         var maxRowHeight = self.rowHeight
+        var columnOffsets: [CGFloat] = []
+        var xOffsets: [CGFloat] = []
         for columnIndex in 0..<self.numberOfColumns {
           // note: keep `makeIfNecessary==false` to prevent drawing items which aren't on the screen
           // (a nice performance improvement, but could be improved visually)
           if let cellView = self.view(atColumn: columnIndex, row: rowIndex, makeIfNecessary: false) as? NSTableCellView {
 
-            for comp in cellView.draggingImageComponents {
+            if columnIndex == 0 {
+              columnOffsets.append(0.0)
+            } else {
+              let colWidth = self.tableColumns[columnIndex].width
+              columnOffsets.append(columnOffsets.last! + colWidth + self.intercellSpacing.width)
+            }
+
+            let dragImageComps = cellView.draggingImageComponents
+            for (compIndex, comp) in dragImageComps.enumerated() {
               if comp.frame.height > maxRowHeight {
                 maxRowHeight = comp.frame.height
+              }
+              if compIndex == 0 {
+                xOffsets.append(columnOffsets.last!)
+              } else {
+                // Never tested with more than 1 component per column.
+                // Probably will need adjusting. At least this shouldn't crash!
+                xOffsets.append(xOffsets.last! + dragImageComps[compIndex-1].frame.width)
               }
 
               componentArray.append(comp)
@@ -218,13 +236,12 @@ class EditableTableView: NSTableView {
           }
         }
 
-        var xOffset = 0.0
+        // Second pass: set offsets and sizes
         for (compArrIndex, comp) in componentArray.enumerated() {
           let colWidth = compArrIndex >= self.numberOfColumns ? 0 : self.tableColumns[compArrIndex].width
           let yAdjustToCenter = (maxRowHeight - comp.frame.height) / 2
           Logger.log("MaxRowHeight: \(maxRowHeight). yAdjustToCenter: \(yAdjustToCenter)")
-          comp.frame = NSRect(x: xOffset, y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
-          xOffset += colWidth + self.intercellSpacing.width
+          comp.frame = NSRect(x: xOffsets[compArrIndex], y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
         }
 
         Logger.log("Returning \(componentArray) draggingImageComponents", level: .verbose)

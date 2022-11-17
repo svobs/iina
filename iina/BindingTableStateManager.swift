@@ -12,10 +12,44 @@ import Foundation
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 class BindingTableStateManager {
-  static var currentState = BindingTableState(AppInputConfig.current, filterString: "", inputConfigFile: nil)
 
-  unowned var undoManager: UndoManager? = nil
+  private unowned var undoManager: UndoManager? = nil
+  private var observers: [NSObjectProtocol] = []
 
+  init() {
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPrefsWindowHasUndoManager, object: nil, queue: .main, using: { notification in
+      guard let undoManager = notification.object as? UndoManager else {
+        Logger.log("Notification \"\(notification.name)\": bad object: \(type(of: notification.object))", level: .error)
+        return
+      }
+      self.undoManager = undoManager
+    }))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaAppInputConfigDidChange, object: nil, queue: .main, using: { notification in
+      guard let appInputConfig = notification.object as? AppInputConfig else {
+        Logger.log("Notification \"\(notification.name)\": bad object: \(type(of: notification.object))", level: .error)
+        return
+      }
+      self.updateTableState(appInputConfig)
+    }))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileDidLoad, object: nil, queue: .main, using: { notification in
+      guard let inputConfFile = notification.object as? InputConfFile else {
+        Logger.log("Notification \"\(notification.name.rawValue)\": bad object: \(type(of: notification.object))", level: .error)
+        return
+      }
+      // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
+      self.updateTableState(AppInputConfig.current, tableChange: TableChange(.reloadAll), newInputConfFile: inputConfFile)
+    }))
+  }
+
+  deinit {
+    for observer in observers {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    observers = []
+  }
+  
   /*
    Executes a single "action" to the current table state.
    This is either the "do" of an undoable action, or an undo of that action, or a redo of that undo.
@@ -31,7 +65,7 @@ class BindingTableStateManager {
   func doAction(_ userConfMappingsNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    if !BindingTableStateManager.currentState.filterString.isEmpty {
+    if !BindingTableState.current.filterString.isEmpty {
       if let ch = desiredTableChange, ch.changeType == .updateRows || ch.changeType == .addRows {
         // This will cause the UI to reload the table. We will do the op as a separate step, because a "reload" is a sledgehammer which
         // doesn't support animation and also blows away selections and editors.
@@ -45,6 +79,7 @@ class BindingTableStateManager {
       undoManager.registerUndo(withTarget: self, handler: { bindingTableStore in
         // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableChange
         // FIXME: also need to use USER BINDINGS
+        // FIXME: Filters!
         // If moving rows in the table which aren't unique, this solution often guesses the wrong rows to animate
         bindingTableStore.doAction(userConfMappingsOld, TableChange(.undoRedo))
       })
@@ -87,6 +122,11 @@ class BindingTableStateManager {
     })
   }
 
+  // No an undoable action; just a UI change
+  func filterBindings(newFilterString: String) {
+    updateTableState(AppInputConfig.current, newFilterString: newFilterString)
+  }
+
   private func clearFilter() {
     Logger.log("Clearing Key Bindings filter", level: .verbose)
     filterBindings(newFilterString: "")
@@ -94,49 +134,45 @@ class BindingTableStateManager {
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingSearchFieldShouldUpdate, object: ""))
   }
 
-  // No an undoable action; just a UI change
-  func filterBindings(newFilterString: String) {
-    updateTableState(AppInputConfig.current, newFilterString: newFilterString)
-  }
-
   /*
-   Does the following sequentially:
-   - Update this class's unfiltered list of bindings, and recalculate filtered list
-   - Push update to the Key Bindings table in the UI so it can be animated.
+   Called asychronously from other parts of IINA when new data is available which affects the state of the
+   table.
+
    Expected to be run on the main thread.
    */
-  func updateTableState(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
-                        newFilterString: String? = nil, newInputConfigFile: InputConfigFile? = nil) {
+  private func updateTableState(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
+                        newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
-    let lastState = BindingTableStateManager.currentState
-    if lastState.appInputConfig.version == appInputConfigNew.version
-        && desiredTableChange == nil && newFilterString == nil && newInputConfigFile == nil{
+
+    let oldState = BindingTableState.current
+    if oldState.appInputConfig.version == appInputConfigNew.version
+        && desiredTableChange == nil && newFilterString == nil && newInputConfFile == nil {
       Logger.log("updateTableState(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
       return
     }
-    let currentState = BindingTableState(appInputConfigNew,
-                                         filterString: newFilterString ?? lastState.filterString,
-                                         inputConfigFile: newInputConfigFile ?? lastState.inputConfigFile)
+    let newState = BindingTableState(appInputConfigNew,
+                                         filterString: newFilterString ?? oldState.filterString,
+                                         inputConfFile: newInputConfFile ?? oldState.inputConfFile)
 
-    // A table change animation can be calculated if not provided, which should be sufficient in most cases:
+    // A table change animation can be calculated if not provided, which should be sufficient in most cases
     let tableChange: TableChange
     if let desiredTableChange = desiredTableChange {
       if desiredTableChange.changeType == .undoRedo {
-        tableChange = buildTableDiff(oldState: lastState, newState: currentState, isUndoRedo: true)
+        tableChange = buildTableDiff(oldState: oldState, newState: newState, isUndoRedo: true)
       } else {
         tableChange = desiredTableChange
       }
     } else {
-      tableChange = buildTableDiff(oldState: lastState, newState: currentState)
+      tableChange = buildTableDiff(oldState: oldState, newState: newState)
     }
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableChange.reloadAllExistingRows = true
 
-    BindingTableStateManager.currentState = currentState
+    BindingTableState.current = newState
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaKeyBindingsTableShouldUpdate, object: tableChange)
+    let notification = Notification(name: .iinaBindingsTableShouldChange, object: tableChange)
     Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
@@ -148,19 +184,19 @@ class BindingTableStateManager {
 
   // Input Config File: Save
   private func saveBindingsToCurrentConfigFile(_ userConfMappings: [KeyMapping]) -> [KeyMapping]? {
-    guard let configFilePath = AppInputConfig.inputConfigStore.currentConfigFilePath else {
+    guard let configFilePath = ConfTableState.current.selectedConfFilePath else {
       let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return nil
     }
     Logger.log("Saving \(userConfMappings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
     do {
-      guard let currentConfigFile = BindingTableStateManager.currentState.inputConfigFile else {
+      guard let selectedConfFile = BindingTableState.current.inputConfFile else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }
       let canonicalPathCurrent = URL(fileURLWithPath: configFilePath).resolvingSymlinksInPath().path
-      let canonicalPathLoaded = URL(fileURLWithPath: currentConfigFile.filePath).resolvingSymlinksInPath().path
+      let canonicalPathLoaded = URL(fileURLWithPath: selectedConfFile.filePath).resolvingSymlinksInPath().path
       guard canonicalPathCurrent == canonicalPathLoaded else {
         Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
         let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
@@ -168,9 +204,9 @@ class BindingTableStateManager {
         return nil
       }
 
-      currentConfigFile.replaceAllMappings(with: userConfMappings)
-      try currentConfigFile.saveToDisk()
-      return currentConfigFile.parseMappings() // gets updated line numbers
+      selectedConfFile.replaceAllMappings(with: userConfMappings)
+      try selectedConfFile.saveToDisk()
+      return selectedConfFile.parseMappings() // gets updated line numbers
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])

@@ -27,15 +27,15 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return false
   }
 
-  private var configStore: InputConfigStore {
-    return AppInputConfig.inputConfigStore
+  private var confTableStore: ConfTableState {
+    return ConfTableState.current
   }
 
   private var bindingTableStore: BindingTableState {
-    return BindingTableStateManager.currentState
+    return BindingTableState.current
   }
 
-  private var configTableController: InputConfigTableViewController? = nil
+  private var confTableController: InputConfTableViewController? = nil
   private var kbTableController: KeyBindingTableViewController? = nil
 
   private var observers: [NSObjectProtocol] = []
@@ -50,7 +50,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var showConfFileBtn: NSButton!
   @IBOutlet weak var deleteConfFileBtn: NSButton!
   @IBOutlet weak var newConfigBtn: NSButton!
-  @IBOutlet weak var duplicateConfigBtn: NSButton!
+  @IBOutlet weak var duplicateConfBtn: NSButton!
   @IBOutlet weak var useMediaKeysButton: NSButton!
   @IBOutlet weak var keyMappingSearchField: NSSearchField!
 
@@ -66,13 +66,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     let kbTableController = KeyBindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     self.kbTableController = kbTableController
-    configTableController = InputConfigTableViewController(inputConfigTableView, configStore, kbTableController)
+    confTableController = InputConfTableViewController(inputConfigTableView, kbTableController)
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaInputConfigTableShouldUpdate, object: nil, queue: .main) { _ in
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaConfTableShouldChange, object: nil, queue: .main) { _ in
       self.updateEditEnabledStatus()
     })
 
@@ -84,7 +84,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       self.keyMappingSearchField.stringValue = newStringValue
     })
 
-    configTableController?.selectCurrentConfigRow()
+    confTableController?.selectCurrentConfRow()
     self.updateEditEnabledStatus()
   }
 
@@ -98,26 +98,26 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     kbTableController?.removeSelectedBindings()
   }
 
-  @IBAction func newConfigFileAction(_ sender: AnyObject) {
-    configTableController?.createNewConfig()
+  @IBAction func newConfFileAction(_ sender: AnyObject) {
+    confTableController?.createNewConf()
   }
 
-  @IBAction func duplicateConfigFileAction(_ sender: AnyObject) {
-    configTableController?.duplicateConfig(configStore.currentConfigName)
+  @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
+    confTableController?.duplicateConf(confTableStore.selectedConfName)
   }
 
   @IBAction func showConfFileAction(_ sender: AnyObject) {
-    configTableController?.showInFinder(configStore.currentConfigName)
+    confTableController?.showInFinder(confTableStore.selectedConfName)
   }
 
   @IBAction func deleteConfFileAction(_ sender: AnyObject) {
-    configTableController?.deleteConfig(configStore.currentConfigName)
+    confTableController?.deleteConf(confTableStore.selectedConfName)
   }
 
-  @IBAction func importConfigBtnAction(_ sender: Any) {
-    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: [AppData.configFileExtension]) { url in
-      guard url.isFileURL, url.lastPathComponent.hasSuffix(AppData.configFileExtension) else { return }
-      self.configTableController?.importConfigFiles([url.lastPathComponent])
+  @IBAction func importConfBtnAction(_ sender: Any) {
+    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window, allowedFileTypes: [AppData.confFileExtension]) { url in
+      guard url.isFileURL, url.lastPathComponent.hasSuffix(AppData.confFileExtension) else { return }
+      self.confTableController?.importConfFiles([url.lastPathComponent])
     }
   }
 
@@ -136,17 +136,17 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isCurrentConfigReadOnly = configStore.isCurrentConfigReadOnly
+    let isSelectedConfReadOnly = confTableStore.isSelectedConfReadOnly
     [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
-      btn.isEnabled = !isCurrentConfigReadOnly
+      btn.isEnabled = !isSelectedConfReadOnly
     }
-    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isCurrentConfigReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
+    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isSelectedConfReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
 
     self.updateRemoveButtonEnablement()
   }
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = !configStore.isCurrentConfigReadOnly && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = !confTableStore.isSelectedConfReadOnly && kbTableView.selectedRow != -1
   }
 }

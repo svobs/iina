@@ -1,5 +1,5 @@
 //
-//  InputConfigFile.swift
+//  InputConfFile.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.08.10.
@@ -9,7 +9,7 @@
 import Foundation
 
 // Represents an input config file which has been loaded into memory.
-class InputConfigFile {
+class InputConfFile {
   // At least one of its fields should be non-nil.
   // Only Lines with non-nil `rawFileContent` are present in the file on disk.
   // A Line struct can include additional in-memory state (if `bindingOverride` is non-nil) which is not present on disk.
@@ -52,7 +52,7 @@ class InputConfigFile {
         let bindingNew = binding.clone(bindingID: lineIndex)
         bindingList.append(bindingNew)
         linesNew.append(Line(line.rawFileContent, bindingOverride: bindingNew))
-      } else if let rawFileContent = line.rawFileContent, let binding = InputConfigFile.parseRawLine(rawFileContent, lineIndex) {
+      } else if let rawFileContent = line.rawFileContent, let binding = InputConfFile.parseRawLine(rawFileContent, lineIndex) {
         bindingList.append(binding)
         linesNew.append(line)
       }
@@ -64,7 +64,7 @@ class InputConfigFile {
 
   private func parseLine(_ lineIndex: Int) -> KeyMapping? {
     if let rawLine = lines[lineIndex].rawFileContent {
-      return InputConfigFile.parseRawLine(rawLine, lineIndex)
+      return InputConfFile.parseRawLine(rawLine, lineIndex)
     }
     return nil
   }
@@ -111,7 +111,7 @@ class InputConfigFile {
     newLines.append(Line(""))
     for newMapping in newMappings {
       let rawLine = newMapping.confFileFormat
-      if InputConfigFile.parseRawLine(rawLine) == nil {
+      if InputConfFile.parseRawLine(rawLine) == nil {
         Logger.log("While serializing bindings: looks like an active edit: \(newMapping)", level: .verbose)
         if let lineIndex = newMapping.bindingID,
            lineIndex <= self.lines.count,
@@ -157,7 +157,7 @@ class InputConfigFile {
   }
 
   // Returns nil if cannot read file
-  static func loadFile(at path: String, isReadOnly: Bool = true) -> InputConfigFile? {
+  static func loadFile(at path: String, isReadOnly: Bool = true) -> InputConfFile? {
     guard let reader = StreamReader(path: path) else {
       // on error
       Logger.log("Error loading key bindings from path: \"\(path)\"", level: .error)
@@ -167,11 +167,11 @@ class InputConfigFile {
 
       return nil
     }
-    let result = InputConfigFile(filePath: path, isReadOnly: isReadOnly)
+    let result = InputConfFile(filePath: path, isReadOnly: isReadOnly)
 
     while let rawFileContent: String = reader.nextLine() {      // ignore empty lines
-      if result.lines.count >= AppData.maxConfigFileLinesAccepted {
-        Logger.log("Maximum number of lines (\(AppData.maxConfigFileLinesAccepted)) exceeded: stopping load of file: \"\(path)\"")
+      if result.lines.count >= AppData.maxConfFileLinesAccepted {
+        Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \"\(path)\"")
         return nil
       }
       result.lines.append(Line(rawFileContent))

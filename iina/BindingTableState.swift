@@ -17,12 +17,18 @@ import Foundation
  This class is downstream from `AppInputConfig.current`
  */
 struct BindingTableState {
+  static var current = BindingTableState(AppInputConfig.current, filterString: "", inputConfFile: nil)
+  static let manager: BindingTableStateManager = BindingTableStateManager()
 
-  init(_ appInputConfig: AppInputConfig, filterString: String, inputConfigFile: InputConfigFile?) {
+  init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile?) {
     self.appInputConfig = appInputConfig
+    self.inputConfFile = inputConfFile
     self.filterString = filterString
-    self.bindingRowsFiltered = BindingTableState.filter(bindingRowsAll: appInputConfig.bindingCandidateList, by: filterString)
-    self.inputConfigFile = inputConfigFile
+    if filterString.isEmpty {
+      self.bindingRowsFiltered = appInputConfig.bindingCandidateList
+    } else {
+      self.bindingRowsFiltered = BindingTableState.filter(bindingRowsAll: appInputConfig.bindingCandidateList, by: filterString)
+    }
   }
 
   // MARK: Data
@@ -34,7 +40,7 @@ struct BindingTableState {
   let appInputConfig: AppInputConfig
 
   // The source user conf file
-  let inputConfigFile: InputConfigFile?
+  let inputConfFile: InputConfFile?
 
   // Should be kept current with the value which the user enters in the search box:
   let filterString: String
@@ -113,8 +119,8 @@ struct BindingTableState {
                          afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
-    guard canModifyCurrentConfig else {
-      Logger.log("Aborting: cannot modify current config!", level: .error)
+    guard canModifyCurrentConf else {
+      Logger.log("Aborting: cannot modify current conf!", level: .error)
       return
     }
 
@@ -140,8 +146,8 @@ struct BindingTableState {
 
   func removeBindings(at indexesToRemove: IndexSet) {
     Logger.log("Removing bindings (\(indexesToRemove.map{$0}))", level: .verbose)
-    guard canModifyCurrentConfig else {
-      Logger.log("Aborting: cannot modify current config!", level: .error)
+    guard canModifyCurrentConf else {
+      Logger.log("Aborting: cannot modify current conf!", level: .error)
       return
     }
 
@@ -181,8 +187,8 @@ struct BindingTableState {
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
     Logger.log("Updating binding at index \(index) to: \(mapping)", level: .verbose)
-    guard canModifyCurrentConfig else {
-      Logger.log("Aborting: cannot modify current config!", level: .error)
+    guard canModifyCurrentConf else {
+      Logger.log("Aborting: cannot modify current conf!", level: .error)
       return
     }
 
@@ -331,11 +337,11 @@ struct BindingTableState {
   // Let BindingTableStateManager deal with altering animations with a filter
   private func doAction(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
     let defaultSectionNew = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    AppInputConfig.bindingTableStateManager.doAction(defaultSectionNew, tableChange)
+    BindingTableState.manager.doAction(defaultSectionNew, tableChange)
   }
 
-  private var canModifyCurrentConfig: Bool {
-    if let currentConfigFile = self.inputConfigFile, !currentConfigFile.isReadOnly {
+  private var canModifyCurrentConf: Bool {
+    if let currentConfigFile = self.inputConfFile, !currentConfigFile.isReadOnly {
       return true
     }
     return false
@@ -349,7 +355,7 @@ struct BindingTableState {
 
   func filterBindings(_ searchString: String) {
     Logger.log("Updating Bindings UI filter to \"\(searchString)\"", level: .verbose)
-    AppInputConfig.bindingTableStateManager.filterBindings(newFilterString: searchString)
+    BindingTableState.manager.filterBindings(newFilterString: searchString)
   }
 
   private static func filter(bindingRowsAll: [InputBinding], by filterString: String) -> [InputBinding] {

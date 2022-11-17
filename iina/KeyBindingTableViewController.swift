@@ -25,12 +25,12 @@ fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 class KeyBindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
-  private var configStore: InputConfigStore {
-    return AppInputConfig.inputConfigStore
+  private var confTableStore: ConfTableState {
+    return ConfTableState.current
   }
 
   private var bindingTableStore: BindingTableState {
-    return BindingTableStateManager.currentState
+    return BindingTableState.current
   }
 
   private var selectionDidChangeHandler: () -> Void
@@ -52,7 +52,7 @@ class KeyBindingTableViewController: NSObject {
 
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
-    tableView.registerTableChangeObserver(forName: .iinaKeyBindingsTableShouldUpdate)
+    tableView.registerTableChangeObserver(forName: .iinaBindingsTableShouldChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
@@ -77,7 +77,7 @@ class KeyBindingTableViewController: NSObject {
   // Display error alert for errors:
   private func errorDidOccur(_ notification: Notification) {
     guard let alertInfo = notification.object as? Utility.AlertInfo else {
-      Logger.log("Notification.iinaKeyBindingErrorOccurred: cannot display error: invalid object: \(type(of: notification.object))", level: .error)
+      Logger.log("Notification \"\(notification.name)\": cannot display error: invalid object: \(type(of: notification.object))", level: .error)
       return
     }
     Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
@@ -279,14 +279,14 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
     self.draggedRowIndexes = rowIndexes
-    self.tableView.setDraggingImageUsingAllColumns(session, screenPoint, rowIndexes)
+    self.tableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
   }
 
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock.
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard !configStore.isCurrentConfigReadOnly && operation == NSDragOperation.delete else {
+    guard !confTableStore.isSelectedConfReadOnly && operation == NSDragOperation.delete else {
       return
     }
 
@@ -311,7 +311,7 @@ extension KeyBindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard !configStore.isCurrentConfigReadOnly else {
+    guard !confTableStore.isSelectedConfReadOnly else {
       return []  // deny drop
     }
 
@@ -451,7 +451,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // Edit either inline or with popup, depending on current mode
   @discardableResult
   private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfAllowed: Bool = true) -> Bool {
-    guard requireCurrentConfigIsEditable(forAction: "edit row") else { return false }
+    guard requireCurrentConfIsEditable(forAction: "edit row") else { return false }
 
     guard bindingTableStore.isEditEnabledForBindingRow(rowIndex) else {
       // Should never see this message
@@ -502,7 +502,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   // depending on whether isRaw is true or false, respectively.
   // If isAfterNotAt==true, inserts after the row with given rowIndex. If isAfterNotAt==false, inserts before the row with given rowIndex.
   private func editNewEmptyBinding(relativeTo rowIndex: Int, isAfterNotAt: Bool = false) {
-    guard requireCurrentConfigIsEditable(forAction: "insert binding") else { return }
+    guard requireCurrentConfIsEditable(forAction: "insert binding") else { return }
 
     Logger.log("Inserting new binding \(isAfterNotAt ? "after" : "at") current row index: \(rowIndex)", level: .verbose)
 
@@ -550,7 +550,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // e.g., drag & drop "copy" operation
   private func copyMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
-    guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
+    guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !mappingList.isEmpty else { return }
 
     // Make sure to use copy() to clone the object here
@@ -562,7 +562,7 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
 
   // e.g., drag & drop "move" operation
   private func moveMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
-    guard requireCurrentConfigIsEditable(forAction: "move binding(s)") else { return }
+    guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !mappingList.isEmpty else { return }
 
     let firstInsertedRowIndex = bindingTableStore.moveBindings(mappingList, to: rowIndex, isAfterNotAt: isAfterNotAt,
@@ -583,8 +583,8 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
     bindingTableStore.removeBindings(at: tableView.selectedRowIndexes)
   }
 
-  private func requireCurrentConfigIsEditable(forAction action: String) -> Bool {
-    if !configStore.isCurrentConfigReadOnly {
+  private func requireCurrentConfIsEditable(forAction action: String) -> Bool {
+    if !confTableStore.isSelectedConfReadOnly {
       return true
     }
 
@@ -608,11 +608,11 @@ extension KeyBindingTableViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return !configStore.isCurrentConfigReadOnly && !selectedModifiableRows.isEmpty
+    return !confTableStore.isSelectedConfReadOnly && !selectedModifiableRows.isEmpty
   }
 
   func isPasteEnabled() -> Bool {
-    return !configStore.isCurrentConfigReadOnly && !readBindingsFromClipboard().isEmpty
+    return !confTableStore.isSelectedConfReadOnly && !readBindingsFromClipboard().isEmpty
   }
 
   func doEditMenuCut() {
@@ -704,8 +704,8 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
   }
 
-  private func addReadOnlyConfigMenuItem(_ mib: CascadingMenuItemBuilder) {
-    mib.addItalicDisabledItem("Cannot make changes: \"\(configStore.currentConfigName)\" is a built-in config")
+  private func addReadOnlyConfMenuItem(_ mib: CascadingMenuItemBuilder) {
+    mib.addItalicDisabledItem("Cannot make changes: \"\(confTableStore.selectedConfName)\" is a built-in config")
   }
 
   func menuNeedsUpdate(_ contextMenu: NSMenu) {
@@ -726,10 +726,10 @@ extension KeyBindingTableViewController: NSMenuDelegate {
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func buildMenuForSingleRow(_ mib: CascadingMenuItemBuilder, _ clickedRow: InputBinding, _ clickedRowIndex: Int) {
-    let isRowEditable = !configStore.isCurrentConfigReadOnly && clickedRow.canBeModified
+    let isRowEditable = !confTableStore.isSelectedConfReadOnly && clickedRow.canBeModified
 
-    if configStore.isCurrentConfigReadOnly {
-      addReadOnlyConfigMenuItem(mib)
+    if confTableStore.isSelectedConfReadOnly {
+      addReadOnlyConfMenuItem(mib)
     } else if !isRowEditable {
       let culprit: String
       switch clickedRow.origin {
@@ -764,7 +764,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     mib.likeEditCopy().butWith(.action(#selector(self.copyRow(_:))), .enabled(clickedRow.canBeCopied)).addItem()
 
     let clipboardCount = readBindingsFromClipboard().count
-    let isPasteEnabled = !configStore.isCurrentConfigReadOnly && clipboardCount > 0
+    let isPasteEnabled = !confTableStore.isSelectedConfReadOnly && clipboardCount > 0
     let pb = mib.butWith(.unitCount(clipboardCount), .enabled(isPasteEnabled))
     if !isPasteEnabled {
       pb.likeEditPaste().addItem()
@@ -790,7 +790,7 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     mib.addSeparator()
 
     // Insert New: follow same logic as Paste, except don't show at all if disabled
-    if !configStore.isCurrentConfigReadOnly {
+    if !confTableStore.isSelectedConfReadOnly {
       if isRowEditable {
         mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewAbove), .action(#selector(self.addNewRowAbove(_:))))
         mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewBelow), .action(#selector(self.addNewRowBelow(_:))))
@@ -824,9 +824,9 @@ extension KeyBindingTableViewController: NSMenuDelegate {
     }
 
     // Add disabled italicized message if not all can be operated on
-    if configStore.isCurrentConfigReadOnly {
+    if confTableStore.isSelectedConfReadOnly {
       modifiableCount = 0
-      addReadOnlyConfigMenuItem(mib)
+      addReadOnlyConfMenuItem(mib)
     } else {
       let readOnlyCount = tableView.selectedRowIndexes.count - modifiableCount
       if readOnlyCount > 0 {

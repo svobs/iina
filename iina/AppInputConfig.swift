@@ -67,10 +67,6 @@ struct AppInputConfig {
 
   // MARK: Other Static
 
-  static let inputConfigStore: InputConfigStore = InputConfigStore()
-
-  static let bindingTableStateManager: BindingTableStateManager = BindingTableStateManager()
-
   static private var lastStartedVersion: Int = 0
 
   static var logBindingsRebuild: Bool {
@@ -79,7 +75,7 @@ struct AppInputConfig {
 
   // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   // the active bindings are rebuilt and the old set is discarded.
-  static var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], defaultSectionStartIndex: 0, defaultSectionEndIndex: 0)
+  static private(set) var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], defaultSectionStartIndex: 0, defaultSectionEndIndex: 0)
 
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
@@ -92,27 +88,29 @@ struct AppInputConfig {
     Logger.log("Requesting app input bindings rebuild (v\(requestedVersion))", level: .verbose)
 
     DispatchQueue.main.async {
-      var notifyTable = true
+      var shouldNotify = true
       defer {
         // Always execute this before returning, if supplied
         if let completionHandler = completionHandler, !completionHandler(AppInputConfig.current) {
-          notifyTable = false
+          shouldNotify = false
         }
-        if notifyTable {
-          // Notify Key Bindings table in prefs UI
-          bindingTableStateManager.updateTableState(AppInputConfig.current)
+        if shouldNotify {
+          let notification = Notification(name: .iinaAppInputConfigDidChange, object: AppInputConfig.current)
+          Logger.log("Posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+          NotificationCenter.default.post(notification)
         }
       }
 
       // Optimization: drop all but the most recent request
       if requestedVersion <= AppInputConfig.lastStartedVersion {
-        notifyTable = false
+        shouldNotify = false
         return
       }
       AppInputConfig.lastStartedVersion = requestedVersion
       if AppInputConfig.current.version == 0 {
-        // Initial load
-        inputConfigStore.loadBindingsFromCurrentConfigFile()
+        let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: "")
+        Logger.log("Initial load: posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+        NotificationCenter.default.post(notification)
       }
 
       guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {

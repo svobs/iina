@@ -200,10 +200,10 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
     for element in pasteboard.pasteboardItems! {
       if let str = element.string(forType: NSPasteboard.PasteboardType(rawValue: "public.utf8-plain-text")) {
         for rawLine in str.split(separator: "\n") {
-          if let mapping = InputConfigFile.parseRawLine(String(rawLine)) {
+          if let mapping = InputConfFile.parseRawLine(String(rawLine)) {
             // If the user dropped a huge e-book into IINA by mistake, try to stop it from blowing up
-            if mappingList.count > AppData.maxConfigFileLinesAccepted {
-              Logger.log("Pasteboard exceeds max allowed bindings from string (\(AppData.maxConfigFileLinesAccepted)): aborting", level: .error)
+            if mappingList.count > AppData.maxConfFileLinesAccepted {
+              Logger.log("Pasteboard exceeds max allowed bindings from string (\(AppData.maxConfFileLinesAccepted)): aborting", level: .error)
               return []
             }
             mappingList.append(mapping)
