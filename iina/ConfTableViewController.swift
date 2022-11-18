@@ -494,10 +494,10 @@ extension InputConfTableViewController:  NSMenuDelegate {
     let mib = CascadingMenuItemBuilder(mip: ConfMenuItemProvider(), .menu(contextMenu),
       .unit(Unit.config), .unitCount(1), .targetRow(clickedRow), .target(self))
 
-    let canModifyRow = !self.confTableState.isDefaultConf(clickedRow)
+    let isUserConf = !self.confTableState.isDefaultConf(clickedRow)
 
     // Show in Finder
-    mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)))
+    mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(isUserConf))
 
     // Duplicate
     mib.addItem("Duplicate", #selector(self.duplicateConfFromMenu(_:)))
@@ -514,7 +514,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       if confCount > 0 {
         pasteBuilder.butWith(.unitCount(confCount)).addItem()
         didAdd = true
-      } else if canModifyRow {
+      } else if isUserConf {
         let bindingCount = kbTableViewController.readBindingsFromClipboard().count
         if bindingCount > 0 {
           pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount)).addItem()
@@ -529,7 +529,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
     mib.addSeparator()
 
     // Delete
-    mib.likeEasyDelete().butWith(.enabled(canModifyRow)).addItem(#selector(self.deleteConfFromContextMenu(_:)))
+    mib.likeEasyDelete().butWith(.enabled(isUserConf)).addItem(#selector(self.deleteConfFromContextMenu(_:)))
   }
 
   @objc fileprivate func copyConfFromContextMenu(_ sender: InputConfMenuItem) {

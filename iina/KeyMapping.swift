@@ -8,10 +8,9 @@
 
 import Foundation
 
-fileprivate let IINA_PREFIX = "#@iina"
-
 // Instances of this class are only intended for mpv use. Search the mpv manual for "input.conf".
 class KeyMapping: NSObject, Codable {
+  static let IINA_PREFIX = "#@iina"
 
   let bindingID: Int?
 
@@ -47,11 +46,12 @@ class KeyMapping: NSObject, Codable {
   // The action with @iina removed (if applicable), but otherwise not formatted
   let rawAction: String
 
-  // Similar to rawAction, but the tokens will always be separated by exactly one space
+  // Similar to rawAction, but includes the @iina prefix if appropriate, and
+  // the tokens are always separated by exactly one space
   var readableAction: String {
     get {
       let joined = action.joined(separator: " ")
-      return isIINACommand ? ("\(IINA_PREFIX) " + joined) : joined
+      return isIINACommand ? ("\(KeyMapping.IINA_PREFIX) " + joined) : joined
     }
   }
 
@@ -85,7 +85,7 @@ class KeyMapping: NSObject, Codable {
   // Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
     get {
-      let iinaCommandString = isIINACommand ? "\(IINA_PREFIX) " : ""
+      let iinaCommandString = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
       return "\(iinaCommandString)\(rawKey) \(rawAction)\(commentString)"
     }

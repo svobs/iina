@@ -17,8 +17,6 @@ class ConfTableStateManager: NSObject {
 
   private var observers: [NSObjectProtocol] = []
 
-  // MARK: Observers
-
   override init() {
     super.init()
     Logger.log("ConfTableStateManager init", level: .verbose)
@@ -45,6 +43,27 @@ class ConfTableStateManager: NSObject {
     }
   }
 
+  static func initialState() -> ConfTableState {
+    let selectedConfName: String
+    if let selectedConf = Preference.string(for: .currentInputConfigName) {
+      selectedConfName = selectedConf
+    } else {
+      let defaultConfig = AppData.defaultConfNamesSorted[0]
+      Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
+      selectedConfName = defaultConfig
+    }
+
+    let userConfDict: [String: String]
+    if let prefDict = Preference.dictionary(for: .inputConfigs), let userConfigStringDict = prefDict as? [String: String] {
+      userConfDict = userConfigStringDict
+    } else {
+      Logger.log("Could not get pref: \(Preference.Key.inputConfigs.rawValue): will use default empty dictionary", level: .warning)
+      userConfDict = [:]
+    }
+
+    return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, isAddingNewConfInline: false)
+  }
+
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let change = change else { return }
 
@@ -68,28 +87,7 @@ class ConfTableStateManager: NSObject {
     }
   }
 
-
-  static func initialState() -> ConfTableState {
-    let selectedConfName: String
-    if let selectedConf = Preference.string(for: .currentInputConfigName) {
-      selectedConfName = selectedConf
-    } else {
-      let defaultConfig = AppData.defaultConfNamesSorted[0]
-      Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfig)\")", level: .warning)
-      selectedConfName = defaultConfig
-    }
-
-    let userConfDict: [String: String]
-    if let prefDict = Preference.dictionary(for: .inputConfigs), let userConfigStringDict = prefDict as? [String: String] {
-      userConfDict = userConfigStringDict
-    } else {
-      Logger.log("Could not get pref: \(Preference.Key.inputConfigs.rawValue): will use default empty dictionary", level: .warning)
-      userConfDict = [:]
-    }
-
-    return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, isAddingNewConfInline: false)
-  }
-
+  // MARK: Do, Undo, Redo
 
   fileprivate struct UndoData {
     var userConfDict: [String:String]?
@@ -100,10 +98,120 @@ class ConfTableStateManager: NSObject {
     case errorOccurred
   }
 
-  // All file operations for undoes are performed here, as well as "rename" and "remove".
-  // For "add" (create/import/duplicate), it's expected that the caller already successfully
+  func doAction(_ userConfDictNew: [String:String]? = nil, selectedConfNameNew: String? = nil,
+                isAddingNewConfInline: Bool = false, completionHandler: TableChange.CompletionHandler? = nil) {
+    let doData = UndoData(userConfDict: userConfDictNew,
+                          selectedConfName: selectedConfNameNew)
+    self.doAction(doData, isAddingNewConfInline: isAddingNewConfInline, completionHandler: completionHandler)
+  }
+
+  // May be called for do, undo, or redo
+  private func doAction(_ newData: UndoData, isAddingNewConfInline: Bool = false,
+                                 completionHandler: TableChange.CompletionHandler? = nil) {
+
+    let currentState = ConfTableState.current
+    var oldData = UndoData(userConfDict: currentState.userConfDict,
+                                  selectedConfName: currentState.selectedConfName)
+
+    // Figure out which entries in the list changed, and update the files on disk to match.
+    // If something changed, we'll get back an action label for Undo (or Redo) menu item
+    var actionName: String?
+    do {
+      // Apply file operations before we update the stored prefs or the UI.
+      actionName = try self.updateFilesOnDisk(from: &oldData, to: newData)
+    } catch {
+      // Already logged whatever went wrong. Just cancel
+      return
+    }
+
+    var selectedConfChanged = false
+    if let oldSelectionName = oldData.selectedConfName, let newSelectionName = newData.selectedConfName,
+       !oldSelectionName.equalsIgnoreCase(newSelectionName) {
+      selectedConfChanged = true
+    }
+
+    let foundUndoableChange: Bool = actionName != nil || selectedConfChanged
+
+    Logger.log("foundUndoableChange: \(foundUndoableChange); selectedConfChanged: \(selectedConfChanged); isAddingNewConfInline: \(isAddingNewConfInline)", level: .verbose)
+
+    if foundUndoableChange {
+      if let undoManager = PreferenceWindowController.undoManager {
+        let undoActionName = actionName ?? changeSelectedConfigActionName
+
+        Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(oldData.filesRemovedByLastAction?.keys.count ?? 0))", level: .verbose)
+        undoManager.registerUndo(withTarget: self, handler: { manager in
+          // Get rid of empty editor before it gets in the way:
+          if ConfTableState.current.isAddingNewConfInline {
+            ConfTableState.current.cancelInlineAdd()
+          }
+
+          manager.doAction(oldData)
+        })
+
+        // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
+        // There's no need to change the name of it for the redo.
+        if !undoManager.isUndoing && !undoManager.isRedoing {
+          undoManager.setActionName(undoActionName)
+        }
+
+      } else {
+        Logger.log("Cannot register for undo: ConfTableState.undoManager is nil", level: .verbose)
+      }
+    }
+
+    let newState = ConfTableState(userConfDict: newData.userConfDict ?? currentState.userConfDict,
+                                  selectedConfName: newData.selectedConfName ?? currentState.selectedConfName,
+                                  isAddingNewConfInline: isAddingNewConfInline)
+    let oldState = ConfTableState.current
+    ConfTableState.current = newState
+
+    if let userConfDictNew = newData.userConfDict {
+      Logger.log("Saving pref: inputConfigs=\(userConfDictNew)", level: .verbose)
+      // Update userConfDict
+      Preference.set(userConfDictNew, for: .inputConfigs)
+    }
+
+    // Update selectedConfName and load new file if changed
+    if selectedConfChanged {
+      Logger.log("Conf selection changed: '\(oldState.selectedConfName)' -> '\(newState.selectedConfName)'")
+      Preference.set(newState.selectedConfName, for: .currentInputConfigName)
+      loadBindingsFromSelectedConfFile()
+    }
+
+    let tableChange = buildConfTableChange(old: oldState, new: newState, completionHandler: completionHandler)
+    // Finally, fire notification. This covers row selection too
+    NotificationCenter.default.post(Notification(name: .iinaConfTableShouldChange, object: tableChange))
+  }
+
+  private func buildConfTableChange(old: ConfTableState, new: ConfTableState, completionHandler: TableChange.CompletionHandler?) -> TableChange {
+    let confTableChange = TableChange.buildDiff(oldRows: old.confTableRows,
+                                                  newRows: new.confTableRows,
+                                                  completionHandler: completionHandler)
+    confTableChange.scrollToFirstSelectedRow = true
+
+    if new.isAddingNewConfInline { // special case: creating an all-new config
+      // Select the new blank row, which will be the last one:
+      confTableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
+    } else {
+      // Always keep the current config selected
+      if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
+        confTableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
+      }
+    }
+    return confTableChange
+  }
+
+  // Utility function: show error popup to user
+  private func sendErrorAlert(key alertKey: String, args: [String]) {
+    let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
+    NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+  }
+
+  // Almost all operations on conf files are performed here. It can handle anything needed by "undo"
+  // and "redo". For the initial "do", it will handle the file operations for "rename" and "remove",
+  // but for "add" types (create/import/duplicate), it's expected that the caller already successfully
   // created the new file(s) before getting here.
-  // Returns true if something changed; false if not
+  // Returns true if it found a change in the data; false if not
   private func updateFilesOnDisk(from oldData: inout UndoData, to newData: UndoData) throws -> String? {
     guard let userConfDictNew = newData.userConfDict else {
       return nil
@@ -228,114 +336,7 @@ class ConfTableStateManager: NSObject {
     return actionName
   }
 
-  func doAction(_ userConfDictNew: [String:String]? = nil, selectedConfNameNew: String? = nil,
-                isAddingNewConfInline: Bool = false, completionHandler: TableChange.CompletionHandler? = nil) {
-    let doData = UndoData(userConfDict: userConfDictNew,
-                          selectedConfName: selectedConfNameNew)
-    self.doAction(doData, isAddingNewConfInline: isAddingNewConfInline, completionHandler: completionHandler)
-  }
-
-  // May be called for do, undo, or redo
-  private func doAction(_ newData: UndoData, isAddingNewConfInline: Bool = false,
-                                 completionHandler: TableChange.CompletionHandler? = nil) {
-
-    let currentState = ConfTableState.current
-    var oldData = UndoData(userConfDict: currentState.userConfDict,
-                                  selectedConfName: currentState.selectedConfName)
-
-    // Figure out which entries in the list changed, and update the files on disk to match.
-    // If something changed, we'll get back an action label for Undo (or Redo) menu item
-    var actionName: String?
-    do {
-      // Apply file operations before we update the stored prefs or the UI.
-      actionName = try self.updateFilesOnDisk(from: &oldData, to: newData)
-    } catch {
-      // Already logged whatever went wrong. Just cancel
-      return
-    }
-
-    var selectedConfChanged = false
-    if let oldSelectionName = oldData.selectedConfName, let newSelectionName = newData.selectedConfName,
-       !oldSelectionName.equalsIgnoreCase(newSelectionName) {
-      selectedConfChanged = true
-    }
-
-    let foundUndoableChange: Bool = actionName != nil || selectedConfChanged
-
-    Logger.log("foundUndoableChange: \(foundUndoableChange); selectedConfChanged: \(selectedConfChanged); isAddingNewConfInline: \(isAddingNewConfInline)", level: .verbose)
-
-    if foundUndoableChange {
-      if let undoManager = PreferenceWindowController.undoManager {
-        let undoActionName = actionName ?? changeSelectedConfigActionName
-
-        Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(oldData.filesRemovedByLastAction?.keys.count ?? 0))", level: .verbose)
-        undoManager.registerUndo(withTarget: self, handler: { manager in
-          // Get rid of empty editor before it gets in the way:
-          if ConfTableState.current.isAddingNewConfInline {
-            ConfTableState.current.cancelInlineAdd()
-          }
-
-          manager.doAction(oldData)
-        })
-
-        // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
-        // There's no need to change the name of it for the redo.
-        if !undoManager.isUndoing && !undoManager.isRedoing {
-          undoManager.setActionName(undoActionName)
-        }
-
-      } else {
-        Logger.log("Cannot register for undo: ConfTableState.undoManager is nil", level: .verbose)
-      }
-    }
-
-    let newState = ConfTableState(userConfDict: newData.userConfDict ?? currentState.userConfDict,
-                                  selectedConfName: newData.selectedConfName ?? currentState.selectedConfName,
-                                  isAddingNewConfInline: isAddingNewConfInline)
-    let oldState = ConfTableState.current
-    ConfTableState.current = newState
-
-    if let userConfDictNew = newData.userConfDict {
-      Logger.log("Saving pref: inputConfigs=\(userConfDictNew)", level: .verbose)
-      // Update userConfDict
-      Preference.set(userConfDictNew, for: .inputConfigs)
-    }
-
-    // Update selectedConfName and load new file if changed
-    if selectedConfChanged {
-      Logger.log("Conf selection changed: '\(oldState.selectedConfName)' -> '\(newState.selectedConfName)'")
-      Preference.set(newState.selectedConfName, for: .currentInputConfigName)
-      loadBindingsFromSelectedConfFile()
-    }
-
-    let tableChange = buildConfTableChange(old: oldState, new: newState, completionHandler: completionHandler)
-    // Finally, fire notification. This covers row selection too
-    NotificationCenter.default.post(Notification(name: .iinaConfTableShouldChange, object: tableChange))
-  }
-
-  private func buildConfTableChange(old: ConfTableState, new: ConfTableState, completionHandler: TableChange.CompletionHandler?) -> TableChange {
-    let confTableChange = TableChange.buildDiff(oldRows: old.confTableRows,
-                                                  newRows: new.confTableRows,
-                                                  completionHandler: completionHandler)
-    confTableChange.scrollToFirstSelectedRow = true
-
-    if new.isAddingNewConfInline { // special case: creating an all-new config
-      // Select the new blank row, which will be the last one:
-      confTableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
-    } else {
-      // Always keep the current config selected
-      if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-        confTableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
-      }
-    }
-    return confTableChange
-  }
-
-  // Convenience function: show error popup to user
-  private func sendErrorAlert(key alertKey: String, args: [String]) {
-    let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
-    NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-  }
+  // MARK: Load Conf File
 
   private func loadCurrentConfFileRequested(_ notification: Notification) {
     loadBindingsFromSelectedConfFile()

@@ -109,7 +109,7 @@ class InputBinding: NSObject {
       // These don't map directly to mpv commands, but have a description stored in the comment
       return menuItemMapping.comment ?? ""
     } else {
-      return raw ? keyMapping.rawAction : keyMapping.readableCommand
+      return raw ? keyMapping.readableAction : keyMapping.readableCommand
     }
   }
 }

@@ -28,7 +28,7 @@ struct ConfTableState {
 
   // MARK: Derived data
 
-  // Looks up the current conf, then searches for it first in the user confs, then the default confs,
+  // Looks up the selected conf, then searches for it first in the user confs, then the default confs,
   // then if still not found, returns nil
   var selectedConfFilePath: String? {
     let selectedConf = selectedConfName
@@ -101,14 +101,14 @@ struct ConfTableState {
   }
 
   func changeSelectedConfToDefault() {
-    Logger.log("Changing current conf to default", level: .verbose)
+    Logger.log("Changing selected conf to default", level: .verbose)
     changeSelectedConf(0)  // using this call will avoid an infinite loop if the default conf cannot be loaded
   }
 
   func changeSelectedConf(_ newIndex: Int) {
-    Logger.log("Changing current input conf, newIndex=\(newIndex)", level: .verbose)
+    Logger.log("Changing conf selection, newIndex=\(newIndex)", level: .verbose)
     guard let confNameNew = getConfName(at: newIndex) else {
-      Logger.log("Cannot change current conf: invalid index: \(newIndex)", level: .error)
+      Logger.log("Cannot change conf selection: invalid index: \(newIndex)", level: .error)
       return
     }
     if isAddingNewConfInline {
@@ -125,23 +125,23 @@ struct ConfTableState {
       return
     }
     guard confTableRows.contains(confNameNew) else {
-      Logger.log("Could not change current conf to '\(confNameNew)' (not found in table); falling back to default conf", level: .error)
+      Logger.log("Could not change selected conf to '\(confNameNew)' (not found in table); falling back to default conf", level: .error)
       changeSelectedConfToDefault()
       return
     }
 
     guard getFilePath(forConf: confNameNew) != nil else {
-      Logger.log("Could not change current conf to '\(confNameNew)' (no entry in prefs); falling back to default conf", level: .error)
+      Logger.log("Could not change selected conf to '\(confNameNew)' (no entry in prefs); falling back to default conf", level: .error)
       changeSelectedConfToDefault()
       return
     }
 
-    Logger.log("Changing current conf to: \"\(confNameNew)\"", level: .verbose)
+    Logger.log("Changing selected conf to: \"\(confNameNew)\"", level: .verbose)
 
     ConfTableState.manager.doAction(selectedConfNameNew: confNameNew)
   }
 
-  // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the current conf.
+  // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
   // Posts update notification
   func addUserConf(confName: String, filePath: String, completionHandler: TableChange.CompletionHandler? = nil) {
     Logger.log("Adding user conf: \"\(confName)\" (filePath: \(filePath))")
@@ -173,13 +173,13 @@ struct ConfTableState {
                                     isAddingNewConfInline: false, completionHandler: completionHandler)
   }
 
-  func cancelInlineAdd(newCurrentConf: String? = nil) {
+  func cancelInlineAdd(selectedConfNew: String? = nil) {
     guard isAddingNewConfInline else {
       Logger.log("cancelInlineAdd() called but isAddingNewConfInline is false!", level: .error)
       return
     }
     Logger.log("Cancelling inline add", level: .verbose)
-    ConfTableState.manager.doAction(selectedConfNameNew: newCurrentConf, isAddingNewConfInline: false)
+    ConfTableState.manager.doAction(selectedConfNameNew: selectedConfNew, isAddingNewConfInline: false)
   }
 
   func addUserConfs(_ userConfsToAdd: [String: String]) {
@@ -187,25 +187,25 @@ struct ConfTableState {
     guard let firstConf = userConfsToAdd.first else {
       return
     }
-    var newCurrentConf = firstConf.key
+    var selectedConfNew = firstConf.key
 
     var userConfDictUpdated = userConfDict
     for (name, filePath) in userConfsToAdd {
       userConfDictUpdated[name] = filePath
       // We can only select one, even if multiple rows added.
       // Select the added conf with the last name in lowercase alphabetical order
-      if newCurrentConf.localizedCompare(name) == .orderedAscending {
-        newCurrentConf = name
+      if selectedConfNew.localizedCompare(name) == .orderedAscending {
+        selectedConfNew = name
       }
     }
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: newCurrentConf)
+    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: selectedConfNew)
   }
 
   func removeConf(_ confName: String) {
     let isCurrentConf: Bool = confName == selectedConfName
     Logger.log("Removing conf: \"\(confName)\" (isCurrentConf: \(isCurrentConf))")
 
-    var newCurrentConfName = selectedConfName
+    var selectedConfNameNew = selectedConfName
 
     if isCurrentConf {
       guard let confIndex = confTableRows.firstIndex(of: confName) else {
@@ -213,7 +213,7 @@ struct ConfTableState {
         return
       }
       // Are we the last entry? If so, after deletion the next entry up should be selected. If not, select the next one down
-      newCurrentConfName = confTableRows[(confIndex == confTableRows.count - 1) ? confIndex - 1 : confIndex + 1]
+      selectedConfNameNew = confTableRows[(confIndex == confTableRows.count - 1) ? confIndex - 1 : confIndex + 1]
     }
 
     var userConfDictUpdated = userConfDict
@@ -221,7 +221,7 @@ struct ConfTableState {
       Logger.log("Cannot remove conf \"\(confName)\": it is not a user conf!", level: .error)
       return
     }
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: newCurrentConfName)
+    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: selectedConfNameNew)
   }
 
   func renameSelectedConf(newName: String) -> Bool {
@@ -233,12 +233,12 @@ struct ConfTableState {
     }
 
     guard userConfDictUpdated[newName] == nil else {
-      Logger.log("Cannot rename current conf: a conf already exists named: \"\(newName)\"", level: .error)
+      Logger.log("Cannot rename selected conf: a conf already exists named: \"\(newName)\"", level: .error)
       return false
     }
 
     guard userConfDictUpdated.removeValue(forKey: selectedConfName) != nil else {
-      Logger.log("Cannot rename current conf \"\(selectedConfName)\": it is not a user conf!", level: .error)
+      Logger.log("Cannot rename selected conf \"\(selectedConfName)\": it is not a user conf!", level: .error)
       return false
     }
 
@@ -249,6 +249,10 @@ struct ConfTableState {
     return true
   }
 
+  private func doAction(_ userConfDictNew: [String:String]? = nil, selectedConfNameNew: String? = nil,
+                        isAddingNewConfInline: Bool = false, completionHandler: TableChange.CompletionHandler? = nil) {
+    ConfTableState.manager.doAction(userConfDictNew, selectedConfNameNew: selectedConfNameNew, isAddingNewConfInline: isAddingNewConfInline, completionHandler: completionHandler)
+  }
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars
   static private func buildConfTableRows(from userConfDict: [String: String],
                                          isAddingNewConfInline: Bool) -> [String] {

@@ -76,10 +76,10 @@ class InputConfFile {
     if content.trimmingCharacters(in: .whitespaces).isEmpty {
       return nil
     } else if content.hasPrefix("#") {
-      if content.hasPrefix("#@iina") {
+      if content.hasPrefix(KeyMapping.IINA_PREFIX) {
         // extended syntax
         isIINACommand = true
-        content = String(content[content.index(content.startIndex, offsetBy: "#@iina".count)...])
+        content = String(content[content.index(content.startIndex, offsetBy: KeyMapping.IINA_PREFIX.count)...])
       } else {
         // ignore comment line
         return nil

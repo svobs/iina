@@ -190,6 +190,7 @@ class CascadingMenuItemBuilder {
     CascadingMenuItemBuilder(parent: self, menuItemProvider: nil, overrideAttrs)  }
 
   // Creates a new, more specialized instance of this builder which overrides it with the given attributes.
+  // Any attribute provided here overrides any previous attributes with the same identifier.
   func butWith(_ overrideAttrs: Attribute...) -> CascadingMenuItemBuilder {
     decorateWith(overrideAttrs)
   }
@@ -244,6 +245,7 @@ class CascadingMenuItemBuilder {
 
   // MARK: MenuItem Output API
 
+  // Adds a new separator item to the current menu
   func addSeparator() {
     do {
       let menu: Attribute.MenuType = try flatten().requireAttr(.menu)
@@ -253,28 +255,7 @@ class CascadingMenuItemBuilder {
     }
   }
 
-  @discardableResult
-  func addItem(_ title: String? = nil, _ action: Selector? = nil, with attrs: Attribute...) -> NSMenuItem? {
-    return decorateWith(attrs).addItem(title, action)
-  }
-
-  @discardableResult
-  func addItem(_ action: Selector? = nil) -> NSMenuItem? {
-    return addItem(nil, action)
-  }
-
-  @discardableResult
-  func addItem(_ title: String? = nil, _ action: Selector? = nil) -> NSMenuItem? {
-    let cmb = self.flatten()
-    if let title = title {
-      cmb.attrs[.title] = .title(title)
-    }
-    if let action = action {
-      cmb.attrs[.action] = .action(action)
-    }
-    return cmb.buildAndAddItem()
-  }
-
+  // Adds a new menu item to the current menu which has italic text, no action, and is always disabled
   func addItalicDisabledItem(_ title: String) {
     do {
       let menu: Attribute.MenuType = try flatten().requireAttr(.menu)
@@ -289,6 +270,32 @@ class CascadingMenuItemBuilder {
     } catch let error {
       Logger.log("Failed to add item: \(error)", level: .error)
     }
+  }
+
+  // Adds a new menu item to the current menu with given title, action, & any other attributes,
+  // taking precendence in that order, and both taking precedence over previously assigned attributes.
+  @discardableResult
+  func addItem(_ title: String? = nil, _ action: Selector? = nil, with attrs: Attribute...) -> NSMenuItem? {
+    return decorateWith(attrs).addItem(title, action)
+  }
+
+  // Adds a new menu item to the current menu with given action & any other previously assigned attributes.
+  @discardableResult
+  func addItem(_ action: Selector? = nil) -> NSMenuItem? {
+    return addItem(nil, action)
+  }
+
+  // Adds a new menu item to the current menu with given title, action, & any previously assigned attributes.
+  @discardableResult
+  func addItem(_ title: String? = nil, _ action: Selector? = nil) -> NSMenuItem? {
+    let cmb = self.flatten()
+    if let title = title {
+      cmb.attrs[.title] = .title(title)
+    }
+    if let action = action {
+      cmb.attrs[.action] = .action(action)
+    }
+    return cmb.buildAndAddItem()
   }
 
   private func buildTitle() throws -> String {

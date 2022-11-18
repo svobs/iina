@@ -164,7 +164,7 @@ class AppInputConfigBuilder {
       if AppInputConfig.logBindingsRebuild {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       }
-      binding.displayMessage = "IINA does not use default-level (\"weak\") bindings"
+      binding.displayMessage = "IINA does not support default-level (\"builtin\") bindings"
       binding.isEnabled = false
       return binding
     }

@@ -39,7 +39,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   private var kbTableController: BindingTableViewController? = nil
 
   // Need to store these somewhere which isn't only inside a struct.
-  // Swift will see them as zero refs!
+  // Swift doesn't count them as strong references
   private let bindingTableStateManger = BindingTableState.manager
   private let confTableStateManager = ConfTableState.manager
 
