@@ -357,8 +357,14 @@ class ConfTableStateManager: NSObject {
       return
     }
 
+    var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
+
+    if !Preference.bool(for: .animateKeyBindingTableReloadAll) {
+      userData[BindingTableStateManager.Key.tableChange] = TableChange(.reloadAll)
+    }
+
     // Send down the pipeline
     let userConfMappingsNew = inputConfFile.parseMappings()
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: [BindingTableStateManager.Key.confFile: inputConfFile])
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: userData)
   }
 }

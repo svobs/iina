@@ -190,7 +190,10 @@ class BindingTableStateManager {
 
   private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, isUndoRedo: Bool = false) -> TableChange {
     // Remember, the displayed table contents must reflect the *filtered* state.
-    return TableChange.buildDiff(oldRows: oldState.bindingRowsFiltered, newRows: newState.bindingRowsFiltered, isUndoRedo: isUndoRedo)
+    let tableChange = TableChange.buildDiff(oldRows: oldState.bindingRowsFiltered, newRows: newState.bindingRowsFiltered, isUndoRedo: isUndoRedo)
+    tableChange.rowInsertAnimation = .effectFade
+    tableChange.rowRemoveAnimation = .effectFade
+    return tableChange
   }
 
   // Input Config File: Save

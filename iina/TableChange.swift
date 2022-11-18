@@ -87,6 +87,11 @@ class TableChange {
   private func executeInAnimationGroup(_ tableView: EditableTableView, _ context: NSAnimationContext) {
     // Encapsulate all animations in this function inside a transaction.
     tableView.beginUpdates()
+    if AccessibilityPreferences.motionReductionEnabled {
+      Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
+      context.duration = 0.0
+      context.allowsImplicitAnimation = false
+    }
     executeStructureUpdates(on: tableView)
 
     if let newSelectedRows = self.newSelectedRows {
@@ -108,8 +113,8 @@ class TableChange {
   }
 
   private func executeStructureUpdates(on tableView: EditableTableView) {
-    let insertAnimation = self.rowInsertAnimation ?? tableView.rowInsertAnimation
-    let removeAnimation = self.rowRemoveAnimation ?? tableView.rowRemoveAnimation
+    let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
+    let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
     switch changeType {
       case .selectionChangeOnly:

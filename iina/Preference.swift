@@ -266,19 +266,23 @@ struct Preference {
     static let enableLogging = Key("enableLogging")
     static let logLevel = Key("logLevel")
 
-    /* The highest mpv log level which IINA will include mpv log events in its own logfile (mutually exclusive of mpv's logfile) */
+    /* [advanced] The highest mpv log level which IINA will include mpv log events in its own logfile (mutually exclusive of mpv's logfile) */
     static let iinaMpvLogLevel = Key("iinaMpvLogLevel")
 
-    /* If true, enables even more verbose logging so that input bindings computations can be more easily debugged. */
+    /* [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged. */
     static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
 
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
-    /* If true, a selection of raw text can be dragged from an input config file and dropped as a list of input bindings wherever input bindings
-     can be dropped. */
+    /* [advanced] If true, a selection of raw text can be pasted, or dragged from an input config file and dropped as a list of
+     input bindings wherever input bindings can be dropped. */
     static let acceptRawTextAsKeyBindings = Key("acceptRawTextAsKeyBindings")
 
-    /* If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
+    /* If true, when the Key Bindings table is completely reloaded (as when changing the selected conf file), animate it using
+     a calculated diff of the new contents compared to the old. If false, just replace the contents of the table without animating it. */
+    static let animateKeyBindingTableReloadAll = Key("animateKeyBindingTableReloadAll")
+
+    /* [advanced] If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
      When this pref is `true`:
      * When editing the last column of a row, pressing TAB accepts changes and opens a new editor in the first column of the next row.
      * When editing the first column of a row, pressing SHIFT+TAB accepts changes and opens a new editor in the last column of the previous row.
@@ -818,6 +822,7 @@ struct Preference {
     .logKeyBindingsRebuild: false,
     .displayKeyBindingRawValues: false,
     .acceptRawTextAsKeyBindings: false,
+    .animateKeyBindingTableReloadAll: true,
     .tableEditKeyNavContinuesBetweenRows: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,
