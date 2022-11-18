@@ -27,16 +27,21 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return false
   }
 
-  private var confTableStore: ConfTableState {
+  private var confTableState: ConfTableState {
     return ConfTableState.current
   }
 
-  private var bindingTableStore: BindingTableState {
+  private var bindingTableState: BindingTableState {
     return BindingTableState.current
   }
 
   private var confTableController: InputConfTableViewController? = nil
-  private var kbTableController: KeyBindingTableViewController? = nil
+  private var kbTableController: BindingTableViewController? = nil
+
+  // Need to store these somewhere which isn't only inside a struct.
+  // Swift will see them as zero refs!
+  private let bindingTableStateManger = BindingTableState.manager
+  private let confTableStateManager = ConfTableState.manager
 
   private var observers: [NSObjectProtocol] = []
 
@@ -64,7 +69,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    let kbTableController = KeyBindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
+    // Apparently, Swift is feeling very lazy about loading `BindingTableViewController`.
+    // The reference above is not enough to call its constructor.
+    // But we need it to start now. Need to be proactive.
+    self.bindingTableStateManger.wakeUp()
+
+    let kbTableController = BindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     self.kbTableController = kbTableController
     confTableController = InputConfTableViewController(inputConfigTableView, kbTableController)
 
@@ -103,15 +113,15 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func duplicateConfFileAction(_ sender: AnyObject) {
-    confTableController?.duplicateConf(confTableStore.selectedConfName)
+    confTableController?.duplicateConf(confTableState.selectedConfName)
   }
 
   @IBAction func showConfFileAction(_ sender: AnyObject) {
-    confTableController?.showInFinder(confTableStore.selectedConfName)
+    confTableController?.showInFinder(confTableState.selectedConfName)
   }
 
   @IBAction func deleteConfFileAction(_ sender: AnyObject) {
-    confTableController?.deleteConf(confTableStore.selectedConfName)
+    confTableController?.deleteConf(confTableState.selectedConfName)
   }
 
   @IBAction func importConfBtnAction(_ sender: Any) {
@@ -130,13 +140,13 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    bindingTableStore.filterBindings(sender.stringValue)
+    bindingTableState.filterBindings(sender.stringValue)
   }
 
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
-    let isSelectedConfReadOnly = confTableStore.isSelectedConfReadOnly
+    let isSelectedConfReadOnly = confTableState.isSelectedConfReadOnly
     [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = !isSelectedConfReadOnly
     }
@@ -147,6 +157,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = !confTableStore.isSelectedConfReadOnly && kbTableView.selectedRow != -1
+    removeKmBtn.isEnabled = !confTableState.isSelectedConfReadOnly && kbTableView.selectedRow != -1
   }
 }

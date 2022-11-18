@@ -166,13 +166,8 @@ extension Notification.Name {
   static let iinaBindingsTableShouldChange = Notification.Name("IINAKeyBindingsTableShouldUpdate")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
-  // Here's an UndoManager for you
-  static let iinaPrefsWindowHasUndoManager = Notification.Name("IINAPrefsWindowHasUndoManager")
   // The AppInputConfig was rebuilt
   static let iinaAppInputConfigDidChange = Notification.Name("IINAAppInputConfigDidChange")
-  // Same as `iinaAppInputConfigDidChange`, but also the current input conf file finished its
-  // initial load or it finished loading a new file
-  static let iinaSelectedConfFileDidLoad = Notification.Name("IINASelectedConfFileDidLoad")
   // Request that the current input conf file be loaded
   static let iinaSelectedConfFileNeedsLoad = Notification.Name("IINASelectedConfFileNeedsLoad")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")

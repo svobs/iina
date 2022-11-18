@@ -238,7 +238,6 @@ class EditableTableView: NSTableView {
 
         // Second pass: set offsets and sizes
         for (compArrIndex, comp) in componentArray.enumerated() {
-          let colWidth = compArrIndex >= self.numberOfColumns ? 0 : self.tableColumns[compArrIndex].width
           let yAdjustToCenter = (maxRowHeight - comp.frame.height) / 2
           Logger.log("MaxRowHeight: \(maxRowHeight). yAdjustToCenter: \(yAdjustToCenter)")
           comp.frame = NSRect(x: xOffsets[compArrIndex], y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
@@ -269,7 +268,7 @@ class EditableTableView: NSTableView {
   // This notification contains the information needed to make the updates to the table (see: `TableChange`).
   private func tableShouldChange(_ notification: Notification) {
     guard let tableChange = notification.object as? TableChange else {
-      Logger.log("tableShouldChange: invalid object: \(type(of: notification.object))", level: .error)
+      Logger.log("Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))", level: .error)
       return
     }
 

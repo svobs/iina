@@ -12,7 +12,7 @@ import Foundation
 // The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data
 struct AppInputConfig {
   // return true to send notifications; false otherwise
-  typealias CompletionHandler = (AppInputConfig) -> Bool
+  typealias NotificationData = [AnyHashable : Any]
 
   // MARK: Shared input sections
 
@@ -34,33 +34,32 @@ struct AppInputConfig {
     return sharedSectionStack.sectionsDefined[SharedInputSection.DEFAULT_SECTION_NAME]!.keyMappingList
   }
 
-  static func replaceDefaultSectionMappings(with userConfMappings: [KeyMapping], completionHandler: CompletionHandler? = nil) {
-    replaceMappings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: userConfMappings, doRebuildAfter: false)
-    AppInputConfig.rebuildCurrent(completionHandler: completionHandler)
+  static func replaceDefaultSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {
+    replaceMappings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: userConfMappings, attaching: userData)
   }
 
 
   // This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
   static func replaceMappings(forSharedSectionName: String, with mappings: [KeyMapping],
-                              onlyIfDifferent: Bool = false, doRebuildAfter: Bool = true) {
-    var doReplace = true
+                              onlyIfDifferent: Bool = false, attaching userData: NotificationData? = nil) {
     InputSectionStack.dq.sync {
-      if let sharedSection = sharedSectionStack.sectionsDefined[forSharedSectionName] as? SharedInputSection {
+      guard let sharedSection = sharedSectionStack.sectionsDefined[forSharedSectionName] as? SharedInputSection else { return }
 
-        if onlyIfDifferent {
-          let existingCount = sharedSection.keyMappingList.count
-          let newCount = mappings.count
-          // TODO: get more sophisticated than this simple check
-          let didChange = !(existingCount == 0 && newCount == 0)
-          doReplace = didChange
-        }
+      var doReplace = true
 
-        if doReplace {
-          sharedSection.setKeyMappingList(mappings)
-          if doRebuildAfter {
-            AppInputConfig.rebuildCurrent()
-          }
-        }
+      if onlyIfDifferent {
+        let existingCount = sharedSection.keyMappingList.count
+        let newCount = mappings.count
+        // TODO: get more sophisticated than this simple check
+        let didChange = !(existingCount == 0 && newCount == 0)
+        doReplace = didChange
+      }
+
+      if doReplace {
+        sharedSection.setKeyMappingList(mappings)
+      }
+      if doReplace || userData != nil {
+        AppInputConfig.rebuildCurrent(attaching: userData)
       }
     }
   }
@@ -83,32 +82,22 @@ struct AppInputConfig {
    When done, notifies the Preferences > Key Bindings table of the update so it can refresh itself, as well
    as notifies the other callbacks supplied here as needed.
    */
-  static func rebuildCurrent(completionHandler: CompletionHandler? = nil) {
+  static func rebuildCurrent(attaching userData: NotificationData? = nil) {
     let requestedVersion = AppInputConfig.lastStartedVersion + 1
     Logger.log("Requesting app input bindings rebuild (v\(requestedVersion))", level: .verbose)
 
     DispatchQueue.main.async {
-      var shouldNotify = true
-      defer {
-        // Always execute this before returning, if supplied
-        if let completionHandler = completionHandler, !completionHandler(AppInputConfig.current) {
-          shouldNotify = false
-        }
-        if shouldNotify {
-          let notification = Notification(name: .iinaAppInputConfigDidChange, object: AppInputConfig.current)
-          Logger.log("Posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
-          NotificationCenter.default.post(notification)
-        }
-      }
 
-      // Optimization: drop all but the most recent request
-      if requestedVersion <= AppInputConfig.lastStartedVersion {
-        shouldNotify = false
+      // Optimization: drop all but the most recent request.
+      // (but not if there is an attachment to deliver)
+      let hasAttachedData = (userData?.count ?? 0) > 0
+      if requestedVersion <= AppInputConfig.lastStartedVersion && !hasAttachedData {
         return
       }
+
       AppInputConfig.lastStartedVersion = requestedVersion
       if AppInputConfig.current.version == 0 {
-        let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: "")
+        let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil)
         Logger.log("Initial load: posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
         NotificationCenter.default.post(notification)
       }
@@ -124,6 +113,14 @@ struct AppInputConfig {
       (NSApp.delegate as! AppDelegate).menuController.updateKeyEquivalents(from: appInputConfigNew.bindingCandidateList)
 
       AppInputConfig.current = appInputConfigNew
+
+      var data = userData ?? [:]
+      data[BindingTableStateManager.Key.appInputConfig] = appInputConfigNew
+
+      let notification = Notification(name: .iinaAppInputConfigDidChange,
+                                      object: nil, userInfo: data)
+      Logger.log("Completed (v\(appInputConfigNew.version)); posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+      NotificationCenter.default.post(notification)
     }
   }
 

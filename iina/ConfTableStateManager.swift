@@ -15,36 +15,20 @@ fileprivate let changeSelectedConfigActionName: String = "Change Active Config"
  */
 class ConfTableStateManager: NSObject {
 
-  private unowned var undoManager: UndoManager? = nil
   private var observers: [NSObjectProtocol] = []
 
   // MARK: Observers
 
   override init() {
     super.init()
-    Logger.log("ConfTableStateManager init")
+    Logger.log("ConfTableStateManager init", level: .verbose)
 
     // This will notify that a pref has changed, even if it was changed by another instance of IINA:
     for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
-    NotificationCenter.default.addObserver(self, selector: #selector(self.onUndoManagerReceived), name: .iinaPrefsWindowHasUndoManager, object: nil)
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileNeedsLoad, object: nil, queue: .main, using: { notification in
-      self.loadBindingsFromSelectedConfFile()
-    }))
-
-//    NotificationCenter.default.addObserver(self, selector: #selector(reloadTable), name: .iinaMainWindowChanged, object: nil)
-  }
-  @objc
-  func onUndoManagerReceived(_ notification: Notification) {
-    Logger.log("Got notification: \"\(notification)\"")
-    guard let undoManager = notification.object as? UndoManager else {
-      Logger.log("Notification \"\(notification.name)\": invalid object: \(type(of: notification.object))", level: .error)
-      return
-    }
-    self.undoManager = undoManager
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileNeedsLoad, object: nil, queue: .main, using: self.loadCurrentConfFileRequested))
   }
 
   deinit {
@@ -276,12 +260,12 @@ class ConfTableStateManager: NSObject {
       selectedConfChanged = true
     }
 
-    var foundUndoableChange: Bool = actionName != nil || selectedConfChanged
+    let foundUndoableChange: Bool = actionName != nil || selectedConfChanged
 
     Logger.log("foundUndoableChange: \(foundUndoableChange); selectedConfChanged: \(selectedConfChanged); isAddingNewConfInline: \(isAddingNewConfInline)", level: .verbose)
 
     if foundUndoableChange {
-      if let undoManager = self.undoManager {
+      if let undoManager = PreferenceWindowController.undoManager {
         let undoActionName = actionName ?? changeSelectedConfigActionName
 
         Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(oldData.filesRemovedByLastAction?.keys.count ?? 0))", level: .verbose)
@@ -353,6 +337,10 @@ class ConfTableStateManager: NSObject {
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
   }
 
+  private func loadCurrentConfFileRequested(_ notification: Notification) {
+    loadBindingsFromSelectedConfFile()
+  }
+
   // Conf File load. Triggered any time `selectedConfName` is changed
   private func loadBindingsFromSelectedConfFile() {
     let currentState = ConfTableState.current
@@ -368,13 +356,8 @@ class ConfTableStateManager: NSObject {
       return
     }
 
+    // Send down the pipeline
     let userConfMappingsNew = inputConfFile.parseMappings()
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfig in
-
-      let notification = Notification(name: .iinaSelectedConfFileDidLoad, object: inputConfFile)
-      Logger.log("Posting '\(notification.name.rawValue)' notification with inputConfFile \"\(inputConfFile.filePath)\"", level: .verbose)
-      NotificationCenter.default.post(notification)
-      return false
-    })
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: [BindingTableStateManager.Key.confFile: inputConfFile])
   }
 }

@@ -140,8 +140,13 @@ class TableChange {
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
            let movePairs = self.toMove {
+          guard !toRemove.isEmpty || !toInsert.isEmpty || !movePairs.isEmpty else {
+            // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
+            Logger.log("TableChange from diff: no rows changed", level: .verbose)
+            break
+          }
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          Logger.log("TableChange diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
+          Logger.log("TableChange from diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
           tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
           tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {

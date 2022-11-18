@@ -12,35 +12,17 @@ import Foundation
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 class BindingTableStateManager {
+  enum Key: String {
+    case appInputConfig = "AppInputConfig"
+    case tableChange = "BindingTableChange"
+    case confFile = "InputConfFile"
+  }
 
-  private unowned var undoManager: UndoManager? = nil
   private var observers: [NSObjectProtocol] = []
 
   init() {
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPrefsWindowHasUndoManager, object: nil, queue: .main, using: { notification in
-      guard let undoManager = notification.object as? UndoManager else {
-        Logger.log("Notification \"\(notification.name)\": bad object: \(type(of: notification.object))", level: .error)
-        return
-      }
-      self.undoManager = undoManager
-    }))
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaAppInputConfigDidChange, object: nil, queue: .main, using: { notification in
-      guard let appInputConfig = notification.object as? AppInputConfig else {
-        Logger.log("Notification \"\(notification.name)\": bad object: \(type(of: notification.object))", level: .error)
-        return
-      }
-      self.updateTableState(appInputConfig)
-    }))
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileDidLoad, object: nil, queue: .main, using: { notification in
-      guard let inputConfFile = notification.object as? InputConfFile else {
-        Logger.log("Notification \"\(notification.name.rawValue)\": bad object: \(type(of: notification.object))", level: .error)
-        return
-      }
-      // By supplying .reloadAll request, we omit the animation and drop the selection. It doesn't make a lot of sense when changing files anyway.
-      self.updateTableState(AppInputConfig.current, tableChange: TableChange(.reloadAll), newInputConfFile: inputConfFile)
-    }))
+    Logger.log("BindingTableStateManager init", level: .verbose)
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaAppInputConfigDidChange, object: nil, queue: .main, using: self.appInputConfigDidChange))
   }
 
   deinit {
@@ -48,6 +30,14 @@ class BindingTableStateManager {
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
+  }
+
+  func wakeUp() {
+    if BindingTableState.current.inputConfFile == nil {
+      let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil)
+      Logger.log("BindingTableState is missing file data; sending notification: \"\(notification.name.rawValue)\"", level: .verbose)
+      NotificationCenter.default.post(notification)
+    }
   }
   
   /*
@@ -73,33 +63,19 @@ class BindingTableStateManager {
       }
     }
 
-    if let undoManager = self.undoManager {
+    if let undoManager = PreferenceWindowController.undoManager {
       let userConfMappingsOld = AppInputConfig.userConfMappings
 
-      undoManager.registerUndo(withTarget: self, handler: { bindingTableStore in
+      undoManager.registerUndo(withTarget: self, handler: { bindingTableState in
         // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableChange
         // FIXME: also need to use USER BINDINGS
         // FIXME: Filters!
         // If moving rows in the table which aren't unique, this solution often guesses the wrong rows to animate
-        bindingTableStore.doAction(userConfMappingsOld, TableChange(.undoRedo))
+        bindingTableState.doAction(userConfMappingsOld, TableChange(.undoRedo))
       })
 
-      // Format the action name for Edit menu display
-      if let desiredTableChange = desiredTableChange, !undoManager.isUndoing && !undoManager.isRedoing {
-        var actionName: String? =  nil
-        switch desiredTableChange.changeType {
-          case .addRows:
-            actionName = Utility.format(.keyBinding, desiredTableChange.toInsert?.count ?? 0, .add)
-          case .removeRows:
-            actionName = Utility.format(.keyBinding, desiredTableChange.toRemove?.count ?? 0, .delete)
-          case .moveRows:
-            actionName = Utility.format(.keyBinding, desiredTableChange.toMove?.count ?? 0, .move)
-          default:
-            break
-        }
-        if let actionName = actionName {
-          undoManager.setActionName(actionName)
-        }
+      if let actionName = makeActionNameIfNeeded(basedOn: desiredTableChange, undoManager) {
+        undoManager.setActionName(actionName)
       }
     }
 
@@ -116,13 +92,31 @@ class BindingTableStateManager {
      This is needed so that animations can work. But InputBindingController builds the actual row data,
      and the two must match or else visual bugs will result.
      */
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, completionHandler: { appInputConfigNew in
-      self.updateTableState(appInputConfigNew, tableChange: desiredTableChange)
-      return false
-    })
+    let attachment = desiredTableChange.flatMap{ [BindingTableStateManager.Key.tableChange: $0]}
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew,
+                                                 attaching: attachment)
   }
 
-  // No an undoable action; just a UI change
+  // Format the action name for Edit menu display (Undo/Redo)
+  private func makeActionNameIfNeeded(basedOn tableChange: TableChange? = nil, _ undoManager: UndoManager) -> String? {
+
+    guard let tableChange = tableChange, !undoManager.isUndoing && !undoManager.isRedoing else {
+      return nil
+    }
+
+    switch tableChange.changeType {
+      case .addRows:
+        return Utility.format(.keyBinding, tableChange.toInsert?.count ?? 0, .add)
+      case .removeRows:
+        return Utility.format(.keyBinding, tableChange.toRemove?.count ?? 0, .delete)
+      case .moveRows:
+        return Utility.format(.keyBinding, tableChange.toMove?.count ?? 0, .move)
+      default:
+        return nil
+    }
+  }
+
+  // Not an undoable action; just a UI change
   func filterBindings(newFilterString: String) {
     updateTableState(AppInputConfig.current, newFilterString: newFilterString)
   }
@@ -132,6 +126,23 @@ class BindingTableStateManager {
     filterBindings(newFilterString: "")
     // Tell search field to clear itself:
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingSearchFieldShouldUpdate, object: ""))
+  }
+
+  private func appInputConfigDidChange(_ notification: Notification) {
+    Logger.log("Received \"\(notification.name.rawValue)\"", level: .verbose)
+    guard let userData = notification.userInfo else {
+      Logger.log("Notification \"\(notification.name.rawValue)\": contains no data!", level: .error)
+      return
+    }
+    guard let appInputConfig = userData[BindingTableStateManager.Key.appInputConfig] as? AppInputConfig else {
+      Logger.log("Notification \"\(notification.name.rawValue)\": no AppInputConfig!", level: .error)
+      return
+    }
+
+    let tableChange = userData[BindingTableStateManager.Key.tableChange] as? TableChange
+    let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
+
+    self.updateTableState(appInputConfig, tableChange: tableChange, newInputConfFile: newInputConfFile)
   }
 
   /*

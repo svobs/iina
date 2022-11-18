@@ -23,13 +23,13 @@ class InputConfTableViewController: NSObject {
   private let enableInlineCreate = true
 
   private unowned var tableView: EditableTableView!
-  private var confTableStore: ConfTableState {
+  private var confTableState: ConfTableState {
     return ConfTableState.current
   }
-  private unowned var kbTableViewController: KeyBindingTableViewController
+  private unowned var kbTableViewController: BindingTableViewController
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfTableView: EditableTableView, _ kbTableViewController: KeyBindingTableViewController) {
+  init(_ inputConfTableView: EditableTableView, _ kbTableViewController: BindingTableViewController) {
     self.tableView = inputConfTableView
     self.kbTableViewController = kbTableViewController
 
@@ -68,10 +68,10 @@ class InputConfTableViewController: NSObject {
   }
 
   func selectCurrentConfRow() {
-    let confName = self.confTableStore.selectedConfName
-    guard let index = confTableStore.confTableRows.firstIndex(of: confName) else {
+    let confName = self.confTableState.selectedConfName
+    guard let index = confTableState.confTableRows.firstIndex(of: confName) else {
       Logger.log("selectCurrentConfRow(): Failed to find '\(confName)' in table; falling back to default", level: .error)
-      confTableStore.changeSelectedConfToDefault()
+      confTableState.changeSelectedConfToDefault()
       return
     }
 
@@ -87,7 +87,7 @@ extension InputConfTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
-    confTableStore.changeSelectedConf(tableView.selectedRow)
+    confTableState.changeSelectedConf(tableView.selectedRow)
   }
 
   /**
@@ -98,8 +98,8 @@ extension InputConfTableViewController: NSTableViewDelegate {
     guard let cell = tableView.makeView(withIdentifier: identifier, owner: self) as? NSTableCellView else { return nil }
     let columnName = identifier.rawValue
 
-    guard let confName = confTableStore.getConfName(at: rowIndex) else { return nil }
-    let isDefaultConf = confTableStore.isDefaultConf(confName)
+    guard let confName = confTableState.getConfName(at: rowIndex) else { return nil }
+    let isDefaultConf = confTableState.isDefaultConf(confName)
 
     switch columnName {
       case "nameColumn":
@@ -126,33 +126,33 @@ extension InputConfTableViewController: NSTableViewDelegate {
 extension InputConfTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    if let confName = confTableStore.getConfName(at: rowIndex), !confTableStore.isDefaultConf(confName) {
+    if let confName = confTableState.getConfName(at: rowIndex), !confTableState.isDefaultConf(confName) {
       return true
     }
     return false
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    if let confName = confTableStore.getConfName(at: rowIndex), !confTableStore.isDefaultConf(confName) {
+    if let confName = confTableState.getConfName(at: rowIndex), !confTableState.isDefaultConf(confName) {
       return true
     }
     return false
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
-    if self.confTableStore.isAddingNewConfInline {
+    if self.confTableState.isAddingNewConfInline {
       // If user didn't enter a name, just remove the row
-      confTableStore.cancelInlineAdd()
+      confTableState.cancelInlineAdd()
     }
   }
 
   // User finished editing (callback from EditableTextField).
   // Renames current conf & its file on disk
   func editDidEndWithNewText(newValue newName: String, row: Int, column: Int) -> Bool {
-    if confTableStore.isAddingNewConfInline { // New file
+    if confTableState.isAddingNewConfInline { // New file
       let succeeded = self.completeInlineAdd(newName: newName)
       if !succeeded {
-        confTableStore.cancelInlineAdd()
+        confTableState.cancelInlineAdd()
       }
       return succeeded
 
@@ -162,7 +162,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
   }
 
   private func completeInlineAdd(newName: String) -> Bool {
-    guard !self.confTableStore.confTableRows.contains(newName) else {
+    guard !self.confTableState.confTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -180,26 +180,26 @@ extension InputConfTableViewController: EditableTableViewDelegate {
       Utility.showAlert("config.cannot_create", sheetWindow: self.tableView.window)
       return false
     }
-    confTableStore.completeInlineAdd(confName: newName, filePath: newFilePath)
+    confTableState.completeInlineAdd(confName: newName, filePath: newFilePath)
     return true
   }
 
   private func moveFileAndRenameCurrentConf(newName: String) -> Bool {
     // Validate name change
-    guard !self.confTableStore.selectedConfName.equalsIgnoreCase(newName) else {
+    guard !self.confTableState.selectedConfName.equalsIgnoreCase(newName) else {
       // No change to current entry: ignore
       return false
     }
 
     Logger.log("User renamed current conf to \"\(newName)\" in editor", level: .verbose)
 
-    guard !self.confTableStore.confTableRows.contains(newName) else {
+    guard !self.confTableState.confTableRows.contains(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
     }
 
-    guard let oldFilePath = self.confTableStore.selectedConfFilePath else {
+    guard let oldFilePath = self.confTableState.selectedConfFilePath else {
       Logger.log("Failed to find file for current conf! Aborting rename", level: .error)
       return false
     }
@@ -213,8 +213,8 @@ extension InputConfTableViewController: EditableTableViewDelegate {
       }
     }
 
-    // Let confTableStore rename the file, update conf lists and send UI update
-    return confTableStore.renameSelectedConf(newName: newName)
+    // Let confTableState rename the file, update conf lists and send UI update
+    return confTableState.renameSelectedConf(newName: newName)
   }
 
   // MARK: Cut, copy, paste, delete support.
@@ -231,7 +231,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return !confTableStore.isSelectedConfReadOnly
+    return !confTableState.isSelectedConfReadOnly
   }
 
   func isPasteEnabled() -> Bool {
@@ -240,7 +240,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
   }
 
   func doEditMenuCopy() {
-    return copyConfFileToClipboard(confName: confTableStore.selectedConfName)
+    return copyConfFileToClipboard(confName: confTableState.selectedConfName)
   }
 
   func doEditMenuPaste() {
@@ -260,7 +260,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
 
   func doEditMenuDelete() {
     // Delete current user conf
-    deleteConf(confTableStore.selectedConfName)
+    deleteConf(confTableState.selectedConfName)
   }
 
   private func readConfFilesFromClipboard() -> [String] {
@@ -269,7 +269,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
 
   // Convert conf file path to URL and put it in clipboard
   private func copyConfFileToClipboard(confName: String) {
-    guard let filePath = confTableStore.getFilePath(forConf: confName) else { return }
+    guard let filePath = confTableState.getFilePath(forConf: confName) else { return }
     let url = NSURL(fileURLWithPath: filePath)
 
     NSPasteboard.general.clearContents()
@@ -286,7 +286,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
    Tell NSTableView the number of rows when it asks
    */
   @objc func numberOfRows(in tableView: NSTableView) -> Int {
-    return confTableStore.confTableRows.count
+    return confTableState.confTableRows.count
   }
 
   // MARK: Drag & Drop
@@ -302,8 +302,8 @@ extension InputConfTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-    if let confName = confTableStore.getConfName(at: row),
-       let filePath = confTableStore.getFilePath(forConf: confName) {
+    if let confName = confTableState.getConfName(at: row),
+       let filePath = confTableState.getFilePath(forConf: confName) {
       return NSURL(fileURLWithPath: filePath)
     }
     return nil
@@ -326,7 +326,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
     }
 
     let userConfList = InputConfTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
-      confTableStore.getUserConfName(forFilePath: $0) }
+      confTableState.getUserConfName(forFilePath: $0) }
 
     guard userConfList.count == 1 else { return }
     let confName = userConfList[0]
@@ -368,7 +368,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
 
     // Check for key bindings
     let bindingCount = KeyMapping.deserializeList(from: info.draggingPasteboard).count
-    if bindingCount > 0 && dropOperation == .on, let targetConfName = confTableStore.getConfName(at: row), !confTableStore.isDefaultConf(targetConfName) {
+    if bindingCount > 0 && dropOperation == .on, let targetConfName = confTableState.getConfName(at: row), !confTableState.isDefaultConf(targetConfName) {
       // Drop bindings into another user conf
       info.numberOfValidItemsForDrop = bindingCount
       return NSDragOperation.copy
@@ -404,7 +404,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
 
     // Option B: drop bindings into user conf file
     let bindingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
-    if !bindingList.isEmpty, dropOperation == .on, let targetConfName = confTableStore.getConfName(at: row), !confTableStore.isDefaultConf(targetConfName) {
+    if !bindingList.isEmpty, dropOperation == .on, let targetConfName = confTableState.getConfName(at: row), !confTableState.isDefaultConf(targetConfName) {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfName)\" conf")
       info.numberOfValidItemsForDrop = bindingList.count
       info.animatesToDestination = true
@@ -420,7 +420,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
   }
 
   private func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
-    let isReadOnly = confTableStore.isDefaultConf(targetConfName)
+    let isReadOnly = confTableState.isDefaultConf(targetConfName)
     guard !isReadOnly else { return }
 
     guard let confFilePath = requireFilePath(forConf: targetConfName),
@@ -442,7 +442,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
       return
     }
 
-    if targetConfName == confTableStore.selectedConfName {
+    if targetConfName == confTableState.selectedConfName {
       NotificationCenter.default.post(Notification(name: .iinaSelectedConfFileNeedsLoad, object: ""))
     }
   }
@@ -490,11 +490,11 @@ extension InputConfTableViewController:  NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedRow: String = confTableStore.getConfName(at: tableView.clickedRow) else { return }
+    guard let clickedRow: String = confTableState.getConfName(at: tableView.clickedRow) else { return }
     let mib = CascadingMenuItemBuilder(mip: ConfMenuItemProvider(), .menu(contextMenu),
       .unit(Unit.config), .unitCount(1), .targetRow(clickedRow), .target(self))
 
-    let canModifyRow = !self.confTableStore.isDefaultConf(clickedRow)
+    let canModifyRow = !self.confTableState.isDefaultConf(clickedRow)
 
     // Show in Finder
     mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)))
@@ -552,7 +552,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
     if !mappingsToInsert.isEmpty {
       let destConfName = sender.confName
       Logger.log("User chose to paste \(mappingsToInsert.count) bindings into \"\(destConfName)\"")
-      if destConfName == confTableStore.selectedConfName {
+      if destConfName == confTableState.selectedConfName {
         // If currently open conf file, this will paste under the current selection
         kbTableViewController.doEditMenuPaste()
       } else {
@@ -582,8 +582,8 @@ extension InputConfTableViewController:  NSMenuDelegate {
       return
     }
 
-    // Let confTableStore delete the file, update prefs & refresh UI
-    confTableStore.removeConf(confName)
+    // Let confTableState delete the file, update prefs & refresh UI
+    confTableState.removeConf(confName)
   }
 
   @objc func showInFinder(_ confName: String) {
@@ -599,7 +599,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
     if enableInlineCreate {
       // Add a new conf with no name, and immediately open an editor for it.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
-      let _ = confTableStore.addNewUserConfInline(completionHandler: { tableChange in
+      let _ = confTableState.addNewUserConfInline(completionHandler: { tableChange in
         if let selectedRowIndex = tableChange.newSelectedRows?.first {
           self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
         }
@@ -634,7 +634,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       // Find a new name for the duplicate, and immediately open an editor for it to change the name.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       if let (newConfName, newFilePath) = self.duplicateCurrentConfFile() {
-        self.confTableStore.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableChange in
+        self.confTableState.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableChange in
           if let selectedRowIndex = tableChange.newSelectedRows?.first {
             self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
           }
@@ -647,7 +647,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
           Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
           return
         }
-        guard !self.confTableStore.confTableRows.contains(newName) else {
+        guard !self.confTableState.confTableRows.contains(newName) else {
           Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
           return
         }
@@ -667,9 +667,9 @@ extension InputConfTableViewController:  NSMenuDelegate {
   }
 
   private func duplicateCurrentConfFile() -> (String, String)? {
-    guard let filePath = confTableStore.selectedConfFilePath else { return nil }
+    guard let filePath = confTableState.selectedConfFilePath else { return nil }
 
-    let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confTableStore.selectedConfName)
+    let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confTableState.selectedConfName)
 
     do {
       Logger.log("Duplicating file: \"\(filePath)\" -> \"\(newFilePath)\"")
@@ -696,7 +696,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       return
     }
 
-    self.confTableStore.addUserConf(confName: newName, filePath: newFilePath)
+    self.confTableState.addUserConf(confName: newName, filePath: newFilePath)
   }
 
   /*
@@ -778,7 +778,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       Logger.log("Successfully imported: \(confsToAdd.count) input conf files")
 
       // update prefs & refresh UI
-      self.confTableStore.addUserConfs(confsToAdd)
+      self.confTableState.addUserConfs(confsToAdd)
     }
   }
 
@@ -812,7 +812,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
   }
 
   private func requireFilePath(forConf confName: String) -> String? {
-    if let confFilePath = self.confTableStore.getFilePath(forConf: confName) {
+    if let confFilePath = self.confTableState.getFilePath(forConf: confName) {
       return confFilePath
     }
 
@@ -832,7 +832,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
       newConfName = nextName
 
-      if confTableStore.getFilePath(forConf: newConfName) != nil {
+      if confTableState.getFilePath(forConf: newConfName) != nil {
         // Entry with same name already exists in conf list
         continue
       }
