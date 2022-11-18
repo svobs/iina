@@ -72,7 +72,7 @@ class ConfTableStateManager: NSObject {
       switch keyPath {
 
         case Preference.Key.currentInputConfigName.rawValue:
-          guard let selectedConfNameNew = change[.newKey] as? String, selectedConfNameNew != curr.selectedConfName else { return }
+          guard let selectedConfNameNew = change[.newKey] as? String, !selectedConfNameNew.equalsIgnoreCase(curr.selectedConfName) else { return }
           Logger.log("Detected pref update for selectedConf: \"\(selectedConfNameNew)\"", level: .verbose)
           ConfTableState.current.changeSelectedConf(selectedConfNameNew)  // updates UI in case the update came from an external source
         case Preference.Key.inputConfigs.rawValue:
@@ -343,7 +343,7 @@ class ConfTableStateManager: NSObject {
   }
 
   // Conf File load. Triggered any time `selectedConfName` is changed
-  private func loadBindingsFromSelectedConfFile() {
+  func loadBindingsFromSelectedConfFile() {
     let currentState = ConfTableState.current
     guard let confFilePath = currentState.selectedConfFilePath else {
       Logger.log("Could not find file for current conf (\"\(currentState.selectedConfName)\"); falling back to default conf", level: .error)

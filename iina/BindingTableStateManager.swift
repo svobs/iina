@@ -32,14 +32,6 @@ class BindingTableStateManager {
     observers = []
   }
 
-  func wakeUp() {
-    if BindingTableState.current.inputConfFile == nil {
-      let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil)
-      Logger.log("BindingTableState is missing file data; sending notification: \"\(notification.name.rawValue)\"", level: .verbose)
-      NotificationCenter.default.post(notification)
-    }
-  }
-  
   /*
    Executes a single "action" to the current table state.
    This is either the "do" of an undoable action, or an undo of that action, or a redo of that undo.

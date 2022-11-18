@@ -84,12 +84,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return PreferenceWindowController(viewControllers: list)
   }()
 
+  // MARK: Other components
+
+  // Need to store these somewhere which isn't only inside a struct.
+  // Swift doesn't count them as strong references
+  private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
+  private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
+
   @IBOutlet weak var menuController: MenuController!
 
   @IBOutlet weak var dockMenu: NSMenu!
 
   private func getReady() {
-    AppInputConfig.rebuildCurrent()
+    self.confTableStateManager.loadBindingsFromSelectedConfFile()
     menuController.bindMenuItems()
     isReady = true
   }

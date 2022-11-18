@@ -161,9 +161,9 @@ extension Notification.Name {
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
   // Contains a TableChange which should be applied to the Input Conf table:
   // user input conf additions, subtractions, a rename, or the selection changed
-  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfigTableShouldUpdate")
+  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfigTableShouldChange")
   // Contains a TableChange which should be applied to the Key Bindings table
-  static let iinaBindingsTableShouldChange = Notification.Name("IINAKeyBindingsTableShouldUpdate")
+  static let iinaBindingsTableShouldChange = Notification.Name("IINAKeyBindingsTableShouldChange")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
   // The AppInputConfig was rebuilt

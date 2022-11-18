@@ -96,11 +96,6 @@ struct AppInputConfig {
       }
 
       AppInputConfig.lastStartedVersion = requestedVersion
-      if AppInputConfig.current.version == 0 {
-        let notification = Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil)
-        Logger.log("Initial load: posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
-        NotificationCenter.default.post(notification)
-      }
 
       guard let activePlayerInputConfig = PlayerCore.active.inputConfig else {
         Logger.fatal("AppInputConfig.rebuildCurrent(): no active player!")

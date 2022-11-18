@@ -38,11 +38,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   private var confTableController: InputConfTableViewController? = nil
   private var kbTableController: BindingTableViewController? = nil
 
-  // Need to store these somewhere which isn't only inside a struct.
-  // Swift doesn't count them as strong references
-  private let bindingTableStateManger = BindingTableState.manager
-  private let confTableStateManager = ConfTableState.manager
-
   private var observers: [NSObjectProtocol] = []
 
   // MARK: - Outlets
@@ -68,11 +63,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   override func viewDidLoad() {
     super.viewDidLoad()
-
-    // Apparently, Swift is feeling very lazy about loading `BindingTableViewController`.
-    // The reference above is not enough to call its constructor.
-    // But we need it to start now. Need to be proactive.
-    self.bindingTableStateManger.wakeUp()
 
     let kbTableController = BindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     self.kbTableController = kbTableController
