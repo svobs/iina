@@ -61,7 +61,7 @@ class ConfTableStateManager: NSObject {
       userConfDict = [:]
     }
 
-    return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, isAddingNewConfInline: false)
+    return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, specialState: .none)
   }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -99,15 +99,16 @@ class ConfTableStateManager: NSObject {
   }
 
   func doAction(_ userConfDictNew: [String:String]? = nil, selectedConfNameNew: String? = nil,
-                isAddingNewConfInline: Bool = false, completionHandler: TableChange.CompletionHandler? = nil) {
-    let doData = UndoData(userConfDict: userConfDictNew,
-                          selectedConfName: selectedConfNameNew)
-    self.doAction(doData, isAddingNewConfInline: isAddingNewConfInline, completionHandler: completionHandler)
+                enterSpecialState specialState: ConfTableState.SpecialState = .none,
+                completionHandler: TableChange.CompletionHandler? = nil) {
+
+    let doData = UndoData(userConfDict: userConfDictNew, selectedConfName: selectedConfNameNew)
+    self.doAction(doData, enterSpecialState: specialState, completionHandler: completionHandler)
   }
 
   // May be called for do, undo, or redo
-  private func doAction(_ newData: UndoData, isAddingNewConfInline: Bool = false,
-                                 completionHandler: TableChange.CompletionHandler? = nil) {
+  private func doAction(_ newData: UndoData, enterSpecialState specialState: ConfTableState.SpecialState = .none,
+                        completionHandler: TableChange.CompletionHandler? = nil) {
 
     let currentState = ConfTableState.current
     var oldData = UndoData(userConfDict: currentState.userConfDict,
@@ -131,8 +132,8 @@ class ConfTableStateManager: NSObject {
     }
 
     let foundUndoableChange: Bool = actionName != nil || selectedConfChanged
-
-    Logger.log("foundUndoableChange: \(foundUndoableChange); selectedConfChanged: \(selectedConfChanged); isAddingNewConfInline: \(isAddingNewConfInline)", level: .verbose)
+    Logger.log("SelectedConfChanged: \(selectedConfChanged); requestedNewState: \(specialState)",
+               level: .verbose)
 
     if foundUndoableChange {
       if let undoManager = PreferenceWindowController.undoManager {
@@ -140,6 +141,8 @@ class ConfTableStateManager: NSObject {
 
         Logger.log("Registering for undo: \"\(undoActionName)\" (removed: \(oldData.filesRemovedByLastAction?.keys.count ?? 0))", level: .verbose)
         undoManager.registerUndo(withTarget: self, handler: { manager in
+          Logger.log("Undoing or redoing action \"\(undoActionName)\"", level: .verbose)
+
           // Get rid of empty editor before it gets in the way:
           if ConfTableState.current.isAddingNewConfInline {
             ConfTableState.current.cancelInlineAdd()
@@ -161,7 +164,7 @@ class ConfTableStateManager: NSObject {
 
     let newState = ConfTableState(userConfDict: newData.userConfDict ?? currentState.userConfDict,
                                   selectedConfName: newData.selectedConfName ?? currentState.selectedConfName,
-                                  isAddingNewConfInline: isAddingNewConfInline)
+                                  specialState: specialState)
     let oldState = ConfTableState.current
     ConfTableState.current = newState
 
@@ -180,24 +183,29 @@ class ConfTableStateManager: NSObject {
 
     let tableChange = buildConfTableChange(old: oldState, new: newState, completionHandler: completionHandler)
     // Finally, fire notification. This covers row selection too
-    NotificationCenter.default.post(Notification(name: .iinaConfTableShouldChange, object: tableChange))
+    let notification = Notification(name: .iinaConfTableShouldChange, object: tableChange)
+    Logger.log("ConfTableStateManager: posting \(notification.name.rawValue) notification", level: .verbose)
+    NotificationCenter.default.post(notification)
   }
 
-  private func buildConfTableChange(old: ConfTableState, new: ConfTableState, completionHandler: TableChange.CompletionHandler?) -> TableChange {
-    let confTableChange = TableChange.buildDiff(oldRows: old.confTableRows,
-                                                  newRows: new.confTableRows,
-                                                  completionHandler: completionHandler)
+  private func buildConfTableChange(old: ConfTableState, new: ConfTableState,
+                                    completionHandler: TableChange.CompletionHandler?) -> TableChange {
+
+    let confTableChange = TableChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+                                                completionHandler: completionHandler)
     confTableChange.scrollToFirstSelectedRow = true
 
-    if new.isAddingNewConfInline { // special case: creating an all-new config
-      // Select the new blank row, which will be the last one:
-      confTableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
-    } else {
-      // Always keep the current config selected
-      if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-        confTableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
-      }
+    switch new.specialState {
+      case .addingNewInline:  // special case: creating an all-new config
+        // Select the new blank row, which will be the last one:
+        confTableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
+      case .none:
+        // Always keep the current config selected
+        if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
+          confTableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
+        }
     }
+
     return confTableChange
   }
 
@@ -347,13 +355,13 @@ class ConfTableStateManager: NSObject {
     let currentState = ConfTableState.current
     guard let confFilePath = currentState.selectedConfFilePath else {
       Logger.log("Could not find file for current conf (\"\(currentState.selectedConfName)\"); falling back to default conf", level: .error)
-      currentState.changeSelectedConfToDefault()
+      currentState.fallBackToDefaultConf()
       return
     }
 
     Logger.log("Loading bindings from conf file: \"\(confFilePath)\"")
     guard let inputConfFile = InputConfFile.loadFile(at: confFilePath, isReadOnly: currentState.isSelectedConfReadOnly) else {
-      currentState.changeSelectedConfToDefault()
+      currentState.fallBackToDefaultConf()
       return
     }
 

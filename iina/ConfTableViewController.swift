@@ -71,12 +71,12 @@ class InputConfTableViewController: NSObject {
     let confName = self.confTableState.selectedConfName
     guard let index = confTableState.confTableRows.firstIndex(of: confName) else {
       Logger.log("selectCurrentConfRow(): Failed to find '\(confName)' in table; falling back to default", level: .error)
-      confTableState.changeSelectedConfToDefault()
+      confTableState.fallBackToDefaultConf()
       return
     }
 
     self.tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-    let printedIndexesMsg = "Selected indexes are now: \(self.tableView.selectedRowIndexes.map{$0})"
+    let printedIndexesMsg = "Selected index list is now: \(self.tableView.selectedRowIndexes.map{$0})"
     Logger.log("Selected row: '\(confName)' (index \(index)). \(printedIndexesMsg)", level: .verbose)
   }
 }
@@ -87,6 +87,7 @@ extension InputConfTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
+    Logger.log("InputConfTableViewController: tableViewSelectionDidChange() called; changing state of selected conf", level: .verbose)
     confTableState.changeSelectedConf(tableView.selectedRow)
   }
 
@@ -505,9 +506,9 @@ extension InputConfTableViewController:  NSMenuDelegate {
     // ---
     mib.addSeparator()
 
-    mib.likeEditCopy().addItem(#selector(self.copyConfFromContextMenu(_:)))
+    mib.likeEditCopy().addItem(#selector(self.copyConfFromMenu(_:)))
 
-    let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromContextMenu(_:))))
+    let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromMenu(_:))))
     var didAdd = false
     if isPasteEnabled() {
       let confCount = readConfFilesFromClipboard().count
@@ -529,14 +530,14 @@ extension InputConfTableViewController:  NSMenuDelegate {
     mib.addSeparator()
 
     // Delete
-    mib.likeEasyDelete().butWith(.enabled(isUserConf)).addItem(#selector(self.deleteConfFromContextMenu(_:)))
+    mib.likeEasyDelete().butWith(.enabled(isUserConf)).addItem(#selector(self.deleteConfFromMenu(_:)))
   }
 
-  @objc fileprivate func copyConfFromContextMenu(_ sender: InputConfMenuItem) {
+  @objc fileprivate func copyConfFromMenu(_ sender: InputConfMenuItem) {
     self.copyConfFileToClipboard(confName: sender.confName)
   }
 
-  @objc fileprivate func pasteFromContextMenu(_ sender: InputConfMenuItem) {
+  @objc fileprivate func pasteFromMenu(_ sender: InputConfMenuItem) {
     // Conf files?
     let confFilePathList = readConfFilesFromClipboard()
     if !confFilePathList.isEmpty {
@@ -562,7 +563,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
     }
   }
 
-  @objc fileprivate func deleteConfFromContextMenu(_ sender: InputConfMenuItem) {
+  @objc fileprivate func deleteConfFromMenu(_ sender: InputConfMenuItem) {
     self.deleteConf(sender.confName)
   }
 

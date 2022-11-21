@@ -136,6 +136,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   // MARK: - UI
 
   private func updateEditEnabledStatus() {
+    Logger.log("Updating editEnabledStatus", level: .verbose)
     let isSelectedConfReadOnly = confTableState.isSelectedConfReadOnly
     [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = !isSelectedConfReadOnly

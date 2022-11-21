@@ -42,7 +42,7 @@ struct BindingTableState {
   let filterString: String
 
   // The table rows currently displayed, which will change depending on the current filterString
-  let filterBimap: BiDictionary<Int, Int>?
+  private let filterBimap: BiDictionary<Int, Int>?
 
   // The current unfiltered list of table rows
   private var bindingRowsAll: [InputBinding] {
