@@ -72,7 +72,7 @@ class BindingTableStateManager {
     }
 
     // Save user's changes to file before doing anything else:
-    guard let userConfMappingsNew = saveBindingsToCurrentConfigFile(userConfMappingsNew) else {
+    guard let updatedConfFile = overwriteCurrentConfFile(with: userConfMappingsNew) else {
       return
     }
 
@@ -84,9 +84,12 @@ class BindingTableStateManager {
      This is needed so that animations can work. But InputBindingController builds the actual row data,
      and the two must match or else visual bugs will result.
      */
-    let attachment = desiredTableChange.flatMap{ [BindingTableStateManager.Key.tableChange: $0]}
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew,
-                                                 attaching: attachment)
+    var attachment: [AnyHashable : Any] = [BindingTableStateManager.Key.confFile: updatedConfFile]
+    if let desiredTableChange = desiredTableChange {
+      attachment[BindingTableStateManager.Key.tableChange] = desiredTableChange
+    }
+
+    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: attachment)
   }
 
   // Format the action name for Edit menu display (Undo/Redo)
@@ -109,13 +112,13 @@ class BindingTableStateManager {
   }
 
   // Not an undoable action; just a UI change
-  func filterBindings(newFilterString: String) {
+  func applyFilter(newFilterString: String) {
     updateTableState(AppInputConfig.current, newFilterString: newFilterString)
   }
 
   private func clearFilter() {
     Logger.log("Clearing Key Bindings filter", level: .verbose)
-    filterBindings(newFilterString: "")
+    applyFilter(newFilterString: "")
     // Tell search field to clear itself:
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingSearchFieldShouldUpdate, object: ""))
   }
@@ -144,7 +147,7 @@ class BindingTableStateManager {
    Expected to be run on the main thread.
    */
   private func updateTableState(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
-                        newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
+                                newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     let oldState = BindingTableState.current
@@ -154,8 +157,8 @@ class BindingTableStateManager {
       return
     }
     let newState = BindingTableState(appInputConfigNew,
-                                         filterString: newFilterString ?? oldState.filterString,
-                                         inputConfFile: newInputConfFile ?? oldState.inputConfFile)
+                                     filterString: newFilterString ?? oldState.filterString,
+                                     inputConfFile: newInputConfFile ?? oldState.inputConfFile)
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases
     let tableChange: TableChange
@@ -189,7 +192,7 @@ class BindingTableStateManager {
   }
 
   // Input Config File: Save
-  private func saveBindingsToCurrentConfigFile(_ userConfMappings: [KeyMapping]) -> [KeyMapping]? {
+  private func overwriteCurrentConfFile(with userConfMappings: [KeyMapping]) -> InputConfFile? {
     guard let configFilePath = ConfTableState.current.selectedConfFilePath else {
       let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
@@ -210,9 +213,7 @@ class BindingTableStateManager {
         return nil
       }
 
-      selectedConfFile.replaceAllMappings(with: userConfMappings)
-      try selectedConfFile.saveToDisk()
-      return selectedConfFile.parseMappings() // gets updated line numbers
+      return try selectedConfFile.overwriteFile(with: userConfMappings)
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])

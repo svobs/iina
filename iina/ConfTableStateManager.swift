@@ -26,7 +26,7 @@ class ConfTableStateManager: NSObject {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileNeedsLoad, object: nil, queue: .main, using: self.loadCurrentConfFileRequested))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaSelectedConfFileNeedsLoad, object: nil, queue: .main, using: self.loadCurrentConfFileWasRequested))
   }
 
   deinit {
@@ -338,7 +338,7 @@ class ConfTableStateManager: NSObject {
 
   // MARK: Load Conf File
 
-  private func loadCurrentConfFileRequested(_ notification: Notification) {
+  private func loadCurrentConfFileWasRequested(_ notification: Notification) {
     loadBindingsFromSelectedConfFile()
   }
 

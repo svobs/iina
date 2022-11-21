@@ -24,11 +24,7 @@ struct BindingTableState {
     self.appInputConfig = appInputConfig
     self.inputConfFile = inputConfFile
     self.filterString = filterString
-    if filterString.isEmpty {
-      self.bindingRowsFiltered = appInputConfig.bindingCandidateList
-    } else {
-      self.bindingRowsFiltered = BindingTableState.filter(bindingRowsAll: appInputConfig.bindingCandidateList, by: filterString)
-    }
+    self.filterBimap = BindingTableState.buildFilterBimap(from: appInputConfig.bindingCandidateList, by: filterString)
   }
 
   // MARK: Data
@@ -46,7 +42,7 @@ struct BindingTableState {
   let filterString: String
 
   // The table rows currently displayed, which will change depending on the current filterString
-  let bindingRowsFiltered: [InputBinding]
+  let filterBimap: BiDictionary<Int, Int>?
 
   // The current unfiltered list of table rows
   private var bindingRowsAll: [InputBinding] {
@@ -56,23 +52,31 @@ struct BindingTableState {
   // MARK: Bindings Table CRUD
 
   var bindingRowCount: Int {
-    return bindingRowsFiltered.count
+    if let filterBimap = filterBimap {
+      return filterBimap.values.count
+    }
+    return bindingRowsAll.count
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getBindingRow(at index: Int) -> InputBinding? {
-    guard index >= 0 && index < bindingRowsFiltered.count else {
-      return nil
+  func getDisplayedRow(at index: Int) -> InputBinding? {
+    guard index >= 0 else { return nil }
+    if let filterBimap = filterBimap {
+      if let unfilteredIndex = filterBimap[value: index] {
+        return bindingRowsAll[unfilteredIndex]
+      }
+    } else if  index < bindingRowsAll.count {
+      return bindingRowsAll[index]
     }
-    return bindingRowsFiltered[index]
+    return nil
   }
 
-  func moveBindings(_ mappingList: [KeyMapping], to index: Int, isAfterNotAt: Bool = false,
+  func moveBindings(at rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
                     afterComplete: TableChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Movimg \(mappingList.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
+    Logger.log("Movimg \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
-    let movedBindingIDs = Set(mappingList.map { $0.bindingID! })
+    let unfilteredIndexes = getUnfilteredIndexes(fromFiltered: rowIndexes)
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
@@ -86,7 +90,7 @@ struct BindingTableState {
 
     // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
     for (origIndex, row) in bindingRowsAll.enumerated() {
-      if let bindingID = row.keyMapping.bindingID, movedBindingIDs.contains(bindingID) {
+      if unfilteredIndexes.contains(origIndex) {
         if origIndex < insertIndex {
           // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
           moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
@@ -144,18 +148,18 @@ struct BindingTableState {
     insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [mapping], afterComplete: afterComplete)
   }
 
-  func removeBindings(at indexesToRemove: IndexSet) {
-    Logger.log("Removing bindings (\(indexesToRemove.map{$0}))", level: .verbose)
+  func removeBindings(at indexes: IndexSet) {
+    Logger.log("Removing bindings (\(indexes.map{$0}))", level: .verbose)
     guard canModifyCurrentConf else {
       Logger.log("Aborting: cannot modify current conf!", level: .error)
       return
     }
 
     // If there is an active filter, the indexes reflect filtered rows.
-    // Get the underlying IDs of the removed rows so that we can reliably update the unfiltered list of bindings.
-    let idsToRemove = resolveBindingIDs(from: indexesToRemove, excluding: { !$0.canBeModified })
+    // Need to submit changes for unfiltered operations
+    let indexesToRemove = getUnfilteredIndexes(fromFiltered: indexes, excluding: { !$0.canBeModified })
 
-    if idsToRemove.isEmpty {
+    if indexesToRemove.isEmpty {
       Logger.log("Aborting remove operation: none of the rows can be modified")
       return
     }
@@ -163,10 +167,9 @@ struct BindingTableState {
     var remainingRowsUnfiltered: [InputBinding] = []
     var lastRemovedIndex = 0
     for (rowIndex, row) in bindingRowsAll.enumerated() {
-      if let id = row.keyMapping.bindingID, idsToRemove.contains(id) {
+      if indexesToRemove.contains(rowIndex) {
         lastRemovedIndex = rowIndex
       } else {
-        // be sure to include rows which do not have IDs
         remainingRowsUnfiltered.append(row)
       }
     }
@@ -192,7 +195,7 @@ struct BindingTableState {
       return
     }
 
-    guard let existingRow = getBindingRow(at: index), existingRow.canBeModified else {
+    guard let existingRow = getDisplayedRow(at: index), existingRow.canBeModified else {
       Logger.log("Cannot update binding at index \(index); aborting", level: .error)
       return
     }
@@ -206,7 +209,7 @@ struct BindingTableState {
     var indexToUpdate: Int = index
 
     // The affected row will change index after the reload. Track it down before clearing the filter.
-    if let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(index) {
+    if let unfilteredIndex = getFilteredIndex(fromUnfiltered: index) {
       indexToUpdate = unfilteredIndex
     }
 
@@ -217,7 +220,7 @@ struct BindingTableState {
   // MARK: Various utility functions
 
   func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
-    self.getBindingRow(at: rowIndex)?.canBeModified ?? false
+    self.getDisplayedRow(at: rowIndex)?.canBeModified ?? false
   }
 
   func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
@@ -233,7 +236,7 @@ struct BindingTableState {
     }
 
     // If there is an active filter, convert the filtered index to unfiltered index
-    if let unfilteredIndex = translateFilteredIndexToUnfilteredIndex(requestedIndex) {
+    if let unfilteredIndex = getFilteredIndex(fromUnfiltered: requestedIndex) {
       insertIndex = unfilteredIndex
     }
 
@@ -258,81 +261,6 @@ struct BindingTableState {
     return insertIndex
   }
 
-  // Finds the index into bindingRowsAll corresponding to the row with the same bindingID as the row with filteredIndex into bindingRowsFiltered.
-  private func translateFilteredIndexToUnfilteredIndex(_ filteredIndex: Int) -> Int? {
-    guard filteredIndex >= 0 else {
-      return nil
-    }
-    guard isFiltered else {
-      return filteredIndex
-    }
-    if filteredIndex == bindingRowsFiltered.count {
-      let filteredRowAtIndex = bindingRowsFiltered[filteredIndex - 1]
-
-      guard let unfilteredIndex = findUnfilteredIndexOfInputBinding(filteredRowAtIndex) else {
-        return nil
-      }
-      return unfilteredIndex + 1
-    }
-    let filteredRowAtIndex = bindingRowsFiltered[filteredIndex]
-    return findUnfilteredIndexOfInputBinding(filteredRowAtIndex)
-  }
-
-  private func findUnfilteredIndexOfInputBinding(_ row: InputBinding) -> Int? {
-    if let bindingID = row.keyMapping.bindingID {
-      for (unfilteredIndex, unfilteredRow) in bindingRowsAll.enumerated() {
-        if unfilteredRow.keyMapping.bindingID == bindingID {
-          Logger.log("Found matching bindingID \(bindingID) at unfiltered row index \(unfilteredIndex)", level: .verbose)
-          return unfilteredIndex
-        }
-      }
-    }
-    Logger.log("Failed to find unfiltered row index for: \(row)", level: .error)
-    return nil
-  }
-
-  static private func resolveBindingIDs(from rows: [InputBinding]) -> Set<Int> {
-    return rows.reduce(into: Set<Int>(), { (ids, row) in
-      if let bindingID = row.keyMapping.bindingID {
-        ids.insert(bindingID)
-      }
-    })
-  }
-
-  private func resolveBindingIDs(from rowIndexes: IndexSet, excluding isExcluded: ((InputBinding) -> Bool)? = nil) -> Set<Int> {
-    var idSet = Set<Int>()
-    for rowIndex in rowIndexes {
-      if let row = getBindingRow(at: rowIndex) {
-        if let id = row.keyMapping.bindingID {
-          if let isExcluded = isExcluded, isExcluded(row) {
-          } else {
-            idSet.insert(id)
-          }
-        } else {
-          Logger.log("Cannot resolve row at index \(rowIndex): binding has no ID!", level: .error)
-        }
-      }
-    }
-    return idSet
-  }
-
-  // Inverse of previous function
-  static private func resolveIndexesFromBindingIDs(_ bindingIDs: Set<Int>, in rows: [InputBinding]) -> IndexSet {
-    var indexSet = IndexSet()
-    for targetID in bindingIDs {
-      for (rowIndex, row) in rows.enumerated() {
-        guard let rowID = row.keyMapping.bindingID else {
-          Logger.log("Cannot resolve row at index \(rowIndex): binding has no ID!", level: .error)
-          continue
-        }
-        if rowID == targetID {
-          indexSet.insert(rowIndex)
-        }
-      }
-    }
-    return indexSet
-  }
-
   // Both params should be calculated based on UNFILTERED rows.
   // Let BindingTableStateManager deal with altering animations with a filter
   private func doAction(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
@@ -353,19 +281,64 @@ struct BindingTableState {
     return !filterString.isEmpty
   }
 
-  func filterBindings(_ searchString: String) {
+  func applyFilter(_ searchString: String) {
     Logger.log("Updating Bindings UI filter to \"\(searchString)\"", level: .verbose)
-    BindingTableState.manager.filterBindings(newFilterString: searchString)
+    BindingTableState.manager.applyFilter(newFilterString: searchString)
   }
 
-  private static func filter(bindingRowsAll: [InputBinding], by filterString: String) -> [InputBinding] {
+  var bindingRowsFiltered: [InputBinding] {
+    if let filterBimap = filterBimap {
+      return bindingRowsAll.enumerated().compactMap({ filterBimap.keys.contains($0.offset) ? $0.element : nil })
+    }
+    return bindingRowsAll
+  }
+
+  // Returns the index into bindingRowsAll corresponding to the given filtered index.
+  private func getFilteredIndex(fromUnfiltered index: Int) -> Int? {
+    guard index >= 0 else {
+      return nil
+    }
+    guard isFiltered else {
+      return index
+    }
+    return filterBimap?[value: index]
+  }
+
+  private func getUnfilteredIndexes(fromFiltered indexes: IndexSet, excluding isExcluded: ((InputBinding) -> Bool)? = nil) -> IndexSet {
+    guard let filterBimap = filterBimap else {
+      return indexes
+    }
+    var unfiltered = IndexSet()
+    for fi in indexes {
+      if let ufi = filterBimap[value: fi] {
+        if let isExcluded = isExcluded, isExcluded(bindingRowsAll[ufi]) {
+        } else {
+          unfiltered.insert(ufi)
+        }
+        unfiltered.insert(ufi)
+      }
+    }
+    return unfiltered
+  }
+
+  private static func buildFilterBimap(from unfilteredRows: [InputBinding], by filterString: String) -> BiDictionary<Int, Int>? {
     if filterString.isEmpty {
-      return bindingRowsAll
+      return nil
     }
-    return bindingRowsAll.filter {
-      return $0.getKeyColumnDisplay(raw: true).localizedStandardContains(filterString)
-      || $0.getActionColumnDisplay(raw: true).localizedStandardContains(filterString)
+
+    var biDict = BiDictionary<Int, Int>()
+
+    for (indexUnfiltered, bindingRow) in unfilteredRows.enumerated() {
+      if matches(bindingRow, filterString) {
+        biDict[key: indexUnfiltered] = biDict.values.count
+      }
     }
+
+    return biDict
   }
 
+  private static func matches(_ binding: InputBinding, _ filterString: String) -> Bool {
+    return binding.getKeyColumnDisplay(raw: true).localizedStandardContains(filterString)
+    || binding.getActionColumnDisplay(raw: true).localizedStandardContains(filterString)
+  }
 }

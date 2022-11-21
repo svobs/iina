@@ -130,7 +130,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func searchAction(_ sender: NSSearchField) {
-    bindingTableState.filterBindings(sender.stringValue)
+    bindingTableState.applyFilter(sender.stringValue)
   }
 
   // MARK: - UI

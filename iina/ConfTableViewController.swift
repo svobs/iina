@@ -432,9 +432,9 @@ extension InputConfTableViewController: NSTableViewDataSource {
     var fileMappings = inputConfFile.parseMappings()
     Logger.log("Appending \(bindings.count) bindings to \(fileMappings.count) existing of conf: \"\(targetConfName)\"")
     fileMappings.append(contentsOf: bindings)
-    inputConfFile.replaceAllMappings(with: fileMappings)
     do {
-      try inputConfFile.saveToDisk()
+      let updatedFile = try inputConfFile.overwriteFile(with: fileMappings)
+      // TODO: store file in memory
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
@@ -443,7 +443,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
     }
 
     if targetConfName == confTableState.selectedConfName {
-      NotificationCenter.default.post(Notification(name: .iinaSelectedConfFileNeedsLoad, object: ""))
+      NotificationCenter.default.post(Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil))
     }
   }
 

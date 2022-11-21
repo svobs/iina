@@ -12,8 +12,6 @@ import Foundation
 class KeyMapping: NSObject, Codable {
   static let IINA_PREFIX = "#@iina"
 
-  let bindingID: Int?
-
   let isIINACommand: Bool
 
   // MARK: Key
@@ -91,9 +89,7 @@ class KeyMapping: NSObject, Codable {
     }
   }
 
-  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil, bindingID: Int? = nil) {
-    self.bindingID = bindingID
-
+  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
 
@@ -111,7 +107,7 @@ class KeyMapping: NSObject, Codable {
   required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
     guard let data = propertyList as? Data,
           let row = try? PropertyListDecoder().decode(KeyMapping.self, from: data) else { return nil }
-    self.init(rawKey: row.rawKey, rawAction: row.rawAction, isIINACommand: row.isIINACommand, comment: row.comment, bindingID: row.bindingID)
+    self.init(rawKey: row.rawKey, rawAction: row.rawAction, isIINACommand: row.isIINACommand, comment: row.comment)
   }
 
 
@@ -132,12 +128,11 @@ class KeyMapping: NSObject, Codable {
   }
 
   // Makes a duplicate of this object, but will also override any non-nil parameter
-  func clone(rawKey: String? = nil, rawAction: String? = nil, bindingID: Int? = nil) -> KeyMapping {
+  func clone(rawKey: String? = nil, rawAction: String? = nil) -> KeyMapping {
     return KeyMapping(rawKey: rawKey ?? self.rawKey,
                       rawAction: rawAction ?? self.rawAction,
                       isIINACommand: self.isIINACommand,
-                      comment: self.comment,
-                      bindingID: bindingID ?? self.bindingID)
+                      comment: self.comment)
   }
 }
 
@@ -221,12 +216,12 @@ class MenuItemMapping: KeyMapping {
   let menuItem: NSMenuItem
   let sourceName: String
   
-  init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String, bindingID: Int? = nil) {
+  init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String) {
     self.menuItem = menuItem
     self.sourceName = sourceName
 
     // Store description in `comment`
-    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: actionDescription, bindingID: bindingID)
+    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: actionDescription)
   }
 
   required init(from decoder: Decoder) throws {

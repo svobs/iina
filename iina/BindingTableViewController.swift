@@ -101,7 +101,7 @@ extension BindingTableViewController: NSTableViewDelegate {
   @objc func tableView(_ tableView: NSTableView, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet) -> IndexSet {
     var approvedSelectionIndexes = IndexSet()
     for index in proposedSelectionIndexes {
-      if let row = bindingTableState.getBindingRow(at: index), row.canBeModified {
+      if let row = bindingTableState.getDisplayedRow(at: index), row.canBeModified {
         approvedSelectionIndexes.insert(index)
       }
     }
@@ -112,7 +112,7 @@ extension BindingTableViewController: NSTableViewDelegate {
    Make cell view when asked
    */
   @objc func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-    guard let bindingRow = bindingTableState.getBindingRow(at: row) else {
+    guard let bindingRow = bindingTableState.getDisplayedRow(at: row) else {
       return nil
     }
 
@@ -227,7 +227,7 @@ extension BindingTableViewController: NSTableViewDelegate {
   }
 
   private var selectedRows: [InputBinding] {
-    Array(tableView.selectedRowIndexes.compactMap( { bindingTableState.getBindingRow(at: $0) }))
+    Array(tableView.selectedRowIndexes.compactMap( { bindingTableState.getDisplayedRow(at: $0) }))
   }
 
   private var selectedCopiableRows: [InputBinding] {
@@ -271,7 +271,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
-    let row = bindingTableState.getBindingRow(at: rowIndex)
+    let row = bindingTableState.getDisplayedRow(at: rowIndex)
     if let row = row, row.canBeCopied {
       return row.keyMapping
     }
@@ -346,16 +346,20 @@ extension BindingTableViewController: NSTableViewDataSource {
     }
 
     if dragMask.contains(.copy) {
+      // Explicit copy is ok
       return .copy
     }
-    // else assume move
-    for mapping in mappingList {
-      if mapping.bindingID == nil {
-        // Mapping isn't from a conf file: cannot modify it. Deny drop.
+
+    // Dragging table rows within same table?
+    if let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView {
+      guard let draggedRowIndexes = self.draggedRowIndexes, draggedRowIndexes.count == mappingList.count else {
+        Logger.log("Count of dragged rows from pasteboard \(mappingList.count) does not match count of row indexes \(draggedRowIndexes?.count ?? -1)", level: .error)
         return []
       }
+      return .move
     }
-    return .move
+    // From outside of table -> only copy allowed
+    return .copy
   }
 
   /*
@@ -394,8 +398,12 @@ extension BindingTableViewController: NSTableViewDataSource {
       guard let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView else {
         return false
       }
+      guard let draggedRowIndexes = draggedRowIndexes, rowList.count == draggedRowIndexes.count else {
+        Logger.log("Something went wrong keeping track of moved row indexes! Bailing!", level: .error)
+        return false
+      }
       DispatchQueue.main.async {
-        self.moveMappings(from: rowList, to: rowIndex, isAfterNotAt: false)
+        self.moveMappings(from: draggedRowIndexes, to: rowIndex, isAfterNotAt: false)
       }
       return true
     } else {
@@ -426,7 +434,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
       return false
     }
 
-    guard let editedRow = bindingTableState.getBindingRow(at: rowIndex) else {
+    guard let editedRow = bindingTableState.getDisplayedRow(at: rowIndex) else {
       Logger.log("userDidEndEditing(): failed to get row \(rowIndex) (newValue='\(newValue)')")
       return false
     }
@@ -479,7 +487,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
   private func editWithPopup(rowIndex: Int) {
     Logger.log("Opening key binding pop-up for row #\(rowIndex)", level: .verbose)
 
-    guard let row = bindingTableState.getBindingRow(at: rowIndex) else {
+    guard let row = bindingTableState.getDisplayedRow(at: rowIndex) else {
       return
     }
 
@@ -566,11 +574,11 @@ extension BindingTableViewController: EditableTableViewDelegate {
   }
 
   // e.g., drag & drop "move" operation
-  private func moveMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func moveMappings(from rowIndexes: IndexSet, to rowIndex: Int, isAfterNotAt: Bool = false) {
     guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
-    guard !mappingList.isEmpty else { return }
+    guard !rowIndexes.isEmpty else { return }
 
-    let firstInsertedRowIndex = bindingTableState.moveBindings(mappingList, to: rowIndex, isAfterNotAt: isAfterNotAt,
+    let firstInsertedRowIndex = bindingTableState.moveBindings(at: rowIndexes, to: rowIndex, isAfterNotAt: isAfterNotAt,
                                                                afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }
@@ -718,7 +726,7 @@ extension BindingTableViewController: NSMenuDelegate {
     contextMenu.removeAllItems()
 
     let clickedRowIndex = tableView.clickedRow
-    guard let clickedRow = bindingTableState.getBindingRow(at: tableView.clickedRow) else { return }
+    guard let clickedRow = bindingTableState.getDisplayedRow(at: tableView.clickedRow) else { return }
     let mib = CascadingMenuItemBuilder(mip: BindingsMenuItemProvider(), .menu(contextMenu), .unit(Unit.keyBinding),
                                 .targetRow(clickedRow), .targetRowIndex(tableView.clickedRow), .target(self))
 
@@ -818,7 +826,7 @@ extension BindingTableViewController: NSMenuDelegate {
     var modifiableCount = 0
     var copyableCount = 0
     for rowIndex in tableView.selectedRowIndexes {
-      if let bindingRow = bindingTableState.getBindingRow(at: rowIndex) {
+      if let bindingRow = bindingTableState.getDisplayedRow(at: rowIndex) {
         if bindingRow.canBeCopied {
           copyableCount += 1
         }
