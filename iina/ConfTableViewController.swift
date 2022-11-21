@@ -19,7 +19,7 @@ fileprivate let defaultConfTextColor: NSColor = .controlAccentColor
 
 class InputConfTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
-  private let DRAGGING_FORMATION: NSDraggingFormation = .list
+  private let DRAGGING_FORMATION: NSDraggingFormation = .default
   private let enableInlineCreate = true
 
   private unowned var tableView: EditableTableView!
@@ -295,6 +295,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
    Drag start: define which operations are allowed
    */
   @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    session.draggingFormation = DRAGGING_FORMATION
     return .copy
   }
 
@@ -388,13 +389,14 @@ extension InputConfTableViewController: NSTableViewDataSource {
       return false
     }
 
+    info.animatesToDestination = true
+    info.draggingFormation = DRAGGING_FORMATION
+
     // Option A: drop input conf file(s) into table
     let confFilePathList = InputConfTableViewController.extractConfFileList(from: info.draggingPasteboard)
     if !confFilePathList.isEmpty {
       Logger.log("User dropped \(confFilePathList.count) conf files into table")
       info.numberOfValidItemsForDrop = confFilePathList.count
-      info.animatesToDestination = true
-      info.draggingFormation = DRAGGING_FORMATION
       // Try not to block animation for I/O or user prompts
       DispatchQueue.main.async {
         self.importConfFiles(confFilePathList, renameDuplicates: true)
@@ -407,8 +409,6 @@ extension InputConfTableViewController: NSTableViewDataSource {
     if !bindingList.isEmpty, dropOperation == .on, let targetConfName = confTableState.getConfName(at: row), !confTableState.isDefaultConf(targetConfName) {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfName)\" conf")
       info.numberOfValidItemsForDrop = bindingList.count
-      info.animatesToDestination = true
-      info.draggingFormation = DRAGGING_FORMATION
       // Try not to block UI. Failures should be rare here anyway
       DispatchQueue.main.async {
         self.appendBindingsToUserConfFile(bindingList, targetConfName: targetConfName)

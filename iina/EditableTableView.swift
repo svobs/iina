@@ -214,7 +214,7 @@ class EditableTableView: NSTableView {
             if columnIndex == 0 {
               columnOffsets.append(0.0)
             } else {
-              let colWidth = self.tableColumns[columnIndex].width
+              let colWidth = self.tableColumns[columnIndex - 1].width
               columnOffsets.append(columnOffsets.last! + colWidth + self.intercellSpacing.width)
             }
 

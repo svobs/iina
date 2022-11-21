@@ -19,7 +19,7 @@ fileprivate let filterIconColor: NSColor = .controlAccentColor
 
 fileprivate let COLUMN_INDEX_KEY = 0
 fileprivate let COLUMN_INDEX_ACTION = 2
-fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .list
+fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .default
 fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
 
 class BindingTableViewController: NSObject {
@@ -36,7 +36,7 @@ class BindingTableViewController: NSObject {
   private var selectionDidChangeHandler: () -> Void
   private var observers: [NSObjectProtocol] = []
 
-  private var draggedRowIndexes: IndexSet? = nil
+  private var draggedRowInfo: (Int, IndexSet)? = nil
 
   init(_ kbTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
     self.tableView = kbTableView
@@ -283,7 +283,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-    self.draggedRowIndexes = rowIndexes
+    self.draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
     self.tableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
   }
 
@@ -301,8 +301,12 @@ extension BindingTableViewController: NSTableViewDataSource {
       return
     }
 
-    guard let draggedRowIndexes = self.draggedRowIndexes,
-            mappings.count == draggedRowIndexes.count else { return }
+    guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
+          session.draggingSequenceNumber == sequenceNumber
+            && mappings.count == draggedRowIndexes.count else {
+      Logger.log("Cancelling drop: dragged data does not match!", level: .error)
+      return
+    }
 
     Logger.log("User dragged to the trash: \(mappings)", level: .verbose)
     // TODO: this is the wrong animation
@@ -352,8 +356,10 @@ extension BindingTableViewController: NSTableViewDataSource {
 
     // Dragging table rows within same table?
     if let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView {
-      guard let draggedRowIndexes = self.draggedRowIndexes, draggedRowIndexes.count == mappingList.count else {
-        Logger.log("Count of dragged rows from pasteboard \(mappingList.count) does not match count of row indexes \(draggedRowIndexes?.count ?? -1)", level: .error)
+      guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
+            sequenceNumber == info.draggingSequenceNumber,
+            draggedRowIndexes.count == mappingList.count else {
+        Logger.log("Denying move within table: dragged data does not match!", level: .error)
         return []
       }
       return .move
@@ -398,8 +404,10 @@ extension BindingTableViewController: NSTableViewDataSource {
       guard let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView else {
         return false
       }
-      guard let draggedRowIndexes = draggedRowIndexes, rowList.count == draggedRowIndexes.count else {
-        Logger.log("Something went wrong keeping track of moved row indexes! Bailing!", level: .error)
+      guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
+            sequenceNumber == info.draggingSequenceNumber,
+            draggedRowIndexes.count == rowList.count else {
+        Logger.log("Something went wrong keeping track of moved row indexes! Rejecting drop!", level: .error)
         return false
       }
       DispatchQueue.main.async {
