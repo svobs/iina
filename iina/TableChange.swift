@@ -97,8 +97,7 @@ class TableChange {
     if let newSelectedRows = self.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here.
-      Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
-      tableView.selectRowIndexes(newSelectedRows, byExtendingSelection: false)
+      tableView.selectApprovedRowIndexes(newSelectedRows)
     }
 
     if reloadAllExistingRows && self.changeType != .reloadAll {

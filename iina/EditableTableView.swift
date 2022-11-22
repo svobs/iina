@@ -163,7 +163,7 @@ class EditableTableView: NSTableView {
 
     if self.selectedRow != rowIndex {
       Logger.log("Selecting edit row: \(rowIndex)", level: .verbose)
-      self.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
+      self.selectApprovedRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
     self.window?.makeFirstResponder(editableTextField)
@@ -255,7 +255,19 @@ class EditableTableView: NSTableView {
     let selectedRows = self.selectedRowIndexes
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
     // Fires change listener...
-    selectRowIndexes(selectedRows, byExtendingSelection: false)
+    selectApprovedRowIndexes(selectedRows, byExtendingSelection: false)
+  }
+
+  func selectApprovedRowIndexes(_ newSelectedRows: IndexSet, byExtendingSelection: Bool = false) {
+    // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
+    // in order to keep enforcing selection rules.
+    if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRows) {
+      Logger.log("Updating table selection to approved indexes: \(approvedRows.map{$0})", level: .verbose)
+      self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
+    } else {
+      Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
+      self.selectRowIndexes(newSelectedRows, byExtendingSelection: byExtendingSelection)
+    }
   }
 
   // MARK: TableChange

@@ -37,7 +37,7 @@ class BindingTableStateManager {
    This is either the "do" of an undoable action, or an undo of that action, or a redo of that undo.
    Don't use this for changes which aren't undoable, like filter string.
 
-   Currently, all changes are to bindings in the current config file. Must execute sequentially:
+   Currently, all changes are to bindings in the current conf file. Must execute sequentially:
    1. Save conf file, get updated default section rows
    2. Send updated default section bindings to InputBindingController. It will recalculate all bindings and re-bind appropriately, then
    returns the updated set of all bindings to us.
@@ -113,7 +113,7 @@ class BindingTableStateManager {
 
   // Not an undoable action; just a UI change
   func applyFilter(newFilterString: String) {
-    updateTableState(AppInputConfig.current, newFilterString: newFilterString)
+    updateTableUI(AppInputConfig.current, newFilterString: newFilterString)
   }
 
   private func clearFilter() {
@@ -137,7 +137,7 @@ class BindingTableStateManager {
     let tableChange = userData[BindingTableStateManager.Key.tableChange] as? TableChange
     let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
 
-    self.updateTableState(appInputConfig, tableChange: tableChange, newInputConfFile: newInputConfFile)
+    self.updateTableUI(appInputConfig, tableChange: tableChange, newInputConfFile: newInputConfFile)
   }
 
   /*
@@ -146,14 +146,14 @@ class BindingTableStateManager {
 
    Expected to be run on the main thread.
    */
-  private func updateTableState(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
-                                newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
+  private func updateTableUI(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
+                             newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableChange == nil && newFilterString == nil && newInputConfFile == nil {
-      Logger.log("updateTableState(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
+      Logger.log("updateTableUI(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
       return
     }
     let newState = BindingTableState(appInputConfigNew,
@@ -175,11 +175,20 @@ class BindingTableStateManager {
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableChange.reloadAllExistingRows = true
 
+    /*
+    // TODO: is this desirable or not?
+    if let newFile = newState.inputConfFile, let oldFile = oldState.inputConfFile,
+      newFile.canonicalFilePath != oldFile.canonicalFilePath {
+      // Clear selection when changing files
+      tableChange.newSelectedRows = IndexSet()
+    }
+    */
+
     BindingTableState.current = newState
 
     // Notify Key Bindings table of update:
     let notification = Notification(name: .iinaBindingTableShouldChange, object: tableChange)
-    Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
+    Logger.log("Posting \"\(notification.name.rawValue)\" notification with changeType \(tableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
@@ -193,22 +202,22 @@ class BindingTableStateManager {
 
   // Input Config File: Save
   private func overwriteCurrentConfFile(with userConfMappings: [KeyMapping]) -> InputConfFile? {
-    guard let configFilePath = ConfTableState.current.selectedConfFilePath else {
+    guard let confFilePath = ConfTableState.current.selectedConfFilePath else {
       let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return nil
     }
-    Logger.log("Saving \(userConfMappings.count) bindings to current config file: \"\(configFilePath)\"", level: .verbose)
+    Logger.log("Saving \(userConfMappings.count) bindings to current conf file: \"\(confFilePath)\"", level: .verbose)
     do {
       guard let selectedConfFile = BindingTableState.current.inputConfFile else {
         Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
         return nil
       }
-      let canonicalPathCurrent = URL(fileURLWithPath: configFilePath).resolvingSymlinksInPath().path
-      let canonicalPathLoaded = URL(fileURLWithPath: selectedConfFile.filePath).resolvingSymlinksInPath().path
+      let canonicalPathCurrent = URL(fileURLWithPath: confFilePath).resolvingSymlinksInPath().path
+      let canonicalPathLoaded = selectedConfFile.canonicalFilePath
       guard canonicalPathCurrent == canonicalPathLoaded else {
         Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
-        let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
+        let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
         NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
         return nil
       }
@@ -216,7 +225,7 @@ class BindingTableStateManager {
       return try selectedConfFile.overwriteFile(with: userConfMappings)
     } catch {
       Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [configFilePath])
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
     return nil

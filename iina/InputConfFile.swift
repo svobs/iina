@@ -37,6 +37,10 @@ struct InputConfFile {
     return self.status == .failedToLoad
   }
 
+  var canonicalFilePath: String {
+    URL(fileURLWithPath: filePath).resolvingSymlinksInPath().path
+  }
+
   // This parses the file's lines one by one, skipping lines which are blank or only comments, If a line looks like a key binding,
   // a KeyMapping object is constructed for it, and each KeyMapping makes note of the line number from which it came. A list of the successfully
   // constructed KeyMappings is returned once the entire file has been parsed.

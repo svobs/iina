@@ -105,6 +105,8 @@ extension BindingTableViewController: NSTableViewDelegate {
         approvedSelectionIndexes.insert(index)
       }
     }
+    Logger.log("Approved \(approvedSelectionIndexes.count) of \(proposedSelectionIndexes.count) proposed selection indexes.",
+               level: .verbose)
     return approvedSelectionIndexes
   }
 

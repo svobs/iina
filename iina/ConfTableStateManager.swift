@@ -101,7 +101,7 @@ class ConfTableStateManager: NSObject {
 
   // This one is a little different, but it doesn't fit anywhere else. Appends bindings to a file in the table which is not the
   // current selection. Also handles the undo of the append. Does not alter anything visible in the UI.
-  func appendBindingsToUserConfFile(_ bindingsToAppend: [KeyMapping], targetConfName: String, undo: Bool = false) {
+  func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String, undo: Bool = false) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
       Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName))!", level: .verbose)
@@ -114,9 +114,9 @@ class ConfTableStateManager: NSObject {
     var fileMappings = inputConfFile.parseMappings()
 
     if undo {
-      Logger.log("Undoing append of \(bindingsToAppend.count) bindings (from current count: \(fileMappings.count)) of conf: \"\(targetConfName)\"")
+      Logger.log("Undoing append of \(mappingsToAppend.count) bindings (from current count: \(fileMappings.count)) of conf: \"\(targetConfName)\"")
 
-      for mappingToRemove in bindingsToAppend.reversed() {
+      for mappingToRemove in mappingsToAppend.reversed() {
         guard let mappingFound = fileMappings.popLast(), mappingToRemove == mappingFound else {
           Logger.log("Undo failed: binding in file is missing or does not match expected (\(mappingToRemove.confFileFormat))", level: .error)
           let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [inputConfFile.filePath])
@@ -125,8 +125,8 @@ class ConfTableStateManager: NSObject {
         }
       }
     } else {
-      Logger.log("Appending \(bindingsToAppend.count) bindings to existing \(fileMappings.count) of conf: \"\(targetConfName)\"")
-      fileMappings.append(contentsOf: bindingsToAppend)
+      Logger.log("Appending \(mappingsToAppend.count) bindings to existing \(fileMappings.count) of conf: \"\(targetConfName)\"")
+      fileMappings.append(contentsOf: mappingsToAppend)
     }
 
     do {
@@ -140,12 +140,12 @@ class ConfTableStateManager: NSObject {
     }
 
     if let undoManager = PreferenceWindowController.undoManager {
-      let undoActionName = Utility.format(.keyBinding, bindingsToAppend.count, .copyToFile)
+      let undoActionName = Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile)
       Logger.log("Registering for undo: \"\(undoActionName)\"", level: .verbose)
 
       undoManager.registerUndo(withTarget: self, handler: { manager in
         Logger.log(self.format(action: undoActionName, undoManager), level: .verbose)
-        manager.appendBindingsToUserConfFile(bindingsToAppend, targetConfName: targetConfName, undo: !undo)
+        manager.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, undo: !undo)
       })
 
       // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
@@ -202,8 +202,7 @@ class ConfTableStateManager: NSObject {
     }
 
     let foundUndoableChange: Bool = actionName != nil || selectedConfChanged
-    Logger.log("SelectedConfChanged: \(selectedConfChanged); requestedNewState: \(specialState)",
-               level: .verbose)
+    Logger.log("SelectedConfChanged: \(selectedConfChanged); requestedNewState: \(specialState)", level: .verbose)
 
     if foundUndoableChange {
       if let undoManager = PreferenceWindowController.undoManager {
@@ -246,37 +245,35 @@ class ConfTableStateManager: NSObject {
 
     // Update selectedConfName and load new file if changed
     if selectedConfChanged {
-      Logger.log("Conf selection changed: '\(oldState.selectedConfName)' -> '\(newState.selectedConfName)'")
+      Logger.log("Conf selection changed: '\(oldState.selectedConfName)' -> '\(newState.selectedConfName)'", level: .verbose)
       Preference.set(newState.selectedConfName, for: .currentInputConfigName)
       loadBindingsFromSelectedConfFile()
     }
 
-    let tableChange = buildConfTableChange(old: oldState, new: newState, completionHandler: completionHandler)
-    // Finally, fire notification. This covers row selection too
-    let notification = Notification(name: .iinaConfTableShouldChange, object: tableChange)
-    Logger.log("ConfTableStateManager: posting \(notification.name.rawValue) notification", level: .verbose)
-    NotificationCenter.default.post(notification)
+    updateTableUI(old: oldState, new: newState, completionHandler: completionHandler)
   }
 
-  private func buildConfTableChange(old: ConfTableState, new: ConfTableState,
-                                    completionHandler: TableChange.CompletionHandler?) -> TableChange {
+  private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableChange.CompletionHandler?) {
 
-    let confTableChange = TableChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+    let tableChange = TableChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
                                                 completionHandler: completionHandler)
-    confTableChange.scrollToFirstSelectedRow = true
+    tableChange.scrollToFirstSelectedRow = true
 
     switch new.specialState {
       case .addingNewInline:  // special case: creating an all-new config
         // Select the new blank row, which will be the last one:
-        confTableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
+        tableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
       case .none:
         // Always keep the current config selected
         if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-          confTableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
+          tableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
         }
     }
 
-    return confTableChange
+    // Finally, fire notification. This covers row selection too
+    let notification = Notification(name: .iinaConfTableShouldChange, object: tableChange)
+    Logger.log("ConfTableStateManager: posting \"\(notification.name.rawValue)\" notification", level: .verbose)
+    NotificationCenter.default.post(notification)
   }
 
   // Utility function: show error popup to user
