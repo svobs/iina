@@ -119,6 +119,10 @@ struct BindingTableState {
     return insertIndex
   }
 
+  func appendBindingsToDefaultSection(_ mappingList: [KeyMapping]) {
+    insertNewBindings(relativeTo: appInputConfig.defaultSectionEndIndex, mappingList)
+  }
+
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)

@@ -52,7 +52,7 @@ class BindingTableViewController: NSObject {
 
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
-    tableView.registerTableChangeObserver(forName: .iinaBindingsTableShouldChange)
+    tableView.registerTableChangeObserver(forName: .iinaBindingTableShouldChange)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]

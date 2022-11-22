@@ -143,6 +143,7 @@ struct UnitActionFormat {
   static let insertNewAbove = UnitActionFormat(none: "Insert Above", single: "Insert New %@ Above", multiple: "Insert %d New %@ Above")
   static let insertNewBelow = UnitActionFormat(none: "Insert Below", single: "Insert New %@ Below", multiple: "Insert %d New %@ Below")
   static let move = UnitActionFormat(none: "Move", single: "Move %@", multiple: "Move %d %@")
+  static let copyToFile = UnitActionFormat(none: "Copy to File", single: "Copy %@ to File", multiple: "Copy %d %@ to File")
 }
 
 extension Notification.Name {
@@ -161,15 +162,13 @@ extension Notification.Name {
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
   // Contains a TableChange which should be applied to the Input Conf table:
   // user input conf additions, subtractions, a rename, or the selection changed
-  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfigTableShouldChange")
+  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfTableShouldChange")
   // Contains a TableChange which should be applied to the Key Bindings table
-  static let iinaBindingsTableShouldChange = Notification.Name("IINAKeyBindingsTableShouldChange")
+  static let iinaBindingTableShouldChange = Notification.Name("IINAKeyBindingTableShouldChange")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
   // The AppInputConfig was rebuilt
   static let iinaAppInputConfigDidChange = Notification.Name("IINAAppInputConfigDidChange")
-  // Request that the current input conf file be loaded
-  static let iinaSelectedConfFileNeedsLoad = Notification.Name("IINASelectedConfFileNeedsLoad")
   static let iinaFileLoaded = Notification.Name("IINAFileLoaded")
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")

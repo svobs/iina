@@ -178,7 +178,7 @@ class BindingTableStateManager {
     BindingTableState.current = newState
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaBindingsTableShouldChange, object: tableChange)
+    let notification = Notification(name: .iinaBindingTableShouldChange, object: tableChange)
     Logger.log("Posting '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }

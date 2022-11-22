@@ -270,7 +270,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
 
   // Convert conf file path to URL and put it in clipboard
   private func copyConfFileToClipboard(confName: String) {
-    guard let filePath = confTableState.getFilePath(forConf: confName) else { return }
+    let filePath = confTableState.getFilePath(forConfName: confName)
     let url = NSURL(fileURLWithPath: filePath)
 
     NSPasteboard.general.clearContents()
@@ -304,8 +304,8 @@ extension InputConfTableViewController: NSTableViewDataSource {
    Drag start: convert tableview rows to clipboard items
    */
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-    if let confName = confTableState.getConfName(at: row),
-       let filePath = confTableState.getFilePath(forConf: confName) {
+    if let confName = confTableState.getConfName(at: row) {
+      let filePath = confTableState.getFilePath(forConfName: confName)
       return NSURL(fileURLWithPath: filePath)
     }
     return nil
@@ -412,40 +412,12 @@ extension InputConfTableViewController: NSTableViewDataSource {
       info.numberOfValidItemsForDrop = bindingList.count
       // Try not to block UI. Failures should be rare here anyway
       DispatchQueue.main.async {
-        self.appendBindingsToUserConfFile(bindingList, targetConfName: targetConfName)
+        self.confTableState.appendBindingsToUserConfFile(bindingList, targetConfName: targetConfName)
       }
       return true
     }
 
     return false
-  }
-
-  private func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
-    let isReadOnly = confTableState.isDefaultConf(targetConfName)
-    guard !isReadOnly else { return }
-
-    guard let confFilePath = requireFilePath(forConf: targetConfName),
-          let inputConfFile = InputConfFile.loadFile(at: confFilePath, isReadOnly: isReadOnly) else {
-      // Error. A message has already been logged and displayed to user.
-      return
-    }
-
-    var fileMappings = inputConfFile.parseMappings()
-    Logger.log("Appending \(bindings.count) bindings to \(fileMappings.count) existing of conf: \"\(targetConfName)\"")
-    fileMappings.append(contentsOf: bindings)
-    do {
-      let updatedFile = try inputConfFile.overwriteFile(with: fileMappings)
-      // TODO: store file in memory
-    } catch {
-      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return
-    }
-
-    if targetConfName == confTableState.selectedConfName {
-      NotificationCenter.default.post(Notification(name: .iinaSelectedConfFileNeedsLoad, object: nil))
-    }
   }
 
   private static func extractConfFileList(from pasteboard: NSPasteboard) -> [String] {
@@ -558,7 +530,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
         kbTableViewController.doEditMenuPaste()
       } else {
         // If other files, append at end
-        appendBindingsToUserConfFile(mappingsToInsert, targetConfName: destConfName)
+        confTableState.appendBindingsToUserConfFile(mappingsToInsert, targetConfName: destConfName)
       }
     }
   }
@@ -579,7 +551,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
 
   // Action: Delete Conf
   @objc public func deleteConf(_ confName: String) {
-    guard self.requireFilePath(forConf: confName) != nil else {
+    guard confTableState.isRow(confName) else {
       return
     }
 
@@ -588,9 +560,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
   }
 
   @objc func showInFinder(_ confName: String) {
-    guard let confFilePath = self.requireFilePath(forConf: confName) else {
-      return
-    }
+    let confFilePath = confTableState.getFilePath(forConfName: confName)
     let url = URL(fileURLWithPath: confFilePath)
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
@@ -627,9 +597,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
 
   // Action: Duplicate Conf
   @objc func duplicateConf(_ confName: String) {
-    guard let currFilePath = self.requireFilePath(forConf: confName) else {
-      return
-    }
+    let currFilePath = confTableState.getFilePath(forConfName: confName)
 
     if enableInlineCreate {
       // Find a new name for the duplicate, and immediately open an editor for it to change the name.
@@ -721,7 +689,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       for filePath in fileList {
         let url = URL(fileURLWithPath: filePath)
 
-        guard InputConfFile.loadFile(at: filePath) != nil else {
+        guard !InputConfFile.loadFile(at: filePath).failedToLoad else {
           let fileName = url.lastPathComponent
           DispatchQueue.main.async {
             Logger.log("Error reading conf file \"\(filePath)\"; aborting import", level: .error)
@@ -812,10 +780,8 @@ extension InputConfTableViewController:  NSMenuDelegate {
     return true
   }
 
-  private func requireFilePath(forConf confName: String) -> String? {
-    if let confFilePath = self.confTableState.getFilePath(forConf: confName) {
-      return confFilePath
-    }
+  private func requireFilePath(forConfName confName: String) -> String? {
+    let confFilePath = self.confTableState.getFilePath(forConfName: confName)
 
     Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: tableView.window)
     return nil
@@ -833,7 +799,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       Logger.log("Checking potential new file name: \"\(nextName)\"", level: .verbose)
       newConfName = nextName
 
-      if confTableState.getFilePath(forConf: newConfName) != nil {
+      if confTableState.isRow(newConfName) {
         // Entry with same name already exists in conf list
         continue
       }

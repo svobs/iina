@@ -86,11 +86,15 @@ struct ConfTableState {
 
   // MARK: Conf CRUD
 
-  func getFilePath(forConf conf: String) -> String? {
-    if let dv = AppData.defaultConfs[conf] {
-      return dv
+  func getFilePath(forConfName confName: String) -> String {
+    if let defaultConfPath = AppData.defaultConfs[confName] {
+      return defaultConfPath
     }
-    return userConfDict[conf]
+    if let userConfPath = userConfDict[confName] {
+      return userConfPath
+    }
+
+    return Utility.buildConfFilePath(for: confName)
   }
 
   // Returns the name of the user conf with the given path, or nil if no conf matches
@@ -101,6 +105,10 @@ struct ConfTableState {
       }
     }
     return nil
+  }
+
+  func isRow(_ confName: String) -> Bool {
+    return isDefaultConf(confName) || userConfDict[confName] != nil
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
@@ -128,7 +136,6 @@ struct ConfTableState {
     changeSelectedConf(selectedConfNew)
   }
 
-  // This is the only method other than ConfTableState.manager.doAction() which actually changes the real preference data
   func changeSelectedConf(_ selectedConfNew: String) {
     guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
       return
@@ -139,7 +146,7 @@ struct ConfTableState {
       return
     }
 
-    guard getFilePath(forConf: selectedConfNew) != nil else {
+    guard isRow(selectedConfNew) else {
       Logger.log("Could not change selected conf to '\(selectedConfNew)' (no entry in prefs dict); falling back to default conf", level: .error)
       fallBackToDefaultConf()
       return
@@ -256,6 +263,18 @@ struct ConfTableState {
 
     ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: newName)
     return true
+  }
+
+  func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
+    let isReadOnly = self.isDefaultConf(targetConfName)
+    guard !isReadOnly else { return }
+
+    if targetConfName == selectedConfName {
+      // If conf is being displayed already, give data to BindingTableState. It will include animations and do a better job.
+      BindingTableState.current.appendBindingsToDefaultSection(bindings)
+    } else {
+      ConfTableState.manager.appendBindingsToUserConfFile(bindings, targetConfName: targetConfName)
+    }
   }
 
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars

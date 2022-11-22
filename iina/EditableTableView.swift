@@ -243,7 +243,7 @@ class EditableTableView: NSTableView {
           comp.frame = NSRect(x: xOffsets[compArrIndex], y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
         }
 
-        Logger.log("Returning \(componentArray) draggingImageComponents", level: .verbose)
+        Logger.log("Returning \(componentArray.count) draggingImageComponents", level: .verbose)
         return componentArray
       }
     }
