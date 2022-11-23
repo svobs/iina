@@ -208,26 +208,19 @@ class BindingTableStateManager {
       return nil
     }
     Logger.log("Saving \(userConfMappings.count) bindings to current conf file: \"\(confFilePath)\"", level: .verbose)
-    do {
-      guard let selectedConfFile = BindingTableState.current.inputConfFile else {
-        Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
-        return nil
-      }
-      let canonicalPathCurrent = URL(fileURLWithPath: confFilePath).resolvingSymlinksInPath().path
-      let canonicalPathLoaded = selectedConfFile.canonicalFilePath
-      guard canonicalPathCurrent == canonicalPathLoaded else {
-        Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
-        let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
-        NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-        return nil
-      }
-
-      return try selectedConfFile.overwriteFile(with: userConfMappings)
-    } catch {
-      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
+    guard let selectedConfFile = BindingTableState.current.inputConfFile else {
+      Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
+      return nil
+    }
+    let canonicalPathCurrent = URL(fileURLWithPath: confFilePath).resolvingSymlinksInPath().path
+    let canonicalPathLoaded = selectedConfFile.canonicalFilePath
+    guard canonicalPathCurrent == canonicalPathLoaded else {
+      Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+      return nil
     }
-    return nil
+
+    return selectedConfFile.overwriteFile(with: userConfMappings)
   }
 }

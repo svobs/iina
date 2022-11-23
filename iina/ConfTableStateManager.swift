@@ -15,11 +15,11 @@ fileprivate let changeSelectedConfigActionName: String = "Change Active Config"
  */
 class ConfTableStateManager: NSObject {
 
-  // Loading all the conf files into memory shouldn't take too much time or space, and it will help avoid
-  // a bunch of tricky failure points for undo/redo.
-  private var confFileMemoryCache: [String: InputConfFile] = [:]
-
   private var observers: [NSObjectProtocol] = []
+
+  private var fileCache: InputConfFileCache {
+    InputConfFileCache.shared
+  }
 
   override init() {
     super.init()
@@ -30,13 +30,13 @@ class ConfTableStateManager: NSObject {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
+    let currentState = ConfTableState.current
     for (confName, filePath) in AppData.defaultConfs {
-      confFileMemoryCache[confName] =  InputConfFile.loadFile(at: filePath, isReadOnly: true)
+      fileCache.loadConfFile(at: filePath, isReadOnly: true, confName: confName)
     }
-    for (confName, filePath) in ConfTableState.current.userConfDict {
-      confFileMemoryCache[confName] =  InputConfFile.loadFile(at: filePath, isReadOnly: false)
+    for (confName, filePath) in currentState.userConfDict {
+      fileCache.loadConfFile(at: filePath, isReadOnly: false, confName: confName)
     }
-    assert(ConfTableState.current.confTableRows.count == confFileMemoryCache.count)
   }
 
   deinit {
@@ -116,8 +116,8 @@ class ConfTableStateManager: NSObject {
       return
     }
 
-    let inputConfFile = loadConfFile(targetConfName)
-    guard !inputConfFile.failedToLoad else {
+    guard let inputConfFile = fileCache.getConfFile(confName: targetConfName),
+            !inputConfFile.failedToLoad else {
       return  // error already logged. Just return.
     }
     var fileMappings = inputConfFile.parseMappings()
@@ -138,15 +138,7 @@ class ConfTableStateManager: NSObject {
       fileMappings.append(contentsOf: mappingsToAppend)
     }
 
-    do {
-      let updatedFile = try inputConfFile.overwriteFile(with: fileMappings)
-      Logger.log("Updating memory cache entry for \"\(targetConfName)\"", level: .verbose)
-      confFileMemoryCache[targetConfName] = updatedFile
-    } catch {
-      Logger.log("Failed to save bindings updates to file: \(error)", level: .error)
-      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [inputConfFile.filePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-    }
+    inputConfFile.overwriteFile(with: fileMappings)
 
     if let undoManager = PreferenceWindowController.undoManager {
       let undoActionName = Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile)
@@ -222,12 +214,12 @@ class ConfTableStateManager: NSObject {
           // This shouldn't be possible. Make sure we catch it if it is
           Logger.fatal("Can't rename more than 1 InputConfig file at a time! (Added: \(addedConfs); Removed: \(removedConfs))")
         }
-        renameConfFile(oldConfName: oldConfName, newConfName: newConfName)
+        fileCache.renameConfFile(oldConfName: oldConfName, newConfName: newConfName)
 
       } else if !removedConfs.isEmpty {
         // File(s) removedConfs (This can be more than one if we're undoing a multi-file import)
         actionName = Utility.format(.config, removedConfs.count, .delete)
-        oldData.filesRemovedByLastAction = removeConfFiles(confNamesToRemove: removedConfs)
+        oldData.filesRemovedByLastAction = fileCache.removeConfFiles(confNamesToRemove: removedConfs)
 
       } else if !addedConfs.isEmpty {
         // Files(s) duplicated, created, or imported.
@@ -235,7 +227,7 @@ class ConfTableStateManager: NSObject {
         actionName = Utility.format(.config, addedConfs.count, .add)
         if let filesRemovedByLastAction = newData.filesRemovedByLastAction {
           // ...UNLESS we are in an undo (if `removedConfsFilesForUndo` != nil): then this class must restore deleted files
-          restoreRemovedConfFiles(addedConfs, filesRemovedByLastAction)
+          fileCache.restoreRemovedConfFiles(addedConfs, filesRemovedByLastAction)
         } else {  // Must be in an initial "do"
           for addedConfName in addedConfs {
             // Assume files were created elsewhere. Just need to load them into memory cache:
@@ -332,116 +324,9 @@ class ConfTableStateManager: NSObject {
 
   // MARK: Conf File Disk Operations
 
-  private func renameConfFile(oldConfName: String, newConfName: String) {
-    Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
-    guard let inputConfFile = confFileMemoryCache.removeValue(forKey: oldConfName) else {
-      Logger.log("Cannot move conf file: no entry in cache for \"\(oldConfName)\" (this should never happen)", level: .error)
-      self.sendErrorAlert(key: "error_finding_file", args: ["config"])
-      return
-    }
-    confFileMemoryCache[newConfName] = inputConfFile
-
-    let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
-    let newFilePath = Utility.buildConfFilePath(for: newConfName)
-
-    let oldExists = FileManager.default.fileExists(atPath: oldFilePath)
-    let newExists = FileManager.default.fileExists(atPath: newFilePath)
-
-    if !oldExists && newExists {
-      Logger.log("Looks like file has already moved: \"\(oldFilePath)\"")
-    } else {
-      if !oldExists {
-        Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
-        self.sendErrorAlert(key: "error_finding_file", args: ["config"])
-      } else if newExists {
-        Logger.log("Can't rename config: a file already exists at the destination: \"\(newFilePath)\"", level: .error)
-        // TODO: more appropriate message
-        self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
-      } else {
-        // - Move file on disk
-        do {
-          Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
-          try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
-        } catch let error {
-          Logger.log("Failed to rename file: \(error)", level: .error)
-          // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
-        }
-      }
-    }
-  }
-
-  // Performs removal of files on disk. Throws exception to indicate failure; otherwise success is assumed even if empty dict returned.
-  // Returns a copy of each removed files' contents which must be stored for later undo
-  private func removeConfFiles(confNamesToRemove: Set<String>) -> [String:InputConfFile] {
-
-    // Cache each file's contents in memory before removing it, for potential later use by undo
-    var removedFileDict: [String:InputConfFile] = [:]
-
-    for confName in confNamesToRemove {
-      // Move file contents out of memory cache and into undo data:
-      Logger.log("Removing from cache: \"\(confName)\"", level: .verbose)
-      guard let inputConfFile = confFileMemoryCache.removeValue(forKey: confName) else {
-        Logger.log("Cannot remove conf file: no entry in cache for \"\(confName)\" (this should never happen)", level: .error)
-        self.sendErrorAlert(key: "error_finding_file", args: ["config"])
-        continue
-      }
-      removedFileDict[confName] = inputConfFile
-      let filePath = inputConfFile.filePath
-
-      do {
-        try FileManager.default.removeItem(atPath: filePath)
-      } catch {
-        if FileManager.default.fileExists(atPath: filePath) {
-          Logger.log("File exists but could not be deleted: \"\(filePath)\"", level: .error)
-          let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-          self.sendErrorAlert(key: "error_deleting_file", args: [fileName])
-        } else {
-          Logger.log("Looks like file was already removed: \"\(filePath)\"")
-        }
-      }
-    }
-
-    return removedFileDict
-  }
-
-  // Because the content of removed files was first stored in the undo data, restoring them will always succeed.
-  // If disk operations fail, we can continue without immediate data loss - just report the error to user first.
-  private func restoreRemovedConfFiles(_ confNames: Set<String>, _ filesRemovedByLastAction: [String:InputConfFile]) {
-    for (confName, inputConfFile) in filesRemovedByLastAction {
-      confFileMemoryCache[confName] = inputConfFile
-    }
-
-    for confName in confNames {
-      guard let inputConfFile = filesRemovedByLastAction[confName] else {
-        Logger.log("Cannot restore deleted conf \"\(confName)\": file content missing from undo data (this should never happen)", level: .error)
-        self.sendErrorAlert(key: "config.cannot_create", args: [Utility.buildConfFilePath(for: confName)])
-        continue
-      }
-
-      Logger.log("Restoring file to cache: \(confName)", level: .verbose)
-      confFileMemoryCache[confName] = inputConfFile
-
-      let filePath = inputConfFile.filePath
-      do {
-        if FileManager.default.fileExists(atPath: filePath) {
-          Logger.log("Cannot restore deleted file: file aleady exists: \(filePath)", level: .error)
-          // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
-          continue
-        }
-        try inputConfFile.saveFile()
-      } catch {
-        Logger.log("Failed to save undeleted file \"\(filePath)\": \(error)", level: .error)
-        self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
-        continue
-      }
-    }
-  }
-
-  // If `confName` not provided, defaults to currently selected conf. Displays error if not found,
-  // but still need to check whether `inputConfFile.failedToLoad`.
-  // If file not found on disk, uses last cached copy.
+  // If `confName` not provided, defaults to currently selected conf.
+  // Uses cached copy first, then reads from disk if not found (more reliable results this way)
+  // Will report error to user & log if not found, but still need to check whether `inputConfFile.failedToLoad`.
   private func loadConfFile(_ confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
@@ -450,21 +335,7 @@ class ConfTableStateManager: NSObject {
     let isReadOnly = currentState.isDefaultConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
-    let inputConfFile = InputConfFile.loadFile(at: confFilePath, isReadOnly: isReadOnly)
-    guard !inputConfFile.failedToLoad else {
-      if let cachedInputFile = confFileMemoryCache[targetConfName], !cachedInputFile.failedToLoad {
-        Logger.log("Returning inputConfFile from memory cache", level: .verbose)
-        return cachedInputFile
-      }
-      let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [confFilePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return inputConfFile
-    }
-
-    Logger.log("Updating memory cache entry for \"\(targetConfName)\"", level: .verbose)
-    confFileMemoryCache[targetConfName] = inputConfFile
-
-    return inputConfFile
+    return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
   }
 
   // Conf File load. Triggered any time `selectedConfName` is changed

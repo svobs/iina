@@ -689,7 +689,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       for filePath in fileList {
         let url = URL(fileURLWithPath: filePath)
 
-        guard !InputConfFile.loadFile(at: filePath).failedToLoad else {
+        guard InputConfFile.tryLoadingFile(at: filePath) else {
           let fileName = url.lastPathComponent
           DispatchQueue.main.async {
             Logger.log("Error reading conf file \"\(filePath)\"; aborting import", level: .error)
@@ -778,13 +778,6 @@ extension InputConfTableViewController:  NSMenuDelegate {
       }
     }
     return true
-  }
-
-  private func requireFilePath(forConfName confName: String) -> String? {
-    let confFilePath = self.confTableState.getFilePath(forConfName: confName)
-
-    Utility.showAlert("error_finding_file", arguments: ["config"], sheetWindow: tableView.window)
-    return nil
   }
 
   // MARK: Calculate name of duplicate file
