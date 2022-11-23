@@ -11,18 +11,34 @@ import Foundation
 // Loading all the conf files into memory shouldn't take too much time or space, and it will help avoid
 // a bunch of tricky failure points for undo/redo.
 class InputConfFileCache {
-  static let shared = InputConfFileCache()
-
   fileprivate var storage: [String: InputConfFile] = [:]
 
-  func initialLoad() {
-    guard storage.isEmpty else { return }
-    Logger.log("InputConfFileCache starting initial load", level: .verbose)
+  func getConfFile(confName: String) -> InputConfFile? {
+    return storage[confName]
+  }
 
+  func getOrLoadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
+    if let cachedConfFile = self.getConfFile(confName: confName) {
+      Logger.log("Found \"\(confName)\" in memory cache", level: .verbose)
+      return cachedConfFile
+    }
+
+    // read-through
+    return loadConfFile(at: filePath, confName: confName)
+  }
+
+  // Loads file from disk, then adds/updates its cache entry, then returns it.
+  @discardableResult
+  func loadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
+    let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
+
+    Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
+    storage[confName] = confFile
+    return confFile
   }
 
   // Check returned object's `status` property; make sure `!= .failedToLoad`.
-  // Don't use this. Use `InputFileCache.loadConfFile()`
+  // Don't use this from outside this file. Use `InputFileCache.loadConfFile()`
   fileprivate func loadFile(at path: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
     let confNameOrDerived = confName ?? URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
 
@@ -50,29 +66,6 @@ class InputConfFileCache {
 
     let status: InputConfFile.Status = isReadOnly ? .readOnly : .normal
     return InputConfFile(confName: confNameOrDerived, filePath: path, status: status, lines: lines)
-  }
-  func getConfFile(confName: String) -> InputConfFile? {
-    return storage[confName]
-  }
-
-  // Loads file and updates its cache entry
-  @discardableResult
-  func loadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
-    let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
-
-    Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
-    storage[confName] = confFile
-    return confFile
-  }
-
-  func getOrLoadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
-    if let cachedConfFile = self.getConfFile(confName: confName) {
-      Logger.log("Found \"\(confName)\" in memory cache", level: .verbose)
-      return cachedConfFile
-    }
-
-    // read-through
-    return loadConfFile(at: filePath, confName: confName)
   }
 
   func renameConfFile(oldConfName: String, newConfName: String) {
@@ -117,7 +110,6 @@ class InputConfFileCache {
   // Performs removal of files on disk. Throws exception to indicate failure; otherwise success is assumed even if empty dict returned.
   // Returns a copy of each removed files' contents which must be stored for later undo
   func removeConfFiles(confNamesToRemove: Set<String>) -> [String:InputConfFile] {
-
     // Cache each file's contents in memory before removing it, for potential later use by undo
     var removedFileDict: [String:InputConfFile] = [:]
 
@@ -185,11 +177,12 @@ class InputConfFileCache {
     let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
   }
-
 }
 
 // Represents an input config file which has been loaded into memory.
 struct InputConfFile {
+  static let cache = InputConfFileCache()
+
   enum Status {
     case failedToLoad
     case readOnly
@@ -226,11 +219,45 @@ struct InputConfFile {
     URL(fileURLWithPath: filePath).resolvingSymlinksInPath().path
   }
 
+  // Notifies the cache as well
+  @discardableResult
+  func overwriteFile(with newMappings: [KeyMapping]) -> InputConfFile {
+    let rawLines = InputConfFile.toRawLines(from: newMappings)
+
+    let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
+    do {
+      try updatedConfFile.saveFile()
+    } catch {
+      Logger.log("Failed to save conf file: \(error)", level: .error)
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+    }
+    return updatedConfFile
+  }
+
+  fileprivate func saveFile() throws {
+    guard !isReadOnly else {
+      Logger.log("saveFile(): aborting - isReadOnly==true!", level: .error)
+      throw IINAError.confFileIsReadOnly
+    }
+
+    Logger.log("Updating memory cache entry for conf file: \"\(self.confName)\"", level: .verbose)
+    InputConfFile.cache.storage[self.confName] = self
+
+    Logger.log("Saving conf file to disk: \"\(self.confName)\"", level: .verbose)
+    let newFileContent: String = self.lines.joined(separator: "\n")
+    try newFileContent.write(toFile: self.filePath, atomically: true, encoding: .utf8)
+  }
+
   // This parses the file's lines one by one, skipping lines which are blank or only comments, If a line looks like a key binding,
   // a KeyMapping object is constructed for it, and each KeyMapping makes note of the line number from which it came. A list of the successfully
   // constructed KeyMappings is returned once the entire file has been parsed.
   func parseMappings() -> [KeyMapping] {
     return self.lines.compactMap({ InputConfFile.parseRawLine($0) })
+  }
+
+  static func tryLoadingFile(at filePath: String) -> Bool {
+    return !InputConfFile.cache.loadFile(at: filePath).failedToLoad
   }
 
   // Returns a KeyMapping if successful, nil if line has no mapping or is not correct format
@@ -279,39 +306,5 @@ struct InputConfFile {
       }
     }
     return newLines
-  }
-
-  // Notifies the cache as well
-  @discardableResult
-  func overwriteFile(with newMappings: [KeyMapping]) -> InputConfFile {
-    let rawLines = InputConfFile.toRawLines(from: newMappings)
-
-    let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
-    do {
-      try updatedConfFile.saveFile()
-    } catch {
-      Logger.log("Failed to save conf file: \(error)", level: .error)
-      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-    }
-    return updatedConfFile
-  }
-
-  fileprivate func saveFile() throws {
-    guard !isReadOnly else {
-      Logger.log("saveFile(): aborting - isReadOnly==true!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    }
-
-    Logger.log("Updating memory cache entry for conf file: \"\(self.confName)\"", level: .verbose)
-    InputConfFileCache.shared.storage[self.confName] = self
-
-    Logger.log("Saving conf file to disk: \"\(self.confName)\"", level: .verbose)
-    let newFileContent: String = self.lines.joined(separator: "\n")
-    try newFileContent.write(toFile: self.filePath, atomically: true, encoding: .utf8)
-  }
-
-  static func tryLoadingFile(at filePath: String) -> Bool {
-    return !InputConfFileCache.shared.loadFile(at: filePath).failedToLoad
   }
 }

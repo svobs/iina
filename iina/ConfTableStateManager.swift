@@ -18,7 +18,7 @@ class ConfTableStateManager: NSObject {
   private var observers: [NSObjectProtocol] = []
 
   private var fileCache: InputConfFileCache {
-    InputConfFileCache.shared
+    InputConfFile.cache
   }
 
   override init() {
