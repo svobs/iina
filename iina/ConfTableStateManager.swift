@@ -97,7 +97,7 @@ class ConfTableStateManager: NSObject {
           guard let userConfDictNew = change[.newKey] as? [String: String] else { return }
           if !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) {
             Logger.log("Detected pref update for inputConfigs", level: .verbose)
-            self.update(userConfDictNew, selectedConfName: curr.selectedConfName)
+            self.updateState(userConfDictNew, selectedConfName: curr.selectedConfName)
           }
         default:
           return
@@ -109,7 +109,7 @@ class ConfTableStateManager: NSObject {
 
   // This one is a little different, but it doesn't fit anywhere else. Appends bindings to a file in the table which is not the
   // current selection. Also handles the undo of the append. Does not alter anything visible in the UI.
-  func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String, undo: Bool = false) {
+  func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String, isUndo: Bool = false) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
       Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName))!", level: .verbose)
@@ -122,7 +122,7 @@ class ConfTableStateManager: NSObject {
     }
     var fileMappings = inputConfFile.parseMappings()
 
-    if undo {
+    if isUndo {
       Logger.log("Undoing append of \(mappingsToAppend.count) bindings (from current count: \(fileMappings.count)) of conf: \"\(targetConfName)\"")
 
       for mappingToRemove in mappingsToAppend.reversed() {
@@ -146,7 +146,7 @@ class ConfTableStateManager: NSObject {
 
       undoManager.registerUndo(withTarget: self, handler: { manager in
         Logger.log(self.format(action: undoActionName, undoManager), level: .verbose)
-        manager.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, undo: !undo)
+        manager.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, isUndo: !isUndo)
       })
 
       // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
@@ -169,9 +169,9 @@ class ConfTableStateManager: NSObject {
     var filesRemovedByLastAction: [String:InputConfFile]?
   }
 
-  func update(_ userConfDict: [String:String]? = nil, selectedConfName: String? = nil,
-              specialState: ConfTableState.SpecialState = .none,
-              completionHandler: TableChange.CompletionHandler? = nil) {
+  func updateState(_ userConfDict: [String:String]? = nil, selectedConfName: String? = nil,
+                   specialState: ConfTableState.SpecialState = .none,
+                   completionHandler: TableUIChange.CompletionHandler? = nil) {
 
     let selectedConfOverride = specialState == .fallBackToDefaultConf ? ConfTableStateManager.defaultConfName : selectedConfName
     let doData = UndoData(userConfDict: userConfDict, selectedConfName: selectedConfOverride)
@@ -181,7 +181,7 @@ class ConfTableStateManager: NSObject {
 
   // May be called for do, undo, or redo of an action which changes the table contents or selection
   private func doAction(_ newData: UndoData, specialState: ConfTableState.SpecialState = .none,
-                        completionHandler: TableChange.CompletionHandler? = nil) {
+                        completionHandler: TableUIChange.CompletionHandler? = nil) {
 
     let oldState = ConfTableState.current
     var oldData = UndoData(userConfDict: oldState.userConfDict, selectedConfName: oldState.selectedConfName)
@@ -293,25 +293,25 @@ class ConfTableStateManager: NSObject {
     updateTableUI(old: oldState, new: newState, completionHandler: completionHandler)
   }
 
-  private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableChange.CompletionHandler?) {
+  private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
-    let tableChange = TableChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+    let tableUIChange = TableUIChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
                                                 completionHandler: completionHandler)
-    tableChange.scrollToFirstSelectedRow = true
+    tableUIChange.scrollToFirstSelectedRow = true
 
     switch new.specialState {
       case .addingNewInline:  // special case: creating an all-new config
         // Select the new blank row, which will be the last one:
-        tableChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
+        tableUIChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
       case .none, .fallBackToDefaultConf:
         // Always keep the current config selected
         if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-          tableChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
+          tableUIChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
         }
     }
 
     // Finally, fire notification. This covers row selection too
-    let notification = Notification(name: .iinaConfTableShouldChange, object: tableChange)
+    let notification = Notification(name: .iinaPendingUIChangeForConfTable, object: tableUIChange)
     Logger.log("ConfTableStateManager: posting \"\(notification.name.rawValue)\" notification", level: .verbose)
     NotificationCenter.default.post(notification)
   }
@@ -348,7 +348,7 @@ class ConfTableStateManager: NSObject {
     // It will default to an animated transition based on calculated diff.
     // To disable animation, specify type .reloadAll explicitly.
     if !Preference.bool(for: .animateKeyBindingTableReloadAll) {
-      userData[BindingTableStateManager.Key.tableChange] = TableChange(.reloadAll)
+      userData[BindingTableStateManager.Key.tableUIChange] = TableUIChange(.reloadAll)
     }
 
     // Send down the pipeline

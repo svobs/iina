@@ -52,7 +52,7 @@ class BindingTableViewController: NSObject {
 
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
-    tableView.registerTableChangeObserver(forName: .iinaBindingTableShouldChange)
+    tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
@@ -531,9 +531,9 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
     if isRaw {
       // The table will execute asynchronously, but we need to wait for it to complete in order to guarantee we have something to edit
-      let afterComplete: TableChange.CompletionHandler = { tableChange in
-        // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableChange object
-        if let insertedRowIndex = tableChange.toInsert?.first {
+      let afterComplete: TableUIChange.CompletionHandler = { tableUIChange in
+        // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableUIChange object
+        if let insertedRowIndex = tableUIChange.toInsert?.first {
           self.tableView.editCell(row: insertedRowIndex, column: 0)
         }
       }
@@ -595,8 +595,8 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
   // Each TableUpdate executes asynchronously, but we need to wait for it to complete in order to do any further work on
   // inserted rows.
-  private func scrollToFirstInserted(_ tableChange: TableChange) {
-    if let firstInsertedRowIndex = tableChange.toInsert?.first {
+  private func scrollToFirstInserted(_ tableUIChange: TableUIChange) {
+    if let firstInsertedRowIndex = tableUIChange.toInsert?.first {
       self.tableView.scrollRowToVisible(firstInsertedRowIndex)
     }
   }

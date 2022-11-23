@@ -44,7 +44,7 @@ class InputConfTableViewController: NSObject {
 
     // Set up callbacks:
     tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
-    tableView.registerTableChangeObserver(forName: .iinaConfTableShouldChange)
+    tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -570,8 +570,8 @@ extension InputConfTableViewController:  NSMenuDelegate {
     if enableInlineCreate {
       // Add a new conf with no name, and immediately open an editor for it.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
-      let _ = confTableState.addNewUserConfInline(completionHandler: { tableChange in
-        if let selectedRowIndex = tableChange.newSelectedRows?.first {
+      let _ = confTableState.addNewUserConfInline(completionHandler: { tableUIChange in
+        if let selectedRowIndex = tableUIChange.newSelectedRows?.first {
           self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
         }
       })
@@ -603,8 +603,8 @@ extension InputConfTableViewController:  NSMenuDelegate {
       // Find a new name for the duplicate, and immediately open an editor for it to change the name.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       if let (newConfName, newFilePath) = self.duplicateCurrentConfFile() {
-        self.confTableState.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableChange in
-          if let selectedRowIndex = tableChange.newSelectedRows?.first {
+        self.confTableState.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableUIChange in
+          if let selectedRowIndex = tableUIChange.newSelectedRows?.first {
             self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
           }
         })

@@ -72,7 +72,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
     }
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaConfTableShouldChange, object: nil, queue: .main) { _ in
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForConfTable, object: nil, queue: .main) { _ in
       self.updateEditEnabledStatus()
     })
 

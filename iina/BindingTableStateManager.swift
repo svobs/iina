@@ -14,7 +14,7 @@ import Foundation
 class BindingTableStateManager {
   enum Key: String {
     case appInputConfig = "AppInputConfig"
-    case tableChange = "BindingTableChange"
+    case tableUIChange = "BindingTableChange"
     case confFile = "InputConfFile"
   }
 
@@ -44,7 +44,7 @@ class BindingTableStateManager {
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  func doAction(_ userConfMappingsNew: [KeyMapping], _ desiredTableChange: TableChange? = nil) {
+  func doAction(_ userConfMappingsNew: [KeyMapping], _ desiredTableChange: TableUIChange? = nil) {
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
     if !BindingTableState.current.filterString.isEmpty {
@@ -59,11 +59,11 @@ class BindingTableStateManager {
       let userConfMappingsOld = AppInputConfig.userConfMappings
 
       undoManager.registerUndo(withTarget: self, handler: { bindingTableState in
-        // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableChange
+        // TODO: instead of .undoRedo/diff, a better solution would be to calculate the inverse of original TableUIChange
         // FIXME: also need to use USER BINDINGS
         // FIXME: Filters!
         // If moving rows in the table which aren't unique, this solution often guesses the wrong rows to animate
-        bindingTableState.doAction(userConfMappingsOld, TableChange(.undoRedo))
+        bindingTableState.doAction(userConfMappingsOld, TableUIChange(.undoRedo))
       })
 
       if let actionName = makeActionNameIfNeeded(basedOn: desiredTableChange, undoManager) {
@@ -80,32 +80,32 @@ class BindingTableStateManager {
      Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
      It will notify us asynchronously when it is done.
 
-     Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableChange`.
+     Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableUIChange`.
      This is needed so that animations can work. But InputBindingController builds the actual row data,
      and the two must match or else visual bugs will result.
      */
     var attachment: [AnyHashable : Any] = [BindingTableStateManager.Key.confFile: updatedConfFile]
     if let desiredTableChange = desiredTableChange {
-      attachment[BindingTableStateManager.Key.tableChange] = desiredTableChange
+      attachment[BindingTableStateManager.Key.tableUIChange] = desiredTableChange
     }
 
     AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: attachment)
   }
 
   // Format the action name for Edit menu display (Undo/Redo)
-  private func makeActionNameIfNeeded(basedOn tableChange: TableChange? = nil, _ undoManager: UndoManager) -> String? {
+  private func makeActionNameIfNeeded(basedOn tableUIChange: TableUIChange? = nil, _ undoManager: UndoManager) -> String? {
 
-    guard let tableChange = tableChange, !undoManager.isUndoing && !undoManager.isRedoing else {
+    guard let tableUIChange = tableUIChange, !undoManager.isUndoing && !undoManager.isRedoing else {
       return nil
     }
 
-    switch tableChange.changeType {
+    switch tableUIChange.changeType {
       case .addRows:
-        return Utility.format(.keyBinding, tableChange.toInsert?.count ?? 0, .add)
+        return Utility.format(.keyBinding, tableUIChange.toInsert?.count ?? 0, .add)
       case .removeRows:
-        return Utility.format(.keyBinding, tableChange.toRemove?.count ?? 0, .delete)
+        return Utility.format(.keyBinding, tableUIChange.toRemove?.count ?? 0, .delete)
       case .moveRows:
-        return Utility.format(.keyBinding, tableChange.toMove?.count ?? 0, .move)
+        return Utility.format(.keyBinding, tableUIChange.toMove?.count ?? 0, .move)
       default:
         return nil
     }
@@ -134,10 +134,10 @@ class BindingTableStateManager {
       return
     }
 
-    let tableChange = userData[BindingTableStateManager.Key.tableChange] as? TableChange
+    let tableUIChange = userData[BindingTableStateManager.Key.tableUIChange] as? TableUIChange
     let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
 
-    self.updateTableUI(appInputConfig, tableChange: tableChange, newInputConfFile: newInputConfFile)
+    self.updateTableUI(appInputConfig, tableUIChange: tableUIChange, newInputConfFile: newInputConfFile)
   }
 
   /*
@@ -146,7 +146,7 @@ class BindingTableStateManager {
 
    Expected to be run on the main thread.
    */
-  private func updateTableUI(_ appInputConfigNew: AppInputConfig, tableChange desiredTableChange: TableChange? = nil,
+  private func updateTableUI(_ appInputConfigNew: AppInputConfig, tableUIChange desiredTableChange: TableUIChange? = nil,
                              newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
@@ -161,43 +161,43 @@ class BindingTableStateManager {
                                      inputConfFile: newInputConfFile ?? oldState.inputConfFile)
 
     // A table change animation can be calculated if not provided, which should be sufficient in most cases
-    let tableChange: TableChange
+    let tableUIChange: TableUIChange
     if let desiredTableChange = desiredTableChange {
       if desiredTableChange.changeType == .undoRedo {
-        tableChange = buildTableDiff(oldState: oldState, newState: newState, isUndoRedo: true)
+        tableUIChange = buildTableDiff(oldState: oldState, newState: newState, isUndoRedo: true)
       } else {
-        tableChange = desiredTableChange
+        tableUIChange = desiredTableChange
       }
     } else {
-      tableChange = buildTableDiff(oldState: oldState, newState: newState)
+      tableUIChange = buildTableDiff(oldState: oldState, newState: newState)
     }
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
-    tableChange.reloadAllExistingRows = true
+    tableUIChange.reloadAllExistingRows = true
 
     /*
     // TODO: is this desirable or not?
     if let newFile = newState.inputConfFile, let oldFile = oldState.inputConfFile,
       newFile.canonicalFilePath != oldFile.canonicalFilePath {
       // Clear selection when changing files
-      tableChange.newSelectedRows = IndexSet()
+      tableUIChange.newSelectedRows = IndexSet()
     }
     */
 
     BindingTableState.current = newState
 
     // Notify Key Bindings table of update:
-    let notification = Notification(name: .iinaBindingTableShouldChange, object: tableChange)
-    Logger.log("Posting \"\(notification.name.rawValue)\" notification with changeType \(tableChange.changeType)", level: .verbose)
+    let notification = Notification(name: .iinaPendingUIChangeForBindingTable, object: tableUIChange)
+    Logger.log("Posting \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, isUndoRedo: Bool = false) -> TableChange {
+  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, isUndoRedo: Bool = false) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state.
-    let tableChange = TableChange.buildDiff(oldRows: oldState.bindingRowsFiltered, newRows: newState.bindingRowsFiltered, isUndoRedo: isUndoRedo)
-    tableChange.rowInsertAnimation = .effectFade
-    tableChange.rowRemoveAnimation = .effectFade
-    return tableChange
+    let tableUIChange = TableUIChange.buildDiff(oldRows: oldState.bindingRowsFiltered, newRows: newState.bindingRowsFiltered, isUndoRedo: isUndoRedo)
+    tableUIChange.rowInsertAnimation = .effectFade
+    tableUIChange.rowRemoveAnimation = .effectFade
+    return tableUIChange
   }
 
   // Input Config File: Save

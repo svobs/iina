@@ -124,7 +124,7 @@ struct ConfTableState {
 
   func fallBackToDefaultConf() {
     Logger.log("Changing selected conf to default", level: .verbose)
-    ConfTableState.manager.update(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
+    ConfTableState.manager.updateState(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
   }
 
   func changeSelectedConf(_ newIndex: Int) {
@@ -157,30 +157,30 @@ struct ConfTableState {
 
     Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
 
-    ConfTableState.manager.update(selectedConfName: selectedConfNew)
+    ConfTableState.manager.updateState(selectedConfName: selectedConfNew)
   }
 
   // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
   // Posts update notification
-  func addUserConf(confName: String, filePath: String, completionHandler: TableChange.CompletionHandler? = nil) {
+  func addUserConf(confName: String, filePath: String, completionHandler: TableUIChange.CompletionHandler? = nil) {
     Logger.log("Adding user conf: \"\(confName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
+    ConfTableState.manager.updateState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
-  func addNewUserConfInline(completionHandler: TableChange.CompletionHandler? = nil) {
+  func addNewUserConfInline(completionHandler: TableUIChange.CompletionHandler? = nil) {
     guard !isAddingNewConfInline else {
       Logger.log("Already adding new user conf inline! Returning.", level: .verbose)
       return
     }
 
     Logger.log("Adding blank row to bottom of table for naming new user conf", level: .verbose)
-    ConfTableState.manager.update(specialState: .addingNewInline, completionHandler: completionHandler)
+    ConfTableState.manager.updateState(specialState: .addingNewInline, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(confName: String, filePath: String,
-                         completionHandler: TableChange.CompletionHandler? = nil) {
+                         completionHandler: TableUIChange.CompletionHandler? = nil) {
     guard isAddingNewConfInline else {
       Logger.log("completeInlineAdd() called but isAddingNewConfInline is false!", level: .error)
       return
@@ -189,7 +189,7 @@ struct ConfTableState {
     Logger.log("Completing inline add of user conf: \"\(confName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
+    ConfTableState.manager.updateState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
   func cancelInlineAdd(selectedConfNew: String? = nil) {
@@ -198,7 +198,7 @@ struct ConfTableState {
       return
     }
     Logger.log("Cancelling inline add", level: .verbose)
-    ConfTableState.manager.update(selectedConfName: selectedConfNew)
+    ConfTableState.manager.updateState(selectedConfName: selectedConfNew)
   }
 
   func addUserConfs(_ userConfsToAdd: [String: String]) {
@@ -217,7 +217,7 @@ struct ConfTableState {
         selectedConfNew = name
       }
     }
-    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: selectedConfNew)
+    ConfTableState.manager.updateState(userConfDictUpdated, selectedConfName: selectedConfNew)
   }
 
   func removeConf(_ confName: String) {
@@ -240,7 +240,7 @@ struct ConfTableState {
       Logger.log("Cannot remove conf \"\(confName)\": it is not a user conf!", level: .error)
       return
     }
-    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: selectedConfNameNew)
+    ConfTableState.manager.updateState(userConfDictUpdated, selectedConfName: selectedConfNameNew)
   }
 
   func renameSelectedConf(newName: String) -> Bool {
@@ -264,7 +264,7 @@ struct ConfTableState {
     let newFilePath = Utility.buildConfFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: newName)
+    ConfTableState.manager.updateState(userConfDictUpdated, selectedConfName: newName)
     return true
   }
 

@@ -160,11 +160,11 @@ extension Notification.Name {
   static let iinaKeyBindingErrorOccurred = Notification.Name("IINAKeyBindingErrorOccurred")
   // Supports auto-complete for key binding editing:
   static let iinaKeyBindingInputChanged = Notification.Name("IINAKeyBindingInputChanged")
-  // Contains a TableChange which should be applied to the Input Conf table:
+  // Contains a TableUIChange which should be applied to the Input Conf table:
   // user input conf additions, subtractions, a rename, or the selection changed
-  static let iinaConfTableShouldChange = Notification.Name("IINAInputConfTableShouldChange")
-  // Contains a TableChange which should be applied to the Key Bindings table
-  static let iinaBindingTableShouldChange = Notification.Name("IINAKeyBindingTableShouldChange")
+  static let iinaPendingUIChangeForConfTable = Notification.Name("IINAPendingUIChangeForConfTable")
+  // Contains a TableUIChange which should be applied to the Key Bindings table
+  static let iinaPendingUIChangeForBindingTable = Notification.Name("IINAPendingUIChangeForBindingTable")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
   // The AppInputConfig was rebuilt

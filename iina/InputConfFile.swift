@@ -9,7 +9,8 @@
 import Foundation
 
 // Loading all the conf files into memory shouldn't take too much time or space, and it will help avoid
-// a bunch of tricky failure points for undo/redo.
+// a bunch of tricky failure points for undo/redo, as well as unexpected behavior when the files are
+// changed outside of IINA.
 class InputConfFileCache {
   fileprivate var storage: [String: InputConfFile] = [:]
 

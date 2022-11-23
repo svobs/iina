@@ -72,7 +72,7 @@ struct BindingTableState {
   }
 
   func moveBindings(at rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
-                    afterComplete: TableChange.CompletionHandler? = nil) -> Int {
+                    afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Movimg \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
@@ -110,12 +110,12 @@ struct BindingTableState {
     }
     let bindingRowsAllUpdated = beforeInsert + movedRows + afterInsert
 
-    let tableChange = TableChange(.moveRows, completionHandler: afterComplete)
+    let tableUIChange = TableUIChange(.moveRows, completionHandler: afterComplete)
     Logger.log("MovePairs: \(moveIndexPairs)", level: .verbose)
-    tableChange.toMove = moveIndexPairs
-    tableChange.newSelectedRows = newSelectedRows
+    tableUIChange.toMove = moveIndexPairs
+    tableUIChange.newSelectedRows = newSelectedRows
 
-    doAction(bindingRowsAllUpdated, tableChange)
+    doAction(bindingRowsAllUpdated, tableUIChange)
     return insertIndex
   }
 
@@ -124,7 +124,7 @@ struct BindingTableState {
   }
 
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
-                         afterComplete: TableChange.CompletionHandler? = nil) {
+                         afterComplete: TableUIChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
     Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
     guard canModifyCurrentConf else {
@@ -132,10 +132,10 @@ struct BindingTableState {
       return
     }
 
-    let tableChange = TableChange(.addRows, completionHandler: afterComplete)
+    let tableUIChange = TableUIChange(.addRows, completionHandler: afterComplete)
     let toInsert = IndexSet(insertIndex..<(insertIndex+mappingList.count))
-    tableChange.toInsert = toInsert
-    tableChange.newSelectedRows = toInsert
+    tableUIChange.toInsert = toInsert
+    tableUIChange.newSelectedRows = toInsert
 
     var bindingRowsAllNew = bindingRowsAll
     for mapping in mappingList.reversed() {
@@ -143,12 +143,12 @@ struct BindingTableState {
       bindingRowsAllNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
-    doAction(bindingRowsAllNew, tableChange)
+    doAction(bindingRowsAllNew, tableUIChange)
   }
 
   // Returns the index at which it was ultimately inserted
   func insertNewBinding(relativeTo index: Int, isAfterNotAt: Bool = false, _ mapping: KeyMapping,
-                        afterComplete: TableChange.CompletionHandler? = nil) {
+                        afterComplete: TableUIChange.CompletionHandler? = nil) {
     insertNewBindings(relativeTo: index, isAfterNotAt: isAfterNotAt, [mapping], afterComplete: afterComplete)
   }
 
@@ -177,19 +177,19 @@ struct BindingTableState {
         remainingRowsUnfiltered.append(row)
       }
     }
-    let tableChange = TableChange(.removeRows)
-    tableChange.toRemove = indexesToRemove
+    let tableUIChange = TableUIChange(.removeRows)
+    tableUIChange.toRemove = indexesToRemove
 
-    if TableChange.selectNextRowAfterDelete {
+    if TableUIChange.selectNextRowAfterDelete {
       // After removal, select the single row after the last one removed:
       let countRemoved = bindingRowsAll.count - remainingRowsUnfiltered.count
       if countRemoved < bindingRowsAll.count {
         let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-        tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+        tableUIChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
       }
     }
 
-    doAction(remainingRowsUnfiltered, tableChange)
+    doAction(remainingRowsUnfiltered, tableUIChange)
   }
 
   func updateBinding(at index: Int, to mapping: KeyMapping) {
@@ -206,9 +206,9 @@ struct BindingTableState {
 
     existingRow.keyMapping = mapping
 
-    let tableChange = TableChange(.updateRows)
+    let tableUIChange = TableUIChange(.updateRows)
 
-    tableChange.toUpdate = IndexSet(integer: index)
+    tableUIChange.toUpdate = IndexSet(integer: index)
 
     var indexToUpdate: Int = index
 
@@ -217,8 +217,8 @@ struct BindingTableState {
       indexToUpdate = unfilteredIndex
     }
 
-    tableChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    doAction(bindingRowsAll, tableChange)
+    tableUIChange.newSelectedRows = IndexSet(integer: indexToUpdate)
+    doAction(bindingRowsAll, tableUIChange)
   }
 
   // MARK: Various utility functions
@@ -267,9 +267,9 @@ struct BindingTableState {
 
   // Both params should be calculated based on UNFILTERED rows.
   // Let BindingTableStateManager deal with altering animations with a filter
-  private func doAction(_ bindingRowsAllNew: [InputBinding], _ tableChange: TableChange) {
+  private func doAction(_ bindingRowsAllNew: [InputBinding], _ tableUIChange: TableUIChange) {
     let defaultSectionNew = bindingRowsAllNew.filter({ $0.origin == .confFile }).map({ $0.keyMapping })
-    BindingTableState.manager.doAction(defaultSectionNew, tableChange)
+    BindingTableState.manager.doAction(defaultSectionNew, tableUIChange)
   }
 
   private var canModifyCurrentConf: Bool {

@@ -10,7 +10,7 @@ import Foundation
 
 class EditableTableView: NSTableView {
 
-  // Can be overridden by each TableChange if set there
+  // Can be overridden by each TableUIChange if set there
   var rowInsertAnimation: NSTableView.AnimationOptions = .slideUp
   var rowRemoveAnimation: NSTableView.AnimationOptions = .slideDown
 
@@ -270,21 +270,21 @@ class EditableTableView: NSTableView {
     }
   }
 
-  // MARK: TableChange
+  // MARK: TableUIChange
 
-  func registerTableChangeObserver(forName name: Notification.Name) {
+  func registerTableUIChangeObserver(forName name: Notification.Name) {
     observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableShouldChange))
   }
 
   // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ChangeType`).
-  // This notification contains the information needed to make the updates to the table (see: `TableChange`).
+  // This notification contains the information needed to make the updates to the table (see: `TableUIChange`).
   private func tableShouldChange(_ notification: Notification) {
-    guard let tableChange = notification.object as? TableChange else {
+    guard let tableUIChange = notification.object as? TableUIChange else {
       Logger.log("Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))", level: .error)
       return
     }
 
-    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableChange.changeType)", level: .verbose)
-    tableChange.execute(on: self)
+    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableUIChange.changeType)", level: .verbose)
+    tableUIChange.execute(on: self)
   }
 }

@@ -1,5 +1,5 @@
 //
-//  TableChange.swift
+//  TableUIChange.swift
 //  iina
 //
 //  Created by Matt Svoboda on 9/29/22.
@@ -9,7 +9,7 @@
 import Foundation
 
 /*
- Each instance of this class should represent an atomic operation on an associated `EditableTableView`, which contains all the
+ Each instance of this class should represent an atomic, quantized operation on an associated `EditableTableView`, which contains all the
  information needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or
  the response to some external update. All of thiis is needed in order to make AppKit animations work.
 
@@ -17,8 +17,8 @@ import Foundation
  for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
  This objects attempts to provide as much of this as possible and provide future reusability.
  */
-class TableChange {
-  typealias CompletionHandler = (TableChange) -> Void
+class TableUIChange {
+  typealias CompletionHandler = (TableUIChange) -> Void
   // After removal of rows, select the next single row after the last one removed:
   static let selectNextRowAfterDelete = true
 
@@ -60,9 +60,9 @@ class TableChange {
   var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
 
   // A method which, if supplied, is called at the end of execute()
-  let completionHandler: TableChange.CompletionHandler?
+  let completionHandler: TableUIChange.CompletionHandler?
 
-  init(_ changeType: ChangeType, completionHandler: TableChange.CompletionHandler? = nil) {
+  init(_ changeType: ChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
     self.changeType = changeType
     self.completionHandler = completionHandler
   }
@@ -138,7 +138,7 @@ class TableChange {
         tableView.reloadExistingRows()
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("TableChange: ReloadAll", level: .verbose)
+        Logger.log("TableUIChange: ReloadAll", level: .verbose)
         tableView.reloadData()
       case .wholeTableDiff:
         if let toRemove = self.toRemove,
@@ -146,11 +146,11 @@ class TableChange {
            let movePairs = self.toMove {
           guard !toRemove.isEmpty || !toInsert.isEmpty || !movePairs.isEmpty else {
             // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-            Logger.log("TableChange from diff: no rows changed", level: .verbose)
+            Logger.log("TableUIChange from diff: no rows changed", level: .verbose)
             break
           }
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          Logger.log("TableChange from diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
+          Logger.log("TableUIChange from diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
           tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
           tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {
@@ -159,21 +159,21 @@ class TableChange {
           }
         }
       case .undoRedo:
-        Logger.log("TableChange: cannot execute type .undoRedo directly!", level: .error)
+        Logger.log("TableUIChange: cannot execute type .undoRedo directly!", level: .error)
     }
   }
 
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, isUndoRedo: Bool = false,
-                           completionHandler: TableChange.CompletionHandler? = nil) -> TableChange where R:Hashable {
+                           completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
-      return TableChange(.reloadAll, completionHandler: completionHandler)
+      return TableUIChange(.reloadAll, completionHandler: completionHandler)
     }
 
-    let tableChange = TableChange(.wholeTableDiff, completionHandler: completionHandler)
-    tableChange.toRemove = IndexSet()
-    tableChange.toInsert = IndexSet()
-    tableChange.toMove = []
+    let tableUIChange = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
+    tableUIChange.toRemove = IndexSet()
+    tableUIChange.toInsert = IndexSet()
+    tableUIChange.toMove = []
 
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
@@ -189,21 +189,21 @@ class TableChange {
       switch step {
         case let .remove(_, index):
           // If toOffset != nil, it signifies a MOVE from fromOffset -> toOffset. But the offset must be adjusted for removes!
-          tableChange.toRemove?.insert(index)
+          tableUIChange.toRemove?.insert(index)
         case let .insert(_, index):
-          tableChange.toInsert?.insert(index)
+          tableUIChange.toInsert?.insert(index)
         case let .move(_, from, to):
-          tableChange.toMove?.append((from, to))
+          tableUIChange.toMove?.append((from, to))
       }
     }
 
-    if let toInsert = tableChange.toInsert, let toMove = tableChange.toMove, let toRemove = tableChange.toRemove {
+    if let toInsert = tableUIChange.toInsert, let toMove = tableUIChange.toMove, let toRemove = tableUIChange.toRemove {
 
-      if TableChange.selectNextRowAfterDelete && toMove.isEmpty && toInsert.isEmpty && !toRemove.isEmpty {
+      if TableUIChange.selectNextRowAfterDelete && toMove.isEmpty && toInsert.isEmpty && !toRemove.isEmpty {
         // After selected rows are deleted, keep a selection on the table by selecting the next row
         if let lastRemoveIndex = toRemove.last, toRemove.count < oldRows.count {
           let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
-          tableChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+          tableUIChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
         }
       }
 
@@ -211,15 +211,15 @@ class TableChange {
         if toMove.isEmpty && toRemove.isEmpty && !toInsert.isEmpty {
           // If lines were added with no other changes, highlight them.
           // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
-          tableChange.newSelectedRows = IndexSet()
+          tableUIChange.newSelectedRows = IndexSet()
           // Only inserts: select added lines
           for insertedIndex in toInsert {
-            tableChange.newSelectedRows?.insert(insertedIndex)
+            tableUIChange.newSelectedRows?.insert(insertedIndex)
           }
         }
       }
     }
 
-    return tableChange
+    return tableUIChange
   }
 }
