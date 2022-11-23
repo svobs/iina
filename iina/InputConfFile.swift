@@ -68,6 +68,20 @@ class InputConfFileCache {
     return InputConfFile(confName: confNameOrDerived, filePath: path, status: status, lines: lines)
   }
 
+  func saveFile(_ inputConfFile: InputConfFile) throws {
+    guard !inputConfFile.isReadOnly else {
+      Logger.log("saveFile(): aborting - isReadOnly==true!", level: .error)
+      throw IINAError.confFileIsReadOnly
+    }
+
+    Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
+    InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
+
+    Logger.log("Saving conf file to disk: \"\(inputConfFile.confName)\"", level: .verbose)
+    let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
+    try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
+  }
+
   func renameConfFile(oldConfName: String, newConfName: String) {
     Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
     guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
@@ -163,7 +177,7 @@ class InputConfFileCache {
           self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
           continue
         }
-        try inputConfFile.saveFile()
+        try saveFile(inputConfFile)
       } catch {
         Logger.log("Failed to save undeleted file \"\(filePath)\": \(error)", level: .error)
         self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
@@ -198,7 +212,7 @@ struct InputConfFile {
   let filePath: String
 
   // This should reflect what is on disk at all times
-  private let lines: [String]
+  fileprivate let lines: [String]
 
   fileprivate init(confName: String, filePath: String, status: Status, lines: [String]) {
     self.confName = confName
@@ -226,27 +240,13 @@ struct InputConfFile {
 
     let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
     do {
-      try updatedConfFile.saveFile()
+      try InputConfFile.cache.saveFile(updatedConfFile)
     } catch {
       Logger.log("Failed to save conf file: \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
     return updatedConfFile
-  }
-
-  fileprivate func saveFile() throws {
-    guard !isReadOnly else {
-      Logger.log("saveFile(): aborting - isReadOnly==true!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    }
-
-    Logger.log("Updating memory cache entry for conf file: \"\(self.confName)\"", level: .verbose)
-    InputConfFile.cache.storage[self.confName] = self
-
-    Logger.log("Saving conf file to disk: \"\(self.confName)\"", level: .verbose)
-    let newFileContent: String = self.lines.joined(separator: "\n")
-    try newFileContent.write(toFile: self.filePath, atomically: true, encoding: .utf8)
   }
 
   // This parses the file's lines one by one, skipping lines which are blank or only comments, If a line looks like a key binding,
