@@ -97,10 +97,6 @@ struct InputConfFile {
   }
 
   func overwriteFile(with newMappings: [KeyMapping]) throws -> InputConfFile {
-    guard !isReadOnly else {
-      Logger.log("overwriteFile(): aborting - isReadOnly==true!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    }
     let rawLines = InputConfFile.toRawLines(from: newMappings)
 
     let updatedConfFile = InputConfFile(filePath: self.filePath, status: .normal, lines: rawLines)
@@ -109,6 +105,11 @@ struct InputConfFile {
   }
 
   func saveFile() throws {
+    guard !isReadOnly else {
+      Logger.log("overwriteFile(): aborting - isReadOnly==true!", level: .error)
+      throw IINAError.confFileIsReadOnly
+    }
+
     let newFileContent: String = self.lines.joined(separator: "\n")
     try newFileContent.write(toFile: self.filePath, atomically: true, encoding: .utf8)
   }

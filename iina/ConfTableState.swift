@@ -23,10 +23,13 @@ struct ConfTableState {
   enum SpecialState {
     case none
 
-    // When true, a blank "fake" row has been created which doesn't map to anything, and the normal
+    // In this state, a blank "fake" row has been created which doesn't map to anything, and the normal
     // rules of the table are bent a little bit to accomodate it, until the user finishes naming it.
-    // The row will also be selected, but `selectedConfName` should not change until the user submits
+    // The blank row will also be selected, but `selectedConfName` should not change until the user submits or clicks on another row.
     case addingNewInline
+
+    // An error in configuration occurred which caused the selected conf to be changed to the default rather than crashing or undefined behavior.
+    case fallBackToDefaultConf
   }
 
   let specialState: SpecialState
@@ -121,7 +124,7 @@ struct ConfTableState {
 
   func fallBackToDefaultConf() {
     Logger.log("Changing selected conf to default", level: .verbose)
-    ConfTableState.manager.doAction(selectedConfNameNew: AppData.defaultConfNamesSorted[0])
+    ConfTableState.manager.update(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
   }
 
   func changeSelectedConf(_ newIndex: Int) {
@@ -154,7 +157,7 @@ struct ConfTableState {
 
     Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
 
-    ConfTableState.manager.doAction(selectedConfNameNew: selectedConfNew)
+    ConfTableState.manager.update(selectedConfName: selectedConfNew)
   }
 
   // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
@@ -163,7 +166,7 @@ struct ConfTableState {
     Logger.log("Adding user conf: \"\(confName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: confName, completionHandler: completionHandler)
+    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
   func addNewUserConfInline(completionHandler: TableChange.CompletionHandler? = nil) {
@@ -173,7 +176,7 @@ struct ConfTableState {
     }
 
     Logger.log("Adding blank row to bottom of table for naming new user conf", level: .verbose)
-    ConfTableState.manager.doAction(enterSpecialState: .addingNewInline, completionHandler: completionHandler)
+    ConfTableState.manager.update(specialState: .addingNewInline, completionHandler: completionHandler)
   }
 
   func completeInlineAdd(confName: String, filePath: String,
@@ -186,7 +189,7 @@ struct ConfTableState {
     Logger.log("Completing inline add of user conf: \"\(confName)\" (filePath: \(filePath))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: confName, completionHandler: completionHandler)
+    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
   }
 
   func cancelInlineAdd(selectedConfNew: String? = nil) {
@@ -195,7 +198,7 @@ struct ConfTableState {
       return
     }
     Logger.log("Cancelling inline add", level: .verbose)
-    ConfTableState.manager.doAction(selectedConfNameNew: selectedConfNew)
+    ConfTableState.manager.update(selectedConfName: selectedConfNew)
   }
 
   func addUserConfs(_ userConfsToAdd: [String: String]) {
@@ -214,7 +217,7 @@ struct ConfTableState {
         selectedConfNew = name
       }
     }
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: selectedConfNew)
+    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: selectedConfNew)
   }
 
   func removeConf(_ confName: String) {
@@ -237,7 +240,7 @@ struct ConfTableState {
       Logger.log("Cannot remove conf \"\(confName)\": it is not a user conf!", level: .error)
       return
     }
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: selectedConfNameNew)
+    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: selectedConfNameNew)
   }
 
   func renameSelectedConf(newName: String) -> Bool {
@@ -261,7 +264,7 @@ struct ConfTableState {
     let newFilePath = Utility.buildConfFilePath(for: newName)
     userConfDictUpdated[newName] = newFilePath
 
-    ConfTableState.manager.doAction(userConfDictUpdated, selectedConfNameNew: newName)
+    ConfTableState.manager.update(userConfDictUpdated, selectedConfName: newName)
     return true
   }
 
