@@ -231,7 +231,7 @@ class ConfTableStateManager: NSObject {
         } else {  // Must be in an initial "do"
           for addedConfName in addedConfs {
             // Assume files were created elsewhere. Just need to load them into memory cache:
-            let confFile = loadConfFile(addedConfName)
+            let confFile = loadConfFile(withConfName: addedConfName)
             guard !confFile.failedToLoad else {
               self.sendErrorAlert(key: "error_finding_file", args: ["config"])
               return
@@ -327,7 +327,7 @@ class ConfTableStateManager: NSObject {
   // If `confName` not provided, defaults to currently selected conf.
   // Uses cached copy first, then reads from disk if not found (more reliable results this way)
   // Will report error to user & log if not found, but still need to check whether `inputConfFile.failedToLoad`.
-  private func loadConfFile(_ confName: String? = nil) -> InputConfFile {
+  private func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
     Logger.log("Loading inputConfFile for \"\(targetConfName)\"")

@@ -175,14 +175,11 @@ class BindingTableStateManager {
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableUIChange.reloadAllExistingRows = true
 
-    /*
-    // TODO: is this desirable or not?
+    // If the table change is the result of a new conf file being selected, don't try to retain the selection.
     if let newFile = newState.inputConfFile, let oldFile = oldState.inputConfFile,
-      newFile.canonicalFilePath != oldFile.canonicalFilePath {
-      // Clear selection when changing files
-      tableUIChange.newSelectedRows = IndexSet()
+        !newFile.canonicalFilePath.equalsIgnoreCase(oldFile.canonicalFilePath) {
+      tableUIChange.newSelectedRows = IndexSet() // will clear any selection
     }
-    */
 
     BindingTableState.current = newState
 

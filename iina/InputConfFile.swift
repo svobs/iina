@@ -31,6 +31,13 @@ class InputConfFileCache {
   // Loads file from disk, then adds/updates its cache entry, then returns it.
   @discardableResult
   func loadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
+    guard !isReadOnly || storage[confName] == nil else {
+      Logger.log("Cannot reload: there is already an entry in the file cache for \"\(confName)\" and it is read-only!", level: .error)
+      // TODO: more appropriate message
+      self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+      return InputConfFile(confName: confName, filePath: filePath, status: .failedToLoad, lines: [])
+    }
+
     let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
 
     Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
@@ -40,33 +47,33 @@ class InputConfFileCache {
 
   // Check returned object's `status` property; make sure `!= .failedToLoad`.
   // Don't use this from outside this file. Use `InputFileCache.loadConfFile()`
-  fileprivate func loadFile(at path: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
-    let confNameOrDerived = confName ?? URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+  fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
+    let confNameOrDerived = confName ?? URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent
 
-    guard let reader = StreamReader(path: path) else {
+    guard let reader = StreamReader(path: filePath) else {
       // on error
-      Logger.log("Error loading key bindings from path: \"\(path)\"", level: .error)
-      let fileName = URL(fileURLWithPath: path).lastPathComponent
+      Logger.log("Error loading key bindings from path: \"\(filePath)\"", level: .error)
+      let fileName = URL(fileURLWithPath: filePath).lastPathComponent
       let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [fileName])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return InputConfFile(confName: confNameOrDerived, filePath: path, status: .failedToLoad, lines: [])
+      return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
     }
 
     var lines: [String] = []
     while let rawLine: String = reader.nextLine() {
       guard lines.count < AppData.maxConfFileLinesAccepted else {
-        Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \"\(path)\"")
+        Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \"\(filePath)\"")
 
         // TODO: more appropriate error msg
-        let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [path])
+        let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [filePath])
         NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-        return InputConfFile(confName: confNameOrDerived, filePath: path, status: .failedToLoad, lines: [])
+        return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
       }
       lines.append(rawLine)
     }
 
     let status: InputConfFile.Status = isReadOnly ? .readOnly : .normal
-    return InputConfFile(confName: confNameOrDerived, filePath: path, status: status, lines: lines)
+    return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: status, lines: lines)
   }
 
   func saveFile(_ inputConfFile: InputConfFile) throws {

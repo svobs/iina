@@ -9,33 +9,45 @@
 import Foundation
 
 /*
- Each instance of this class should represent an atomic, quantized operation on an associated `EditableTableView`, which contains all the
- information needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or
- the response to some external update. All of thiis is needed in order to make AppKit animations work.
+ Each instance of this class:
+  * Represents an atomic state change to the UI of an associated `EditableTableView`
+  * Contains all the metadata (though not the actual data) needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or the response to some external update. All of thiis is needed in order to make AppKit animations work.
 
  In order to facilitate table animations, and to get around some AppKit limitations such as the tendency
  for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
  This objects attempts to provide as much of this as possible and provide future reusability.
  */
 class TableUIChange {
+  // MARK: Static definitions
+
   typealias CompletionHandler = (TableUIChange) -> Void
+
   // After removal of rows, select the next single row after the last one removed:
   static let selectNextRowAfterDelete = true
 
   enum ChangeType {
-    case selectionChangeOnly
-    case addRows
     case removeRows
+
+    case addRows
+
     case moveRows
+
     case updateRows
+
+    case selectionChangeOnly
+
     // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
     // use this only when absolutely needed:
     case reloadAll
+
     // Can have any number of adds, removes, moves, and updates:
     case wholeTableDiff
+
     // Just a placeholder, to be replaced with `wholeTableDiff` but also highlight changes
     case undoRedo
   }
+
+  // MARK: Instance Vars
 
   // Required
   let changeType: ChangeType
@@ -50,14 +62,16 @@ class TableUIChange {
 
   // MARK: Additoional options
 
-  var scrollToFirstSelectedRow: Bool = false
+  // Animation overrides. Leave nil to use the value from the table
+  var rowInsertAnimation: NSTableView.AnimationOptions? = nil
+  var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
 
   // If true, reload all existing rows after executing the primary differences (to cover the case that one of them may have changed)
   var reloadAllExistingRows: Bool = false
 
-  // Leave nil to use the value from the table
-  var rowInsertAnimation: NSTableView.AnimationOptions? = nil
-  var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
+  // If true, and only if there are selected row(s), scroll the table so that the first selected row is
+  // visible to the user. Does this after `reloadAllExistingRows` but before `completionHandler`.
+  var scrollToFirstSelectedRow: Bool = false
 
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableUIChange.CompletionHandler?
@@ -66,6 +80,8 @@ class TableUIChange {
     self.changeType = changeType
     self.completionHandler = completionHandler
   }
+
+  // MARK: Execute
 
   // Subclasses should override executeStructureUpdates() instead of this
   func execute(on tableView: EditableTableView) {
@@ -116,30 +132,37 @@ class TableUIChange {
     let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
     switch changeType {
-      case .selectionChangeOnly:
-        fallthrough
+
+      case .removeRows:
+        if let indexes = self.toRemove {
+          tableView.removeRows(at: indexes, withAnimation: removeAnimation)
+        }
+
+      case .addRows:
+        if let indexes = self.toInsert {
+          tableView.insertRows(at: indexes, withAnimation: insertAnimation)
+        }
+
       case .moveRows:
         if let movePairs = self.toMove {
           for (oldIndex, newIndex) in movePairs {
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
-      case .addRows:
-        if let indexes = self.toInsert {
-          tableView.insertRows(at: indexes, withAnimation: insertAnimation)
-        }
-      case .removeRows:
-        if let indexes = self.toRemove {
-          tableView.removeRows(at: indexes, withAnimation: removeAnimation)
-        }
+
       case .updateRows:
         // Just redraw all of them. This is a very inexpensive operation, and much easier
         // than chasing down all the possible ways other rows could be updated.
         tableView.reloadExistingRows()
+
+      case .selectionChangeOnly:
+        fallthrough
+
       case .reloadAll:
         // Try not to use this much, if at all
         Logger.log("TableUIChange: ReloadAll", level: .verbose)
         tableView.reloadData()
+
       case .wholeTableDiff:
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
@@ -158,11 +181,29 @@ class TableUIChange {
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
+
       case .undoRedo:
         Logger.log("TableUIChange: cannot execute type .undoRedo directly!", level: .error)
     }
   }
 
+  // MARK: Diff
+
+  /*
+   Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, `toMove`, and `newSelectedRows` fields
+   based on a diffing algorithm similar to Git's.
+
+   Note for tables containing non-unique rows:
+   If changes were made to row(s) which not unique in the table, the diffing algorithm can't reliably
+   identify which of the duplicates changed and which didn't, and may pick the wrong ones.
+   Assuming the positions of shared rows are fungible, this isn't exactly wrong but may be visually
+   inconvenient for things like undo. Where possible, this should be avoided in favor of explicit information.
+
+   Solution shared by Giles Hammond:
+   https://stackoverflow.com/a/63281265/1347529S
+   Further reference:
+   https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
+   */
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, isUndoRedo: Bool = false,
                            completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
@@ -177,12 +218,6 @@ class TableUIChange {
 
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
-    /*
-     Solution shared by Giles Hammond:
-     https://stackoverflow.com/a/63281265/1347529S
-     Further reference:
-     https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
-     */
     let steps = newRows.difference(from: oldRows).steps
     Logger.log("Computing table diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
     for step in steps {
@@ -210,7 +245,6 @@ class TableUIChange {
       if isUndoRedo {  // Special styling for undo & redo
         if toMove.isEmpty && toRemove.isEmpty && !toInsert.isEmpty {
           // If lines were added with no other changes, highlight them.
-          // The diff algorithm can't reliably distinguish between moved rows and add/removes, so don't highlight those.
           tableUIChange.newSelectedRows = IndexSet()
           // Only inserts: select added lines
           for insertedIndex in toInsert {
