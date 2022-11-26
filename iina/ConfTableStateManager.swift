@@ -164,8 +164,8 @@ class ConfTableStateManager: NSObject {
   private func doAction(_ newData: UndoData, specialState: ConfTableState.SpecialState = .none,
                         completionHandler: TableUIChange.CompletionHandler? = nil) {
 
-    let oldState = ConfTableState.current
-    var oldData = UndoData(userConfDict: oldState.userConfDict, selectedConfName: oldState.selectedConfName)
+    let tableStateOld = ConfTableState.current
+    var oldData = UndoData(userConfDict: tableStateOld.userConfDict, selectedConfName: tableStateOld.selectedConfName)
 
     // Action label for Undo (or Redo) menu item, if applicable
     var actionName: String? = nil
@@ -174,7 +174,7 @@ class ConfTableStateManager: NSObject {
       // Figure out which of the 3 basic types of file operations was done by doing a basic diff.
       // This is a lot easier because Move is only allowed on 1 file at a time.
       let newUserConfs = Set(userConfDictNew.keys)
-      let oldUserConfs = Set(oldState.userConfDict.keys)
+      let oldUserConfs = Set(tableStateOld.userConfDict.keys)
 
       let addedConfs = newUserConfs.subtracting(oldUserConfs)
       let removedConfs = oldUserConfs.subtracting(newUserConfs)
@@ -182,7 +182,6 @@ class ConfTableStateManager: NSObject {
       if !addedConfs.isEmpty || !removedConfs.isEmpty {
         hasConfListChange = true
       }
-
 
       // Apply conf file disk operations before updating the stored prefs or the UI.
       // Almost all operations on conf files are performed here. It can handle anything needed by "undo"
@@ -222,10 +221,28 @@ class ConfTableStateManager: NSObject {
       }
     }
 
-    let hasSelectionChange = !oldState.selectedConfName.equalsIgnoreCase(newData.selectedConfName ?? oldState.selectedConfName)
-    let hasUndoableChange: Bool = hasSelectionChange || hasConfListChange
-    Logger.log("HasUndoableChange: \(hasUndoableChange), HasSelectionChange: \(hasSelectionChange), SpecialState: \(specialState)", level: .verbose)
+    let tableStateNew = ConfTableState(userConfDict: newData.userConfDict ?? tableStateOld.userConfDict,
+                                       selectedConfName: newData.selectedConfName ?? tableStateOld.selectedConfName,
+                                       specialState: specialState)
 
+    Logger.log("Setting new ConfTableState. (specialState: \(specialState))", level: .verbose)
+    ConfTableState.current = tableStateNew
+
+    // Update userConfDict pref if changed
+    if hasConfListChange {
+      Logger.log("Saving pref: inputConfigs=\(tableStateNew.userConfDict)", level: .verbose)
+      Preference.set(tableStateNew.userConfDict, for: .inputConfigs)
+    }
+
+    // Update selectedConfName and load new file if changed
+    let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)
+    if hasSelectionChange {
+      Logger.log("Saving pref 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)'", level: .verbose)
+      Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
+      loadBindingsFromSelectedConfFile()
+    }
+
+    let hasUndoableChange: Bool = hasSelectionChange || hasConfListChange
     if hasUndoableChange {
       undoHelper.registerUndo(actionName: actionName ?? changeSelectedConfActionName, {
         // Get rid of empty editor before it gets in the way:
@@ -237,25 +254,7 @@ class ConfTableStateManager: NSObject {
       })
     }
 
-    let newState = ConfTableState(userConfDict: newData.userConfDict ?? oldState.userConfDict,
-                                  selectedConfName: newData.selectedConfName ?? oldState.selectedConfName,
-                                  specialState: specialState)
-    ConfTableState.current = newState
-
-    if hasConfListChange {
-        Logger.log("Saving pref: inputConfigs=\(newState.userConfDict)", level: .verbose)
-      // Update userConfDict
-        Preference.set(newState.userConfDict, for: .inputConfigs)
-    }
-
-    // Update selectedConfName and load new file if changed
-    if hasSelectionChange {
-      Logger.log("Saving pref 'currentInputConfigName': '\(oldState.selectedConfName)' -> '\(newState.selectedConfName)'", level: .verbose)
-      Preference.set(newState.selectedConfName, for: .currentInputConfigName)
-      loadBindingsFromSelectedConfFile()
-    }
-
-    updateTableUI(old: oldState, new: newState, completionHandler: completionHandler)
+    updateTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
   }
 
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
