@@ -178,6 +178,7 @@
 		D1D87E002924F92100737886 /* ConfTableStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */; };
 		D1D87E02292B2AEE00737886 /* BiDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87E01292B2AEE00737886 /* BiDictionary.swift */; };
 		D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87E032932086000737886 /* TableUIChangeBuilder.swift */; };
+		D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D87E0529320F7C00737886 /* UndoHelper.swift */; };
 		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
@@ -1521,6 +1522,7 @@
 		D1D87DFF2924F92100737886 /* ConfTableStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableStateManager.swift; sourceTree = "<group>"; };
 		D1D87E01292B2AEE00737886 /* BiDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiDictionary.swift; sourceTree = "<group>"; };
 		D1D87E032932086000737886 /* TableUIChangeBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChangeBuilder.swift; sourceTree = "<group>"; };
+		D1D87E0529320F7C00737886 /* UndoHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoHelper.swift; sourceTree = "<group>"; };
 		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
@@ -2133,6 +2135,7 @@
 				84AABE961DBFB62F00D138FD /* FixedFontManager.h */,
 				84AABE971DBFB62F00D138FD /* FixedFontManager.m */,
 				D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */,
+				D1D87E0529320F7C00737886 /* UndoHelper.swift */,
 				84E745D51DFDD4FD00588DED /* KeyCodeHelper.swift */,
 				840D47971DFEEE6A000D9A64 /* KeyMapping.swift */,
 				84BEEC411DFEE46200F945CA /* StreamReader.swift */,
@@ -2985,6 +2988,7 @@
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
 				E38B3213214FB9EA000F6D27 /* PrefPluginPermissionView.swift in Sources */,
 				847644081D48B413004F6DF5 /* MPVOption.swift in Sources */,
+				D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */,
 				84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */,
 				84A886F31E26CA24008755BB /* Regex.swift in Sources */,
 				D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */,

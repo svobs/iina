@@ -14,9 +14,9 @@ fileprivate let changeSelectedConfActionName: String = "Change Active Config"
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 class ConfTableStateManager: NSObject {
-
+  private var undoHelper = PrefsWindowUndoHelper()
   private var observers: [NSObjectProtocol] = []
-
+  
   private var fileCache: InputConfFileCache {
     InputConfFile.cache
   }
@@ -97,7 +97,7 @@ class ConfTableStateManager: NSObject {
           guard let userConfDictNew = change[.newKey] as? [String: String] else { return }
           if !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) {
             Logger.log("Detected pref update for inputConfigs", level: .verbose)
-            self.updateState(userConfDictNew, selectedConfName: curr.selectedConfName)
+            self.changeState(userConfDictNew, selectedConfName: curr.selectedConfName)
           }
         default:
           return
@@ -116,8 +116,7 @@ class ConfTableStateManager: NSObject {
       return
     }
 
-    guard let inputConfFile = fileCache.getConfFile(confName: targetConfName),
-            !inputConfFile.failedToLoad else {
+    guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
       return  // error already logged. Just return.
     }
     var fileMappings = inputConfFile.parseMappings()
@@ -140,27 +139,9 @@ class ConfTableStateManager: NSObject {
 
     inputConfFile.overwriteFile(with: fileMappings)
 
-    if let undoManager = PreferenceWindowController.undoManager {
-      let undoActionName = Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile)
-      Logger.log("Registering for undo: \"\(undoActionName)\"", level: .verbose)
-
-      undoManager.registerUndo(withTarget: self, handler: { manager in
-        Logger.log(self.format(action: undoActionName, undoManager), level: .verbose)
-        manager.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, isUndo: !isUndo)
-      })
-
-      // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
-      // There's no need to change the name of it for the redo.
-      if !undoManager.isUndoing && !undoManager.isRedoing {
-        undoManager.setActionName(undoActionName)
-      }
-    } else {
-      Logger.log("Cannot register undo for append: ConfTableState.undoManager is nil", level: .verbose)
-    }
-  }
-
-  private func format(action undoActionName: String, _ undoManager: UndoManager) -> String {
-    "\(undoManager.isUndoing ? "Undoing" : (undoManager.isRedoing ? "Redoing" : "Doing")) action \"\(undoActionName)\""
+    undoHelper.registerUndo(actionName: Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile), {
+      self.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, isUndo: !isUndo)
+    })
   }
 
   fileprivate struct UndoData {
@@ -169,14 +150,14 @@ class ConfTableStateManager: NSObject {
     var filesRemovedByLastAction: [String:InputConfFile]?
   }
 
-  func updateState(_ userConfDict: [String:String]? = nil, selectedConfName: String? = nil,
+  func changeState(_ userConfDict: [String:String]? = nil, selectedConfName: String? = nil,
                    specialState: ConfTableState.SpecialState = .none,
                    completionHandler: TableUIChange.CompletionHandler? = nil) {
 
     let selectedConfOverride = specialState == .fallBackToDefaultConf ? ConfTableStateManager.defaultConfName : selectedConfName
-    let doData = UndoData(userConfDict: userConfDict, selectedConfName: selectedConfOverride)
+    let undoData = UndoData(userConfDict: userConfDict, selectedConfName: selectedConfOverride)
 
-    self.doAction(doData, specialState: specialState, completionHandler: completionHandler)
+    self.doAction(undoData, specialState: specialState, completionHandler: completionHandler)
   }
 
   // May be called for do, undo, or redo of an action which changes the table contents or selection
@@ -246,41 +227,14 @@ class ConfTableStateManager: NSObject {
     Logger.log("HasUndoableChange: \(hasUndoableChange), HasSelectionChange: \(hasSelectionChange), SpecialState: \(specialState)", level: .verbose)
 
     if hasUndoableChange {
-      if let undoManager = PreferenceWindowController.undoManager {
-        let currentOp: String
-        let origActionName: String
-        if undoManager.isUndoing {
-          currentOp = "Undo"
-          origActionName = undoManager.undoActionName
-        } else if undoManager.isRedoing {
-          currentOp = "Redo"
-          origActionName = undoManager.redoActionName
-        } else {
-          currentOp = "Do"
-          // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
-          // There's no need to change the name of it for the redo.
-          origActionName = actionName ?? changeSelectedConfActionName
-          undoManager.setActionName(origActionName)
+      undoHelper.registerUndo(actionName: actionName ?? changeSelectedConfActionName, {
+        // Get rid of empty editor before it gets in the way:
+        if ConfTableState.current.isAddingNewConfInline {
+          ConfTableState.current.cancelInlineAdd()
         }
-        let undoOfCurrentOp = currentOp == "Redo" ? "Undo" : "Redo"
 
-        Logger.log("Registering for \"\(undoOfCurrentOp)\" of \"\(origActionName)\"", level: .verbose)
-        undoManager.registerUndo(withTarget: self, handler: { manager in
-          Logger.log(self.format(action: origActionName, undoManager), level: .verbose)
-
-          // Get rid of empty editor before it gets in the way:
-          if ConfTableState.current.isAddingNewConfInline {
-            ConfTableState.current.cancelInlineAdd()
-          }
-
-          manager.doAction(oldData)
-        })
-
-        Logger.log("Executing \"\(currentOp)\" of \"\(origActionName)\"", level: .verbose)
-
-      } else {
-        Logger.log("Cannot register for undo: ConfTableState.undoManager is nil", level: .verbose)
-      }
+        self.doAction(oldData)
+      })
     }
 
     let newState = ConfTableState(userConfDict: newData.userConfDict ?? oldState.userConfDict,

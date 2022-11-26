@@ -18,6 +18,7 @@ class BindingTableStateManager {
     case confFile = "InputConfFile"
   }
 
+  private var undoHelper = PrefsWindowUndoHelper()
   private var observers: [NSObjectProtocol] = []
 
   init() {
@@ -48,8 +49,10 @@ class BindingTableStateManager {
     // Currently don't care about any rows except for "default" section
     let userConfMappingsNew = extractUserConfMappings(from: bindingRowsNew)
 
+    let tableStateOld = BindingTableState.current
+
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    if !BindingTableState.current.filterString.isEmpty {
+    if !tableStateOld.filterString.isEmpty {
       if tableUIChange.changeType == .updateRows || tableUIChange.changeType == .insertRows {
         // This will cause an asynchronous load of the table's UI. So we will end up with 2 table updates from our one action.
         // We will do the op as a separate step, because a "reload" is a sledgehammer which
@@ -58,34 +61,23 @@ class BindingTableStateManager {
       }
     }
 
-    if let undoManager = PreferenceWindowController.undoManager {
-      let bindingTableStateOld = BindingTableState.current
-      let actionName = makeActionName(basedOn: tableUIChange)
+    undoHelper.registerUndo(actionName: makeActionName(basedOn: tableUIChange), {
+      let tableStateNew = BindingTableState.current
 
-      if !undoManager.isUndoing && !undoManager.isRedoing {
-        if let actionName = actionName {
-          undoManager.setActionName(actionName)
-        }
-      }
+      // The undo of the original TableUIChange is just its inverse.
+      // HOWEVER: at present, the undo/redo logic in this class only cares about the "default section" bindings.
+      // This means that other bindings could have been added/removed by other sections above and below the default section
+      // since the last `TableUIChange` was calculated. Don't need to care about anything below the default section,
+      // but do need to adjust the indexes in each `TableUIChange` by the number of rows added/removed above them in order
+      // to stay current.
+      let defaultSectionStartIndexOld = tableStateOld.appInputConfig.defaultSectionStartIndex
+      let defaultSectionStartIndexNew = tableStateNew.appInputConfig.defaultSectionStartIndex
+      let defaultSectionOffsetChange = defaultSectionStartIndexOld - defaultSectionStartIndexNew
+      let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: defaultSectionOffsetChange)
 
-      undoManager.registerUndo(withTarget: self, handler: { manager in
-        let bindingTableStateNew = BindingTableState.current
-
-        // The undo of the original TableUIChange is just its inverse.
-        // HOWEVER: at present, the undo/redo logic in this class only cares about the "default section" bindings.
-        // This means that other bindings could have been added/removed by other sections above and below the default section
-        // since the last `TableUIChange` was calculated. Don't need to care about anything below the default section,
-        // but do need to adjust the indexes in each `TableUIChange` by the number of rows added/removed above them in order
-        // to stay current.
-        let defaultSectionStartIndexOld = bindingTableStateOld.appInputConfig.defaultSectionStartIndex
-        let defaultSectionStartIndexNew = bindingTableStateNew.appInputConfig.defaultSectionStartIndex
-        let defaultSectionOffsetChange = defaultSectionStartIndexOld - defaultSectionStartIndexNew
-        let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: defaultSectionOffsetChange)
-
-        let bindingRowsOld = bindingTableStateOld.appInputConfig.bindingCandidateList
-        manager.doAction(bindingRowsOld, tableUIChangeUndo)
-      })
-    }
+      let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
+      self.doAction(bindingRowsOld, tableUIChangeUndo)
+    })
 
     // Save user's changes to file before doing anything else:
     // FIXME: do not fail from this
@@ -105,10 +97,6 @@ class BindingTableStateManager {
                                                BindingTableStateManager.Key.tableUIChange: tableUIChange]
 
     AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: associatedData)
-  }
-
-  private func format(action undoActionName: String, _ undoManager: UndoManager) -> String {
-    "\(undoManager.isUndoing ? "Undoing" : (undoManager.isRedoing ? "Redoing" : "Doing")) action \"\(undoActionName)\""
   }
 
   private func extractUserConfMappings(from bindingRows: [InputBinding]) -> [KeyMapping] {
