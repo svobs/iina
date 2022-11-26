@@ -114,7 +114,7 @@ struct AppInputConfig {
 
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
-      Logger.log("Completed (v\(appInputConfigNew.version)); posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+      Logger.log("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
       NotificationCenter.default.post(notification)
     }
   }
@@ -133,14 +133,22 @@ struct AppInputConfig {
   let resolverDict: [String: InputBinding]
 
   // (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
-  // The index into `bindingCandidateList` of the first binding in the "default" section.
-  // If the "default" section has no bindings, then this will be the last index of the section preceding it in precendence, or simply 0
-  // if there are no sections preceding it.
+  // The index into `bindingCandidateList` of the first binding in the "default" (user conf) section.
+  // • If the "default" section has no bindings, then this will be the index of the next binding after it in the list,
+  // and also equal to `defaultSectionEndIndex` (thus, defaultSectionSize = defaultSectionEndIndex - defaultSectionStartIndex = 0).
+  // • If the "default" section has no bindings *and* there are no other "strong" sections in the table, then this will be equal to the
+  // size of the list (and not a valid index for lookup)
+  // [Remember that larger index in `bindingCandidateList` equals higher priority; all "weak" sections' bindings are placed at lower
+  // indexes than "default"; and all "strong" sections' bindings (other than default) are placed at higher indexes than "default"].
   let defaultSectionStartIndex: Int
   // The index into `bindingCandidateList` of the last binding in the "default" section.
-  // If the "default" section has no bindings, then this will be the index of the first binding belonging to  the next "strong" section,
+  // If the "default" section has no bindings, then this will be the index of the first binding belonging to the next "strong" section,
   // or simply `bindingCandidateList.count` if there are no sections after it.
   let defaultSectionEndIndex: Int
+
+  var defaultSectionLength: Int {
+    defaultSectionEndIndex - defaultSectionStartIndex
+  }
 
   init(version: Int, bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], defaultSectionStartIndex: Int, defaultSectionEndIndex: Int) {
     self.version = version

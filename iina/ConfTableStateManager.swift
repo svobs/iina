@@ -8,7 +8,7 @@
 
 import Foundation
 
-fileprivate let changeSelectedConfigActionName: String = "Change Active Config"
+fileprivate let changeSelectedConfActionName: String = "Change Active Config"
 
 /*
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
@@ -247,11 +247,26 @@ class ConfTableStateManager: NSObject {
 
     if hasUndoableChange {
       if let undoManager = PreferenceWindowController.undoManager {
+        let currentOp: String
+        let origActionName: String
+        if undoManager.isUndoing {
+          currentOp = "Undo"
+          origActionName = undoManager.undoActionName
+        } else if undoManager.isRedoing {
+          currentOp = "Redo"
+          origActionName = undoManager.redoActionName
+        } else {
+          currentOp = "Do"
+          // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
+          // There's no need to change the name of it for the redo.
+          origActionName = actionName ?? changeSelectedConfActionName
+          undoManager.setActionName(origActionName)
+        }
+        let undoOfCurrentOp = currentOp == "Redo" ? "Undo" : "Redo"
 
-        let undoActionName = actionName ?? changeSelectedConfigActionName
-        Logger.log("Registering for undo: \"\(undoActionName)\"", level: .verbose)
+        Logger.log("Registering for \"\(undoOfCurrentOp)\" of \"\(origActionName)\"", level: .verbose)
         undoManager.registerUndo(withTarget: self, handler: { manager in
-          Logger.log(self.format(action: undoActionName, undoManager), level: .verbose)
+          Logger.log(self.format(action: origActionName, undoManager), level: .verbose)
 
           // Get rid of empty editor before it gets in the way:
           if ConfTableState.current.isAddingNewConfInline {
@@ -261,11 +276,7 @@ class ConfTableStateManager: NSObject {
           manager.doAction(oldData)
         })
 
-        // Action name only needs to be set once per action, and it will displayed for both "Undo {}" and "Redo {}".
-        // There's no need to change the name of it for the redo.
-        if !undoManager.isUndoing && !undoManager.isRedoing {
-          undoManager.setActionName(undoActionName)
-        }
+        Logger.log("Executing \"\(currentOp)\" of \"\(origActionName)\"", level: .verbose)
 
       } else {
         Logger.log("Cannot register for undo: ConfTableState.undoManager is nil", level: .verbose)

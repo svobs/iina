@@ -10,8 +10,8 @@ import Foundation
 
 /*
  Each instance of this class:
-  * Represents an atomic state change to the UI of an associated `EditableTableView`
-  * Contains all the metadata (though not the actual data) needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or the response to some external update. All of thiis is needed in order to make AppKit animations work.
+ * Represents an atomic state change to the UI of an associated `EditableTableView`
+ * Contains all the metadata (though not the actual data) needed to transition it from {State_N} to {State_N+1}, where each state refers to a single user action or the response to some external update. All of thiis is needed in order to make AppKit animations work.
 
  In order to facilitate table animations, and to get around some AppKit limitations such as the tendency
  for it to lose track of the row selection, much additional boilerplate is needed to keep track of state.
@@ -25,37 +25,35 @@ class TableUIChange {
   // After removal of rows, select the next single row after the last one removed:
   static let selectNextRowAfterDelete = true
 
-  enum ChangeType {
+  enum ContentChangeType {
     case removeRows
 
-    case addRows
+    case insertRows
 
     case moveRows
 
     case updateRows
 
-    case selectionChangeOnly
+    // No changes to content, but can specify changes to metadata (selection change, completionHandler, ...)
+    case none
 
     // Due to AppKit limitations (removes selection, disables animations, seems to send extra events)
     // use this only when absolutely needed:
     case reloadAll
 
-    // Can have any number of adds, removes, moves, and updates:
+    // Can have any number of inserts, removes, moves, and updates:
     case wholeTableDiff
-
-    // Just a placeholder, to be replaced with `wholeTableDiff` but also highlight changes
-    case undoRedo
   }
 
   // MARK: Instance Vars
 
   // Required
-  let changeType: ChangeType
+  let changeType: ContentChangeType
 
   var toInsert: IndexSet? = nil
   var toRemove: IndexSet? = nil
   var toUpdate: IndexSet? = nil
-  // Used by ChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
+  // Used by ContentChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
 
   var newSelectedRows: IndexSet? = nil
@@ -76,14 +74,35 @@ class TableUIChange {
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableUIChange.CompletionHandler?
 
-  init(_ changeType: ChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
+  var hasRemove: Bool {
+    if let toRemove = self.toRemove {
+      return !toRemove.isEmpty
+    }
+    return false
+  }
+
+  var hasInsert: Bool {
+    if let toInsert = self.toInsert {
+      return !toInsert.isEmpty
+    }
+    return false
+  }
+
+  var hasMove: Bool {
+    if let toMove = self.toMove {
+      return !toMove.isEmpty
+    }
+    return false
+  }
+
+  init(_ changeType: ContentChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
     self.changeType = changeType
     self.completionHandler = completionHandler
   }
 
   // MARK: Execute
 
-  // Subclasses should override executeStructureUpdates() instead of this
+  // Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
     NSAnimationContext.runAnimationGroup({context in
       self.executeInAnimationGroup(tableView, context)
@@ -108,7 +127,7 @@ class TableUIChange {
       context.duration = 0.0
       context.allowsImplicitAnimation = false
     }
-    executeStructureUpdates(on: tableView)
+    executeContentUpdates(on: tableView)
 
     if let newSelectedRows = self.newSelectedRows {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
@@ -127,7 +146,7 @@ class TableUIChange {
     tableView.endUpdates()
   }
 
-  private func executeStructureUpdates(on tableView: EditableTableView) {
+  private func executeContentUpdates(on tableView: EditableTableView) {
     let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
     let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
@@ -138,7 +157,7 @@ class TableUIChange {
           tableView.removeRows(at: indexes, withAnimation: removeAnimation)
         }
 
-      case .addRows:
+      case .insertRows:
         if let indexes = self.toInsert {
           tableView.insertRows(at: indexes, withAnimation: insertAnimation)
         }
@@ -155,7 +174,7 @@ class TableUIChange {
         // than chasing down all the possible ways other rows could be updated.
         tableView.reloadExistingRows()
 
-      case .selectionChangeOnly:
+      case .none:
         fallthrough
 
       case .reloadAll:
@@ -181,10 +200,83 @@ class TableUIChange {
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
-
-      case .undoRedo:
-        Logger.log("TableUIChange: cannot execute type .undoRedo directly!", level: .error)
     }
+  }
+
+  // Derives the inverse of this `TableUIChange` (as suitable for an Undo) and returns it.
+  func inverse(andAdjustAllIndexesBy offset: Int = 0) -> TableUIChange {
+    let inverted: TableUIChange
+
+    switch changeType {
+
+      case .removeRows:
+        inverted = TableUIChange(.insertRows)
+
+      case .insertRows:
+        inverted = TableUIChange(.removeRows)
+
+      case .moveRows:
+        inverted = TableUIChange(.moveRows)
+
+      case .updateRows:
+        inverted = TableUIChange(.updateRows)
+
+      case .none, .reloadAll, .wholeTableDiff:
+        // Will not cause a failure. But can't think of a reason to ever invert these types
+        Logger.log("Calling inverse() on content change type '\(changeType)': was this intentional?", level: .warning)
+        inverted = TableUIChange(changeType)
+    }
+
+    if let toRemove = self.toRemove {
+      inverted.toInsert = IndexSet(toRemove.map({ $0 + offset }))
+      Logger.log("Inverse: changed removes=\(toRemove.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
+    }
+    if let toInsert = self.toInsert {
+      inverted.toRemove = IndexSet(toInsert.map({ $0 + offset }))
+      Logger.log("Inverse: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})", level: .verbose)
+    }
+    if let movePairs = self.toMove {
+      inverted.toMove = []
+      for (fromIndex, toIndex) in movePairs.reversed() {
+        let fromIndexNew = toIndex + offset
+        let toIndexNew = fromIndex + offset
+        inverted.toMove?.append((fromIndexNew, toIndexNew))
+
+        // FIXME: selection isn't correct
+//          if fromIndexNew < toIndexNew {
+//            // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
+//            moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
+//            newSelectedRows.insert(insertIndex + moveFromOffset - 1)
+//            moveFromOffset -= 1
+//          } else {
+//            moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
+//            newSelectedRows.insert(insertIndex + moveToOffset)
+//            moveToOffset += 1
+//          }
+
+      }
+      Logger.log("Inverse: changed movePairs=\(movePairs) into movePairs=\(inverted.toMove!)", level: .verbose)
+    }
+
+    if inverted.changeType != .none && inverted.changeType != .reloadAll {
+      inverted.newSelectedRows = IndexSet()
+
+      // Select inserted lines
+      if let toInsert = inverted.toInsert {
+        for insertedIndex in toInsert {
+          inverted.newSelectedRows?.insert(insertedIndex)
+        }
+      }
+      if let toMove = inverted.toMove {
+        for (_, toIndex) in toMove {
+          inverted.newSelectedRows?.insert(toIndex)
+        }
+      }
+      Logger.log("Inverse: selectedRows=\(inverted.newSelectedRows!.map({$0}))", level: .verbose)
+    }
+    inverted.applyExtraSelectionRules()
+
+    return inverted
   }
 
   // MARK: Diff
@@ -232,28 +324,34 @@ class TableUIChange {
       }
     }
 
-    if let toInsert = tableUIChange.toInsert, let toMove = tableUIChange.toMove, let toRemove = tableUIChange.toRemove {
-
-      if TableUIChange.selectNextRowAfterDelete && toMove.isEmpty && toInsert.isEmpty && !toRemove.isEmpty {
-        // After selected rows are deleted, keep a selection on the table by selecting the next row
-        if let lastRemoveIndex = toRemove.last, toRemove.count < oldRows.count {
-          let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
-          tableUIChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
-        }
-      }
-
-      if isUndoRedo {  // Special styling for undo & redo
-        if toMove.isEmpty && toRemove.isEmpty && !toInsert.isEmpty {
-          // If lines were added with no other changes, highlight them.
-          tableUIChange.newSelectedRows = IndexSet()
-          // Only inserts: select added lines
+    if isUndoRedo {  // Special styling for undo & redo
+      if !tableUIChange.hasMove && !tableUIChange.hasRemove && tableUIChange.hasInsert {
+        // If lines were added with no other changes, highlight them.
+        tableUIChange.newSelectedRows = IndexSet()
+        // Only inserts: select added lines
+        if let toInsert = tableUIChange.toInsert {
           for insertedIndex in toInsert {
             tableUIChange.newSelectedRows?.insert(insertedIndex)
           }
         }
       }
     }
+    tableUIChange.applyExtraSelectionRules()
 
     return tableUIChange
+  }
+
+  private func applyExtraSelectionRules() {
+    if TableUIChange.selectNextRowAfterDelete && !self.hasMove && !self.hasInsert && self.hasRemove {
+      // After selected rows are deleted, keep a selection on the table by selecting the next row
+      if let toRemove = self.toRemove, let lastRemoveIndex = toRemove.last {
+        let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
+        if newSelectionIndex < 0 {
+          Logger.log("selectNextRowAfterDelete: new selection index is less than zero! Discarding", level: .error)
+        } else {
+          self.newSelectedRows = IndexSet(integer: newSelectionIndex)
+        }
+      }
+    }
   }
 }

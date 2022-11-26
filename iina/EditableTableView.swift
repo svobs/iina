@@ -276,7 +276,7 @@ class EditableTableView: NSTableView {
     observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableShouldChange))
   }
 
-  // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ChangeType`).
+  // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ContentChangeType`).
   // This notification contains the information needed to make the updates to the table (see: `TableUIChange`).
   private func tableShouldChange(_ notification: Notification) {
     guard let tableUIChange = notification.object as? TableUIChange else {

@@ -32,13 +32,20 @@ struct ConfTableState {
     case fallBackToDefaultConf
   }
 
+  // MARK: State vars
+
   let specialState: SpecialState
 
-  // MARK: Actual data
-
+  // Combined with built-in conf
   let userConfDict: [String: String]
 
   let selectedConfName: String
+
+  /*
+   Contains names of all the default confs in pre-defined order, follwed by the names of all user confs in alphabetical order.
+   Each name is unique within the Conf TableView and serve as identifiers.
+   */
+  let confTableRows: [String]
 
   // MARK: Derived data
 
@@ -66,11 +73,6 @@ struct ConfTableState {
     return self.specialState == .addingNewInline
   }
 
-  /*
-   Contains names of all user confs, which are also the identifiers in the UI table.
-   */
-  let confTableRows: [String]
-
   init(userConfDict: [String: String], selectedConfName: String, specialState: SpecialState) {
     self.userConfDict = userConfDict
     self.selectedConfName = selectedConfName
@@ -79,6 +81,8 @@ struct ConfTableState {
                                                            isAddingNewConfInline: specialState == .addingNewInline)
   }
 
+  // MARK: Non-mutating getters
+
   var isSelectedConfReadOnly: Bool {
     return isDefaultConf(selectedConfName)
   }
@@ -86,8 +90,6 @@ struct ConfTableState {
   func isDefaultConf(_ confName: String) -> Bool {
     return AppData.defaultConfs[confName] != nil
   }
-
-  // MARK: Conf CRUD
 
   func getFilePath(forConfName confName: String) -> String {
     if let defaultConfPath = AppData.defaultConfs[confName] {
@@ -122,43 +124,7 @@ struct ConfTableState {
     return confTableRows[index]
   }
 
-  func fallBackToDefaultConf() {
-    Logger.log("Changing selected conf to default", level: .verbose)
-    ConfTableState.manager.updateState(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
-  }
-
-  func changeSelectedConf(_ newIndex: Int) {
-    Logger.log("Changing conf selection, newIndex=\(newIndex)", level: .verbose)
-    guard let selectedConfNew = getConfName(at: newIndex) else {
-      Logger.log("Cannot change conf selection: invalid index: \(newIndex)", level: .error)
-      return
-    }
-    if isAddingNewConfInline && selectedConfNew == "" {
-      return
-    }
-    changeSelectedConf(selectedConfNew)
-  }
-
-  func changeSelectedConf(_ selectedConfNew: String) {
-    guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
-      return
-    }
-    guard confTableRows.contains(selectedConfNew) else {
-      Logger.log("Could not change selected conf to '\(selectedConfNew)' (not found in table); falling back to default conf", level: .error)
-      fallBackToDefaultConf()
-      return
-    }
-
-    guard isRow(selectedConfNew) else {
-      Logger.log("Could not change selected conf to '\(selectedConfNew)' (no entry in prefs dict); falling back to default conf", level: .error)
-      fallBackToDefaultConf()
-      return
-    }
-
-    Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
-
-    ConfTableState.manager.updateState(selectedConfName: selectedConfNew)
-  }
+  // MARK: Operations which change state
 
   // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
   // Posts update notification
@@ -278,6 +244,46 @@ struct ConfTableState {
     } else {
       ConfTableState.manager.appendBindingsToUserConfFile(bindings, targetConfName: targetConfName)
     }
+  }
+
+  // MARK: Change Selection
+
+  func fallBackToDefaultConf() {
+    Logger.log("Changing selected conf to default", level: .verbose)
+    ConfTableState.manager.updateState(selectedConfName: ConfTableStateManager.defaultConfName, specialState: .fallBackToDefaultConf)
+  }
+
+  func changeSelectedConf(_ newIndex: Int) {
+    Logger.log("Changing conf selection, newIndex=\(newIndex)", level: .verbose)
+    guard let selectedConfNew = getConfName(at: newIndex) else {
+      Logger.log("Cannot change conf selection: invalid index: \(newIndex)", level: .error)
+      return
+    }
+    if isAddingNewConfInline && selectedConfNew == "" {
+      return
+    }
+    changeSelectedConf(selectedConfNew)
+  }
+
+  func changeSelectedConf(_ selectedConfNew: String) {
+    guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
+      return
+    }
+    guard confTableRows.contains(selectedConfNew) else {
+      Logger.log("Could not change selected conf to '\(selectedConfNew)' (not found in table); falling back to default conf", level: .error)
+      fallBackToDefaultConf()
+      return
+    }
+
+    guard isRow(selectedConfNew) else {
+      Logger.log("Could not change selected conf to '\(selectedConfNew)' (no entry in prefs dict); falling back to default conf", level: .error)
+      fallBackToDefaultConf()
+      return
+    }
+
+    Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
+
+    ConfTableState.manager.updateState(selectedConfName: selectedConfNew)
   }
 
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars

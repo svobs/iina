@@ -109,14 +109,8 @@ class AppInputConfigBuilder {
       // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
       // Remember, all weak bindings precede the default section, and all strong bindings come after it.
       // But any section may have zero bindings.
-      if countOfDefaultSectionBindings > 0 {
-        defaultSectionStartIndex = countOfWeakSectionBindings
-        defaultSectionEndIndex = countOfWeakSectionBindings + countOfDefaultSectionBindings
-      } else {
-        let startIndex = max(0, countOfWeakSectionBindings - 1)
-        defaultSectionStartIndex = startIndex
-        defaultSectionEndIndex = min(startIndex + 1, linkedList.count)
-      }
+      defaultSectionStartIndex = countOfWeakSectionBindings
+      defaultSectionEndIndex = countOfWeakSectionBindings + countOfDefaultSectionBindings
 
       return Array<InputBinding>(linkedList)
     }
