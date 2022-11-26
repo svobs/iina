@@ -68,7 +68,7 @@ class BindingTableStateManager {
         }
       }
 
-      undoManager.registerUndo(withTarget: self, handler: { bindingTableState in
+      undoManager.registerUndo(withTarget: self, handler: { manager in
         let bindingTableStateNew = BindingTableState.current
 
         // The undo of the original TableUIChange is just its inverse.
@@ -80,10 +80,10 @@ class BindingTableStateManager {
         let defaultSectionStartIndexOld = bindingTableStateOld.appInputConfig.defaultSectionStartIndex
         let defaultSectionStartIndexNew = bindingTableStateNew.appInputConfig.defaultSectionStartIndex
         let defaultSectionOffsetChange = defaultSectionStartIndexOld - defaultSectionStartIndexNew
-        let tableUIChangeUndo = tableUIChange.inverse(andAdjustAllIndexesBy: defaultSectionOffsetChange)
+        let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: defaultSectionOffsetChange)
 
         let bindingRowsOld = bindingTableStateOld.appInputConfig.bindingCandidateList
-        bindingTableState.doAction(bindingRowsOld, tableUIChangeUndo)
+        manager.doAction(bindingRowsOld, tableUIChangeUndo)
       })
     }
 
@@ -208,9 +208,9 @@ class BindingTableStateManager {
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, isUndoRedo: Bool = false) -> TableUIChange {
+  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state.
-    let tableUIChange = TableUIChange.buildDiff(oldRows: oldState.filteredRows, newRows: newState.filteredRows, isUndoRedo: isUndoRedo)
+    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: oldState.filteredRows, newRows: newState.filteredRows)
     tableUIChange.rowInsertAnimation = .effectFade
     tableUIChange.rowRemoveAnimation = .effectFade
     return tableUIChange

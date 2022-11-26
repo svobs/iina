@@ -306,8 +306,8 @@ class ConfTableStateManager: NSObject {
 
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
-    let tableUIChange = TableUIChange.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
-                                                completionHandler: completionHandler)
+    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
+                                                       completionHandler: completionHandler)
     tableUIChange.scrollToFirstSelectedRow = true
 
     switch new.specialState {
