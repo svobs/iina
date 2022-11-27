@@ -317,6 +317,6 @@ class ConfTableStateManager: NSObject {
 
     // Send down the pipeline
     let userConfMappingsNew = inputConfFile.parseMappings()
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: userData)
+    AppInputConfig.replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: userData)
   }
 }

@@ -129,8 +129,8 @@ struct BindingTableState {
     return insertIndex
   }
 
-  func appendBindingsToDefaultSection(_ mappingList: [KeyMapping]) {
-    insertNewBindings(relativeTo: appInputConfig.defaultSectionEndIndex, mappingList)
+  func appendBindingsToUserConfSection(_ mappingList: [KeyMapping]) {
+    insertNewBindings(relativeTo: appInputConfig.userConfSectionEndIndex, mappingList)
   }
 
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
@@ -150,7 +150,7 @@ struct BindingTableState {
     var allRowsNew = allRows
     for mapping in mappingList.reversed() {
       // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-      allRowsNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
+      allRowsNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME), at: insertIndex)
     }
 
     doAction(allRowsNew, tableUIChange)
@@ -262,13 +262,13 @@ struct BindingTableState {
     // The "default" section is the only section which can be edited or changed.
     // If the insert cursor is outside the default section, then snap it to the nearest valid index.
     let ai = self.appInputConfig
-    if insertIndex < ai.defaultSectionStartIndex {
-      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is before the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionStartIndex)", level: .verbose)
-      return ai.defaultSectionStartIndex
+    if insertIndex < ai.userConfSectionStartIndex {
+      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is before the default section (\(ai.userConfSectionStartIndex) - \(ai.userConfSectionEndIndex)). Snapping it to index: \(ai.userConfSectionStartIndex)", level: .verbose)
+      return ai.userConfSectionStartIndex
     }
-    if insertIndex > ai.defaultSectionEndIndex {
-      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.defaultSectionStartIndex) - \(ai.defaultSectionEndIndex)). Snapping it to index: \(ai.defaultSectionEndIndex)", level: .verbose)
-      return ai.defaultSectionEndIndex
+    if insertIndex > ai.userConfSectionEndIndex {
+      Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.userConfSectionStartIndex) - \(ai.userConfSectionEndIndex)). Snapping it to index: \(ai.userConfSectionEndIndex)", level: .verbose)
+      return ai.userConfSectionEndIndex
     }
 
     Logger.log("Returning insertIndex: \(insertIndex) from requestedIndex: \(requestedIndex)", level: .verbose)

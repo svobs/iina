@@ -11,10 +11,10 @@ import Foundation
 class AppInputConfigBuilder {
   private let sectionStack: InputSectionStack
 
-  // See `AppInputConfig.defaultSectionStartIndex`
-  private var defaultSectionStartIndex: Int? = nil
-  // See `AppInputConfig.defaultSectionEndIndex`
-  private var defaultSectionEndIndex: Int? = nil
+  // See `AppInputConfig.userConfSectionStartIndex`
+  private var userConfSectionStartIndex: Int? = nil
+  // See `AppInputConfig.userConfSectionEndIndex`
+  private var userConfSectionEndIndex: Int? = nil
 
   init(_ sectionStack: InputSectionStack) {
     self.sectionStack = sectionStack
@@ -28,7 +28,7 @@ class AppInputConfigBuilder {
     Logger.log("Starting rebuild of AppInputConfig v\(version)", level: .verbose, subsystem: sectionStack.subsystem)
 
     // Build the list of InputBindings, including redundancies. We're not done setting each's `isEnabled` field though.
-    // This also sets `defaultSectionStartIndex` and `defaultSectionEndIndex`.
+    // This also sets `userConfSectionStartIndex` and `userConfSectionEndIndex`.
     let bindingCandidateList = self.combineEnabledSectionBindings()
     var resolverDict: [String: InputBinding] = [:]
 
@@ -58,7 +58,7 @@ class AppInputConfigBuilder {
     fillInPartialSequences(&resolverDict)
 
     let appBindings = AppInputConfig(version: version, bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
-                                     defaultSectionStartIndex: defaultSectionStartIndex!, defaultSectionEndIndex: defaultSectionEndIndex!)
+                                     userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
     Logger.log("Finished rebuild of AppInputConfig (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
     appBindings.logEnabledBindings()
 
@@ -74,7 +74,7 @@ class AppInputConfigBuilder {
     InputSectionStack.dq.sync {
       var linkedList = LinkedList<InputBinding>()
 
-      var countOfDefaultSectionBindings: Int = 0
+      var countOfUserConfSectionBindings: Int = 0
       var countOfWeakSectionBindings: Int = 0
 
       // Iterate from bottom to the top of the "stack":
@@ -88,8 +88,8 @@ class AppInputConfigBuilder {
           continue
         }
 
-        if inputSection.origin == .confFile && inputSection.name == SharedInputSection.DEFAULT_SECTION_NAME {
-          countOfDefaultSectionBindings = inputSection.keyMappingList.count
+        if inputSection.origin == .confFile && inputSection.name == SharedInputSection.USER_CONF_SECTION_NAME {
+          countOfUserConfSectionBindings = inputSection.keyMappingList.count
         } else if !inputSection.isForce {
           countOfWeakSectionBindings += inputSection.keyMappingList.count
         }
@@ -109,8 +109,8 @@ class AppInputConfigBuilder {
       // Best to set these variables here while still having a well-defined section structure, than try to guess it later.
       // Remember, all weak bindings precede the default section, and all strong bindings come after it.
       // But any section may have zero bindings.
-      defaultSectionStartIndex = countOfWeakSectionBindings
-      defaultSectionEndIndex = countOfWeakSectionBindings + countOfDefaultSectionBindings
+      userConfSectionStartIndex = countOfWeakSectionBindings
+      userConfSectionEndIndex = countOfWeakSectionBindings + countOfUserConfSectionBindings
 
       return Array<InputBinding>(linkedList)
     }

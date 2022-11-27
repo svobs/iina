@@ -20,7 +20,7 @@ struct AppInputConfig {
   // Sort of like a prototype, but a change to any of these sections will immediately affects all players.
   static private let sharedSectionStack = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
                                                             initialEnabledSections: [
-                                                              SharedInputSection(name: SharedInputSection.DEFAULT_SECTION_NAME, isForce: true, origin: .confFile),
+                                                              SharedInputSection(name: SharedInputSection.USER_CONF_SECTION_NAME, isForce: true, origin: .confFile),
                                                               SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
                                                               SharedInputSection(name: SharedInputSection.VIDEO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
                                                               SharedInputSection(name: SharedInputSection.PLUGINS_SECTION_NAME, isForce: false, origin: .iinaPlugin)
@@ -31,11 +31,11 @@ struct AppInputConfig {
   }
 
   static var userConfMappings: [KeyMapping] {
-    return sharedSectionStack.sectionsDefined[SharedInputSection.DEFAULT_SECTION_NAME]!.keyMappingList
+    return sharedSectionStack.sectionsDefined[SharedInputSection.USER_CONF_SECTION_NAME]!.keyMappingList
   }
 
-  static func replaceDefaultSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {
-    replaceMappings(forSharedSectionName: SharedInputSection.DEFAULT_SECTION_NAME, with: userConfMappings, attaching: userData)
+  static func replaceUserConfSectionMappings(with userConfMappings: [KeyMapping], attaching userData: NotificationData? = nil) {
+    replaceMappings(forSharedSectionName: SharedInputSection.USER_CONF_SECTION_NAME, with: userConfMappings, attaching: userData)
   }
 
 
@@ -74,7 +74,7 @@ struct AppInputConfig {
 
   // The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   // the active bindings are rebuilt and the old set is discarded.
-  static private(set) var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], defaultSectionStartIndex: 0, defaultSectionEndIndex: 0)
+  static private(set) var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], userConfSectionStartIndex: 0, userConfSectionEndIndex: 0)
 
   /*
    This attempts to mimick the logic in mpv's `get_cmd_from_keys()` function in input/input.c.
@@ -135,27 +135,27 @@ struct AppInputConfig {
   // (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
   // The index into `bindingCandidateList` of the first binding in the "default" (user conf) section.
   // • If the "default" section has no bindings, then this will be the index of the next binding after it in the list,
-  // and also equal to `defaultSectionEndIndex` (thus, defaultSectionSize = defaultSectionEndIndex - defaultSectionStartIndex = 0).
+  // and also equal to `userConfSectionEndIndex` (thus, userConfSectionSize = userConfSectionEndIndex - userConfSectionStartIndex = 0).
   // • If the "default" section has no bindings *and* there are no other "strong" sections in the table, then this will be equal to the
   // size of the list (and not a valid index for lookup)
   // [Remember that larger index in `bindingCandidateList` equals higher priority; all "weak" sections' bindings are placed at lower
   // indexes than "default"; and all "strong" sections' bindings (other than default) are placed at higher indexes than "default"].
-  let defaultSectionStartIndex: Int
+  let userConfSectionStartIndex: Int
   // The index into `bindingCandidateList` of the last binding in the "default" section.
   // If the "default" section has no bindings, then this will be the index of the first binding belonging to the next "strong" section,
   // or simply `bindingCandidateList.count` if there are no sections after it.
-  let defaultSectionEndIndex: Int
+  let userConfSectionEndIndex: Int
 
-  var defaultSectionLength: Int {
-    defaultSectionEndIndex - defaultSectionStartIndex
+  var userConfSectionLength: Int {
+    userConfSectionEndIndex - userConfSectionStartIndex
   }
 
-  init(version: Int, bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], defaultSectionStartIndex: Int, defaultSectionEndIndex: Int) {
+  init(version: Int, bindingCandidateList: [InputBinding], resolverDict: [String: InputBinding], userConfSectionStartIndex: Int, userConfSectionEndIndex: Int) {
     self.version = version
     self.bindingCandidateList = bindingCandidateList
     self.resolverDict = resolverDict
-    self.defaultSectionStartIndex = defaultSectionStartIndex
-    self.defaultSectionEndIndex = defaultSectionEndIndex
+    self.userConfSectionStartIndex = userConfSectionStartIndex
+    self.userConfSectionEndIndex = userConfSectionEndIndex
   }
 
   func logEnabledBindings() {

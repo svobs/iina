@@ -240,7 +240,7 @@ struct ConfTableState {
 
     if targetConfName == selectedConfName {
       // If conf is being displayed already, give data to BindingTableState. It will include animations and do a better job.
-      BindingTableState.current.appendBindingsToDefaultSection(bindings)
+      BindingTableState.current.appendBindingsToUserConfSection(bindings)
     } else {
       ConfTableState.manager.appendBindingsToUserConfFile(bindings, targetConfName: targetConfName)
     }

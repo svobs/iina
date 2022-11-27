@@ -70,10 +70,10 @@ class BindingTableStateManager {
       // since the last `TableUIChange` was calculated. Don't need to care about anything below the default section,
       // but do need to adjust the indexes in each `TableUIChange` by the number of rows added/removed above them in order
       // to stay current.
-      let defaultSectionStartIndexOld = tableStateOld.appInputConfig.defaultSectionStartIndex
-      let defaultSectionStartIndexNew = tableStateNew.appInputConfig.defaultSectionStartIndex
-      let defaultSectionOffsetChange = defaultSectionStartIndexOld - defaultSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: defaultSectionOffsetChange)
+      let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
+      let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
+      let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
+      let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
       self.doAction(bindingRowsOld, tableUIChangeUndo)
@@ -96,7 +96,7 @@ class BindingTableStateManager {
     let associatedData: [AnyHashable : Any] = [BindingTableStateManager.Key.confFile: updatedConfFile,
                                                BindingTableStateManager.Key.tableUIChange: tableUIChange]
 
-    AppInputConfig.replaceDefaultSectionMappings(with: userConfMappingsNew, attaching: associatedData)
+    AppInputConfig.replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: associatedData)
   }
 
   private func extractUserConfMappings(from bindingRows: [InputBinding]) -> [KeyMapping] {

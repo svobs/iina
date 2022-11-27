@@ -67,9 +67,10 @@ class MPVInputSection: InputSection {
 }
 
 class SharedInputSection: MPVInputSection {
-  // The 'default' section contains the bindings loaded from the currently
-  // selected input config file, and will be shared for all `PlayerCore` instances.
-  static let DEFAULT_SECTION_NAME = "default"
+  // The "default" section contains the bindings loaded from the user's currently
+  // selected input conf file, and will be shared for all `PlayerCore` instances.
+  // Note: mpv expects this section to be named "default", so this constant should not be changed.
+  static let USER_CONF_SECTION_NAME = "default"
 
   static let VIDEO_FILTERS_SECTION_NAME = "IINA Video Filters"
   static let AUDIO_FILTERS_SECTION_NAME = "IINA Audio Filters"
