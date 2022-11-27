@@ -131,7 +131,6 @@ class KeyMapping: NSObject, Codable {
   func clone(rawKey: String? = nil, rawAction: String? = nil) -> KeyMapping {
     return KeyMapping(rawKey: rawKey ?? self.rawKey,
                       rawAction: rawAction ?? self.rawAction,
-                      isIINACommand: self.isIINACommand,
                       comment: self.comment)
   }
 }

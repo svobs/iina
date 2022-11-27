@@ -38,24 +38,32 @@ struct BindingTableState {
   // The source user conf file
   let inputConfFile: InputConfFile?
 
-  // Should be kept current with the value which the user enters in the search box:
+  // Should be kept current with the value which the user enters in the search box. Empty string means no filter applied
   let filterString: String
 
-  // The table rows currently displayed, which will change depending on the current filterString
+  // The table rows currently displayed, which will change depending on the current `filterString`
   private let filterBimap: BiDictionary<Int, Int>?
 
   // The current *unfiltered* list of table rows
-  private var bindingRows: [InputBinding] {
+  private var allRows: [InputBinding] {
     appInputConfig.bindingCandidateList
+  }
+
+  // The currently displayed list of table rows. Subset of `allRows`; exact number depends on `filterString`
+  var displayedRows: [InputBinding] {
+    if let filterBimap = filterBimap {
+      return allRows.enumerated().compactMap({ filterBimap.keys.contains($0.offset) ? $0.element : nil })
+    }
+    return allRows
   }
 
   // MARK: Bindings Table CRUD
 
-  var bindingRowCount: Int {
+  var displayedRowCount: Int {
     if let filterBimap = filterBimap {
       return filterBimap.values.count
     }
-    return bindingRows.count
+    return allRows.count
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
@@ -63,20 +71,21 @@ struct BindingTableState {
     guard index >= 0 else { return nil }
     if let filterBimap = filterBimap {
       if let unfilteredIndex = filterBimap[value: index] {
-        return bindingRows[unfilteredIndex]
+        return allRows[unfilteredIndex]
       }
-    } else if  index < bindingRows.count {
-      return bindingRows[index]
+    } else if  index < allRows.count {
+      return allRows[index]
     }
     return nil
   }
 
-  func moveBindings(at rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
+  func moveBindings(from rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
-    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Movimg \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
-    let indexesToMove = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
+    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
+    Logger.log("Moving \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
+
+    let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
 
     // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
     // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
@@ -84,21 +93,21 @@ struct BindingTableState {
     var afterInsert: [InputBinding] = []
     var movedRows: [InputBinding] = []
     var moveIndexPairs: [(Int, Int)] = []
-    var newSelectedRows = IndexSet()
+    var dstIndexes = IndexSet()
     var moveFromOffset = 0
     var moveToOffset = 0
 
     // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
-    for (origIndex, row) in bindingRows.enumerated() {
-      if indexesToMove.contains(origIndex) {
+    for (origIndex, row) in allRows.enumerated() {
+      if srcIndexes.contains(origIndex) {
         if origIndex < insertIndex {
           // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
           moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
-          newSelectedRows.insert(insertIndex + moveFromOffset - 1)
+          dstIndexes.insert(insertIndex + moveFromOffset - 1)  // new selected index
           moveFromOffset -= 1
         } else {
           moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
-          newSelectedRows.insert(insertIndex + moveToOffset)
+          dstIndexes.insert(insertIndex + moveToOffset)  // new selected index
           moveToOffset += 1
         }
         movedRows.append(row)
@@ -108,14 +117,15 @@ struct BindingTableState {
         afterInsert.append(row)
       }
     }
-    let bindingRowsUpdated = beforeInsert + movedRows + afterInsert
+    let allRowsUpdated = beforeInsert + movedRows + afterInsert
 
     let tableUIChange = TableUIChange(.moveRows, completionHandler: afterComplete)
-    Logger.log("Generated \(moveIndexPairs.count) move pairs: \(moveIndexPairs)", level: .verbose)
+    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs), changing selection from \(srcIndexes.map{$0}) to \(dstIndexes.map{$0})", level: .verbose)
     tableUIChange.toMove = moveIndexPairs
-    tableUIChange.newSelectedRows = newSelectedRows
+    tableUIChange.newSelectedRowIndexes = dstIndexes
+    tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
 
-    doAction(bindingRowsUpdated, tableUIChange)
+    doAction(allRowsUpdated, tableUIChange)
     return insertIndex
   }
 
@@ -135,15 +145,15 @@ struct BindingTableState {
     let tableUIChange = TableUIChange(.insertRows, completionHandler: afterComplete)
     let toInsert = IndexSet(insertIndex..<(insertIndex+mappingList.count))
     tableUIChange.toInsert = toInsert
-    tableUIChange.newSelectedRows = toInsert
+    tableUIChange.newSelectedRowIndexes = toInsert
 
-    var bindingRowsNew = bindingRows
+    var allRowsNew = allRows
     for mapping in mappingList.reversed() {
       // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-      bindingRowsNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
+      allRowsNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.DEFAULT_SECTION_NAME), at: insertIndex)
     }
 
-    doAction(bindingRowsNew, tableUIChange)
+    doAction(allRowsNew, tableUIChange)
   }
 
   // Returns the index at which it was ultimately inserted
@@ -170,7 +180,7 @@ struct BindingTableState {
 
     var remainingRowsUnfiltered: [InputBinding] = []
     var lastRemovedIndex = 0
-    for (rowIndex, row) in bindingRows.enumerated() {
+    for (rowIndex, row) in allRows.enumerated() {
       if indexesToRemove.contains(rowIndex) {
         lastRemovedIndex = rowIndex
       } else {
@@ -182,10 +192,10 @@ struct BindingTableState {
 
     if TableUIChange.selectNextRowAfterDelete {
       // After removal, select the single row after the last one removed:
-      let countRemoved = bindingRows.count - remainingRowsUnfiltered.count
-      if countRemoved < bindingRows.count {
+      let countRemoved = allRows.count - remainingRowsUnfiltered.count
+      if countRemoved < allRows.count {
         let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-        tableUIChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
       }
     }
 
@@ -217,8 +227,8 @@ struct BindingTableState {
       indexToUpdate = unfilteredIndex
     }
 
-    tableUIChange.newSelectedRows = IndexSet(integer: indexToUpdate)
-    doAction(bindingRows, tableUIChange)
+    tableUIChange.newSelectedRowIndexes = IndexSet(integer: indexToUpdate)
+    doAction(allRows, tableUIChange)
   }
 
   // MARK: Various utility functions
@@ -232,9 +242,9 @@ struct BindingTableState {
     if requestedIndex < 0 {
       // snap to very beginning
       insertIndex = 0
-    } else if requestedIndex >= bindingRows.count {
+    } else if requestedIndex >= allRows.count {
       // snap to very end
-      insertIndex = bindingRows.count
+      insertIndex = allRows.count
     } else {
       insertIndex = requestedIndex  // default to requested index
     }
@@ -246,7 +256,7 @@ struct BindingTableState {
 
     // Adjust for insert cursor
     if isAfterNotAt {
-      insertIndex = min(insertIndex + 1, bindingRows.count)
+      insertIndex = min(insertIndex + 1, allRows.count)
     }
 
     // The "default" section is the only section which can be edited or changed.
@@ -267,8 +277,8 @@ struct BindingTableState {
 
   // Both params should be calculated based on UNFILTERED rows.
   // Let BindingTableStateManager deal with altering animations with a filter
-  private func doAction(_ bindingRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
-    BindingTableState.manager.doAction(bindingRowsNew, tableUIChange)
+  private func doAction(_ allRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
+    BindingTableState.manager.doAction(allRowsNew, tableUIChange)
   }
 
   private var canModifyCurrentConf: Bool {
@@ -289,14 +299,7 @@ struct BindingTableState {
     BindingTableState.manager.applyFilter(newFilterString: searchString)
   }
 
-  var filteredRows: [InputBinding] {
-    if let filterBimap = filterBimap {
-      return bindingRows.enumerated().compactMap({ filterBimap.keys.contains($0.offset) ? $0.element : nil })
-    }
-    return bindingRows
-  }
-
-  // Returns the index into bindingRows corresponding to the given filtered index.
+  // Returns the index into allRows corresponding to the given filtered index.
   private func getFilteredIndex(fromUnfiltered index: Int) -> Int? {
     guard index >= 0 else {
       return nil
@@ -314,7 +317,7 @@ struct BindingTableState {
     var unfiltered = IndexSet()
     for fi in indexes {
       if let ufi = filterBimap[value: fi] {
-        if let isExcluded = isExcluded, isExcluded(bindingRows[ufi]) {
+        if let isExcluded = isExcluded, isExcluded(allRows[ufi]) {
         } else {
           unfiltered.insert(ufi)
         }

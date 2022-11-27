@@ -571,7 +571,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       // Add a new conf with no name, and immediately open an editor for it.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       let _ = confTableState.addNewUserConfInline(completionHandler: { tableUIChange in
-        if let selectedRowIndex = tableUIChange.newSelectedRows?.first {
+        if let selectedRowIndex = tableUIChange.newSelectedRowIndexes?.first {
           self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
         }
       })
@@ -604,7 +604,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
       if let (newConfName, newFilePath) = self.duplicateCurrentConfFile() {
         self.confTableState.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableUIChange in
-          if let selectedRowIndex = tableUIChange.newSelectedRows?.first {
+          if let selectedRowIndex = tableUIChange.newSelectedRowIndexes?.first {
             self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
           }
         })

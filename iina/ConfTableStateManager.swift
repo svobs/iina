@@ -266,11 +266,11 @@ class ConfTableStateManager: NSObject {
     switch new.specialState {
       case .addingNewInline:  // special case: creating an all-new config
         // Select the new blank row, which will be the last one:
-        tableUIChange.newSelectedRows = IndexSet(integer: new.confTableRows.count - 1)
+        tableUIChange.newSelectedRowIndexes = IndexSet(integer: new.confTableRows.count - 1)
       case .none, .fallBackToDefaultConf:
         // Always keep the current config selected
         if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-          tableUIChange.newSelectedRows = IndexSet(integer: selectedConfIndex)
+          tableUIChange.newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
         }
     }
 

@@ -33,53 +33,43 @@ class TableUIChangeBuilder {
         inverted = TableUIChange(original.changeType)
     }
 
-    if let toRemove = original.toRemove {
-      inverted.toInsert = IndexSet(toRemove.map({ $0 + offset }))
-      Logger.log("Inverse: changed removes=\(toRemove.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
+    if inverted.changeType != .none && inverted.changeType != .reloadAll {
+      inverted.newSelectedRowIndexes = IndexSet()
+    }
+
+    if let removed = original.toRemove {
+      inverted.toInsert = IndexSet(removed.map({ $0 + offset }))
+      // Add inserted lines to selection
+      for insertIndex in inverted.toInsert! {
+        inverted.newSelectedRowIndexes?.insert(insertIndex)
+      }
+      Logger.log("Inverse: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
     }
     if let toInsert = original.toInsert {
       inverted.toRemove = IndexSet(toInsert.map({ $0 + offset }))
       Logger.log("Inverse: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})", level: .verbose)
     }
-    if let movePairs = original.toMove {
-      inverted.toMove = []
-      for (fromIndex, toIndex) in movePairs.reversed() {
+    if let movePairsOrig = original.toMove {
+      var movePairsInverted: [(Int, Int)] = []
+
+      for (fromIndex, toIndex) in movePairsOrig {
         let fromIndexNew = toIndex + offset
         let toIndexNew = fromIndex + offset
-        inverted.toMove?.append((fromIndexNew, toIndexNew))
-
-        // FIXME: selection isn't correct
-        //          if fromIndexNew < toIndexNew {
-        //            // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
-        //            moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
-        //            newSelectedRows.insert(insertIndex + moveFromOffset - 1)
-        //            moveFromOffset -= 1
-        //          } else {
-        //            moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
-        //            newSelectedRows.insert(insertIndex + moveToOffset)
-        //            moveToOffset += 1
-        //          }
-
+        movePairsInverted.append((fromIndexNew, toIndexNew))
       }
-      Logger.log("Inverse: changed movePairs=\(movePairs) into movePairs=\(inverted.toMove!)", level: .verbose)
+
+      inverted.toMove = movePairsInverted.reversed()  // Need to reverse order for proper animation
+
+      // Preserve selection if possible:
+      if let origBeginningSelection = original.oldSelectedRowIndexes,
+          let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
+        inverted.newSelectedRowIndexes = origBeginningSelection
+        inverted.oldSelectedRowIndexes = origEndingSelection
+        Logger.log("Inverse: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})", level: .verbose)
+      }
     }
 
-    if inverted.changeType != .none && inverted.changeType != .reloadAll {
-      inverted.newSelectedRows = IndexSet()
-
-      // Select inserted lines
-      if let toInsert = inverted.toInsert {
-        for insertedIndex in toInsert {
-          inverted.newSelectedRows?.insert(insertedIndex)
-        }
-      }
-      if let toMove = inverted.toMove {
-        for (_, toIndex) in toMove {
-          inverted.newSelectedRows?.insert(toIndex)
-        }
-      }
-      Logger.log("Inverse: selectedRows=\(inverted.newSelectedRows!.map({$0}))", level: .verbose)
-    }
+    // Select next row after delete event (maybe):
     applyExtraSelectionRules(to: inverted)
 
     return inverted
@@ -88,7 +78,7 @@ class TableUIChangeBuilder {
   // MARK: Diff
 
   /*
-   Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, `toMove`, and `newSelectedRows` fields
+   Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, `toMove`, and `newSelectedRowIndexes` fields
    based on a diffing algorithm similar to Git's.
 
    Note for tables containing non-unique rows:
@@ -133,11 +123,11 @@ class TableUIChangeBuilder {
     if isUndoRedo {  // Special styling for undo & redo
       if !diff.hasMove && !diff.hasRemove && diff.hasInsert {
         // If lines were added with no other changes, highlight them.
-        diff.newSelectedRows = IndexSet()
+        diff.newSelectedRowIndexes = IndexSet()
         // Only inserts: select added lines
         if let toInsert = diff.toInsert {
           for insertedIndex in toInsert {
-            diff.newSelectedRows?.insert(insertedIndex)
+            diff.newSelectedRowIndexes?.insert(insertedIndex)
           }
         }
       }
@@ -155,7 +145,7 @@ class TableUIChangeBuilder {
         if newSelectionIndex < 0 {
           Logger.log("selectNextRowAfterDelete: new selection index is less than zero! Discarding", level: .error)
         } else {
-          tableUIChange.newSelectedRows = IndexSet(integer: newSelectionIndex)
+          tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
         }
       }
     }

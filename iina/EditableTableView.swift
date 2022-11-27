@@ -258,15 +258,15 @@ class EditableTableView: NSTableView {
     selectApprovedRowIndexes(selectedRows, byExtendingSelection: false)
   }
 
-  func selectApprovedRowIndexes(_ newSelectedRows: IndexSet, byExtendingSelection: Bool = false) {
+  func selectApprovedRowIndexes(_ newSelectedRowIndexes: IndexSet, byExtendingSelection: Bool = false) {
     // It seems that `selectionIndexesForProposedSelection` needs to be called explicitly
     // in order to keep enforcing selection rules.
-    if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRows) {
+    if let approvedRows = self.delegate?.tableView?(self, selectionIndexesForProposedSelection: newSelectedRowIndexes) {
       Logger.log("Updating table selection to approved indexes: \(approvedRows.map{$0})", level: .verbose)
       self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
     } else {
-      Logger.log("Updating table selection to indexes: \(newSelectedRows.map{$0})", level: .verbose)
-      self.selectRowIndexes(newSelectedRows, byExtendingSelection: byExtendingSelection)
+      Logger.log("Updating table selection to indexes: \(newSelectedRowIndexes.map{$0})", level: .verbose)
+      self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
     }
   }
 
@@ -284,7 +284,7 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log("Got '\(notification.name.rawValue)' notification with changeType \(tableUIChange.changeType)", level: .verbose)
+    Logger.log("Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
     tableUIChange.execute(on: self)
   }
 }

@@ -248,7 +248,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    Tell AppKit the number of rows when it asks
    */
   @objc func numberOfRows(in tableView: NSTableView) -> Int {
-    return bindingTableState.bindingRowCount
+    return bindingTableState.displayedRowCount
   }
 
   // MARK: Drag & Drop
@@ -588,7 +588,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
     guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !rowIndexes.isEmpty else { return }
 
-    let firstInsertedRowIndex = bindingTableState.moveBindings(at: rowIndexes, to: rowIndex, isAfterNotAt: isAfterNotAt,
+    let firstInsertedRowIndex = bindingTableState.moveBindings(from: rowIndexes, to: rowIndex, isAfterNotAt: isAfterNotAt,
                                                                afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }

@@ -56,9 +56,13 @@ class TableUIChange {
   // Used by ContentChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
 
-  var newSelectedRows: IndexSet? = nil
+  var newSelectedRowIndexes: IndexSet? = nil
 
-  // MARK: Additoional options
+  // MARK: Optional vars
+
+  // Provide this to restore old selection when calculating the inverse of this change (when doing an undo of "move").
+  // TODO: (optimization) figure out how to calculate this from `toMove` instead of storing this
+  var oldSelectedRowIndexes: IndexSet? = nil
 
   // Animation overrides. Leave nil to use the value from the table
   var rowInsertAnimation: NSTableView.AnimationOptions? = nil
@@ -129,17 +133,17 @@ class TableUIChange {
     }
     executeContentUpdates(on: tableView)
 
-    if let newSelectedRows = self.newSelectedRows {
+    if let newSelectedRowIndexes = self.newSelectedRowIndexes {
       // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
       // To select added rows, will need an explicit call here.
-      tableView.selectApprovedRowIndexes(newSelectedRows)
+      tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
     }
 
     if reloadAllExistingRows && self.changeType != .reloadAll {
       tableView.reloadExistingRows()
     }
 
-    if let newSelectedRows = self.newSelectedRows, let firstSelectedRow = newSelectedRows.first, scrollToFirstSelectedRow {
+    if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
       tableView.scrollRowToVisible(firstSelectedRow)
     }
 

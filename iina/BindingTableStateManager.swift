@@ -187,7 +187,7 @@ class BindingTableStateManager {
     // If the table change is the result of a new conf file being selected, don't try to retain the selection.
     if let newFile = newState.inputConfFile, let oldFile = oldState.inputConfFile,
         !newFile.canonicalFilePath.equalsIgnoreCase(oldFile.canonicalFilePath) {
-      tableUIChange.newSelectedRows = IndexSet() // will clear any selection
+      tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
     }
 
     // Notify Key Bindings table of update:
@@ -198,7 +198,7 @@ class BindingTableStateManager {
 
   private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state.
-    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: oldState.filteredRows, newRows: newState.filteredRows)
+    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
     tableUIChange.rowInsertAnimation = .effectFade
     tableUIChange.rowRemoveAnimation = .effectFade
     return tableUIChange
