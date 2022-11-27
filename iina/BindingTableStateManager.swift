@@ -61,7 +61,7 @@ class BindingTableStateManager {
       }
     }
 
-    undoHelper.registerUndo(actionName: makeActionName(basedOn: tableUIChange), {
+    undoHelper.register(makeActionName(basedOn: tableUIChange), undo: {
       let tableStateNew = BindingTableState.current
 
       // The undo of the original TableUIChange is just its inverse.
@@ -76,7 +76,7 @@ class BindingTableStateManager {
       let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
-      self.doAction(bindingRowsOld, tableUIChangeUndo)
+      self.doAction(bindingRowsOld, tableUIChangeUndo)  // Recursive call: implicitly registers redo
     })
 
     // Save user's changes to file before doing anything else:

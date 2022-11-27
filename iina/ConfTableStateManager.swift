@@ -105,43 +105,38 @@ class ConfTableStateManager: NSObject {
     }
   }
 
-  // MARK: Do, Undo, Redo
+  // MARK: State updates
 
   // This one is a little different, but it doesn't fit anywhere else. Appends bindings to a file in the table which is not the
   // current selection. Also handles the undo of the append. Does not alter anything visible in the UI.
-  func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String, isUndo: Bool = false) {
+  // Creates an undo which will fully undo its changes.
+  func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
       Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName))!", level: .verbose)
       return
     }
-
+    
     guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
       return  // error already logged. Just return.
     }
-    var fileMappings = inputConfFile.parseMappings()
 
-    if isUndo {
-      Logger.log("Undoing append of \(mappingsToAppend.count) bindings (from current count: \(fileMappings.count)) of conf: \"\(targetConfName)\"")
+    let actionName = Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile)
+    let fileMappingsOrig = inputConfFile.parseMappings()
+    let fileMappingsAppended = [fileMappingsOrig, mappingsToAppend].flatMap { $0 }
 
-      for mappingToRemove in mappingsToAppend.reversed() {
-        guard let mappingFound = fileMappings.popLast(), mappingToRemove == mappingFound else {
-          Logger.log("Undo failed: binding in file is missing or does not match expected (\(mappingToRemove.confFileFormat))", level: .error)
-          let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [inputConfFile.filePath])
-          NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-          return
-        }
-      }
-    } else {
-      Logger.log("Appending \(mappingsToAppend.count) bindings to existing \(fileMappings.count) of conf: \"\(targetConfName)\"")
-      fileMappings.append(contentsOf: mappingsToAppend)
+    let doAction = {
+      Logger.log("Appending to conf: \"\(targetConfName)\", prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
+      inputConfFile.overwriteFile(with: fileMappingsAppended)
     }
 
-    inputConfFile.overwriteFile(with: fileMappings)
+    let undoAction = {
+      Logger.log("Un-appending \(mappingsToAppend.count) bindings of conf: \"\(targetConfName)\" (newCount: \(fileMappingsOrig.count))")
+      inputConfFile.overwriteFile(with: fileMappingsOrig)
+    }
 
-    undoHelper.registerUndo(actionName: Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile), {
-      self.appendBindingsToUserConfFile(mappingsToAppend, targetConfName: targetConfName, isUndo: !isUndo)
-    })
+    doAction()
+    undoHelper.register(actionName, undo: undoAction, redo: doAction)
   }
 
   fileprivate struct UndoData {
@@ -244,13 +239,13 @@ class ConfTableStateManager: NSObject {
 
     let hasUndoableChange: Bool = hasSelectionChange || hasConfListChange
     if hasUndoableChange {
-      undoHelper.registerUndo(actionName: actionName ?? changeSelectedConfActionName, {
+      undoHelper.register(actionName ?? changeSelectedConfActionName, undo: {
         // Get rid of empty editor before it gets in the way:
         if ConfTableState.current.isAddingNewConfInline {
           ConfTableState.current.cancelInlineAdd()
         }
 
-        self.doAction(oldData)
+        self.doAction(oldData)  // Recursive call: implicitly registers redo
       })
     }
 

@@ -78,14 +78,14 @@ class InputConfFileCache {
 
   func saveFile(_ inputConfFile: InputConfFile) throws {
     guard !inputConfFile.isReadOnly else {
-      Logger.log("saveFile(): aborting - isReadOnly==true!", level: .error)
+      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
       throw IINAError.confFileIsReadOnly
     }
 
     Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
     InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
 
-    Logger.log("Saving conf file to disk: \"\(inputConfFile.confName)\"", level: .verbose)
+    Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
     let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
     try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
   }

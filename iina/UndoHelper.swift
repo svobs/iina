@@ -10,28 +10,40 @@ import Foundation
 
 // Just a bunch of boilerplate code for actionName, logging
 class UndoHelper {
+  static let DO = "Do"
+  static let UNDO = "Undo"
+  static let REDO = "Redo"
+
+  typealias ActionBody = () -> Void
 
   var undoManager: UndoManager? {
     nil  // Subclasses should override
   }
 
   // This can be called both for the "undo" of the original "do", and for the "redo" (AKA the undo of the undo).
-  // `actionName` will only be used for the original "do" action, and will be cached for use in "undo" / "redo"
+  // `actionName` will only be used for the original "do" action, and will be cached for use in "undo" / "redo".
+  // Note: the `redo` param exists to (hopefully) improve readability and better indicate intent. It does not need to
+  // be used if `undoAction` calls `registerUndo()` itself.
   @discardableResult
-  func registerUndo(actionName: String? = nil, _ action: @escaping () -> Void) -> Bool {
+  func register(_ actionName: String? = nil, undo undoAction: @escaping ActionBody, redo redoAction: ActionBody? = nil) -> Bool {
     guard let undoMan = self.undoManager else {
       Logger.log("Cannot register for undo: undoManager is nil", level: .verbose)
       return false
     }
 
     let origActionName: String? = UndoHelper.getOrSetOriginalActionName(actionName, undoMan)
-    let actionDebugString = origActionName == nil ? "" : " \(origActionName!)"
-    Logger.log("[\(UndoHelper.formatCurrentOp(undoMan))] Registering for \"\(undoMan.isRedoing ? "Redo" : "Undo")\(actionDebugString)\" (\(UndoHelper.extraDebug(undoMan)))")
+
+    Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \"\(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)\"")
 
     undoMan.registerUndo(withTarget: self, handler: { manager in
-      Logger.log("Starting \(UndoHelper.formatAction(origActionName, undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
+      // Undo starts here. Or: undo of the undo (redo)
+      Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
 
-      action()
+      undoAction()
+
+      if let redoAction = redoAction {
+        self.register(actionName, undo: redoAction)
+      }
     })
 
     return true
@@ -58,13 +70,16 @@ class UndoHelper {
     "canUndo: \(undoMan.canUndo), canRedo: \(undoMan.canRedo)"
   }
 
-  static private func formatCurrentOp(_ undoMan: UndoManager) -> String {
-    undoMan.isUndoing ? "Undo" : (undoMan.isRedoing ? "Redo" : "Do")
+  static private func currentOp(_ undoMan: UndoManager) -> String {
+    undoMan.isUndoing ? UNDO : (undoMan.isRedoing ? REDO : DO)
   }
 
   static private func formatAction(_ actionName: String?, _ undoMan: UndoManager) -> String {
-    let actionString = actionName == nil ? "" :  " \"\(actionName ?? "")\""
-    return "\(UndoHelper.formatCurrentOp(undoMan))\(actionString)"
+    let op = UndoHelper.currentOp(undoMan)
+    if let action = actionName {
+      return "\(op) \(action)"
+    }
+    return op
   }
 }
 
