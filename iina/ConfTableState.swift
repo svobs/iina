@@ -50,8 +50,8 @@ struct ConfTableState {
   // MARK: Derived data
 
   // Looks up the selected conf, then searches for it first in the user confs, then the default confs,
-  // then if still not found, returns nil
-  var selectedConfFilePath: String? {
+  // then if still not found, just computes its expected value and returns it.
+  var selectedConfFilePath: String {
     let selectedConf = selectedConfName
 
     if let filePath = userConfDict[selectedConf] {
@@ -65,8 +65,10 @@ struct ConfTableState {
       Logger.log("Found file path for default conf '\(selectedConf)': \"\(filePath)\"", level: .verbose)
       return filePath
     }
-    Logger.log("Cannot find file path for conf: '\(selectedConf)'", level: .error)
-    return nil
+    Logger.log("Cannot find file path for selected conf (\"\(selectedConf)\"). It is likely the preferences are corrupted. Will derive its file path from its name and the user conf directory path.", level: .warning)
+    let filePath = Utility.buildConfFilePath(for: selectedConf)
+    Logger.log("Computed path of conf \"\(selectedConf)\": \"\(filePath)\"")
+    return filePath
   }
 
   var isAddingNewConfInline: Bool {

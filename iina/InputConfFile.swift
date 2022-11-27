@@ -14,90 +14,48 @@ import Foundation
 class InputConfFileCache {
   fileprivate var storage: [String: InputConfFile] = [:]
 
+  // Returns cached file with the given name, or nil if no such entry present
   func getConfFile(confName: String) -> InputConfFile? {
     return storage[confName]
   }
 
+  // First checks the in-memory cache for an entry for `confName`. If found, returns it. If not found in the cache,
+  // loads file from disk with the given `filePath`, adds it to the in-memory cache, then returns it.
+  // • Always returns an `InputConfFile` object, even on failure. If an error occurs it is handled and returns an object
+  // with `failedToLoad` property set to true.
+  // • This method must be used for loading all conf files, in order to ensure the in-memory cache is the single source
+  // of truth. To update a conf file both on disk and in memory, first load an `InputConfFile` via this method and then
+  // call its `overwriteFile()` method.
+  // • NOTE: Updating the cache in response to events outside the running application instance is not currently supported.
+  // When support is added, it must be done in a way that ties into the `UndoManager` (maybe create an undoable action
+  // similar to how conf file imports are currently done),
+  @discardableResult
   func getOrLoadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
     if let cachedConfFile = self.getConfFile(confName: confName) {
       Logger.log("Found \"\(confName)\" in memory cache", level: .verbose)
       return cachedConfFile
     }
 
-    // read-through
-    return loadConfFile(at: filePath, confName: confName)
-  }
-
-  // Loads file from disk, then adds/updates its cache entry, then returns it.
-  @discardableResult
-  func loadConfFile(at filePath: String, isReadOnly: Bool = true, confName: String) -> InputConfFile {
-    guard !isReadOnly || storage[confName] == nil else {
-      Logger.log("Cannot reload: there is already an entry in the file cache for \"\(confName)\" and it is read-only!", level: .error)
-      // TODO: more appropriate message
-      self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
-      return InputConfFile(confName: confName, filePath: filePath, status: .failedToLoad, lines: [])
-    }
-
     let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
 
-    Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
+    // read-through
     storage[confName] = confFile
+
+    Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
     return confFile
-  }
-
-  // Check returned object's `status` property; make sure `!= .failedToLoad`.
-  // Don't use this from outside this file. Use `InputFileCache.loadConfFile()`
-  fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
-    let confNameOrDerived = confName ?? URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent
-
-    guard let reader = StreamReader(path: filePath) else {
-      // on error
-      Logger.log("Error loading key bindings from path: \"\(filePath)\"", level: .error)
-      let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-      let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [fileName])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
-    }
-
-    var lines: [String] = []
-    while let rawLine: String = reader.nextLine() {
-      guard lines.count < AppData.maxConfFileLinesAccepted else {
-        Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \"\(filePath)\"")
-
-        // TODO: more appropriate error msg
-        let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [filePath])
-        NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-        return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
-      }
-      lines.append(rawLine)
-    }
-
-    let status: InputConfFile.Status = isReadOnly ? .readOnly : .normal
-    return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: status, lines: lines)
-  }
-
-  func saveFile(_ inputConfFile: InputConfFile) throws {
-    guard !inputConfFile.isReadOnly else {
-      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    }
-
-    Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
-    InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
-
-    Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
-    let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
-    try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
   }
 
   func renameConfFile(oldConfName: String, newConfName: String) {
     Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
     guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
       Logger.log("Cannot move conf file: no entry in cache for \"\(oldConfName)\" (this should never happen)", level: .error)
-      self.sendErrorAlert(key: "error_finding_file", args: ["config"])
+      sendErrorAlert(key: "error_finding_file", args: ["config"])
       return
     }
     storage[newConfName] = inputConfFile
+
+
+    // TODO: put in async queue
 
     let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
     let newFilePath = Utility.buildConfFilePath(for: newConfName)
@@ -110,11 +68,11 @@ class InputConfFileCache {
     } else {
       if !oldExists {
         Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
-        self.sendErrorAlert(key: "error_finding_file", args: ["config"])
+        sendErrorAlert(key: "error_finding_file", args: ["config"])
       } else if newExists {
         Logger.log("Can't rename config: a file already exists at the destination: \"\(newFilePath)\"", level: .error)
         // TODO: more appropriate message
-        self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+        sendErrorAlert(key: "config.cannot_create", args: ["config"])
       } else {
         // - Move file on disk
         do {
@@ -123,7 +81,7 @@ class InputConfFileCache {
         } catch let error {
           Logger.log("Failed to rename file: \(error)", level: .error)
           // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: ["config"])
+          sendErrorAlert(key: "config.cannot_create", args: ["config"])
         }
       }
     }
@@ -140,11 +98,13 @@ class InputConfFileCache {
       Logger.log("Removing from cache: \"\(confName)\"", level: .verbose)
       guard let inputConfFile = storage.removeValue(forKey: confName) else {
         Logger.log("Cannot remove conf file: no entry in cache for \"\(confName)\" (this should never happen)", level: .error)
-        self.sendErrorAlert(key: "error_finding_file", args: ["config"])
+        sendErrorAlert(key: "error_finding_file", args: ["config"])
         continue
       }
       removedFileDict[confName] = inputConfFile
       let filePath = inputConfFile.filePath
+
+      // TODO: put in async queue
 
       do {
         try FileManager.default.removeItem(atPath: filePath)
@@ -152,7 +112,7 @@ class InputConfFileCache {
         if FileManager.default.fileExists(atPath: filePath) {
           Logger.log("File exists but could not be deleted: \"\(filePath)\"", level: .error)
           let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-          self.sendErrorAlert(key: "error_deleting_file", args: [fileName])
+          sendErrorAlert(key: "error_deleting_file", args: [fileName])
         } else {
           Logger.log("Looks like file was already removed: \"\(filePath)\"")
         }
@@ -173,32 +133,79 @@ class InputConfFileCache {
     for confName in confNames {
       guard let inputConfFile = filesRemovedByLastAction[confName] else {
         Logger.log("Cannot restore deleted conf \"\(confName)\": file content missing from undo data (this should never happen)", level: .error)
-        self.sendErrorAlert(key: "config.cannot_create", args: [Utility.buildConfFilePath(for: confName)])
+        sendErrorAlert(key: "config.cannot_create", args: [Utility.buildConfFilePath(for: confName)])
         continue
       }
+
+      // TODO: put in async queue
 
       let filePath = inputConfFile.filePath
       do {
         if FileManager.default.fileExists(atPath: filePath) {
-          Logger.log("Cannot restore deleted file: file aleady exists: \(filePath)", level: .error)
+          Logger.log("Cannot restore deleted conf: a file aleady exists at \"\(filePath)\"", level: .error)
           // TODO: more appropriate message
-          self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
+          sendErrorAlert(key: "config.cannot_create", args: [filePath])
           continue
         }
         try saveFile(inputConfFile)
       } catch {
-        Logger.log("Failed to save undeleted file \"\(filePath)\": \(error)", level: .error)
-        self.sendErrorAlert(key: "config.cannot_create", args: [filePath])
+        Logger.log("Failed to restore deleted conf at path \"\(filePath)\": \(error)", level: .error)
+        sendErrorAlert(key: "config.cannot_create", args: [filePath])
         continue
       }
     }
   }
+}
 
-  // Utility function: show error popup to user
-  private func sendErrorAlert(key alertKey: String, args: [String]) {
-    let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
+// Internal file loader util func. Check returned object's `status` property; make sure `!= .failedToLoad`.
+fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
+  let confNameOrDerived = confName ?? URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent
+
+  guard let reader = StreamReader(path: filePath) else {
+    // on error
+    Logger.log("Error loading key bindings from path: \"\(filePath)\"", level: .error)
+    let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+    let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [fileName])
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+    return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
   }
+
+  var lines: [String] = []
+  while let rawLine: String = reader.nextLine() {
+    guard lines.count < AppData.maxConfFileLinesAccepted else {
+      Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \"\(filePath)\"")
+
+      // TODO: more appropriate error msg
+      let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [filePath])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
+      return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: .failedToLoad, lines: [])
+    }
+    lines.append(rawLine)
+  }
+
+  let status: InputConfFile.Status = isReadOnly ? .readOnly : .normal
+  return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: status, lines: lines)
+}
+
+// Internal file writer util func
+fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
+  guard !inputConfFile.isReadOnly else {
+    Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
+    throw IINAError.confFileIsReadOnly
+  }
+
+  Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
+  InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
+
+  Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
+  let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
+  try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
+}
+
+// Utility function: show error popup to user
+fileprivate func sendErrorAlert(key alertKey: String, args: [String]) {
+  let alertInfo = Utility.AlertInfo(key: alertKey, args: args)
+  NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
 }
 
 // Represents an input config file which has been loaded into memory.
@@ -248,9 +255,9 @@ struct InputConfFile {
 
     let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
     do {
-      try InputConfFile.cache.saveFile(updatedConfFile)
+      try saveFile(updatedConfFile)
     } catch {
-      Logger.log("Failed to save conf file: \(error)", level: .error)
+      Logger.log("Failed to overwrite conf file at \"\(self.filePath)\": \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
     }
@@ -265,7 +272,7 @@ struct InputConfFile {
   }
 
   static func tryLoadingFile(at filePath: String) -> Bool {
-    return !InputConfFile.cache.loadFile(at: filePath).failedToLoad
+    return !loadFile(at: filePath).failedToLoad
   }
 
   // Returns a KeyMapping if successful, nil if line has no mapping or is not correct format

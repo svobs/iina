@@ -17,7 +17,7 @@ import Foundation
  This class is downstream from `AppInputConfig.current`
  */
 struct BindingTableState {
-  static var current = BindingTableState(AppInputConfig.current, filterString: "", inputConfFile: nil)
+  static var current: BindingTableState = BindingTableStateManager.initialState()
   static let manager: BindingTableStateManager = BindingTableStateManager()
 
   init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile?) {

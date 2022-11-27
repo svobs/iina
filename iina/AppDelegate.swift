@@ -87,7 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: Other components
 
   // Need to store these somewhere which isn't only inside a struct.
-  // Swift doesn't count them as strong references
+  // Swift doesn't seem to count them as strong references
   private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
   private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
 

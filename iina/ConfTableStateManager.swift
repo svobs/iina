@@ -16,10 +16,8 @@ fileprivate let changeSelectedConfActionName: String = "Change Active Config"
 class ConfTableStateManager: NSObject {
   private var undoHelper = PrefsWindowUndoHelper()
   private var observers: [NSObjectProtocol] = []
-  
-  private var fileCache: InputConfFileCache {
-    InputConfFile.cache
-  }
+
+  private unowned var fileCache = InputConfFile.cache
 
   override init() {
     super.init()
@@ -32,10 +30,10 @@ class ConfTableStateManager: NSObject {
 
     let currentState = ConfTableState.current
     for (confName, filePath) in AppData.defaultConfs {
-      fileCache.loadConfFile(at: filePath, isReadOnly: true, confName: confName)
+      fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
     }
     for (confName, filePath) in currentState.userConfDict {
-      fileCache.loadConfFile(at: filePath, isReadOnly: false, confName: confName)
+      fileCache.getOrLoadConfFile(at: filePath, isReadOnly: false, confName: confName)
     }
   }
 
@@ -116,7 +114,7 @@ class ConfTableStateManager: NSObject {
       Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName))!", level: .verbose)
       return
     }
-    
+
     guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
       return  // error already logged. Just return.
     }
@@ -205,7 +203,8 @@ class ConfTableStateManager: NSObject {
           fileCache.restoreRemovedConfFiles(addedConfs, filesRemovedByLastAction)
         } else {  // Must be in an initial "do"
           for addedConfName in addedConfs {
-            // Assume files were created elsewhere. Just need to load them into memory cache:
+            // Assume files were created elsewhere. Just need to load them into memory cache.
+            // Once in memory this call should never fail, so this should never fail for undo/redo.
             let confFile = loadConfFile(withConfName: addedConfName)
             guard !confFile.failedToLoad else {
               self.sendErrorAlert(key: "error_finding_file", args: ["config"])
@@ -252,6 +251,7 @@ class ConfTableStateManager: NSObject {
     updateTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
   }
 
+  // Assembles a `TableUIChange` based the differences between states, then sends it to the UI for updating
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
@@ -284,9 +284,10 @@ class ConfTableStateManager: NSObject {
   // MARK: Conf File Disk Operations
 
   // If `confName` not provided, defaults to currently selected conf.
-  // Uses cached copy first, then reads from disk if not found (more reliable results this way)
-  // Will report error to user & log if not found, but still need to check whether `inputConfFile.failedToLoad`.
-  private func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
+  // Uses cached copy first, then reads from disk if not found (faster & more reliable this way than always reading disk).
+  // If it fails to find the file or read it, an error will be shown to user & written to log, but the caller needs to check
+  // if `inputConfFile.failedToLoad` is false before continuing.
+  func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
     Logger.log("Loading inputConfFile for \"\(targetConfName)\"")
@@ -297,7 +298,7 @@ class ConfTableStateManager: NSObject {
     return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
   }
 
-  // Conf File load. Triggered any time `selectedConfName` is changed
+  // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).
   func loadBindingsFromSelectedConfFile() {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else { return }

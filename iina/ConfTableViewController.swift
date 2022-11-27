@@ -200,11 +200,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
       return false
     }
 
-    guard let oldFilePath = self.confTableState.selectedConfFilePath else {
-      Logger.log("Failed to find file for current conf! Aborting rename", level: .error)
-      return false
-    }
-
+    let oldFilePath = self.confTableState.selectedConfFilePath
     let newFilePath =  Utility.buildConfFilePath(for: newName)
 
     if newFilePath != oldFilePath { // allow this...it helps when user is trying to fix corrupted file list
@@ -636,17 +632,17 @@ extension InputConfTableViewController:  NSMenuDelegate {
   }
 
   private func duplicateCurrentConfFile() -> (String, String)? {
-    guard let filePath = confTableState.selectedConfFilePath else { return nil }
+    let origFilePath = confTableState.selectedConfFilePath
 
     let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confTableState.selectedConfName)
 
     do {
-      Logger.log("Duplicating file: \"\(filePath)\" -> \"\(newFilePath)\"")
-      try FileManager.default.copyItem(atPath: filePath, toPath: newFilePath)
+      Logger.log("Duplicating file: \"\(origFilePath)\" -> \"\(newFilePath)\"")
+      try FileManager.default.copyItem(atPath: origFilePath, toPath: newFilePath)
       return (newConfName, newFilePath)
     } catch let error {
       DispatchQueue.main.async {
-        Logger.log("Failed to create duplicate: \"\(filePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
+        Logger.log("Failed to create duplicate: \"\(origFilePath)\" -> \"\(newFilePath)\": \(error.localizedDescription)", level: .error)
         Utility.showAlert("config.cannot_create", arguments: [error.localizedDescription], sheetWindow: self.tableView.window)
       }
       return nil

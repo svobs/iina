@@ -358,12 +358,7 @@ class MPVController: NSObject {
     // Load external scripts
 
     // Load keybindings. This is still required for mpv to handle media keys or apple remote.
-    let inputConfPath: String
-    if let selectedConfFilePath = ConfTableState.current.selectedConfFilePath {
-      inputConfPath = selectedConfFilePath
-    } else {
-      inputConfPath = AppData.defaultConfs[AppData.defaultConfNamesSorted[0]]!
-    }
+    let inputConfPath = ConfTableState.current.selectedConfFilePath
     chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
 
     // Receive log messages at given level of verbosity.

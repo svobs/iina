@@ -33,6 +33,10 @@ class BindingTableStateManager {
     observers = []
   }
 
+  static func initialState() -> BindingTableState {
+    BindingTableState(AppInputConfig.current, filterString: "", inputConfFile: ConfTableState.manager.loadConfFile())
+  }
+
   /*
    Executes a single "action" to the current table state.
    This is either the "do" of an undoable action, or an undo of that action, or a redo of that undo.
@@ -206,12 +210,9 @@ class BindingTableStateManager {
 
   // Input Config File: Save
   private func overwriteCurrentConfFile(with userConfMappings: [KeyMapping]) -> InputConfFile? {
-    guard let confFilePath = ConfTableState.current.selectedConfFilePath else {
-      let alertInfo = Utility.AlertInfo(key: "error_finding_file", args: ["config"])
-      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return nil
-    }
+    let confFilePath = ConfTableState.current.selectedConfFilePath
     Logger.log("Saving \(userConfMappings.count) bindings to current conf file: \"\(confFilePath)\"", level: .verbose)
+
     guard let selectedConfFile = BindingTableState.current.inputConfFile else {
       Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
       return nil
