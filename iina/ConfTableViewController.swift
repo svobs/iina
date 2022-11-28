@@ -100,7 +100,7 @@ extension InputConfTableViewController: NSTableViewDelegate {
     let columnName = identifier.rawValue
 
     guard let confName = confTableState.getConfName(at: rowIndex) else { return nil }
-    let isDefaultConf = confTableState.isDefaultConf(confName)
+    let isDefaultConf = ConfTableState.isDefaultConf(confName)
 
     switch columnName {
       case "nameColumn":
@@ -127,17 +127,11 @@ extension InputConfTableViewController: NSTableViewDelegate {
 extension InputConfTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    if let confName = confTableState.getConfName(at: rowIndex), !confTableState.isDefaultConf(confName) {
-      return true
-    }
-    return false
+    return confTableState.getUserConfName(at: rowIndex) != nil
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    if let confName = confTableState.getConfName(at: rowIndex), !confTableState.isDefaultConf(confName) {
-      return true
-    }
-    return false
+    return confTableState.getUserConfName(at: rowIndex) != nil
   }
 
   func editDidEndWithNoChange(row rowIndex: Int, column columnIndex: Int) {
@@ -366,7 +360,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
 
     // Check for key bindings
     let bindingCount = KeyMapping.deserializeList(from: info.draggingPasteboard).count
-    if bindingCount > 0 && dropOperation == .on, let targetConfName = confTableState.getConfName(at: row), !confTableState.isDefaultConf(targetConfName) {
+    if bindingCount > 0 && dropOperation == .on, confTableState.getUserConfName(at: row) != nil {
       // Drop bindings into another user conf
       info.numberOfValidItemsForDrop = bindingCount
       return NSDragOperation.copy
@@ -403,7 +397,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
 
     // Option B: drop bindings into user conf file
     let bindingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
-    if !bindingList.isEmpty, dropOperation == .on, let targetConfName = confTableState.getConfName(at: row), !confTableState.isDefaultConf(targetConfName) {
+    if !bindingList.isEmpty, dropOperation == .on, let targetConfName = confTableState.getUserConfName(at: row) {
       Logger.log("User dropped \(bindingList.count) bindings into \"\(targetConfName)\" conf")
       info.numberOfValidItemsForDrop = bindingList.count
       // Try not to block UI. Failures should be rare here anyway
@@ -459,11 +453,11 @@ extension InputConfTableViewController:  NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedRow: String = confTableState.getConfName(at: tableView.clickedRow) else { return }
+    guard let clickedConfName: String = confTableState.getConfName(at: tableView.clickedRow) else { return }
     let mib = CascadingMenuItemBuilder(mip: ConfMenuItemProvider(), .menu(contextMenu),
-      .unit(Unit.config), .unitCount(1), .targetRow(clickedRow), .target(self))
+      .unit(Unit.config), .unitCount(1), .targetRow(clickedConfName), .target(self))
 
-    let isUserConf = !self.confTableState.isDefaultConf(clickedRow)
+    let isUserConf = !ConfTableState.isDefaultConf(clickedConfName)
 
     // Show in Finder
     mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(isUserConf))

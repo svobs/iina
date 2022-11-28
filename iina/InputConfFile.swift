@@ -254,6 +254,8 @@ struct InputConfFile {
     let rawLines = InputConfFile.toRawLines(from: newMappings)
 
     let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
+
+    // FIXME: Enqueue instead
     do {
       try saveFile(updatedConfFile)
     } catch {

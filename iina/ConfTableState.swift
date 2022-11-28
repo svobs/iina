@@ -86,10 +86,10 @@ struct ConfTableState {
   // MARK: Non-mutating getters
 
   var isSelectedConfReadOnly: Bool {
-    return isDefaultConf(selectedConfName)
+    return ConfTableState.isDefaultConf(selectedConfName)
   }
 
-  func isDefaultConf(_ confName: String) -> Bool {
+  static func isDefaultConf(_ confName: String) -> Bool {
     return AppData.defaultConfs[confName] != nil
   }
 
@@ -115,7 +115,7 @@ struct ConfTableState {
   }
 
   func isRow(_ confName: String) -> Bool {
-    return isDefaultConf(confName) || userConfDict[confName] != nil
+    return confTableRows.contains(confName)
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
@@ -124,6 +124,21 @@ struct ConfTableState {
       return nil
     }
     return confTableRows[index]
+  }
+
+  // Same as `getConfName()`, but only returns user confs. If a default conf is found instead, nil is returned.
+  func getUserConfName(at index: Int) -> String? {
+    if let confName = getConfName(at: index), !ConfTableState.isDefaultConf(confName){
+      return confName
+    }
+    return nil
+  }
+
+  func isDefaultConf(at index: Int) -> Bool {
+    if let confName = getConfName(at: index) {
+      return ConfTableState.isDefaultConf(confName)
+    }
+    return false
   }
 
   // MARK: Operations which change state
@@ -237,7 +252,7 @@ struct ConfTableState {
   }
 
   func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
-    let isReadOnly = self.isDefaultConf(targetConfName)
+    let isReadOnly = ConfTableState.isDefaultConf(targetConfName)
     guard !isReadOnly else { return }
 
     if targetConfName == selectedConfName {
@@ -271,14 +286,9 @@ struct ConfTableState {
     guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
       return
     }
-    guard confTableRows.contains(selectedConfNew) else {
-      Logger.log("Could not change selected conf to '\(selectedConfNew)' (not found in table); falling back to default conf", level: .error)
-      fallBackToDefaultConf()
-      return
-    }
 
     guard isRow(selectedConfNew) else {
-      Logger.log("Could not change selected conf to '\(selectedConfNew)' (no entry in prefs dict); falling back to default conf", level: .error)
+      Logger.log("Could not change selected conf to \"\(selectedConfNew)\" (not found in table); falling back to default conf", level: .error)
       fallBackToDefaultConf()
       return
     }

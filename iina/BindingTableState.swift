@@ -20,7 +20,7 @@ struct BindingTableState {
   static var current: BindingTableState = BindingTableStateManager.initialState()
   static let manager: BindingTableStateManager = BindingTableStateManager()
 
-  init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile?) {
+  init(_ appInputConfig: AppInputConfig, filterString: String, inputConfFile: InputConfFile) {
     self.appInputConfig = appInputConfig
     self.inputConfFile = inputConfFile
     self.filterString = filterString
@@ -35,8 +35,8 @@ struct BindingTableState {
   // and each new AppInputConfig is an atomic update which replaces the previously received one via asynchronous updates.
   let appInputConfig: AppInputConfig
 
-  // The source user conf file
-  let inputConfFile: InputConfFile?
+  // The user conf file from where the bindings originated
+  let inputConfFile: InputConfFile
 
   // Should be kept current with the value which the user enters in the search box. Empty string means no filter applied
   let filterString: String
@@ -282,10 +282,7 @@ struct BindingTableState {
   }
 
   private var canModifyCurrentConf: Bool {
-    if let currentConfigFile = self.inputConfFile, !currentConfigFile.isReadOnly {
-      return true
-    }
-    return false
+    return !self.inputConfFile.isReadOnly
   }
 
   // MARK: Filtering

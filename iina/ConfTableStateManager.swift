@@ -292,7 +292,7 @@ class ConfTableStateManager: NSObject {
     let targetConfName = confName ?? currentState.selectedConfName
     Logger.log("Loading inputConfFile for \"\(targetConfName)\"")
 
-    let isReadOnly = currentState.isDefaultConf(targetConfName)
+    let isReadOnly = ConfTableState.isDefaultConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
     return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
@@ -301,7 +301,10 @@ class ConfTableStateManager: NSObject {
   // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).
   func loadBindingsFromSelectedConfFile() {
     let inputConfFile = loadConfFile()
-    guard !inputConfFile.failedToLoad else { return }
+    guard !inputConfFile.failedToLoad else {
+      ConfTableState.current.fallBackToDefaultConf()
+      return
+    }
     var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
 
     // Key Bindings table will reload after it receives new data from AppInputConfig.

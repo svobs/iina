@@ -49,9 +49,9 @@ class BindingTableStateManager {
    3. Update this class's unfiltered list of bindings, and recalculate filtered list
    4. Push update to the Key Bindings table in the UI so it can be animated.
    */
-  func doAction(_ bindingRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
+  func doAction(_ allRowsNew: [InputBinding], _ tableUIChange: TableUIChange) {
     // Currently don't care about any rows except for "default" section
-    let userConfMappingsNew = extractUserConfMappings(from: bindingRowsNew)
+    let userConfMappingsNew = extractUserConfMappings(from: allRowsNew)
 
     let tableStateOld = BindingTableState.current
 
@@ -83,11 +83,8 @@ class BindingTableStateManager {
       self.doAction(bindingRowsOld, tableUIChangeUndo)  // Recursive call: implicitly registers redo
     })
 
-    // Save user's changes to file before doing anything else:
-    // FIXME: do not fail from this
-    guard let updatedConfFile = overwriteCurrentConfFile(with: userConfMappingsNew) else {
-      return
-    }
+    // Enqueue save of user's changes to file before doing anything else.
+    let updatedConfFile = overwrite(currentConfFile: tableStateOld.inputConfFile, with: userConfMappingsNew)
 
     /*
      Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
@@ -162,7 +159,7 @@ class BindingTableStateManager {
    Expected to be run on the main thread.
    */
   private func updateTableState(_ appInputConfigNew: AppInputConfig, desiredTableUIChange: TableUIChange? = nil,
-                           newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
+                                newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
     let oldState = BindingTableState.current
@@ -189,8 +186,7 @@ class BindingTableStateManager {
     tableUIChange.reloadAllExistingRows = true
 
     // If the table change is the result of a new conf file being selected, don't try to retain the selection.
-    if let newFile = newState.inputConfFile, let oldFile = oldState.inputConfFile,
-        !newFile.canonicalFilePath.equalsIgnoreCase(oldFile.canonicalFilePath) {
+    if !newState.inputConfFile.canonicalFilePath.equalsIgnoreCase(oldState.inputConfFile.canonicalFilePath) {
       tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
     }
 
@@ -208,24 +204,18 @@ class BindingTableStateManager {
     return tableUIChange
   }
 
-  // Input Config File: Save
-  private func overwriteCurrentConfFile(with userConfMappings: [KeyMapping]) -> InputConfFile? {
-    let confFilePath = ConfTableState.current.selectedConfFilePath
-    Logger.log("Saving \(userConfMappings.count) bindings to current conf file: \"\(confFilePath)\"", level: .verbose)
-
-    guard let selectedConfFile = BindingTableState.current.inputConfFile else {
-      Logger.log("Cannot save bindings updates to file: could not find file in memory!", level: .error)
-      return nil
-    }
-    let canonicalPathCurrent = URL(fileURLWithPath: confFilePath).resolvingSymlinksInPath().path
-    let canonicalPathLoaded = selectedConfFile.canonicalFilePath
-    guard canonicalPathCurrent == canonicalPathLoaded else {
-      Logger.log("Failed to save bindings updates to file \"\(canonicalPathCurrent)\": its path does not match currently loaded config's (\"\(canonicalPathLoaded)\")", level: .error)
-      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [confFilePath])
+  // Save change to input conf file
+  private func overwrite(currentConfFile: InputConfFile, with userConfMappings: [KeyMapping]) -> InputConfFile {
+    // Sanity check. Probably being paranoid.
+    let filePathFromBindingState = currentConfFile.canonicalFilePath
+    let filePathFromConfState = URL(fileURLWithPath: ConfTableState.current.selectedConfFilePath).resolvingSymlinksInPath().path
+    guard filePathFromBindingState == filePathFromConfState else {
+      Logger.log("While saving bindings updates to file \"\(filePathFromBindingState)\": its path does not match value from preferences (\"\(filePathFromConfState)\")", level: .error)
+      let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [filePathFromBindingState])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
-      return nil
+      return currentConfFile
     }
 
-    return selectedConfFile.overwriteFile(with: userConfMappings)
+    return currentConfFile.overwriteFile(with: userConfMappings)
   }
 }
