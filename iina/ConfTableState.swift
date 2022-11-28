@@ -271,7 +271,7 @@ struct ConfTableState {
   }
 
   func changeSelectedConf(_ newIndex: Int) {
-    Logger.log("Changing conf selection, newIndex=\(newIndex)", level: .verbose)
+    Logger.log("Changing conf selection index to: \(newIndex)", level: .verbose)
     guard let selectedConfNew = getConfName(at: newIndex) else {
       Logger.log("Cannot change conf selection: invalid index: \(newIndex)", level: .error)
       return

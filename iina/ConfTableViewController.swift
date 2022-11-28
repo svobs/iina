@@ -87,7 +87,7 @@ extension InputConfTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
-    Logger.log("InputConfTableViewController: tableViewSelectionDidChange() called; changing state of selected conf", level: .verbose)
+    Logger.log("InputConfTableViewController: tableViewSelectionDidChange() called. Kicking off state change", level: .verbose)
     confTableState.changeSelectedConf(tableView.selectedRow)
   }
 

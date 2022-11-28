@@ -12,6 +12,8 @@ import Foundation
 // a bunch of tricky failure points for undo/redo, as well as unexpected behavior when the files are
 // changed outside of IINA.
 class InputConfFileCache {
+  static let writeQueue = DispatchQueue(label: "InputConfFile-WriteQueue", qos: .utility)
+
   fileprivate var storage: [String: InputConfFile] = [:]
 
   // Returns cached file with the given name, or nil if no such entry present
@@ -45,6 +47,37 @@ class InputConfFileCache {
     return confFile
   }
 
+  // Inserts or overwrites the given file in the cache, then writes it to disk asynchronously.
+  // Throws exception if cache could not be updated.
+  fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
+    switch inputConfFile.status {
+      case .readOnly:
+        Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
+        throw IINAError.confFileIsReadOnly
+      case .failedToLoad:
+        Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": invalid operation: file never loaded properly!", level: .error)
+        throw IINAError.confFileIsReadOnly
+      case .normal:
+        break
+    }
+
+    Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
+    InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
+
+    InputConfFileCache.writeQueue.async {
+      Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
+      do {
+        let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
+        try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
+      } catch {
+        Logger.log("Write to disk failed for file \"\(inputConfFile.filePath)\": \(error)", level: .error)
+        // TODO: more appropriate message, with file name
+        sendErrorAlert(key: "config.cannot_create", args: ["config"])
+      }
+    }
+  }
+
+  // RENAME file in cache and on disk. Returns before writing to disk. Sends an async notify if disk ops fail.
   func renameConfFile(oldConfName: String, newConfName: String) {
     Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
     guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
@@ -54,41 +87,42 @@ class InputConfFileCache {
     }
     storage[newConfName] = inputConfFile
 
+    InputConfFileCache.writeQueue.async {
+      let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
+      let newFilePath = Utility.buildConfFilePath(for: newConfName)
 
-    // TODO: put in async queue
+      let oldExists = FileManager.default.fileExists(atPath: oldFilePath)
+      let newExists = FileManager.default.fileExists(atPath: newFilePath)
 
-    let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
-    let newFilePath = Utility.buildConfFilePath(for: newConfName)
-
-    let oldExists = FileManager.default.fileExists(atPath: oldFilePath)
-    let newExists = FileManager.default.fileExists(atPath: newFilePath)
-
-    if !oldExists && newExists {
-      Logger.log("Looks like file has already moved: \"\(oldFilePath)\"")
-    } else {
-      if !oldExists {
-        Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
-        sendErrorAlert(key: "error_finding_file", args: ["config"])
-      } else if newExists {
-        Logger.log("Can't rename config: a file already exists at the destination: \"\(newFilePath)\"", level: .error)
-        // TODO: more appropriate message
-        sendErrorAlert(key: "config.cannot_create", args: ["config"])
+      if !oldExists && newExists {
+        Logger.log("Looks like file has already moved: \"\(oldFilePath)\"")
       } else {
-        // - Move file on disk
-        do {
-          Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
-          try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
-        } catch let error {
-          Logger.log("Failed to rename file: \(error)", level: .error)
+        if !oldExists {
+          Logger.log("Can't rename config: could not find file: \"\(oldFilePath)\"", level: .error)
+          sendErrorAlert(key: "error_finding_file", args: ["config"])
+        } else if newExists {
+          Logger.log("Can't rename config: a file already exists at the destination: \"\(newFilePath)\"", level: .error)
           // TODO: more appropriate message
           sendErrorAlert(key: "config.cannot_create", args: ["config"])
+        } else {
+          // - Move file on disk
+          do {
+            Logger.log("Attempting to move InputConf file \"\(oldFilePath)\" to \"\(newFilePath)\"")
+            try FileManager.default.moveItem(atPath: oldFilePath, toPath: newFilePath)
+          } catch let error {
+            Logger.log("Failed to rename file: \(error)", level: .error)
+            // TODO: more appropriate message
+            sendErrorAlert(key: "config.cannot_create", args: ["config"])
+          }
         }
       }
     }
   }
 
-  // Performs removal of files on disk. Throws exception to indicate failure; otherwise success is assumed even if empty dict returned.
-  // Returns a copy of each removed files' contents which must be stored for later undo
+  // Performs removal of files from cache and on disk. Each must be present in the cache in order to be deleted.
+  // Sends an async notify for each file which fails to be deleted.
+  // Returns the only remaining copy of each removed files' contents, which must be stored by the caller for
+  // later undo.
   func removeConfFiles(confNamesToRemove: Set<String>) -> [String:InputConfFile] {
     // Cache each file's contents in memory before removing it, for potential later use by undo
     var removedFileDict: [String:InputConfFile] = [:]
@@ -104,17 +138,17 @@ class InputConfFileCache {
       removedFileDict[confName] = inputConfFile
       let filePath = inputConfFile.filePath
 
-      // TODO: put in async queue
-
-      do {
-        try FileManager.default.removeItem(atPath: filePath)
-      } catch {
-        if FileManager.default.fileExists(atPath: filePath) {
-          Logger.log("File exists but could not be deleted: \"\(filePath)\"", level: .error)
-          let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-          sendErrorAlert(key: "error_deleting_file", args: [fileName])
-        } else {
-          Logger.log("Looks like file was already removed: \"\(filePath)\"")
+      InputConfFileCache.writeQueue.async {
+        do {
+          try FileManager.default.removeItem(atPath: filePath)
+        } catch {
+          if FileManager.default.fileExists(atPath: filePath) {
+            Logger.log("File exists but could not be deleted: \"\(filePath)\"", level: .error)
+            let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+            sendErrorAlert(key: "error_deleting_file", args: [fileName])
+          } else {
+            Logger.log("Looks like file was already removed: \"\(filePath)\"")
+          }
         }
       }
     }
@@ -122,7 +156,9 @@ class InputConfFileCache {
     return removedFileDict
   }
 
-  // Because the content of removed files was first stored in the undo data, restoring them will always succeed.
+  // Undoes `removeConfFiles()`.
+  // Requires a dict of {confName -> file} as param, ideally the same data returned by `removeConfFiles()`
+  // By saving the files' contents in memory, restoring them will always succeed.
   // If disk operations fail, we can continue without immediate data loss - just report the error to user first.
   func restoreRemovedConfFiles(_ confNames: Set<String>, _ filesRemovedByLastAction: [String:InputConfFile]) {
     for (confName, inputConfFile) in filesRemovedByLastAction {
@@ -132,30 +168,28 @@ class InputConfFileCache {
 
     for confName in confNames {
       guard let inputConfFile = filesRemovedByLastAction[confName] else {
-        Logger.log("Cannot restore deleted conf \"\(confName)\": file content missing from undo data (this should never happen)", level: .error)
+        Logger.log("Cannot restore deleted conf \"\(confName)\": file's content is missing from undo data (this should never happen)", level: .error)
         sendErrorAlert(key: "config.cannot_create", args: [Utility.buildConfFilePath(for: confName)])
         continue
       }
 
-      // TODO: put in async queue
-
-      let filePath = inputConfFile.filePath
-      do {
-        if FileManager.default.fileExists(atPath: filePath) {
-          Logger.log("Cannot restore deleted conf: a file aleady exists at \"\(filePath)\"", level: .error)
-          // TODO: more appropriate message
+      InputConfFileCache.writeQueue.async {
+        let filePath = inputConfFile.filePath
+        do {
+          if FileManager.default.fileExists(atPath: filePath) {
+            Logger.log("Cannot restore deleted conf: a file aleady exists at \"\(filePath)\"", level: .error)
+            // TODO: more appropriate message
+            sendErrorAlert(key: "config.cannot_create", args: [filePath])
+          }
+          try InputConfFile.cache.saveFile(inputConfFile)
+        } catch {
+          Logger.log("Failed to restore deleted conf at path \"\(filePath)\": \(error)", level: .error)
           sendErrorAlert(key: "config.cannot_create", args: [filePath])
-          continue
         }
-        try saveFile(inputConfFile)
-      } catch {
-        Logger.log("Failed to restore deleted conf at path \"\(filePath)\": \(error)", level: .error)
-        sendErrorAlert(key: "config.cannot_create", args: [filePath])
-        continue
       }
     }
   }
-}
+}  // end of InputConfFileCache
 
 // Internal file loader util func. Check returned object's `status` property; make sure `!= .failedToLoad`.
 fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName: String? = nil) -> InputConfFile {
@@ -185,27 +219,6 @@ fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName
 
   let status: InputConfFile.Status = isReadOnly ? .readOnly : .normal
   return InputConfFile(confName: confNameOrDerived, filePath: filePath, status: status, lines: lines)
-}
-
-// Internal file writer util func
-fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
-  switch inputConfFile.status {
-    case .readOnly:
-      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    case .failedToLoad:
-      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": invalid operation: file never loaded properly!", level: .error)
-      throw IINAError.confFileIsReadOnly
-    case .normal:
-      break
-  }
-
-  Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
-  InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
-
-  Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
-  let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
-  try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)
 }
 
 // Utility function: show error popup to user
@@ -261,10 +274,8 @@ struct InputConfFile {
 
     let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
 
-    // TODO: put in async queue
-
     do {
-      try saveFile(updatedConfFile)
+      try InputConfFile.cache.saveFile(updatedConfFile)
     } catch {
       Logger.log("Failed to overwrite conf file at \"\(self.filePath)\": \(error)", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [updatedConfFile.filePath])

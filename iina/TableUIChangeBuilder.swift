@@ -107,7 +107,7 @@ class TableUIChangeBuilder {
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
 
     let steps = newRows.difference(from: oldRows).steps
-    Logger.log("Computing table diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+    Logger.log("Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
     for step in steps {
       switch step {
         case let .remove(_, index):
@@ -133,6 +133,9 @@ class TableUIChangeBuilder {
       }
     }
     applyExtraSelectionRules(to: diff)
+    if let newSelected = diff.newSelectedRowIndexes {
+      Logger.log("From diff results: will change table selection to: \(newSelected.map{$0})", level: .verbose)
+    }
 
     return diff
   }

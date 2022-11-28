@@ -175,6 +175,7 @@ class ConfTableStateManager: NSObject {
 
       if !addedConfs.isEmpty || !removedConfs.isEmpty {
         hasConfListChange = true
+        Logger.log("Found in state change: \(addedConfs.count) added & \(removedConfs.count) removed confs", level: .verbose)
       }
 
       // Apply conf file disk operations before updating the stored prefs or the UI.
@@ -220,7 +221,6 @@ class ConfTableStateManager: NSObject {
                                        selectedConfName: newData.selectedConfName ?? tableStateOld.selectedConfName,
                                        specialState: specialState)
 
-    Logger.log("Setting new ConfTableState. (specialState: \(specialState))", level: .verbose)
     ConfTableState.current = tableStateNew
 
     // Update userConfDict pref if changed
@@ -247,6 +247,16 @@ class ConfTableStateManager: NSObject {
 
         self.doAction(oldData)  // Recursive call: implicitly registers redo
       })
+    }
+
+    let specialStateChanged = tableStateOld.specialState != tableStateNew.specialState
+    if specialStateChanged {
+      Logger.log("ConfTable specialState is changing: \(tableStateOld.specialState) -> \(tableStateNew.specialState)", level: .verbose)
+    }
+
+    guard hasUndoableChange || specialStateChanged || completionHandler != nil else {
+      Logger.log("ConfTable doAction(): looks like nothing to do. Will skip update to table UI", level: .verbose)
+      return
     }
 
     updateTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
