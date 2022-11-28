@@ -239,7 +239,6 @@ class EditableTableView: NSTableView {
         // Second pass: set offsets and sizes
         for (compArrIndex, comp) in componentArray.enumerated() {
           let yAdjustToCenter = (maxRowHeight - comp.frame.height) / 2
-          Logger.log("MaxRowHeight: \(maxRowHeight). yAdjustToCenter: \(yAdjustToCenter)")
           comp.frame = NSRect(x: xOffsets[compArrIndex], y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
         }
 
@@ -251,11 +250,14 @@ class EditableTableView: NSTableView {
 
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
   // This will preserve the selection indexes (whereas reloadData() will not)
-  func reloadExistingRows() {
-    let selectedRows = self.selectedRowIndexes
+  func reloadExistingRows(reselectRowsAfter: Bool, usingNewSelection newRowIndexes: IndexSet? = nil) {
+    let selectedRows = newRowIndexes ?? self.selectedRowIndexes
+    Logger.log("Reloading existing rows\(reselectRowsAfter ? " (will re-select \(selectedRows) after)" : "")", level: .verbose)
     reloadData(forRowIndexes: IndexSet(0..<numberOfRows), columnIndexes: IndexSet(0..<numberOfColumns))
-    // Fires change listener...
-    selectApprovedRowIndexes(selectedRows, byExtendingSelection: false)
+    if reselectRowsAfter {
+      // Fires change listener...
+      selectApprovedRowIndexes(selectedRows, byExtendingSelection: false)
+    }
   }
 
   func selectApprovedRowIndexes(_ newSelectedRowIndexes: IndexSet, byExtendingSelection: Bool = false) {

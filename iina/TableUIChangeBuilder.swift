@@ -149,6 +149,7 @@ class TableUIChangeBuilder {
           Logger.log("selectNextRowAfterDelete: new selection index is less than zero! Discarding", level: .error)
         } else {
           tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
+          Logger.log("TableUIChange: selecting next index after removed rows: \(newSelectionIndex)", level: .verbose)
         }
       }
     }

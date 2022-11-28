@@ -120,7 +120,7 @@ struct BindingTableState {
     let allRowsUpdated = beforeInsert + movedRows + afterInsert
 
     let tableUIChange = TableUIChange(.moveRows, completionHandler: afterComplete)
-    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs), changing selection from \(srcIndexes.map{$0}) to \(dstIndexes.map{$0})", level: .verbose)
+    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs); will change selection from \(srcIndexes.map{$0}) to \(dstIndexes.map{$0})", level: .verbose)
     tableUIChange.toMove = moveIndexPairs
     tableUIChange.newSelectedRowIndexes = dstIndexes
     tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo

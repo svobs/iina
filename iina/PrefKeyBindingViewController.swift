@@ -122,7 +122,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func displayRawValueAction(_ sender: NSButton) {
-    kbTableView.reloadExistingRows()
+    kbTableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   @IBAction func openKeyBindingsHelpAction(_ sender: AnyObject) {

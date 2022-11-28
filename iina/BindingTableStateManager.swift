@@ -192,7 +192,7 @@ class BindingTableStateManager {
 
     // Notify Key Bindings table of update:
     let notification = Notification(name: .iinaPendingUIChangeForBindingTable, object: tableUIChange)
-    Logger.log("Posting \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
+    Logger.log("BindingTableStateManager: posting \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 

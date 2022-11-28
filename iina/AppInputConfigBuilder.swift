@@ -59,7 +59,7 @@ class AppInputConfigBuilder {
 
     let appBindings = AppInputConfig(version: version, bindingCandidateList: bindingCandidateList, resolverDict: resolverDict,
                                      userConfSectionStartIndex: userConfSectionStartIndex!, userConfSectionEndIndex: userConfSectionEndIndex!)
-    Logger.log("Finished rebuild of AppInputConfig (\(appBindings.resolverDict.count) total)", subsystem: sectionStack.subsystem)
+    Logger.log("Finished rebuild of AppInputConfig (\(appBindings.resolverDict.count) bindings)", subsystem: sectionStack.subsystem)
     appBindings.logEnabledBindings()
 
     return appBindings

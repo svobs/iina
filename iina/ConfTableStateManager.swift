@@ -262,7 +262,7 @@ class ConfTableStateManager: NSObject {
     updateTableUI(old: tableStateOld, new: tableStateNew, completionHandler: completionHandler)
   }
 
-  // Assembles a `TableUIChange` based the differences between states, then sends it to the UI for updating
+  // Assembles a `TableUIChange` based on the differences between states, then sends it to the UI for updating
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,

@@ -56,6 +56,9 @@ class TableUIChange {
   // Used by ContentChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
 
+  // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
+  // To select added rows, or select next index after remove, etc, will need an explicit call to update selection afterwards.
+  // Will not call to update selection if this is nil.
   var newSelectedRowIndexes: IndexSet? = nil
 
   // MARK: Optional vars
@@ -126,34 +129,26 @@ class TableUIChange {
   private func executeInAnimationGroup(_ tableView: EditableTableView, _ context: NSAnimationContext) {
     // Encapsulate all animations in this function inside a transaction.
     tableView.beginUpdates()
+
     if AccessibilityPreferences.motionReductionEnabled {
       Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
       context.duration = 0.0
       context.allowsImplicitAnimation = false
     }
-    executeContentUpdates(on: tableView)
 
-    if let newSelectedRowIndexes = self.newSelectedRowIndexes {
-      // NSTableView already updates previous selection indexes if added/removed rows cause them to move.
-      // To select added rows, will need an explicit call here.
-      tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
-    }
-
-    if reloadAllExistingRows && self.changeType != .reloadAll {
-      tableView.reloadExistingRows()
-    }
-
-    if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
-      tableView.scrollRowToVisible(firstSelectedRow)
-    }
+    executeRowUpdates(on: tableView)
 
     tableView.endUpdates()
   }
 
-  private func executeContentUpdates(on tableView: EditableTableView) {
+  private func executeRowUpdates(on tableView: EditableTableView) {
     let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
     let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
+    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves; reloadExisting: \(self.reloadAllExistingRows), hasNewSelection: \(self.newSelectedRowIndexes != nil)", level: .verbose)
+
+    // track this so we don't do it more than once (it fires the selectionChangedListener every time)
+    var wantsReloadOfExistingRows = false
     switch changeType {
 
       case .removeRows:
@@ -174,36 +169,46 @@ class TableUIChange {
         }
 
       case .updateRows:
-        // Just redraw all of them. This is a very inexpensive operation, and much easier
+        // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
         // than chasing down all the possible ways other rows could be updated.
-        tableView.reloadExistingRows()
+        wantsReloadOfExistingRows = true
 
       case .none:
-        fallthrough
+        break
 
       case .reloadAll:
         // Try not to use this much, if at all
-        Logger.log("TableUIChange: ReloadAll", level: .verbose)
+        Logger.log("Executing TableUIChange: ReloadAll", level: .verbose)
         tableView.reloadData()
+        wantsReloadOfExistingRows = false
 
       case .wholeTableDiff:
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
            let movePairs = self.toMove {
           guard !toRemove.isEmpty || !toInsert.isEmpty || !movePairs.isEmpty else {
-            // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-            Logger.log("TableUIChange from diff: no rows changed", level: .verbose)
+            Logger.log("Executing changes from diff: no rows changed", level: .verbose)
             break
           }
           // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
-          Logger.log("TableUIChange from diff: removing \(toRemove.count), adding \(toInsert.count), and moving \(movePairs.count) rows", level: .verbose)
           tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
           tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {
-            Logger.log("Diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
+            Logger.log("Executing changes from diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
+    }
+
+    if wantsReloadOfExistingRows {
+      // Also uses `newSelectedRowIndexes`, if it is not nil:
+      tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
+    } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
+      tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
+    }
+
+    if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
+      tableView.scrollRowToVisible(firstSelectedRow)
     }
   }
 }
