@@ -8,10 +8,10 @@
 
 import Foundation
 
-// Loading all the conf files into memory shouldn't take too much time or space, and it will help avoid
+// Loading all the input conf files into memory shouldn't take too much time or space, and it will help avoid
 // a bunch of tricky failure points for undo/redo, as well as unexpected behavior when the files are
 // changed outside of IINA.
-class InputConfFileCache {
+class ConfFileCache {
   fileprivate var storage: [String: InputConfFile] = [:]
 
   // Returns cached file with the given name, or nil if no such entry present
@@ -189,9 +189,15 @@ fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName
 
 // Internal file writer util func
 fileprivate func saveFile(_ inputConfFile: InputConfFile) throws {
-  guard !inputConfFile.isReadOnly else {
-    Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
-    throw IINAError.confFileIsReadOnly
+  switch inputConfFile.status {
+    case .readOnly:
+      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": isReadOnly==true!", level: .error)
+      throw IINAError.confFileIsReadOnly
+    case .failedToLoad:
+      Logger.log("Aborting saveFile() for \"\(inputConfFile.filePath)\": invalid operation: file never loaded properly!", level: .error)
+      throw IINAError.confFileIsReadOnly
+    case .normal:
+      break
   }
 
   Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
@@ -210,7 +216,7 @@ fileprivate func sendErrorAlert(key alertKey: String, args: [String]) {
 
 // Represents an input config file which has been loaded into memory.
 struct InputConfFile {
-  static let cache = InputConfFileCache()
+  static let cache = ConfFileCache()
 
   enum Status {
     case failedToLoad
@@ -255,7 +261,8 @@ struct InputConfFile {
 
     let updatedConfFile = InputConfFile(confName: self.confName, filePath: self.filePath, status: .normal, lines: rawLines)
 
-    // FIXME: Enqueue instead
+    // TODO: put in async queue
+
     do {
       try saveFile(updatedConfFile)
     } catch {

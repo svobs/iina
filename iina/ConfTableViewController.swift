@@ -606,7 +606,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
           Utility.showAlert("config.empty_name", sheetWindow: self.tableView.window)
           return
         }
-        guard !self.confTableState.confTableRows.contains(newName) else {
+        guard !self.confTableState.isRow(newName) else {
           Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
           return
         }

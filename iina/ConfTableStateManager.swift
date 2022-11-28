@@ -111,12 +111,13 @@ class ConfTableStateManager: NSObject {
   func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
-      Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName))!", level: .verbose)
+      Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\"\(targetConfName)\")!", level: .verbose)
       return
     }
 
     guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
-      return  // error already logged. Just return.
+      Logger.log("Cannot append to conf: \"\(targetConfName)\": file was not loaded properly!", level: .error)
+      return
     }
 
     let actionName = Utility.format(.keyBinding, mappingsToAppend.count, .copyToFile)
