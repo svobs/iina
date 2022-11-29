@@ -683,6 +683,10 @@ struct Preference {
       }
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
+
+    // Width will be identical
+    static let frameHeight: CGFloat = 24
+
   }
 
   // MARK: - Defaults

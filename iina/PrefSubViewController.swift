@@ -42,8 +42,21 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   @IBOutlet weak var loginIndicator: NSProgressIndicator!
   @IBOutlet weak var defaultEncodingList: NSPopUpButton!
 
+  @IBOutlet var subColorWell: NSColorWell!
+  @IBOutlet var subBackgroundColorWell: NSColorWell!
+  @IBOutlet var subBorderColorWell: NSColorWell!
+  @IBOutlet var subShadowColorWell: NSColorWell!
+
   override func viewDidLoad() {
     super.viewDidLoad()
+
+#if MACOS_13_AVAILABLE
+    if #available(macOS 13.0, *) {
+      [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
+        $0.colorWellStyle = .minimal
+      }
+    }
+#endif
 
     let defaultEncoding = Preference.string(for: .defaultEncoding)
     for encoding in AppData.encodings {
