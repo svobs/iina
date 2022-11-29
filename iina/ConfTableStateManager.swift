@@ -27,13 +27,23 @@ class ConfTableStateManager: NSObject {
     for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
+  }
 
-    let currentState = ConfTableState.current
-    for (confName, filePath) in AppData.defaultConfs {
-      fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
-    }
-    for (confName, filePath) in currentState.userConfDict {
-      fileCache.getOrLoadConfFile(at: filePath, isReadOnly: false, confName: confName)
+  // Should not be called until the init() methods of all major components have completed
+  func startUp() {
+    loadSelectedConfBindingsIntoAppConfig()
+
+    DispatchQueue.global(qos: .utility).async {
+      Logger.log("Loading \(AppData.defaultConfs.count) default conf files into cache")
+      for (confName, filePath) in AppData.defaultConfs {
+        self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
+      }
+      
+      let currentState = ConfTableState.current
+      Logger.log("Loading \(currentState.userConfDict.count) user conf files into cache")
+      for (confName, filePath) in currentState.userConfDict {
+        self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: false, confName: confName)
+      }
     }
   }
 
@@ -234,7 +244,7 @@ class ConfTableStateManager: NSObject {
     if hasSelectionChange {
       Logger.log("Saving pref 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)'", level: .verbose)
       Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
-      loadBindingsFromSelectedConfFile()
+      loadSelectedConfBindingsIntoAppConfig()
     }
 
     let hasUndoableChange: Bool = hasSelectionChange || hasConfListChange
@@ -301,21 +311,22 @@ class ConfTableStateManager: NSObject {
   func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
-    Logger.log("Loading inputConfFile for \"\(targetConfName)\"")
-
     let isReadOnly = ConfTableState.isDefaultConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
+    Logger.log("Loading inputConfFile for \"\(targetConfName)\"")
     return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
   }
 
   // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).
-  func loadBindingsFromSelectedConfFile() {
+  func loadSelectedConfBindingsIntoAppConfig() {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else {
+      Logger.log("Cannot get bindings from \"\(inputConfFile.confName)\" because it failed to load", level: .error)
       ConfTableState.current.fallBackToDefaultConf()
       return
     }
+
     var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
 
     // Key Bindings table will reload after it receives new data from AppInputConfig.

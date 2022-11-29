@@ -14,7 +14,8 @@ import Foundation
 class InputConfFileCache {
   static let writeQueue = DispatchQueue(label: "InputConfFile-WriteQueue", qos: .utility)
 
-  fileprivate var storage: [String: InputConfFile] = [:]
+  private var storage: [String: InputConfFile] = [:]
+  private let storageLock = Lock()
 
   // Returns cached file with the given name, or nil if no such entry present
   func getConfFile(confName: String) -> InputConfFile? {
@@ -41,7 +42,9 @@ class InputConfFileCache {
     let confFile = loadFile(at: filePath, isReadOnly: isReadOnly, confName: confName)
 
     // read-through
-    storage[confName] = confFile
+    storageLock.withLock {
+      storage[confName] = confFile
+    }
 
     Logger.log("Updating memory cache entry for \"\(confName)\" (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
     return confFile
@@ -61,8 +64,10 @@ class InputConfFileCache {
         break
     }
 
-    Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
-    InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
+    storageLock.withLock {
+      Logger.log("Updating memory cache entry for conf file: \"\(inputConfFile.confName)\"", level: .verbose)
+      InputConfFile.cache.storage[inputConfFile.confName] = inputConfFile
+    }
 
     InputConfFileCache.writeQueue.async {
       Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
@@ -79,13 +84,15 @@ class InputConfFileCache {
 
   // RENAME file in cache and on disk. Returns before writing to disk. Sends an async notify if disk ops fail.
   func renameConfFile(oldConfName: String, newConfName: String) {
-    Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
-    guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
-      Logger.log("Cannot move conf file: no entry in cache for \"\(oldConfName)\" (this should never happen)", level: .error)
-      sendErrorAlert(key: "error_finding_file", args: ["config"])
-      return
+    storageLock.withLock {
+      Logger.log("Updating memory cache: moving \"\(oldConfName)\" -> \"\(newConfName)\"", level: .verbose)
+      guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
+        Logger.log("Cannot move conf file: no entry in cache for \"\(oldConfName)\" (this should never happen)", level: .error)
+        sendErrorAlert(key: "error_finding_file", args: ["config"])
+        return
+      }
+      storage[newConfName] = inputConfFile
     }
-    storage[newConfName] = inputConfFile
 
     InputConfFileCache.writeQueue.async {
       let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
@@ -128,15 +135,13 @@ class InputConfFileCache {
     var removedFileDict: [String:InputConfFile] = [:]
 
     for confName in confNamesToRemove {
-      // Move file contents out of memory cache and into undo data:
-      Logger.log("Removing from cache: \"\(confName)\"", level: .verbose)
-      guard let inputConfFile = storage.removeValue(forKey: confName) else {
+      guard let removedConfFile = removeFromCache(confName: confName) else {
         Logger.log("Cannot remove conf file: no entry in cache for \"\(confName)\" (this should never happen)", level: .error)
         sendErrorAlert(key: "error_finding_file", args: ["config"])
         continue
       }
-      removedFileDict[confName] = inputConfFile
-      let filePath = inputConfFile.filePath
+      removedFileDict[confName] = removedConfFile
+      let filePath = removedConfFile.filePath
 
       InputConfFileCache.writeQueue.async {
         do {
@@ -156,14 +161,24 @@ class InputConfFileCache {
     return removedFileDict
   }
 
+  private func removeFromCache(confName: String) -> InputConfFile? {
+    // Move file contents out of memory cache and into undo data:
+    storageLock.withLock {
+      Logger.log("Removing from cache: \"\(confName)\"", level: .verbose)
+      return storage.removeValue(forKey: confName)
+    }
+  }
+
   // Undoes `removeConfFiles()`.
   // Requires a dict of {confName -> file} as param, ideally the same data returned by `removeConfFiles()`
   // By saving the files' contents in memory, restoring them will always succeed.
   // If disk operations fail, we can continue without immediate data loss - just report the error to user first.
   func restoreRemovedConfFiles(_ confNames: Set<String>, _ filesRemovedByLastAction: [String:InputConfFile]) {
-    for (confName, inputConfFile) in filesRemovedByLastAction {
-      Logger.log("Restoring file to cache: \(confName)", level: .verbose)
-      storage[confName] = inputConfFile
+    storageLock.withLock {
+      for (confName, inputConfFile) in filesRemovedByLastAction {
+        Logger.log("Restoring file to cache: \(confName)", level: .verbose)
+        storage[confName] = inputConfFile
+      }
     }
 
     for confName in confNames {

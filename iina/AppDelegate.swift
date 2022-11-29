@@ -96,7 +96,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @IBOutlet weak var dockMenu: NSMenu!
 
   private func getReady() {
-    self.confTableStateManager.loadBindingsFromSelectedConfFile()
+    confTableStateManager.startUp()
     menuController.bindMenuItems()
     isReady = true
   }
