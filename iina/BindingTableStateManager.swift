@@ -183,8 +183,7 @@ class BindingTableStateManager {
 
   private func updateTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange: TableUIChange? = nil) {
     // A table change animation can be calculated if not provided, which should be sufficient in most cases.
-    let isFilterChange = oldState.filterString != newState.filterString
-    let tableUIChange = desiredTableUIChange ?? buildTableDiff(oldState: oldState, newState: newState, useFadeEffects: !isFilterChange)
+    let tableUIChange = desiredTableUIChange ?? buildTableDiff(oldState: oldState, newState: newState)
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableUIChange.reloadAllExistingRows = true
@@ -193,6 +192,11 @@ class BindingTableStateManager {
     if !newState.inputConfFile.canonicalFilePath.equalsIgnoreCase(oldState.inputConfFile.canonicalFilePath) {
       Logger.log("Looks like a different input conf file was selected", level: .verbose)
       tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
+      // The default slide animations look good when applying filters, but they are too chaotic when changing files.
+      // A fade effect still looks nicer than nothing. Moved rows will still animate, but that actually works well
+      // for sliding VF/AF bindings up and down as the list above them changes length.
+      tableUIChange.rowInsertAnimation = .effectFade
+      tableUIChange.rowRemoveAnimation = .effectFade
     }
 
     // Notify Key Bindings table of update:
@@ -201,14 +205,9 @@ class BindingTableStateManager {
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, useFadeEffects: Bool = false) -> TableUIChange {
+  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
     // Remember, the displayed table contents must reflect the *filtered* state (displayed rows).
-    let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
-    if useFadeEffects {
-      tableUIChange.rowInsertAnimation = .effectFade
-      tableUIChange.rowRemoveAnimation = .effectFade
-    }
-    return tableUIChange
+    return TableUIChangeBuilder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
   }
 
   // Save change to input conf file
