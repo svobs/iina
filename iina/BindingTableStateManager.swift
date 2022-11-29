@@ -87,8 +87,8 @@ class BindingTableStateManager {
     let updatedConfFile = overwrite(currentConfFile: tableStateOld.inputConfFile, with: userConfMappingsNew)
 
     /*
-     Replace the shared static "default" section bindings with the given list. Then rebuild the AppInputConfig.
-     It will notify us asynchronously when it is done.
+     Replace the shared static "default" section bindings with the given list, which will trigger a rebuild
+     of AppInputConfig, which will result in `appInputConfigDidChange()` being called asynchronously.
 
      Note: we rely on the assumption that we know which rows will be added & removed, and that information is contained in `tableUIChange`.
      This is needed so that animations can work. But InputBindingController builds the actual row data,
@@ -96,7 +96,6 @@ class BindingTableStateManager {
      */
     let associatedData: [AnyHashable : Any] = [BindingTableStateManager.Key.confFile: updatedConfFile,
                                                BindingTableStateManager.Key.tableUIChange: tableUIChange]
-
     AppInputConfig.replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: associatedData)
   }
 
@@ -125,7 +124,7 @@ class BindingTableStateManager {
 
   // Not an undoable action; just a UI change
   func applyFilter(newFilterString: String) {
-    updateTableState(AppInputConfig.current, newFilterString: newFilterString)
+    applyStateUpdate(AppInputConfig.current, newFilterString: newFilterString)
   }
 
   private func clearFilter() {
@@ -149,23 +148,27 @@ class BindingTableStateManager {
     let tableUIChange = userData[BindingTableStateManager.Key.tableUIChange] as? TableUIChange
     let newInputConfFile = userData[BindingTableStateManager.Key.confFile] as? InputConfFile
 
-    self.updateTableState(appInputConfig, desiredTableUIChange: tableUIChange, newInputConfFile: newInputConfFile)
+    self.applyStateUpdate(appInputConfig, desiredTableUIChange: tableUIChange, newInputConfFile: newInputConfFile)
   }
 
   /*
-   Called asychronously from other parts of IINA when new data is available which affects the state of the
-   table.
-
-   Expected to be run on the main thread.
+   Builds a new `BindingTableState` and sets `BindingTableState.current` to it, using the given params if provided.
+   Then notifies the table to update its UI. More notes:
+   • If an update to `AppInputConfig` was needed, that will be done first and this method will be called asychronously
+   from other parts of IINA.
+   • The `TableUIChange` can be generated via diff to update the UI if not provided, but it is better to provide it in
+   order to get more accurate animations.
+   • Expected to be run on the main thread.
    */
-  private func updateTableState(_ appInputConfigNew: AppInputConfig, desiredTableUIChange: TableUIChange? = nil,
+  private func applyStateUpdate(_ appInputConfigNew: AppInputConfig, desiredTableUIChange: TableUIChange? = nil,
                                 newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
+    Logger.log("Updating state for Binding table: uiUpdateProvided=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "{nil}")", level: .verbose)
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableUIChange == nil && newFilterString == nil && newInputConfFile == nil {
-      Logger.log("updateTableState(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
+      Logger.log("applyStateUpdate(): ignoring update because nothing new: (v\(appInputConfigNew.version))", level: .verbose)
       return
     }
 
@@ -179,14 +182,16 @@ class BindingTableStateManager {
   }
 
   private func updateTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange: TableUIChange? = nil) {
-    // A table change animation can be calculated if not provided, which should be sufficient in most cases
-    let tableUIChange = desiredTableUIChange ?? buildTableDiff(oldState: oldState, newState: newState)
+    // A table change animation can be calculated if not provided, which should be sufficient in most cases.
+    let isFilterChange = oldState.filterString != newState.filterString
+    let tableUIChange = desiredTableUIChange ?? buildTableDiff(oldState: oldState, newState: newState, useFadeEffects: !isFilterChange)
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableUIChange.reloadAllExistingRows = true
 
     // If the table change is the result of a new conf file being selected, don't try to retain the selection.
     if !newState.inputConfFile.canonicalFilePath.equalsIgnoreCase(oldState.inputConfFile.canonicalFilePath) {
+      Logger.log("Looks like a different input conf file was selected", level: .verbose)
       tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
     }
 
@@ -196,11 +201,13 @@ class BindingTableStateManager {
     NotificationCenter.default.post(notification)
   }
 
-  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
-    // Remember, the displayed table contents must reflect the *filtered* state.
+  private func buildTableDiff(oldState: BindingTableState, newState: BindingTableState, useFadeEffects: Bool = false) -> TableUIChange {
+    // Remember, the displayed table contents must reflect the *filtered* state (displayed rows).
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: oldState.displayedRows, newRows: newState.displayedRows)
-    tableUIChange.rowInsertAnimation = .effectFade
-    tableUIChange.rowRemoveAnimation = .effectFade
+    if useFadeEffects {
+      tableUIChange.rowInsertAnimation = .effectFade
+      tableUIChange.rowRemoveAnimation = .effectFade
+    }
     return tableUIChange
   }
 

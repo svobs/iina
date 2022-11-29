@@ -78,7 +78,7 @@ class TableUIChangeBuilder {
   // MARK: Diff
 
   /*
-   Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, `toMove`, and `newSelectedRowIndexes` fields
+   Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, and `toMove` fields
    based on a diffing algorithm similar to Git's.
 
    Note for tables containing non-unique rows:
@@ -92,8 +92,8 @@ class TableUIChangeBuilder {
    Further reference:
    https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
    */
-  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, isUndoRedo: Bool = false,
-                           completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange where R:Hashable {
+  static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
+                           TableUIChange.CompletionHandler? = nil) -> TableUIChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
       return TableUIChange(.reloadAll, completionHandler: completionHandler)
@@ -118,23 +118,6 @@ class TableUIChangeBuilder {
         case let .move(_, from, to):
           diff.toMove?.append((from, to))
       }
-    }
-
-    if isUndoRedo {  // Special styling for undo & redo
-      if !diff.hasMove && !diff.hasRemove && diff.hasInsert {
-        // If lines were added with no other changes, highlight them.
-        diff.newSelectedRowIndexes = IndexSet()
-        // Only inserts: select added lines
-        if let toInsert = diff.toInsert {
-          for insertedIndex in toInsert {
-            diff.newSelectedRowIndexes?.insert(insertedIndex)
-          }
-        }
-      }
-    }
-    applyExtraSelectionRules(to: diff)
-    if let newSelected = diff.newSelectedRowIndexes {
-      Logger.log("From diff results: will change table selection to: \(newSelected.map{$0})", level: .verbose)
     }
 
     return diff
