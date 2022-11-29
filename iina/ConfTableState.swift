@@ -32,7 +32,7 @@ struct ConfTableState {
     case fallBackToDefaultConf
   }
 
-  // MARK: State vars
+  // MARK: State data
 
   let specialState: SpecialState
 
@@ -41,13 +41,13 @@ struct ConfTableState {
 
   let selectedConfName: String
 
+  // MARK: Derived data (built from state data above + various constants & predictable logic)
+
   /*
    Contains names of all the default confs in pre-defined order, follwed by the names of all user confs in alphabetical order.
    Each name is unique within the Conf TableView and serve as identifiers.
    */
   let confTableRows: [String]
-
-  // MARK: Derived data
 
   // Looks up the selected conf, then searches for it first in the user confs, then the default confs,
   // then if still not found, just computes its expected value and returns it.
