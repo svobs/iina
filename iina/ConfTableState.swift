@@ -282,7 +282,7 @@ struct ConfTableState {
     changeSelectedConf(selectedConfNew)
   }
 
-  func changeSelectedConf(_ selectedConfNew: String) {
+  func changeSelectedConf(_ selectedConfNew: String, skipSaveToPrefs: Bool = false) {
     guard !selectedConfNew.equalsIgnoreCase(self.selectedConfName) else {
       return
     }
@@ -295,7 +295,7 @@ struct ConfTableState {
 
     Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
 
-    ConfTableState.manager.changeState(selectedConfName: selectedConfNew)
+    ConfTableState.manager.changeState(selectedConfName: selectedConfNew, skipSaveToPrefs: skipSaveToPrefs)
   }
 
   // Rebuilds & re-sorts the table names. Must not change the actual state of any member vars

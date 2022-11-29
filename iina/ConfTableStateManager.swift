@@ -93,6 +93,8 @@ class ConfTableStateManager: NSObject {
 
     DispatchQueue.main.async {  // had some issues with race conditions
       let curr = ConfTableState.current
+
+
       switch keyPath {
 
         case Preference.Key.currentInputConfigName.rawValue:
@@ -103,12 +105,14 @@ class ConfTableStateManager: NSObject {
             return
           }
           Logger.log("Detected pref update for selectedConf: \"\(selectedConfNameNew)\"", level: .verbose)
-          ConfTableState.current.changeSelectedConf(selectedConfNameNew)  // updates UI in case the update came from an external source
+          // Update the UI in case the update came from an external source. Make sure not to update prefs,
+          // as this can cause a runaway chain reaction of back-and-forth updates if two or more instances are open!
+          ConfTableState.current.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
         case Preference.Key.inputConfigs.rawValue:
           guard let userConfDictNew = change[.newKey] as? [String: String] else { return }
           if !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) {
             Logger.log("Detected pref update for inputConfigs", level: .verbose)
-            self.changeState(userConfDictNew, selectedConfName: curr.selectedConfName)
+            self.changeState(userConfDictNew, selectedConfName: curr.selectedConfName, skipSaveToPrefs: true)
           }
         default:
           return
@@ -158,17 +162,18 @@ class ConfTableStateManager: NSObject {
   }
 
   func changeState(_ userConfDict: [String:String]? = nil, selectedConfName: String? = nil,
-                   specialState: ConfTableState.SpecialState = .none,
+                   specialState: ConfTableState.SpecialState = .none, skipSaveToPrefs: Bool = false,
                    completionHandler: TableUIChange.CompletionHandler? = nil) {
 
     let selectedConfOverride = specialState == .fallBackToDefaultConf ? ConfTableStateManager.defaultConfName : selectedConfName
     let undoData = UndoData(userConfDict: userConfDict, selectedConfName: selectedConfOverride)
 
-    self.doAction(undoData, specialState: specialState, completionHandler: completionHandler)
+    self.doAction(undoData, specialState: specialState, skipSaveToPrefs: skipSaveToPrefs, completionHandler: completionHandler)
   }
 
   // May be called for do, undo, or redo of an action which changes the table contents or selection
   private func doAction(_ newData: UndoData, specialState: ConfTableState.SpecialState = .none,
+                        skipSaveToPrefs: Bool = false,
                         completionHandler: TableUIChange.CompletionHandler? = nil) {
 
     let tableStateOld = ConfTableState.current
@@ -238,15 +243,23 @@ class ConfTableStateManager: NSObject {
 
     // Update userConfDict pref if changed
     if hasConfListChange {
-      Logger.log("Saving pref: inputConfigs=\(tableStateNew.userConfDict)", level: .verbose)
-      Preference.set(tableStateNew.userConfDict, for: .inputConfigs)
+      if skipSaveToPrefs {
+        Logger.log("Skipping pref save for inputConfigs=\(tableStateNew.userConfDict)", level: .verbose)
+      } else {
+        Logger.log("Saving pref: inputConfigs=\(tableStateNew.userConfDict)", level: .verbose)
+        Preference.set(tableStateNew.userConfDict, for: .inputConfigs)
+      }
     }
 
     // Update selectedConfName and load new file if changed
     let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)
     if hasSelectionChange {
-      Logger.log("Saving pref 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)'", level: .verbose)
-      Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
+      if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
+        Logger.log("Skipping pref save for 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)' (current pref val: \(Preference.string(for: .currentInputConfigName) ?? "nil"); skip=\(skipSaveToPrefs))", level: .verbose)
+      } else {
+        Logger.log("Saving pref 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)'", level: .verbose)
+        Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
+      }
       loadSelectedConfBindingsIntoAppConfig()
     }
 

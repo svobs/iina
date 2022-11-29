@@ -119,7 +119,7 @@ class TableUIChange {
       // avoids issues such as unexpected notifications being fired from animations
       if let completionHandler = self.completionHandler {
         DispatchQueue.main.async {
-          Logger.log("Calling completion handler", level: .verbose)
+          Logger.log("TableUIChange: calling completion handler", level: .verbose)
           completionHandler(self)
         }
       }

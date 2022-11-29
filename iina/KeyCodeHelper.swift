@@ -338,7 +338,13 @@ class KeyCodeHelper {
 
   // See mpv/input/keycodes.c: mp_input_get_keys_from_string()
   public static func splitKeystrokes(_ keystrokes: String) -> [String] {
-    var unparsedRemainder = Substring(keystrokes)
+    // Older versions of IINA's saved filters would add 3 null chars to end before saving in IINA's preferences.
+    // They will cause matching logic to fail, so it's necessary to check for this for the forseeable future.
+    let ksClean = keystrokes.replacingOccurrences(of: "\0", with: "")
+    if ksClean.count != keystrokes.count {
+      Logger.log("Found \(keystrokes.count - ksClean.count) null characters in \"\(keystrokes)\"; will try to fix & continue", level: .warning)
+    }
+    var unparsedRemainder = Substring(ksClean)
     var splitKeystrokeList: [String] = []
 
     while !unparsedRemainder.isEmpty && splitKeystrokeList.count < MP_MAX_KEY_DOWN {
