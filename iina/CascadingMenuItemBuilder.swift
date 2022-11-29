@@ -112,8 +112,8 @@ class CascadingMenuItemBuilder {
             debugVal = val.singular
           }
         case .key, .title, .unitActionFormat:
-          if let val = val as? String {
-            debugVal = "\"\(val)\""
+          if let val = val as? UnitActionFormatType {
+            debugVal = "\"\(val.none)\""
           }
         case .enabled, .targetRowIndex, .unitCount:
           if let val = val {

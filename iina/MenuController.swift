@@ -831,15 +831,16 @@ class MenuController: NSObject, NSMenuDelegate {
       guard let menuItem = binding.menuItem else { return }
 
       if binding.isEnabled {
-        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: binding.keyMapping.normalizedMpvKey) {
+        let mpvKey = binding.keyMapping.normalizedMpvKey
+        if let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: mpvKey) {
           menuItem.keyEquivalent = kEqv
           menuItem.keyEquivalentModifierMask = kMdf
           binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
           if AppInputConfig.logBindingsRebuild {
-            Logger.log("Updated keyEquivalent for \"\(binding.keyMapping.normalizedMpvKey)\" -> \"\(menuItem.title)\"", level: .verbose)
+            Logger.log("Updated keyEquivalent for \"\(mpvKey)\" -> \"\(menuItem.title)\"", level: .verbose)
           }
         } else {
-          Logger.log("Failed to get MacOS key equivalent for \"\(binding.keyMapping.normalizedMpvKey)\"", level: .error)
+          Logger.log("Failed to get MacOS key equivalent for \"\(mpvKey)\"", level: .error)
         }
       } else {
         // Conflict! Key binding already reserved

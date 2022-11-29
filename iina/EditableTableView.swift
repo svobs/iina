@@ -156,7 +156,7 @@ class EditableTableView: NSTableView {
       return
     }
 
-    Logger.log("EditableTableView: Opening inline editor for row \(rowIndex), column \(columnIndex), textField: \(editableTextField)", level: .verbose)
+    Logger.log("EditableTableView: Opening inline editor for row \(rowIndex), col \(columnIndex)", level: .verbose)
 
     self.scrollRowToVisible(rowIndex)
     cellEditTracker.changeCurrentCell(to: editableTextField, row: rowIndex, column: columnIndex)

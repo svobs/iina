@@ -35,7 +35,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     return BindingTableState.current
   }
 
-  private var confTableController: InputConfTableViewController? = nil
+  private var confTableController: ConfTableViewController? = nil
   private var kbTableController: BindingTableViewController? = nil
 
   private var observers: [NSObjectProtocol] = []
@@ -66,7 +66,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     let kbTableController = BindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
     self.kbTableController = kbTableController
-    confTableController = InputConfTableViewController(inputConfigTableView, kbTableController)
+    confTableController = ConfTableViewController(inputConfigTableView, kbTableController)
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")

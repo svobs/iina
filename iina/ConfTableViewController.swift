@@ -17,7 +17,7 @@ fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
 @available(macOS 10.14, *)
 fileprivate let defaultConfTextColor: NSColor = .controlAccentColor
 
-class InputConfTableViewController: NSObject {
+class ConfTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
   private let DRAGGING_FORMATION: NSDraggingFormation = .default
   private let enableInlineCreate = true
@@ -83,11 +83,11 @@ class InputConfTableViewController: NSObject {
 
 // MARK: NSTableViewDelegate
 
-extension InputConfTableViewController: NSTableViewDelegate {
+extension ConfTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
-    Logger.log("InputConfTableViewController: tableViewSelectionDidChange() called. Kicking off state change", level: .verbose)
+    Logger.log("ConfTableViewController: tableViewSelectionDidChange() called. Kicking off state change", level: .verbose)
     confTableState.changeSelectedConf(tableView.selectedRow)
   }
 
@@ -124,7 +124,7 @@ extension InputConfTableViewController: NSTableViewDelegate {
 
 // MARK: EditableTableViewDelegate
 
-extension InputConfTableViewController: EditableTableViewDelegate {
+extension ConfTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     return confTableState.getUserConfName(at: rowIndex) != nil
@@ -255,7 +255,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
   }
 
   private func readConfFilesFromClipboard() -> [String] {
-    InputConfTableViewController.extractConfFileList(from: NSPasteboard.general)
+    ConfTableViewController.extractConfFileList(from: NSPasteboard.general)
   }
 
   // Convert conf file path to URL and put it in clipboard
@@ -272,7 +272,7 @@ extension InputConfTableViewController: EditableTableViewDelegate {
 
 // MARK: NSTableViewDataSource
 
-extension InputConfTableViewController: NSTableViewDataSource {
+extension ConfTableViewController: NSTableViewDataSource {
   /*
    Tell NSTableView the number of rows when it asks
    */
@@ -317,7 +317,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
       return
     }
 
-    let userConfList = InputConfTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
+    let userConfList = ConfTableViewController.extractConfFileList(from: session.draggingPasteboard).compactMap {
       confTableState.getUserConfName(forFilePath: $0) }
 
     guard userConfList.count == 1 else { return }
@@ -349,7 +349,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
     info.draggingDestinationWindow?.orderFrontRegardless()
 
     // Check for conf files
-    let confFileCount = InputConfTableViewController.extractConfFileList(from: info.draggingPasteboard).count
+    let confFileCount = ConfTableViewController.extractConfFileList(from: info.draggingPasteboard).count
     if confFileCount > 0 {
       // Update that little red number:
       info.numberOfValidItemsForDrop = confFileCount
@@ -384,7 +384,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
     info.draggingFormation = DRAGGING_FORMATION
 
     // Option A: drop input conf file(s) into table
-    let confFilePathList = InputConfTableViewController.extractConfFileList(from: info.draggingPasteboard)
+    let confFilePathList = ConfTableViewController.extractConfFileList(from: info.draggingPasteboard)
     if !confFilePathList.isEmpty {
       Logger.log("User dropped \(confFilePathList.count) conf files into table")
       info.numberOfValidItemsForDrop = confFilePathList.count
@@ -427,7 +427,7 @@ extension InputConfTableViewController: NSTableViewDataSource {
 
 // MARK: NSMenuDelegate
 
-extension InputConfTableViewController:  NSMenuDelegate {
+extension ConfTableViewController:  NSMenuDelegate {
 
   fileprivate class InputConfMenuItem: NSMenuItem {
     let confName: String
@@ -592,7 +592,7 @@ extension InputConfTableViewController:  NSMenuDelegate {
     if enableInlineCreate {
       // Find a new name for the duplicate, and immediately open an editor for it to change the name.
       // The table will update asynchronously, but we need to make sure it's done adding before we can edit it.
-      if let (newConfName, newFilePath) = self.duplicateCurrentConfFile() {
+      if let (newConfName, newFilePath) = self.duplicateConfFile(forConfName: confName) {
         self.confTableState.addUserConf(confName: newConfName, filePath: newFilePath, completionHandler: { tableUIChange in
           if let selectedRowIndex = tableUIChange.newSelectedRowIndexes?.first {
             self.tableView.editCell(row: selectedRowIndex, column: 0)  // open  an editor for the new row
@@ -625,10 +625,11 @@ extension InputConfTableViewController:  NSMenuDelegate {
     }
   }
 
-  private func duplicateCurrentConfFile() -> (String, String)? {
-    let origFilePath = confTableState.selectedConfFilePath
+  private func duplicateConfFile(forConfName confName: String) -> (String, String)? {
+    guard confTableState.isRow(confName) else { return nil }
+    let origFilePath = confTableState.getFilePath(forConfName: confName)
 
-    let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confTableState.selectedConfName)
+    let (newConfName, newFilePath) = findNewNameForDuplicate(originalName: confName)
 
     do {
       Logger.log("Duplicating file: \"\(origFilePath)\" -> \"\(newFilePath)\"")

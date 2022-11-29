@@ -164,7 +164,7 @@ class BindingTableStateManager {
                                 newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    Logger.log("Updating state for Binding table: uiUpdateProvided=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "{nil}")", level: .verbose)
+    Logger.log("Updating state for Binding table: uiUpdateWasGiven=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "nil")", level: .verbose)
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableUIChange == nil && newFilterString == nil && newInputConfFile == nil {
@@ -190,7 +190,6 @@ class BindingTableStateManager {
 
     // If the table change is the result of a new conf file being selected, don't try to retain the selection.
     if !newState.inputConfFile.canonicalFilePath.equalsIgnoreCase(oldState.inputConfFile.canonicalFilePath) {
-      Logger.log("Looks like a different input conf file was selected", level: .verbose)
       tableUIChange.newSelectedRowIndexes = IndexSet() // will clear any selection
       // The default slide animations look good when applying filters, but they are too chaotic when changing files.
       // A fade effect still looks nicer than nothing. Moved rows will still animate, but that actually works well
