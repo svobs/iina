@@ -129,13 +129,14 @@ class PreferenceWindowController: NSWindowController {
   @IBOutlet weak var searchField: NSSearchField!
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var maskView: PrefSearchResultMaskView!
-  @IBOutlet weak var scrollView: NSScrollView!
-  @IBOutlet weak var contentView: NSView!
+  @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
+  @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
+  @IBOutlet weak var prefSectionsStackView: NSStackView!  // add prefs sections to this
   @IBOutlet var completionPopover: NSPopover!
   @IBOutlet weak var completionTableView: NSTableView!
   @IBOutlet weak var noResultLabel: NSTextField!
 
-  private var contentViewBottomConstraint: NSLayoutConstraint?
+  private var detailViewBottomConstraint: NSLayoutConstraint?
 
   private var viewControllers: [NSViewController & PreferenceWindowEmbeddable]
 
@@ -160,7 +161,7 @@ class PreferenceWindowController: NSWindowController {
     completionTableView.delegate = self
     completionTableView.dataSource = self
 
-    contentViewBottomConstraint = contentView.bottomAnchor.constraint(equalTo: contentView.superview!.bottomAnchor)
+    detailViewBottomConstraint = prefDetailContentView.bottomAnchor.constraint(equalTo: prefDetailContentView.superview!.bottomAnchor)
 
     var viewMap = [
       ["general", "PrefGeneralViewController"],
@@ -249,14 +250,14 @@ class PreferenceWindowController: NSWindowController {
     if index != tableView.selectedRow {
       tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     }
-    contentView.subviews.forEach { $0.removeFromSuperview() }
+    prefSectionsStackView.subviews.forEach { $0.removeFromSuperview() }
     guard let vc = viewControllers[at: index] else { return }
-    contentView.addSubview(vc.view)
+    prefSectionsStackView.addSubview(vc.view)
     Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": vc.view])
 
     let isScrollable = vc.preferenceContentIsScrollable
-    contentViewBottomConstraint?.isActive = !isScrollable
-    scrollView.verticalScrollElasticity = .none
+    detailViewBottomConstraint?.isActive = !isScrollable
+    prefDetailScrollView.verticalScrollElasticity = .none
 
     // find label
     if let title = title, let label = findLabel(titled: title, in: vc.view) {
