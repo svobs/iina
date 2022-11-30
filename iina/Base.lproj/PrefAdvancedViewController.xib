@@ -55,7 +55,7 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="shz-CZ-kqM">
-                    <rect key="frame" x="359" y="288" width="148" height="32"/>
+                    <rect key="frame" x="360" y="288" width="147" height="32"/>
                     <buttonCell key="cell" type="push" title="Open log directory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="JDA-g3-RNX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -196,7 +196,7 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hbF-n4-jl3">
-                    <rect key="frame" x="359" y="25" width="148" height="32"/>
+                    <rect key="frame" x="359" y="27" width="148" height="32"/>
                     <buttonCell key="cell" type="push" title="Choose directory…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MRT-u8-xTX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -261,7 +261,7 @@
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="wWR-n2-u2E" secondAttribute="trailing" id="cWT-fx-J5u"/>
                 <constraint firstAttribute="trailing" secondItem="shz-CZ-kqM" secondAttribute="trailing" id="eHI-S4-ALO"/>
                 <constraint firstAttribute="trailing" secondItem="bA7-7o-Vd0" secondAttribute="trailing" id="foA-Yd-KGK"/>
-                <constraint firstItem="hbF-n4-jl3" firstAttribute="firstBaseline" secondItem="Gf8-9e-wu7" secondAttribute="firstBaseline" id="j2y-sy-d0s"/>
+                <constraint firstItem="hbF-n4-jl3" firstAttribute="baseline" secondItem="Gf8-9e-wu7" secondAttribute="baseline" id="j2y-sy-d0s"/>
                 <constraint firstItem="jsf-pn-h6s" firstAttribute="leading" secondItem="Gf8-9e-wu7" secondAttribute="leading" constant="18" id="kCk-Cy-eeA"/>
                 <constraint firstItem="hbF-n4-jl3" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Gf8-9e-wu7" secondAttribute="trailing" constant="8" id="ltk-Vb-ZZN"/>
                 <constraint firstItem="shz-CZ-kqM" firstAttribute="firstBaseline" secondItem="SHQ-mh-jeX" secondAttribute="firstBaseline" id="plm-KY-Yk5"/>
