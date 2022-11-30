@@ -129,6 +129,7 @@ class PreferenceWindowController: NSWindowController {
   @IBOutlet weak var searchField: NSSearchField!
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var maskView: PrefSearchResultMaskView!
+  // Check `prefDetailScrollView` constraints in the XIB for window content insets
   @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
   @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
   @IBOutlet weak var prefSectionsStackView: NSStackView!  // add prefs sections to this
