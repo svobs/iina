@@ -145,16 +145,16 @@
                         <rect key="frame" x="220" y="0.0" width="480" height="479"/>
                     </customView>
                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
-                        <rect key="frame" x="220" y="0.0" width="480" height="479"/>
+                        <rect key="frame" x="240" y="20" width="440" height="439"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn" userLabel="PrefDetailPanel Clip View">
-                            <rect key="frame" x="0.0" y="0.0" width="480" height="479"/>
+                            <rect key="frame" x="0.0" y="0.0" width="440" height="439"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <view translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Flipped Content View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="479" width="480" height="0.0"/>
+                                    <rect key="frame" x="0.0" y="439" width="440" height="0.0"/>
                                     <subviews>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="evY-SZ-c3s" userLabel="PrefSections Vertical Stack View">
-                                            <rect key="frame" x="0.0" y="0.0" width="480" height="0.0"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="440" height="0.0"/>
                                         </stackView>
                                     </subviews>
                                     <constraints>
@@ -168,7 +168,7 @@
                             </subviews>
                             <constraints>
                                 <constraint firstItem="5R5-77-bmq" firstAttribute="leading" secondItem="fAk-o1-RBn" secondAttribute="leading" id="GDH-y8-wlw"/>
-                                <constraint firstAttribute="trailing" secondItem="5R5-77-bmq" secondAttribute="trailing" id="dpQ-k3-zSF"/>
+                                <constraint firstItem="5R5-77-bmq" firstAttribute="trailing" secondItem="fAk-o1-RBn" secondAttribute="trailing" id="dpQ-k3-zSF"/>
                                 <constraint firstItem="5R5-77-bmq" firstAttribute="top" secondItem="fAk-o1-RBn" secondAttribute="top" id="xXS-T3-Lsu"/>
                             </constraints>
                         </clipView>
@@ -184,10 +184,10 @@
                     </scrollView>
                 </subviews>
                 <constraints>
-                    <constraint firstAttribute="trailing" secondItem="VYU-tb-v3l" secondAttribute="trailing" id="1bS-bk-Lv2"/>
+                    <constraint firstAttribute="trailing" secondItem="VYU-tb-v3l" secondAttribute="trailing" constant="20" id="1bS-bk-Lv2"/>
                     <constraint firstItem="mpW-1b-ztU" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="trailing" id="2TL-62-8WL"/>
-                    <constraint firstItem="VYU-tb-v3l" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="trailing" id="5eJ-ny-1La"/>
-                    <constraint firstAttribute="bottom" secondItem="VYU-tb-v3l" secondAttribute="bottom" id="6S5-9o-5Ba"/>
+                    <constraint firstItem="VYU-tb-v3l" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="trailing" constant="20" id="5eJ-ny-1La"/>
+                    <constraint firstAttribute="bottom" secondItem="VYU-tb-v3l" secondAttribute="bottom" constant="20" id="6S5-9o-5Ba"/>
                     <constraint firstItem="AO2-1e-7F6" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" id="77O-JU-GkV"/>
                     <constraint firstAttribute="bottom" secondItem="anY-kd-ix3" secondAttribute="bottom" id="9if-Ux-B4r"/>
                     <constraint firstItem="anY-kd-ix3" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="IPO-JP-XJz"/>
@@ -196,7 +196,7 @@
                     <constraint firstAttribute="trailing" secondItem="mpW-1b-ztU" secondAttribute="trailing" id="TaF-ES-bGg"/>
                     <constraint firstItem="AO2-1e-7F6" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="Yag-r7-077"/>
                     <constraint firstAttribute="bottom" secondItem="mpW-1b-ztU" secondAttribute="bottom" id="ZFX-8N-eqw"/>
-                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="gJS-on-Kmb"/>
+                    <constraint firstItem="VYU-tb-v3l" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="20" id="gJS-on-Kmb"/>
                     <constraint firstItem="mpW-1b-ztU" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" id="zpa-gD-im9"/>
                 </constraints>
             </view>
