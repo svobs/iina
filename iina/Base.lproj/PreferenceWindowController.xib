@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17156" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21507" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17156"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21507"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -25,13 +25,13 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="700" height="480"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1055"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2048" height="1255"/>
             <value key="minSize" type="size" width="480" height="360"/>
-            <view key="contentView" wantsLayer="YES" id="se5-gp-TjO">
+            <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="PrefWindow Content View">
                 <rect key="frame" x="0.0" y="0.0" width="700" height="479"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="AO2-1e-7F6">
+                    <visualEffectView blendingMode="behindWindow" material="sidebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="AO2-1e-7F6" userLabel="Navigator Visual Effect View">
                         <rect key="frame" x="0.0" y="0.0" width="220" height="479"/>
                         <subviews>
                             <searchField wantsLayer="YES" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rKj-eM-MTH">
@@ -137,22 +137,22 @@
                             <constraint firstItem="Isy-K8-od9" firstAttribute="leading" secondItem="AO2-1e-7F6" secondAttribute="leading" id="vb0-7P-sn7"/>
                         </constraints>
                     </visualEffectView>
-                    <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="anY-kd-ix3">
+                    <box horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="anY-kd-ix3" userLabel="Vertical Divider Line">
                         <rect key="frame" x="217" y="0.0" width="5" height="479"/>
                     </box>
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mpW-1b-ztU" customClass="PrefSearchResultMaskView" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="220" y="0.0" width="480" height="479"/>
                     </customView>
-                    <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l">
+                    <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VYU-tb-v3l" userLabel="PrefDetailPanel Scroll View">
                         <rect key="frame" x="220" y="0.0" width="480" height="479"/>
-                        <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn">
+                        <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="fAk-o1-RBn" userLabel="PrefDetailPanel Clip View">
                             <rect key="frame" x="0.0" y="0.0" width="480" height="479"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <view translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="459" width="480" height="20"/>
+                                <view translatesAutoresizingMaskIntoConstraints="NO" id="5R5-77-bmq" userLabel="PrefDetailPanel Flipped Content View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="0.0" y="479" width="480" height="0.0"/>
                                     <constraints>
-                                        <constraint firstAttribute="height" constant="20" placeholder="YES" id="zVF-kp-HmN"/>
+                                        <constraint firstAttribute="height" placeholder="YES" id="lzf-er-imT"/>
                                     </constraints>
                                 </view>
                             </subviews>
