@@ -190,14 +190,31 @@ class EditableTableView: NSTableView {
 
   // All this garbage is needed just to show all the columns when dragging (instead of just the clicked one)
   func setDraggingImageToAllColumns(_ session: NSDraggingSession, _ dragStartScreenPoint: NSPoint, _ rowIndexes: IndexSet) {
-    session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) {(draggingItem, rowNumber, stop) in
+    let rowIndexArray = Array(rowIndexes)
 
-      let rowIndexArray = Array(rowIndexes)
+    // Need to convert to TableView's coord system
+    guard let window = self.window else { return }
+    let dragStartWindowPoint = window.convertPoint(fromScreen: dragStartScreenPoint)
+    let dragStartPointInTable = self.convert(dragStartWindowPoint, from: nil)
+
+    var dragStartPointInCell: CGPoint = .zero
+    var dragStartColumnIndex = self.column(at: dragStartPointInTable)
+    var dragStartRowIndex = self.row(at: dragStartPointInTable)
+    if dragStartColumnIndex < 0 || dragStartRowIndex < 0 {
+      Logger.log("Failed to get cellView from drag start coordinates! Cannot calculate drag image offset!", level: .error)
+      dragStartColumnIndex = 0
+      dragStartRowIndex = 0
+    } else {
+      if let clickedCell = view(atColumn: dragStartColumnIndex, row: dragStartRowIndex, makeIfNecessary: false) {
+        dragStartPointInCell = clickedCell.convert(dragStartPointInTable, from: self)
+        Logger.log("Drag cell: row \(dragStartRowIndex), col \(dragStartColumnIndex); dragPoint \(dragStartPointInCell)", level: .verbose)
+      }
+    }
+
+    session.enumerateDraggingItems(options: .clearNonenumeratedImages, for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) {(draggingItem, rowNumber, stop) in
 
       draggingItem.imageComponentsProvider = {
         var componentArray: [NSDraggingImageComponent] = []
-
-        draggingItem.draggingFrame = NSRect(x: 0.0, y: 0.0, width: self.frame.width, height: self.rowHeight * CGFloat(rowIndexArray.count))
 
         guard rowNumber < rowIndexArray.count else { return componentArray }
         let rowIndex = rowIndexArray[rowNumber]
@@ -214,8 +231,8 @@ class EditableTableView: NSTableView {
             if columnIndex == 0 {
               columnOffsets.append(0.0)
             } else {
-              let colWidth = self.tableColumns[columnIndex - 1].width
-              columnOffsets.append(columnOffsets.last! + colWidth + self.intercellSpacing.width)
+              let colWidth = self.tableColumns[columnIndex - 1].width + self.intercellSpacing.width
+              columnOffsets.append(columnOffsets.last! + colWidth)
             }
 
             let dragImageComps = cellView.draggingImageComponents
@@ -230,17 +247,27 @@ class EditableTableView: NSTableView {
                 // Probably will need adjusting. At least this shouldn't crash!
                 xOffsets.append(xOffsets.last! + dragImageComps[compIndex-1].frame.width)
               }
-
               componentArray.append(comp)
             }
           }
         }
 
+        // The `draggingFrame` of `draggingItem` uses the coordinate system of the clicked cell by default.
+        // Need to convert this...
+        let dragStartColumnOffset: CGFloat = columnOffsets[dragStartColumnIndex]
+
         // Second pass: set offsets and sizes
         for (compArrIndex, comp) in componentArray.enumerated() {
           let yAdjustToCenter = (maxRowHeight - comp.frame.height) / 2
-          comp.frame = NSRect(x: xOffsets[compArrIndex], y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
+          comp.frame = NSRect(x: xOffsets[compArrIndex] - dragStartColumnOffset, y: yAdjustToCenter, width: comp.frame.width, height: comp.frame.height)
         }
+
+        let draggingFrameOrigin = CGPoint(x: 0.0,
+                                          y: 0.0)
+        let draggingFrameSize = CGSize(width: self.frame.width,
+                                       height: self.rowHeight * CGFloat(rowIndexArray.count))
+        draggingItem.draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingFrameSize)
+        Logger.log("DraggingFrame: \(draggingItem.draggingFrame)", level: .verbose)
 
         Logger.log("Returning \(componentArray.count) draggingImageComponents", level: .verbose)
         return componentArray
