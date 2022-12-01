@@ -67,23 +67,30 @@ fileprivate struct LangToken: Equatable, Hashable, CustomStringConvertible {
 
 class LanguageTokenField: NSTokenField {
   private var layoutManager: NSLayoutManager?
+  private var lastSavedTokens: [LangToken] = []
 
-  fileprivate var tokens: [LangToken] {
-    return (objectValue as? NSArray)?.compactMap({ ($0 as? LangToken) }) ?? []
+  // may include unsaved tokens from the edit session
+  fileprivate var currentTokens: [LangToken] {
+    get {
+      return (objectValue as? NSArray)?.compactMap({ ($0 as? LangToken) }) ?? []
+    } set {
+      self.objectValue = newValue
+    }
   }
 
   var commaSeparatedValues: String {
     get {
-      let csv = tokens.map{ $0.identifierString }.sorted().joined(separator: ",")
-      Logger.log("Generated CSV from LanguageTokenField: \"\(csv)\"", level: .verbose)
+      let csv = lastSavedTokens.map{ $0.identifierString }.sorted().joined(separator: ",")
+      Logger.log("LTF Generated CSV from LanguageTokenField: \"\(csv)\"", level: .verbose)
       return csv
     } set {
-      Logger.log("Setting LanguageTokenField value from CSV: \"\(newValue)\"", level: .verbose)
+      Logger.log("LTF Setting LanguageTokenField value from CSV: \"\(newValue)\"", level: .verbose)
       if newValue.isEmpty {
-        self.objectValue = []
+        self.lastSavedTokens = []
       } else {
-        self.objectValue = newValue.components(separatedBy: ",").map{ LangToken.from(code: $0.trimmingCharacters(in: .whitespaces)) }
+        self.lastSavedTokens = newValue.components(separatedBy: ",").map{ LangToken.from(code: $0.trimmingCharacters(in: .whitespaces)) }
       }
+      self.currentTokens = self.lastSavedTokens
     }
   }
 
@@ -97,7 +104,8 @@ class LanguageTokenField: NSTokenField {
   }
 
   @objc func controlTextDidEndEditing(_ notification: Notification) {
-    executeAction()
+    Logger.log("LTF Calling action from controlTextDidEndEditing()", level: .verbose)
+    commitChanges()
   }
 
   func controlTextDidChange(_ obj: Notification) {
@@ -105,7 +113,8 @@ class LanguageTokenField: NSTokenField {
     let attachmentChar = Character(UnicodeScalar(NSTextAttachment.character)!)
     let finished = layoutManager.attributedString().string.split(separator: attachmentChar).count == 0
     if finished {
-      executeAction()
+      Logger.log("LTF Committing changes from controlTextDidChange()", level: .verbose)
+      commitChanges()
     }
   }
 
@@ -116,35 +125,45 @@ class LanguageTokenField: NSTokenField {
     return true
   }
 
-  func executeAction() {
+  func commitChanges() {
+    let newUniqueTokens = excludingExisting(from: currentTokens)
+    guard !newUniqueTokens.isEmpty else {
+      Logger.log("No new unique tokens found", level: .verbose)
+      return
+    }
+    lastSavedTokens.append(contentsOf: newUniqueTokens)
+    lastSavedTokens.sort(by: { $0.identifierString < $1.identifierString })
     if let target = target, let action = action {
       target.performSelector(onMainThread: action, with: self, waitUntilDone: false)
     }
+  }
+
+  private func excludingExisting(from tokenCandidates: [LangToken]) -> [LangToken] {
+    let existingTokens = lastSavedTokens
+    var remainingCandidates: [LangToken] = []
+    for tokenCandidate in tokenCandidates {
+      if existingTokens.filter({ $0.identifierString == tokenCandidate.identifierString }).isEmpty {
+        remainingCandidates.append(tokenCandidate)
+      }
+    }
+    return remainingCandidates
   }
 }
 
 extension LanguageTokenField: NSTokenFieldDelegate {
 
+  // Don't allow duplicates
   func tokenField(_ tokenField: NSTokenField, shouldAdd tokens: [Any], at index: Int) -> [Any] {
-    var toAdd: [LangToken] = []
     guard let rawTokens = tokens as? [LangToken] else {
       return []
     }
-    let currentTokens = self.tokens
-    Logger.log("LTF checking whether to add tokens \(rawTokens) to existing (\(currentTokens))", level: .verbose)
-    for token in rawTokens {
-      // Don't allow duplicates. But keep in mind `self.tokens` already includes the added token,
-      // so it's a duplicate if it occurs twice or more there. Normalize it first to compare ignoring case/whitespace
-      let normalizedEditingString = token.identifierString
-      let count = currentTokens.filter({ $0.editingString == normalizedEditingString || $0.editingString == token.editingString }).count
-      if count == 0 {
-        toAdd.append(token)
-      }
-    }
+    Logger.log("LTF checking whether should add tokens \(rawTokens) to existing", level: .verbose)
+    let toAdd: [LangToken] = excludingExisting(from: rawTokens)
+    Logger.log("LTF will add new language tokens: \(toAdd)", level: .verbose)
     if !toAdd.isEmpty {
-      executeAction()
+      Logger.log("Committing changes from tokenField(shouldAdd)", level: .verbose)
+      commitChanges()
     }
-    Logger.log("LTF adding language tokens: \(toAdd)", level: .verbose)
     return toAdd
   }
 
@@ -157,8 +176,7 @@ extension LanguageTokenField: NSTokenFieldDelegate {
   func tokenField(_ tokenField: NSTokenField, completionsForSubstring substring: String,
                   indexOfToken tokenIndex: Int, indexOfSelectedItem selectedIndex: UnsafeMutablePointer<Int>?) -> [Any]? {
     let lowSubString = substring.lowercased()
-    let currentTokens = self.tokens
-    let currentLangCodes = Set(currentTokens.compactMap{$0.code})
+    let currentLangCodes = Set(self.lastSavedTokens.compactMap{$0.code})
     let matches = ISO639Helper.languages.filter { lang in
       return !currentLangCodes.contains(lang.code) && lang.name.contains { $0.lowercased().hasPrefix(lowSubString) }
     }
