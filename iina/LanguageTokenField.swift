@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let enableLookupLogging = false
+
 fileprivate extension String {
   func normalized() -> String {
     return self.lowercased().replacingOccurrences(of: ",", with: ";").trimmingCharacters(in: .whitespaces)
@@ -65,32 +67,49 @@ fileprivate struct LangToken: Equatable, Hashable, CustomStringConvertible {
   }
 }
 
+fileprivate struct LangSet {
+  let langTokens: [LangToken]
+
+  init(langTokens: [LangToken]) {
+    self.langTokens = langTokens
+  }
+
+  init(fromCSV csv: String) {
+    self.init(langTokens: csv.isEmpty ? [] : csv.components(separatedBy: ",").map{ LangToken.from(code: $0.trimmingCharacters(in: .whitespaces)) })
+  }
+
+  init(fromObjectValue objectValue: Any?) {
+    self.init(langTokens: (objectValue as? NSArray)?.compactMap({ ($0 as? LangToken) }) ?? [])
+  }
+
+  func toCSV() -> String {
+    return langTokens.map{ $0.identifierString }.sorted().joined(separator: ",")
+  }
+
+  func toNewlineSeparatedString() -> String {
+    return toCSV().replacingOccurrences(of: ",", with: "\n")
+  }
+}
+
 class LanguageTokenField: NSTokenField {
   private var layoutManager: NSLayoutManager?
-  private var lastSavedTokens: [LangToken] = []
+  private var savedTokenSet = LangSet(langTokens: [])
 
   // may include unsaved tokens from the edit session
-  fileprivate var currentTokens: [LangToken] {
-    get {
-      return (objectValue as? NSArray)?.compactMap({ ($0 as? LangToken) }) ?? []
-    } set {
-      self.objectValue = newValue
-    }
+  fileprivate var objectValueTokens: LangSet {
+    LangSet(fromObjectValue: self.objectValue)
   }
 
   var commaSeparatedValues: String {
     get {
-      let csv = lastSavedTokens.map{ $0.identifierString }.sorted().joined(separator: ",")
-      Logger.log("LTF Generated CSV from LanguageTokenField: \"\(csv)\"", level: .verbose)
+      let csv = savedTokenSet.toCSV()
+      Logger.log("LTF Generated CSV from savedTokenSet: \"\(csv)\"", level: .verbose)
       return csv
     } set {
-      Logger.log("LTF Setting LanguageTokenField value from CSV: \"\(newValue)\"", level: .verbose)
-      if newValue.isEmpty {
-        self.lastSavedTokens = []
-      } else {
-        self.lastSavedTokens = newValue.components(separatedBy: ",").map{ LangToken.from(code: $0.trimmingCharacters(in: .whitespaces)) }
-      }
-      self.currentTokens = self.lastSavedTokens
+      Logger.log("LTF Setting savedTokenSet from CSV: \"\(newValue)\"", level: .verbose)
+      self.savedTokenSet = LangSet(fromCSV: newValue)
+      // Need to convert from CSV to newline-SV
+      self.stringValue = self.savedTokenSet.toNewlineSeparatedString()
     }
   }
 
@@ -126,20 +145,28 @@ class LanguageTokenField: NSTokenField {
   }
 
   func commitChanges() {
-    let newUniqueTokens = excludingExisting(from: currentTokens)
-    guard !newUniqueTokens.isEmpty else {
-      Logger.log("No new unique tokens found", level: .verbose)
+    let csvOld = self.savedTokenSet.toCSV()
+    let langSetNew = self.objectValueTokens
+    let csvNew = langSetNew.toCSV()
+
+    Logger.log("OldLangs: \(csvOld.enquoted); NewLangs: \(csvNew)", level: .verbose)
+    guard csvOld != csvNew else {
+      Logger.log("No changes to lang set", level: .verbose)
       return
     }
-    lastSavedTokens.append(contentsOf: newUniqueTokens)
-    lastSavedTokens.sort(by: { $0.identifierString < $1.identifierString })
+    self.savedTokenSet = langSetNew
     if let target = target, let action = action {
       target.performSelector(onMainThread: action, with: self, waitUntilDone: false)
     }
   }
 
+  private func subtract(_ tokensLeft: [LangToken], from tokensRight: [LangToken]) -> [LangToken] {
+    let identifiersLeft = Set(tokensLeft.map{ $0.identifierString })
+    return tokensRight.filter{ identifiersLeft.contains($0.identifierString) }
+  }
+
   private func excludingExisting(from tokenCandidates: [LangToken]) -> [LangToken] {
-    let existingTokens = lastSavedTokens
+    let existingTokens = savedTokenSet
     var remainingCandidates: [LangToken] = []
     for tokenCandidate in tokenCandidates {
       if existingTokens.filter({ $0.identifierString == tokenCandidate.identifierString }).isEmpty {
@@ -176,12 +203,14 @@ extension LanguageTokenField: NSTokenFieldDelegate {
   func tokenField(_ tokenField: NSTokenField, completionsForSubstring substring: String,
                   indexOfToken tokenIndex: Int, indexOfSelectedItem selectedIndex: UnsafeMutablePointer<Int>?) -> [Any]? {
     let lowSubString = substring.lowercased()
-    let currentLangCodes = Set(self.lastSavedTokens.compactMap{$0.code})
+    let currentLangCodes = Set(self.savedTokenSet.langTokens.compactMap{$0.code})
     let matches = ISO639Helper.languages.filter { lang in
       return !currentLangCodes.contains(lang.code) && lang.name.contains { $0.lowercased().hasPrefix(lowSubString) }
     }
     let descriptions = matches.map { $0.description }
-    Logger.log("LTF given substring: \"\(substring)\" -> returning completions: \(descriptions)", level: .verbose)
+    if enableLookupLogging {
+      Logger.log("LTF given substring: \"\(substring)\" -> returning completions: \(descriptions)", level: .verbose)
+    }
     return descriptions
   }
 
@@ -189,7 +218,9 @@ extension LanguageTokenField: NSTokenFieldDelegate {
   func tokenField(_ tokenField: NSTokenField, displayStringForRepresentedObject representedObject: Any) -> String? {
     guard let token = representedObject as? LangToken else { return nil }
 
-    Logger.log("LTF given token: \(token) -> returning displayString \"\(token.identifierString)\"", level: .verbose)
+    if enableLookupLogging {
+      Logger.log("LTF given token: \(token) -> returning displayString \"\(token.identifierString)\"", level: .verbose)
+    }
     return token.identifierString
   }
 
@@ -197,7 +228,9 @@ extension LanguageTokenField: NSTokenFieldDelegate {
   func tokenField(_ tokenField: NSTokenField, editingStringForRepresentedObject representedObject: Any) -> String? {
     guard let token = representedObject as? LangToken else { return nil }
 
-    Logger.log("LTF given token: \(token) -> returning editingString \"\(token.editingString)\"", level: .verbose)
+    if enableLookupLogging {
+      Logger.log("LTF given token: \(token) -> returning editingString \"\(token.editingString)\"", level: .verbose)
+    }
     return token.editingString
   }
 
@@ -207,12 +240,27 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     let token: LangToken
     if let langCode = ISO639Helper.descriptionRegex.captures(in: editingString)[at: 1] {
       token  = LangToken.from(code: langCode)
-      Logger.log("LTF given editingString: \"\(editingString)\" -> found match, returning \(token)", level: .verbose)
+      if enableLookupLogging {
+        Logger.log("LTF given editingString: \"\(editingString)\" -> found match, returning \(token)", level: .verbose)
+      }
     } else {
       token = LangToken.from(editingString: editingString)
-      Logger.log("LTF given editingString: \"\(editingString)\", -> no code; returning \(token)", level: .verbose)
+      if enableLookupLogging {
+        Logger.log("LTF given editingString: \"\(editingString)\", -> no code; returning \(token)", level: .verbose)
+      }
     }
     return token
   }
 
+  // We put the string on the pasteboard before calling this delegate method.
+  // By default, we write the NSStringPboardType as well as an array of NSStrings.
+//  func tokenField(_ tokenField: NSTokenField, writeRepresentedObjects objects: [Any], to pboard: NSPasteboard) -> Bool {
+//
+//  }
+
+
+  // Return an array of represented objects to add to the token field.
+//  func tokenField(_ tokenField: NSTokenField, readFrom pboard: NSPasteboard) -> [Any]? {
+//
+//  }
 }
