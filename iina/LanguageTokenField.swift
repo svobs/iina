@@ -10,27 +10,22 @@ import Cocoa
 
 fileprivate let enableLookupLogging = false
 
-fileprivate extension String {
-  func normalized() -> String {
-    return self.lowercased().replacingOccurrences(of: ",", with: ";").trimmingCharacters(in: .whitespaces)
-  }
-
-  var enquoted: String {
-    return "\"\(self)\""
-  }
-}
-
+// Token which represents a single language
 fileprivate struct LangToken: Equatable, Hashable, CustomStringConvertible {
   let code: String?
   let editingString: String
 
   // As a displayed token, this is used as the displayString. When stored in prefs CSV, this is used as the V[alue]:
   var identifierString: String {
-    code ?? editingString.normalized()
+    code ?? normalizedEditingString
   }
 
   var description: String {
-    return "LangToken(code: \(code?.enquoted ?? "nil"), editStr: \(editingString.enquoted))"
+    return "LangToken(code: \(code?.quoted ?? "nil"), editStr: \(editingString.quoted))"
+  }
+
+  private var normalizedEditingString: String {
+    self.editingString.lowercased().replacingOccurrences(of: ",", with: ";").trimmingCharacters(in: .whitespaces)
   }
 
   // Need the following to prevent NSTokenField doing an infinite loop
@@ -67,6 +62,7 @@ fileprivate struct LangToken: Equatable, Hashable, CustomStringConvertible {
   }
 }
 
+// A collection of unique languages (usually the field's entire contents)
 fileprivate struct LangSet {
   let langTokens: [LangToken]
 
@@ -94,7 +90,7 @@ fileprivate struct LangSet {
     return !langTokens.filter({ $0.identifierString == token.identifierString }).isEmpty
   }
 
-  func deduplicate() -> LangSet {
+  func deduplicated() -> LangSet {
     var uniques: [String: LangToken] = [:]
     for token in langTokens {
       uniques[token.identifierString] = token
@@ -105,6 +101,9 @@ fileprivate struct LangSet {
 
 class LanguageTokenField: NSTokenField {
   private var layoutManager: NSLayoutManager?
+
+  // Should match the value from the prefs.
+  // Is only changed when `commaSeparatedValues` is set, and by `submitChanges()`.
   private var savedSet = LangSet(langTokens: [])
 
   // may include unsaved tokens from the edit session
@@ -115,10 +114,10 @@ class LanguageTokenField: NSTokenField {
   var commaSeparatedValues: String {
     get {
       let csv = savedSet.toCSV()
-      Logger.log("LTF Generated CSV from savedSet: \(csv.enquoted)", level: .verbose)
+      Logger.log("LTF Generated CSV from savedSet: \(csv.quoted)", level: .verbose)
       return csv
     } set {
-      Logger.log("LTF Setting savedSet from CSV: \(newValue.enquoted)", level: .verbose)
+      Logger.log("LTF Setting savedSet from CSV: \(newValue.quoted)", level: .verbose)
       self.savedSet = LangSet(fromCSV: newValue)
       // Need to convert from CSV to newline-SV
       self.stringValue = self.savedSet.toNewlineSeparatedString()
@@ -136,7 +135,7 @@ class LanguageTokenField: NSTokenField {
 
   @objc func controlTextDidEndEditing(_ notification: Notification) {
     Logger.log("LTF Calling action from controlTextDidEndEditing()", level: .verbose)
-    commitChanges()
+    submitChanges()
   }
 
   func controlTextDidChange(_ obj: Notification) {
@@ -145,7 +144,7 @@ class LanguageTokenField: NSTokenField {
     let finished = layoutManager.attributedString().string.split(separator: attachmentChar).count == 0
     if finished {
       Logger.log("LTF Committing changes from controlTextDidChange()", level: .verbose)
-      commitChanges()
+      submitChanges()
     }
   }
 
@@ -156,40 +155,39 @@ class LanguageTokenField: NSTokenField {
     return true
   }
 
-  func commitChanges() {
-    let csvOld = self.savedSet.toCSV()
-    let langSetNew = self.objectValueLangSet
-    let csvNew = langSetNew.deduplicate().toCSV()
+  func submitChanges() {
+    let langSetNew = self.objectValueLangSet.deduplicated()
+    makeUndoableUpdate(to: langSetNew)
+  }
 
-    Logger.log("LTF LangsOld: \(csvOld.enquoted)\"; LangsNew: \(csvNew.enquoted)", level: .verbose)
-    guard csvOld != csvNew else {
+  private func makeUndoableUpdate(to langSetNew: LangSet) {
+    let langSetOld = self.savedSet
+    let csvOld = langSetOld.toCSV()
+    let csvNew = langSetNew.toCSV()
+
+    Logger.log("LTF Updating: Old: \(csvOld.quoted) New: \(csvNew.quoted)}", level: .verbose)
+    if csvOld == csvNew {
       Logger.log("LTF No changes to lang set", level: .verbose)
-      return
+    } else {
+      self.savedSet = langSetNew
+      if let target = target, let action = action {
+        target.performSelector(onMainThread: action, with: self, waitUntilDone: false)
+      }
+
+      // Register for undo or redo. Needed because the change to stringValue below doesn't include it
+      if let undoManager = self.undoManager {
+        undoManager.registerUndo(withTarget: self, handler: { languageTokenField in
+          self.makeUndoableUpdate(to: langSetOld)
+        })
+      }
     }
-    self.savedSet = langSetNew
-    if let target = target, let action = action {
-      target.performSelector(onMainThread: action, with: self, waitUntilDone: false)
-    }
+
+    // Update displayed list. Even if there were no changes, there may have been changes to sorting, or duplicates removed.
+    self.stringValue = langSetNew.toNewlineSeparatedString()
   }
 }
 
 extension LanguageTokenField: NSTokenFieldDelegate {
-
-  // Don't allow duplicates
-  func tokenField(_ tokenField: NSTokenField, shouldAdd tokens: [Any], at index: Int) -> [Any] {
-    guard let candidateTokens = tokens as? [LangToken] else {
-      return []
-    }
-    let saved = savedSet
-    Logger.log("LTF checking whether should add tokens \(candidateTokens) to existing (\(saved.langTokens))", level: .verbose)
-    let newUniqueTokens: [LangToken] = candidateTokens.filter({ !savedSet.contains($0) })
-    Logger.log("LTF will add new language tokens: \(newUniqueTokens)", level: .verbose)
-    if !newUniqueTokens.isEmpty {
-      Logger.log("Committing changes from tokenField(shouldAdd)", level: .verbose)
-      commitChanges()
-    }
-    return newUniqueTokens
-  }
 
   func tokenField(_ tokenField: NSTokenField, hasMenuForRepresentedObject representedObject: Any) -> Bool {
     // Tokens never have a context menu
@@ -206,7 +204,7 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     }
     let descriptions = matches.map { $0.description }
     if enableLookupLogging {
-      Logger.log("LTF given substring: \(substring.enquoted) -> returning completions: \(descriptions)", level: .verbose)
+      Logger.log("LTF given substring: \(substring.quoted) -> returning completions: \(descriptions)", level: .verbose)
     }
     return descriptions
   }
@@ -216,7 +214,7 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     guard let token = representedObject as? LangToken else { return nil }
 
     if enableLookupLogging {
-      Logger.log("LTF given token: \(token) -> returning displayString \(token.identifierString.enquoted)", level: .verbose)
+      Logger.log("LTF given token: \(token) -> returning displayString \(token.identifierString.quoted)", level: .verbose)
     }
     return token.identifierString
   }
@@ -226,7 +224,7 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     guard let token = representedObject as? LangToken else { return nil }
 
     if enableLookupLogging {
-      Logger.log("LTF given token: \(token) -> returning editingString \(token.editingString.enquoted)", level: .verbose)
+      Logger.log("LTF given token: \(token) -> returning editingString \(token.editingString.quoted)", level: .verbose)
     }
     return token.editingString
   }
@@ -238,12 +236,12 @@ extension LanguageTokenField: NSTokenFieldDelegate {
     if let langCode = ISO639Helper.descriptionRegex.captures(in: editingString)[at: 1] {
       token  = LangToken.from(code: langCode)
       if enableLookupLogging {
-        Logger.log("LTF given editingString: \(editingString.enquoted) -> found match, returning \(token)", level: .verbose)
+        Logger.log("LTF given editingString: \(editingString.quoted) -> found match, returning \(token)", level: .verbose)
       }
     } else {
       token = LangToken.from(editingString: editingString)
       if enableLookupLogging {
-        Logger.log("LTF given editingString: \(editingString.enquoted), -> no code; returning \(token)", level: .verbose)
+        Logger.log("LTF given editingString: \(editingString.quoted), -> no code; returning \(token)", level: .verbose)
       }
     }
     return token
