@@ -1298,7 +1298,7 @@ class PlayerCore: NSObject {
       }
     }
 
-    if #available(OSX 10.13, *), RemoteCommandController.useSystemMediaControl {
+    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       DispatchQueue.main.async {
         NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
       }
@@ -1395,7 +1395,7 @@ class PlayerCore: NSObject {
     reloadSavedIINAfilters()
     mainWindow.videoView.videoLayer.draw(forced: true)
 
-    if #available(OSX 10.13, *), RemoteCommandController.useSystemMediaControl {
+    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       NowPlayingInfoManager.updateInfo()
     }
 
