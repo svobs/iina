@@ -70,7 +70,7 @@ class InputConfFileCache {
     }
 
     InputConfFileCache.writeQueue.async {
-      Logger.log("Saving conf file for \"\(inputConfFile.confName)\" to disk", level: .verbose)
+      Logger.log("Saving conf \"\(inputConfFile.confName)\" to file path \"\(inputConfFile.filePath)\"", level: .verbose)
       do {
         let newFileContent: String = inputConfFile.lines.joined(separator: "\n")
         try newFileContent.write(toFile: inputConfFile.filePath, atomically: true, encoding: .utf8)

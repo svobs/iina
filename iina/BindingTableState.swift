@@ -214,7 +214,15 @@ struct BindingTableState {
       return
     }
 
-    existingRow.keyMapping = mapping
+    // Must create a clone. If the original binding is modified it will screw up Undo
+    var allRowsNew = allRows
+    guard index < allRowsNew.count else {
+      Logger.log("Index to update (\(index)) is larger than row count (\(allRowsNew.count)); aborting", level: .error)
+      return
+    }
+    var bindingClone = existingRow.shallowClone()
+    bindingClone.keyMapping = mapping
+    allRowsNew[index] = bindingClone
 
     let tableUIChange = TableUIChange(.updateRows)
 
@@ -228,7 +236,7 @@ struct BindingTableState {
     }
 
     tableUIChange.newSelectedRowIndexes = IndexSet(integer: indexToUpdate)
-    doAction(allRows, tableUIChange)
+    doAction(allRowsNew, tableUIChange)
   }
 
   // MARK: Various utility functions

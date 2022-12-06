@@ -93,14 +93,16 @@ class KeyMapping: NSObject, Codable {
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
 
-    if let trimmedAction = KeyMapping.removeIINAPrefix(from: rawAction) {
+    let rawActionTrimmed: String
+    if let trimmed = KeyMapping.removeIINAPrefix(from: rawAction) {
       self.isIINACommand = true
-      self.rawAction = trimmedAction
+      rawActionTrimmed = trimmed
     } else {
       self.isIINACommand = isIINACommand
-      self.rawAction = rawAction
+      rawActionTrimmed = rawAction
     }
-    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+    self.rawAction = rawActionTrimmed
+    self.action = rawActionTrimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     self.comment = comment
   }
 
@@ -120,7 +122,7 @@ class KeyMapping: NSObject, Codable {
   }
 
   public override var description: String {
-    return "KeyMapping(\"\(rawKey)\"->\"\(action.joined(separator: " "))\" iina=\(isIINACommand))"
+    return "KeyMapping(rawKey: \"\(rawKey)\" rawAction: \"\(rawAction)\" isIIna: \(isIINACommand))"
   }
 
   func rawEquals(_ other: KeyMapping) -> Bool {

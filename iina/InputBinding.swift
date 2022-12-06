@@ -22,7 +22,7 @@ class InputBinding: NSObject {
   // Will be nil for plugin bindings.
   var keyMapping: KeyMapping
 
-  var origin: InputBindingOrigin
+  let origin: InputBindingOrigin
 
   /*
    Will be one of:
@@ -31,7 +31,8 @@ class InputBinding: NSObject {
    - The Plugins section name, if origin == .iinaPlugin
    - The Video or Audio Filters section name, if origin == .savedFilter
    */
-  var srcSectionName: String
+  let srcSectionName: String
+  
   var isEnabled: Bool
 
   // Menu item, if any, which was matched with the KeyMapping
@@ -59,6 +60,10 @@ class InputBinding: NSObject {
     get {
       self.origin == .confFile || self.origin == .libmpv
     }
+  }
+
+  func shallowClone() -> InputBinding {
+    return InputBinding(self.keyMapping, origin: self.origin, srcSectionName: self.srcSectionName)
   }
 
   private var menuItemMapping: MenuItemMapping? {
