@@ -164,6 +164,7 @@ class TableUIChange {
       case .moveRows:
         if let movePairs = self.toMove {
           for (oldIndex, newIndex) in movePairs {
+            Logger.log("Moving row \(oldIndex) -> \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }

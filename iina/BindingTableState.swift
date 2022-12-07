@@ -50,6 +50,18 @@ struct BindingTableState {
   }
 
   // The currently displayed list of table rows. Subset of `allRows`; exact number depends on `filterString`
+  var displayedRowIndexes: IndexSet {
+    if let filterBimap = filterBimap {
+      var displayedIndexes = IndexSet()
+      for index in filterBimap.keys {
+        displayedIndexes.insert(index)
+      }
+      return displayedIndexes
+    }
+    return IndexSet(integersIn: 0..<allRows.count)
+  }
+
+  // The currently displayed list of table rows. Subset of `allRows`; exact number depends on `filterString`
   var displayedRows: [InputBinding] {
     if let filterBimap = filterBimap {
       return allRows.enumerated().compactMap({ filterBimap.keys.contains($0.offset) ? $0.element : nil })
@@ -82,8 +94,8 @@ struct BindingTableState {
   func moveBindings(from rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
 
-    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Moving \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") to filtered index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
+    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
+    Logger.log("Moving \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
 
@@ -135,8 +147,8 @@ struct BindingTableState {
 
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableUIChange.CompletionHandler? = nil) {
-    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt)
-    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") unfiltered row index \(index) -> insert at \(insertIndex)", level: .verbose)
+    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
+    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") row index \(index) -> insert at \(insertIndex)", level: .verbose)
     guard canModifyCurrentConf else {
       Logger.log("Aborting: cannot modify current conf!", level: .error)
       return
@@ -220,7 +232,7 @@ struct BindingTableState {
       Logger.log("Index to update (\(index)) is larger than row count (\(allRowsNew.count)); aborting", level: .error)
       return
     }
-    var bindingClone = existingRow.shallowClone()
+    let bindingClone = existingRow.shallowClone()
     bindingClone.keyMapping = mapping
     allRowsNew[index] = bindingClone
 
@@ -231,7 +243,7 @@ struct BindingTableState {
     var indexToUpdate: Int = index
 
     // The affected row will change index after the reload. Track it down before clearing the filter.
-    if let unfilteredIndex = getFilteredIndex(fromUnfiltered: index) {
+    if let unfilteredIndex = getUnfilteredIndex(fromFiltered: index) {
       indexToUpdate = unfilteredIndex
     }
 
@@ -245,21 +257,27 @@ struct BindingTableState {
     self.getDisplayedRow(at: rowIndex)?.canBeModified ?? false
   }
 
-  func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false) -> Int {
+  // Set `returnUnfilteredIndex` to `true` to always return unfiltered index, never filtered
+  func getClosestValidInsertIndex(from requestedIndex: Int, isAfterNotAt: Bool = false, returnUnfilteredIndex: Bool = false) -> Int {
     var insertIndex: Int
     if requestedIndex < 0 {
       // snap to very beginning
       insertIndex = 0
-    } else if requestedIndex >= allRows.count {
+    } else if let filterBimap = filterBimap, requestedIndex > filterBimap.values.count {
+      insertIndex = filterBimap.values.count
+    } else if requestedIndex > allRows.count {
       // snap to very end
       insertIndex = allRows.count
     } else {
       insertIndex = requestedIndex  // default to requested index
     }
 
+    var didUnfilter = false
+
     // If there is an active filter, convert the filtered index to unfiltered index
-    if let unfilteredIndex = getFilteredIndex(fromUnfiltered: requestedIndex) {
+    if let unfilteredIndex = getUnfilteredIndex(fromFiltered: requestedIndex) {
       insertIndex = unfilteredIndex
+      didUnfilter = true
     }
 
     // Adjust for insert cursor
@@ -277,6 +295,18 @@ struct BindingTableState {
     if insertIndex > ai.userConfSectionEndIndex {
       Logger.log("Insert index (\(insertIndex), origReq=\(requestedIndex)) is after the default section (\(ai.userConfSectionStartIndex) - \(ai.userConfSectionEndIndex)). Snapping it to index: \(ai.userConfSectionEndIndex)", level: .verbose)
       return ai.userConfSectionEndIndex
+    }
+
+    if !returnUnfilteredIndex && didUnfilter {
+      if let filteredIndex = getFilteredIndex(fromUniltered: insertIndex) {
+        Logger.log("Returning filtered insertIndex: \(filteredIndex) from requestedIndex: \(requestedIndex)", level: .verbose)
+        return filteredIndex
+      }
+      let displayedRowIndexes = self.displayedRowIndexes
+      if let lastFilteredIndex = displayedRowIndexes.last, insertIndex > lastFilteredIndex {
+        Logger.log("Returning index after filtered array: \(displayedRowIndexes.count) from requestedIndex: \(requestedIndex)", level: .verbose)
+        return displayedRowIndexes.count
+      }
     }
 
     Logger.log("Returning insertIndex: \(insertIndex) from requestedIndex: \(requestedIndex)", level: .verbose)
@@ -304,15 +334,35 @@ struct BindingTableState {
     BindingTableState.manager.applyFilter(newFilterString: searchString)
   }
 
-  // Returns the index into allRows corresponding to the given filtered index.
-  private func getFilteredIndex(fromUnfiltered index: Int) -> Int? {
-    guard index >= 0 else {
+  // Returns the index into filteredRows corresponding to the given unfiltered index.
+  private func getFilteredIndex(fromUniltered unfilteredIndex: Int) -> Int? {
+    guard unfilteredIndex >= 0 else {
       return nil
     }
-    guard isFiltered else {
-      return index
+    Logger.log("Getting filtered index for: \(unfilteredIndex)")
+    guard let filterBimap = filterBimap else {
+      return unfilteredIndex
     }
-    return filterBimap?[value: index]
+    if unfilteredIndex == allRows.count {
+      // Special case: inserting at end of list
+      return filterBimap.values.count
+    }
+    return filterBimap[key: unfilteredIndex]
+  }
+
+  // Returns the index into allRows corresponding to the given filtered index.
+  private func getUnfilteredIndex(fromFiltered filteredIndex: Int) -> Int? {
+    guard filteredIndex >= 0 else {
+      return nil
+    }
+    guard let filterBimap = filterBimap else {
+      return filteredIndex
+    }
+    if filteredIndex == filterBimap.values.count {
+      // Special case: inserting at end of list
+      return allRows.count
+    }
+    return filterBimap[value: filteredIndex]
   }
 
   private func ensureUnfilteredIndexes(forRowIndexes indexes: IndexSet, excluding isExcluded: ((InputBinding) -> Bool)? = nil) -> IndexSet {

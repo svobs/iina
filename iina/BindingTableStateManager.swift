@@ -53,17 +53,20 @@ class BindingTableStateManager {
     // Currently don't care about any rows except for "default" section
     let userConfMappingsNew = extractUserConfMappings(from: allRowsNew)
 
-    let tableStateOld = BindingTableState.current
-
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    if !tableStateOld.filterString.isEmpty {
-      if tableUIChange.changeType == .updateRows || tableUIChange.changeType == .insertRows {
-        // This will cause an asynchronous load of the table's UI. So we will end up with 2 table updates from our one action.
-        // We will do the op as a separate step, because a "reload" is a sledgehammer which
-        // doesn't support animation and also blows away selections and editors.
-        clearFilter()
+    if !BindingTableState.current.filterString.isEmpty {
+      switch tableUIChange.changeType {
+        case .updateRows, .insertRows, .moveRows, .removeRows:
+          // This will cause an asynchronous load of the table's UI. So we will end up with 2 table updates from our one action.
+          // We will do the op as a separate step, because a "reload" is a sledgehammer which
+          // doesn't support animation and also blows away selections and editors.
+          clearFilter()
+        default:
+          break
       }
     }
+
+    let tableStateOld = BindingTableState.current
 
     undoHelper.register(makeActionName(basedOn: tableUIChange), undo: {
       let tableStateNew = BindingTableState.current
@@ -83,7 +86,7 @@ class BindingTableStateManager {
       self.doAction(bindingRowsOld, tableUIChangeUndo)  // Recursive call: implicitly registers redo
     })
 
-    // Enqueue save of user's changes to file before doing anything else.
+    // Enqueue task to save user's changes to file:
     let updatedConfFile = overwrite(currentConfFile: tableStateOld.inputConfFile, with: userConfMappingsNew)
 
     /*
@@ -164,7 +167,7 @@ class BindingTableStateManager {
                                 newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    Logger.log("Updating state for Binding table: uiChangeSpecified=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "nil")", level: .verbose)
+    Logger.log("Updating state for Binding table: hasUIChange=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "nil")", level: .verbose)
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableUIChange == nil && newFilterString == nil && newInputConfFile == nil {
