@@ -68,7 +68,7 @@ class BindingTableStateManager {
 
     let tableStateOld = BindingTableState.current
 
-    undoHelper.register(makeActionName(basedOn: tableUIChange), undo: {
+    undoHelper.register(buildActionName(basedOn: tableUIChange), undo: {
       let tableStateNew = BindingTableState.current
 
       // The undo of the original TableUIChange is just its inverse.
@@ -107,7 +107,7 @@ class BindingTableStateManager {
   }
 
   // Format the action name for Edit menu display (Undo/Redo)
-  private func makeActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
+  private func buildActionName(basedOn tableUIChange: TableUIChange? = nil) -> String? {
 
     guard let tableUIChange = tableUIChange else {
       return nil
@@ -181,12 +181,64 @@ class BindingTableStateManager {
 
     BindingTableState.current = newState
 
-    updateTableUI(oldState: oldState, newState: newState, desiredTableUIChange: desiredTableUIChange)
+    let tableUIChange: TableUIChange
+    if let unfilteredTableChange = desiredTableUIChange {
+      // If there is an active filter, must convert the unfiltered indexes in TableUIChange to filtered indexes.
+      // This can't be done until after the new `AppInputConfig` is received due to the possibility of rows being added/removed
+      // which are outside the user conf section.
+      if !newState.filterString.isEmpty {
+        // sanity check
+        assert(newFilterString == nil, "Expected filteredString not to change at the same time TableUIChange is pre-calculated!")
+        tableUIChange = applyFilter(to: unfilteredTableChange, oldState: oldState, newState: newState)
+      } else {
+        tableUIChange = unfilteredTableChange
+      }
+    } else {
+      // A table change animation can be calculated if not provided, which should be sufficient for "reload".
+      tableUIChange = buildTableDiff(oldState: oldState, newState: newState)
+    }
+    updateTableUI(oldState: oldState, newState: newState, desiredTableUIChange: tableUIChange)
   }
 
-  private func updateTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange: TableUIChange? = nil) {
-    // A table change animation can be calculated if not provided, which should be sufficient in most cases.
-    let tableUIChange = desiredTableUIChange ?? buildTableDiff(oldState: oldState, newState: newState)
+  private func applyFilter(to unfilteredTableChange: TableUIChange, oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
+    let filtereUIChange = unfilteredTableChange.shallowClone()
+    filtereUIChange.toRemove = translateToFiltered(unfilteredTableChange.toRemove, oldState)
+    filtereUIChange.toInsert = translateToFiltered(unfilteredTableChange.toInsert, newState)
+    filtereUIChange.toUpdate = translateToFiltered(unfilteredTableChange.toUpdate, oldState)
+    filtereUIChange.newSelectedRowIndexes = translateToFiltered(unfilteredTableChange.newSelectedRowIndexes, newState)
+
+    if let toMove = unfilteredTableChange.toMove {
+      filtereUIChange.toMove = []
+
+      for (from, to) in toMove {
+        if let fromFiltered = oldState.getFilteredIndex(fromUniltered: from), let toFiltered = oldState.getFilteredIndex(fromUniltered: to) {
+          filtereUIChange.toMove?.append((fromFiltered, toFiltered))
+        } else {
+          Logger.log("Failed to find filtered index from either or both of ToMove pair: (\(from), \(to)); skipping", level: .error)
+        }
+      }
+    }
+
+    return filtereUIChange
+  }
+
+  private func translateToFiltered(_ unfilteredSet: IndexSet?, _ oldState: BindingTableState) -> IndexSet? {
+    guard let unfilteredSet = unfilteredSet else {
+      return nil
+    }
+    var filteredSet = IndexSet()
+    for unfilteredIndex in unfilteredSet {
+      if let filteredIndex = oldState.getFilteredIndex(fromUniltered: unfilteredIndex) {
+        filteredSet.insert(filteredIndex)
+      } else {
+        Logger.log("Failed to find filtered index from unfiltered index \(unfilteredIndex); skipping", level: .error)
+      }
+    }
+    return filteredSet
+  }
+
+  private func updateTableUI(oldState: BindingTableState, newState: BindingTableState, desiredTableUIChange: TableUIChange) {
+    let tableUIChange = desiredTableUIChange
 
     // Any change made could conceivably change other rows in the table. It's inexpensive to just reload all of them:
     tableUIChange.reloadAllExistingRows = true

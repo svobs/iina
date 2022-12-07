@@ -50,8 +50,8 @@ class TableUIChange {
   // Required
   let changeType: ContentChangeType
 
-  var toInsert: IndexSet? = nil
   var toRemove: IndexSet? = nil
+  var toInsert: IndexSet? = nil
   var toUpdate: IndexSet? = nil
   // Used by ContentChangeType.moveRows. Ordered list of pairs of (fromIndex, toIndex)
   var toMove: [(Int, Int)]? = nil
@@ -211,5 +211,21 @@ class TableUIChange {
     if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
       tableView.scrollRowToVisible(firstSelectedRow)
     }
+  }
+
+  func shallowClone() -> TableUIChange {
+    var clone = TableUIChange(self.changeType, completionHandler: self.completionHandler)
+    clone.toRemove = self.toRemove
+    clone.toInsert = self.toInsert
+    clone.toMove = self.toMove
+    clone.toUpdate = self.toUpdate
+    clone.newSelectedRowIndexes = self.newSelectedRowIndexes
+    clone.oldSelectedRowIndexes = self.oldSelectedRowIndexes
+    clone.rowInsertAnimation = self.rowInsertAnimation
+    clone.rowRemoveAnimation = self.rowRemoveAnimation
+    clone.reloadAllExistingRows = self.reloadAllExistingRows
+    clone.scrollToFirstSelectedRow = self.scrollToFirstSelectedRow
+
+    return clone
   }
 }

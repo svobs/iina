@@ -49,6 +49,8 @@ struct BindingTableState {
     appInputConfig.bindingCandidateList
   }
 
+  // MARK: Bindings Table CRUD
+
   // The currently displayed list of table rows. Subset of `allRows`; exact number depends on `filterString`
   var displayedRowIndexes: IndexSet {
     if let filterBimap = filterBimap {
@@ -68,8 +70,6 @@ struct BindingTableState {
     }
     return allRows
   }
-
-  // MARK: Bindings Table CRUD
 
   var displayedRowCount: Int {
     if let filterBimap = filterBimap {
@@ -335,7 +335,7 @@ struct BindingTableState {
   }
 
   // Returns the index into filteredRows corresponding to the given unfiltered index.
-  private func getFilteredIndex(fromUniltered unfilteredIndex: Int) -> Int? {
+  func getFilteredIndex(fromUniltered unfilteredIndex: Int) -> Int? {
     guard unfilteredIndex >= 0 else {
       return nil
     }
@@ -351,7 +351,7 @@ struct BindingTableState {
   }
 
   // Returns the index into allRows corresponding to the given filtered index.
-  private func getUnfilteredIndex(fromFiltered filteredIndex: Int) -> Int? {
+  func getUnfilteredIndex(fromFiltered filteredIndex: Int) -> Int? {
     guard filteredIndex >= 0 else {
       return nil
     }

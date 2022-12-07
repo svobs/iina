@@ -462,6 +462,9 @@ extension ConfTableViewController:  NSMenuDelegate {
     // Show in Finder
     mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(isUserConf))
 
+    // Rename Conf File
+    mib.addItem("Rename", #selector(self.renameFromMenu(_:)), with: .enabled(isUserConf), .key(KeyCodeHelper.KeyEquivalents.RETURN))
+
     // Duplicate
     mib.addItem("Duplicate", #selector(self.duplicateConfFromMenu(_:)))
 
@@ -531,6 +534,12 @@ extension ConfTableViewController:  NSMenuDelegate {
 
   @objc fileprivate func showInFinderFromMenu(_ sender: InputConfMenuItem) {
     self.showInFinder(sender.confName)
+  }
+
+  @objc fileprivate func renameFromMenu(_ sender: InputConfMenuItem) {
+    if let targetRowIndex = confTableState.confTableRows.firstIndex(of: sender.confName) {
+      tableView.editCell(row: targetRowIndex, column: COLUMN_INDEX_NAME)
+    }
   }
 
   @objc fileprivate func duplicateConfFromMenu(_ sender: InputConfMenuItem) {
