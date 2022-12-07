@@ -86,10 +86,10 @@ struct ConfTableState {
   // MARK: Non-mutating getters
 
   var isSelectedConfReadOnly: Bool {
-    return ConfTableState.isDefaultConf(selectedConfName)
+    return ConfTableState.isBuiltinConf(selectedConfName)
   }
 
-  static func isDefaultConf(_ confName: String) -> Bool {
+  static func isBuiltinConf(_ confName: String) -> Bool {
     return AppData.defaultConfs[confName] != nil
   }
 
@@ -128,15 +128,15 @@ struct ConfTableState {
 
   // Same as `getConfName()`, but only returns user confs. If a default conf is found instead, nil is returned.
   func getUserConfName(at index: Int) -> String? {
-    if let confName = getConfName(at: index), !ConfTableState.isDefaultConf(confName){
+    if let confName = getConfName(at: index), !ConfTableState.isBuiltinConf(confName){
       return confName
     }
     return nil
   }
 
-  func isDefaultConf(at index: Int) -> Bool {
+  func isBuiltinConf(at index: Int) -> Bool {
     if let confName = getConfName(at: index) {
-      return ConfTableState.isDefaultConf(confName)
+      return ConfTableState.isBuiltinConf(confName)
     }
     return false
   }
@@ -252,7 +252,7 @@ struct ConfTableState {
   }
 
   func appendBindingsToUserConfFile(_ bindings: [KeyMapping], targetConfName: String) {
-    let isReadOnly = ConfTableState.isDefaultConf(targetConfName)
+    let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
     guard !isReadOnly else { return }
 
     if targetConfName == selectedConfName {

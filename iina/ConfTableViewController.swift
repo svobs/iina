@@ -14,8 +14,9 @@ fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
   pattern: #"(.*)(?:\scopy(?: (\d+))?)"#, options: []
 )
 
+fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
-fileprivate let defaultConfTextColor: NSColor = .controlAccentColor
+fileprivate let builtinConfTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 
 class ConfTableViewController: NSObject {
   private let COLUMN_INDEX_NAME = 0
@@ -100,19 +101,19 @@ extension ConfTableViewController: NSTableViewDelegate {
     let columnName = identifier.rawValue
 
     guard let confName = confTableState.getConfName(at: rowIndex) else { return nil }
-    let isDefaultConf = ConfTableState.isDefaultConf(confName)
+    let isBuiltinConf = ConfTableState.isBuiltinConf(confName)
 
     switch columnName {
       case "nameColumn":
         cell.textField?.stringValue = confName
         if #available(macOS 10.14, *) {
-          cell.textField?.textColor = isDefaultConf ? defaultConfTextColor : .controlTextColor
+          cell.textField?.textColor = isBuiltinConf ? builtinConfTextColor : .controlTextColor
         }
         return cell
       case "isDefaultColumn":
-        cell.imageView?.isHidden = !isDefaultConf
+        cell.imageView?.isHidden = !isBuiltinConf
         if #available(macOS 10.14, *) {
-          cell.imageView?.contentTintColor = defaultConfTextColor
+          cell.imageView?.contentTintColor = builtinConfTextColor
         }
         return cell
       default:
@@ -457,7 +458,7 @@ extension ConfTableViewController:  NSMenuDelegate {
     let mib = CascadingMenuItemBuilder(mip: ConfMenuItemProvider(), .menu(contextMenu),
       .unit(Unit.config), .unitCount(1), .targetRow(clickedConfName), .target(self))
 
-    let isUserConf = !ConfTableState.isDefaultConf(clickedConfName)
+    let isUserConf = !ConfTableState.isBuiltinConf(clickedConfName)
 
     // Show in Finder
     mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(isUserConf))

@@ -8,14 +8,15 @@
 
 import Foundation
 
+fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
-fileprivate let nonConfTextColor: NSColor = .controlAccentColor
+fileprivate let nonConfTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 @available(macOS 10.14, *)
-fileprivate let pluginIconColor: NSColor = .controlAccentColor
+fileprivate let pluginIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 @available(macOS 10.14, *)
-fileprivate let libmpvIconColor: NSColor = .controlAccentColor
+fileprivate let libmpvIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 @available(macOS 10.14, *)
-fileprivate let filterIconColor: NSColor = .controlAccentColor
+fileprivate let filterIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 
 fileprivate let COLUMN_INDEX_KEY = 0
 fileprivate let COLUMN_INDEX_ACTION = 2

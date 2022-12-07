@@ -8,17 +8,23 @@
 
 import Foundation
 
+fileprivate func log(_ msg: String, _ level: Logger.Level = .debug) {
+  Logger.log(msg, level: level, subsystem: AppInputConfig.subsystem)
+}
+
 // Application-scoped input config (key bindings)
 // The currently active bindings for the IINA app. Includes key lookup table, list of binding candidates, & other data
 struct AppInputConfig {
   // return true to send notifications; false otherwise
   typealias NotificationData = [AnyHashable : Any]
 
+  static let subsystem = Logger.Subsystem(rawValue: "input")
+
   // MARK: Shared input sections
 
   // Contains static sections which occupy the bottom of every stack.
   // Sort of like a prototype, but a change to any of these sections will immediately affects all players.
-  static private let sharedSectionStack = InputSectionStack(PlayerInputConfig.inputBindingsSubsystem,
+  static private let sharedSectionStack = InputSectionStack(AppInputConfig.subsystem,
                                                             initialEnabledSections: [
                                                               SharedInputSection(name: SharedInputSection.USER_CONF_SECTION_NAME, isForce: true, origin: .confFile),
                                                               SharedInputSection(name: SharedInputSection.AUDIO_FILTERS_SECTION_NAME, isForce: true, origin: .savedFilter),
@@ -84,7 +90,7 @@ struct AppInputConfig {
    */
   static func rebuildCurrent(attaching userData: NotificationData? = nil) {
     let requestedVersion = AppInputConfig.lastStartedVersion + 1
-    Logger.log("Requesting app input bindings rebuild (v\(requestedVersion))", level: .verbose)
+    log("Requesting app input bindings rebuild (v\(requestedVersion))", .verbose)
 
     DispatchQueue.main.async {
 
@@ -114,7 +120,7 @@ struct AppInputConfig {
 
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
-      Logger.log("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \"\(notification.name.rawValue)\"", level: .verbose)
+      log("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \"\(notification.name.rawValue)\"", .verbose)
       NotificationCenter.default.post(notification)
     }
   }
@@ -161,7 +167,7 @@ struct AppInputConfig {
   func logEnabledBindings() {
     if AppInputConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
-      Logger.log("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))", level: .verbose, subsystem: PlayerInputConfig.inputBindingsSubsystem)
+      log("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))", .verbose)
     }
   }
 }

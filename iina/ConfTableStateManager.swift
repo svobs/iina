@@ -327,7 +327,7 @@ class ConfTableStateManager: NSObject {
   func loadConfFile(withConfName confName: String? = nil) -> InputConfFile {
     let currentState = ConfTableState.current
     let targetConfName = confName ?? currentState.selectedConfName
-    let isReadOnly = ConfTableState.isDefaultConf(targetConfName)
+    let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
     Logger.log("Loading inputConfFile for \"\(targetConfName)\"")

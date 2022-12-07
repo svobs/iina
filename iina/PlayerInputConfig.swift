@@ -70,8 +70,6 @@ let MP_MAX_KEY_DOWN = 4
  */
 class PlayerInputConfig {
 
-  static let inputBindingsSubsystem = Logger.Subsystem(rawValue: "inputbindings")
-
   // MARK: - Single player instance
 
   private let subsystem: Logger.Subsystem
@@ -87,7 +85,7 @@ class PlayerInputConfig {
   private var keyPressHistory = RingBuffer<String>(capacity: MP_MAX_KEY_DOWN)
 
   init(playerCore: PlayerCore) {
-    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(PlayerInputConfig.inputBindingsSubsystem.rawValue)")
+    self.subsystem = Logger.Subsystem(rawValue: "\(playerCore.subsystem.rawValue)/\(AppInputConfig.subsystem.rawValue)")
 
     // Default to adding the static shared sections
     sectionStack = InputSectionStack(subsystem, initialEnabledSections: AppInputConfig.sharedSections)
