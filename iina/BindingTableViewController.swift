@@ -363,6 +363,12 @@ extension BindingTableViewController: NSTableViewDataSource {
         Logger.log("Denying move within table: dragged data does not match!", level: .error)
         return []
       }
+      // Only allow "move" if all dragged rows are editable
+      for rowIndex in draggedRowIndexes {
+        if !self.bindingTableState.isRowModifiable(rowIndex) {
+          return []
+        }
+      }
       return .move
     }
     // From outside of table -> only copy allowed
@@ -411,6 +417,12 @@ extension BindingTableViewController: NSTableViewDataSource {
         Logger.log("Something went wrong keeping track of moved row indexes! Rejecting drop!", level: .error)
         return false
       }
+      // Only allow "move" if all dragged rows are editable
+      for rowIndex in draggedRowIndexes {
+        if !self.bindingTableState.isRowModifiable(rowIndex) {
+          return false
+        }
+      }
       DispatchQueue.main.async {
         self.moveMappings(from: draggedRowIndexes, to: rowIndex, isAfterNotAt: false)
       }
@@ -437,7 +449,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
-    guard bindingTableState.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingTableState.isRowModifiable(rowIndex) else {
       // An error here would be really bad
       Logger.log("Cannot save binding row \(rowIndex): edit is not allowed for this row type! If you see this message please report it.", level: .error)
       return false
@@ -475,9 +487,9 @@ extension BindingTableViewController: EditableTableViewDelegate {
   private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfAllowed: Bool = true) -> Bool {
     guard requireCurrentConfIsEditable(forAction: "edit row") else { return false }
 
-    guard bindingTableState.isEditEnabledForBindingRow(rowIndex) else {
+    guard bindingTableState.isRowModifiable(rowIndex) else {
       // Should never see this message
-      Logger.log("Cannot edit binding row \(rowIndex): edit is not allowed for this row! Aborting", level: .error)
+      Logger.log("Cannot edit binding row \(rowIndex): row cannot be modified! Aborting", level: .error)
       return false
     }
 

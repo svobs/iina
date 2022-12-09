@@ -253,7 +253,7 @@ struct BindingTableState {
 
   // MARK: Various utility functions
 
-  func isEditEnabledForBindingRow(_ rowIndex: Int) -> Bool {
+  func isRowModifiable(_ rowIndex: Int) -> Bool {
     self.getDisplayedRow(at: rowIndex)?.canBeModified ?? false
   }
 

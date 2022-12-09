@@ -28,7 +28,7 @@
             <rect key="frame" x="0.0" y="0.0" width="472" height="320"/>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="LU9-QU-BFL">
-                    <rect key="frame" x="-2" y="295" width="121" height="18"/>
+                    <rect key="frame" x="-1" y="295" width="121" height="18"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="16" id="lOm-I3-MpB"/>
                     </constraints>
@@ -44,7 +44,7 @@
                     <rect key="frame" x="0.0" y="277" width="472" height="5"/>
                 </box>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bm5-rb-Qjb">
-                    <rect key="frame" x="449" y="290" width="25" height="25"/>
+                    <rect key="frame" x="448" y="290" width="25" height="25"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="vf9-A9-dKA">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -510,7 +510,7 @@
                     <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                 </box>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KZA-hu-vhZ">
-                    <rect key="frame" x="-7" y="1" width="210" height="32"/>
+                    <rect key="frame" x="-6" y="1" width="210" height="32"/>
                     <buttonCell key="cell" type="push" title="Show the config file in Finder" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="gDo-JL-a9k">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -520,7 +520,7 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AuR-Lj-Iz4">
-                    <rect key="frame" x="201" y="1" width="206" height="32"/>
+                    <rect key="frame" x="202" y="1" width="206" height="32"/>
                     <buttonCell key="cell" type="push" title="Import an existing config file" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="6cO-C0-33g">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -532,7 +532,7 @@
             </subviews>
             <constraints>
                 <constraint firstItem="mLe-eI-lIk" firstAttribute="top" secondItem="t1k-sf-Xj1" secondAttribute="bottom" constant="-1" id="1Vv-wI-EAW"/>
-                <constraint firstItem="KZA-hu-vhZ" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="3kW-5w-PxP"/>
+                <constraint firstItem="KZA-hu-vhZ" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="1" id="3kW-5w-PxP"/>
                 <constraint firstItem="t1k-sf-Xj1" firstAttribute="top" secondItem="x6N-6q-HiV" secondAttribute="bottom" constant="8" id="7Wp-bG-vO2"/>
                 <constraint firstItem="Le4-ai-PiB" firstAttribute="trailing" secondItem="WFu-Oz-42S" secondAttribute="trailing" id="7oZ-ud-8yD"/>
                 <constraint firstItem="WFu-Oz-42S" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="9lk-th-jiB"/>
@@ -553,7 +553,7 @@
                 <constraint firstAttribute="trailing" secondItem="ER0-iU-7fy" secondAttribute="trailing" id="Y4g-9e-aDt"/>
                 <constraint firstItem="ZWR-gT-S2p" firstAttribute="top" secondItem="ER0-iU-7fy" secondAttribute="bottom" constant="16" id="ZX7-1F-af0"/>
                 <constraint firstItem="bm5-rb-Qjb" firstAttribute="centerY" secondItem="LU9-QU-BFL" secondAttribute="centerY" id="dVn-Pj-vDl"/>
-                <constraint firstItem="LU9-QU-BFL" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="eIu-AE-LI1"/>
+                <constraint firstItem="LU9-QU-BFL" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="1" id="eIu-AE-LI1"/>
                 <constraint firstItem="ZWR-gT-S2p" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="eyA-gW-IBL"/>
                 <constraint firstItem="mLe-eI-lIk" firstAttribute="bottom" secondItem="Le4-ai-PiB" secondAttribute="bottom" id="fZq-hE-chm"/>
                 <constraint firstItem="t1k-sf-Xj1" firstAttribute="leading" secondItem="x6N-6q-HiV" secondAttribute="leading" id="gG9-UL-2Ib"/>
@@ -569,7 +569,7 @@
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ZWR-gT-S2p" secondAttribute="trailing" id="tWl-b9-AcQ"/>
                 <constraint firstItem="EpF-t6-PtC" firstAttribute="bottom" secondItem="Mvx-13-iEj" secondAttribute="bottom" id="uic-mB-Pr8"/>
                 <constraint firstItem="LU9-QU-BFL" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="8" id="uzh-oa-t27"/>
-                <constraint firstAttribute="trailing" secondItem="bm5-rb-Qjb" secondAttribute="trailing" id="yu6-lr-z6o"/>
+                <constraint firstAttribute="trailing" secondItem="bm5-rb-Qjb" secondAttribute="trailing" constant="1" id="yu6-lr-z6o"/>
             </constraints>
             <point key="canvasLocation" x="121.5" y="248.5"/>
         </customView>
