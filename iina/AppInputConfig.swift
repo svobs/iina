@@ -120,7 +120,7 @@ struct AppInputConfig {
 
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
-      log("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \"\(notification.name.rawValue)\"", .verbose)
+      log("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)", .verbose)
       NotificationCenter.default.post(notification)
     }
   }

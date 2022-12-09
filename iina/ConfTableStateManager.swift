@@ -69,7 +69,7 @@ class ConfTableStateManager: NSObject {
     if let selectedConf = Preference.string(for: .currentInputConfigName) {
       selectedConfName = selectedConf
     } else {
-      Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue): will use default (\"\(defaultConfName)\")", level: .warning)
+      Logger.log("Could not get pref: \(Preference.Key.currentInputConfigName.rawValue.quoted): will use default (\(defaultConfName.quoted))", level: .warning)
       selectedConfName = defaultConfName
     }
 
@@ -101,10 +101,10 @@ class ConfTableStateManager: NSObject {
           guard let selectedConfNameNew = change[.newKey] as? String, !selectedConfNameNew.equalsIgnoreCase(curr.selectedConfName) else { return }
           guard curr.specialState != .fallBackToDefaultConf else {
             // Avoids infinite loop if two or more instances are running at the same time
-            Logger.log("Already in error state; ignoring pref update for selectedConf: \"\(selectedConfNameNew)\"", level: .verbose)
+            Logger.log("Already in error state; ignoring pref update for selectedConf: \(selectedConfNameNew.quoted)", level: .verbose)
             return
           }
-          Logger.log("Detected pref update for selectedConf: \"\(selectedConfNameNew)\"", level: .verbose)
+          Logger.log("Detected pref update for selectedConf: \(selectedConfNameNew.quoted)", level: .verbose)
           // Update the UI in case the update came from an external source. Make sure not to update prefs,
           // as this can cause a runaway chain reaction of back-and-forth updates if two or more instances are open!
           ConfTableState.current.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
@@ -128,12 +128,12 @@ class ConfTableStateManager: NSObject {
   func appendBindingsToUserConfFile(_ mappingsToAppend: [KeyMapping], targetConfName: String) {
     guard targetConfName != ConfTableState.current.selectedConfName else {
       // Should use BindingTableState instead
-      Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\"\(targetConfName)\")!", level: .verbose)
+      Logger.log("appendBindingsToUserConfFile() should not be called for appending to the currently selected conf (\(targetConfName.quoted))!", level: .verbose)
       return
     }
 
     guard let inputConfFile = fileCache.getConfFile(confName: targetConfName), !inputConfFile.failedToLoad else {
-      Logger.log("Cannot append to conf: \"\(targetConfName)\": file was not loaded properly!", level: .error)
+      Logger.log("Cannot append to conf: \(targetConfName.quoted): file was not loaded properly!", level: .error)
       return
     }
 
@@ -142,12 +142,12 @@ class ConfTableStateManager: NSObject {
     let fileMappingsAppended = [fileMappingsOrig, mappingsToAppend].flatMap { $0 }
 
     let doAction = {
-      Logger.log("Appending to conf: \"\(targetConfName)\", prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
+      Logger.log("Appending to conf: \(targetConfName.quoted), prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
       inputConfFile.overwriteFile(with: fileMappingsAppended)
     }
 
     let undoAction = {
-      Logger.log("Un-appending \(mappingsToAppend.count) bindings of conf: \"\(targetConfName)\" (newCount: \(fileMappingsOrig.count))")
+      Logger.log("Un-appending \(mappingsToAppend.count) bindings of conf: \(targetConfName.quoted) (newCount: \(fileMappingsOrig.count))")
       inputConfFile.overwriteFile(with: fileMappingsOrig)
     }
 
@@ -308,7 +308,7 @@ class ConfTableStateManager: NSObject {
 
     // Finally, fire notification. This covers row selection too
     let notification = Notification(name: .iinaPendingUIChangeForConfTable, object: tableUIChange)
-    Logger.log("ConfTableStateManager: posting \"\(notification.name.rawValue)\" notification", level: .verbose)
+    Logger.log("ConfTableStateManager: posting \(notification.name.rawValue.quoted) notification", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
@@ -330,7 +330,7 @@ class ConfTableStateManager: NSObject {
     let isReadOnly = ConfTableState.isBuiltinConf(targetConfName)
     let confFilePath = currentState.getFilePath(forConfName: targetConfName)
 
-    Logger.log("Loading inputConfFile for \"\(targetConfName)\"")
+    Logger.log("Loading inputConfFile for \(targetConfName.quoted)")
     return fileCache.getOrLoadConfFile(at: confFilePath, isReadOnly: isReadOnly, confName: targetConfName)
   }
 
@@ -338,7 +338,7 @@ class ConfTableStateManager: NSObject {
   private func loadSelectedConfBindingsIntoAppConfig() {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else {
-      Logger.log("Cannot get bindings from \"\(inputConfFile.confName)\" because it failed to load", level: .error)
+      Logger.log("Cannot get bindings from \(inputConfFile.confName.quoted) because it failed to load", level: .error)
       ConfTableState.current.fallBackToDefaultConf()
       return
     }

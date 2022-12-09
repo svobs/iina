@@ -138,13 +138,13 @@ class BindingTableStateManager {
   }
 
   private func appInputConfigDidChange(_ notification: Notification) {
-    Logger.log("Received \"\(notification.name.rawValue)\"", level: .verbose)
+    Logger.log("Received \(notification.name.rawValue.quoted)", level: .verbose)
     guard let userData = notification.userInfo else {
-      Logger.log("Notification \"\(notification.name.rawValue)\": contains no data!", level: .error)
+      Logger.log("Notification \(notification.name.rawValue.quoted): contains no data!", level: .error)
       return
     }
     guard let appInputConfig = userData[BindingTableStateManager.Key.appInputConfig] as? AppInputConfig else {
-      Logger.log("Notification \"\(notification.name.rawValue)\": no AppInputConfig!", level: .error)
+      Logger.log("Notification \(notification.name.rawValue.quoted): no AppInputConfig!", level: .error)
       return
     }
 
@@ -167,7 +167,7 @@ class BindingTableStateManager {
                                 newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    Logger.log("Updating state for Binding table: hasUIChange=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "nil")", level: .verbose)
+    Logger.log("Updating Binding table state: hasUIChange=\(desiredTableUIChange != nil) filterUpdate=\(newFilterString ?? "nil")", level: .verbose)
     let oldState = BindingTableState.current
     if oldState.appInputConfig.version == appInputConfigNew.version
         && desiredTableUIChange == nil && newFilterString == nil && newInputConfFile == nil {
@@ -255,7 +255,7 @@ class BindingTableStateManager {
 
     // Notify Key Bindings table of update:
     let notification = Notification(name: .iinaPendingUIChangeForBindingTable, object: tableUIChange)
-    Logger.log("BindingTableStateManager: posting \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
+    Logger.log("BindingTableStateManager: posting \(notification.name.rawValue.quoted) notification with changeType \(tableUIChange.changeType)", level: .verbose)
     NotificationCenter.default.post(notification)
   }
 
@@ -270,7 +270,7 @@ class BindingTableStateManager {
     let filePathFromBindingState = currentConfFile.canonicalFilePath
     let filePathFromConfState = URL(fileURLWithPath: ConfTableState.current.selectedConfFilePath).resolvingSymlinksInPath().path
     guard filePathFromBindingState == filePathFromConfState else {
-      Logger.log("While saving bindings updates to file \"\(filePathFromBindingState)\": its path does not match value from preferences (\"\(filePathFromConfState)\")", level: .error)
+      Logger.log("While saving bindings updates to file \(filePathFromBindingState.quoted): its path does not match value from preferences (\(filePathFromConfState.quoted))", level: .error)
       let alertInfo = Utility.AlertInfo(key: "config.cannot_write", args: [filePathFromBindingState])
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       return currentConfFile

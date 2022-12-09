@@ -45,9 +45,9 @@ class AppInputConfigBuilder {
       if let prevSameKeyBinding = resolverDict[key] {
         prevSameKeyBinding.isEnabled = false
         if prevSameKeyBinding.origin == .iinaPlugin {
-          prevSameKeyBinding.displayMessage = "\"\(key)\" is overridden by \"\(binding.keyMapping.readableAction)\". Plugins must use key bindings which have not already been used."
+          prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.readableAction.quoted). Plugins must use key bindings which have not already been used."
         } else {
-          prevSameKeyBinding.displayMessage = "This binding was overridden by another binding below it which also uses \"\(key)\""
+          prevSameKeyBinding.displayMessage = "This binding was overridden by another binding below it which also uses \(key.quoted)"
         }
       }
       // Store it, overwriting any previous entry:
@@ -80,11 +80,11 @@ class AppInputConfigBuilder {
       // Iterate from bottom to the top of the "stack":
       for enabledSectionMeta in sectionStack.sectionsEnabled {
         if AppInputConfig.logBindingsRebuild {
-          log("RebuildBindings: examining enabled section: \"\(enabledSectionMeta.name)\"", level: .error)
+          log("RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)", level: .error)
         }
         guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
           // indicates serious internal error
-          log("RebuildBindings: failed to find section: \"\(enabledSectionMeta.name)\"", level: .error)
+          log("RebuildBindings: failed to find section: \(enabledSectionMeta.name.quoted)", level: .error)
           continue
         }
 
@@ -101,7 +101,7 @@ class AppInputConfigBuilder {
         }
 
         if enabledSectionMeta.isExclusive {
-          log("RebuildBindings: section \"\(inputSection.name)\" was enabled exclusively", level: .verbose)
+          log("RebuildBindings: section \(inputSection.name.quoted) was enabled exclusively", level: .verbose)
           return Array<InputBinding>(linkedList)
         }
       }
@@ -169,16 +169,16 @@ class AppInputConfigBuilder {
         // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
         binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
-        Logger.log("Modified binding to remove redundant section specifier (\"\(destinationSectionName)\") for key: \(keyMapping.rawKey)", level: .verbose)
+        Logger.log("Modified binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
       } else {
-        Logger.log("Skipping binding which specifies section \"\(destinationSectionName)\" for key: \(keyMapping.rawKey)", level: .verbose)
+        Logger.log("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
         binding.displayMessage = "Adding bindings to other input sections is not supported"
         binding.isEnabled = false
         return binding
       }
     }
     if AppInputConfig.logBindingsRebuild {
-      Logger.log("Adding binding for key: \(keyMapping.rawKey)", level: .verbose)
+      Logger.log("Adding binding for key: \(keyMapping.rawKey.quoted)", level: .verbose)
     }
     return binding
   }

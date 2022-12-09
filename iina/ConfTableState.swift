@@ -55,19 +55,19 @@ struct ConfTableState {
     let selectedConf = selectedConfName
 
     if let filePath = userConfDict[selectedConf] {
-      Logger.log("Found file path in user conf dict for '\(selectedConf)': \"\(filePath)\"", level: .verbose)
+      Logger.log("Found file path in user conf dict for \(selectedConf.quoted): \(filePath.quoted)", level: .verbose)
       if URL(fileURLWithPath: filePath).deletingPathExtension().lastPathComponent != selectedConf {
-        Logger.log("Conf's name '\(selectedConf)' does not match its filename: \"\(filePath)\"", level: .warning)
+        Logger.log("Conf's name \(selectedConf.quoted) does not match its filename: \(filePath.quoted)", level: .warning)
       }
       return filePath
     }
     if let filePath = AppData.defaultConfs[selectedConf] {
-      Logger.log("Found file path for default conf '\(selectedConf)': \"\(filePath)\"", level: .verbose)
+      Logger.log("Found file path for default conf \(selectedConf.quoted): \(filePath.quoted)", level: .verbose)
       return filePath
     }
-    Logger.log("Cannot find file path for selected conf (\"\(selectedConf)\"). It is likely the preferences are corrupted. Will derive its file path from its name and the user conf directory path.", level: .warning)
+    Logger.log("Cannot find file path for selected conf (\(selectedConf.quoted)). It is likely the preferences are corrupted. Will derive its file path from its name and the user conf directory path.", level: .warning)
     let filePath = Utility.buildConfFilePath(for: selectedConf)
-    Logger.log("Computed path of conf \"\(selectedConf)\": \"\(filePath)\"")
+    Logger.log("Computed path of conf \(selectedConf.quoted): \(filePath.quoted)")
     return filePath
   }
 
@@ -114,6 +114,15 @@ struct ConfTableState {
     return nil
   }
 
+  func getBuiltinConfName(forFilePath filePath: String) -> String? {
+    for (builtinConfName, builtinFilePath) in AppData.defaultConfs {
+      if builtinFilePath == filePath {
+        return builtinConfName
+      }
+    }
+    return nil
+  }
+
   func isRow(_ confName: String) -> Bool {
     return confTableRows.contains(confName)
   }
@@ -146,7 +155,7 @@ struct ConfTableState {
   // Adds (or updates) conf file with the given name into the user confs list preference, and sets it as the selected conf.
   // Posts update notification
   func addUserConf(confName: String, filePath: String, completionHandler: TableUIChange.CompletionHandler? = nil) {
-    Logger.log("Adding user conf: \"\(confName)\" (filePath: \(filePath))")
+    Logger.log("Adding user conf: \(confName.quoted) (filePath: \(filePath.quoted))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
     ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
@@ -169,7 +178,7 @@ struct ConfTableState {
       return
     }
 
-    Logger.log("Completing inline add of user conf: \"\(confName)\" (filePath: \(filePath))")
+    Logger.log("Completing inline add of user conf: \(confName.quoted) (filePath: \(filePath.quoted))")
     var userConfDictUpdated = userConfDict
     userConfDictUpdated[confName] = filePath
     ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: confName, completionHandler: completionHandler)
@@ -205,13 +214,13 @@ struct ConfTableState {
 
   func removeConf(_ confName: String) {
     let isCurrentConf: Bool = confName == selectedConfName
-    Logger.log("Removing conf: \"\(confName)\" (isCurrentConf: \(isCurrentConf))")
+    Logger.log("Removing conf: \(confName.quoted) (isCurrentConf: \(isCurrentConf))")
 
     var selectedConfNameNew = selectedConfName
 
     if isCurrentConf {
       guard let confIndex = confTableRows.firstIndex(of: confName) else {
-        Logger.log("Cannot find \"\(confName)\" in table!", level: .error)
+        Logger.log("Cannot find \(confName.quoted) in table!", level: .error)
         return
       }
       // Are we the last entry? If so, after deletion the next entry up should be selected. If not, select the next one down
@@ -220,7 +229,7 @@ struct ConfTableState {
 
     var userConfDictUpdated = userConfDict
     guard userConfDictUpdated.removeValue(forKey: confName) != nil else {
-      Logger.log("Cannot remove conf \"\(confName)\": it is not a user conf!", level: .error)
+      Logger.log("Cannot remove conf \(confName.quoted): it is not a user conf!", level: .error)
       return
     }
     ConfTableState.manager.changeState(userConfDictUpdated, selectedConfName: selectedConfNameNew)
@@ -228,19 +237,19 @@ struct ConfTableState {
 
   func renameSelectedConf(newName: String) -> Bool {
     var userConfDictUpdated = userConfDict
-    Logger.log("Renaming conf in prefs: \"\(selectedConfName)\" -> \"\(newName)\"")
+    Logger.log("Renaming conf in prefs: \(selectedConfName.quoted) -> \(newName.quoted)")
     guard !selectedConfName.equalsIgnoreCase(newName) else {
-      Logger.log("Skipping rename: '\(selectedConfName)' and '\(newName)' are the same", level: .error)
+      Logger.log("Skipping rename: \(selectedConfName.quoted) and \(newName.quoted) are the same", level: .error)
       return false
     }
 
     guard userConfDictUpdated[newName] == nil else {
-      Logger.log("Cannot rename selected conf: a conf already exists named: \"\(newName)\"", level: .error)
+      Logger.log("Cannot rename selected conf: a conf already exists named: \(newName.quoted)", level: .error)
       return false
     }
 
     guard userConfDictUpdated.removeValue(forKey: selectedConfName) != nil else {
-      Logger.log("Cannot rename selected conf \"\(selectedConfName)\": it is not a user conf!", level: .error)
+      Logger.log("Cannot rename selected conf \(selectedConfName.quoted): it is not a user conf!", level: .error)
       return false
     }
 
@@ -288,12 +297,12 @@ struct ConfTableState {
     }
 
     guard isRow(selectedConfNew) else {
-      Logger.log("Could not change selected conf to \"\(selectedConfNew)\" (not found in table); falling back to default conf", level: .error)
+      Logger.log("Could not change selected conf to \(selectedConfNew.quoted) (not found in table); falling back to default conf", level: .error)
       fallBackToDefaultConf()
       return
     }
 
-    Logger.log("Changing selected conf to: \"\(selectedConfNew)\"", level: .verbose)
+    Logger.log("Changing selected conf to: \(selectedConfNew.quoted)", level: .verbose)
 
     ConfTableState.manager.changeState(selectedConfName: selectedConfNew, skipSaveToPrefs: skipSaveToPrefs)
   }

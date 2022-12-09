@@ -168,21 +168,21 @@ class PlayerInputConfig {
         keySequence = "\(prevKey)-\(keySequence)"
       }
 
-      log("Checking sequence: \"\(keySequence)\"", level: .verbose)
+      log("Checking sequence: \(keySequence.quoted)", level: .verbose)
 
       if let binding = appBindings.resolverDict[keySequence] {
         if binding.origin == .iinaPlugin {
           // Make extra sure we don't resolve plugin bindings here
-          log("Sequence \"\(keySequence)\" resolved to an IINA plugin (and will be ignored)! This indicates a bug which should be fixed", level: .error)
+          log("Sequence \(keySequence.quoted) resolved to an IINA plugin (and will be ignored)! This indicates a bug which should be fixed", level: .error)
           appBindings.logEnabledBindings()
           return nil
         }
         let keyMapping = binding.keyMapping
         if keyMapping.isIgnored {
-          log("Ignoring \"\(keyMapping.normalizedMpvKey)\" (from: \"\(binding.srcSectionName)\")", level: .verbose)
+          log("Ignoring \(keyMapping.normalizedMpvKey.quoted) (from: \(binding.srcSectionName.quoted))", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \"\(keyMapping.normalizedMpvKey)\" -> \(keyMapping.action) (from: \"\(binding.srcSectionName)\")")
+          log("Resolved keySeq \(keyMapping.normalizedMpvKey.quoted) -> \(keyMapping.rawAction.quoted) (from: \(binding.srcSectionName.quoted))")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return keyMapping
@@ -192,11 +192,11 @@ class PlayerInputConfig {
 
     if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
-      log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
+      log("Contains partial sequence, ignoring: \(keySequence.quoted)", level: .verbose)
       return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
-      log("No active binding for keystroke \"\(lastKeyStroke)\"")
+      log("No active binding for keystroke \(lastKeyStroke.quoted)")
       appBindings.logEnabledBindings()
       return nil
     }

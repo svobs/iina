@@ -59,7 +59,7 @@ class InputSectionStack {
 
     for section in sections {
       if AppInputConfig.logBindingsRebuild {
-        log("CreateStack: Adding initial enabled section: \"\(section.name)\"", level: .verbose)
+        log("CreateStack: Adding initial enabled section: \(section.name.quoted)", level: .verbose)
       }
       self.sectionsDefined[section.name] = section
       self.sectionsEnabled.append(EnabledSectionMeta(name: section.name, isExclusive: false))
@@ -113,7 +113,7 @@ class InputSectionStack {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyMappingList.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
-        log("New definition of \"\(inputSection.name)\" contains no bindings: disabling & removing it")
+        log("New definition of \(inputSection.name.quoted) contains no bindings: disabling & removing it")
         disableSection_Unsafe(inputSection.name)
       }
       sectionsDefined[inputSection.name] = inputSection
@@ -146,15 +146,15 @@ class InputSectionStack {
             break
           case "exclusive":
             isExclusive = true
-            log("Enabling exclusive section: \"\(sectionName)\"")
+            log("Enabling exclusive section: \(sectionName.quoted)")
             break
           default:
-            log("Found unexpected flag \"\(flag)\" when enabling input section \"\(sectionName)\"", level: .error)
+            log("Found unexpected flag \(flag.quoted) when enabling input section \(sectionName.quoted)", level: .error)
         }
       }
 
       guard sectionsDefined[sectionName] != nil else {
-        log("Cannot enable section \"\(sectionName)\": it was never defined!", level: .error)
+        log("Cannot enable section \(sectionName.quoted): it was never defined!", level: .error)
         return
       }
 
@@ -163,7 +163,7 @@ class InputSectionStack {
       sectionsEnabled.remove({ $0.name == sectionName })
 
       sectionsEnabled.append(EnabledSectionMeta(name: sectionName, isExclusive: isExclusive))
-      log("InputSection was enabled: \"\(sectionName)\". SectionsEnabled=\(sectionsEnabled.map{ "\"\($0.name)\"" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
+      log("InputSection was enabled: \(sectionName.quoted). SectionsEnabled=\(sectionsEnabled.map{ "\($0.name.quoted)" }); SectionsDefined=\(sectionsDefined.keys)", level: .verbose)
     }
   }
 
@@ -185,7 +185,7 @@ class InputSectionStack {
       sectionsEnabled.remove({ $0.name == sectionName })
       sectionsDefined.removeValue(forKey: sectionName)
 
-      log("InputSection was disabled: \"\(sectionName)\"", level: .verbose)
+      log("InputSection was disabled: \(sectionName.quoted)", level: .verbose)
     }
   }
 
@@ -199,7 +199,7 @@ class InputSectionStack {
         }
       } else {
         // indicates our code is wrong
-        log("Unexpected action for parsed key binding from 'define-section': \(kb.action)", level: .error)
+        log("Unexpected action for parsed key binding from 'define-section': \(kb.rawAction.quoted)", level: .error)
       }
     }
     return scriptNameSet
@@ -210,7 +210,7 @@ class InputSectionStack {
     if splitName.count == 2 {
       return String(splitName[0])
     } else if splitName.count != 1 {
-      log("Unexpected script binding name from 'define-section': \(scriptBindingName)", level: .error)
+      log("Unexpected script binding name from 'define-section': \(scriptBindingName.quoted)", level: .error)
     }
     return nil
   }

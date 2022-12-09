@@ -83,7 +83,7 @@ class BindingTableViewController: NSObject {
   // Display error alert for errors:
   private func errorDidOccur(_ notification: Notification) {
     guard let alertInfo = notification.object as? Utility.AlertInfo else {
-      Logger.log("Notification \"\(notification.name)\": cannot display error: invalid object: \(type(of: notification.object))", level: .error)
+      Logger.log("Notification \(notification.name.rawValue.quoted): cannot display error: invalid object: \(type(of: notification.object))", level: .error)
       return
     }
     Utility.showAlert(alertInfo.key, arguments: alertInfo.args, sheetWindow: self.tableView.window)
@@ -460,7 +460,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
       return false
     }
 
-    Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \"\(newValue)\"", level: .verbose)
+    Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)", level: .verbose)
 
     let key, action: String?
     switch columnIndex {
@@ -739,7 +739,7 @@ extension BindingTableViewController: NSMenuDelegate {
   }
 
   private func addReadOnlyConfMenuItem(_ mib: CascadingMenuItemBuilder) {
-    mib.addItalicDisabledItem("Cannot make changes: \"\(confTableState.selectedConfName)\" is a built-in config")
+    mib.addItalicDisabledItem("Cannot make changes: \(confTableState.selectedConfName.quoted) is a built-in config")
   }
 
   func menuNeedsUpdate(_ contextMenu: NSMenu) {
@@ -769,10 +769,10 @@ extension BindingTableViewController: NSMenuDelegate {
       switch clickedRow.origin {
         case .iinaPlugin:
           let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
-          culprit = "the IINA plugin \"\(sourceName)\""
+          culprit = "the IINA plugin \(sourceName.quoted)"
         case .savedFilter:
           let sourceName = (clickedRow.keyMapping as? MenuItemMapping)?.sourceName ?? "<ERROR>"
-          culprit = "the saved filter \"\(sourceName)\""
+          culprit = "the saved filter \(sourceName.quoted)"
         case .libmpv:
           culprit = "a Lua script or other mpv interface"
         default:

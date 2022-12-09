@@ -33,7 +33,7 @@ class UndoHelper {
 
     let origActionName: String? = UndoHelper.getOrSetOriginalActionName(actionName, undoMan)
 
-    Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \"\(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)\"")
+    Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)")
 
     undoMan.registerUndo(withTarget: self, handler: { manager in
       // Undo starts here. Or: undo of the undo (redo)

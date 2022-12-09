@@ -330,7 +330,7 @@ struct BindingTableState {
   }
 
   func applyFilter(_ searchString: String) {
-    Logger.log("Updating Bindings UI filter to \"\(searchString)\"", level: .verbose)
+    Logger.log("Updating Bindings UI filter to \(searchString.quoted)", level: .verbose)
     BindingTableState.manager.applyFilter(newFilterString: searchString)
   }
 
@@ -339,7 +339,6 @@ struct BindingTableState {
     guard unfilteredIndex >= 0 else {
       return nil
     }
-    Logger.log("Getting filtered index for: \(unfilteredIndex)")
     guard let filterBimap = filterBimap else {
       return unfilteredIndex
     }

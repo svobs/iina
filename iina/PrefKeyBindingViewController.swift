@@ -78,7 +78,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingSearchFieldShouldUpdate, object: nil, queue: .main) { notification in
       guard let newStringValue = notification.object as? String else {
-        Logger.log("\(notification.name): invalid object: \(type(of: notification.object))", level: .error)
+        Logger.log("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))", level: .error)
         return
       }
       self.keyMappingSearchField.stringValue = newStringValue

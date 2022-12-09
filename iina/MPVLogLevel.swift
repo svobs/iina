@@ -107,7 +107,7 @@ enum MPVLogLevel: Int, CustomStringConvertible {
    if let severityParsed = MPVLogLevel.fromString(severity) {
      return shouldLog(severity: severityParsed.rawValue)
    } else {
-     Logger.log("Failed to parse logging level: '\(severity)'", level: .error)
+     Logger.log("Failed to parse logging level: \(severity.quoted)", level: .error)
      return false
    }
  }

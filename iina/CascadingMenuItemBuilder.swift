@@ -99,21 +99,25 @@ class CascadingMenuItemBuilder {
     }
     var debugDescription: String {
       let val = self.associatedValue()
-      var debugVal: String = "<ERROR>"  // default
+      var debugVal: String = "⚠️"  // default
       switch self {
         case .target, .action, .targetRow, .menu:
-          debugVal = val == nil ? "nil" : "{•}"
+          debugVal = val == nil ? "nil" : "!nil"
         case .keyMods:
           if let val = val as? KeyModsType {
             debugVal = KeyCodeHelper.macString(from: val)
           }
+        case .key, .title:
+          if let val = val as? String {
+            debugVal = val.quoted
+          }
         case .unit:
           if let val = val as? UnitType {
-            debugVal = val.singular
+            debugVal = val.singular.quoted
           }
-        case .key, .title, .unitActionFormat:
+        case .unitActionFormat:
           if let val = val as? UnitActionFormatType {
-            debugVal = "\"\(val.none)\""
+            debugVal = val.none.quoted
           }
         case .enabled, .targetRowIndex, .unitCount:
           if let val = val {
