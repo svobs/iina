@@ -62,10 +62,15 @@ class EditableTextField: NSTextField {
 class EditableTextFieldCell: NSTextFieldCell {
   var textColorOrig: NSColor? = nil
 
+  override func highlight(_ flag: Bool, withFrame cellFrame: NSRect, in controlView: NSView) {
+    <#code#>
+  }
+
   // When the background changes (as a result of selection/deselection), change text color appropriately.
   // This is needed to account for custom text coloring.
   override var backgroundStyle: NSView.BackgroundStyle {
     didSet {
+      self.controlView?.animations
       switch backgroundStyle {
         case .normal, .lowered:      // Deselected
           textColor = textColorOrig

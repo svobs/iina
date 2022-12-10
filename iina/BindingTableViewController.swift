@@ -18,10 +18,10 @@ fileprivate let libmpvIconColor: NSColor = .controlAccentColor.blended(withFract
 @available(macOS 10.14, *)
 fileprivate let filterIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 
-fileprivate let COLUMN_INDEX_KEY = 0
-fileprivate let COLUMN_INDEX_ACTION = 2
-fileprivate let DRAGGING_FORMATION: NSDraggingFormation = .default
-fileprivate let DEFAULT_DRAG_OPERATION = NSDragOperation.move
+fileprivate let keyColumnIndex = 0
+fileprivate let actionColumnIndex = 2
+fileprivate let draggingFormation: NSDraggingFormation = .default
+fileprivate let defaultDragOperation = NSDragOperation.move
 
 class BindingTableViewController: NSObject {
 
@@ -52,7 +52,7 @@ class BindingTableViewController: NSObject {
     tableView.menu?.delegate = self
 
     tableView.allowsMultipleSelection = true
-    tableView.editableTextColumnIndexes = [COLUMN_INDEX_KEY, COLUMN_INDEX_ACTION]
+    tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
@@ -61,7 +61,7 @@ class BindingTableViewController: NSObject {
         acceptableDraggedTypes.append(.string)
       }
       tableView.registerForDraggedTypes(acceptableDraggedTypes)
-      tableView.setDraggingSourceOperationMask([DEFAULT_DRAG_OPERATION], forLocal: false)
+      tableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
       tableView.draggingDestinationFeedbackStyle = .regular
     }
 
@@ -256,7 +256,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    Drag start: define which operations are allowed, and in which contexts
    */
   @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-    session.draggingFormation = DRAGGING_FORMATION
+    session.draggingFormation = draggingFormation
 
     switch(context) {
       case .withinApplication:
@@ -347,7 +347,7 @@ extension BindingTableViewController: NSTableViewDataSource {
 
     var dragMask = info.draggingSourceOperationMask
     if dragMask.contains(.every) || dragMask.contains(.generic) {
-      dragMask = DEFAULT_DRAG_OPERATION
+      dragMask = defaultDragOperation
     }
 
     if dragMask.contains(.copy) {
@@ -392,12 +392,12 @@ extension BindingTableViewController: NSTableViewDataSource {
     }
 
     info.numberOfValidItemsForDrop = rowList.count
-    info.draggingFormation = DRAGGING_FORMATION
+    info.draggingFormation = draggingFormation
     info.animatesToDestination = true
 
     var dragMask = info.draggingSourceOperationMask
     if dragMask.contains(.every) || dragMask.contains(.generic) {
-      dragMask = DEFAULT_DRAG_OPERATION
+      dragMask = defaultDragOperation
     }
 
     // Return immediately, and import (or fail to) asynchronously
@@ -464,10 +464,10 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
     let key, action: String?
     switch columnIndex {
-      case COLUMN_INDEX_KEY:
+      case keyColumnIndex:
         key = KeyCodeHelper.escapeReservedMpvKeys(newValue)
         action = nil
-      case COLUMN_INDEX_ACTION:
+      case actionColumnIndex:
         key = nil
         action = newValue
       default:
@@ -920,11 +920,11 @@ extension BindingTableViewController: NSMenuDelegate {
   }
 
   @objc fileprivate func editKeyColumn(_ sender: BindingMenuItem) {
-    edit(rowIndex: sender.rowIndex, columnIndex: COLUMN_INDEX_KEY)
+    edit(rowIndex: sender.rowIndex, columnIndex: keyColumnIndex)
   }
 
   @objc fileprivate func editActionColumn(_ sender: BindingMenuItem) {
-    edit(rowIndex: sender.rowIndex, columnIndex: COLUMN_INDEX_ACTION)
+    edit(rowIndex: sender.rowIndex, columnIndex: actionColumnIndex)
   }
 
   @objc fileprivate func editRow(_ sender: BindingMenuItem) {

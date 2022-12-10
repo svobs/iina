@@ -14,15 +14,16 @@ fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
   pattern: #"(.*)(?:\scopy(?: (\d+))?)"#, options: []
 )
 
+fileprivate let nameColumnIndex = 0
+fileprivate let draggingFormation: NSDraggingFormation = .default
+
+fileprivate let enableInlineCreate = true // TODO
+
 fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
 fileprivate let builtinConfTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 
 class ConfTableViewController: NSObject {
-  private let COLUMN_INDEX_NAME = 0
-  private let DRAGGING_FORMATION: NSDraggingFormation = .default
-  private let enableInlineCreate = true
-
   private unowned var tableView: EditableTableView!
   private var confTableState: ConfTableState {
     return ConfTableState.current
@@ -44,7 +45,7 @@ class ConfTableViewController: NSObject {
     tableView.menu?.delegate = self
 
     // Set up callbacks:
-    tableView.editableTextColumnIndexes = [COLUMN_INDEX_NAME]
+    tableView.editableTextColumnIndexes = [nameColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
 
     if #available(macOS 10.13, *) {
@@ -287,7 +288,7 @@ extension ConfTableViewController: NSTableViewDataSource {
    Drag start: define which operations are allowed
    */
   @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-    session.draggingFormation = DRAGGING_FORMATION
+    session.draggingFormation = draggingFormation
     return .copy
   }
 
@@ -338,7 +339,7 @@ extension ConfTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    info.draggingFormation = DRAGGING_FORMATION
+    info.draggingFormation = draggingFormation
     info.animatesToDestination = true
 
     if let dragSource = info.draggingSource as? NSTableView, dragSource == self.tableView {
@@ -382,7 +383,7 @@ extension ConfTableViewController: NSTableViewDataSource {
     }
 
     info.animatesToDestination = true
-    info.draggingFormation = DRAGGING_FORMATION
+    info.draggingFormation = draggingFormation
 
     // Option A: drop input conf file(s) into table
     let confFilePathList = ConfTableViewController.extractConfFileList(from: info.draggingPasteboard)
@@ -539,7 +540,7 @@ extension ConfTableViewController:  NSMenuDelegate {
 
   @objc fileprivate func renameFromMenu(_ sender: InputConfMenuItem) {
     if let targetRowIndex = confTableState.confTableRows.firstIndex(of: sender.confName) {
-      tableView.editCell(row: targetRowIndex, column: COLUMN_INDEX_NAME)
+      tableView.editCell(row: targetRowIndex, column: nameColumnIndex)
     }
   }
 
