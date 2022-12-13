@@ -67,6 +67,10 @@ class TableUIChange {
   // TODO: (optimization) figure out how to calculate this from `toMove` instead of storing this
   var oldSelectedRowIndexes: IndexSet? = nil
 
+  // Optional animations
+  var flashBefore: IndexSet? = nil
+  var flashAfter: IndexSet? = nil
+
   // Animation overrides. Leave nil to use the value from the table
   var rowInsertAnimation: NSTableView.AnimationOptions? = nil
   var rowRemoveAnimation: NSTableView.AnimationOptions? = nil
@@ -111,18 +115,39 @@ class TableUIChange {
 
   // Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
-    NSAnimationContext.runAnimationGroup({context in
-      self.executeInAnimationGroup(tableView, context)
-    }, completionHandler: {
-      // Put things like "inline editing after adding a row" here, so
-      // it will wait until after the animations are complete. Doing so
-      // avoids issues such as unexpected notifications being fired from animations
-      if let completionHandler = self.completionHandler {
-        DispatchQueue.main.async {
-          Logger.log("TableUIChange: calling completion handler", level: .verbose)
-          completionHandler(self)
-        }
+    // 1. "Before" animations (if provided)
+    NSAnimationContext.runAnimationGroup({ (contextBefore) in
+      if let flashBefore = self.flashBefore, !flashBefore.isEmpty {
+        self.animateFlash(forIndexes: flashBefore, in: tableView, contextBefore)
       }
+
+    }, completionHandler: {
+
+      // 2. Perform row update animations
+      NSAnimationContext.runAnimationGroup({contextDuring in
+        self.executeInAnimationGroup(tableView, contextDuring)
+
+      }, completionHandler: {
+
+        // 3. "After" animations (if provided)
+        NSAnimationContext.runAnimationGroup({contextAfter in
+          if let flashAfter = self.flashAfter, !flashAfter.isEmpty {
+            self.animateFlash(forIndexes: flashAfter, in: tableView, contextAfter)
+          }
+        }, completionHandler: {
+
+          // 4. `completionHandler` (if provided):
+          // Put things like "inline editing after adding a row" here, so
+          // it will wait until after the animations are complete. Doing so
+          // avoids issues such as unexpected notifications being fired from animations
+          if let completionHandler = self.completionHandler {
+            DispatchQueue.main.async {
+              Logger.log("TableUIChange: calling completion handler", level: .verbose)
+              completionHandler(self)
+            }
+          }
+        })
+      })
     })
   }
 
@@ -211,28 +236,43 @@ class TableUIChange {
     if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
       tableView.scrollRowToVisible(firstSelectedRow)
     }
-
-    if let toUpdate = self.toUpdate {
-      animateFlash(forIndexes: toUpdate, in: tableView)
-    }
-
   }
 
-  private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView) {
-    NSAnimationContext.runAnimationGroup({ (context) in
-      for index in indexes {
-        if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {
-          let animation = CAKeyframeAnimation()
-          animation.keyPath = "backgroundColor"
-          animation.values = [NSColor.textBackgroundColor.cgColor,
-                              NSColor.controlTextColor.cgColor,
-                              NSColor.textBackgroundColor.cgColor]
-          animation.keyTimes = [0, 0.2, 1]
-          animation.duration = 0.25
-          rowView.layer?.add(animation, forKey: "bgFlash")
-        }
+  // Set up a flash animation to make it clear which rows were updated or removed.
+  // Don't need to worry about moves & inserts, because those will be highlighted
+  func setUpFlashForChangedRows() {
+    flashBefore = IndexSet()
+    if let toRemove = self.toRemove {
+      for index in toRemove {
+        flashBefore?.insert(index)
       }
-    })
+    }
+
+    flashAfter = IndexSet()
+    if let toUpdate = self.toUpdate {
+      for index in toUpdate {
+        flashAfter?.insert(index)
+      }
+    }
+  }
+
+  private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
+    context.duration = 0.2
+    tableView.beginUpdates()
+    Logger.log("Flashing rows: \(indexes.map({$0}))", level: .verbose)
+    for index in indexes {
+      if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {
+        let animation = CAKeyframeAnimation()
+        animation.keyPath = "backgroundColor"
+        animation.values = [NSColor.textBackgroundColor.cgColor,
+                            NSColor.controlTextColor.cgColor,
+                            NSColor.textBackgroundColor.cgColor]
+        animation.keyTimes = [0, 0.25, 1]
+        animation.duration = context.duration
+        rowView.layer?.add(animation, forKey: "bgFlash")
+      }
+    }
+    tableView.endUpdates()
   }
 
   func shallowClone() -> TableUIChange {

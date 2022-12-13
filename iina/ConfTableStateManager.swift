@@ -141,6 +141,12 @@ class ConfTableStateManager: NSObject {
     let fileMappingsOrig = inputConfFile.parseMappings()
     let fileMappingsAppended = [fileMappingsOrig, mappingsToAppend].flatMap { $0 }
 
+    // Set up animation to flash row of changed conf (for undo/redo)
+    let tableUIChange = TableUIChange(.none)
+    if let targetConfIndex = ConfTableState.current.confTableRows.firstIndex(of: targetConfName) {
+      tableUIChange.flashAfter = IndexSet(integer: targetConfIndex)
+    }
+
     let doAction = {
       Logger.log("Appending to conf: \(targetConfName.quoted), prevCount: \(fileMappingsOrig.count), newCount: \(fileMappingsAppended.count)")
       inputConfFile.overwriteFile(with: fileMappingsAppended)
@@ -149,10 +155,16 @@ class ConfTableStateManager: NSObject {
     let undoAction = {
       Logger.log("Un-appending \(mappingsToAppend.count) bindings of conf: \(targetConfName.quoted) (newCount: \(fileMappingsOrig.count))")
       inputConfFile.overwriteFile(with: fileMappingsOrig)
+      self.updateTableUI(tableUIChange)
+    }
+
+    let redoAction = {
+      doAction()
+      self.updateTableUI(tableUIChange)
     }
 
     doAction()
-    undoHelper.register(actionName, undo: undoAction, redo: doAction)
+    undoHelper.register(actionName, undo: undoAction, redo: redoAction)
   }
 
   fileprivate struct UndoData {
@@ -294,6 +306,9 @@ class ConfTableStateManager: NSObject {
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
                                                        completionHandler: completionHandler)
     tableUIChange.scrollToFirstSelectedRow = true
+    if self.undoHelper.isUndoingOrRedoing() {
+      tableUIChange.setUpFlashForChangedRows()
+    }
 
     switch new.specialState {
       case .addingNewInline:  // special case: creating an all-new config
@@ -305,8 +320,11 @@ class ConfTableStateManager: NSObject {
           tableUIChange.newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
         }
     }
-
     // Finally, fire notification. This covers row selection too
+    updateTableUI(tableUIChange)
+  }
+
+  private func updateTableUI(_ tableUIChange: TableUIChange) {
     let notification = Notification(name: .iinaPendingUIChangeForConfTable, object: tableUIChange)
     Logger.log("ConfTableStateManager: posting \(notification.name.rawValue.quoted) notification", level: .verbose)
     NotificationCenter.default.post(notification)

@@ -42,11 +42,22 @@ class UndoHelper {
       undoAction()
 
       if let redoAction = redoAction {
-        self.register(actionName, undo: redoAction)
+        self.register(actionName, undo: redoAction, redo: undoAction)
       }
     })
 
     return true
+  }
+
+  func isUndoing() -> Bool {
+    return self.undoManager?.isUndoing ?? false
+  }
+
+  func isUndoingOrRedoing() -> Bool {
+    if let undoManager = self.undoManager, undoManager.isUndoing || undoManager.isRedoing {
+      return true
+    }
+    return false
   }
 
   static private func getOrSetOriginalActionName(_ actionName: String?, _ undoMan: UndoManager) -> String? {

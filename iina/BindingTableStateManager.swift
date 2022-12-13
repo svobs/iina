@@ -81,6 +81,7 @@ class BindingTableStateManager {
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
       let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
+      tableUIChangeUndo.setUpFlashForChangedRows()
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList
       self.doAction(bindingRowsOld, tableUIChangeUndo)  // Recursive call: implicitly registers redo
