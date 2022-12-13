@@ -145,7 +145,7 @@ class TableUIChange {
     let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
     let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
-    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves; reloadExisting: \(self.reloadAllExistingRows), hasNewSelection: \(self.newSelectedRowIndexes != nil)", level: .verbose)
+    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), hasNewSelection: \(self.newSelectedRowIndexes != nil)", level: .verbose)
 
     // track this so we don't do it more than once (it fires the selectionChangedListener every time)
     var wantsReloadOfExistingRows = false
@@ -211,10 +211,32 @@ class TableUIChange {
     if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
       tableView.scrollRowToVisible(firstSelectedRow)
     }
+
+    if let toUpdate = self.toUpdate {
+      animateFlash(forIndexes: toUpdate, in: tableView)
+    }
+
+  }
+
+  private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView) {
+    NSAnimationContext.runAnimationGroup({ (context) in
+      for index in indexes {
+        if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {
+          let animation = CAKeyframeAnimation()
+          animation.keyPath = "backgroundColor"
+          animation.values = [NSColor.textBackgroundColor.cgColor,
+                              NSColor.controlTextColor.cgColor,
+                              NSColor.textBackgroundColor.cgColor]
+          animation.keyTimes = [0, 0.2, 1]
+          animation.duration = 0.25
+          rowView.layer?.add(animation, forKey: "bgFlash")
+        }
+      }
+    })
   }
 
   func shallowClone() -> TableUIChange {
-    var clone = TableUIChange(self.changeType, completionHandler: self.completionHandler)
+    let clone = TableUIChange(self.changeType, completionHandler: self.completionHandler)
     clone.toRemove = self.toRemove
     clone.toInsert = self.toInsert
     clone.toMove = self.toMove
