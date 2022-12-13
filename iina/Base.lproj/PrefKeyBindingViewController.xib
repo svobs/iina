@@ -71,18 +71,21 @@
                 </textField>
                 <box boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="WFu-Oz-42S" userLabel="ConfTableDecoration Box">
                     <rect key="frame" x="0.0" y="61" width="182" height="160"/>
-                    <view key="contentView" id="rIF-5Y-r24" userLabel="ConfBox View">
+                    <view key="contentView" id="rIF-5Y-r24" userLabel="ConfTable Box View">
                         <rect key="frame" x="1" y="1" width="180" height="158"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Mhk-DT-3CM">
+                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="Mhk-DT-3CM" userLabel="ConfTable Scroll View">
                                 <rect key="frame" x="0.0" y="0.0" width="180" height="158"/>
-                                <clipView key="contentView" id="4gB-i6-I71">
+                                <clipView key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4gB-i6-I71" userLabel="ConfTable Clip View">
                                     <rect key="frame" x="0.0" y="0.0" width="180" height="158"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" viewBased="YES" floatsGroupRows="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AYj-6d-niF" userLabel="ConfTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
-                                            <rect key="frame" x="0.0" y="0.0" width="180" height="158"/>
+                                        <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" viewBased="YES" floatsGroupRows="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AYj-6d-niF" userLabel="ConfTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="200" height="158"/>
+                                            <constraints>
+                                                <constraint firstAttribute="height" relation="lessThanOrEqual" priority="501" id="iJr-we-FqD"/>
+                                                <constraint firstAttribute="height" relation="greaterThanOrEqual" priority="499" id="rqI-KJ-PwK"/>
+                                            </constraints>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -100,11 +103,11 @@
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                                     <prototypeCellViews>
                                                         <tableCellView id="8QN-S3-Agb" userLabel="Name TableCellView">
-                                                            <rect key="frame" x="1" y="1" width="158" height="18"/>
+                                                            <rect key="frame" x="1" y="1" width="138" height="18"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zmv-VF-02E" userLabel="Name TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
-                                                                    <rect key="frame" x="0.0" y="1" width="158" height="16"/>
+                                                                    <rect key="frame" x="0.0" y="1" width="138" height="16"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="evx-8m-PJT" userLabel="Name TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA" customModuleProvider="target">
                                                                         <font key="font" usesAppearanceFont="YES"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -272,21 +275,22 @@
                         <action selector="searchAction:" target="-2" id="ogf-Gk-XAq"/>
                     </connections>
                 </searchField>
-                <box boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="t1k-sf-Xj1" userLabel="BindingsTableDecoration Box">
+                <box boxType="custom" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="t1k-sf-Xj1" userLabel="BindingTableDecoration Box">
                     <rect key="frame" x="190" y="61" width="282" height="124"/>
-                    <view key="contentView" id="V3q-jN-tsJ" userLabel="BindingBox View">
+                    <view key="contentView" id="V3q-jN-tsJ" userLabel="BindingTableDecoration Box View">
                         <rect key="frame" x="1" y="1" width="280" height="122"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87">
+                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87" userLabel="BindingTable Scroll View">
                                 <rect key="frame" x="0.0" y="0.0" width="280" height="122"/>
-                                <clipView key="contentView" id="Hxb-1N-pOY">
+                                <clipView key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hxb-1N-pOY" userLabel="BindingTable Clip View">
                                     <rect key="frame" x="0.0" y="0.0" width="280" height="122"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" rowHeight="18" headerView="OOd-BT-w3p" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1Z4-NL-6P3" userLabel="BindingsTable" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                                        <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" rowHeight="18" headerView="OOd-BT-w3p" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                             <rect key="frame" x="0.0" y="0.0" width="280" height="99"/>
                                             <constraints>
+                                                <constraint firstAttribute="height" relation="greaterThanOrEqual" priority="499" id="kJY-lf-2ep"/>
+                                                <constraint firstAttribute="height" relation="lessThanOrEqual" priority="501" id="uia-0r-cYR"/>
                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="zox-S7-xOz"/>
                                             </constraints>
                                             <size key="intercellSpacing" width="3" height="2"/>
@@ -379,11 +383,11 @@
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                                     <prototypeCellViews>
                                                         <tableCellView id="Fx4-cZ-KSl" userLabel="Action Table Cell View">
-                                                            <rect key="frame" x="146" y="1" width="132" height="18"/>
+                                                            <rect key="frame" x="146" y="1" width="112" height="18"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsExpansionToolTips="YES" translatesAutoresizingMaskIntoConstraints="NO" id="90m-qq-SPn" userLabel="Action TextField" customClass="EditableTextField" customModule="IINA" customModuleProvider="target">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="136" height="18"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="116" height="18"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" constant="18" id="1JE-NY-Qb1"/>
                                                                     </constraints>
@@ -418,7 +422,7 @@
                                     <rect key="frame" x="-100" y="-100" width="465" height="16"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
-                                <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="YwQ-kF-wlj">
+                                <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="YwQ-kF-wlj">
                                     <rect key="frame" x="-15" y="23" width="16" height="0.0"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>

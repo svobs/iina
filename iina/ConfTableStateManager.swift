@@ -94,7 +94,6 @@ class ConfTableStateManager: NSObject {
     DispatchQueue.main.async {  // had some issues with race conditions
       let curr = ConfTableState.current
 
-
       switch keyPath {
 
         case Preference.Key.currentInputConfigName.rawValue:
