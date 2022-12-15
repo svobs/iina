@@ -168,7 +168,7 @@ class PlayerInputConfig {
         keySequence = "\(prevKey)-\(keySequence)"
       }
 
-      log("Checking sequence: \(keySequence.quoted)", level: .verbose)
+      log("Checking keySeq: \(keySequence.quoted)", level: .verbose)
 
       if let binding = appBindings.resolverDict[keySequence] {
         if binding.origin == .iinaPlugin {
@@ -182,7 +182,7 @@ class PlayerInputConfig {
           log("Ignoring \(keyMapping.normalizedMpvKey.quoted) (from: \(binding.srcSectionName.quoted))", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \(keyMapping.normalizedMpvKey.quoted) -> \(keyMapping.rawAction.quoted) (from: \(binding.srcSectionName.quoted))")
+          log("Resolved keySeq \(keyMapping.normalizedMpvKey.quoted) -> \(keyMapping.readableAction.quoted) (from: \(binding.srcSectionName.quoted))")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return keyMapping

@@ -702,7 +702,7 @@ class MenuController: NSObject, NSMenuDelegate {
   // MARK: - Menu delegate
 
   func menuWillOpen(_ menu: NSMenu) {
-    Logger.log("Updating menu: \(menu.title)", level: .verbose)
+    Logger.log("Updating menu: \(menu.title.quoted)", level: .verbose)
 
     // If all menu items are disabled do not update the menus.
     guard !isDisabled else { return }
@@ -779,12 +779,12 @@ class MenuController: NSObject, NSMenuDelegate {
 
       if AppInputConfig.logBindingsRebuild {
         let readableKey = KeyCodeHelper.readableString(fromKey: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
-        Logger.log("Updating menu item for \(isVideo ? "video" : "audio") filter \"\(filter.name)\" (key=\(readableKey))")
+        Logger.log("Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)")
       }
 
       let rawKey = KeyCodeHelper.macOSToMpv(key: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
       if !rawKey.isEmpty {
-        let description = "\(filterTypeString): \"\(filter.name)\""
+        let description = "\(filterTypeString): \(filter.name.quoted)"
         keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: filter.name, menuItem: menuItem, actionDescription: description))
       }
     }
@@ -837,17 +837,17 @@ class MenuController: NSObject, NSMenuDelegate {
           menuItem.keyEquivalentModifierMask = kMdf
           binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
           if AppInputConfig.logBindingsRebuild {
-            Logger.log("Updated keyEquivalent for \"\(mpvKey)\" -> \"\(menuItem.title)\"", level: .verbose)
+            Logger.log("Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)", level: .verbose)
           }
         } else {
-          Logger.log("Failed to get MacOS key equivalent for \"\(mpvKey)\"", level: .error)
+          Logger.log("Failed to get MacOS menu item key equivalent for \(mpvKey.quoted)", level: .error)
         }
       } else {
         // Conflict! Key binding already reserved
         menuItem.keyEquivalent = ""
         menuItem.keyEquivalentModifierMask = []
         if AppInputConfig.logBindingsRebuild {
-          Logger.log("Nulled out keyEquivalent for \"\(menuItem.title)\"", level: .verbose)
+          Logger.log("Unset menu keyEquiv: \(menuItem.title.quoted)", level: .verbose)
         }
       }
   }

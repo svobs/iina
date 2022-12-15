@@ -14,6 +14,8 @@ class KeyMapping: NSObject, Codable {
 
   let isIINACommand: Bool
 
+  var menuItem: NSMenuItem? { nil }
+
   // MARK: Key
 
   let rawKey: String
@@ -122,7 +124,7 @@ class KeyMapping: NSObject, Codable {
   }
 
   public override var description: String {
-    return "KeyMapping(rawKey: \"\(rawKey)\" rawAction: \"\(rawAction)\" isIIna: \(isIINACommand))"
+    return "\(rawKey.quoted) → \(isIINACommand ? "@IINA" : "") \(rawAction.quoted)"
   }
 
   func rawEquals(_ other: KeyMapping) -> Bool {
@@ -214,11 +216,11 @@ extension KeyMapping: NSPasteboardWriting, NSPasteboardReading {
 // This class is a little bit of a hurried kludge, so that bindings for menu items could go everywhere that mpv's bindings can go,
 // but instead of an action string each contains a reference to a menu item.
 class MenuItemMapping: KeyMapping {
-  let menuItem: NSMenuItem
+  private let _menuItem: NSMenuItem
   let sourceName: String
   
   init(rawKey: String, sourceName: String, menuItem: NSMenuItem, actionDescription: String) {
-    self.menuItem = menuItem
+    self._menuItem = menuItem
     self.sourceName = sourceName
 
     // Store description in `comment`
@@ -234,14 +236,16 @@ class MenuItemMapping: KeyMapping {
   }
 
   public override var description: String {
-    return "MenuItemMapping(\"\(rawKey)\" → \"\(sourceName)\":\"\(menuItem.title)\""
+    return "\(rawKey.quoted) → src=\(sourceName.quoted) menuItem=\(_menuItem.title.quoted) comment=\(comment?.quoted ?? "nil")"
   }
 
+  override var menuItem: NSMenuItem? { _menuItem }
+
   override var readableAction: String {
-    return rawAction
+    return menuItem?.title ?? ""
   }
 
   override var readableCommand: String {
-    return rawAction
+    return readableAction
   }
 }

@@ -35,7 +35,8 @@ class InputBinding: NSObject {
   
   var isEnabled: Bool
 
-  // Menu item, if any, which was matched with the KeyMapping
+  // The menu item, if any, which was matched with the `keyMapping`'s key using `MenuController`'s matching logic.
+  // If `keyMapping` is already a `MenuItemMapping`, this field is not needed or used.
   var associatedMenuItem: NSMenuItem? = nil
 
   // for use in UI only
@@ -66,17 +67,13 @@ class InputBinding: NSObject {
     return InputBinding(self.keyMapping, origin: self.origin, srcSectionName: self.srcSectionName)
   }
 
-  private var menuItemMapping: MenuItemMapping? {
-    return self.keyMapping as? MenuItemMapping
-  }
-
   /*
    Will be non-nil for all origin == `.iinaPlugin`, `.savedFilter`, and some `.conf`
    */
   var menuItem: NSMenuItem? {
     get {
-      if let menuItemMapping = self.menuItemMapping {
-        return menuItemMapping.menuItem
+      if let intrinsicMenuItem = self.keyMapping.menuItem {
+        return intrinsicMenuItem
       } else {
         return associatedMenuItem
       }
@@ -110,7 +107,7 @@ class InputBinding: NSObject {
   }
 
   func getActionColumnDisplay(raw: Bool) -> String {
-    if let menuItemMapping = menuItemMapping {
+    if let menuItemMapping = self.keyMapping as? MenuItemMapping {
       // These don't map directly to mpv commands, but have a description stored in the comment
       return menuItemMapping.comment ?? ""
     } else {

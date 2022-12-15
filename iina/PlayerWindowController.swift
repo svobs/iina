@@ -215,13 +215,19 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
-    if keyBinding.isIINACommand {
+    if let menuItem = keyBinding.menuItem, let action = menuItem.action {
+      // - Menu item (e.g. custom video filter)
+      // If a menu item's key equivalent doesn't have any modifiers, the player window will get the key event instead of the main menu.
+      Logger.log("Executing action for menuItem \(menuItem.title.quoted)", level: .verbose)
+      NSApp.sendAction(action, to: self, from: menuItem)
+      return true
+    } else if keyBinding.isIINACommand {
       // - IINA command
       if let iinaCommand = IINACommand(rawValue: keyBinding.rawAction) {
         handleIINACommand(iinaCommand)
         return true
       } else {
-        Logger.log("Unknown iina command \(keyBinding.rawAction)", level: .error)
+        Logger.log("Unrecognized IINA command: \(keyBinding.rawAction.quoted)", level: .error)
         return false
       }
     } else {
@@ -238,7 +244,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       if returnValue == 0 {
         return true
       } else {
-        Logger.log("Return value \(returnValue) when executing key command \(keyBinding.rawAction)", level: .error)
+        Logger.log("Return value \(returnValue) when executing key command \(keyBinding.rawAction.quoted)", level: .error)
         return false
       }
     }
