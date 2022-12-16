@@ -304,7 +304,6 @@ class ConfTableStateManager: NSObject {
 
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
                                                        completionHandler: completionHandler)
-    tableUIChange.scrollToFirstSelectedRow = true
     if self.undoHelper.isUndoingOrRedoing() {
       tableUIChange.setUpFlashForChangedRows()
     }

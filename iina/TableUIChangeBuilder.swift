@@ -52,6 +52,10 @@ class TableUIChangeBuilder {
     if let toUpdate = original.toUpdate {
       inverted.toUpdate = IndexSet(toUpdate.map({ $0 + offset }))
       Logger.log("Inverse: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})", level: .verbose)
+      // Add updated lines to selection
+      for updateIndex in inverted.toUpdate! {
+        inverted.newSelectedRowIndexes?.insert(updateIndex)
+      }
     }
     if let movePairsOrig = original.toMove {
       var movePairsInverted: [(Int, Int)] = []

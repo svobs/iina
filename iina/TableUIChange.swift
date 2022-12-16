@@ -80,7 +80,7 @@ class TableUIChange {
 
   // If true, and only if there are selected row(s), scroll the table so that the first selected row is
   // visible to the user. Does this after `reloadAllExistingRows` but before `completionHandler`.
-  var scrollToFirstSelectedRow: Bool = false
+  var scrollToFirstSelectedRow: Bool = true
 
   // A method which, if supplied, is called at the end of execute()
   let completionHandler: TableUIChange.CompletionHandler?
@@ -124,8 +124,20 @@ class TableUIChange {
     }, completionHandler: {
 
       // 2. Perform row update animations
-      NSAnimationContext.runAnimationGroup({contextDuring in
-        self.executeInAnimationGroup(tableView, contextDuring)
+      NSAnimationContext.runAnimationGroup({contextRowUpdates in
+        // Encapsulate all animations in this function inside a transaction.
+        tableView.beginUpdates()
+        defer {
+          tableView.endUpdates()
+        }
+
+        if AccessibilityPreferences.motionReductionEnabled {
+          Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
+          contextRowUpdates.duration = 0.0
+          contextRowUpdates.allowsImplicitAnimation = false
+        }
+
+        self.executeRowUpdates(on: tableView)
 
       }, completionHandler: {
 
@@ -149,21 +161,6 @@ class TableUIChange {
         })
       })
     })
-  }
-
-  private func executeInAnimationGroup(_ tableView: EditableTableView, _ context: NSAnimationContext) {
-    // Encapsulate all animations in this function inside a transaction.
-    tableView.beginUpdates()
-
-    if AccessibilityPreferences.motionReductionEnabled {
-      Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
-      context.duration = 0.0
-      context.allowsImplicitAnimation = false
-    }
-
-    executeRowUpdates(on: tableView)
-
-    tableView.endUpdates()
   }
 
   private func executeRowUpdates(on tableView: EditableTableView) {
@@ -247,18 +244,15 @@ class TableUIChange {
         flashBefore?.insert(index)
       }
     }
-
-    flashAfter = IndexSet()
-    if let toUpdate = self.toUpdate {
-      for index in toUpdate {
-        flashAfter?.insert(index)
-      }
-    }
   }
 
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
     context.duration = 0.2
     tableView.beginUpdates()
+    defer {
+      tableView.endUpdates()
+    }
+
     Logger.log("Flashing rows: \(indexes.map({$0}))", level: .verbose)
     for index in indexes {
       if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {
@@ -272,7 +266,6 @@ class TableUIChange {
         rowView.layer?.add(animation, forKey: "bgFlash")
       }
     }
-    tableView.endUpdates()
   }
 
   func shallowClone() -> TableUIChange {
