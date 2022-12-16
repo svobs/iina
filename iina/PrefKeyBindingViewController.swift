@@ -36,23 +36,23 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private var confTableController: ConfTableViewController? = nil
-  private var kbTableController: BindingTableViewController? = nil
+  private var bindingTableController: BindingTableViewController? = nil
 
   private var observers: [NSObjectProtocol] = []
 
   // MARK: - Outlets
 
-  @IBOutlet weak var inputConfigTableView: EditableTableView!
-  @IBOutlet weak var kbTableView: EditableTableView!
-  @IBOutlet weak var configHintLabel: NSTextField!
-  @IBOutlet weak var addKmBtn: NSButton!
-  @IBOutlet weak var removeKmBtn: NSButton!
+  @IBOutlet weak var confTableView: EditableTableView!
+  @IBOutlet weak var bindingTableView: EditableTableView!
+  @IBOutlet weak var confHintLabel: NSTextField!
+  @IBOutlet weak var addBindingBtn: NSButton!
+  @IBOutlet weak var removeBindingBtn: NSButton!
   @IBOutlet weak var showConfFileBtn: NSButton!
   @IBOutlet weak var deleteConfFileBtn: NSButton!
-  @IBOutlet weak var newConfigBtn: NSButton!
+  @IBOutlet weak var newConfBtn: NSButton!
   @IBOutlet weak var duplicateConfBtn: NSButton!
   @IBOutlet weak var useMediaKeysButton: NSButton!
-  @IBOutlet weak var keyMappingSearchField: NSSearchField!
+  @IBOutlet weak var bindingSearchField: NSSearchField!
 
   deinit {
     for observer in observers {
@@ -64,9 +64,9 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    let kbTableController = BindingTableViewController(kbTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
-    self.kbTableController = kbTableController
-    confTableController = ConfTableViewController(inputConfigTableView, kbTableController)
+    let bindingTableController = BindingTableViewController(bindingTableView, selectionDidChangeHandler: updateRemoveButtonEnablement)
+    self.bindingTableController = bindingTableController
+    confTableController = ConfTableViewController(confTableView, bindingTableController)
 
     if #available(macOS 10.13, *) {
       useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
@@ -81,7 +81,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
         Logger.log("Received \(notification.name.rawValue.quoted) with invalid object: \(type(of: notification.object))", level: .error)
         return
       }
-      self.keyMappingSearchField.stringValue = newStringValue
+      self.bindingSearchField.stringValue = newStringValue
     })
 
     confTableController?.selectCurrentConfRow()
@@ -90,12 +90,12 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   // MARK: - IBActions
 
-  @IBAction func addKeyMappingBtnAction(_ sender: AnyObject) {
-    kbTableController?.addNewBinding()
+  @IBAction func addBindingBtnAction(_ sender: AnyObject) {
+    bindingTableController?.addNewBinding()
   }
 
-  @IBAction func removeKeyMappingBtnAction(_ sender: AnyObject) {
-    kbTableController?.removeSelectedBindings()
+  @IBAction func removeBindingBtnAction(_ sender: AnyObject) {
+    bindingTableController?.removeSelectedBindings()
   }
 
   @IBAction func newConfFileAction(_ sender: AnyObject) {
@@ -122,7 +122,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func displayRawValueAction(_ sender: NSButton) {
-    kbTableView.reloadExistingRows(reselectRowsAfter: true)
+    bindingTableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   @IBAction func openKeyBindingsHelpAction(_ sender: AnyObject) {
@@ -138,16 +138,16 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   private func updateEditEnabledStatus() {
     let isSelectedConfReadOnly = confTableState.isSelectedConfReadOnly
     Logger.log("Updating editEnabledStatus to \(!isSelectedConfReadOnly)", level: .verbose)
-    [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
+    [showConfFileBtn, deleteConfFileBtn, addBindingBtn].forEach { btn in
       btn.isEnabled = !isSelectedConfReadOnly
     }
-    configHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isSelectedConfReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
+    confHintLabel.stringValue = NSLocalizedString("preference.key_binding_hint_\(isSelectedConfReadOnly ? "1" : "2")", comment: "preference.key_binding_hint")
 
     self.updateRemoveButtonEnablement()
   }
 
   private func updateRemoveButtonEnablement() {
     // re-evaluate this each time either table changed selection:
-    removeKmBtn.isEnabled = !confTableState.isSelectedConfReadOnly && kbTableView.selectedRow != -1
+    removeBindingBtn.isEnabled = !confTableState.isSelectedConfReadOnly && bindingTableView.selectedRow != -1
   }
 }

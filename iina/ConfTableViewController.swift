@@ -28,12 +28,12 @@ class ConfTableViewController: NSObject {
   private var confTableState: ConfTableState {
     return ConfTableState.current
   }
-  private unowned var kbTableViewController: BindingTableViewController
+  private unowned var bindingTableViewController: BindingTableViewController
   private var observers: [NSObjectProtocol] = []
 
-  init(_ inputConfTableView: EditableTableView, _ kbTableViewController: BindingTableViewController) {
+  init(_ inputConfTableView: EditableTableView, _ bindingTableViewController: BindingTableViewController) {
     self.tableView = inputConfTableView
-    self.kbTableViewController = kbTableViewController
+    self.bindingTableViewController = bindingTableViewController
 
     super.init()
 
@@ -229,7 +229,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
 
   func isPasteEnabled() -> Bool {
     // can paste either conf files or key bindings
-    return !readConfFilesFromClipboard().isEmpty || kbTableViewController.isPasteEnabled()
+    return !readConfFilesFromClipboard().isEmpty || bindingTableViewController.isPasteEnabled()
   }
 
   func doEditMenuCopy() {
@@ -248,7 +248,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
     }
 
     // Maybe key bindings. Paste bindings into current conf, if any:
-    kbTableViewController.doEditMenuPaste()
+    bindingTableViewController.doEditMenuPaste()
   }
 
   func doEditMenuDelete() {
@@ -483,7 +483,7 @@ extension ConfTableViewController:  NSMenuDelegate {
         pasteBuilder.butWith(.unitCount(confCount)).addItem()
         didAdd = true
       } else if isUserConf {
-        let bindingCount = kbTableViewController.readBindingsFromClipboard().count
+        let bindingCount = bindingTableViewController.readBindingsFromClipboard().count
         if bindingCount > 0 {
           pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount)).addItem()
           didAdd = true
@@ -516,13 +516,13 @@ extension ConfTableViewController:  NSMenuDelegate {
     }
 
     // Maybe key bindings
-    let mappingsToInsert = kbTableViewController.readBindingsFromClipboard()
+    let mappingsToInsert = bindingTableViewController.readBindingsFromClipboard()
     if !mappingsToInsert.isEmpty {
       let destConfName = sender.confName
       Logger.log("User chose to paste \(mappingsToInsert.count) bindings into \(destConfName.quoted)")
       if destConfName == confTableState.selectedConfName {
         // If currently open conf file, this will paste under the current selection
-        kbTableViewController.doEditMenuPaste()
+        bindingTableViewController.doEditMenuPaste()
       } else {
         // If other files, append at end
         confTableState.appendBindingsToUserConfFile(mappingsToInsert, targetConfName: destConfName)

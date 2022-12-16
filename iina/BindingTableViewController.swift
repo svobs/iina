@@ -39,8 +39,8 @@ class BindingTableViewController: NSObject {
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
-  init(_ kbTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
-    self.tableView = kbTableView
+  init(_ bindingTableView: EditableTableView, selectionDidChangeHandler: @escaping () -> Void) {
+    self.tableView = bindingTableView
     self.selectionDidChangeHandler = selectionDidChangeHandler
 
     super.init()
