@@ -254,10 +254,11 @@
                 </searchField>
                 <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87" userLabel="BindingTable Bordered Scroll View">
                     <rect key="frame" x="198" y="62" width="282" height="113"/>
-                    <clipView key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hxb-1N-pOY" userLabel="BindingTable Clip View">
+                    <clipView key="contentView" id="Hxb-1N-pOY" userLabel="BindingTable Clip View">
                         <rect key="frame" x="1" y="1" width="280" height="111"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView focusRingType="none" verticalHuggingPriority="750" ambiguous="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" autosaveName="" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" autosaveName="" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="280" height="88"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
