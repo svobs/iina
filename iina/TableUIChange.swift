@@ -21,6 +21,7 @@ class TableUIChange {
   // MARK: Static definitions
 
   typealias CompletionHandler = (TableUIChange) -> Void
+  typealias AnimationBlock = (NSAnimationContext) -> Void
 
   // After removal of rows, select the next single row after the last one removed:
   static let selectNextRowAfterDelete = true
@@ -115,84 +116,81 @@ class TableUIChange {
 
   // Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
+    var animationGroups = LinkedList<AnimationBlock>()
+
+
     // 1. "Before" animations (if provided)
-    NSAnimationContext.runAnimationGroup({ (contextBefore) in
-      if let flashBefore = self.flashBefore, !flashBefore.isEmpty {
-        self.animateFlash(forIndexes: flashBefore, in: tableView, contextBefore)
+    if let flashBefore = self.flashBefore, !flashBefore.isEmpty {
+      animationGroups.append { context in
+        self.animateFlash(forIndexes: flashBefore, in: tableView, context)
+      }
+    }
+
+
+    // 2. Perform row update animations
+    animationGroups.append { context in
+      // Encapsulate all animations in this function inside a transaction.
+      tableView.beginUpdates()
+      defer {
+        tableView.endUpdates()
       }
 
-    }, completionHandler: {
+      if AccessibilityPreferences.motionReductionEnabled {
+        Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
+        context.duration = 0.0
+        context.allowsImplicitAnimation = false
+      }
 
-      // 2. Perform row update animations
-      NSAnimationContext.runAnimationGroup({contextRowUpdates in
-        // Encapsulate all animations in this function inside a transaction.
-        tableView.beginUpdates()
-        defer {
-          tableView.endUpdates()
-        }
+      self.executeRowUpdates(on: tableView)
+    }
 
-        if AccessibilityPreferences.motionReductionEnabled {
-          Logger.log("Motion reduction is enabled: nulling out animation", level: .verbose)
-          contextRowUpdates.duration = 0.0
-          contextRowUpdates.allowsImplicitAnimation = false
-        }
 
-        self.executeRowUpdates(on: tableView)
+    // 3. Change row selection.
+    // MUST NOT DO THIS IN THE SAME ANIMATION GROUP AS ROW UPDATES or else weird selection "burn-in" can result
+    animationGroups.append { context in
+      // track this so we don't do it more than once (it fires the selectionChangedListener every time)
+      let wantsReloadOfExistingRows: Bool
+      if self.changeType == .reloadAll {
+        // Don't reload twice
+        wantsReloadOfExistingRows = false
+      } else if self.reloadAllExistingRows || self.changeType == .updateRows {
+        // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
+        // than chasing down all the possible ways other rows could be updated.
+        wantsReloadOfExistingRows = true
+      } else {
+        wantsReloadOfExistingRows = false
+      }
 
-      }, completionHandler: {
+      if wantsReloadOfExistingRows {
+        // Also uses `newSelectedRowIndexes`, if it is not nil:
+        tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
+      } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
+        tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
+      }
 
-        // 3. Change row selection.
-        // MUST NOT DO THIS IN THE SAME ANIMATION GROUP AS ROW UPDATES or else weird selection "burn-in" can result
-        NSAnimationContext.runAnimationGroup({contextRowUpdates in
+      if self.scrollToFirstSelectedRow,
+         let newSelectedRowIndexes = self.newSelectedRowIndexes,
+         let firstSelectedRow = newSelectedRowIndexes.first {
+        tableView.scrollRowToVisible(firstSelectedRow)
+      }
+    }
 
-          // track this so we don't do it more than once (it fires the selectionChangedListener every time)
-          let wantsReloadOfExistingRows: Bool
-          if self.changeType == .reloadAll {
-            // Don't reload twice
-            wantsReloadOfExistingRows = false
-          } else if self.reloadAllExistingRows || self.changeType == .updateRows {
-            // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
-            // than chasing down all the possible ways other rows could be updated.
-            wantsReloadOfExistingRows = true
-          } else {
-            wantsReloadOfExistingRows = false
-          }
+    // 4. "After" animations (if provided)
+    if let flashAfter = self.flashAfter, !flashAfter.isEmpty {
+      animationGroups.append { context in
+        self.animateFlash(forIndexes: flashAfter, in: tableView, context)
+      }
+    }
 
-          if wantsReloadOfExistingRows {
-            // Also uses `newSelectedRowIndexes`, if it is not nil:
-            tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
-          } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
-            tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
-          }
+    executeGroup(animationGroups.firstNode)
+  }
 
-          if self.scrollToFirstSelectedRow,
-             let newSelectedRowIndexes = self.newSelectedRowIndexes,
-             let firstSelectedRow = newSelectedRowIndexes.first {
-            tableView.scrollRowToVisible(firstSelectedRow)
-          }
+  // Recursive function which executions code for a single group in the chain
+  private func executeGroup(_ groupNode: LinkedList<AnimationBlock>.Node?) {
+    guard let groupNode = groupNode else { return }
 
-        }, completionHandler: {
-
-        // 4. "After" animations (if provided)
-        NSAnimationContext.runAnimationGroup({contextAfter in
-          if let flashAfter = self.flashAfter, !flashAfter.isEmpty {
-            self.animateFlash(forIndexes: flashAfter, in: tableView, contextAfter)
-          }
-        }, completionHandler: {
-
-          // 5. `completionHandler` (if provided):
-          // Put things like "inline editing after adding a row" here, so
-          // it will wait until after the animations are complete. Doing so
-          // avoids issues such as unexpected notifications being fired from animations
-          if let completionHandler = self.completionHandler {
-            DispatchQueue.main.async {
-              Logger.log("TableUIChange: calling completion handler", level: .verbose)
-              completionHandler(self)
-            }
-          }
-        })
-        })
-      })
+    NSAnimationContext.runAnimationGroup(groupNode.value, completionHandler: {
+      self.executeGroup(groupNode.next)
     })
   }
 

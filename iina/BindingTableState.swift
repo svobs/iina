@@ -35,7 +35,8 @@ struct BindingTableState {
   // and each new AppInputConfig is an atomic update which replaces the previously received one via asynchronous updates.
   let appInputConfig: AppInputConfig
 
-  // The user conf file from where the bindings originated
+  // The input conf file from where the bindings originated.
+  // This reference is just for convenience in case its metadata is needed; for updates to this data, consult `InputConfFileCache`.
   let inputConfFile: InputConfFile
 
   // Should be kept current with the value which the user enters in the search box. Empty string means no filter applied

@@ -47,7 +47,7 @@ class AppInputConfigBuilder {
         if prevSameKeyBinding.origin == .iinaPlugin {
           prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.readableAction.quoted). Plugins must use key bindings which have not already been used."
         } else {
-          prevSameKeyBinding.displayMessage = "This binding was overridden by another binding below it which also uses \(key.quoted)"
+          prevSameKeyBinding.displayMessage = "This binding is overridden by another binding below it which also uses \(key.quoted)"
         }
       }
       // Store it, overwriting any previous entry:

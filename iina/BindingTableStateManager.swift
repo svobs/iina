@@ -188,7 +188,7 @@ class BindingTableStateManager {
       // This can't be done until after the new `AppInputConfig` is received due to the possibility of rows being added/removed
       // which are outside the user conf section.
       if !newState.filterString.isEmpty {
-        // sanity check
+        // Sanity check. Filter change * regular change = big headache
         assert(newFilterString == nil, "Expected filteredString not to change at the same time TableUIChange is pre-calculated!")
         tableUIChange = applyFilter(to: unfilteredTableChange, oldState: oldState, newState: newState)
       } else {
@@ -201,7 +201,10 @@ class BindingTableStateManager {
     updateTableUI(oldState: oldState, newState: newState, desiredTableUIChange: tableUIChange)
   }
 
+  // FIXME: this mapping is not straightforward and there are probably bugs here.
+  // Determine if this code is even called anymore and maybe delete this function.
   private func applyFilter(to unfilteredTableChange: TableUIChange, oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
+    Logger.log("Attempting to apply filter to TableUIChange data. This functionality has not been well-tested!", level: .warning)
     let filtereUIChange = unfilteredTableChange.shallowClone()
     filtereUIChange.toRemove = translateToFiltered(unfilteredTableChange.toRemove, oldState)
     filtereUIChange.toInsert = translateToFiltered(unfilteredTableChange.toInsert, newState)
