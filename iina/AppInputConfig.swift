@@ -90,7 +90,7 @@ struct AppInputConfig {
    */
   static func rebuildCurrent(attaching userData: NotificationData? = nil) {
     let requestedVersion = AppInputConfig.lastStartedVersion + 1
-    log("Requesting app input bindings rebuild (v\(requestedVersion))", .verbose)
+    log("Requesting AppInputConfig rebuild (v\(requestedVersion))", .verbose)
 
     DispatchQueue.main.async {
 

@@ -132,7 +132,7 @@ struct BindingTableState {
     let allRowsUpdated = beforeInsert + movedRows + afterInsert
 
     let tableUIChange = TableUIChange(.moveRows, completionHandler: afterComplete)
-    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs); will change selection from \(srcIndexes.map{$0}) to \(dstIndexes.map{$0})", level: .verbose)
+    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs); will change selection: \(srcIndexes.map{$0}) → \(dstIndexes.map{$0})", level: .verbose)
     tableUIChange.toMove = moveIndexPairs
     tableUIChange.newSelectedRowIndexes = dstIndexes
     tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
@@ -148,7 +148,7 @@ struct BindingTableState {
   func insertNewBindings(relativeTo index: Int, isAfterNotAt: Bool = false, _ mappingList: [KeyMapping],
                          afterComplete: TableUIChange.CompletionHandler? = nil) {
     let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
-    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") row index \(index) -> insert at \(insertIndex)", level: .verbose)
+    Logger.log("Inserting \(mappingList.count) bindings \(isAfterNotAt ? "after" : "into") \(isFiltered ? "filtered" : "unfiltered") rowIndex \(index) → insert at \(insertIndex)", level: .verbose)
     guard canModifyCurrentConf else {
       Logger.log("Aborting: cannot modify current conf!", level: .error)
       return

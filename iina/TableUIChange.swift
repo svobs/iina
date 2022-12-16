@@ -141,14 +141,46 @@ class TableUIChange {
 
       }, completionHandler: {
 
-        // 3. "After" animations (if provided)
+        // 3. Change row selection.
+        // MUST NOT DO THIS IN THE SAME ANIMATION GROUP AS ROW UPDATES or else weird selection "burn-in" can result
+        NSAnimationContext.runAnimationGroup({contextRowUpdates in
+
+          // track this so we don't do it more than once (it fires the selectionChangedListener every time)
+          let wantsReloadOfExistingRows: Bool
+          if self.changeType == .reloadAll {
+            // Don't reload twice
+            wantsReloadOfExistingRows = false
+          } else if self.reloadAllExistingRows || self.changeType == .updateRows {
+            // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
+            // than chasing down all the possible ways other rows could be updated.
+            wantsReloadOfExistingRows = true
+          } else {
+            wantsReloadOfExistingRows = false
+          }
+
+          if wantsReloadOfExistingRows {
+            // Also uses `newSelectedRowIndexes`, if it is not nil:
+            tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
+          } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
+            tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
+          }
+
+          if self.scrollToFirstSelectedRow,
+             let newSelectedRowIndexes = self.newSelectedRowIndexes,
+             let firstSelectedRow = newSelectedRowIndexes.first {
+            tableView.scrollRowToVisible(firstSelectedRow)
+          }
+
+        }, completionHandler: {
+
+        // 4. "After" animations (if provided)
         NSAnimationContext.runAnimationGroup({contextAfter in
           if let flashAfter = self.flashAfter, !flashAfter.isEmpty {
             self.animateFlash(forIndexes: flashAfter, in: tableView, contextAfter)
           }
         }, completionHandler: {
 
-          // 4. `completionHandler` (if provided):
+          // 5. `completionHandler` (if provided):
           // Put things like "inline editing after adding a row" here, so
           // it will wait until after the animations are complete. Doing so
           // avoids issues such as unexpected notifications being fired from animations
@@ -158,6 +190,7 @@ class TableUIChange {
               completionHandler(self)
             }
           }
+        })
         })
       })
     })
@@ -169,8 +202,6 @@ class TableUIChange {
 
     Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), hasNewSelection: \(self.newSelectedRowIndexes != nil)", level: .verbose)
 
-    // track this so we don't do it more than once (it fires the selectionChangedListener every time)
-    var wantsReloadOfExistingRows = false
     switch changeType {
 
       case .removeRows:
@@ -186,15 +217,14 @@ class TableUIChange {
       case .moveRows:
         if let movePairs = self.toMove {
           for (oldIndex, newIndex) in movePairs {
-            Logger.log("Moving row \(oldIndex) -> \(newIndex)", level: .verbose)
+            Logger.log("Moving row \(oldIndex) → \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
 
       case .updateRows:
-        // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
-        // than chasing down all the possible ways other rows could be updated.
-        wantsReloadOfExistingRows = true
+        // will reload rows in next step
+        break
 
       case .none:
         break
@@ -203,7 +233,6 @@ class TableUIChange {
         // Try not to use this much, if at all
         Logger.log("Executing TableUIChange: ReloadAll", level: .verbose)
         tableView.reloadData()
-        wantsReloadOfExistingRows = false
 
       case .wholeTableDiff:
         if let toRemove = self.toRemove,
@@ -217,21 +246,10 @@ class TableUIChange {
           tableView.removeRows(at: toRemove, withAnimation: removeAnimation)
           tableView.insertRows(at: toInsert, withAnimation: insertAnimation)
           for (oldIndex, newIndex) in movePairs {
-            Logger.log("Executing changes from diff: moving row: \(oldIndex) -> \(newIndex)", level: .verbose)
+            Logger.log("Executing changes from diff: moving row: \(oldIndex) → \(newIndex)", level: .verbose)
             tableView.moveRow(at: oldIndex, to: newIndex)
           }
         }
-    }
-
-    if wantsReloadOfExistingRows {
-      // Also uses `newSelectedRowIndexes`, if it is not nil:
-      tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
-    } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
-      tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
-    }
-
-    if let newSelectedRowIndexes = self.newSelectedRowIndexes, let firstSelectedRow = newSelectedRowIndexes.first, scrollToFirstSelectedRow {
-      tableView.scrollRowToVisible(firstSelectedRow)
     }
   }
 
