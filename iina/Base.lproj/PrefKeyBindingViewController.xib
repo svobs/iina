@@ -76,7 +76,7 @@
                         <rect key="frame" x="1" y="1" width="188" height="141"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="ConfTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView identifier="InputConfTable" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" autosaveName="" rowHeight="18" rowSizeStyle="automatic" viewBased="YES" floatsGroupRows="NO" id="AYj-6d-niF" userLabel="ConfTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="188" height="141"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -252,13 +252,13 @@
                         <action selector="searchAction:" target="-2" id="ogf-Gk-XAq"/>
                     </connections>
                 </searchField>
-                <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87" userLabel="BindingTable Bordered Scroll View">
+                <scrollView autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="2pX-29-I87" userLabel="BindingTable Bordered Scroll View">
                     <rect key="frame" x="198" y="62" width="282" height="113"/>
                     <clipView key="contentView" id="Hxb-1N-pOY" userLabel="BindingTable Clip View">
                         <rect key="frame" x="1" y="1" width="280" height="111"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveColumns="NO" autosaveName="" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
+                            <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" autosaveName="PrefBindingTable" rowHeight="18" rowSizeStyle="automatic" headerView="OOd-BT-w3p" viewBased="YES" id="1Z4-NL-6P3" userLabel="BindingTable Table View" customClass="EditableTableView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="280" height="88"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
@@ -338,7 +338,7 @@
                                             </tableCellView>
                                         </prototypeCellViews>
                                     </tableColumn>
-                                    <tableColumn identifier="actionColumn" editable="NO" width="128" minWidth="100" maxWidth="1000" id="4Bn-MF-dfY" userLabel="Action Column">
+                                    <tableColumn identifier="actionColumn" editable="NO" width="128" minWidth="100" maxWidth="2000" id="4Bn-MF-dfY" userLabel="Action Column">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Action">
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -379,11 +379,6 @@
                                 </tableColumns>
                             </tableView>
                         </subviews>
-                        <constraints>
-                            <constraint firstItem="1Z4-NL-6P3" firstAttribute="top" secondItem="Hxb-1N-pOY" secondAttribute="top" id="6Yi-Bf-ePL"/>
-                            <constraint firstAttribute="trailing" secondItem="1Z4-NL-6P3" secondAttribute="trailing" id="PgF-Ph-ibL"/>
-                            <constraint firstItem="1Z4-NL-6P3" firstAttribute="leading" secondItem="Hxb-1N-pOY" secondAttribute="leading" id="sxe-Ai-T71"/>
-                        </constraints>
                     </clipView>
                     <constraints>
                         <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="100" id="5me-gl-Ien"/>
