@@ -56,7 +56,7 @@
                 </box>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZWR-gT-S2p">
                     <rect key="frame" x="-2" y="231" width="91" height="16"/>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Configuration:" id="au5-6f-s55">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Configuration:" id="au5-6f-s55">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -64,7 +64,7 @@
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="tP6-Ua-acA" userLabel="ConfHint Label">
                     <rect key="frame" x="-2" y="213" width="484" height="14"/>
-                    <textFieldCell key="cell" controlSize="small" title="Label" id="M4N-eg-JA8">
+                    <textFieldCell key="cell" controlSize="small" refusesFirstResponder="YES" title="Label" id="M4N-eg-JA8">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -285,7 +285,7 @@
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="FcW-hn-lT4"/>
                                                         </constraints>
-                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="D4i-Dv-Avr" userLabel="Key TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA">
+                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Table View Cell" id="D4i-Dv-Avr" userLabel="Key TextFieldCell" customClass="EditableTextFieldCell" customModule="IINA">
                                                             <font key="font" usesAppearanceFont="YES"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -358,7 +358,7 @@
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="18" id="1JE-NY-Qb1"/>
                                                         </constraints>
-                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="5Ny-gY-KGz" customClass="EditableTextFieldCell" customModule="IINA">
+                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Table View Cell" id="5Ny-gY-KGz" customClass="EditableTextFieldCell" customModule="IINA">
                                                             <font key="font" usesAppearanceFont="YES"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -489,6 +489,14 @@
                         <action selector="importConfBtnAction:" target="-2" id="m3a-yn-NIE"/>
                     </connections>
                 </button>
+                <textField identifier="SectionTitleSettings" hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8ym-fj-1VT">
+                    <rect key="frame" x="427" y="0.0" width="55" height="16"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" title="Settings" id="jPl-gf-pVX">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
             </subviews>
             <constraints>
                 <constraint firstItem="KZA-hu-vhZ" firstAttribute="top" secondItem="0le-1T-r5f" secondAttribute="bottom" constant="14" id="2Pk-ll-iUo"/>
@@ -503,6 +511,7 @@
                 <constraint firstItem="AuR-Lj-Iz4" firstAttribute="leading" secondItem="KZA-hu-vhZ" secondAttribute="trailing" constant="12" id="LWW-j6-UPY"/>
                 <constraint firstItem="mLe-eI-lIk" firstAttribute="top" secondItem="2pX-29-I87" secondAttribute="bottom" constant="-1" id="LeQ-qP-FVe"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="AuR-Lj-Iz4" secondAttribute="trailing" constant="1" id="M6E-Ra-d8q"/>
+                <constraint firstAttribute="trailing" secondItem="8ym-fj-1VT" secondAttribute="trailing" id="Mfz-Ot-GqL"/>
                 <constraint firstItem="Mhk-DT-3CM" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="OLU-oB-Se7"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="trailing" secondItem="x6N-6q-HiV" secondAttribute="trailing" id="OUg-39-1kM"/>
                 <constraint firstAttribute="bottom" secondItem="KZA-hu-vhZ" secondAttribute="bottom" constant="8" id="QtF-OP-vXc"/>
@@ -510,6 +519,7 @@
                 <constraint firstAttribute="trailing" secondItem="mLe-eI-lIk" secondAttribute="trailing" id="U9K-pE-0CL"/>
                 <constraint firstItem="Mhk-DT-3CM" firstAttribute="top" secondItem="tP6-Ua-acA" secondAttribute="bottom" constant="8" id="Ud4-VR-43k"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="leading" secondItem="Mhk-DT-3CM" secondAttribute="trailing" constant="8" id="VX8-3k-wdZ"/>
+                <constraint firstAttribute="bottom" secondItem="8ym-fj-1VT" secondAttribute="bottom" id="XOr-pD-cA6"/>
                 <constraint firstAttribute="trailing" secondItem="ER0-iU-7fy" secondAttribute="trailing" id="Y4g-9e-aDt"/>
                 <constraint firstItem="ZWR-gT-S2p" firstAttribute="top" secondItem="ER0-iU-7fy" secondAttribute="bottom" constant="16" id="ZX7-1F-af0"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="top" secondItem="x6N-6q-HiV" secondAttribute="bottom" constant="8" id="aGz-Kt-wfl"/>
@@ -519,6 +529,7 @@
                 <constraint firstItem="LU9-QU-BFL" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="1" id="eIu-AE-LI1"/>
                 <constraint firstItem="ZWR-gT-S2p" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="eyA-gW-IBL"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="leading" secondItem="x6N-6q-HiV" secondAttribute="leading" id="g2M-Pk-tTF"/>
+                <constraint firstItem="8ym-fj-1VT" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Hz6-mo-xeY" secondAttribute="trailing" constant="-51" id="ioM-iS-Gic"/>
                 <constraint firstItem="tP6-Ua-acA" firstAttribute="top" secondItem="ZWR-gT-S2p" secondAttribute="bottom" constant="4" id="krb-us-D9G"/>
                 <constraint firstItem="tP6-Ua-acA" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="olF-Fw-cWs"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ZWR-gT-S2p" secondAttribute="trailing" id="tWl-b9-AcQ"/>
