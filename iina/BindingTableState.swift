@@ -233,8 +233,7 @@ struct BindingTableState {
       Logger.log("Index to update (\(index)) is larger than row count (\(allRowsNew.count)); aborting", level: .error)
       return
     }
-    let bindingClone = existingRow.shallowClone()
-    bindingClone.keyMapping = mapping
+    let bindingClone = existingRow.shallowClone(keyMapping: mapping)
     allRowsNew[index] = bindingClone
 
     let tableUIChange = TableUIChange(.updateRows)

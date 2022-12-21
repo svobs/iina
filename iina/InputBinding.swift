@@ -20,7 +20,7 @@
  */
 class InputBinding: NSObject {
   // Will be nil for plugin bindings.
-  var keyMapping: KeyMapping
+  let keyMapping: KeyMapping
 
   let origin: InputBindingOrigin
 
@@ -40,13 +40,15 @@ class InputBinding: NSObject {
   var associatedMenuItem: NSMenuItem? = nil
 
   // for use in UI only
-  var displayMessage: String = ""
+  var displayMessage: String
 
-  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, menuItem: NSMenuItem? = nil, isEnabled: Bool = true) {
+  init(_ keyMapping: KeyMapping, origin: InputBindingOrigin, srcSectionName: String, menuItem: NSMenuItem? = nil, isEnabled: Bool = true,
+       displayMessage: String = "") {
     self.keyMapping = keyMapping
     self.origin = origin
     self.srcSectionName = srcSectionName
     self.isEnabled = isEnabled
+    self.displayMessage = displayMessage
   }
 
   // Only mpv bindings in the "default" section can be modified or deleted
@@ -63,8 +65,9 @@ class InputBinding: NSObject {
     }
   }
 
-  func shallowClone() -> InputBinding {
-    return InputBinding(self.keyMapping, origin: self.origin, srcSectionName: self.srcSectionName)
+  // Clones this `InputBinding`, but using the given `keyMapping` if provided.
+  func shallowClone(keyMapping: KeyMapping? = nil) -> InputBinding {
+    return InputBinding(keyMapping ?? self.keyMapping, origin: self.origin, srcSectionName: self.srcSectionName)
   }
 
   /*

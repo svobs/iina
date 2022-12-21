@@ -151,36 +151,35 @@ class AppInputConfigBuilder {
    and put it into `binding.keyMapping`.
    */
   private func buildNewInputBinding(from keyMapping: KeyMapping, section: InputSection) -> InputBinding {
-    // Set `isMenuItem` to `false` always: let `MenuController` decide which to include later
-    let binding = InputBinding(keyMapping, origin: section.origin, srcSectionName: section.name, isEnabled: true)
+
+    var isEnabled: Bool = true
+    var displayMessage: String = ""
+    var finalMapping: KeyMapping = keyMapping
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       if AppInputConfig.logBindingsRebuild {
         Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
       }
-      binding.displayMessage = "IINA does not support default-level (\"builtin\") bindings"
-      binding.isEnabled = false
-      return binding
-    }
-
-    // Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
-    if let destinationSectionName = keyMapping.destinationSection {
-      if destinationSectionName == binding.srcSectionName {
+      displayMessage = "IINA does not support default-level (\"builtin\") bindings"
+      isEnabled = false
+    } else if let destinationSectionName = keyMapping.destinationSection {
+      // Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
+      if destinationSectionName == section.name {
         // Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
-        binding.keyMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
-        Logger.log("Modified binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
+        finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, isIINACommand: keyMapping.isIINACommand, comment: keyMapping.comment)
+        Logger.log("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
       } else {
         Logger.log("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
-        binding.displayMessage = "Adding bindings to other input sections is not supported"
-        binding.isEnabled = false
-        return binding
+        displayMessage = "Adding bindings to other input sections is not supported"
+        isEnabled = false
       }
     }
+
     if AppInputConfig.logBindingsRebuild {
       Logger.log("Adding binding for key: \(keyMapping.rawKey.quoted)", level: .verbose)
     }
-    return binding
+    return InputBinding(finalMapping, origin: section.origin, srcSectionName: section.name, isEnabled: isEnabled, displayMessage: displayMessage)
   }
 
   // Sets an explicit "ignore" for all partial key sequence matches. This is all done so that the player window doesn't beep.
