@@ -26,9 +26,6 @@ fileprivate let defaultDragOperation = NSDragOperation.move
 class BindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
-  private var confTableState: ConfTableState {
-    return ConfTableState.current
-  }
 
   private var bindingTableState: BindingTableState {
     return BindingTableState.current
@@ -292,7 +289,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    This is implemented to support dropping items onto the Trash icon in the Dock.
    */
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-    guard !confTableState.isSelectedConfReadOnly && operation == NSDragOperation.delete else {
+    guard !bindingTableState.inputConfFile.isReadOnly && operation == NSDragOperation.delete else {
       return
     }
 
@@ -321,7 +318,7 @@ extension BindingTableViewController: NSTableViewDataSource {
    */
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
-    guard !confTableState.isSelectedConfReadOnly else {
+    guard !bindingTableState.inputConfFile.isReadOnly else {
       return []  // deny drop
     }
 
@@ -618,7 +615,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
   }
 
   private func requireCurrentConfIsEditable(forAction action: String) -> Bool {
-    if !confTableState.isSelectedConfReadOnly {
+    if !bindingTableState.inputConfFile.isReadOnly {
       return true
     }
 
@@ -642,11 +639,11 @@ extension BindingTableViewController: EditableTableViewDelegate {
   }
 
   func isDeleteEnabled() -> Bool {
-    return !confTableState.isSelectedConfReadOnly && !selectedModifiableRows.isEmpty
+    return !bindingTableState.inputConfFile.isReadOnly && !selectedModifiableRows.isEmpty
   }
 
   func isPasteEnabled() -> Bool {
-    return !confTableState.isSelectedConfReadOnly && !readBindingsFromClipboard().isEmpty
+    return !bindingTableState.inputConfFile.isReadOnly && !readBindingsFromClipboard().isEmpty
   }
 
   func doEditMenuCut() {
@@ -739,7 +736,7 @@ extension BindingTableViewController: NSMenuDelegate {
   }
 
   private func addReadOnlyConfMenuItem(_ mib: CascadingMenuItemBuilder) {
-    mib.addItalicDisabledItem("Cannot make changes: \(confTableState.selectedConfName.quoted) is a built-in config")
+    mib.addItalicDisabledItem("Cannot make changes: \(bindingTableState.inputConfFile.confName.quoted) is a built-in config")
   }
 
   func menuNeedsUpdate(_ contextMenu: NSMenu) {
@@ -760,9 +757,10 @@ extension BindingTableViewController: NSMenuDelegate {
 
   // SINGLE: For right-click on a single row. This may be selected, if it is the only row in the selection.
   private func buildMenuForSingleRow(_ mib: CascadingMenuItemBuilder, _ clickedRow: InputBinding, _ clickedRowIndex: Int) {
-    let isRowEditable = !confTableState.isSelectedConfReadOnly && clickedRow.canBeModified
+    let isSelectedConfReadOnly = bindingTableState.inputConfFile.isReadOnly
+    let isRowEditable = !isSelectedConfReadOnly && clickedRow.canBeModified
 
-    if confTableState.isSelectedConfReadOnly {
+    if isSelectedConfReadOnly {
       addReadOnlyConfMenuItem(mib)
     } else if !isRowEditable {
       let culprit: String
@@ -798,7 +796,7 @@ extension BindingTableViewController: NSMenuDelegate {
     mib.likeEditCopy().butWith(.action(#selector(self.copyRow(_:))), .enabled(clickedRow.canBeCopied)).addItem()
 
     let clipboardCount = readBindingsFromClipboard().count
-    let isPasteEnabled = !confTableState.isSelectedConfReadOnly && clipboardCount > 0
+    let isPasteEnabled = !isSelectedConfReadOnly && clipboardCount > 0
     let pb = mib.butWith(.unitCount(clipboardCount), .enabled(isPasteEnabled))
     if !isPasteEnabled {
       pb.likeEditPaste().addItem()
@@ -824,7 +822,7 @@ extension BindingTableViewController: NSMenuDelegate {
     mib.addSeparator()
 
     // Insert New: follow same logic as Paste, except don't show at all if disabled
-    if !confTableState.isSelectedConfReadOnly {
+    if !isSelectedConfReadOnly {
       if isRowEditable {
         mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewAbove), .action(#selector(self.addNewRowAbove(_:))))
         mib.addItem(with: .unitActionFormat(UnitActionFormat.insertNewBelow), .action(#selector(self.addNewRowBelow(_:))))
@@ -858,7 +856,7 @@ extension BindingTableViewController: NSMenuDelegate {
     }
 
     // Add disabled italicized message if not all can be operated on
-    if confTableState.isSelectedConfReadOnly {
+    if bindingTableState.inputConfFile.isReadOnly {
       modifiableCount = 0
       addReadOnlyConfMenuItem(mib)
     } else {
