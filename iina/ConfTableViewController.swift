@@ -24,7 +24,7 @@ fileprivate let blendFraction: CGFloat = 0.05
 fileprivate var builtinConfTextColor: NSColor!
 
 @available(macOS 10.14, *)
-private func recomputeColors() {
+private func recomputeCustomColors() {
   builtinConfTextColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
 }
 
@@ -54,7 +54,7 @@ class ConfTableViewController: NSObject {
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
 
     if #available(macOS 10.14, *) {
-      recomputeColors()
+      recomputeCustomColors()
       distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.uiSettingsDidChange))
     }
 
@@ -86,7 +86,7 @@ class ConfTableViewController: NSObject {
   @available(macOS 10.14, *)
   private func uiSettingsDidChange(notification: Notification) {
     Logger.log("Detected change system color prefs; reloading Conf table", level: .verbose)
-    recomputeColors()
+    recomputeCustomColors()
     self.tableView.reloadExistingRows(reselectRowsAfter: true)
   }
 

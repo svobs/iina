@@ -187,7 +187,13 @@ class TableUIChange {
 
   // Recursive function which executions code for a single group in the chain
   private func executeGroup(_ groupNode: LinkedList<AnimationBlock>.Node?) {
-    guard let groupNode = groupNode else { return }
+    guard let groupNode = groupNode else {
+      if let lastCompletionHandler = self.completionHandler {
+        Logger.log("Executing custom completion handler for TableUIChange", level: .verbose)
+        lastCompletionHandler(self)
+      }
+      return
+    }
 
     NSAnimationContext.runAnimationGroup(groupNode.value, completionHandler: {
       self.executeGroup(groupNode.next)
@@ -263,13 +269,14 @@ class TableUIChange {
   }
 
   private func animateFlash(forIndexes indexes: IndexSet, in tableView: NSTableView, _ context: NSAnimationContext) {
+    Logger.log("Flashing rows: \(indexes.map({$0}))", level: .verbose)
+
     context.duration = 0.2
     tableView.beginUpdates()
     defer {
       tableView.endUpdates()
     }
 
-    Logger.log("Flashing rows: \(indexes.map({$0}))", level: .verbose)
     for index in indexes {
       if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) {
         let animation = CAKeyframeAnimation()

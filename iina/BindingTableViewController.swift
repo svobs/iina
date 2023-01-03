@@ -19,7 +19,7 @@ fileprivate var libmpvIconColor: NSColor!
 fileprivate var filterIconColor: NSColor!
 
 @available(macOS 10.14, *)
-private func recomputeColors() {
+private func recomputeCustomColors() {
   nonConfTextColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
   pluginIconColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
   libmpvIconColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
@@ -61,7 +61,7 @@ class BindingTableViewController: NSObject {
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
     if #available(macOS 10.14, *) {
-      recomputeColors()
+      recomputeCustomColors()
       distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.uiSettingsDidChange))
     }
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
@@ -97,7 +97,7 @@ class BindingTableViewController: NSObject {
   @available(macOS 10.14, *)
   private func uiSettingsDidChange(notification: Notification) {
     Logger.log("Detected change system color prefs; reloading Binding table", level: .verbose)
-    recomputeColors()
+    recomputeCustomColors()
     self.tableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
