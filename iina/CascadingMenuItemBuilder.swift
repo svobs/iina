@@ -337,10 +337,10 @@ class CascadingMenuItemBuilder {
       let menu: Attribute.MenuType = try requireAttr(.menu)
 
       let item: NSMenuItem
-      if let menuItemProvider = menuItemProvider {
-        let targetRowAny: Any = try requireAttr(.targetRow)
+      if let menuItemProvider = menuItemProvider, let targetRowAny: Any = getAttr(.targetRow) {
         item = try menuItemProvider.buildItem(title, action: action, targetRow: targetRowAny, key: key, self)
       } else {
+        // Eithr MenuItemProvider or targetRow is nil
         item = NSMenuItem(title: title, action: action, keyEquivalent: key)
       }
 

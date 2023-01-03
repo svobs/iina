@@ -476,17 +476,21 @@ extension ConfTableViewController:  NSMenuDelegate {
     // This will prevent menu from showing if no items are added
     contextMenu.removeAllItems()
 
-    guard let clickedConfName: String = confTableState.getConfName(at: tableView.clickedRow) else { return }
+    guard let clickedConfName: String = confTableState.getConfName(at: tableView.clickedRow) else {
+      let mib = CascadingMenuItemBuilder(.menu(contextMenu), .unit(Unit.config), .target(self))
+      self.addPasteMenuItem(mib, didClickOnUserConf: false)
+      return
+    }
     let mib = CascadingMenuItemBuilder(mip: ConfMenuItemProvider(), .menu(contextMenu),
       .unit(Unit.config), .unitCount(1), .targetRow(clickedConfName), .target(self))
 
-    let isUserConf = !ConfTableState.isBuiltinConf(clickedConfName)
+    let didClickOnUserConf = !ConfTableState.isBuiltinConf(clickedConfName)
 
     // Show in Finder
-    mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(isUserConf))
+    mib.addItem("Show in Finder", #selector(self.showInFinderFromMenu(_:)), with: .enabled(didClickOnUserConf))
 
     // Rename Conf File
-    mib.addItem("Rename", #selector(self.renameFromMenu(_:)), with: .enabled(isUserConf), .key(KeyCodeHelper.KeyEquivalents.RETURN))
+    mib.addItem("Rename", #selector(self.renameFromMenu(_:)), with: .enabled(didClickOnUserConf), .key(KeyCodeHelper.KeyEquivalents.RETURN))
 
     // Duplicate
     mib.addItem("Duplicate", #selector(self.duplicateConfFromMenu(_:)))
@@ -496,6 +500,15 @@ extension ConfTableViewController:  NSMenuDelegate {
 
     mib.likeEditCopy().addItem(#selector(self.copyConfFromMenu(_:)))
 
+    self.addPasteMenuItem(mib, didClickOnUserConf: didClickOnUserConf)
+
+    mib.addSeparator()
+
+    // Delete
+    mib.likeEasyDelete().butWith(.enabled(didClickOnUserConf)).addItem(#selector(self.deleteConfFromMenu(_:)))
+  }
+
+  private func addPasteMenuItem(_ mib: CascadingMenuItemBuilder, didClickOnUserConf: Bool) {
     let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromMenu(_:))))
     var didAdd = false
     if isPasteEnabled() {
@@ -503,10 +516,10 @@ extension ConfTableViewController:  NSMenuDelegate {
       if confCount > 0 {
         pasteBuilder.butWith(.unitCount(confCount)).addItem()
         didAdd = true
-      } else if isUserConf {
+      } else {
         let bindingCount = bindingTableViewController.readBindingsFromClipboard().count
         if bindingCount > 0 {
-          pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount)).addItem()
+          pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount), .enabled(didClickOnUserConf)).addItem()
           didAdd = true
         }
       }
@@ -514,11 +527,6 @@ extension ConfTableViewController:  NSMenuDelegate {
     if !didAdd {  // disabled
       pasteBuilder.addItem(with: .enabled(false), .unitCount(0))
     }
-
-    mib.addSeparator()
-
-    // Delete
-    mib.likeEasyDelete().butWith(.enabled(isUserConf)).addItem(#selector(self.deleteConfFromMenu(_:)))
   }
 
   @objc fileprivate func copyConfFromMenu(_ sender: InputConfMenuItem) {

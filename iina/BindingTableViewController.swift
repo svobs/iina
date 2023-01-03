@@ -752,7 +752,7 @@ extension BindingTableViewController: NSMenuDelegate {
     }
   }
 
-  fileprivate class BindingsMenuItemProvider: MenuItemProvider {
+  fileprivate class BindingMenuItemProvider: MenuItemProvider {
     func buildItem(_ title: String, action: Selector?, targetRow: Any, key: String, _ cmb: CascadingMenuItemBuilder) throws -> NSMenuItem {
       let targetRowIndex: Int = try cmb.requireAttr(.targetRowIndex)
       return BindingMenuItem(targetRow as! InputBinding, rowIndex: targetRowIndex, title: title, action: action, key: key)
@@ -769,7 +769,7 @@ extension BindingTableViewController: NSMenuDelegate {
 
     let clickedRowIndex = tableView.clickedRow
     guard let clickedRow = bindingTableState.getDisplayedRow(at: tableView.clickedRow) else { return }
-    let mib = CascadingMenuItemBuilder(mip: BindingsMenuItemProvider(), .menu(contextMenu), .unit(Unit.keyBinding),
+    let mib = CascadingMenuItemBuilder(mip: BindingMenuItemProvider(), .menu(contextMenu), .unit(Unit.keyBinding),
                                 .targetRow(clickedRow), .targetRowIndex(tableView.clickedRow), .target(self))
 
     if tableView.selectedRowIndexes.count > 1 && tableView.selectedRowIndexes.contains(clickedRowIndex) {
