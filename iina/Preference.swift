@@ -272,14 +272,22 @@ struct Preference {
     /* [debugging] If true, enables even more verbose logging so that input bindings computations can be more easily debugged. */
     static let logKeyBindingsRebuild = Key("logKeyBindingsRebuild")
 
+    /* Saved value of checkbox in Key Bindings settings UI */
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
+
+    /* Behavior when setting the name of a new configuration to the Settings > Key Bindings > Configuration table, when duplicating an
+     existing file or adding a new file.
+     If true, a new row will be created in the table and a field editor will be displayed in it to allow setting the name (more modern).
+     If false, a dialog will pop up containing a prompt and text field for entering the name.
+     */
+    static let useInlineEditorInsteadOfDialogForNewInputConf = Key("useInlineEditorInsteadOfDialogForNewInputConf")
 
     /* [advanced] If true, a selection of raw text can be pasted, or dragged from an input config file and dropped as a list of
      input bindings wherever input bindings can be dropped. */
     static let acceptRawTextAsKeyBindings = Key("acceptRawTextAsKeyBindings")
 
-    /* If true, when the Key Bindings table is completely reloaded (as when changing the selected conf file), animate it using
-     a calculated diff of the new contents compared to the old. If false, just replace the contents of the table without animating it. */
+    /* If true, when the Key Bindings table is completely reloaded (as when changing the selected conf file), the changes will be animated using
+     a calculated diff of the new contents compared to the old. If false, the contents of the table will be changed without an animation. */
     static let animateKeyBindingTableReloadAll = Key("animateKeyBindingTableReloadAll")
 
     /* [advanced] If true, enables spreadsheet-like navigation for quickly editing the Key Bindings table.
@@ -825,6 +833,7 @@ struct Preference {
     .iinaMpvLogLevel: MPVLogLevel.warn.rawValue,
     .logKeyBindingsRebuild: false,
     .displayKeyBindingRawValues: false,
+    .useInlineEditorInsteadOfDialogForNewInputConf: true,
     .acceptRawTextAsKeyBindings: false,
     .animateKeyBindingTableReloadAll: true,
     .tableEditKeyNavContinuesBetweenRows: false,

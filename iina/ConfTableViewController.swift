@@ -17,7 +17,7 @@ fileprivate let COPY_COUNT_REGEX = try! NSRegularExpression(
 fileprivate let nameColumnIndex = 0
 fileprivate let draggingFormation: NSDraggingFormation = .default
 
-fileprivate let enableInlineCreate = true // TODO
+fileprivate let enableInlineCreate = Preference.bool(for: .useInlineEditorInsteadOfDialogForNewInputConf)
 
 fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
