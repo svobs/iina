@@ -21,7 +21,12 @@ fileprivate let enableInlineCreate = Preference.bool(for: .useInlineEditorInstea
 
 fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
-fileprivate let builtinConfTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+fileprivate var builtinConfTextColor: NSColor!
+
+@available(macOS 10.14, *)
+private func recomputeColors() {
+  builtinConfTextColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+}
 
 class ConfTableViewController: NSObject {
   private unowned var tableView: EditableTableView!
@@ -29,6 +34,7 @@ class ConfTableViewController: NSObject {
     return ConfTableState.current
   }
   private unowned var bindingTableViewController: BindingTableViewController
+  private var distObservers: [NSObjectProtocol] = []
   private var observers: [NSObjectProtocol] = []
 
   init(_ inputConfTableView: EditableTableView, _ bindingTableViewController: BindingTableViewController) {
@@ -44,9 +50,13 @@ class ConfTableViewController: NSObject {
     tableView.menu = NSMenu()
     tableView.menu?.delegate = self
 
-    // Set up callbacks:
     tableView.editableTextColumnIndexes = [nameColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
+
+    if #available(macOS 10.14, *) {
+      recomputeColors()
+      distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.uiSettingsDidChange))
+    }
 
     if #available(macOS 10.13, *) {
       // Enable drag & drop for MacOS 10.13+
@@ -63,10 +73,21 @@ class ConfTableViewController: NSObject {
   }
 
   deinit {
+    for observer in distObservers {
+      DistributedNotificationCenter.default().removeObserver(observer)
+    }
+    distObservers = []
     for observer in observers {
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
+  }
+
+  @available(macOS 10.14, *)
+  private func uiSettingsDidChange(notification: Notification) {
+    Logger.log("Detected change system color prefs; reloading Conf table", level: .verbose)
+    recomputeColors()
+    self.tableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   func selectCurrentConfRow() {

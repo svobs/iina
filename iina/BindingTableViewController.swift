@@ -10,13 +10,21 @@ import Foundation
 
 fileprivate let blendFraction: CGFloat = 0.05
 @available(macOS 10.14, *)
-fileprivate let nonConfTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+fileprivate var nonConfTextColor: NSColor!
 @available(macOS 10.14, *)
-fileprivate let pluginIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+fileprivate var pluginIconColor: NSColor!
 @available(macOS 10.14, *)
-fileprivate let libmpvIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+fileprivate var libmpvIconColor: NSColor!
 @available(macOS 10.14, *)
-fileprivate let filterIconColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+fileprivate var filterIconColor: NSColor!
+
+@available(macOS 10.14, *)
+private func recomputeColors() {
+  nonConfTextColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+  pluginIconColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+  libmpvIconColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+  filterIconColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+}
 
 fileprivate let keyColumnIndex = 0
 fileprivate let actionColumnIndex = 2
@@ -32,6 +40,7 @@ class BindingTableViewController: NSObject {
   }
 
   private var selectionDidChangeHandler: () -> Void
+  private var distObservers: [NSObjectProtocol] = []
   private var observers: [NSObjectProtocol] = []
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
@@ -51,6 +60,10 @@ class BindingTableViewController: NSObject {
     tableView.allowsMultipleSelection = true
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
+    if #available(macOS 10.14, *) {
+      recomputeColors()
+      distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.uiSettingsDidChange))
+    }
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
     if #available(macOS 10.13, *) {
       var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
@@ -71,10 +84,21 @@ class BindingTableViewController: NSObject {
   }
 
   deinit {
+    for observer in distObservers {
+      DistributedNotificationCenter.default().removeObserver(observer)
+    }
+    distObservers = []
     for observer in observers {
       NotificationCenter.default.removeObserver(observer)
     }
     observers = []
+  }
+
+  @available(macOS 10.14, *)
+  private func uiSettingsDidChange(notification: Notification) {
+    Logger.log("Detected change system color prefs; reloading Binding table", level: .verbose)
+    recomputeColors()
+    self.tableView.reloadExistingRows(reselectRowsAfter: true)
   }
 
   // Display error alert for errors:
