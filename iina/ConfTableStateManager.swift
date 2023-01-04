@@ -37,7 +37,7 @@ class ConfTableStateManager: NSObject {
     loadSelectedConfBindingsIntoAppConfig()
 
     DispatchQueue.global(qos: .utility).async {
-      Logger.log("Loading \(AppData.defaultConfs.count) default conf files into cache")
+      Logger.log("Loading \(AppData.defaultConfs.count) builtin conf files into cache")
       for (confName, filePath) in AppData.defaultConfs {
         self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
       }
@@ -303,7 +303,7 @@ class ConfTableStateManager: NSObject {
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
-                                                       completionHandler: completionHandler)
+                                                       completionHandler: completionHandler, overrideSingleRowMove: true)
     if self.undoHelper.isUndoingOrRedoing() {
       tableUIChange.setUpFlashForChangedRows()
     }
@@ -315,7 +315,10 @@ class ConfTableStateManager: NSObject {
       case .none, .fallBackToDefaultConf:
         // Always keep the current config selected
         if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
+          Logger.log("Will change Conf Table selection index to \(selectedConfIndex)", level: .verbose)
           tableUIChange.newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
+        } else {
+          Logger.log("Failed to find selection index for \(new.selectedConfName.quoted) in new Conf Table state!", level: .error)
         }
     }
     // Finally, fire notification. This covers row selection too

@@ -84,6 +84,9 @@ class InputConfFileCache {
 
   // RENAME file in cache and on disk. Returns before writing to disk. Sends an async notify if disk ops fail.
   func renameConfFile(oldConfName: String, newConfName: String) {
+    let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
+    let newFilePath = Utility.buildConfFilePath(for: newConfName)
+
     storageLock.withLock {
       Logger.log("Updating memory cache: moving \(oldConfName.quoted) -> \(newConfName.quoted)", level: .verbose)
       guard let inputConfFile = storage.removeValue(forKey: oldConfName) else {
@@ -91,12 +94,10 @@ class InputConfFileCache {
         sendErrorAlert(key: "error_finding_file", args: ["config"])
         return
       }
-      storage[newConfName] = inputConfFile
+      storage[newConfName] = inputConfFile.clone(confName: newConfName, filePath: newFilePath)
     }
 
     InputConfFileCache.writeQueue.async {
-      let oldFilePath = Utility.buildConfFilePath(for: oldConfName)
-      let newFilePath = Utility.buildConfFilePath(for: newConfName)
 
       let oldExists = FileManager.default.fileExists(atPath: oldFilePath)
       let newExists = FileManager.default.fileExists(atPath: newFilePath)
@@ -268,6 +269,13 @@ struct InputConfFile {
     self.filePath = filePath
     self.status = status
     self.lines = lines
+  }
+
+  func clone(confName: String? = nil, filePath: String? = nil, status: Status? = nil, lines: [String]? = nil) -> InputConfFile {
+    InputConfFile(confName: confName ?? self.confName,
+                  filePath: filePath ?? self.filePath,
+                  status: status ?? self.status,
+                  lines: lines ?? self.lines)
   }
 
   var isReadOnly: Bool {

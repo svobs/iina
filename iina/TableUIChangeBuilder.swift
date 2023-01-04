@@ -101,7 +101,7 @@ class TableUIChangeBuilder {
    https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
    */
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
-                           TableUIChange.CompletionHandler? = nil) -> TableUIChange where R:Hashable {
+                           TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = false) -> TableUIChange where R:Hashable {
     guard #available(macOS 10.15, *) else {
       Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
       return TableUIChange(.reloadAll, completionHandler: completionHandler)
@@ -116,6 +116,21 @@ class TableUIChangeBuilder {
 
     let steps = newRows.difference(from: oldRows).steps
     Logger.log("Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
+
+    // Override default behavior for single row: treat del + ins as move
+    if overrideSingleRowMove && steps.count == 2 {
+      switch steps[0] {
+        case let .remove(_, indexToRemove):
+          switch steps[1] {
+            case let .insert(_, indexToInsert):
+              diff.toMove?.append((indexToRemove, indexToInsert))
+              return diff
+            default: break
+          }
+        default: break
+      }
+    }
+
     for step in steps {
       switch step {
         case let .remove(_, index):

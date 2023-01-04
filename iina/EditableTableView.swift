@@ -294,7 +294,7 @@ class EditableTableView: NSTableView {
       Logger.log("Updating table selection to approved indexes: \(approvedRows.map{$0})", level: .verbose)
       self.selectRowIndexes(approvedRows, byExtendingSelection: byExtendingSelection)
     } else {
-      Logger.log("Updating table selection to indexes: \(newSelectedRowIndexes.map{$0})", level: .verbose)
+      Logger.log("Updating table selection (no approval) to indexes: \(newSelectedRowIndexes.map{$0})", level: .verbose)
       self.selectRowIndexes(newSelectedRowIndexes, byExtendingSelection: byExtendingSelection)
     }
   }
