@@ -10,7 +10,7 @@ import Foundation
 
 class TableUIChangeBuilder {
   // Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
-  static func inverse(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0) -> TableUIChange {
+  static func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0) -> TableUIChange {
     let inverted: TableUIChange
 
     switch original.changeType {
@@ -29,7 +29,7 @@ class TableUIChangeBuilder {
 
       case .none, .reloadAll, .wholeTableDiff:
         // Will not cause a failure. But can't think of a reason to ever invert these types
-        Logger.log("Calling inverse() on content change type '\(original.changeType)': was this intentional?", level: .warning)
+        Logger.log("Calling inverted() on content change type '\(original.changeType)': was this intentional?", level: .warning)
         inverted = TableUIChange(original.changeType)
     }
 
@@ -43,15 +43,15 @@ class TableUIChangeBuilder {
       for insertIndex in inverted.toInsert! {
         inverted.newSelectedRowIndexes?.insert(insertIndex)
       }
-      Logger.log("Inverse: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
+      Logger.log("Invert: changed removes=\(removed.map{$0}) into inserts=\(inverted.toInsert!.map{$0})", level: .verbose)
     }
     if let toInsert = original.toInsert {
       inverted.toRemove = IndexSet(toInsert.map({ $0 + offset }))
-      Logger.log("Inverse: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})", level: .verbose)
+      Logger.log("Invert: changed inserts=\(toInsert.map{$0}) into removes=\(inverted.toRemove!.map{$0})", level: .verbose)
     }
     if let toUpdate = original.toUpdate {
       inverted.toUpdate = IndexSet(toUpdate.map({ $0 + offset }))
-      Logger.log("Inverse: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})", level: .verbose)
+      Logger.log("Invert: changed updates=\(toUpdate.map{$0}) into updates=\(inverted.toUpdate!.map{$0})", level: .verbose)
       // Add updated lines to selection
       for updateIndex in inverted.toUpdate! {
         inverted.newSelectedRowIndexes?.insert(updateIndex)
@@ -73,7 +73,7 @@ class TableUIChangeBuilder {
           let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
         inverted.newSelectedRowIndexes = origBeginningSelection
         inverted.oldSelectedRowIndexes = origEndingSelection
-        Logger.log("Inverse: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})", level: .verbose)
+        Logger.log("Invert: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})", level: .verbose)
       }
     }
 

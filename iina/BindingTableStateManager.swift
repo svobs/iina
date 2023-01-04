@@ -80,7 +80,7 @@ class BindingTableStateManager {
       let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChangeBuilder.inverse(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
+      let tableUIChangeUndo = TableUIChangeBuilder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList

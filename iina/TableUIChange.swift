@@ -162,10 +162,14 @@ class TableUIChange {
       }
 
       if wantsReloadOfExistingRows {
+        Logger.log("TableUIChange: reloading existing rows", level: .verbose)
         // Also uses `newSelectedRowIndexes`, if it is not nil:
         tableView.reloadExistingRows(reselectRowsAfter: true, usingNewSelection: self.newSelectedRowIndexes)
       } else if let newSelectedRowIndexes = self.newSelectedRowIndexes {
+        Logger.log("TableUIChange: selecting \(newSelectedRowIndexes.count) rows", level: .verbose)
         tableView.selectApprovedRowIndexes(newSelectedRowIndexes)
+      } else {
+        Logger.log("TableUIChange: no change to row selection", level: .verbose)
       }
 
       if self.scrollToFirstSelectedRow,
@@ -204,7 +208,7 @@ class TableUIChange {
     let insertAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowInsertAnimation ?? tableView.rowInsertAnimation)
     let removeAnimation = AccessibilityPreferences.motionReductionEnabled ? [] : (self.rowRemoveAnimation ?? tableView.rowRemoveAnimation)
 
-    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), hasNewSelection: \(self.newSelectedRowIndexes != nil)", level: .verbose)
+    Logger.log("Executing TableUIChange type \"\(self.changeType)\": \(self.toRemove?.count ?? 0) removes, \(self.toInsert?.count ?? 0) inserts, \(self.toMove?.count ?? 0), moves, \(self.toUpdate?.count ?? 0) updates; reloadExisting: \(self.reloadAllExistingRows), \(self.newSelectedRowIndexes?.count ?? -1) selectedRows", level: .verbose)
 
     switch changeType {
 

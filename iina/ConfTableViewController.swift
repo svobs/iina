@@ -110,7 +110,11 @@ extension ConfTableViewController: NSTableViewDelegate {
 
   // Selection Changed
   @objc func tableViewSelectionDidChange(_ notification: Notification) {
-    Logger.log("ConfTableViewController: tableViewSelectionDidChange() called. Kicking off state change", level: .verbose)
+    guard tableView.selectedRow >= 0 else {
+      Logger.log("ConfTableViewController: ignoring tableViewSelectionDidChange(); no row selected", level: .verbose)
+      return
+    }
+    Logger.log("ConfTableViewController: tableViewSelectionDidChange() called. Kicking off state change to index \(tableView.selectedRow)", level: .verbose)
     confTableState.changeSelectedConf(tableView.selectedRow)
   }
 
