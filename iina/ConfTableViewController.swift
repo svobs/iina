@@ -515,17 +515,15 @@ extension ConfTableViewController:  NSMenuDelegate {
   private func addPasteMenuItem(_ mib: CascadingMenuItemBuilder, didClickOnUserConf: Bool) {
     let pasteBuilder = mib.likeEditPaste().butWith(.action(#selector(self.pasteFromMenu(_:))))
     var didAdd = false
-    if isPasteEnabled() {
-      let confCount = readConfFilesFromClipboard().count
-      if confCount > 0 {
-        pasteBuilder.butWith(.unitCount(confCount)).addItem()
+    let confCount = readConfFilesFromClipboard().count
+    if confCount > 0 {
+      pasteBuilder.butWith(.unitCount(confCount)).addItem()
+      didAdd = true
+    } else {
+      let bindingCount = bindingTableViewController.readBindingsFromClipboard().count
+      if bindingCount > 0 {
+        pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount), .enabled(didClickOnUserConf)).addItem()
         didAdd = true
-      } else {
-        let bindingCount = bindingTableViewController.readBindingsFromClipboard().count
-        if bindingCount > 0 {
-          pasteBuilder.butWith(.unit(.keyBinding), .unitCount(bindingCount), .enabled(didClickOnUserConf)).addItem()
-          didAdd = true
-        }
       }
     }
     if !didAdd {  // disabled
