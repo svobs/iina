@@ -266,9 +266,9 @@ class ConfTableStateManager: NSObject {
     let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)
     if hasSelectionChange {
       if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
-        Logger.log("Skipping pref save for 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)' (current pref val: \(Preference.string(for: .currentInputConfigName) ?? "nil"); skip=\(skipSaveToPrefs))", level: .verbose)
+        Logger.log("Skipping pref save for 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted) (current pref val: \(Preference.string(for: .currentInputConfigName)?.quoted ?? "nil"); skip=\(skipSaveToPrefs))", level: .verbose)
       } else {
-        Logger.log("Saving pref 'currentInputConfigName': '\(tableStateOld.selectedConfName)' -> '\(tableStateNew.selectedConfName)'", level: .verbose)
+        Logger.log("Saving pref 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted)", level: .verbose)
         Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
       }
       loadSelectedConfBindingsIntoAppConfig()
@@ -315,7 +315,7 @@ class ConfTableStateManager: NSObject {
       case .none, .fallBackToDefaultConf:
         // Always keep the current config selected
         if let selectedConfIndex = new.confTableRows.firstIndex(of: new.selectedConfName) {
-          Logger.log("Will change Conf Table selection index to \(selectedConfIndex)", level: .verbose)
+          Logger.log("Will change Conf Table selection index to \(selectedConfIndex) (\(new.selectedConfName.quoted))", level: .verbose)
           tableUIChange.newSelectedRowIndexes = IndexSet(integer: selectedConfIndex)
         } else {
           Logger.log("Failed to find selection index for \(new.selectedConfName.quoted) in new Conf Table state!", level: .error)

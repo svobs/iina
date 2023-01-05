@@ -110,6 +110,7 @@ class TableUIChangeBuilder {
     let diff = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
     diff.toRemove = IndexSet()
     diff.toInsert = IndexSet()
+    diff.toUpdate = IndexSet()
     diff.toMove = []
 
     // Remember, AppKit expects the order of operations to be: 1. Delete, 2. Insert, 3. Move
@@ -123,7 +124,13 @@ class TableUIChangeBuilder {
         case let .remove(_, indexToRemove):
           switch steps[1] {
             case let .insert(_, indexToInsert):
+              if indexToRemove == indexToInsert {
+                diff.toUpdate = IndexSet(integer: indexToInsert)
+                Logger.log("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 update: \(indexToInsert)", level: .verbose)
+                return diff
+              }
               diff.toMove?.append((indexToRemove, indexToInsert))
+              Logger.log("Overrode TableUIChange from diff: changed 1 rm + 1 add into 1 move: from \(indexToRemove) to \(indexToInsert)", level: .verbose)
               return diff
             default: break
           }

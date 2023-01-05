@@ -115,16 +115,24 @@ struct ConfTableState {
   }
 
   func getBuiltinConfName(forFilePath filePath: String) -> String? {
+    let filePathLower = filePath.lowercased()
     for (builtinConfName, builtinFilePath) in AppData.defaultConfs {
-      if builtinFilePath == filePath {
+      if builtinFilePath.lowercased() == filePathLower {
         return builtinConfName
       }
     }
     return nil
   }
 
+  // Does a case-insensitive check to see if a row already exists in the table with the given name
   func isRow(_ confName: String) -> Bool {
-    return confTableRows.contains(confName)
+    let confNameLower = confName.lowercased()
+    for rowName in confTableRows {
+      if rowName.lowercased() == confNameLower {
+        return true
+      }
+    }
+    return false
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)

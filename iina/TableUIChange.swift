@@ -153,7 +153,7 @@ class TableUIChange {
       if self.changeType == .reloadAll {
         // Don't reload twice
         wantsReloadOfExistingRows = false
-      } else if self.reloadAllExistingRows || self.changeType == .updateRows {
+      } else if self.reloadAllExistingRows || self.changeType == .updateRows || (!(self.toUpdate?.isEmpty ?? true)) {
         // Just schedule a reload for all of them. This is a very inexpensive operation, and much easier
         // than chasing down all the possible ways other rows could be updated.
         wantsReloadOfExistingRows = true
@@ -245,8 +245,9 @@ class TableUIChange {
       case .wholeTableDiff:
         if let toRemove = self.toRemove,
            let toInsert = self.toInsert,
+           let toUpdate = self.toUpdate,
            let movePairs = self.toMove {
-          guard !toRemove.isEmpty || !toInsert.isEmpty || !movePairs.isEmpty else {
+          guard !toRemove.isEmpty || !toInsert.isEmpty || !toUpdate.isEmpty || !movePairs.isEmpty else {
             Logger.log("Executing changes from diff: no rows changed", level: .verbose)
             break
           }

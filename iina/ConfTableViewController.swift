@@ -184,7 +184,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
   }
 
   private func completeInlineAdd(newName: String) -> Bool {
-    guard !self.confTableState.confTableRows.contains(newName) else {
+    guard !self.confTableState.isRow(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -215,7 +215,7 @@ extension ConfTableViewController: EditableTableViewDelegate {
 
     Logger.log("User renamed current conf to \(newName.quoted) in editor", level: .verbose)
 
-    guard !self.confTableState.confTableRows.contains(newName) else {
+    guard !self.confTableState.isRow(newName) else {
       // Disallow overwriting another entry in list
       Utility.showAlert("config.name_existing", sheetWindow: self.tableView.window)
       return false
@@ -743,7 +743,7 @@ extension ConfTableViewController:  NSMenuDelegate {
           newFilePath =  Utility.buildConfFilePath(for: newName)
         }
 
-        if filePath == newFilePath {
+        if filePath.equalsIgnoreCase(newFilePath) {
           // Edge case
           Logger.log("File is already present in input_conf directory but was missing from conf list; adding it: \(filePath.quoted)")
         } else {
