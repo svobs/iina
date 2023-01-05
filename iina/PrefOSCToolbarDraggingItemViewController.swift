@@ -57,13 +57,13 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     let imageOrigin = CGPoint(x: iconImageView.frame.origin.x + (iconImageView.frame.width - imageSize.width) / 2,
                               y: iconImageView.frame.origin.y + (iconImageView.frame.height - imageSize.height) / 2)
     dragItem.draggingFrame = NSRect(origin: imageOrigin,
-                                    size: NSSize(width: iconSize, height: iconSize))
-    Logger.log("Dragging from AvailableItemsView: \(dragItem.draggingFrame)")
+                                    size: imageSize)
+    Logger.log("Dragging from AvailableItemsView: \(dragItem.draggingFrame) (imageSize: \(imageSize))")
     dragItem.imageComponentsProvider = {
       let imageComponent = NSDraggingImageComponent(key: .icon)
       let image = self.buttonType.image().tinted(.textColor)
       imageComponent.contents = image
-      imageComponent.frame = NSRect(origin: .zero, size: NSSize(width: image.size.width, height: image.size.height))
+      imageComponent.frame = NSRect(origin: .zero, size: imageSize)
       return [imageComponent]
     }
     if let availableItemsView = availableItemsView {
