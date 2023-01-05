@@ -734,25 +734,29 @@ extension ConfTableViewController:  NSMenuDelegate {
           return
         }
         var newName = confName
-        let newFilePath: String
-        if renameDuplicates {
+        var newFilePath: String
+        if let filePath = self.getFilePathIfValid(forConfName: newName) {
+          newFilePath = filePath
+        } else if renameDuplicates {
           (newName, newFilePath) = self.findNewNameForDuplicate(originalName: newName)
         } else {
-          newFilePath =  Utility.buildConfFilePath(for: newName)
-        }
+          // Looks like file exists, but renameDuplicates is disabled
+          newFilePath = Utility.buildConfFilePath(for: newName)
 
-        if filePath.equalsIgnoreCase(newFilePath) {
-          // Edge case
-          Logger.log("File is already present in input_conf directory but was missing from conf list; adding it: \(filePath.quoted)")
-        } else {
-          DispatchQueue.main.sync {  // block because we need user input to proceed
-            guard self.handlePossibleExistingFile(filePath: newFilePath) else {
-              // Do not proceed if user does not want to delete.
-              Logger.log("Aborting conf file import: user did not delete file: \(newFilePath.quoted)")
-              return
+          if filePath.equalsIgnoreCase(newFilePath) {
+            // Edge case
+            Logger.log("File is already present in input_conf directory but was missing from conf list; adding it: \(filePath.quoted)")
+          } else {
+            DispatchQueue.main.sync {  // block because we need user input to proceed
+              guard self.handlePossibleExistingFile(filePath: newFilePath) else {
+                // Do not proceed if user does not want to delete.
+                Logger.log("Aborting conf file import: user did not delete file: \(newFilePath.quoted)")
+                return
+              }
             }
           }
         }
+
         createdConfDict[newName] = (filePath, newFilePath)
       }
 
@@ -826,19 +830,24 @@ extension ConfTableViewController:  NSMenuDelegate {
       Logger.log("Checking potential new file name: \(nextName.quoted)", level: .verbose)
       newConfName = nextName
 
-      if confTableState.isRow(newConfName) {
-        // Entry with same name already exists in conf list
-        continue
+      if let newFilePath = getFilePathIfValid(forConfName: newConfName) {
+        return (newConfName, newFilePath)
       }
-
-      let newFilePath =  Utility.buildConfFilePath(for: newConfName)
-      if FileManager.default.fileExists(atPath: newFilePath) {
-        // File with same name already exists
-        continue
-      }
-
-      return (newConfName, newFilePath)
     }
+  }
+
+  private func getFilePathIfValid(forConfName newConfName: String) -> String? {
+    // Entry with same name already exists in conf list?
+    guard !confTableState.isRow(newConfName) else {
+      return nil
+    }
+
+    // File with same name already exists?
+    let newFilePath =  Utility.buildConfFilePath(for: newConfName)
+    guard !FileManager.default.fileExists(atPath: newFilePath) else {
+      return nil
+    }
+    return newFilePath
   }
 
   private func matchRegex(_ regex: NSRegularExpression, _ msg: String) -> NSTextCheckingResult? {
