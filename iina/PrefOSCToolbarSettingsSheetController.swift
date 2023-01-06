@@ -37,7 +37,6 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
       itemViewControllers.append(itemViewController)
       itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
       availableItemsView.addView(itemViewController.view, in: .top)
-      Utility.quickConstraints(["H:[v(240)]", "V:[v(\(Preference.ToolBarButton.frameHeight))]"], ["v": itemViewController.view])
     }
   }
 

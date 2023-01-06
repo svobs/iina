@@ -70,7 +70,7 @@
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" tabbingMode="disallowed" id="F0z-JX-Cv5" customClass="MainWindow" customModule="IINA" customModuleProvider="target">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" fullSizeContentView="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="875"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="3440" height="1415"/>
             <view key="contentView" id="se5-gp-TjO">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -231,12 +231,12 @@
                         </constraints>
                     </visualEffectView>
                     <visualEffectView wantsLayer="YES" blendingMode="withinWindow" material="headerView" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="DFb-1L-U9o">
-                        <rect key="frame" x="0.0" y="0.0" width="640" height="40"/>
+                        <rect key="frame" x="0.0" y="0.0" width="640" height="24"/>
                         <subviews>
                             <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="Qmi-hb-0aM" customClass="TimeLabelOverflowedStackView" customModule="IINA" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="8" width="632" height="24"/>
+                                <rect key="frame" x="0.0" y="8" width="632" height="8"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="24" id="4rp-3T-TCc"/>
+                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="8" id="4rp-3T-TCc"/>
                                 </constraints>
                             </stackView>
                         </subviews>

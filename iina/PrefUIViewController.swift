@@ -167,8 +167,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let button = NSButton()
       OSCToolbarButton.setStyle(of: button, buttonType: buttonType)
       oscToolbarStackView.addView(button, in: .trailing)
-      // Prevent button from changing appearance when being clicked
-      (button.cell! as! NSButtonCell).highlightsBy = NSCell.StyleMask(rawValue: 0)
+      // Button is actually disabled so that its mouseDown goes to its superview instead
+      button.isEnabled = false
+      // But don't gray it out
+      (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     }
   }
 

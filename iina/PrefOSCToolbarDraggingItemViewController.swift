@@ -17,7 +17,7 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   var availableItemsView: PrefOSCToolbarAvailableItemsView?
   var buttonType: Preference.ToolBarButton
 
-  @IBOutlet weak var iconImageView: NSImageView!
+  @IBOutlet weak var toolbarButton: NSButton!
   @IBOutlet weak var descriptionLabel: NSTextField!
 
 
@@ -33,8 +33,12 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    iconImageView.image = buttonType.image()
-    iconImageView.translatesAutoresizingMaskIntoConstraints = false
+    OSCToolbarButton.setStyle(of: toolbarButton, buttonType: buttonType)
+    // Button is actually disabled so that its mouseDown goes to its superview instead. But don't gray it out.
+    (toolbarButton.cell! as! NSButtonCell).imageDimsWhenDisabled = false
+
+    // TODO: set image height
+//    iconImageView.heightAnchor.constraint(equalToConstant: Preference.ToolBarButton.frameHeight).isActive = true
     descriptionLabel.stringValue = buttonType.description()
   }
 
@@ -52,18 +56,17 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func mouseDown(with event: NSEvent) {
     let dragItem = NSDraggingItem(pasteboardWriter: self)
     let iconSize = Preference.ToolBarButton.frameHeight
-    let imageSize = self.buttonType.image().size
-    // Remember that the image is centered inside `iconImageView`, so need to find offset
-    let imageOrigin = CGPoint(x: iconImageView.frame.origin.x + (iconImageView.frame.width - imageSize.width) / 2,
-                              y: iconImageView.frame.origin.y + (iconImageView.frame.height - imageSize.height) / 2)
-    dragItem.draggingFrame = NSRect(origin: imageOrigin,
-                                    size: imageSize)
-    Logger.log("Dragging from AvailableItemsView: \(dragItem.draggingFrame) (imageSize: \(imageSize))")
+
+    let image = self.buttonType.image()
+    // Image is centered in frame, and frame has 0px offset from left & bottom of superview
+    let dragOrigin = CGPoint(x: (iconSize - image.size.width) / 2, y: (iconSize - image.size.height) / 2)
+    dragItem.draggingFrame = NSRect(origin: dragOrigin, size: image.size)
+    Logger.log("Dragging from AvailableItemsView: \(dragItem.draggingFrame) (imageSize: \(image.size))")
     dragItem.imageComponentsProvider = {
       let imageComponent = NSDraggingImageComponent(key: .icon)
       let image = self.buttonType.image().tinted(.textColor)
       imageComponent.contents = image
-      imageComponent.frame = NSRect(origin: .zero, size: imageSize)
+      imageComponent.frame = NSRect(origin: .zero, size: image.size)
       return [imageComponent]
     }
     if let availableItemsView = availableItemsView {
