@@ -37,8 +37,6 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     // Button is actually disabled so that its mouseDown goes to its superview instead. But don't gray it out.
     (toolbarButton.cell! as! NSButtonCell).imageDimsWhenDisabled = false
 
-    // TODO: set image height
-//    iconImageView.heightAnchor.constraint(equalToConstant: Preference.ToolBarButton.frameHeight).isActive = true
     descriptionLabel.stringValue = buttonType.description()
   }
 
