@@ -80,14 +80,16 @@ struct BindingTableState {
   }
 
   // Avoids hard program crash if index is invalid (which would happen for array dereference)
-  func getDisplayedRow(at index: Int) -> InputBinding? {
-    guard index >= 0 else { return nil }
-    if let filterBimap = filterBimap {
-      if let unfilteredIndex = filterBimap[value: index] {
-        return allRows[unfilteredIndex]
-      }
-    } else if  index < allRows.count {
-      return allRows[index]
+  func getDisplayedRow(at displayIndex: Int) -> InputBinding? {
+    guard displayIndex >= 0 else { return nil }
+    let allRowsIndex: Int
+    if let filterBimap = filterBimap, let unfilteredIndex = filterBimap[value: displayIndex] {
+      allRowsIndex = unfilteredIndex
+    } else {
+      allRowsIndex = displayIndex
+    }
+    if allRowsIndex < allRows.count {
+      return allRows[allRowsIndex]
     }
     return nil
   }
@@ -215,39 +217,41 @@ struct BindingTableState {
     doAction(remainingRowsUnfiltered, tableUIChange)
   }
 
-  func updateBinding(at index: Int, to mapping: KeyMapping) {
-    Logger.log("Updating binding at index \(index) to: \(mapping)", level: .verbose)
+  func updateBinding(at displayIndex: Int, to mapping: KeyMapping) {
     guard canModifyCurrentConf else {
-      Logger.log("Aborting: cannot modify current conf!", level: .error)
+      Logger.log("Aborting updateBinding(): cannot modify current conf!", level: .error)
       return
     }
 
-    guard let existingRow = getDisplayedRow(at: index), existingRow.canBeModified else {
-      Logger.log("Cannot update binding at index \(index); aborting", level: .error)
+    guard let existingRow = getDisplayedRow(at: displayIndex), existingRow.canBeModified else {
+      Logger.log("Aborting updateBinding(): binding at displayIndex \(displayIndex) is read-only; aborting", level: .error)
       return
+    }
+
+    Logger.log("Updating binding at displayIndex \(displayIndex) from \(existingRow.keyMapping) to: \(mapping)", level: .verbose)
+
+    let indexToUpdate: Int
+    // The affected row will change index after the reload. Track it down before clearing the filter.
+    if let unfilteredIndex = getUnfilteredIndex(fromFiltered: displayIndex) {
+      Logger.log("Translated filtered index \(displayIndex) to unfiltered index \(unfilteredIndex)", level: .verbose)
+      indexToUpdate = unfilteredIndex
+    } else {
+      indexToUpdate = displayIndex
     }
 
     // Must create a clone. If the original binding is modified it will screw up Undo
     var allRowsNew = allRows
-    guard index < allRowsNew.count else {
-      Logger.log("Index to update (\(index)) is larger than row count (\(allRowsNew.count)); aborting", level: .error)
+    guard indexToUpdate < allRowsNew.count else {
+      Logger.log("Index to update (\(indexToUpdate)) is larger than row count (\(allRowsNew.count)); aborting", level: .error)
       return
     }
     let bindingClone = existingRow.shallowClone(keyMapping: mapping)
-    allRowsNew[index] = bindingClone
+    allRowsNew[indexToUpdate] = bindingClone
 
     let tableUIChange = TableUIChange(.updateRows)
-
-    tableUIChange.toUpdate = IndexSet(integer: index)
-
-    var indexToUpdate: Int = index
-
-    // The affected row will change index after the reload. Track it down before clearing the filter.
-    if let unfilteredIndex = getUnfilteredIndex(fromFiltered: index) {
-      indexToUpdate = unfilteredIndex
-    }
-
+    tableUIChange.toUpdate = IndexSet(integer: indexToUpdate)
     tableUIChange.newSelectedRowIndexes = IndexSet(integer: indexToUpdate)
+
     doAction(allRowsNew, tableUIChange)
   }
 
@@ -276,6 +280,7 @@ struct BindingTableState {
 
     // If there is an active filter, convert the filtered index to unfiltered index
     if let unfilteredIndex = getUnfilteredIndex(fromFiltered: requestedIndex) {
+      Logger.log("Translated filtered index \(requestedIndex) to unfiltered index \(unfilteredIndex)", level: .verbose)
       insertIndex = unfilteredIndex
       didUnfilter = true
     }
@@ -350,12 +355,13 @@ struct BindingTableState {
   }
 
   // Returns the index into allRows corresponding to the given filtered index.
+  // Returns nil if given `filteredIndex` is invalid or there is no active filter
   func getUnfilteredIndex(fromFiltered filteredIndex: Int) -> Int? {
     guard filteredIndex >= 0 else {
       return nil
     }
     guard let filterBimap = filterBimap else {
-      return filteredIndex
+      return nil
     }
     if filteredIndex == filterBimap.values.count {
       // Special case: inserting at end of list
