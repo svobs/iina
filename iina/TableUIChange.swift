@@ -116,7 +116,7 @@ class TableUIChange {
 
   // Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
-    var animationGroups = LinkedList<AnimationBlock>()
+    let animationGroups = LinkedList<AnimationBlock>()
 
 
     // 1. "Before" animations (if provided)
