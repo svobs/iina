@@ -27,7 +27,7 @@
 /**
  Did generated thumbnails for the video.
  */
-- (void)didGenerateThumbnails:(nonnull NSArray<FFThumbnail *> *)thumbnails forFile:(nonnull NSString *)filename succeeded:(BOOL)succeeded;
+- (void)didGenerateThumbnails:(nonnull NSArray<FFThumbnail *> *)thumbnails forFile:(nonnull NSString *)filename thumbWidth:(int)thumbWidth succeeded:(BOOL)succeeded;
 
 @end
 

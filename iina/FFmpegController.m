@@ -86,6 +86,7 @@ return -1;\
     if (self.delegate) {
       [self.delegate didGenerateThumbnails:[NSArray arrayWithArray:self->_thumbnails]
                                    forFile: file
+                                thumbWidth: thumbWidth
                                  succeeded:(success < 0 ? NO : YES)];
     }
   }];
