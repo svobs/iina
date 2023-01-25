@@ -8,12 +8,12 @@
 
 import Cocoa
 
-fileprivate let subsystem = Logger.Subsystem(rawValue: "thumbcache")
-
 class ThumbnailCache {
   private typealias CacheVersion = UInt8
   private typealias FileSize = UInt64
   private typealias FileTimestamp = Int64
+
+  static let subsystem = Logger.Subsystem(rawValue: "thumbcache")
 
   private static let version: CacheVersion = 2
   
@@ -71,7 +71,10 @@ class ThumbnailCache {
     let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize) * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue
     if maxCacheSize == 0 {
       return
-    } else if CacheManager.shared.getCacheSize() > maxCacheSize {
+    }
+    let cacheSize = CacheManager.shared.getCacheSize()
+    if cacheSize > maxCacheSize {
+      Logger.log("Thumbnail cache size (\(cacheSize)) is larger than max allowed (\(maxCacheSize)) and will be cleared", subsystem: subsystem)
       CacheManager.shared.clearOldCache()
     }
 

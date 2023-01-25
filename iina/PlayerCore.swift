@@ -1753,24 +1753,27 @@ class PlayerCore: NSObject {
         return
       }
     }
-    if Preference.bool(for: .enableThumbnailPreview) {
-      let width = Preference.integer(for: .thumbnailWidth)
-      if let cacheName = info.mpvMd5, ThumbnailCache.fileIsCached(forName: cacheName, forVideo: info.currentURL, forWidth: width) {
-        Logger.log("Found thumbnail cache for \(cacheName.quoted), width \(width)", subsystem: subsystem)
-        thumbnailQueue.async {
-          if let thumbnails = ThumbnailCache.read(forName: cacheName, forWidth: width) {
-            self.info.thumbnails = thumbnails
-            self.info.thumbnailsReady = true
-            self.info.thumbnailsProgress = 1
-            self.refreshTouchBarSlider()
-          } else {
-            Logger.log("Cannot read thumbnail from cache \(cacheName.quoted), width \(width)", level: .error, subsystem: self.subsystem)
-          }
+    guard Preference.bool(for: .enableThumbnailPreview) else {
+      return
+    }
+    
+    let width = Preference.integer(for: .thumbnailWidth)
+    info.thumbnailWidth = width
+    if let cacheName = info.mpvMd5, ThumbnailCache.fileIsCached(forName: cacheName, forVideo: info.currentURL, forWidth: width) {
+      Logger.log("Found thumbnail cache for \(cacheName.quoted), width \(width)", subsystem: subsystem)
+      thumbnailQueue.async {
+        if let thumbnails = ThumbnailCache.read(forName: cacheName, forWidth: width) {
+          self.info.thumbnails = thumbnails
+          self.info.thumbnailsReady = true
+          self.info.thumbnailsProgress = 1
+          self.refreshTouchBarSlider()
+        } else {
+          Logger.log("Cannot read thumbnail from cache \(cacheName.quoted), width \(width)", level: .error, subsystem: self.subsystem)
         }
-      } else {
-        Logger.log("Request new thumbnails, width=\(width)", subsystem: subsystem)
-        ffmpegController.generateThumbnail(forFile: url.path, thumbWidth:Int32(width))
       }
+    } else {
+      Logger.log("Requesting new thumbnails, width=\(width)", subsystem: subsystem)
+      ffmpegController.generateThumbnail(forFile: url.path, thumbWidth:Int32(width))
     }
   }
 
@@ -2034,9 +2037,13 @@ class PlayerCore: NSObject {
 
 extension PlayerCore: FFmpegControllerDelegate {
 
-  func didUpdate(_ thumbnails: [FFThumbnail]?, forFile filename: String, withProgress progress: Int) {
-    guard let currentFilePath = info.currentURL?.path, currentFilePath == filename else { return }
-    Logger.log("Got new thumbnails, progress \(progress)", subsystem: subsystem)
+  func didUpdate(_ thumbnails: [FFThumbnail]?, forFile filename: String, thumbWidth width: Int32, withProgress progress: Int) {
+    guard let currentFilePath = info.currentURL?.path, currentFilePath == filename, width == info.thumbnailWidth else {
+      Logger.log("Discarding update (\(width)px thumbnails, progress \(progress)): either sourcePath or thumbnailWidth does not match expected",
+                 level: .error, subsystem: subsystem)
+      return
+    }
+    Logger.log("Got new \(width)px thumbnails, progress \(progress)", subsystem: subsystem)
     if let thumbnails = thumbnails {
       info.thumbnails.append(contentsOf: thumbnails)
     }
@@ -2045,8 +2052,12 @@ extension PlayerCore: FFmpegControllerDelegate {
   }
 
   func didGenerate(_ thumbnails: [FFThumbnail], forFile filename: String, thumbWidth width: Int32, succeeded: Bool) {
-    guard let currentFilePath = info.currentURL?.path, currentFilePath == filename else { return }
-    Logger.log("Got all thumbnails (\(thumbnails.count) total), succeeded=\(succeeded)", subsystem: subsystem)
+    guard let currentFilePath = info.currentURL?.path, currentFilePath == filename, width == info.thumbnailWidth else {
+      Logger.log("Ignoring generated thumbnails (\(width)px): either filePath or thumbnailWidth does not match expected",
+                 level: .error, subsystem: subsystem)
+      return
+    }
+    Logger.log("Got all \(width)px thumbnails (\(thumbnails.count) total), succeeded=\(succeeded)", subsystem: subsystem)
     if succeeded {
       info.thumbnails = thumbnails
       info.thumbnailsReady = true
