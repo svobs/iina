@@ -312,6 +312,7 @@ class MainWindowController: PlayerWindowController {
 
   private let localObservedPrefKeys: [Preference.Key] = [
     .oscPosition,
+    .thumbnailWidth,
     .showChapterPos,
     .arrowButtonAction,
     .pinchAction,
@@ -330,6 +331,16 @@ class MainWindowController: PlayerWindowController {
     case PK.oscPosition.rawValue:
       if let newValue = change[.newKey] as? Int {
         setupOnScreenController(withPosition: Preference.OSCPosition(rawValue: newValue) ?? .floating)
+      }
+    case PK.thumbnailWidth.rawValue:
+      if let newValue = change[.newKey] as? Int {
+        DispatchQueue.main.asyncAfter(deadline: .now() + AppData.thumbnailRegenerationDelay) {
+          if newValue == Preference.integer(for: .thumbnailWidth) && newValue != self.player.info.thumbnailWidth {
+            Logger.log("Pref \(Preference.Key.thumbnailWidth.rawValue.quoted) changed to \(newValue)px: requesting thumbs regen",
+                       subsystem: self.player.subsystem)
+            self.player.generateThumbnails()
+          }
+        }
       }
     case PK.showChapterPos.rawValue:
       if let newValue = change[.newKey] as? Bool {

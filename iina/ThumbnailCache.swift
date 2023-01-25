@@ -82,7 +82,7 @@ class ThumbnailCache {
 
     Utility.createDirIfNotExist(url: pathURL.deletingLastPathComponent())
 
-    let path = pathURL.absoluteString
+    let path = pathURL.path
     guard FileManager.default.createFile(atPath: pathURL.path, contents: nil, attributes: nil) else {
       Logger.log("Cannot create thumbnail cache file: \(path)", level: .error, subsystem: subsystem)
       return
