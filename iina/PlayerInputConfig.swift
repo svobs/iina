@@ -12,7 +12,7 @@ let MP_MAX_KEY_DOWN = 4
 
 /*
  A single PlayerInputConfig instance should be associated with a single PlayerCore, and while the player window has focus ("is active"), its
- PlayerInputConfig is expected to direct key presses to this class's `resolveKeyEvent` method.
+ PlayerInputConfig is expected to direct key presses to this class's `matchActiveKeyBinding` method.
  to match the user's key stroke(s) into recognized commands.
 
  This class stores up to the last 4 key combinations which the user pressed in this window in `keyPressHistory `.
@@ -124,7 +124,7 @@ class PlayerInputConfig {
   // MARK: Key resolution
 
   /*
-   Similar to `resolveKeyEvent()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
+   Similar to `matchActiveKeyBinding()`, but takes a raw string directly (does not examine past key presses). Must be normalized.
    */
   func resolveMpvKey(_ keySequence: String) -> KeyMapping? {
     AppInputConfig.current.resolverDict[keySequence]?.keyMapping
@@ -141,7 +141,7 @@ class PlayerInputConfig {
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
-  func resolveKeyEvent(_ keyDownEvent: NSEvent) -> KeyMapping? {
+  func matchActiveKeyBinding(endingWith keyDownEvent: NSEvent) -> KeyMapping? {
     assert (keyDownEvent.type == NSEvent.EventType.keyDown, "Expected a KeyDown event but got: \(keyDownEvent)")
 
     let keySequence: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
@@ -150,11 +150,11 @@ class PlayerInputConfig {
       return nil
     }
 
-    return resolveFirstMatchingKeySequence(endingWith: keySequence)
+    return matchShortestKeySequence(endingWith: keySequence)
   }
 
   // Try to match key sequences, up to 4 keystrokes. shortest match wins
-  private func resolveFirstMatchingKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
+  private func matchShortestKeySequence(endingWith lastKeyStroke: String) -> KeyMapping? {
     let appBindings: AppInputConfig = AppInputConfig.current
     var keySequence = ""
     var hasPartialValidSequence = false
@@ -182,7 +182,7 @@ class PlayerInputConfig {
           log("Ignoring \(keyMapping.normalizedMpvKey.quoted) (from: \(binding.srcSectionName.quoted))", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Resolved keySeq \(keyMapping.normalizedMpvKey.quoted) -> \(keyMapping.readableAction.quoted) (from: \(binding.srcSectionName.quoted))")
+          log("Found matching binding: \(keyMapping.normalizedMpvKey.quoted) → \(keyMapping.readableAction.quoted) (from: \(binding.srcSectionName.quoted))")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return keyMapping

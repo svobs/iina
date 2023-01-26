@@ -135,7 +135,7 @@ struct AppInputConfig {
 
   // This structure results from merging the layers of enabled input sections for the currently active player using precedence rules.
   // Contains only the bindings which are currently enabled for this player, plus extra dummy "ignored" bindings for partial key sequences.
-  // For lookup use `resolveMpvKey()` or `resolveKeyEvent()` from the active player's input config.
+  // For lookup use `resolveMpvKey()` or `matchActiveKeyBinding()` from the active player's input config.
   let resolverDict: [String: InputBinding]
 
   // (Note: These two fields are used for optimizing the Key Bindings UI  but are otherwise not important.)
