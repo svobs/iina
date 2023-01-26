@@ -2043,11 +2043,13 @@ extension PlayerCore: FFmpegControllerDelegate {
                  level: .error, subsystem: subsystem)
       return
     }
-    Logger.log("Got new \(width)px thumbnails, progress \(progress)", subsystem: subsystem)
+    // 
+    let goalCount = ffmpegController.thumbnailCount
+    Logger.log("Got \(thumbnails?.count ?? 0) more \(width)px thumbnails, progress: \(progress) / \(goalCount)", subsystem: subsystem)
     if let thumbnails = thumbnails {
       info.thumbnails.append(contentsOf: thumbnails)
     }
-    info.thumbnailsProgress = Double(progress) / Double(ffmpegController.thumbnailCount)
+    info.thumbnailsProgress = Double(progress) / Double(goalCount)
     refreshTouchBarSlider()
   }
 
@@ -2057,7 +2059,7 @@ extension PlayerCore: FFmpegControllerDelegate {
                  level: .error, subsystem: subsystem)
       return
     }
-    Logger.log("Got all \(width)px thumbnails (\(thumbnails.count) total), succeeded=\(succeeded)", subsystem: subsystem)
+    Logger.log("Done generating thumbnails: success=\(succeeded) count=\(thumbnails.count) width=\(width)px", subsystem: subsystem)
     if succeeded {
       info.thumbnails = thumbnails
       info.thumbnailsReady = true

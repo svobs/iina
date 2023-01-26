@@ -195,12 +195,15 @@ return -1;\
 
   // Get duration and interval
   int64_t duration = av_rescale_q(pFormatCtx->duration, AV_TIME_BASE_Q, pVideoStream->time_base);
-  double interval = duration / (double)self.thumbnailCount;
+  // Because there's a thumbnail at 0:00: for every N thumbnails, there will be N - 1 segments
+  // Example: with 5 thumbnails and 4 segments with 20s run time
+  // 0:00 🌄---🌄---🌄---🌄---🌄 0:20 <-- length of segment is 5s
+  double interval = duration / (double)(self.thumbnailCount - 1);
   double timebaseDouble = av_q2d(pVideoStream->time_base);
   AVPacket packet;
 
   // For each preview point
-  for (i = 0; i <= self.thumbnailCount; i++) {
+  for (i = 0; i < self.thumbnailCount; i++) {
     int64_t seek_pos = interval * i + pVideoStream->start_time;
 
     avcodec_flush_buffers(pCodecCtx);
@@ -236,7 +239,7 @@ return -1;\
             double currentTime = CACurrentMediaTime();
             if (currentTime - _timestamp > 1) {
               if (self.delegate) {
-                [self.delegate didUpdateThumbnails:NULL forFile: file thumbWidth: thumbWidth withProgress: i];
+                [self.delegate didUpdateThumbnails:NULL forFile: file thumbWidth: thumbWidth withProgress: i + 1];
                 _timestamp = currentTime;
               }
             }
@@ -329,7 +332,7 @@ return -1;\
         [self.delegate didUpdateThumbnails:[NSArray arrayWithArray:_thumbnailPartialResult]
                                    forFile: file
                                 thumbWidth: width
-                              withProgress: index];
+                              withProgress: index + 1];
       }
       [_thumbnailPartialResult removeAllObjects];
       _timestamp = currentTime;
