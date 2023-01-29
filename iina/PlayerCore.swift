@@ -2043,13 +2043,12 @@ extension PlayerCore: FFmpegControllerDelegate {
                  level: .error, subsystem: subsystem)
       return
     }
-    // 
-    let goalCount = ffmpegController.thumbnailCount
-    Logger.log("Got \(thumbnails?.count ?? 0) more \(width)px thumbnails, progress: \(progress) / \(goalCount)", subsystem: subsystem)
+    let targetCount = ffmpegController.thumbnailCount
     if let thumbnails = thumbnails {
       info.thumbnails.append(contentsOf: thumbnails)
     }
-    info.thumbnailsProgress = Double(progress) / Double(goalCount)
+    Logger.log("Got \(thumbnails?.count ?? 0) more \(width)px thumbs (\(info.thumbnails.count) so far), progress: \(progress) / \(targetCount)", subsystem: subsystem)
+    info.thumbnailsProgress = Double(progress) / Double(targetCount)
     refreshTouchBarSlider()
   }
 
