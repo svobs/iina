@@ -362,6 +362,9 @@ class ConfTableStateManager: NSObject {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else {
       Logger.log("Cannot get bindings from \(inputConfFile.confName.quoted) because it failed to load", level: .error)
+      let fileName = URL(fileURLWithPath: inputConfFile.filePath).lastPathComponent
+      let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [fileName])
+      NotificationCenter.default.post(Notification(name: .iinaKeyBindingErrorOccurred, object: alertInfo))
       ConfTableState.current.fallBackToDefaultConf()
       return false
     }
