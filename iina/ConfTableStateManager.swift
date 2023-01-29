@@ -34,7 +34,7 @@ class ConfTableStateManager: NSObject {
 
   // Should not be called until the init() methods of all major components have completed
   func startUp() {
-    loadSelectedConfBindingsIntoAppConfig()
+    _ = loadSelectedConfBindingsIntoAppConfig()
 
     DispatchQueue.global(qos: .utility).async {
       Logger.log("Loading \(AppData.defaultConfs.count) builtin conf files into cache")
@@ -265,13 +265,15 @@ class ConfTableStateManager: NSObject {
     // Update selectedConfName and load new file if changed
     let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)
     if hasSelectionChange {
+      if !loadSelectedConfBindingsIntoAppConfig() {
+        return
+      }
       if skipSaveToPrefs || Preference.string(for: .currentInputConfigName) == tableStateNew.selectedConfName {
         Logger.log("Skipping pref save for 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted) (current pref val: \(Preference.string(for: .currentInputConfigName)?.quoted ?? "nil"); skip=\(skipSaveToPrefs))", level: .verbose)
       } else {
         Logger.log("Saving pref 'currentInputConfigName': \(tableStateOld.selectedConfName.quoted) -> \(tableStateNew.selectedConfName.quoted)", level: .verbose)
         Preference.set(tableStateNew.selectedConfName, for: .currentInputConfigName)
       }
-      loadSelectedConfBindingsIntoAppConfig()
     }
 
     let hasUndoableChange: Bool = hasSelectionChange || hasConfListChange
@@ -355,12 +357,13 @@ class ConfTableStateManager: NSObject {
   }
 
   // Conf File load. Triggered any time `selectedConfName` is changed (ignoring case).
-  private func loadSelectedConfBindingsIntoAppConfig() {
+  // Returns `true` if load was successful; `false` otherwise.
+  private func loadSelectedConfBindingsIntoAppConfig() -> Bool {
     let inputConfFile = loadConfFile()
     guard !inputConfFile.failedToLoad else {
       Logger.log("Cannot get bindings from \(inputConfFile.confName.quoted) because it failed to load", level: .error)
       ConfTableState.current.fallBackToDefaultConf()
-      return
+      return false
     }
 
     var userData: [BindingTableStateManager.Key: Any] = [BindingTableStateManager.Key.confFile: inputConfFile]
@@ -375,5 +378,7 @@ class ConfTableStateManager: NSObject {
     // Send down the pipeline
     let userConfMappingsNew = inputConfFile.parseMappings()
     AppInputConfig.replaceUserConfSectionMappings(with: userConfMappingsNew, attaching: userData)
+
+    return true
   }
 }
