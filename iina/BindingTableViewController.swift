@@ -461,12 +461,12 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
     Logger.log("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
-    return edit(rowIndex: rowIndex, columnIndex: columnIndex, startInlineIfAllowed: false)
+    return edit(rowIndex: rowIndex, columnIndex: columnIndex, skipInlineEdit: true)
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
     Logger.log("Enter key: Edit requested for row \(rowIndex)")
-    return edit(rowIndex: rowIndex, startInlineIfAllowed: false)
+    return edit(rowIndex: rowIndex, skipInlineEdit: true)
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
@@ -505,7 +505,7 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
   // Edit either inline or with popup, depending on current mode
   @discardableResult
-  private func edit(rowIndex: Int, columnIndex: Int = 0, startInlineIfAllowed: Bool = true) -> Bool {
+  private func edit(rowIndex: Int, columnIndex: Int = 0, skipInlineEdit: Bool = false) -> Bool {
     guard requireCurrentConfIsEditable(forAction: "edit row") else { return false }
 
     guard bindingTableState.isRowModifiable(rowIndex) else {
@@ -515,14 +515,15 @@ extension BindingTableViewController: EditableTableViewDelegate {
     }
 
     if isRaw {
-      if startInlineIfAllowed {
+      if !skipInlineEdit {
         // Use in-line editor
         self.tableView.editCell(row: rowIndex, column: columnIndex)
       }
+      return true
     } else {
       editWithPopup(rowIndex: rowIndex)
+      return false
     }
-    return true
   }
 
   // Use this if isRaw==false (i.e., not inline editing)
