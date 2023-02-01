@@ -168,7 +168,7 @@ class MPVLogHandler {
       }
       Logger.log("Bindings for section \"\(section.name)\":\(bindingsString)", level: .verbose, subsystem: player.subsystem)
     }
-    player.inputConfig.defineSection(section)
+    player.bindingController.defineSection(section)
     return true
   }
 
@@ -191,7 +191,7 @@ class MPVLogHandler {
     let flags = parseFlags(String(msg[flagsRange]))
 
     Logger.log("Got 'enable-section' from mpv: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
-    player.inputConfig.enableSection(name, flags)
+    player.bindingController.enableSection(name, flags)
     return true
   }
 
@@ -211,7 +211,7 @@ class MPVLogHandler {
 
     let name = String(msg[nameRange])
     Logger.log("disable-section: \"\(name)\"", subsystem: player.subsystem)
-    player.inputConfig.disableSection(name)
+    player.bindingController.disableSection(name)
     return true
   }
 }
