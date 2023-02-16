@@ -320,28 +320,33 @@ struct InputConfFile {
 
   // Returns a KeyMapping if successful, nil if line has no mapping or is not correct format
   static func parseRawLine(_ rawLine: String) -> KeyMapping? {
-    var content = rawLine
+    var content = rawLine.trimmingCharacters(in: .whitespaces)
+
+    // ignore blank lines
+    guard !content.isEmpty else { return nil }
+
     var isIINACommand = false
-    if content.trimmingCharacters(in: .whitespaces).isEmpty {
-      return nil
-    } else if content.hasPrefix("#") {
-      if content.hasPrefix(KeyMapping.IINA_PREFIX) {
+    if content.hasPrefix("#") {
+      if let trimmedContent = KeyMapping.removeIINAPrefix(from: content) {
         // extended syntax
         isIINACommand = true
-        content = String(content[content.index(content.startIndex, offsetBy: KeyMapping.IINA_PREFIX.count)...])
+        content = trimmedContent
       } else {
-        // ignore comment line
+        // ignore whole-line comments
         return nil
       }
     }
+
+    // parse comment (if any)
     var comment: String? = nil
     if let sharpIndex = content.firstIndex(of: "#") {
       comment = String(content[content.index(after: sharpIndex)...])
       content = String(content[...content.index(before: sharpIndex)])
     }
+
     // split
     let splitted = content.split(maxSplits: 1, whereSeparator: { $0 == " " || $0 == "\t"})
-    if splitted.count < 2 {
+    guard splitted.count >= 2 else {
       return nil  // no command, wrong format
     }
     let key = String(splitted[0]).trimmingCharacters(in: .whitespaces)

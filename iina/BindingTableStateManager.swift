@@ -121,6 +121,8 @@ class BindingTableStateManager {
         return Utility.format(.keyBinding, tableUIChange.toRemove?.count ?? 0, .delete)
       case .moveRows:
         return Utility.format(.keyBinding, tableUIChange.toMove?.count ?? 0, .move)
+      case .updateRows:
+        return Utility.format(.keyBinding, tableUIChange.toUpdate?.count ?? 0, .update)
       default:
         return nil
     }

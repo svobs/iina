@@ -483,20 +483,27 @@ extension BindingTableViewController: EditableTableViewDelegate {
 
     Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)", level: .verbose)
 
-    let key, action: String?
+    let rawKey, rawAction: String?
+    var isIINA: Bool? = nil
     switch columnIndex {
       case keyColumnIndex:
-        key = KeyCodeHelper.escapeReservedMpvKeys(newValue)
-        action = nil
+        rawKey = KeyCodeHelper.escapeReservedMpvKeys(newValue)
+        rawAction = nil
       case actionColumnIndex:
-        key = nil
-        action = newValue
+        rawKey = nil
+        if let trimmedValue = KeyMapping.removeIINAPrefix(from: newValue) {
+          isIINA = true
+          rawAction = trimmedValue
+        } else {
+          isIINA = false
+          rawAction = newValue
+        }
       default:
         Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
         return false
     }
 
-    let newVersion = editedRow.keyMapping.clone(rawKey: key, rawAction: action)
+    let newVersion = editedRow.keyMapping.clone(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINA)
     bindingTableState.updateBinding(at: rowIndex, to: newVersion)
     return true
   }
@@ -534,11 +541,10 @@ extension BindingTableViewController: EditableTableViewDelegate {
       return
     }
 
-    showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction) { key, action in
-      guard !key.isEmpty && !action.isEmpty else { return }
-      let newVersion = row.keyMapping.clone(rawKey: key, rawAction: action)
+    showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction, ok: { rawKey, rawAction, isIINACommand in
+      let newVersion = row.keyMapping.clone(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINACommand)
       self.bindingTableState.updateBinding(at: rowIndex, to: newVersion)
-    }
+    })
   }
 
   // Adds a new binding after the current selection and then opens an editor for it. The editor with either be inline or using the popup,
@@ -574,18 +580,16 @@ extension BindingTableViewController: EditableTableViewDelegate {
       let _ = bindingTableState.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping, afterComplete: afterComplete)
 
     } else {
-      showEditBindingPopup { key, action in
-        guard !key.isEmpty && !action.isEmpty else { return }
-
-        let newMapping = KeyMapping(rawKey: key, rawAction: action)
+      showEditBindingPopup(ok: { rawKey, rawAction, isIINACommand in
+        let newMapping = KeyMapping(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINACommand)
         self.bindingTableState.insertNewBinding(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMapping,
                                                 afterComplete: self.scrollToFirstInserted)
-      }
+      })
     }
   }
 
   // Displays popup for editing a binding
-  private func showEditBindingPopup(key: String = "", action: String = "", ok: @escaping (String, String) -> Void) {
+  private func showEditBindingPopup(key: String = "", action: String = "", ok: @escaping (String, String, Bool) -> Void) {
     let panel = NSAlert()
     let keyRecordViewController = KeyRecordViewController()
     keyRecordViewController.keyCode = key
@@ -599,7 +603,19 @@ extension BindingTableViewController: EditableTableViewDelegate {
     panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
     panel.beginSheetModal(for: tableView.window!) { respond in
       if respond == .alertFirstButtonReturn {
-        ok(keyRecordViewController.keyCode, keyRecordViewController.action)
+        let rawKey = keyRecordViewController.keyCode
+        let readableAction = keyRecordViewController.action
+        let rawAction: String
+        let isIINACommand: Bool
+
+        if let trimmedAction = KeyMapping.removeIINAPrefix(from: readableAction) {
+          rawAction = trimmedAction
+          isIINACommand = true
+        } else {
+          rawAction = readableAction
+          isIINACommand = false
+        }
+        ok(rawKey, rawAction, isIINACommand)
       }
     }
   }

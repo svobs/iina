@@ -143,6 +143,7 @@ struct UnitActionFormat {
   static let insertNewAbove = UnitActionFormat(none: "Insert Above", single: "Insert New %@ Above", multiple: "Insert %d New %@ Above")
   static let insertNewBelow = UnitActionFormat(none: "Insert Below", single: "Insert New %@ Below", multiple: "Insert %d New %@ Below")
   static let move = UnitActionFormat(none: "Move", single: "Move %@", multiple: "Move %d %@")
+  static let update = UnitActionFormat(none: "Update", single: "%@ Update", multiple: "%d %@ Updates")
   static let copyToFile = UnitActionFormat(none: "Copy to File", single: "Copy %@ to File", multiple: "Copy %d %@ to File")
 }
 

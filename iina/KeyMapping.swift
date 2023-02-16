@@ -46,7 +46,7 @@ class KeyMapping: NSObject, Codable {
   // The action with @iina removed (if applicable), but otherwise not formatted
   let rawAction: String
 
-  // Similar to rawAction, but includes the @iina prefix if appropriate, and
+  // Similar to rawAction, but includes the #@iina prefix if appropriate, and
   // the tokens are always separated by exactly one space
   var readableAction: String {
     get {
@@ -85,26 +85,22 @@ class KeyMapping: NSObject, Codable {
   // Serialized form, suitable for writing to a single line of mpv's input.conf
   var confFileFormat: String {
     get {
-      let iinaCommandString = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
+      let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
-      return "\(iinaCommandString)\(rawKey) \(rawAction)\(commentString)"
+      return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
     }
   }
 
+  // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
+  // (If this is an IINA command, use `isIINACommand: true`)
   init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
+    assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && !rawAction.hasPrefix(KeyMapping.IINA_PREFIX), "Bad input to KeyMapping init")
+
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-
-    let rawActionTrimmed: String
-    if let trimmed = KeyMapping.removeIINAPrefix(from: rawAction) {
-      self.isIINACommand = true
-      rawActionTrimmed = trimmed
-    } else {
-      self.isIINACommand = isIINACommand
-      rawActionTrimmed = rawAction
-    }
-    self.rawAction = rawActionTrimmed
-    self.action = rawActionTrimmed.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+    self.isIINACommand = isIINACommand
+    self.rawAction = rawAction
+    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     self.comment = comment
   }
 
@@ -115,12 +111,16 @@ class KeyMapping: NSObject, Codable {
   }
 
 
-  private static func removeIINAPrefix(from rawAction: String) -> String? {
-    if rawAction.hasPrefix(IINA_PREFIX) {
-      return rawAction[rawAction.index(rawAction.startIndex, offsetBy: IINA_PREFIX.count)...].trimmingCharacters(in: .whitespaces)
+  static func removeIINAPrefix(from string: String) -> String? {
+    if string.hasPrefix(IINA_PREFIX) {
+      return string[string.index(string.startIndex, offsetBy: IINA_PREFIX.count)...].trimmingCharacters(in: .whitespaces)
     } else {
       return nil
     }
+  }
+
+  static func addIINAPrefix(to string: String) -> String {
+    "\(KeyMapping.IINA_PREFIX) \(string)"
   }
 
   public override var description: String {
@@ -132,9 +132,10 @@ class KeyMapping: NSObject, Codable {
   }
 
   // Makes a duplicate of this object, but will also override any non-nil parameter
-  func clone(rawKey: String? = nil, rawAction: String? = nil) -> KeyMapping {
+  func clone(rawKey: String? = nil, rawAction: String? = nil, isIINACommand: Bool? = nil) -> KeyMapping {
     return KeyMapping(rawKey: rawKey ?? self.rawKey,
                       rawAction: rawAction ?? self.rawAction,
+                      isIINACommand: isIINACommand ?? self.isIINACommand,
                       comment: self.comment)
   }
 }

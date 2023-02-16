@@ -619,7 +619,7 @@ class MPVController: NSObject {
           let comment = getFromMap("comment", map)
           let cmdTokens = cmd.split(separator: " ")
           if filter == nil || filter!(cmdTokens[0]) {
-            keyMappingList.append(KeyMapping(rawKey: key, rawAction: cmd, comment: comment))
+            keyMappingList.append(KeyMapping(rawKey: key, rawAction: cmd, isIINACommand: false, comment: comment))
           }
         }
       }
