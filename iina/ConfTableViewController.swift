@@ -142,7 +142,7 @@ extension ConfTableViewController: NSTableViewDelegate {
         } else {
           textColor = nil
         }
-        cell.textField?.setFormattedText(stringValue: confName, textColor: textColor, italic: isBuiltinConf)
+        cell.textField?.setFormattedText(stringValue: confName, textColor: textColor)
         return cell
       case "isDefaultColumn":
         if #available(macOS 10.14, *), useSeparateColorForBuiltinConfs {
