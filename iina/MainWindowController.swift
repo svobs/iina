@@ -20,12 +20,14 @@ fileprivate let isMacOS11: Bool = {
 }()
 
 fileprivate let TitleBarHeightNormal: CGFloat = {
-  // `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
-  // the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
-  // Note that we can't use this trick to get it from our window instance directly, because our window has the
-  // "full-sized content view" style and so its `frameRect` does not include any extra space for its title bar.
+  /**
+   `NSWindow` doesn't provide title bar height directly, but we can derive it by asking `NSWindow` for
+  the dimensions of a prototypical window with titlebar, then subtracting the height of its `contentView`.
+  Note that we can't use this trick to get it from our window instance directly, because our window has the
+  `fullSizeContentView` style and so its `frameRect` does not include any extra space for its title bar.
+   */
 
-  // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make then nonzero.
+  // Probably doesn't matter what dimensions we pick for the dummy contentRect, but to be safe let's make them nonzero.
   let dummyContentRect = NSRect(x: 0, y: 0, width: 10, height: 10)
   let dummyFrameRect = NSWindow.frameRect(forContentRect: dummyContentRect, styleMask: .titled)
   let titleBarHeight = dummyFrameRect.height - dummyContentRect.height
@@ -33,8 +35,8 @@ fileprivate let TitleBarHeightNormal: CGFloat = {
 }()
 fileprivate let OSCTopHeightInFullScreen: CGFloat = 24 + 10
 fileprivate let OSCTopHeightWithTitleBar: CGFloat = TitleBarHeightNormal + OSCTopHeightInFullScreen
-fileprivate let OSCTopMainViewMarginTopInFullScreen: CGFloat = 6
 fileprivate let OSCTopMainViewMarginTop: CGFloat = 26
+fileprivate let OSCTopMainViewMarginTopInFullScreen: CGFloat = 6
 
 fileprivate let SettingsWidth: CGFloat = 360
 fileprivate let PlaylistMinWidth: CGFloat = 240
@@ -56,7 +58,8 @@ fileprivate extension NSStackView.VisibilityPriority {
 
 
 class MainWindowController: PlayerWindowController {
-  // adjust so that when sidebar is open & "top" OSC is shown, the separator under the sidebar tab buttons aligns with bottom of OSC:
+  /** Adjust vertical offset so that when sidebar is open & "top" OSC is shown, the separator
+   under the sidebar tab buttons aligns with bottom of OSC. */
   static let sidebarDownShift: CGFloat = TitleBarHeightNormal - 14
 
   override var windowNibName: NSNib.Name {
