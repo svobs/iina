@@ -293,7 +293,7 @@ class PlayerCore: NSObject {
 
 
   private func openMainWindow(path: String, url: URL, isNetwork: Bool) {
-    Logger.log("Opening \(path) in main window", subsystem: subsystem)
+    Logger.log("Opening in main window: \(path.pii)", subsystem: subsystem)
     info.currentURL = url
     // clear currentFolder since playlist is cleared, so need to auto-load again in playerCore#fileStarted
     info.currentFolder = nil
@@ -386,12 +386,12 @@ class PlayerCore: NSObject {
       path = customYtdlPath + ":" + path
     }
     setenv("PATH", path, 1)
-    Logger.log("Set path to \(path)", subsystem: subsystem)
+    Logger.log("Set path to \(path.pii)", subsystem: subsystem)
 
     // set http proxy
     if let proxy = Preference.string(for: .httpProxy), !proxy.isEmpty {
       setenv("http_proxy", "http://" + proxy, 1)
-      Logger.log("Set http_proxy to \(proxy)", subsystem: subsystem)
+      Logger.log("Set http_proxy to \(proxy.pii)", subsystem: subsystem)
     }
 
     mpv.mpvInit()

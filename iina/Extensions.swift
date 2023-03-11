@@ -402,6 +402,12 @@ extension String {
     }
   }
 
+  // Returns a lookup token for the given string, which can be used in its place to privatize the log.
+  // The pii.txt file is required to match the lookup token with the privateString.
+  var pii: String {
+    Logger.getOrCreatePII(for: self)
+  }
+
   var isDirectoryAsPath: Bool {
     get {
       var re = ObjCBool(false)
@@ -637,7 +643,7 @@ extension NSScreen {
     if #available(macOS 10.15, *) {
       let maxPossibleEDR = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
       let canEnableEDR = maxPossibleEDR > 1.0
-      Logger.log("\(label): \"\(screen.localizedName)\" visible frame \(screen.visibleFrame) EDR: {supports=\(canEnableEDR) maxPotential=\(maxPossibleEDR) maxCurrent=\(screen.maximumExtendedDynamicRangeColorComponentValue)}")
+      Logger.log("\(label): \"\(screen.localizedName.pii)\" visible frame \(screen.visibleFrame) EDR: {supports=\(canEnableEDR) maxPotential=\(maxPossibleEDR) maxCurrent=\(screen.maximumExtendedDynamicRangeColorComponentValue)}")
     } else {
       Logger.log("\(label): visible frame \(screen.visibleFrame)")
     }

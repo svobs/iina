@@ -251,15 +251,15 @@ class InitialWindowController: NSWindowController {
     recentFilesTableView.reloadData()
 
     if Logger.enabled && Logger.Level.preferred >= .verbose {
-      let last = lastPlaybackURL.flatMap { $0.resolvingSymlinksInPath().path } ?? "<none>"
+      let last = lastPlaybackURL.flatMap { $0.resolvingSymlinksInPath().path.pii } ?? "<none>"
       Logger.log("InitialWindow.reloadData(): LastPlaybackURL: \(last)", level: .verbose)
 
       for (index, url) in NSDocumentController.shared.recentDocumentURLs.enumerated() {
-        Logger.log("InitialWindow.reloadData(): RecentDocuments_Unfiltered[\(index)]: \(url.resolvingSymlinksInPath().path)", level: .verbose)
+        Logger.log("InitialWindow.reloadData(): UnfilteredRecents[\(index)]: \(url.resolvingSymlinksInPath().path.pii)", level: .verbose)
       }
 
       for (index, url) in recentDocuments.enumerated() {
-        Logger.log("InitialWindow.reloadData(): Loaded RecentDocuments[\(index)]: \(url.resolvingSymlinksInPath().path)", level: .verbose)
+        Logger.log("Recents[\(index)]: \(url.resolvingSymlinksInPath().path.pii)", level: .verbose)
       }
     }
     

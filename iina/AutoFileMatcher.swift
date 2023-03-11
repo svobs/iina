@@ -192,7 +192,7 @@ class AutoFileMatcher {
 
     for video in filesGroupedByMediaType[.video]! {
       var matchedSubs = Set<FileInfo>()
-      Logger.log("Matching for \(video.filename)", subsystem: subsystem)
+      Logger.log("Matching for \(video.filename.pii)", subsystem: subsystem)
 
       // match video and sub if both are the closest one to each other
       if subAutoLoadOption.shouldLoadSubsMatchedByIINA() {
@@ -209,7 +209,7 @@ class AutoFileMatcher {
               nameMatched = vn == sn
             }
             if nameMatched {
-              Logger.log("Matched \(video.filename)(\(vn)) and \(sub.filename)(\(sn)) ...", level: .verbose, subsystem: subsystem)
+              Logger.log("Matched \(video.filename.pii)(\(vn.pii)) and \(sub.filename.pii)(\(sn.pii)) ...", level: .verbose, subsystem: subsystem)
               video.relatedSubs.append(sub)
               if sub.prefix == matchedSubPrefix {
                 try checkTicket()
@@ -230,7 +230,7 @@ class AutoFileMatcher {
           $0.filename.contains(video.filename) && !$0.isMatched
         }.forEach { sub in
           try checkTicket()
-          Logger.log("Matched \(sub.filename) and \(video.filename)", level: .verbose, subsystem: subsystem)
+          Logger.log("Matched \(sub.filename.pii) and \(video.filename.pii)", level: .verbose, subsystem: subsystem)
           player.info.matchedSubs[video.path, default: []].append(sub.url)
           sub.isMatched = true
           matchedSubs.insert(sub)
@@ -266,7 +266,7 @@ class AutoFileMatcher {
           .compactMap { player.info.matchedSubs[video.path]!.firstIndex(of: $0.url) }  // get index
           .forEach {  // move the sub with index to first
             try checkTicket()
-            Logger.log("Move \(player.info.matchedSubs[video.path]![$0]) to front", level: .verbose, subsystem: subsystem)
+            Logger.log("Move \(player.info.matchedSubs[video.path]![$0].absoluteString.pii) to front", level: .verbose, subsystem: subsystem)
             if let s = player.info.matchedSubs[video.path]?.remove(at: $0) {
               player.info.matchedSubs[video.path]!.insert(s, at: 0)
             }
@@ -291,7 +291,7 @@ class AutoFileMatcher {
       // calculate edit distance
       Logger.log("Calculating edit distance...", subsystem: subsystem)
       for sub in unmatchedSubs {
-        Logger.log("Calculating edit distance for \(sub.filename)", level: .verbose, subsystem: subsystem)
+        Logger.log("Calculating edit distance for \(sub.filename.pii)", level: .verbose, subsystem: subsystem)
         var minDistToVideo: UInt = .max
         for video in unmatchedVideos {
           try checkTicket()

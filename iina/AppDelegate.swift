@@ -185,7 +185,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     var iinaArgFilenames: [String] = []
     var dropNextArg = false
 
-    Logger.log("Got arguments \(arguments)")
+    Logger.log("Got arguments \("\(arguments)".pii)")
     for arg in arguments {
       if dropNextArg {
         dropNextArg = false
@@ -209,8 +209,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
     }
 
-    Logger.log("IINA arguments: \(iinaArgs)")
-    Logger.log("Filenames from arguments: \(iinaArgFilenames)")
+    Logger.log("IINA arguments: \("\(iinaArgs)".pii)")
+    Logger.log("Filenames from arguments: \(iinaArgFilenames.map {$0.pii})")
     commandLineStatus.parseArguments(iinaArgs)
 
     print("IINA \(version) Build \(build)")
@@ -505,7 +505,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func applicationWillTerminate(_ notification: Notification) {
     Logger.log("App will terminate")
-    Logger.closeLogFile()
+    Logger.closeLogFiles()
   }
 
   /**

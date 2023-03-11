@@ -265,6 +265,7 @@ struct Preference {
     /** Log to log folder (bool) */
     static let enableLogging = Key("enableLogging")
     static let logLevel = Key("logLevel")
+    static let enablePiiMaskingInLog = Key("enablePiiMaskingInLog")
 
     static let displayKeyBindingRawValues = Key("displayKeyBindingRawValues")
 
@@ -799,6 +800,7 @@ struct Preference {
     .useMpvOsd: false,
     .enableLogging: false,
     .logLevel: Logger.Level.debug.rawValue,
+    .enablePiiMaskingInLog: true,
     .displayKeyBindingRawValues: false,
     .userOptions: [],
     .useUserDefinedConfDir: false,

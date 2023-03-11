@@ -21,6 +21,26 @@ import Foundation
 ///     the logger uses its own similar method.
 struct Logger {
 
+  fileprivate static let sessionDirName: String = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
+    let timeString  = formatter.string(from: Date())
+    let token = Utility.ShortCodeGenerator.getCode(length: 6)
+    return "\(timeString)_\(token)"
+  }()
+
+  /// If true, strings which are indicated to contain personally identifiable information (PII) are replaced with a
+  /// unique PII token (see `piiFormat` below) when they are logged to iina.log.
+  static let enablePiiMaskingInLog = Preference.bool(for: .enablePiiMaskingInLog)
+
+  /// Is ignored unless `enablePiiMaskingInLog` is true. If `writeUnmaskedPiiToFile` is true, each PII token and its value is written to a separate file
+  /// which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.
+  static let writeUnmaskedPiiToFile = true
+
+  fileprivate static let piiFormat: String = "{pii%@}"
+  fileprivate static let piiFileVersion: Int = 0
+  fileprivate static let piiFirstLineFormat = "# IINA_PII \(piiFileVersion) \(sessionDirName)\n"
+
   struct Subsystem: RawRepresentable {
     var rawValue: String
 
@@ -53,6 +73,48 @@ struct Logger {
     }
   }
 
+  fileprivate static var piiDict: [String: Int] = [:]
+
+  static func getOrCreatePII(for privateString: String) -> String {
+    guard enablePiiMaskingInLog else {
+      return privateString
+    }
+
+    var piiToken: String = ""
+    lock.withLock {
+      if let piiID = piiDict[privateString] {
+        piiToken = formatPIIToken(piiID)
+      } else {
+        let piiID = piiDict.count
+        piiDict[privateString] = piiID
+        let escapedString = privateString.replacingOccurrences(of: "\n", with: "\\n")
+        piiToken = formatPIIToken(piiID)
+
+        if writeUnmaskedPiiToFile {
+          if piiID == 0 {
+            if let data = piiFirstLineFormat.data(using: .utf8) {
+              writeToFile(piiFileHandle, data)
+            } else {
+              print(formatMessage("Could not encode pii header for writing!", .error, Logger.loggerSubsystem, false))
+            }
+          }
+          let line = "\(piiToken)=\(escapedString)\n"
+          if let data = line.data(using: .utf8) {
+            writeToFile(piiFileHandle, data)
+          } else {
+            print(formatMessage("Could not encode pii token (\(piiToken)) for writing!", .error, Logger.loggerSubsystem, false))
+          }
+        }
+      }
+    }
+    return piiToken
+  }
+
+  fileprivate static func formatPIIToken(_ piiID: Int) -> String {
+    let paddedInt = piiID < 10 ? "0\(piiID)" : "\(piiID)"
+    return String(format: piiFormat, paddedInt)
+  }
+
   static let enabled = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
 
   static let logDirectory: URL = {
@@ -69,11 +131,6 @@ struct Logger {
     // methods must not ever be called while the logger is still initializing.
     createDirIfNotExist(url: logsUrl)
 
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
-    let timeString  = formatter.string(from: Date())
-    let token = Utility.ShortCodeGenerator.getCode(length: 6)
-    let sessionDirName = "\(timeString)_\(token)"
     let sessionDir = appLogsUrl.appendingPathComponent(sessionDirName, isDirectory: true)
 
     // MUST NOT use the similar method in Utilities. See above for reason.
@@ -82,6 +139,8 @@ struct Logger {
   }()
 
   private static let logFile: URL = logDirectory.appendingPathComponent("iina.log")
+  // File for personally identifiable information lookup
+  private static let piiFile: URL = logDirectory.appendingPathComponent("user-private.txt")
 
   private static let loggerSubsystem = Logger.Subsystem(rawValue: "logger")
 
@@ -91,6 +150,15 @@ struct Logger {
       return try FileHandle(forWritingTo: logFile)
     } catch  {
       fatalDuringInit("Cannot open log file \(logFile.path) for writing: \(error.localizedDescription)")
+    }
+  }()
+
+  private static var piiFileHandle: FileHandle? = {
+    FileManager.default.createFile(atPath: piiFile.path, contents: nil, attributes: nil)
+    do {
+      return try FileHandle(forWritingTo: piiFile)
+    } catch  {
+      fatalDuringInit("Cannot open log file \(piiFile.path) for writing: \(error.localizedDescription)")
     }
   }()
 
@@ -108,22 +176,28 @@ struct Logger {
   ///     a thread will attempt to log a message after the log file has been closed or not.  Previously this was triggering crashes due
   ///     to writing to a closed file handle. The logger now uses a lock to coordinate closing of the log file. If a log message is logged
   ///     after the log file is closed it will only be logged to the console.
-  static func closeLogFile() {
+  static func closeLogFiles() {
     guard enabled else { return }
     // Lock to avoid closing the log file while another thread is writing to it.
     lock.withLock {
-      guard let fileHandle = logFileHandle else { return }
-      do {
-        // The deprecated method is used instead of the new close method that throws swift exceptions
-        // because testing with the new write method found it failed to convert all objective-c
-        // exceptions to swift exceptions.
-        try ObjcUtils.catchException { fileHandle.closeFile() }
-      } catch {
-        // Unusual, but could happen if closing causes a buffer to be flushed to a full disk.
-        print(formatMessage("Cannot close log file \(logFile.path): \(error.localizedDescription)",
-                            .error, Logger.loggerSubsystem, true))
-      }
+      close(logFile, logFileHandle)
       logFileHandle = nil
+      close(piiFile, piiFileHandle)
+      piiFileHandle = nil
+    }
+  }
+
+  private static func close(_ fileURL: URL, _ fileHandle: FileHandle?) {
+    guard let fileHandle = fileHandle else { return }
+    do {
+      // The deprecated method is used instead of the new close method that throws swift exceptions
+      // because testing with the new write method found it failed to convert all objective-c
+      // exceptions to swift exceptions.
+      try ObjcUtils.catchException { fileHandle.closeFile() }
+    } catch {
+      // Unusual, but could happen if closing causes a buffer to be flushed to a full disk.
+      print(formatMessage("Cannot close log file \(fileURL.path): \(error.localizedDescription)",
+                          .error, Logger.loggerSubsystem, true))
     }
   }
 
@@ -149,6 +223,21 @@ struct Logger {
     return "\(time) [\(subsystem.rawValue)][\(level.description)] \(message)\(appendNewlineAtTheEnd ? "\n" : "")"
   }
 
+  private static func writeToFile(_ fileHandle: FileHandle?, _ data: Data) {
+    // The logger may be called after it has been closed.
+    guard let fileHandle = fileHandle else { return }
+    do {
+      // The deprecated write method is used instead of the replacement method that throws swift
+      // exceptions because testing the new method with macOS 12.5.1 showed that method failed to
+      // turn all objective-c exceptions into swift exceptions. The exception thrown for writing
+      // to a closed channel was not picked up by the catch block.
+      try ObjcUtils.catchException { fileHandle.write(data) }
+    } catch {
+      print(formatMessage("Cannot write to log file: \(error.localizedDescription)", .error,
+                          Logger.loggerSubsystem, false))
+    }
+  }
+
   static func log(_ message: String, level: Level = .debug, subsystem: Subsystem = .general, appendNewlineAtTheEnd: Bool = true) {
     #if !DEBUG
     guard enabled else { return }
@@ -168,18 +257,7 @@ struct Logger {
     }
     // Lock to prevent the log file from being closed by another thread while writing to it.
     lock.withLock() {
-      // The logger may be called after it has been closed.
-      guard let logFileHandle = logFileHandle else { return }
-      do {
-        // The deprecated write method is used instead of the replacement method that throws swift
-        // exceptions because testing the new method with macOS 12.5.1 showed that method failed to
-        // turn all objective-c exceptions into swift exceptions. The exception thrown for writing
-        // to a closed channel was not picked up by the catch block.
-        try ObjcUtils.catchException { logFileHandle.write(data) }
-      } catch {
-        print(formatMessage("Cannot write to log file: \(error.localizedDescription)", .error,
-                            Logger.loggerSubsystem, false))
-      }
+      writeToFile(logFileHandle, data)
     }
   }
 
