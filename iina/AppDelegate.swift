@@ -261,7 +261,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       var lastPlayerCore: PlayerCore? = nil
       let getNewPlayerCore = { () -> PlayerCore in
         let pc = PlayerCore.newPlayerCore
-        self.commandLineStatus.assignMPVArguments(to: pc)
+        let mpvArgs = self.commandLineStatus.mpvArguments
+        Logger.log("Setting mpv properties from arguments: \(mpvArgs)", subsystem: pc.subsystem)
+        for mpvArg in mpvArgs {
+          pc.mpv.setString(mpvArg.0, mpvArg.1)
+        }
         lastPlayerCore = pc
         return pc
       }
@@ -821,88 +825,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 }
 
-
-class CommandLineStatus {
-  var isCommandLine = false
-  var isStdin = false
-  var openSeparateWindows = false
-  var enterMusicMode = false
-  var enterPIP = false
-  var mpvArguments: [(String, String)] = []
-  var filenames: [String] = []
-
-  init(_ arguments: ArraySlice<String>) {
-    guard !arguments.isEmpty else { return }
-
-    for arg in arguments {
-      if arg.hasPrefix("--") {
-        parseDoubleDashedArg(arg)
-      } else if arg.hasPrefix("-") {
-        parseSingleDashedArg(arg)
-      } else {
-        // assume arg with no starting dashes is a filename
-        filenames.append(arg)
-      }
-    }
-
-    Logger.log("Parsed command-line args: isStdin=\(isStdin) separateWindows=\(openSeparateWindows), enterMusicMode=\(enterMusicMode), enterPIP=\(enterPIP))")
-    Logger.log("Filenames from arguments: \(filenames)")
-  }
-
-  private func parseDoubleDashedArg(_ arg: String) {
-    if arg == "--" {
-      // ignore
-      return
-    }
-    let splitted = arg.dropFirst(2).split(separator: "=", maxSplits: 1)
-    let name = String(splitted[0])
-    if name.hasPrefix("mpv-") {
-      // mpv args
-      let strippedName = String(name.dropFirst(4))
-      if strippedName == "-" {
-        isStdin = true
-      } else if splitted.count <= 1 {
-        mpvArguments.append((strippedName, "yes"))
-      } else {
-        mpvArguments.append((strippedName, String(splitted[1])))
-      }
-    } else {
-      // Check for IINA args. If an arg is not recognized, assume it is an mpv arg.
-      // (The names here should match the "Usage" message in main.swift)
-      switch name {
-      case "stdin":
-        isStdin = true
-      case "separate-windows":
-        openSeparateWindows = true
-      case "music-mode":
-        enterMusicMode = true
-      case "pip":
-        enterPIP = true
-      default:
-        if splitted.count <= 1 {
-          mpvArguments.append((name, "yes"))
-        } else {
-          mpvArguments.append((name, String(splitted[1])))
-        }
-      }
-    }
-  }
-
-  private func parseSingleDashedArg(_ arg: String) {
-    if arg == "-" {
-      // single '-'
-      isStdin = true
-    }
-    // else ignore all single-dashed args
-  }
-
-  func assignMPVArguments(to playerCore: PlayerCore) {
-    Logger.log("Setting mpv properties from arguments: \(mpvArguments)")
-    for arg in mpvArguments {
-      playerCore.mpv.setString(arg.0, arg.1)
-    }
-  }
-}
 
 @available(macOS 10.13, *)
 class RemoteCommandController {

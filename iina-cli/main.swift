@@ -11,15 +11,15 @@ import Foundation
 func printHelp() {
   print(
     """
-    Usage: iina-cli [arguments] [files] [-- mpv_option [...]]
+    Usage: iina-cli [option ...] [file ...] [-- [mpv_option ...]]
 
-    Arguments:
+    Options:
     --mpv-*:
             All mpv options are supported here, except those starting with "--no-".
-            Example: --mpv-volume=20 --mpv-resume-playback=no
-    --separate-windows | -w:
+            Example: iina-cli --mpv-volume=20 --mpv-resume-playback=no movie.mp4
+    --separate-windows, -w:
             Open all files in separate windows.
-    --stdin, --no-stdin:
+    --stdin | --no-stdin:
             You may also pipe to stdin directly. Sometimes iina-cli can detect whether
             stdin has file, but sometimes not. Therefore it's recommended to always
             supply --stdin when piping to iina, and --no-stdin when you are not intend
@@ -32,12 +32,14 @@ func printHelp() {
     --pip:
             Enter Picture-in-Picture after opening the media. Music mode does not
             support Picture-in-Picture.
-    --help | -h:
-            Print this message.
+    --help, -h:
+            Print this help message and exit.
 
-    mpv Option:
-    Raw mpv options without --mpv- prefix. All mpv options are supported here.
-    Example: --volume=20 --no-resume-playback
+    Files:
+
+    MPV Options:
+    Raw mpv options without --mpv- prefix may be listed after --. All mpv options are supported here.
+    Example: iina-cli movie.mp4 -- --volume=20 --no-resume-playback
     """)
 }
 
@@ -62,7 +64,7 @@ guard FileManager.default.fileExists(atPath: iinaPath) else {
 let task = Process()
 task.launchPath = iinaPath
 
-// Check arguments
+// Check options
 
 let userArgs = Array(processInfo.arguments.dropFirst())
 
