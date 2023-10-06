@@ -98,15 +98,18 @@ extension MainMenuActionHandler {
     }
   }
 
-  @objc func menuStepFrame(_ sender: NSMenuItem) {
+  @objc func menuStepPrevFrame(_ sender: NSMenuItem) {
     if player.info.isPlaying {
       player.pause()
     }
-    if sender.tag == 0 { // -> 1f
-      player.frameStep(backwards: false)
-    } else if sender.tag == 1 { // <- 1f
-      player.frameStep(backwards: true)
+    player.frameStep(backwards: true)
+  }
+
+  @objc func menuStepNextFrame(_ sender: NSMenuItem) {
+    if player.info.isPlaying {
+      player.pause()
     }
+    player.frameStep(backwards: false)
   }
 
   @objc func menuChangeSpeed(_ sender: NSMenuItem) {

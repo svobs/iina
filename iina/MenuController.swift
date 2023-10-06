@@ -204,9 +204,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // -- seeking
     forward.action = #selector(MainMenuActionHandler.menuStep(_:))
-    nextFrame.action = #selector(MainMenuActionHandler.menuStepFrame(_:))
+    nextFrame.action = #selector(MainMenuActionHandler.menuStepNextFrame(_:))
     backward.action = #selector(MainMenuActionHandler.menuStep(_:))
-    previousFrame.action = #selector(MainMenuActionHandler.menuStepFrame(_:))
+    previousFrame.action = #selector(MainMenuActionHandler.menuStepPrevFrame(_:))
     jumpToBegin.action = #selector(MainMenuActionHandler.menuJumpToBegin(_:))
     jumpTo.action = #selector(MainMenuActionHandler.menuJumpTo(_:))
 
