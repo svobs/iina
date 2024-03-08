@@ -823,13 +823,16 @@ not applying FFmpeg 9599 workaround
 
   // Read event and handle it async
   private func readEvents() {
+    NSLog("readEvents()")
     queue.async {
       while ((self.mpv) != nil) {
+        NSLog("Waiting for event")
         let event = mpv_wait_event(self.mpv, 0)
         // Do not deal with mpv-event-none
         if event?.pointee.event_id == MPV_EVENT_NONE {
           break
         }
+        NSLog("HANDLING EVENT")
         self.handleEvent(event)
       }
     }
@@ -850,6 +853,7 @@ not applying FFmpeg 9599 workaround
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId = event.pointee.event_id
 
+    NSLog("EVENT: \(eventId)")
     switch eventId {
     case MPV_EVENT_SHUTDOWN:
       let quitByMPV = !player.isShuttingDown
@@ -926,8 +930,9 @@ not applying FFmpeg 9599 workaround
       onFileLoaded()
 
     case MPV_EVENT_SEEK:
+      NSLog("Handling seek")
       player.info.isSeeking = true
-      DispatchQueue.main.sync {
+      DispatchQueue.main.async { [self] in
         // When playback is paused the display link may be shutdown in order to not waste energy.
         // It must be running when seeking to avoid slowdowns caused by mpv waiting for IINA to call
         // mpv_render_report_swap.
@@ -941,11 +946,12 @@ not applying FFmpeg 9599 workaround
         (player.info.videoDuration?.stringRepresentation ?? Constants.String.videoTimePlaceholder)
       let percentage = (player.info.videoPosition / player.info.videoDuration) ?? 1
       player.sendOSD(.seek(osdText, percentage))
+      NSLog("Done handling seek")
 
     case MPV_EVENT_PLAYBACK_RESTART:
       player.info.isIdle = false
       player.info.isSeeking = false
-      DispatchQueue.main.sync {
+      DispatchQueue.main.async { [self] in
         // When playback is paused the display link may be shutdown in order to not waste energy.
         // The display link will be restarted while seeking. If playback is paused shut it down
         // again.
@@ -1007,6 +1013,8 @@ not applying FFmpeg 9599 workaround
       let eventName = "mpv.\(String(cString: mpv_event_name(eventId)))"
       player.events.emit(.init(eventName))
     }
+
+    Logger.log("Done with handleEvent")
   }
 
   private func onVideoParamsChange(_ data: UnsafePointer<mpv_node_list>) {
@@ -1081,7 +1089,7 @@ not applying FFmpeg 9599 workaround
       if let paused = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
         if player.info.isPaused != paused {
           player.sendOSD(paused ? .pause : .resume)
-          DispatchQueue.main.sync {
+          DispatchQueue.main.async { [self] in
             player.info.isPaused = paused
             // Follow energy efficiency best practices and ensure IINA is absolutely idle when the
             // video is paused to avoid wasting energy with needless processing. If paused shutdown
