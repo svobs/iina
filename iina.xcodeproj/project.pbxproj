@@ -171,10 +171,10 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
-		D1B4E24E2A3AFC9100E36F1D /* MiniPlayerWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B4E24D2A3AFC9100E36F1D /* MiniPlayerWindow.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* KeyInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* KeyInputController.swift */; };
 		D19E23E9284F0A8400FD6999 /* IINAApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19E23E8284F0A8400FD6999 /* IINAApplication.swift */; };
+		D1B4E24E2A3AFC9100E36F1D /* MiniPlayerWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B4E24D2A3AFC9100E36F1D /* MiniPlayerWindow.swift */; };
 		E301EFDA21312AB300BC8588 /* KeychainAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = E301EFD921312AB300BC8588 /* KeychainAccess.swift */; };
 		E30D2EBD21F5FD2600E1FF0D /* PluginOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30D2EBC21F5FD2600E1FF0D /* PluginOverlayView.swift */; };
 		E322A4F820A8442E00C67D32 /* PlaylistPlaybackProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E322A4F720A8442E00C67D32 /* PlaylistPlaybackProgressView.swift */; };
@@ -4333,7 +4333,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2017-2024\nCollider LI, et al.\nReleased under GPLv3.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSPrincipalClass = IINAApplication;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
@@ -4369,7 +4369,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2017-2024\nCollider LI, et al.\nReleased under GPLv3.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSPrincipalClass = IINAApplication;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
@@ -4412,7 +4412,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2017-2024\nCollider LI, et al.\nReleased under GPLv3.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSPrincipalClass = IINAApplication;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",
@@ -4427,7 +4427,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2017-2024\nCollider LI, et al.\nReleased under GPLv3.";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSPrincipalClass = IINAApplication;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/deps/lib",

@@ -14,11 +14,11 @@ class IINAApplication: NSApplication {
   override func sendEvent(_ event: NSEvent) {
     switch event.type {
     case .keyDown:
-        if handleKeyDown(event) {
-            return
-        }
-      default:
-        break
+      if handleKeyDown(event) {
+        return
+      }
+    default:
+      break
     }
 
     // process via the normal chain:
