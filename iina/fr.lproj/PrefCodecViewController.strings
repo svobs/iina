@@ -51,3 +51,36 @@
 
 /* Class = "NSTextFieldCell"; title = "Preferred language:"; ObjectID = "wjt-O6-KbC"; */
 "wjt-O6-KbC.title" = "Langue préférée :";
+
+/* Class = "NSButtonCell"; title = "Load ICC profile"; ObjectID = "3g4-jW-uJd"; */
+"3g4-jW-uJd.title" = "Charger un profil ICC";
+
+/* Class = "NSTextFieldCell"; title = "Load the ICC profile for current display and use it to transform video RGB to screen output. (Only for SDR mode)"; ObjectID = "M2M-of-gjd"; */
+"M2M-of-gjd.title" = "Charger le profil ICC pour l'affichage actuel et l'utiliser pour transformer le RVB vidéo en sortie d'écran. (Uniquement pour le mode SDR)";
+
+/* Class = "NSButtonCell"; title = "Enable HDR support"; ObjectID = "R7Z-9c-vPJ"; */
+"R7Z-9c-vPJ.title" = "Activer le support HDR";
+
+/* Class = "NSTextFieldCell"; title = "Enable HDR mode by default when playing HDR videos."; ObjectID = "ZgQ-bc-yEE"; */
+"ZgQ-bc-yEE.title" = "Activer le HDR par défaut lors de la lecture de vidéos HDR.";
+
+/* Class = "NSButtonCell"; title = "Enable tone mapping"; ObjectID = "a5Y-gU-JTj"; */
+"a5Y-gU-JTj.title" = "Activer la gamme dynamique";
+
+/* Class = "NSTextFieldCell"; title = "Enable tone mapping images onto the display"; ObjectID = "mNn-cb-IVw"; */
+"mNn-cb-IVw.title" = "Activer les images de gamme dynamique sur l'écran";
+
+/* Class = "NSTextFieldCell"; title = "Target peak:"; ObjectID = "xVk-OA-kOf"; */
+"xVk-OA-kOf.title" = "Target peak :";
+
+/* Class = "NSTextFieldCell"; title = "nits"; ObjectID = "baO-xy-7hD"; */
+"baO-xy-7hD.title" = "nits";
+
+/* Class = "NSTextFieldCell"; title = "Measured peak brightness of the display. If set to 0, IINA detects this value. If detection fails, IINA sets the target peak to 400."; ObjectID = "aTt-aZ-rjK"; */
+"aTt-aZ-rjK.title" = "Luminosité maximale mesurée de l'écran, Si défini à 0, IINA détecte la valeur automatiquement. Si la détection auto échoue, la valeur est fixée à 400.";
+
+/* Class = "NSTextFieldCell"; title = "Algorithm:"; ObjectID = "qzI-rq-PqO"; */
+"qzI-rq-PqO.title" = "Algorithme :";
+
+/* Class = "NSTextFieldCell"; title = "Algorithm to use for tone mapping images onto the display."; ObjectID = "szA-8r-plt"; */
+"szA-8r-plt.title" = "Algorithme à utiliser pour le mapping tonale des images sur l'écran.";

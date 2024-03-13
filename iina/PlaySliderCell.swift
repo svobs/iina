@@ -1,5 +1,5 @@
 //
-//  PlaySlider.swift
+//  PlaySliderCell.swift
 //  iina
 //
 //  Created by lhc on 25/7/16.
@@ -22,14 +22,15 @@ fileprivate extension NSColor {
 }
 
 class PlaySliderCell: NSSliderCell {
+  unowned var _playerCore: PlayerCore!
+  var playerCore: PlayerCore {
+    if let player = _playerCore { return player }
 
-  lazy var playerCore: PlayerCore = {
     let windowController = self.controlView!.window!.windowController
-    if let mainWindowController = windowController as? MainWindowController {
-      return mainWindowController.player
-    }
-    return (windowController as! MiniPlayerWindowController).player
-  }()
+    let player = (windowController as! PlayerWindowController).player
+    _playerCore = player
+    return player
+  }
 
   override var knobThickness: CGFloat {
     return knobWidth
@@ -97,6 +98,8 @@ class PlaySliderCell: NSSliderCell {
     maxValue = 100
   }
 
+  // MARK:- Displaying the Cell
+
   override func drawKnob(_ knobRect: NSRect) {
     // Round the X position for cleaner drawing
     let rect = NSMakeRect(round(knobRect.origin.x),
@@ -128,19 +131,20 @@ class PlaySliderCell: NSSliderCell {
 
   override func knobRect(flipped: Bool) -> NSRect {
     let slider = self.controlView as! NSSlider
-    let barRect = super.barRect(flipped: flipped)
+    let barRect = barRect(flipped: flipped)
     let percentage = slider.doubleValue / (slider.maxValue - slider.minValue)
-    let pos = min(CGFloat(percentage) * barRect.width, barRect.width - 1);
+    // The usable width of the bar is reduced by the width of the knob.
+    let effectiveBarWidth = barRect.width - knobWidth
+    let pos = barRect.origin.x + CGFloat(percentage) * effectiveBarWidth
     let rect = super.knobRect(flipped: flipped)
-    let flippedMultiplier = flipped ? CGFloat(-1) : CGFloat(1)
 
     let height: CGFloat
-    if #available(macOS 10.16, *) {
+    if #available(macOS 11, *) {
       height = (barRect.origin.y - rect.origin.y) * 2 + barRect.height
     } else {
       height = rect.height
     }
-    return NSMakeRect(pos - flippedMultiplier * 0.5 * knobWidth, rect.origin.y, knobWidth, height)
+    return NSMakeRect(pos, rect.origin.y, knobWidth, height)
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
@@ -166,7 +170,7 @@ class PlaySliderCell: NSSliderCell {
 
     NSGraphicsContext.saveGraphicsState()
     let barRect: NSRect
-    if #available(macOS 10.16, *) {
+    if #available(macOS 11, *) {
       barRect = rect
     } else {
       barRect = NSMakeRect(rect.origin.x, rect.origin.y + 1, rect.width, rect.height - 2)
@@ -201,10 +205,9 @@ class PlaySliderCell: NSSliderCell {
     if drawChapters {
       if let totalSec = info.videoDuration?.second {
         chapterStrokeColor.setStroke()
-        var chapters = info.chapters
-        if chapters.count > 0 {
-          chapters.remove(at: 0)
-          chapters.forEach { chapt in
+        let chapters = info.chapters
+        if chapters.count > 1 {
+          for chapt in chapters[1...] {
             let chapPos = CGFloat(chapt.time.second) / CGFloat(totalSec) * barRect.width
             let linePath = NSBezierPath()
             linePath.move(to: NSPoint(x: chapPos, y: barRect.origin.y))
@@ -217,11 +220,7 @@ class PlaySliderCell: NSSliderCell {
     NSGraphicsContext.restoreGraphicsState()
   }
 
-  override func barRect(flipped: Bool) -> NSRect {
-    let rect = super.barRect(flipped: flipped)
-    return NSMakeRect(0, rect.origin.y, rect.width + rect.origin.x * 2, rect.height)
-  }
-
+  // MARK:- Tracking the Mouse
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
     isPausedBeforeSeeking = playerCore.info.isPaused
@@ -239,5 +238,4 @@ class PlaySliderCell: NSSliderCell {
     }
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
   }
-
 }

@@ -10,6 +10,18 @@ import Foundation
 
 class PlaybackInfo {
 
+  /// Enumeration representing the status of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
+  ///
+  /// The A-B loop command cycles mpv through these states:
+  /// - Cleared (looping disabled)
+  /// - A loop point set
+  /// - B loop point set (looping enabled)
+  enum LoopStatus {
+    case cleared
+    case aSet
+    case bSet
+  }
+
   unowned let player: PlayerCore
 
   init(_ pc: PlayerCore) {
@@ -50,9 +62,9 @@ class PlaybackInfo {
   var cachedWindowScale: Double = 1.0
 
   func constrainVideoPosition() {
-    guard let duration = videoDuration else { return }
-    if videoPosition!.second < 0 { videoPosition!.second = 0 }
-    if videoPosition!.second > duration.second { videoPosition!.second = duration.second }
+    guard let duration = videoDuration, let position = videoPosition else { return }
+    if position.second < 0 { position.second = 0 }
+    if position.second > duration.second { position.second = duration.second }
   }
 
   var isSeeking: Bool = false
@@ -79,7 +91,6 @@ class PlaybackInfo {
     }
   }
 
-  var justLaunched: Bool = true
   var justStartedFile: Bool = false
   var justOpenedFile: Bool = false
   var shouldAutoLoadFiles: Bool = false
@@ -88,7 +99,7 @@ class PlaybackInfo {
 
   /** The current applied aspect, used for find current aspect in menu, etc. Maybe not a good approach. */
   var unsureAspect: String = "Default"
-  var unsureCrop: String = "None"
+  var unsureCrop: String = "None" // TODO: rename this to "selectedCrop"
   var cropFilter: MPVFilter?
   var flipFilter: MPVFilter?
   var mirrorFilter: MPVFilter?
@@ -130,7 +141,7 @@ class PlaybackInfo {
   var videoTracks: [MPVTrack] = []
   var subTracks: [MPVTrack] = []
 
-  var abLoopStatus: Int = 0 // 0: none, 1: A set, 2: B set (looping)
+  var abLoopStatus: LoopStatus = .cleared
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var aid: Int?
@@ -186,7 +197,10 @@ class PlaybackInfo {
   var chapters: [MPVChapter] = []
   var chapter = 0
 
-  var matchedSubs: [String: [URL]] = [:]
+  @Atomic var matchedSubs: [String: [URL]] = [:]
+
+  func getMatchedSubs(_ file: String) -> [URL]? { $matchedSubs.withLock { $0[file] } }
+
   var currentSubsInfo: [FileInfo] = []
   var currentVideosInfo: [FileInfo] = []
 

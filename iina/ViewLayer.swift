@@ -14,8 +14,8 @@ class ViewLayer: CAOpenGLLayer {
 
   weak var videoView: VideoView!
 
-  lazy var mpvGLQueue = DispatchQueue(label: "com.colliderli.iina.mpvgl", qos: .userInteractive)
-  var blocked = false
+  let mpvGLQueue = DispatchQueue(label: "com.colliderli.iina.mpvgl", qos: .userInteractive)
+  @Atomic var blocked = false
 
   private var fbo: GLint = 1
 
@@ -47,6 +47,8 @@ class ViewLayer: CAOpenGLLayer {
     var attributeList: [CGLPixelFormatAttribute] = [
       kCGLPFADoubleBuffer,
       kCGLPFAAllowOfflineRenderers,
+      kCGLPFAColorFloat,
+      kCGLPFAColorSize, CGLPixelFormatAttribute(64),
       kCGLPFAOpenGLProfile, CGLPixelFormatAttribute(kCGLOGLPVersion_3_2_Core.rawValue),
       kCGLPFAAccelerated,
     ]
@@ -95,8 +97,6 @@ class ViewLayer: CAOpenGLLayer {
     let mpv = videoView.player.mpv!
     needsMPVRender = false
 
-    guard !videoView.isUninited else { return }
-
     glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
 
     var i: GLint = 0
@@ -143,18 +143,30 @@ class ViewLayer: CAOpenGLLayer {
   }
 
   func draw(forced: Bool = false) {
-    needsMPVRender = true
-    if forced { forceRender = true }
-    display()
-    if forced {
-      forceRender = false
-      return
+    videoView.$isUninited.withLock() { isUninited in
+      // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
+      // lock. This avoids the need for separate locks to avoid data races with these flags. No need
+      // to check isUninited at this point.
+      needsMPVRender = true
+      if forced { forceRender = true }
     }
-    if needsMPVRender {
+
+    // Must not call display while holding isUninited's lock as that method will attempt to acquire
+    // the lock and our locks do not support recursion.
+    display()
+
+    videoView.$isUninited.withLock() { isUninited in
+      guard !isUninited else { return }
+      if forced {
+        forceRender = false
+        return
+      }
+      guard needsMPVRender else { return }
+
       videoView.player.mpv.lockAndSetOpenGLContext()
       defer { videoView.player.mpv.unlockOpenGLContext() }
       // draw(inCGLContext:) is not called, needs a skip render
-      if !videoView.isUninited, let renderContext = videoView.player.mpv.mpvRenderContext {
+      if let renderContext = videoView.player.mpv.mpvRenderContext {
         var skip: CInt = 1
         withUnsafeMutablePointer(to: &skip) { skip in
           var params: [mpv_render_param] = [
@@ -169,7 +181,16 @@ class ViewLayer: CAOpenGLLayer {
   }
 
   override func display() {
-    super.display()
+    let needsFlush: Bool = videoView.$isUninited.withLock() { isUninited in
+      guard !isUninited else { return false }
+
+      super.display()
+      return true
+    }
+    guard needsFlush else { return }
+
+    // Must not call flush while holding isUninited's lock as that method may call display and our
+    // locks do not support recursion.
     CATransaction.flush()
   }
 
@@ -211,5 +232,4 @@ class ViewLayer: CAOpenGLLayer {
   func ignoreGLError() {
     glGetError()
   }
-
 }

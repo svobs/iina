@@ -49,7 +49,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var configHintLabel: NSTextField!
   @IBOutlet weak var addKmBtn: NSButton!
   @IBOutlet weak var removeKmBtn: NSButton!
-  @IBOutlet weak var revealConfFileBtn: NSButton!
+  @IBOutlet weak var showConfFileBtn: NSButton!
   @IBOutlet weak var deleteConfFileBtn: NSButton!
   @IBOutlet weak var newConfigBtn: NSButton!
   @IBOutlet weak var duplicateConfigBtn: NSButton!
@@ -102,7 +102,6 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     currentConfName = currentConf
     guard let path = getFilePath(forConfig: currentConf) else { return }
     currentConfFilePath = path
-    loadConfigFile()
     
     NotificationCenter.default.addObserver(forName: .iinaKeyBindingChanged, object: nil, queue: .main, using: saveToConfFile)
   }
@@ -129,7 +128,8 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
     panel.beginSheetModal(for: view.window!) { respond in
       if respond == .alertFirstButtonReturn {
-        ok(keyRecordViewController.keyCode, keyRecordViewController.action)
+        let rawKey = KeyCodeHelper.escapeReservedMpvKeys(keyRecordViewController.keyCode)
+        ok(rawKey, keyRecordViewController.action)
       }
     }
   }
@@ -139,11 +139,11 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
       guard !key.isEmpty && !action.isEmpty else { return }
       if action.hasPrefix("@iina") {
         let trimmedAction = action[action.index(action.startIndex, offsetBy: "@iina".count)...].trimmingCharacters(in: .whitespaces)
-        self.mappingController.addObject(KeyMapping(key: key,
+        self.mappingController.addObject(KeyMapping(rawKey: key,
                                         rawAction: trimmedAction,
                                         isIINACommand: true))
       } else {
-        self.mappingController.addObject(KeyMapping(key: key, rawAction: action))
+        self.mappingController.addObject(KeyMapping(rawKey: key, rawAction: action))
       }
 
       self.kbTableView.scrollRowToVisible((self.mappingController.arrangedObjects as! [AnyObject]).count - 1)
@@ -253,7 +253,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
     }
   }
 
-  @IBAction func revealConfFileAction(_ sender: AnyObject) {
+  @IBAction func showConfFileAction(_ sender: AnyObject) {
     let url = URL(fileURLWithPath: currentConfFilePath)
     NSWorkspace.shared.activateFileViewerSelecting([url])
   }
@@ -315,7 +315,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   private func changeButtonEnabledStatus() {
     shouldEnableEdit = !isDefaultConfig(currentConfName)
-    [revealConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
+    [showConfFileBtn, deleteConfFileBtn, addKmBtn].forEach { btn in
       btn.isEnabled = shouldEnableEdit
     }
     kbTableView.tableColumns.forEach { $0.isEditable = shouldEnableEdit }
@@ -325,11 +325,14 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   func saveToConfFile(_ sender: Notification) {
     let predicate = mappingController.filterPredicate
     mappingController.filterPredicate = nil
-    let keyMapping = mappingController.arrangedObjects as! [KeyMapping]
+    let keyMappings = mappingController.arrangedObjects as! [KeyMapping]
+    for mapping in keyMappings {
+      mapping.rawKey = KeyCodeHelper.escapeReservedMpvKeys(mapping.rawKey)
+    }
     setKeybindingsForPlayerCore()
     mappingController.filterPredicate = predicate
     do {
-      try KeyMapping.generateConfData(from: keyMapping).write(toFile: currentConfFilePath, atomically: true, encoding: .utf8)
+      try KeyMapping.generateInputConf(from: keyMappings).write(toFile: currentConfFilePath, atomically: true, encoding: .utf8)
     } catch {
       Utility.showAlert("config.cannot_write", sheetWindow: view.window)
     }
@@ -401,7 +404,7 @@ extension PrefKeyBindingViewController: NSTableViewDelegate, NSTableViewDataSour
     return [
       "name": name,
       "isHidden": !isDefaultConfig(name)
-    ]
+    ] as [String: Any]
   }
 
   // NSTableViewDelegate
@@ -421,9 +424,9 @@ extension PrefKeyBindingViewController: NSTableViewDelegate, NSTableViewDataSour
     }
     guard kbTableView.selectedRow != -1 else { return }
     let selectedData = mappingController.selectedObjects[0] as! KeyMapping
-    showKeyBindingPanel(key: selectedData.key, action: selectedData.readableAction) { key, action in
+    showKeyBindingPanel(key: selectedData.rawKey, action: selectedData.readableAction) { key, action in
       guard !key.isEmpty && !action.isEmpty else { return }
-      selectedData.key = key
+      selectedData.rawKey = key
       selectedData.rawAction = action
       self.kbTableView.reloadData()
       NotificationCenter.default.post(Notification(name: .iinaKeyBindingChanged))

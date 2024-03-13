@@ -8,15 +8,15 @@
 
 import Cocoa
 import Mustache
+import WebKit
 
 fileprivate let isMacOS11: Bool = {
-  var res = false
   if #available(macOS 11.0, *) {
-    if #available(macOS 12.0, *) {} else {
-      res = true
+    if #unavailable(macOS 12.0) {
+        return true
     }
   }
-  return res
+  return false
 }()
 
 fileprivate let TitleBarHeightNormal: CGFloat = {
@@ -49,6 +49,8 @@ fileprivate extension NSStackView.VisibilityPriority {
   static let detachEarliest = NSStackView.VisibilityPriority(rawValue: 750)
 }
 
+// The minimum distance that the user must drag before their click or tap gesture is interpreted as a drag gesture:
+fileprivate let minimumInitialDragDistance: CGFloat = 3.0
 
 class MainWindowController: PlayerWindowController {
 
@@ -74,7 +76,7 @@ class MainWindowController: PlayerWindowController {
   override var videoView: VideoView {
     return _videoView
   }
-  
+
   lazy private var _videoView: VideoView = VideoView(frame: window!.contentView!.bounds, player: player)
 
   /** The quick setting sidebar (video, audio, subtitles). */
@@ -181,6 +183,8 @@ class MainWindowController: PlayerWindowController {
   var isShowingPersistentOSD = false
   var osdContext: Any?
 
+  private var isClosing = false
+
   // MARK: - Enums
 
   // Window state
@@ -242,6 +246,8 @@ class MainWindowController: PlayerWindowController {
 
   var fsState: FullScreenState = .windowed {
     didSet {
+      // Must not access mpv while it is asynchronously processing stop and quit commands.
+      guard !isClosing else { return }
       switch fsState {
       case .fullscreen: player.mpv.setFlag(MPVOption.Window.fullscreen, true)
       case .animating:  break
@@ -462,6 +468,15 @@ class MainWindowController: PlayerWindowController {
 
   @IBOutlet weak var pipOverlayView: NSVisualEffectView!
 
+  lazy var pluginOverlayViewContainer: NSView! = {
+    guard let window = window, let cv = window.contentView else { return nil }
+    let view = NSView(frame: .zero)
+    view.translatesAutoresizingMaskIntoConstraints = false
+    cv.addSubview(view, positioned: .below, relativeTo: bufferIndicatorView)
+    Utility.quickConstraints(["H:|[v]|", "V:|[v]|"], ["v": view])
+    return view
+  }()
+
   lazy var subPopoverView = playlistView.subPopover?.contentViewController?.view
 
   var videoViewConstraints: [NSLayoutConstraint.Attribute: NSLayoutConstraint] = [:]
@@ -471,12 +486,18 @@ class MainWindowController: PlayerWindowController {
 
   // MARK: - PIP
 
-  @available(macOS 10.12, *)
-  lazy var pip: PIPViewController = {
-    let pip = PIPViewController()
-    pip.delegate = self
+  lazy var _pip: PIPViewController = {
+    let pip = VideoPIPViewController()
+    if #available(macOS 10.12, *) {
+      pip.delegate = self
+    }
     return pip
   }()
+  
+  @available(macOS 10.12, *)
+  var pip: PIPViewController {
+    _pip
+  }
 
   var pipVideo: NSViewController!
 
@@ -538,6 +559,19 @@ class MainWindowController: PlayerWindowController {
     // gesture recognizer
     cv.addGestureRecognizer(magnificationGestureRecognizer)
 
+    // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
+    // screen mode once overlaying views are fully hidden (issue #3844). After applying this
+    // workaround another bug in Ventura where an external monitor goes black could not be
+    // reproduced (issue #4015). The workaround adds a tiny subview with such a low alpha level it
+    // is invisible to the human eye. This workaround may not be effective in all cases.
+    if #available(macOS 13, *) {
+      let view = NSView(frame: NSRect(origin: .zero, size: NSSize(width: 0.1, height: 0.1)))
+      view.wantsLayer = true
+      view.layer?.backgroundColor = NSColor.black.cgColor
+      view.layer?.opacity = 0.01
+      cv.addSubview(view)
+    }
+
     player.initVideo()
 
     // init quick setting view now
@@ -569,10 +603,12 @@ class MainWindowController: PlayerWindowController {
     timePreviewWhenSeek.isHidden = true
     bottomView.isHidden = true
     pipOverlayView.isHidden = true
+    
+    if player.disableUI { hideUI() }
 
     // add user default observers
     observedPrefKeys.append(contentsOf: localObservedPrefKeys)
-    observedPrefKeys.forEach { key in
+    localObservedPrefKeys.forEach { key in
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
@@ -598,6 +634,40 @@ class MainWindowController: PlayerWindowController {
       // frame.
       guard self.fsState.isFullscreen, Preference.bool(for: .useLegacyFullScreen) else { return }
       setWindowFrameForLegacyFullScreen()
+    }
+
+    // Observe the loop knobs on the progress bar and update mpv when the knobs move.
+    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
+      guard let self = self else { return }
+      let seconds = self.percentToSeconds(self.playSlider.abLoopA.doubleValue)
+      self.player.abLoopA = seconds
+      self.player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
+    }
+    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
+      guard let self = self else { return }
+      let seconds = self.percentToSeconds(self.playSlider.abLoopB.doubleValue)
+      self.player.abLoopB = seconds
+      self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
+    }
+
+    player.events.emit(.windowLoaded)
+  }
+
+  /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
+  ///
+  /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from
+  /// the [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that
+  /// mpv is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is
+  /// unknown this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
+  /// - Parameter percent: Position in the video as a percentage of the duration.
+  /// - Returns: The position in the video the given percentage represents.
+  private func percentToSeconds(_ percent: Double) -> Double {
+    if let duration = player.info.videoDuration?.second {
+      return duration * percent / 100
+    } else if let position = player.info.videoPosition?.second {
+      return position * percent / 100
+    } else {
+      return 0
     }
   }
 
@@ -807,9 +877,28 @@ class MainWindowController: PlayerWindowController {
     }
   }
 
+  /// Workaround for issue #4183, Cursor remains visible after resuming playback with the touchpad using secondary click
+  ///
+  /// When IINA hides the OSC it also calls the macOS AppKit method `NSCursor.setHiddenUntilMouseMoves` to hide the
+  /// cursor. In macOS Catalina that method works as documented and keeps the cursor hidden until the mouse moves. Starting with
+  /// macOS Big Sur the cursor becomes visible if mouse buttons are clicked without moving the mouse. To workaround this defect
+  /// call this method again to keep the cursor hidden when the OSC is not visible.
+  ///
+  /// This erroneous behavior has been reported to Apple as: "Regression in NSCursor.setHiddenUntilMouseMoves"
+  /// Feedback number FB11963121
+  private func workaroundCursorDefect() {
+    guard #available(macOS 11, *), animationState == .hidden else { return }
+    NSCursor.setHiddenUntilMouseMoves(true)
+  }
+
   override func mouseDown(with event: NSEvent) {
+    if Logger.enabled && Logger.Level.preferred >= .verbose {
+      Logger.log("MainWindow mouseDown @ \(event.locationInWindow)", level: .verbose, subsystem: player.subsystem)
+    }
+    workaroundCursorDefect()
     // do nothing if it's related to floating OSC
     guard !controlBarFloating.isDragging else { return }
+    var shouldCallSuper = true
     // record current mouse pos
     mousePosRelatedToWindow = event.locationInWindow
     // playlist resizing
@@ -817,7 +906,11 @@ class MainWindowController: PlayerWindowController {
       let sf = sideBarView.frame
       if NSPointInRect(mousePosRelatedToWindow!, NSMakeRect(sf.origin.x - 4, sf.origin.y, 4, sf.height)) {
         isResizingSidebar = true
+        shouldCallSuper = false
       }
+    }
+    if shouldCallSuper {
+      super.mouseDown(with: event)
     }
   }
 
@@ -828,16 +921,34 @@ class MainWindowController: PlayerWindowController {
       let newWidth = window!.frame.width - currentLocation.x - 2
       sideBarWidthConstraint.constant = newWidth.clamped(to: PlaylistMinWidth...PlaylistMaxWidth)
     } else if !fsState.isFullscreen {
-      // move the window by dragging
-      isDragging = true
       guard !controlBarFloating.isDragging else { return }
-      if mousePosRelatedToWindow != nil {
+
+      if let mousePosRelatedToWindow = mousePosRelatedToWindow {
+        if !isDragging {
+          /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
+          /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
+          /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
+          /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
+          if mousePosRelatedToWindow.distance(to: event.locationInWindow) <= minimumInitialDragDistance {
+            return
+          }
+          if Logger.enabled && Logger.Level.preferred >= .verbose {
+            Logger.log("MainWindow mouseDrag: minimum dragging distance was met", level: .verbose, subsystem: player.subsystem)
+          }
+          isDragging = true
+        }
         window?.performDrag(with: event)
+        super.informPluginMouseDragged(with: event)
       }
     }
   }
 
   override func mouseUp(with event: NSEvent) {
+    if Logger.enabled && Logger.Level.preferred >= .verbose {
+      Logger.log("MainWindow mouseUp @ \(event.locationInWindow), isDragging: \(isDragging), isResizingSidebar: \(isResizingSidebar), clickCount: \(event.clickCount)",
+                 level: .verbose, subsystem: player.subsystem)
+    }
+    workaroundCursorDefect()
     mousePosRelatedToWindow = nil
     if isDragging {
       // if it's a mouseup after dragging window
@@ -848,11 +959,13 @@ class MainWindowController: PlayerWindowController {
       Preference.set(Int(sideBarWidthConstraint.constant), for: .playlistWidth)
     } else {
       // if it's a mouseup after clicking
-      if event.clickCount == 1 && !isMouseEvent(event, inAnyOf: [sideBarView, subPopoverView]) && sideBarStatus != .hidden {
+
+      // Single click. Note that `event.clickCount` will be 0 if there is at least one call to `mouseDragged()`,
+      // but we will only count it as a drag if `isDragging==true`
+      if event.clickCount <= 1 && !isMouseEvent(event, inAnyOf: [sideBarView, subPopoverView]) && sideBarStatus != .hidden {
         hideSideBar()
         return
       }
-
       if event.clickCount == 2 && isMouseEvent(event, inAnyOf: [titleBarView]) {
         let userDefault = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick")
         if userDefault == "Minimize" {
@@ -867,13 +980,39 @@ class MainWindowController: PlayerWindowController {
     }
   }
 
+  override func otherMouseDown(with event: NSEvent) {
+    workaroundCursorDefect()
+    super.otherMouseDown(with: event)
+  }
+
+  override func otherMouseUp(with event: NSEvent) {
+    workaroundCursorDefect()
+    super.otherMouseUp(with: event)
+  }
+
+  /// Workaround for issue #4183, Cursor remains visible after resuming playback with the touchpad using secondary click
+  ///
+  /// AppKit contains special handling for [rightMouseDown](https://developer.apple.com/documentation/appkit/nsview/event_handling/1806802-rightmousedown) having to do with contextual menus.
+  /// Even though the documentation indicates the event will be passed up the responder chain, the event is not being received by the
+  /// window controller. We are having to catch the event in the view. Because of that we do not call the super method and instead
+  /// return to the view.`
+  override func rightMouseDown(with event: NSEvent) {
+    workaroundCursorDefect()
+    super.rightMouseDown(with: event)
+  }
+
+  override func rightMouseUp(with event: NSEvent) {
+    workaroundCursorDefect()
+    super.rightMouseUp(with: event)
+  }
+
   override internal func performMouseAction(_ action: Preference.MouseClickAction) {
     super.performMouseAction(action)
     switch action {
     case .fullscreen:
       toggleWindowFullScreen()
     case .hideOSC:
-      hideUI()
+      hideUIAndCursor()
     case .togglePIP:
       if #available(macOS 10.12, *) {
         menuTogglePIP(.dummy)
@@ -921,8 +1060,7 @@ class MainWindowController: PlayerWindowController {
         timePreviewWhenSeek.isHidden = false
         thumbnailPeekView.isHidden = !player.info.thumbnailsReady
       }
-      let mousePos = playSlider.convert(event.locationInWindow, from: nil)
-      updateTimeLabel(mousePos.x, originalPos: event.locationInWindow)
+      refreshSeekTimeAndThumbnail(from: event)
     }
   }
 
@@ -943,18 +1081,15 @@ class MainWindowController: PlayerWindowController {
       // slider
       isMouseInSlider = false
       timePreviewWhenSeek.isHidden = true
-      let mousePos = playSlider.convert(event.locationInWindow, from: nil)
-      updateTimeLabel(mousePos.x, originalPos: event.locationInWindow)
+      refreshSeekTimeAndThumbnail(from: event)
       thumbnailPeekView.isHidden = true
     }
   }
 
   override func mouseMoved(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
-    let mousePos = playSlider.convert(event.locationInWindow, from: nil)
-    if isMouseInSlider {
-      updateTimeLabel(mousePos.x, originalPos: event.locationInWindow)
-    }
+
+    refreshSeekTimeAndThumbnail(from: event)
     if isMouseInWindow {
       showUI()
     }
@@ -1011,26 +1146,21 @@ class MainWindowController: PlayerWindowController {
   // MARK: - Window delegate: Open / Close
 
   func windowWillOpen() {
-    if #available(macOS 12, *) {
-      // Apparently Apple fixed AppKit for Monterey so the workaround below is only needed for
-      // previous versions of macOS. Support for #unavailable is coming in Swift 5.6. The version of
-      // Xcode being used at the time of this writing supports Swift 5.5.
-    } else {
-      // Must workaround an AppKit defect in earlier versions of macOS. This defect is known to
-      // exist in Catalina and Big Sur. The problem was not reproducible in Monterey. The status of
-      // other versions of macOS is unknown, however the workaround should be safe to apply in any
-      // version of macOS. The problem was reported in issues #3159, #3097 and #3253. The titles of
-      // open windows shown in the "Window" menu are automatically managed by the AppKit framework.
-      // To improve performance PlayerCore caches and reuses player instances along with their
-      // windows. This technique is valid and recommended by Apple. But in older versions of macOS,
-      // if a window is reused the framework will display the title first used for the window in the
-      // "Window" menu even after IINA has updated the title of the window. This problem can also be
-      // seen when right-clicking or control-clicking the IINA icon in the dock. As a workaround
-      // reset the window's title to "Window" before it is reused. This is the default title AppKit
-      // assigns to a window when it is first created. Surprising and rather disturbing this works
-      // as a workaround, but it does.
-      window!.title = "Window"
-    }
+    isClosing = false
+    // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
+    // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It
+    // reappeared in Ventura. The status of other versions of macOS is unknown, however the
+    // workaround should be safe to apply in any version of macOS. The problem was reported in
+    // issues #4229, #3159, #3097 and #3253. The titles of open windows shown in the "Window" menu
+    // are automatically managed by the AppKit framework. To improve performance PlayerCore caches
+    // and reuses player instances along with their windows. This technique is valid and recommended
+    // by Apple. But in some versions of macOS, if a window is reused the framework will display the
+    // title first used for the window in the "Window" menu even after IINA has updated the title of
+    // the window. This problem can also be seen when right-clicking or control-clicking the IINA
+    // icon in the dock. As a workaround reset the window's title to "Window" before it is reused.
+    // This is the default title AppKit assigns to a window when it is first created. Surprising and
+    // rather disturbing this works as a workaround, but it does.
+    window!.title = "Window"
 
     // As there have been issues in this area, log details about the screen selection process.
     NSScreen.log("window!.screen", window!.screen)
@@ -1071,13 +1201,21 @@ class MainWindowController: PlayerWindowController {
     guard let w = self.window, let cv = w.contentView else { return }
     if cv.trackingAreas.isEmpty {
       cv.addTrackingArea(NSTrackingArea(rect: cv.bounds,
-                                        options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                        options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                         owner: self, userInfo: ["obj": 0]))
     }
     if playSlider.trackingAreas.isEmpty {
       playSlider.addTrackingArea(NSTrackingArea(rect: playSlider.bounds,
-                                                options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
+                                                options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                                 owner: self, userInfo: ["obj": 1]))
+    }
+    // Track the thumbs on the progress bar representing the A-B loop points and treat them as part
+    // of the slider.
+    if playSlider.abLoopA.trackingAreas.count <= 1 {
+      playSlider.abLoopA.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopA.bounds, options:  [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved], owner: self, userInfo: ["obj": 1]))
+    }
+    if playSlider.abLoopB.trackingAreas.count <= 1 {
+      playSlider.abLoopB.addTrackingArea(NSTrackingArea(rect: playSlider.abLoopB.bounds, options: [.activeAlways, .enabledDuringMouseDrag, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved], owner: self, userInfo: ["obj": 1]))
     }
 
     // update timer
@@ -1091,6 +1229,7 @@ class MainWindowController: PlayerWindowController {
   }
 
   func windowWillClose(_ notification: Notification) {
+    isClosing = true
     shouldApplyInitialWindowSize = true
     // Close PIP
     if pipStatus == .inPIP {
@@ -1099,21 +1238,17 @@ class MainWindowController: PlayerWindowController {
       }
     }
     // stop playing
-    if !player.isMpvTerminated {
-      if case .fullscreen(legacy: true, priorWindowedFrame: _) = fsState {
-        restoreDockSettings()
-      }
-      player.savePlaybackPosition()
-      player.stop()
-      videoView.stopDisplayLink()
+    if case .fullscreen(legacy: true, priorWindowedFrame: _) = fsState {
+      restoreDockSettings()
     }
-    player.info.currentFolder = nil
-    player.info.matchedSubs.removeAll()
+    player.stop()
     // stop tracking mouse event
     guard let w = self.window, let cv = w.contentView else { return }
     cv.trackingAreas.forEach(cv.removeTrackingArea)
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
     UserDefaults.standard.set(NSStringFromRect(window!.frame), forKey: "MainWindowLastPosition")
+    
+    player.events.emit(.windowWillClose)
   }
 
   // MARK: - Window delegate: Full screen
@@ -1149,6 +1284,9 @@ class MainWindowController: PlayerWindowController {
   }
 
   func windowWillEnterFullScreen(_ notification: Notification) {
+    // When playback is paused the display link is stopped in order to avoid wasting energy on
+    // needless processing. It must be running while transitioning to full screen mode.
+    videoView.displayActive()
     if isInInteractiveMode {
       exitInteractiveMode(immediately: true)
     }
@@ -1210,8 +1348,15 @@ class MainWindowController: PlayerWindowController {
       fadeableViews.append(additionalInfoView)
     }
 
-    if Preference.bool(for: .playWhenEnteringFullScreen) && player.info.isPaused {
-      player.resume()
+    if player.info.isPaused {
+      if Preference.bool(for: .playWhenEnteringFullScreen) {
+        player.resume()
+      } else {
+        // When playback is paused the display link is stopped in order to avoid wasting energy on
+        // needless processing. It must be running while transitioning to full screen mode. Now that
+        // the transition has completed it can be stopped.
+        videoView.displayIdle()
+      }
     }
 
     if #available(macOS 10.12.2, *) {
@@ -1219,15 +1364,20 @@ class MainWindowController: PlayerWindowController {
     }
 
     updateWindowParametersForMPV()
-    
+
     // Exit PIP if necessary
     if pipStatus == .inPIP,
       #available(macOS 10.12, *) {
       exitPIP()
     }
+    
+    player.events.emit(.windowFullscreenChanged, data: true)
   }
 
   func windowWillExitFullScreen(_ notification: Notification) {
+    // When playback is paused the display link is stopped in order to avoid wasting energy on
+    // needless processing. It must be running while transitioning from full screen mode.
+    videoView.displayActive()
     if isInInteractiveMode {
       exitInteractiveMode(immediately: true)
     }
@@ -1249,6 +1399,14 @@ class MainWindowController: PlayerWindowController {
 
     fsState.startAnimatingToWindow()
 
+    // If a window is closed while in full screen mode (control-w pressed) AppKit will still call
+    // this method. Because windows are tied to player cores and cores are cached and reused some
+    // processing must be performed to leave the window in a consistent state for reuse. However
+    // the windowWillClose method will have initiated unloading of the file being played. That
+    // operation is processed asynchronously by mpv. If the window is being closed due to IINA
+    // quitting then mpv could be in the process of shutting down. Must not access mpv while it is
+    // asynchronously processing stop and quit commands.
+    guard !isClosing else { return }
     videoView.videoLayer.suspend()
     player.mpv.setFlag(MPVOption.Window.keepaspect, false)
   }
@@ -1264,6 +1422,28 @@ class MainWindowController: PlayerWindowController {
     }
     addBackStandardButtonsToFadeableViews()
     titleBarView.isHidden = false
+    fsState.finishAnimating()
+
+    if Preference.bool(for: .blackOutMonitor) {
+      removeBlackWindow()
+    }
+
+    if player.info.isPaused {
+      // When playback is paused the display link is stopped in order to avoid wasting energy on
+      // needless processing. It must be running while transitioning from full screen mode. Now that
+      // the transition has completed it can be stopped.
+      videoView.displayIdle()
+    }
+
+    if #available(macOS 10.12.2, *) {
+      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
+    }
+
+    window!.addTitlebarAccessoryViewController(titlebarAccesoryViewController)
+
+    // Must not access mpv while it is asynchronously processing stop and quit commands.
+    // See comments in windowWillExitFullScreen for details.
+    guard !isClosing else { return }
     showUI()
     updateTimer()
 
@@ -1272,28 +1452,19 @@ class MainWindowController: PlayerWindowController {
     videoView.layoutSubtreeIfNeeded()
     videoView.videoLayer.resume()
 
-    fsState.finishAnimating()
-
-    if Preference.bool(for: .blackOutMonitor) {
-      removeBlackWindow()
-    }
-
     if Preference.bool(for: .pauseWhenLeavingFullScreen) && player.info.isPlaying {
       player.pause()
-    }
-
-    if #available(macOS 10.12.2, *) {
-      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
     }
 
     // restore ontop status
     if player.info.isPlaying {
       setWindowFloatingOnTop(isOntop, updateOnTopStatus: false)
     }
-    window!.addTitlebarAccessoryViewController(titlebarAccesoryViewController)
 
     resetCollectionBehavior()
     updateWindowParametersForMPV()
+    
+    player.events.emit(.windowFullscreenChanged, data: false)
   }
 
   func toggleWindowFullScreen() {
@@ -1317,7 +1488,7 @@ class MainWindowController: PlayerWindowController {
       return
     }
   }
-  
+
   private func restoreDockSettings() {
     NSApp.presentationOptions.remove(.autoHideMenuBar)
     NSApp.presentationOptions.remove(.autoHideDock)
@@ -1502,10 +1673,15 @@ class MainWindowController: PlayerWindowController {
         }
       }
     }
+
+    player.events.emit(.windowResized, data: window.frame)
   }
 
   // resize framebuffer in videoView after resizing.
   func windowDidEndLiveResize(_ notification: Notification) {
+    // Must not access mpv while it is asynchronously processing stop and quit commands.
+    // See comments in windowWillExitFullScreen for details.
+    guard !isClosing else { return }
     videoView.videoSize = window!.convertToBacking(videoView.bounds).size
     updateWindowParametersForMPV()
   }
@@ -1515,10 +1691,19 @@ class MainWindowController: PlayerWindowController {
       oldScale != Double(window!.backingScaleFactor) {
       videoView.videoLayer.contentsScale = window!.backingScaleFactor
     }
+  }
+  
+  override func windowDidChangeScreen(_ notification: Notification) {
+    super.windowDidChangeScreen(notification)
 
+    player.events.emit(.windowScreenChanged)
   }
 
   // MARK: - Window delegate: Activeness status
+  func windowDidMove(_ notification: Notification) {
+    guard let window = window else { return }
+    player.events.emit(.windowMoved, data: window.frame)
+  }
 
   func windowDidBecomeKey(_ notification: Notification) {
     window!.makeFirstResponder(window!)
@@ -1547,6 +1732,7 @@ class MainWindowController: PlayerWindowController {
     if fsState.isFullscreen && Preference.bool(for: .blackOutMonitor) {
       blackOutOtherMonitors()
     }
+    player.events.emit(.windowMainStatusChanged, data: true)
   }
 
   override func windowDidResignMain(_ notification: Notification) {
@@ -1554,6 +1740,7 @@ class MainWindowController: PlayerWindowController {
     if Preference.bool(for: .blackOutMonitor) {
       removeBlackWindow()
     }
+    player.events.emit(.windowMainStatusChanged, data: false)
   }
 
   func windowWillMiniaturize(_ notification: Notification) {
@@ -1562,13 +1749,14 @@ class MainWindowController: PlayerWindowController {
       player.pause()
     }
   }
-  
+
   func windowDidMiniaturize(_ notification: Notification) {
     if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
       if #available(macOS 10.12, *) {
         enterPIP()
       }
     }
+    player.events.emit(.windowMiniaturized)
   }
 
   func windowDidDeminiaturize(_ notification: Notification) {
@@ -1581,6 +1769,7 @@ class MainWindowController: PlayerWindowController {
         exitPIP()
       }
     }
+    player.events.emit(.windowDeminiaturized)
   }
 
   // MARK: - UI: Show / Hide
@@ -1596,6 +1785,21 @@ class MainWindowController: PlayerWindowController {
     // Don't hide UI when in PIP
     guard pipStatus == .notInPIP || animationState == .hidden else {
       return
+    }
+
+    // Follow energy efficiency best practices and stop the timer that updates the OSC while it is
+    // hidden. However the timer can't be stopped if the mini player is being used as it always
+    // displays the the OSC or the timer is also updating the information being displayed in the
+    // touch bar. Does this host have a touch bar? Is the touch bar configured to show app controls?
+    // Is the touch bar awake? Is the host being operated in closed clamshell mode? This is the kind
+    // of information needed to avoid running the timer and updating controls that are not visible.
+    // Unfortunately in the documentation for NSTouchBar Apple indicates "There’s no need, and no
+    // API, for your app to know whether or not there’s a Touch Bar available". So this code keys
+    // off whether AppKit has requested that a NSTouchBar object be created. This avoids running the
+    // timer on Macs that do not have a touch bar. It also may avoid running the timer when a
+    // MacBook with a touch bar is being operated in closed clameshell mode.
+    if !player.isInMiniPlayer && !player.needsTouchBar {
+      player.invalidateTimer()
     }
 
     animationState = .willHide
@@ -1626,12 +1830,16 @@ class MainWindowController: PlayerWindowController {
   }
 
   private func showUI() {
+    if player.disableUI { return }
     animationState = .willShow
     fadeableViews.forEach { (v) in
       v.isHidden = false
     }
-    if !player.isInMiniPlayer && fsState.isFullscreen && displayTimeAndBatteryInFullScreen {
-      player.syncUI(.additionalInfo)
+    // The OSC may not have been updated while it was hidden to avoid wasting energy. Make sure it
+    // is up to date.
+    player.syncUITime()
+    if !player.info.isPaused {
+      player.createSyncUITimer()
     }
     standardWindowButtons.forEach { $0.isEnabled = true }
     NSAnimationContext.runAnimationGroup({ (context) in
@@ -1810,6 +2018,7 @@ class MainWindowController: PlayerWindowController {
     }) {
       if self.osdAnimationState == .willHide {
         self.osdAnimationState = .hidden
+        self.osdVisualEffectView.isHidden = true
         self.osdStackView.views(in: .bottom).forEach { self.osdStackView.removeView($0) }
       }
     }
@@ -2002,7 +2211,7 @@ class MainWindowController: PlayerWindowController {
 
     // show crop settings view
     NSAnimationContext.runAnimationGroup({ (context) in
-      context.duration = CropAnimationDuration
+      context.duration = AccessibilityPreferences.adjustedDuration(CropAnimationDuration)
       context.timingFunction = CAMediaTimingFunction(name: .easeIn)
       bottomBarBottomConstraint.animator().constant = 0
       ([.top, .bottom, .left, .right] as [NSLayoutConstraint.Attribute]).forEach { attr in
@@ -2041,7 +2250,7 @@ class MainWindowController: PlayerWindowController {
 
     // if with animation
     NSAnimationContext.runAnimationGroup({ (context) in
-      context.duration = CropAnimationDuration
+      context.duration = AccessibilityPreferences.adjustedDuration(CropAnimationDuration)
       context.timingFunction = CAMediaTimingFunction(name: .easeIn)
       bottomBarBottomConstraint.animator().constant = -InteractiveModeBottomViewHeight
       ([.top, .bottom, .left, .right] as [NSLayoutConstraint.Attribute]).forEach { attr in
@@ -2057,11 +2266,46 @@ class MainWindowController: PlayerWindowController {
     }
   }
 
+  private func refreshSeekTimeAndThumbnail(from event: NSEvent) {
+    let isCoveredByOSD = !osdVisualEffectView.isHidden && isMouseEvent(event, inAnyOf: [osdVisualEffectView])
+    let isCoveredBySidebar = !sideBarView.isHidden && isMouseEvent(event, inAnyOf: [sideBarView])
+    if isMouseInSlider, !isCoveredByOSD, !isCoveredBySidebar {
+      updateTimeLabel(event.locationInWindow)
+    } else {
+      thumbnailPeekView.isHidden = true
+    }
+  }
+
+  /// Determine if the thumbnail preview can be shown above the progress bar in the on screen controller..
+  ///
+  /// Normally the OSC's thumbnail preview is shown above the time preview. This is the preferred location. However the
+  /// thumbnail preview extends beyond the frame of the OSC. If the OSC is near the top of the window this could result
+  /// in the thumbnail extending outside of the window resulting in clipping. This method checks if there is room for the
+  /// thumbnail to fully fit in the window. Otherwise the thumbnail must be displayed below the OSC's progress bar.
+  /// - Parameters:
+  ///   - timnePreviewYPos: The y-coordinate of the time preview `TextField`.
+  ///   - thumbnailHeight: The height of the thumbnail.
+  /// - Returns: `true` if the thumbnail can be shown above the slider, `false` otherwise.
+  private func canShowThumbnailAbove(timnePreviewYPos: Double, thumbnailHeight: Double) -> Bool {
+    guard oscPosition != .bottom else { return true }
+    guard oscPosition != .top else { return false }
+    // The layout preference for the on screen controller is set to the default floating layout.
+    // Must insure the top of the thumbnail would be below the top of the window.
+    let topOfThumbnail = timnePreviewYPos + timePreviewWhenSeek.frame.height + thumbnailHeight
+    // Normally the height of the usable area of the window can be obtained from the content
+    // layout. But when the legacy full screen preference is enabled the layout height may be
+    // larger than the content view if the display contains a camera housing. Use the lower of
+    // the two heights.
+    let windowContentHeight = min(window!.contentLayoutRect.height, window!.contentView!.frame.height)
+    return topOfThumbnail <= windowContentHeight
+  }
+
   /** Display time label when mouse over slider */
-  private func updateTimeLabel(_ mouseXPos: CGFloat, originalPos: NSPoint) {
-    let timeLabelXPos = playSlider.frame.origin.y + 15
-    timePreviewWhenSeek.frame.origin = NSPoint(x: round(mouseXPos + playSlider.frame.origin.x - timePreviewWhenSeek.frame.width / 2),
-                                               y: timeLabelXPos + 1)
+  private func updateTimeLabel(_ posInWindow: NSPoint) {
+    let mouseXPos = playSlider.convert(posInWindow, from: nil).x
+    let timeLabelXPos = round(mouseXPos + playSlider.frame.origin.x - timePreviewWhenSeek.frame.width / 2)
+    let timeLabelYPos = playSlider.frame.origin.y + playSlider.frame.height
+    timePreviewWhenSeek.frame.origin = NSPoint(x: timeLabelXPos, y: timeLabelYPos)
     let sliderFrame = playSlider.bounds
     let sliderFrameInWindow = playSlider.superview!.convert(playSlider.frame.origin, to: nil)
     var percentage = Double((mouseXPos - 3) / (sliderFrame.width - 6))
@@ -2077,10 +2321,11 @@ class MainWindowController: PlayerWindowController {
         thumbnailPeekView.imageView.image = image.rotate(rotation)
         thumbnailPeekView.isHidden = false
         let height = round(120 / thumbnailPeekView.imageView.image!.size.aspect)
-        let yPos = (oscPosition == .top || (oscPosition == .floating && sliderFrameInWindow.y + 52 + height >= window!.frame.height)) ?
-          sliderFrameInWindow.y - height : sliderFrameInWindow.y + 32
+        let timePreviewFrameInWindow = timePreviewWhenSeek.superview!.convert(timePreviewWhenSeek.frame.origin, to: nil)
+        let showAbove = canShowThumbnailAbove(timnePreviewYPos: timePreviewFrameInWindow.y, thumbnailHeight: height)
+        let yPos = showAbove ? timePreviewFrameInWindow.y + timePreviewWhenSeek.frame.height : sliderFrameInWindow.y - height
         thumbnailPeekView.frame.size = NSSize(width: 120, height: height)
-        thumbnailPeekView.frame.origin = NSPoint(x: round(originalPos.x - thumbnailPeekView.frame.width / 2), y: yPos)
+        thumbnailPeekView.frame.origin = NSPoint(x: round(posInWindow.x - thumbnailPeekView.frame.width / 2), y: yPos)
       } else {
         thumbnailPeekView.isHidden = true
       }
@@ -2269,9 +2514,13 @@ class MainWindowController: PlayerWindowController {
       if let screenFrame = window.screen?.frame {
         rect = rect.constrain(in: screenFrame)
       }
-      // animated `setFrame` can be inaccurate!
-      window.setFrame(rect, display: true, animate: true)
-      window.setFrame(rect, display: true)
+      if player.disableWindowAnimation {
+        window.setFrame(rect, display: true, animate: false)
+      } else {
+        // animated `setFrame` can be inaccurate!
+        window.setFrame(rect, display: true, animate: true)
+        window.setFrame(rect, display: true)
+      }
       updateWindowParametersForMPV(withFrame: rect)
     }
 
@@ -2283,6 +2532,7 @@ class MainWindowController: PlayerWindowController {
 
     // UI and slider
     updatePlayTime(withDuration: true, andProgressBar: true)
+    player.events.emit(.windowSizeAdjusted, data: rect)
   }
 
   func updateWindowParametersForMPV(withFrame frame: NSRect? = nil) {
@@ -2326,6 +2576,9 @@ class MainWindowController: PlayerWindowController {
   private func blackOutOtherMonitors() {
     screens = NSScreen.screens.filter { $0 != window?.screen }
 
+    for window in blackWindows {
+      window.orderOut(self)
+    }
     blackWindows = []
 
     for screen in screens {
@@ -2336,7 +2589,7 @@ class MainWindowController: PlayerWindowController {
       blackWindow.level = .iinaBlackScreen
 
       blackWindows.append(blackWindow)
-      blackWindow.makeKeyAndOrderFront(nil)
+      blackWindow.orderFront(self)
     }
   }
 
@@ -2524,38 +2777,60 @@ class MainWindowController: PlayerWindowController {
     setWindowFloatingOnTop(!isOntop)
   }
 
-  /// Legacy IBAction, but still in use.
-  func settingsButtonAction(_ sender: AnyObject) {
-    if sidebarAnimationState == .willShow || sidebarAnimationState == .willHide {
-      return  // do not interrupt other actions while it is animating
+  func showSettingsSidebar(tab: QuickSettingViewController.TabViewType? = nil, force: Bool = false, hideIfAlreadyShown: Bool = true) {
+    if !force && sidebarAnimationState == .willShow || sidebarAnimationState == .willHide {
+      return  // do not interrput other actions while it is animating
     }
     let view = quickSettingView
     switch sideBarStatus {
     case .hidden:
+      if let tab = tab {
+        view.pleaseSwitchToTab(tab)
+      }
       showSideBar(viewController: view, type: .settings)
     case .playlist:
+      if let tab = tab {
+        view.pleaseSwitchToTab(tab)
+      }
       hideSideBar {
         self.showSideBar(viewController: view, type: .settings)
       }
     case .settings:
-      hideSideBar()
+      if view.currentTab == tab || tab == nil {
+        if hideIfAlreadyShown {
+          hideSideBar()
+        }
+      } else if let tab = tab {
+        view.pleaseSwitchToTab(tab)
+      }
     }
   }
 
-  /// Legacy IBAction, but still in use.
-  func playlistButtonAction(_ sender: AnyObject) {
-    if sidebarAnimationState == .willShow || sidebarAnimationState == .willHide {
-      return  // do not interrupt other actions while it is animating
+  func showPlaylistSidebar(tab: PlaylistViewController.TabViewType? = nil, force: Bool = false, hideIfAlreadyShown: Bool = true) {
+    if !force && sidebarAnimationState == .willShow || sidebarAnimationState == .willHide {
+      return  // do not interrput other actions while it is animating
     }
     let view = playlistView
     switch sideBarStatus {
     case .hidden:
+      if let tab = tab {
+        view.pleaseSwitchToTab(tab)
+      }
       showSideBar(viewController: view, type: .playlist)
-    case .playlist:
-      hideSideBar()
     case .settings:
+      if let tab = tab {
+        view.pleaseSwitchToTab(tab)
+      }
       hideSideBar {
         self.showSideBar(viewController: view, type: .playlist)
+      }
+    case .playlist:
+      if view.currentTab == tab || tab == nil {
+        if hideIfAlreadyShown {
+          hideSideBar()
+        }
+      } else if let tab = tab {
+        view.pleaseSwitchToTab(tab)
       }
     }
   }
@@ -2571,7 +2846,7 @@ class MainWindowController: PlayerWindowController {
     // label
     timePreviewWhenSeek.frame.origin = CGPoint(
       x: round(sender.knobPointPosition() - timePreviewWhenSeek.frame.width / 2),
-      y: playSlider.frame.origin.y + 16)
+      y: playSlider.frame.origin.y + playSlider.frame.height)
     timePreviewWhenSeek.stringValue = (player.info.videoDuration! * percentage * 0.01).stringRepresentation
   }
 
@@ -2591,11 +2866,13 @@ class MainWindowController: PlayerWindowController {
         }
       }
     case .playlist:
-      playlistButtonAction(sender)
+      showPlaylistSidebar()
     case .settings:
-      settingsButtonAction(sender)
+      showSettingsSidebar()
     case .subTrack:
       quickSettingView.showSubChooseMenu(forView: sender, showLoadedSubs: true)
+    case .screenshot:
+      player.screenshot()
     }
   }
 
@@ -2668,15 +2945,6 @@ extension MainWindowController: PIPViewControllerDelegate {
     pip.presentAsPicture(inPicture: pipVideo)
     pipOverlayView.isHidden = false
 
-    // If the video is paused, it will end up in a weird state due to the
-    // animation. By forcing a redraw it will keep its paused image throughout.
-    // (At least) in 10.15, presentAsPictureInPicture: behaves asynchronously.
-    // Therefore we should wait until the view is moved to the PIP superview.
-    let currentTrackIsAlbumArt = player.info.currentTrack(.video)?.isAlbumart ?? false
-    if player.info.isPaused || currentTrackIsAlbumArt {
-      videoView.pendingRedrawAfterEnteringPIP = true
-    }
-
     if let window = self.window {
       let windowShouldDoNothing = window.styleMask.contains(.fullScreen) || window.isMiniaturized
       let pipBehavior = windowShouldDoNothing ? .doNothing : Preference.enum(for: .windowBehaviorWhenPip) as Preference.WindowBehaviorWhenPip
@@ -2696,6 +2964,8 @@ extension MainWindowController: PIPViewControllerDelegate {
         player.pause()
       }
     }
+
+    player.events.emit(.pipChanged, data: true)
   }
 
   func exitPIP() {
@@ -2707,6 +2977,7 @@ extension MainWindowController: PIPViewControllerDelegate {
       // is chosen in this case. See https://bugs.swift.org/browse/SR-8956.
       pip.dismiss(pipVideo!)
     }
+    player.events.emit(.pipChanged, data: false)
   }
 
   func doneExitingPIP() {
@@ -2738,7 +3009,7 @@ extension MainWindowController: PIPViewControllerDelegate {
     guard let window = window else { return }
     // This is called right before we're about to close the PIP
     pipStatus = .intermediate
-    
+
     // Hide the overlay view preemptively, to prevent any issues where it does
     // not hide in time and ends up covering the video view (which will be added
     // to the window under everything else, including the overlay).

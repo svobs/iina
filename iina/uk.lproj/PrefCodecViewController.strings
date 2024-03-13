@@ -1,8 +1,8 @@
 /* Class = "NSMenuItem"; title = "Auto (Copy)"; ObjectID = "0DK-uZ-duj"; */
-"0DK-uZ-duj.title" = "автоматично (копіювання)";
+"0DK-uZ-duj.title" = "Автоматично (копіювання)";
 
 /* Class = "NSTextFieldCell"; title = "Default: 0 (Auto)"; ObjectID = "2yO-To-el7"; */
-"2yO-To-el7.title" = "Типово: 0 (автоматично)";
+"2yO-To-el7.title" = "За замовчуванням: 0 (автоматично)";
 
 /* Class = "NSTextFieldCell"; title = "Maximum volume:"; ObjectID = "44m-ge-naq"; */
 "44m-ge-naq.title" = "Максимальна гучність:";
@@ -14,7 +14,7 @@
 "YUr-aJ-xfC.title" = "Примусово задіяти GPU";
 
 /* Class = "NSTextFieldCell"; title = "Default: 0 (Auto)"; ObjectID = "bxW-np-SGm"; */
-"bxW-np-SGm.title" = "Типово: 0 (автоматично)";
+"bxW-np-SGm.title" = "За замовчуванням: 0 (автоматично)";
 
 /* Class = "NSTextFieldCell"; title = "(100-1000)"; ObjectID = "cJP-ep-847"; */
 "cJP-ep-847.title" = "(100—1000)";
@@ -41,7 +41,7 @@
 "sV5-dL-MUt.title" = "Аудіо:";
 
 /* Class = "NSMenuItem"; title = "Auto"; ObjectID = "tAQ-oU-1AJ"; */
-"tAQ-oU-1AJ.title" = "автоматично";
+"tAQ-oU-1AJ.title" = "Автоматично";
 
 /* Class = "NSTextFieldCell"; title = "Number of threads:"; ObjectID = "tO4-pw-2W9"; */
 "tO4-pw-2W9.title" = "Число потоків:";
@@ -51,3 +51,36 @@
 
 /* Class = "NSTextFieldCell"; title = "Preferred language:"; ObjectID = "wjt-O6-KbC"; */
 "wjt-O6-KbC.title" = "Основна мова:";
+
+/* Class = "NSButtonCell"; title = "Load ICC profile"; ObjectID = "3g4-jW-uJd"; */
+"3g4-jW-uJd.title" = "Завантажити профіль ICC";
+
+/* Class = "NSTextFieldCell"; title = "Load the ICC profile for current display and use it to transform video RGB to screen output. (Only for SDR mode)"; ObjectID = "M2M-of-gjd"; */
+"M2M-of-gjd.title" = "Завантажити профіль ICC для поточного дисплея і використовувати його для перетворення відео RGB на екран. (Тільки для режиму SDR)";
+
+/* Class = "NSButtonCell"; title = "Enable HDR support"; ObjectID = "R7Z-9c-vPJ"; */
+"R7Z-9c-vPJ.title" = "Увімкнути підтримку HDR";
+
+/* Class = "NSTextFieldCell"; title = "Enable HDR mode by default when playing HDR videos."; ObjectID = "ZgQ-bc-yEE"; */
+"ZgQ-bc-yEE.title" = "Увімкнути режим HDR за замовчуванням при відтворенні HDR відео.";
+
+/* Class = "NSButtonCell"; title = "Enable tone mapping"; ObjectID = "a5Y-gU-JTj"; */
+"a5Y-gU-JTj.title" = "Увімкнути тональне відображення";
+
+/* Class = "NSTextFieldCell"; title = "Enable tone mapping images onto the display"; ObjectID = "mNn-cb-IVw"; */
+"mNn-cb-IVw.title" = "Увімкнути тональне відображення зображень на дисплеї";
+
+/* Class = "NSTextFieldCell"; title = "Target peak:"; ObjectID = "xVk-OA-kOf"; */
+"xVk-OA-kOf.title" = "Пікова яскравість:";
+
+/* Class = "NSTextFieldCell"; title = "nits"; ObjectID = "baO-xy-7hD"; */
+"baO-xy-7hD.title" = "нит";
+
+/* Class = "NSTextFieldCell"; title = "Measured peak brightness of the display. If set to 0, IINA detects this value. If detection fails, IINA sets the target peak to 400."; ObjectID = "aTt-aZ-rjK"; */
+"aTt-aZ-rjK.title" = "Вимірювана пікова яскравість дисплея. Якщо встановлено 0, IINA автоматично визначає це значення. Якщо автовизначення не вдалося, IINA встановлює пікову яскравість 400.";
+
+/* Class = "NSTextFieldCell"; title = "Algorithm:"; ObjectID = "qzI-rq-PqO"; */
+"qzI-rq-PqO.title" = "Алгоритм:";
+
+/* Class = "NSTextFieldCell"; title = "Algorithm to use for tone mapping images onto the display."; ObjectID = "szA-8r-plt"; */
+"szA-8r-plt.title" = "Алгоритм для тонального відображення зображень на дисплеї.";

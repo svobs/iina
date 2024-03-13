@@ -153,10 +153,10 @@ class KeyInputController {
 
       if let keyBinding = PlayerCore.keyBindings[keySequence] {
         if keyBinding.isIgnored {
-          log("Ignoring \"\(keyBinding.key)\"", level: .verbose)
+          log("Ignoring \"\(keyBinding.rawKey)\"", level: .verbose)
           hasPartialValidSequence = true
         } else {
-          log("Found active binding for \"\(keyBinding.key)\" -> \(keyBinding.action)", level: .debug)
+          log("Found active binding for \"\(keyBinding.rawKey)\" -> \(keyBinding.action)", level: .debug)
           // Non-ignored action! Clear prev key buffer as per MPV spec
           lastKeysPressed.clear()
           return keyBinding
@@ -170,7 +170,7 @@ class KeyInputController {
     if hasPartialValidSequence {
       // Send an explicit "ignore" for a partial sequence match, so player window doesn't beep
       log("Contains partial sequence, ignoring: \"\(keySequence)\"", level: .verbose)
-      return KeyMapping(key: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
+      return KeyMapping(rawKey: keySequence, rawAction: MPVCommand.ignore.rawValue, isIINACommand: false, comment: nil)
     } else {
       // Not even part of a valid sequence = invalid keystroke
       log("No active binding for keystroke \"\(lastKeyStroke)\"", level: .debug)

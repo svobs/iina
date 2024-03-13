@@ -18,6 +18,7 @@ extension NSColor.Name {
   static let mainSliderBarChapterStroke = NSColor.Name("MainSliderBarChapterStroke")
   static let mainSliderKnob = NSColor.Name("MainSliderKnob")
   static let mainSliderKnobActive = NSColor.Name("MainSliderKnobActive")
+  static let mainSliderLoopKnob = NSColor.Name("MainSliderLoopKnob")
 
   static let titleBarBorder = NSColor.Name("TitleBarBorder")
 
@@ -28,10 +29,18 @@ extension NSColor.Name {
   static let initialWindowLastFileBackgroundHover = NSColor.Name("InitialWindowLastFileBackgroundHover")
   static let initialWindowLastFileBackgroundPressed = NSColor.Name("InitialWindowLastFileBackgroundPressed")
   static let initialWindowBetaLabel = NSColor.Name("InitialWindowBetaLabel")
+  static let initialWindowNightlyLabel = NSColor.Name("InitialWindowNightlyLabel")
+  static let initialWindowDebugLabel = NSColor.Name("InitialWindowDebugLabel")
 
   static let cropBoxFill = NSColor.Name("CropBoxFill")
   static let playlistProgressBar = NSColor.Name("PlaylistProgressBar")
   
   static let sidebarTabTint = NSColor.Name("SidebarTabTint")
   static let sidebarTabTintActive = NSColor.Name("SidebarTabTintActive")
+}
+
+@available(macOS 10.14, *)
+extension NSColor {
+  static let sidebarTabTint: NSColor = NSColor(named: .sidebarTabTint)!
+  static let sidebarTabTintActive: NSColor = NSColor(named: .sidebarTabTintActive)!
 }

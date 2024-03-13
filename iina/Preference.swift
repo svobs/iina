@@ -150,6 +150,10 @@ struct Preference {
     static let hardwareDecoder = Key("hardwareDecoder")
     static let forceDedicatedGPU = Key("forceDedicatedGPU")
     static let loadIccProfile = Key("loadIccProfile")
+    static let enableHdrSupport = Key("enableHdrSupport")
+    static let enableToneMapping = Key("enableToneMapping")
+    static let toneMappingTargetPeak = Key("toneMappingTargetPeak")
+    static let toneMappingAlgorithm = Key("toneMappingAlgorithm")
 
     static let audioThreads = Key("audioThreads")
     static let audioLanguage = Key("audioLanguage")
@@ -190,7 +194,8 @@ struct Preference {
     static let subMarginY = Key("subMarginY")
     static let subPos = Key("subPos")
     static let subLang = Key("subLang")
-    static let onlineSubSource = Key("onlineSubSource")
+    static let legacyOnlineSubSource = Key("onlineSubSource")
+    static let onlineSubProvider = Key("onlineSubProvider")
     static let displayInLetterBox = Key("displayInLetterBox")
     static let subScaleWithWindow = Key("subScaleWithWindow")
     static let openSubUsername = Key("openSubUsername")
@@ -283,6 +288,14 @@ struct Preference {
 
     static let iinaLastPlayedFilePath = Key("iinaLastPlayedFilePath")
     static let iinaLastPlayedFilePosition = Key("iinaLastPlayedFilePosition")
+
+    /** Alerts */
+    static let suppressCannotPreventDisplaySleep = Key("suppressCannotPreventDisplaySleep")
+
+    static let iinaEnablePluginSystem = Key("iinaEnablePluginSystem")
+
+    /** Workaround for issue [#4688](https://github.com/iina/iina/issues/4688) */
+    static let recentDocuments = Key("recentDocuments")
   }
 
   // MARK: - Enums
@@ -574,6 +587,36 @@ struct Preference {
     }
   }
 
+  enum ToneMappingAlgorithmOption: Int, InitializingFromKey {
+    case auto = 0
+    case clip
+    case mobius
+    case reinhard
+    case hable
+    case bt_2390
+    case gamma
+    case linear
+
+    static var defaultValue = ToneMappingAlgorithmOption.auto
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var mpvString: String {
+      switch self {
+      case .auto: return "auto"
+      case .clip: return "clip"
+      case .mobius: return "mobius"
+      case .reinhard: return "reinhard"
+      case .hable: return "hable"
+      case .bt_2390: return "bt.2390"
+      case .gamma: return "gamma"
+      case .linear: return "linear"
+      }
+    }
+  }
+
   enum ResizeWindowTiming: Int, InitializingFromKey {
     case always = 0
     case onlyWhenOpen
@@ -629,6 +672,7 @@ struct Preference {
     case fullScreen
     case musicMode
     case subTrack
+    case screenshot
 
     func image() -> NSImage {
       switch self {
@@ -638,6 +682,7 @@ struct Preference {
       case .fullScreen: return #imageLiteral(resourceName: "fullscreen")
       case .musicMode: return #imageLiteral(resourceName: "toggle-album-art")
       case .subTrack: return #imageLiteral(resourceName: "sub-track")
+      case .screenshot: return #imageLiteral(resourceName: "screenshot")
       }
     }
 
@@ -650,9 +695,14 @@ struct Preference {
       case .fullScreen: key = "full_screen"
       case .musicMode: key = "music_mode"
       case .subTrack: key = "sub_track"
+      case .screenshot: key = "screenshot"
       }
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
+
+    // Width will be identical
+    static let frameHeight: CGFloat = 24
+
   }
 
   // MARK: - Defaults
@@ -725,6 +775,10 @@ struct Preference {
     .hardwareDecoder: HardwareDecoderOption.auto.rawValue,
     .forceDedicatedGPU: false,
     .loadIccProfile: true,
+    .enableHdrSupport: true,
+    .enableToneMapping: false,
+    .toneMappingTargetPeak: 0,
+    .toneMappingAlgorithm: "auto",
     .audioThreads: 0,
     .audioLanguage: "",
     .maxVolume: 100,
@@ -759,7 +813,8 @@ struct Preference {
     .subMarginY: Float(22),
     .subPos: Float(100),
     .subLang: "",
-    .onlineSubSource: OnlineSubtitle.Source.openSub.rawValue,
+    .legacyOnlineSubSource: 1, /* openSub */
+    .onlineSubProvider: OnlineSubtitle.Providers.openSub.id,
     .displayInLetterBox: true,
     .subScaleWithWindow: true,
     .openSubUsername: "",
@@ -779,7 +834,7 @@ struct Preference {
     .ytdlRawOptions: "",
     .httpProxy: "",
 
-    .inputConfigs: [:],
+    .inputConfigs: [String: Any](),
     .currentInputConfigName: "IINA Default",
 
     .enableAdvancedSettings: false,
@@ -787,9 +842,10 @@ struct Preference {
     .enableLogging: false,
     .logLevel: Logger.Level.debug.rawValue,
     .displayKeyBindingRawValues: false,
-    .userOptions: [],
+    .userOptions: [[String]](),
     .useUserDefinedConfDir: false,
     .userDefinedConfDir: "~/.config/mpv/",
+    .iinaEnablePluginSystem: false,
 
     .keepOpenOnFileEnd: true,
     .quitWhenNoOpenedWindow: false,
@@ -815,9 +871,13 @@ struct Preference {
     .screenshotTemplate: "%F-%n",
     .screenshotShowPreview: true,
 
-    .watchProperties: [],
-    .savedVideoFilters: [],
-    .savedAudioFilters: []
+    .watchProperties: [String](),
+    .savedVideoFilters: [SavedFilter](),
+    .savedAudioFilters: [SavedFilter](),
+
+    .suppressCannotPreventDisplaySleep: false,
+
+    .recentDocuments: [Any]()
   ]
 
 

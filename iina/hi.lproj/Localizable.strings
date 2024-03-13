@@ -18,8 +18,15 @@
 
 // Guide Window
 "guide.highlights" = "Highlights";
-"guide.basic_settings" = "Basic Settings";
+"guide.basic_settings" = "मार्गदर्शक. मूल_सेटिंग्स";
 "guide.faq" = "Frequently Asked Questions";
+
+// Initial Window
+"initial.announcement" = "You are using a %@ version of IINA";
+"initial.beta.desc" = "If you want to rollback to a release version, uncheck \"receive beta updates\" from Settings > General, and install a stable release from our <a href=\"https://iina.io\">official website</a>.";
+"initial.nightly.desc" = "Nightly is not recommended to be used as daily drive. Currently nightly builds do not support auto update. Please manually download newer builds from our <a href=\"https://nightly.iina.io\">nightly website</a>.";
+"initial.debug.desc" = "Debug builds are usually not optimized for performance, so it is not recommended to be used as daily drive. Debug builds do not support auto update.";
+"initial.bug_report" = "Report via <a href=\"https://github.com/iina/iina/issues\">GitHub issues</a>.";
 
 // MainWindowController.swift
 "main.buffering_indicator" = "बफरिंग… %d%%";
@@ -34,7 +41,7 @@
 "quicksetting.item_default" = "डिफ़ॉल्ट";
 "quicksetting.item_none" = "कोई नहीं";
 "quicksetting.hwdec" = "Hardware Decoding";
-"quicksetting.deinterlace" = "Deinterlace";
+"quicksetting.deinterlace" = "असंग्रथित";
 "quicksetting.hdr" = "HDR";
 
 // OSDMessage.swift
@@ -54,7 +61,7 @@
 "osd.sub_delay.later" = "उपशीर्षक देरी: %.2fs बाद में";
 "osd.sub_delay.earlier" = "उपशीर्षक देरी: %.2fs पूर्व";
 "osd.subtitle_pos" = "उपशीर्षक पद: %.1f";
-"osd.mute" = "Mute";
+"osd.mute" = "म्यूट";
 "osd.unmute" = "Unmute";
 "osd.screenshot" = "स्क्रीनशॉट कैप्चर किया गया";
 "osd.abloop.a" = "AB-लूप: A";
@@ -80,8 +87,13 @@
 "osd.file_error" = "फ़ाइल पढ़ने में त्रुटि";
 "osd.cannot_login" = "लॉग इन नहीं कर सकता";
 "osd.canceled" = "रद्द";
+"osd.cannot_connect" = "Cannot connect";
+"osd.timed_out" = "Timed Out";
 "osd.filter_added" = "जोड़ा गया फ़िल्टर: %@";
 "osd.filter_removed" = "फ़िल्टर हटाया गया";
+"osd.file_loop" = "Loop Single File";
+"osd.playlist_loop" = "Loop Playlist";
+"osd.no_loop" = "Disable Looping";
 
 "preference.title" = "पसंद";
 "preference.general" = "सामान्य";
@@ -92,6 +104,7 @@
 "preference.control" = "नियंत्रण";
 "preference.keybindings" = "कुंजी बाइंडिंग";
 "preference.advanced" = "उन्नत";
+"preference.plugins" = "Plugins";
 "preference.utilities" = "उपयोगिताएँ";
 "preference.scripts" = "स्क्रिप्ट";
 "preference.not_logged_in" = "लोग इन नहीं है";
@@ -101,18 +114,31 @@
 "preference.key_binding_hint_1" = "वर्तमान कॉन्फ़िगरेशन फ़ाइल में मुख्य बाइंडिंग को संपादित करने के लिए, प्रतिलिपि बनाने के लिए सबसे पहले \"डुप्लीकेट…\" बटन पर क्लिक करें।";
 "preference.key_binding_hint_2" = "संबंधित कुंजी बंधन को संपादित करने के लिए दाईं ओर एक पंक्ति पर डबल क्लिक करें।";
 
-"preference.enable_adv_settings" = "Enable advanced settings";
+"preference.enable_adv_settings" = "उन्नत सेटिंग्स सक्षम करें";
 
 "menu.volume" = "ध्वनि: %d";
+"menu.volume_muted" = "Volume: %d (Muted)";
 "menu.audio_delay" = "ऑडियो विलंब: %.2fs";
 "menu.sub_delay" = "उपशीर्षक देरी: %.2fs";
 "menu.fullscreen" = "पूर्ण स्क्रीन दर्ज करें";
 "menu.exit_fullscreen" = "पूर्ण स्क्रीन से बाहर निकलें";
 "menu.pip" = "पिक्चर-इन-पिक्चर डालें";
 "menu.exit_pip" = "पिक्चर-इन-पिक्चर से बाहर निकलें";
+"menu.mini_player" = "Enter Music Mode";
+"menu.exit_mini_player" = "Exit Music Mode";
 "menu.pause" = "रोकें";
 "menu.resume" = "पुनः आरंभ";
 "menu.speed" = "गति: %.2fx";
+"menu.chapters" = "अध्याय पैनल दिखाएं";
+"menu.hide_chapters" = "Hide Chapters Panel";
+"menu.playlist" = "प्लेलिस्ट पैनल दिखाएं";
+"menu.hide_playlist" = "Hide Playlist Panel";
+"menu.video" = "Show Video Panel";
+"menu.hide_video" = "Hide Video Panel";
+"menu.audio" = "Show Audio Panel";
+"menu.hide_audio" = "Hide Audio Panel";
+"menu.subtitles" = "Show Subtitles Panel";
+"menu.hide_subtitles" = "Hide Subtitles Panel";
 
 "menu.seek_forward" = "आगे कदम %.0fs";
 "menu.seek_backward" = "पीछे जाओ %.0fs";
@@ -125,7 +151,8 @@
 "menu.sub_delay_up" = "उपशीर्षक देरी + %.1fs";
 "menu.sub_delay_down" = "उपशीर्षक देरी - %.1fs";
 
-"menu.crop_custom" = "Custom...";
+"menu.crop_custom" = "कस्टम...";
+"menu.find_online_sub" = "Find Online Subtitles from %@";
 
 "track.none" = "<कोई नहीं>";
 
@@ -141,7 +168,7 @@
 
 "alert.fatal_error" = "घातक त्रुटि: %@ \n एप्लिकेशन अब बाहर निकल जाएगा।";
 "alert.mpv_error" = "आंतरिक गलती %@ (%@) विकल्प सेट करते समय %@।";
-"alert.sleep" = "प्रदर्शन नींद को रोक नहीं सकता!";
+"alert.sleep" = "Cannot prevent display sleep! (0x%0X8)";
 
 "alert.unsupported_audio" = "असमर्थित बाहरी ऑडियो फ़ाइल।";
 "alert.unsupported_sub" = "असमर्थित बाहरी उपशीर्षक।";
@@ -178,10 +205,13 @@
 
 "alert.playlist.error_deleting" = "हटाने में त्रुटि: %@";
 
+"alert.screenshot.error_taking" = "Cannot take a screenshot!";
+
 "alert.sub.no_selected" = "कृपया पहले डाउनलोड किए गए उपशीर्षक का चयन करें।";
 "alert.sub_lang_not_set" = "OpenSubtitles का उपयोग करने से पहले वरीयताओं को पसंदीदा उपशीर्षक भाषाओं में सेट करें। इस बार अंग्रेजी (संलग्न) का उपयोग किया जाएगा।";
 "alert.sub.cannot_save_passwd" = "किचेन में अपना पासवर्ड नहीं सहेज सकता: %@";
 "alert.sub.cannot_login" = "लॉग इन नहीं कर सकता। कृपया अपना उपयोगकर्ता नाम, पासवर्ड और नेटवर्क स्थिति जांचें। \n\n%@";
+"alert.sub.save_downloaded.title" = "डाउनलोड किए गए उपशीर्षक को सहेजें";
 
 "alert.set_default.title" = "डिफ़ॉल्ट ऐप के रूप में IINA की स्थापना";
 "alert.set_default.message" = "IINA सभी फ़ाइल प्रकारों के लिए डिफ़ॉल्ट ऐप के रूप में सेट किया जाएगा जो इसका समर्थन करता है।";
@@ -220,6 +250,9 @@
 "alert.clear_watch_later.title" = "स्पष्ट प्लेबैक प्रगति को बचाया";
 "alert.clear_watch_later.message" = "क्या आप सभी सहेजे गए प्लेबैक प्रगति (\"बाद में देखना\" डेटा) को हटाना सुनिश्चित कर रहे हैं?";
 
+"alert.restore_alerts.title" = "Restore Suppressed Alerts";
+"alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
+
 "alert.nothing_to_open" = "कुछ भी नहीं खोलने के लिए।";
 
 "alert.no_video_track" = "कोई वीडियो ट्रैक नहीं है।";
@@ -233,6 +266,17 @@
 "alert.assrt_token_prompt.message" = "कृपया खुले हुए वेबपेज में पंजीकरण करें। अपने उपयोगकर्ता मुख पृष्ठ में अपना टोकन प्राप्त करें और इसे नीचे दर्ज करें:";
 "alert.assrt_token_invalid" = "आपका Assrt API टोकन अमान्य लगता है।";
 
+"alert.plugin_uninstall.title" = "Are you sure to uninstall %@?";
+"alert.plugin_uninstall.message" = "The plugin will be deleted from your disk.";
+"alert.plugin_reinstall.title" = "Plugin %@ already exists";
+"alert.plugin_reinstall.message" = "Do you want to reinstall the plugin?";
+"alert.duplicated_plugin_id" = "Duplicated plugin identifiers detected. Two or more plugins have the same identifier \"%@\". This may cause abnormal behaviors. Please find them in Preferences - Plugins and report to their authors. If a plugin is installed locally, you can also manually change its identifier in the plugin's Info.json file.";
+"alert.plugin_no_update" = "No update found.";
+"alert.plugin_update_found.title" = "Update found for %@";
+"alert.plugin_update_found.message" = "The latest version is %@. You have %@. Would you like to update?";
+"alert.plugin_permission" = "This plugin requires the following permissions. Please review them before proceeding.";
+"alert.plugin_permission_added" = "This update requires additional permissions. Please review them before proceeding.";
+
 "playlist.total_length" = "कुल %@";
 "playlist.total_length_with_selected" = "%@ में से %@ का चयन किया गया ";
 "pl_menu.title_multi" = "%d आइटम";
@@ -244,7 +288,7 @@
 "pl_menu.delete_multi" = "चयनित फ़ाइलों को ट्रैश में ले जाएं";
 "pl_menu.delete_after_play" = "प्लेबैक के बाद ट्रैश में जाएं";
 "pl_menu.delete_after_play_multi" = "प्लेबैक के बाद ट्रैश में चयनित फ़ाइलों को स्थानांतरित करें";
-"pl_menu.reveal_in_finder" = "खोजक में पता चलता है";
+"pl_menu.show_in_finder" = "खोजक में पता चलता है";
 "pl_menu.add_file" = "फाइल जोडें…";
 "pl_menu.add_url" = "यू आर एल जोड़िये…";
 "pl_menu.clear_playlist" = "क्लियर प्लेलिस्ट";
@@ -273,14 +317,15 @@
 "osc_toolbar.full_screen" = "पूर्णस्क्रीन चालू करें";
 "osc_toolbar.music_mode" = "संगीत मोड दर्ज करें";
 "osc_toolbar.sub_track" = "उपशीर्षक ट्रैक चुनें";
+"osc_toolbar.screenshot" = "Take a screenshot";
 
 "mini_player.album_art" = "Toggle album art";
 "mini_player.loop" = "Repeat";
-"mini_player.shuffle" = "Shuffle";
+"mini_player.shuffle" = "फेंटना";
 "mini_player.remove" = "Remove from playlist";
 "mini_player.add" = "Add to playlist";
 "mini_player.delete" = "Delete all tracks from playlist";
-"mini_player.volume" = "Volume";
+"mini_player.volume" = "ध्वनि";
 "mini_player.close" = "Close music mode";
 "mini_player.back" = "Return to video mode";
 
@@ -301,3 +346,31 @@
 "touchbar.time" = "समय की स्थिति";
 "touchbar.remainingTimeOrTotalDuration" = "Remaining Time / Total Duration";
 "touchbar.toggle_pip" = "टॉगल पिक्चर-इन-पिक्चर";
+
+// Plugin permissions
+
+"permissions.network-request.name" = "Network Request";
+"permissions.network-request.desc" = "This plugin can make requsts from or upload data to these websites:";
+"permissions.network-request.any_site" = "Any site";
+"permissions.show-osd.name" = "Show OSD";
+"permissions.show-osd.desc" = "This plugin can show OSD (On Screen Display) messages.";
+"permissions.show-alert.name" = "Show Alerts";
+"permissions.show-alert.desc" = "This plugin can show pop-up alerts.";
+"permissions.video-overlay.name" = "Add overlays on videos";
+"permissions.video-overlay.desc" = "This plugin can render additional content on the top of the video.";
+"permissions.file-system.name" = "Access the file system";
+"permissions.file-system.desc" = "This plugin can read or write files on your disk, which may include sensitive information. It can also execute other programs or applications that can harm your computer. So be sure to verify the source.";
+
+"plugin.install" = "Install";
+"plugin.installed" = "Installed";
+"plugin.not_installed" = "Not Installed";
+"plugin.local" = "Installed locally";
+"alert.plugin.install_error" = "Error occurred during the installation: %@";
+"alert.invalid_url" = "The URL is invalid.";
+"plugin.install_error.invalid_url" = "The URL is invalid.";
+"plugin.install_error.file_not_found" = "Cannot find the package file.";
+"plugin.install_error.cannot_download" = "Failed to download the plugin.\n\nOutput:%@\n";
+"plugin.install_error.cannot_unpackage" = "Failed to unpackage the plugin.\n\nOutput:%@\n";
+"plugin.install_error.cannot_load" = "IINA cannot load this plugin. It might be in the wrong format.";
+"plugin.check_for_updates" = "अद्यतन के लिए जाँच";
+"plugin.updating" = "Downloading update…";

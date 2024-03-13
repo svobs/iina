@@ -10,10 +10,13 @@ import Cocoa
 
 fileprivate extension String {
   func removedLastSemicolon() -> String {
-    if self.hasSuffix(":") || self.hasSuffix("：") {
-      return String(self.dropLast())
-    }
+    let trimed = trimWhitespaceSuffix()
+    guard !trimed.hasSuffix(":") else { return String(trimed.dropLast()) }
     return self
+  }
+
+  func trimWhitespaceSuffix() -> String {
+    self.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression)
   }
 }
 
@@ -38,6 +41,18 @@ extension PreferenceWindowEmbeddable {
     return true
   }
 }
+
+class CustomCellView: NSTableCellView {
+  @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
+
+  override func viewWillDraw() {
+    if #unavailable (macOS 11.0) {
+      leadingConstraint.constant = 20
+    }
+    super.viewWillDraw()
+  }
+}
+
 
 class PreferenceWindowController: NSWindowController {
 
@@ -125,17 +140,25 @@ class PreferenceWindowController: NSWindowController {
 
   private let indexingQueue = DispatchQueue(label: "IINAPreferenceIndexingTask", qos: .userInitiated)
   private var isIndexing: Bool = true
+  
+  enum Action {
+    case installPlugin(url: URL)
+  }
 
   @IBOutlet weak var searchField: NSSearchField!
   @IBOutlet weak var tableView: NSTableView!
   @IBOutlet weak var maskView: PrefSearchResultMaskView!
-  @IBOutlet weak var scrollView: NSScrollView!
-  @IBOutlet weak var contentView: NSView!
+  @IBOutlet weak var prefDetailScrollView: NSScrollView!  // contains the prefs detail panel (on right)
+  // Check `prefDetailContentView` constraints in the XIB for window content insets
+  @IBOutlet weak var prefDetailContentView: NSView!       // contains the sections stack
+  @IBOutlet weak var prefSectionsStackView: NSStackView!  // add prefs sections to this
   @IBOutlet var completionPopover: NSPopover!
   @IBOutlet weak var completionTableView: NSTableView!
   @IBOutlet weak var noResultLabel: NSTextField!
 
-  private var contentViewBottomConstraint: NSLayoutConstraint?
+  @IBOutlet weak var navTableSearchFieldSpacingConstraint: NSLayoutConstraint!
+
+  private var detailViewBottomConstraint: NSLayoutConstraint?
 
   private var viewControllers: [NSViewController & PreferenceWindowEmbeddable]
 
@@ -160,9 +183,15 @@ class PreferenceWindowController: NSWindowController {
     completionTableView.delegate = self
     completionTableView.dataSource = self
 
-    contentViewBottomConstraint = contentView.bottomAnchor.constraint(equalTo: contentView.superview!.bottomAnchor)
+    detailViewBottomConstraint = prefDetailContentView.bottomAnchor.constraint(equalTo: prefDetailContentView.superview!.bottomAnchor)
 
-    let labelDict = [String: [String: [String]]](uniqueKeysWithValues:  [
+    // NSTableView's "Source List" style is only available with MacOS 11.0+ and includes a built-in 10pt offset for its highlights.
+    // But for older MacOS versions, the style will default to "full width" with no highlight offset, which will touch the Search field.
+    if #unavailable(macOS 11.0) {
+      navTableSearchFieldSpacingConstraint.constant = 10.0
+    }
+
+    var viewMap = [
       ["general", "PrefGeneralViewController"],
       ["ui", "PrefUIViewController"],
       ["subtitle", "PrefSubViewController"],
@@ -170,24 +199,34 @@ class PreferenceWindowController: NSWindowController {
       ["control", "PrefControlViewController"],
       ["keybindings", "PrefKeyBindingViewController"],
       ["video_audio", "PrefCodecViewController"],
+      // ["plugin", "PrefPluginViewController"],
       ["advanced", "PrefAdvancedViewController"],
       ["utilities", "PrefUtilsViewController"],
-    ].map { (NSLocalizedString("preference.\($0[0])", comment: ""), self.getLabelDict(inNibNamed: $0[1])) })
+    ]
+    if IINA_ENABLE_PLUGIN_SYSTEM {
+      viewMap.insert(["plugins", "PrefPluginViewController"], at: 8)
+    }
+    let labelDict = [String: [String: [String]]](
+      uniqueKeysWithValues: viewMap.map { (NSLocalizedString("preference.\($0[0])", comment: ""), self.getLabelDict(inNibNamed: $0[1])) })
+
+#if DEBUG
+    // As the following call emits a lot of messages that are only needed when debugging the NIB
+    // scan it is checked into source control commented out.
+    //logLabelDict(labelDict)
+#endif
 
     indexingQueue.async{
       self.isIndexing = true
       self.makeTries(labelDict)
       self.isIndexing = false
     }
-
-    loadTab(at: 0)
   }
 
   override func mouseDown(with event: NSEvent) {
     dismissCompletionList()
   }
 
-  // MARK: Searching
+  // MARK: - Searching
 
   private func makeTries(_ labelDict: [String: [String: [String]]]) {
     // search for sections and labels
@@ -203,7 +242,7 @@ class PreferenceWindowController: NSWindowController {
 
   @IBAction func searchFieldAction(_ sender: Any) {
     guard !isIndexing else { return }
-    let searchString = searchField.stringValue.lowercased()
+    let searchString = searchField.stringValue.lowercased().trimWhitespaceSuffix().removedLastSemicolon()
     if searchString == lastString { return }
     if searchString.count == 0 {
       dismissCompletionList()
@@ -236,23 +275,21 @@ class PreferenceWindowController: NSWindowController {
     }
   }
 
-  // MARK: Tabs
+  // MARK: - Tabs
 
   private func loadTab(at index: Int, thenFindLabelTitled title: String? = nil) {
     // load view
     if index != tableView.selectedRow {
       tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
     }
-    contentView.subviews.forEach { $0.removeFromSuperview() }
+    prefSectionsStackView.subviews.forEach { $0.removeFromSuperview() }
     guard let vc = viewControllers[at: index] else { return }
-    contentView.addSubview(vc.view)
-    Utility.quickConstraints(["H:|-20-[v]-20-|", "V:|-28-[v]-28-|"], ["v": vc.view])
+    prefSectionsStackView.addSubview(vc.view)
+    Utility.quickConstraints(["H:|-0-[v]-0-|", "V:|-0-[v]-0-|"], ["v": vc.view])
 
     let isScrollable = vc.preferenceContentIsScrollable
-    contentViewBottomConstraint?.isActive = !isScrollable
-    scrollView.verticalScrollElasticity = isScrollable ? .allowed : .none
-    // scroll to top
-    scrollView.documentView?.scroll(.zero)
+    detailViewBottomConstraint?.isActive = !isScrollable
+    prefDetailScrollView.verticalScrollElasticity = .none
 
     // find label
     if let title = title, let label = findLabel(titled: title, in: vc.view) {
@@ -285,7 +322,7 @@ class PreferenceWindowController: NSWindowController {
       }) else {
         return nil
     }
-    let title = (sectionTitleLabel as! NSTextField).stringValue
+    let title = formSearchTerm((sectionTitleLabel as! NSTextField).stringValue)
     var labels = findLabels(in: section)
     labels.remove(at: labels.firstIndex(of: title)!)
     return (title, labels)
@@ -302,6 +339,16 @@ class PreferenceWindowController: NSWindowController {
     return labels
   }
 
+  /// Form a search term from the given string.
+  ///
+  /// The UI labels and titles contain extraneous characters that must be removed for them to be used as a search term.
+  /// - Parameter string: The string to turn into a search term.
+  /// - Returns: The given string with extraneous characters removed.
+  private func formSearchTerm(_ string: String) -> String {
+    string.trimmingCharacters(in: .whitespacesAndNewlines)
+      .replacingOccurrences(of: "[:…()\"\n]", with: "", options: .regularExpression)
+  }
+
   private func findLabel(titled title: String, in view: NSView) -> NSView? {
     for subView in view.subviews {
       if getTitle(from: subView) == title {
@@ -316,12 +363,12 @@ class PreferenceWindowController: NSWindowController {
 
   private func getTitle(from view: NSView) -> String? {
     if let label = view as? NSTextField,
-      !label.isEditable, label.textColor == .labelColor,
+      !label.isEditable, label.textColor == .labelColor, label.stringValue != "Label",
       !label.identifierStartsWith("AccessoryLabel"), !label.identifierStartsWith("Trigger") {
-      return label.stringValue
+      return formSearchTerm(label.stringValue)
     } else if let button = view as? NSButton,
       (button.identifierStartsWith("FunctionalButton") || button.bezelStyle == .regularSquare) {
-      return button.title
+      return formSearchTerm(button.title)
     }
     return nil
   }
@@ -337,6 +384,41 @@ class PreferenceWindowController: NSWindowController {
     return nil
   }
 
+  func performAction(_ action: Action) {
+    switch action {
+    case .installPlugin(url: let url):
+      guard let idx = viewControllers.firstIndex(where: { $0 is PrefPluginViewController }) else {
+        return
+      }
+      loadTab(at: idx)
+      let vc = viewControllers[idx] as! PrefPluginViewController
+      vc.installPluginAction(localPackageURL: url)
+      // vc.perform(#selector(vc.installPluginAction(localPackageURL:)), with: url, afterDelay: 0.25)
+    }
+  }
+
+  // MARK: - Debugging
+
+#if DEBUG
+  /// Log the search terms found in the NIB scan.
+  ///
+  /// The log messages emitted by this method are only useful to developers when validating the results of scanning the settings NIBs.
+  /// - Parameter labelDict: Nested dictionary  containing the search terms that were found in the scan.
+  private func logLabelDict(_ labelDict: [String: [String: [String]]]) {
+    Logger.log("--------------------------------------------------")
+    Logger.log("Search terms found in scan of settings panel NIBs:")
+    for (section, subSection) in labelDict {
+      Logger.log("\(section)")
+      for (subSectionName, contents) in subSection {
+        Logger.log("  \(subSectionName)")
+        for label in contents {
+          Logger.log("    \(label)")
+        }
+      }
+    }
+    Logger.log("--------------------------------------------------")
+  }
+#endif
 }
 
 extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource {
@@ -363,7 +445,7 @@ extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource
         "noSection": noLabel,
         "section": result.strippedSection,
         "label": result.strippedLabel ?? result.strippedSection,
-      ]
+      ] as [String: Any?]
     }
   }
 

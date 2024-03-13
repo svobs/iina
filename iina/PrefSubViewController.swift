@@ -42,8 +42,21 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   @IBOutlet weak var loginIndicator: NSProgressIndicator!
   @IBOutlet weak var defaultEncodingList: NSPopUpButton!
 
+  @IBOutlet var subColorWell: NSColorWell!
+  @IBOutlet var subBackgroundColorWell: NSColorWell!
+  @IBOutlet var subBorderColorWell: NSColorWell!
+  @IBOutlet var subShadowColorWell: NSColorWell!
+
   override func viewDidLoad() {
     super.viewDidLoad()
+
+#if MACOS_13_AVAILABLE
+    if #available(macOS 13.0, *) {
+      [subColorWell, subBackgroundColorWell, subBorderColorWell, subShadowColorWell].forEach {
+        $0.colorWellStyle = .expanded
+      }
+    }
+#endif
 
     let defaultEncoding = Preference.string(for: .defaultEncoding)
     for encoding in AppData.encodings {
@@ -58,9 +71,14 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
     defaultEncodingList.menu?.insertItem(NSMenuItem.separator(), at: 1)
     loginIndicator.isHidden = true
 
-    subLangTokenView.stringValue = Preference.string(for: .subLang) ?? ""
+    subLangTokenView.commaSeparatedValues = Preference.string(for: .subLang) ?? ""
 
-    refreshOnlineSubSource()
+    refreshSubSources()
+    refreshSubSourceAccessoryView()
+
+    NotificationCenter.default.addObserver(forName: .iinaPluginChanged, object: nil, queue: .main) { [unowned self] _ in
+      self.refreshSubSources()
+    }
   }
 
   @IBAction func chooseSubFontAction(_ sender: AnyObject) {
@@ -78,7 +96,7 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
         self.loginIndicator.isHidden = false
         self.loginIndicator.startAnimation(nil)
         firstly {
-          OpenSubSupport().login(testUser: username, password: password)
+          OpenSub.Fetcher.shared.login(testUser: username, password: password)
         }.map { _ in
           do {
             try KeychainAccess.write(username: username, password: password, forService: .openSubAccount)
@@ -96,10 +114,8 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
         }.catch { err in
           let message: String
           switch err {
-          case OpenSubSupport.OpenSubError.loginFailed(let reason):
+          case OpenSub.Error.loginFailed(let reason):
             message = reason
-          case OpenSubSupport.OpenSubError.xmlRpcError(let e):
-            message = e.readableDescription
           default:
             message = "Unknown error"
           }
@@ -127,18 +143,30 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   }
 
   @IBAction func onlineSubSourceAction(_ sender: NSPopUpButton) {
-    refreshOnlineSubSource()
+    refreshSubSourceAccessoryView()
   }
 
   @IBAction func preferredLanguageAction(_ sender: LanguageTokenField) {
-    Preference.set(sender.stringValue, for: .subLang)
+    let csv = sender.commaSeparatedValues
+    if Preference.string(for: .subLang) != csv {
+      Logger.log("Saving \(Preference.Key.subLang.rawValue): \"\(csv)\"", level: .verbose)
+      Preference.set(csv, for: .subLang)
+    }
   }
 
-  private func refreshOnlineSubSource() {
-    let tag = subSourcePopUpButton.selectedTag()
+  private func refreshSubSources() {
+    OnlineSubtitle.populateMenu(subSourcePopUpButton.menu!)
+    let provider = Preference.string(for: .onlineSubProvider)
+    let index = subSourcePopUpButton.menu!.items.firstIndex { $0.representedObject as? String == provider }
+    subSourcePopUpButton.selectItem(at: index ?? 0)
+  }
+
+  private func refreshSubSourceAccessoryView() {
+    let map = [OnlineSubtitle.Providers.openSub.id: 1, OnlineSubtitle.Providers.assrt.id: 2]
+    let id = subSourcePopUpButton.selectedItem?.representedObject as? String ?? ""
     for (index, view) in subSourceStackView.views.enumerated() {
       if index == 0 { continue }
-      subSourceStackView.setVisibilityPriority(index == tag ? .mustHold : .notVisible, for: view)
+      subSourceStackView.setVisibilityPriority(index == map[id] ? .mustHold : .notVisible, for: view)
     }
   }
 }

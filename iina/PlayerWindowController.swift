@@ -117,7 +117,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   @IBOutlet weak var volumeSlider: NSSlider!
   @IBOutlet weak var muteButton: NSButton!
   @IBOutlet weak var playButton: NSButton!
-  @IBOutlet weak var playSlider: NSSlider!
+  @IBOutlet weak var playSlider: PlaySlider!
   @IBOutlet weak var rightLabel: DurationDisplayTextField!
   @IBOutlet weak var leftLabel: DurationDisplayTextField!
 
@@ -185,11 +185,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       self.updateTitle()
     }
 
-    NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: nil, using: { [unowned self] _ in
+    NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: nil) { [unowned self] _ in
       if Preference.bool(for: .pauseWhenGoesToSleep) {
         self.player.pause()
       }
-    })
+    }
 
     if #available(macOS 10.15, *) {
       addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification, object: nil) { [unowned self] noti in
@@ -239,7 +239,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // execute the command
       switch keyBinding.action.first! {
       case MPVCommand.abLoop.rawValue:
-        player.abLoop()
+        abLoop()
         returnValue = 0
       default:
         returnValue = player.mpv.command(rawString: keyBinding.rawAction)
@@ -253,50 +253,137 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
   }
 
-  override func keyDown(with event: NSEvent) {
-    if let keyBinding = player.keyInputController.resolveKeyEvent(event) {
-      if !keyBinding.isIgnored {  // if "ignore", do nothing. No beep, no send
-        if !handleKeyBinding(keyBinding) {
-          // beep if cmd failed
-          super.keyDown(with: event)
-        }
-      }
+  func abLoop() {
+    player.abLoop()
+    syncSlider()
+  }
+
+  func syncSlider() {
+    let a = player.abLoopA
+    playSlider.abLoopA.isHidden = a == 0
+    playSlider.abLoopA.doubleValue = secondsToPercent(a)
+    let b = player.abLoopB
+    playSlider.abLoopB.isHidden = b == 0
+    playSlider.abLoopB.doubleValue = secondsToPercent(b)
+    playSlider.needsDisplay = true
+  }
+
+  /// Returns the percent of the total duration of the video the given position in seconds represents.
+  ///
+  /// The percentage returned must be considered an estimate that could change. The duration of the video is obtained from the
+  /// [mpv](https://mpv.io/manual/stable/) `duration` property. The documentation for this property cautions that mpv
+  /// is not always able to determine the duration and when it does return a duration it may be an estimate. If the duration is unknown
+  /// this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
+  /// - Parameter seconds: Position in the video as seconds from start.
+  /// - Returns: The percent of the video the given position represents.
+  private func secondsToPercent(_ seconds: Double) -> Double {
+    if let duration = player.info.videoDuration?.second {
+      return duration == 0 ? 0 : seconds / duration * 100
+    } else if let position = player.info.videoPosition?.second {
+      return position == 0 ? 0 : seconds / position * 100
     } else {
-      // invalid key
-      super.keyDown(with: event)
+      return 0
     }
   }
 
+  override func keyDown(with event: NSEvent) {
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyDown, player: player,
+      arguments: keyEventArgs(event), handler: {
+      if let kb = PlayerCore.keyBindings[normalizedKeyCode] {
+        self.handleKeyBinding(kb)
+        return true
+      }
+      return false
+    }, defaultHandler: {
+      super.keyDown(with: event)
+    })
+  }
+  
+  override func keyUp(with event: NSEvent) {
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyUp, player: player,
+      arguments: keyEventArgs(event)
+    )
+  }
+  
+  
+  override func mouseDown(with event: NSEvent) {
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.mouse, event: .mouseDown,
+      player: player, arguments: mouseEventArgs(event)
+    )
+    // we don't call super here because before adding the plugin system,
+    // MainWindowController didn't call super at all
+  }
+
   override func mouseUp(with event: NSEvent) {
-    guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
-    if event.clickCount == 1 {
-      if doubleClickAction == .none {
-        performMouseAction(singleClickAction)
-      } else {
-        singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
-        mouseExitEnterCount = 0
+    guard !self.isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
+    
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
+      arguments: mouseEventArgs(event), defaultHandler: { [self] in
+      // default handler
+      if event.clickCount == 1 {
+        if doubleClickAction == .none {
+          performMouseAction(singleClickAction)
+        } else {
+          singleClickTimer = Timer.scheduledTimer(timeInterval: NSEvent.doubleClickInterval, target: self, selector: #selector(performMouseActionLater), userInfo: singleClickAction, repeats: false)
+          mouseExitEnterCount = 0
+        }
+      } else if event.clickCount == 2 {
+        if let timer = singleClickTimer {
+          timer.invalidate()
+          singleClickTimer = nil
+        }
+        performMouseAction(doubleClickAction)
       }
-    } else if event.clickCount == 2 {
-      if let timer = singleClickTimer {
-        timer.invalidate()
-        singleClickTimer = nil
-      }
-      performMouseAction(doubleClickAction)
-    }
+    })
+  }
+
+  /// This method is provided soly for invoking plugin input handlers.
+  func informPluginMouseDragged(with event: NSEvent) {
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.mouse, event: .mouseDrag, player: player,
+      arguments: mouseEventArgs(event)
+    )
+  }
+
+  override func rightMouseDown(with event: NSEvent) {
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.rightMouse, event: .mouseDown,
+      player: player, arguments: mouseEventArgs(event)
+    )
   }
 
   override func rightMouseUp(with event: NSEvent) {
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
-    performMouseAction(Preference.enum(for: .rightClickAction))
+    
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.rightMouse, event: .mouseUp, player: player,
+      arguments: mouseEventArgs(event), defaultHandler: {
+      self.performMouseAction(Preference.enum(for: .rightClickAction))
+    })
   }
 
   override func otherMouseUp(with event: NSEvent) {
     guard !isMouseEvent(event, inAnyOf: mouseActionDisabledViews) else { return }
-    if event.type == .otherMouseUp {
-      performMouseAction(Preference.enum(for: .middleClickAction))
-    } else {
-      super.otherMouseUp(with: event)
-    }
+    
+    PluginInputManager.handle(
+      input: PluginInputManager.Input.otherMouse, event: .mouseUp, player: player,
+      arguments: mouseEventArgs(event), defaultHandler: {
+      if event.type == .otherMouseUp {
+        self.performMouseAction(Preference.enum(for: .middleClickAction))
+      } else {
+        super.otherMouseUp(with: event)
+      }
+    })
   }
 
   internal func performMouseAction(_ action: Preference.MouseClickAction) {
@@ -420,11 +507,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       NowPlayingInfoManager.updateInfo(withTitle: true)
     }
-    NotificationCenter.default.post(name: .iinaMainWindowChanged, object: nil)
+    (NSApp.delegate as? AppDelegate)?.menuController?.updatePluginMenu()
+
+    NotificationCenter.default.post(name: .iinaMainWindowChanged, object: true)
   }
   
   func windowDidResignMain(_ notification: Notification) {
-    NotificationCenter.default.post(name: .iinaMainWindowChanged, object: nil)
+    NotificationCenter.default.post(name: .iinaMainWindowChanged, object: false)
   }
 
   func windowDidChangeScreen(_ notification: Notification) {
@@ -539,4 +628,22 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     })
   }
 
+}
+
+
+fileprivate func mouseEventArgs(_ event: NSEvent) -> [[String: Any]] {
+  return [[
+    "x": event.locationInWindow.x,
+    "y": event.locationInWindow.y,
+    "clickCount": event.clickCount,
+    "pressure": event.pressure
+  ] as [String : Any]]
+}
+
+fileprivate func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
+  return [[
+    "x": event.locationInWindow.x,
+    "y": event.locationInWindow.y,
+    "isRepeat": event.isARepeat
+  ] as [String : Any]]
 }

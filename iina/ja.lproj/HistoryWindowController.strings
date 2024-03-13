@@ -13,7 +13,7 @@
 /* Class = "NSWindow"; title = "Playback History"; ObjectID = "F0z-JX-Cv5"; */
 "F0z-JX-Cv5.title" = "再生履歴";
 
-/* Class = "NSMenuItem"; title = "Reveal in Finder"; ObjectID = "FPK-nx-hvF"; */
+/* Class = "NSMenuItem"; title = "Show in Finder"; ObjectID = "FPK-nx-hvF"; */
 "FPK-nx-hvF.title" = "Finderで表示";
 
 /* Class = "NSMenuItem"; title = "Search in"; ObjectID = "Gx5-gP-rzr"; */
@@ -23,7 +23,7 @@
 "M7K-6H-OPw.headerCell.title" = "再生日時";
 
 /* Class = "NSTableColumn"; headerCell.title = "Progress"; ObjectID = "MJU-JY-7fx"; */
-"MJU-JY-7fx.headerCell.title" = "再生状況";
+"MJU-JY-7fx.headerCell.title" = "再生進度";
 
 /* Class = "NSMenuItem"; title = "Date"; ObjectID = "QBO-JS-dNV"; */
 "QBO-JS-dNV.title" = "日付";

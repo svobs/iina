@@ -9,33 +9,33 @@
 
 
 
-"crop" = "Crop";
-"crop.w" = "Width (default: video width)";
-"crop.h" = "Height (default: video height)";
+"crop" = "வெட்டு";
+"crop.w" = "அகலம்  (இயல்புநிலை: காணொளி அகலம்)";
+"crop.h" = "உயரம்  (இயல்புநிலை: காணொளி உயரம்)";
 "crop.x" = "Origin X (default: center)";
 "crop.y" = "Origin Y (default: center)";
 
 "expand" = "விரிவாக்கு";
-"expand.w" = "Width (default: video width)";
-"expand.h" = "Height (default: video height)";
+"expand.w" = "அகலம்  (இயல்புநிலை: காணொளி அகலம்)";
+"expand.h" = "உயரம்  (இயல்புநிலை: காணொளி உயரம்)";
 "expand.x" = "Origin X (default: center)";
 "expand.y" = "Origin Y (default: center)";
 "expand.aspect" = "Expands to fit an aspect (e.g: 4/3)";
 "expand.round" = "Rounds up to make divisible by this value";
 
 "sharpen" = "கூர்மைப்படுத்துங்கள்";
-"sharpen.msize" = "Matrix size";
+"sharpen.msize" = "அணி அளவு";
 "sharpen.amount" = "தொகை";
 
-"blur" = "Blur";
-"blur.msize" = "Matrix size";
+"blur" = "கலங்கள்";
+"blur.msize" = "அணி அளவு";
 "blur.amount" = "தொகை";
 
-"delogo" = "Delogo";
+"delogo" = "இலச்சினை நீக்கம்";
 "delogo.w" = "அகலம்";
 "delogo.h" = "உயரம்";
-"delogo.x" = "Origin X";
-"delogo.y" = "Origin Y";
+"delogo.x" = "நீளமூலம்";
+"delogo.y" = "அகளமூலம்";
 
 "negative" = "எதிர்மறை";
 

@@ -38,10 +38,13 @@ class PrefCodecViewController: PreferenceViewController, PreferenceWindowEmbedda
 
   @IBOutlet weak var audioDevicePopUp: NSPopUpButton!
 
+  @IBOutlet weak var enableToneMappingBtn: NSButton!
+  @IBOutlet weak var toneMappingTargetPeakTextField: NSTextField!
+  @IBOutlet weak var toneMappingAlgorithmPopUpBtn: NSPopUpButton!
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    audioLangTokenField.stringValue = Preference.string(for: .audioLanguage) ?? ""
+    audioLangTokenField.commaSeparatedValues = Preference.string(for: .audioLanguage) ?? ""
     updateHwdecDescription()
   }
 
@@ -88,11 +91,27 @@ class PrefCodecViewController: PreferenceViewController, PreferenceWindowEmbedda
   }
 
   @IBAction func preferredLanguageAction(_ sender: LanguageTokenField) {
-    Preference.set(sender.stringValue, for: .audioLanguage)
+    let csv = sender.commaSeparatedValues
+    if Preference.string(for: .audioLanguage) != csv {
+      Logger.log("Saving \(Preference.Key.audioLanguage.rawValue): \"\(csv)\"", level: .verbose)
+      Preference.set(csv, for: .audioLanguage)
+    }
   }
 
   private func updateHwdecDescription() {
     let hwdec: Preference.HardwareDecoderOption = Preference.enum(for: .hardwareDecoder)
     hwdecDescriptionTextField.stringValue = hwdec.localizedDescription
+  }
+
+  @IBAction func toneMappingHelpAction(_ sender: Any) {
+    NSWorkspace.shared.open(URL(string: AppData.toneMappingHelpLink)!)
+  }
+
+  @IBAction func targetPeakHelpAction(_ sender: Any) {
+    NSWorkspace.shared.open(URL(string: AppData.targetPeakHelpLink)!)
+  }
+
+  @IBAction func algorithmHelpAction(_ sender: Any) {
+    NSWorkspace.shared.open(URL(string: AppData.algorithmHelpLink)!)
   }
 }

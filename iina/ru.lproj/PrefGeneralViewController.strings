@@ -62,7 +62,7 @@
 "KYi-0W-zOr.title" = "Выключить остальные мониторы в полноэкранном режиме";
 
 /* Class = "NSButtonCell"; title = "Switch to \"music mode\" automatically when playing an audio file"; ObjectID = "KfL-r7-Uav"; */
-"KfL-r7-Uav.title" = "Автоматически переходить в «музыкальный режим» при воспроизведении аудиофайла";
+"KfL-r7-Uav.title" = "Автоматически переходить в \"музыкальный режим\" при воспроизведении аудиофайла";
 
 /* Class = "NSButtonCell"; title = "Play next item automatically"; ObjectID = "Lac-Ol-g6E"; */
 "Lac-Ol-g6E.title" = "Автоматически воспроизводить следующий файл";
@@ -107,7 +107,7 @@
 "gqT-CB-Puw.title" = "При запуске:";
 
 /* Class = "NSButtonCell"; title = "Check for updates"; ObjectID = "hWC-KJ-FuC"; */
-"hWC-KJ-FuC.title" = "Проверить наличие обновлений";
+"hWC-KJ-FuC.title" = "Проверять наличие обновлений";
 
 /* Class = "NSButtonCell"; title = "Pause when machine goes to sleep"; ObjectID = "i4A-86-dGC"; */
 "i4A-86-dGC.title" = "Пауза, когда компьютер переходит в режим сна";
@@ -146,7 +146,7 @@
 "uQR-Fx-oEm.title" = "Поведение:";
 
 /* Class = "NSButtonCell"; title = "Show previews after taking screenshots"; ObjectID = "xE7-Uu-19f"; */
-"xE7-Uu-19f.title" = "Показывать превью после снятия скриншота";
+"xE7-Uu-19f.title" = "Показывать превью после скриншота";
 
 /* Class = "NSTextFieldCell"; title = "Pause/resume when:"; ObjectID = "xr2-rB-O0x"; */
 "xr2-rB-O0x.title" = "Остановить/продолжить воспроизведение, когда:";

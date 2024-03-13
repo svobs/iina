@@ -21,6 +21,13 @@
 "guide.basic_settings" = "基本設定";
 "guide.faq" = "よくある質問";
 
+// Initial Window
+"initial.announcement" = "You are using a %@ version of IINA";
+"initial.beta.desc" = "If you want to rollback to a release version, uncheck \"receive beta updates\" from Settings > General, and install a stable release from our <a href=\"https://iina.io\">official website</a>.";
+"initial.nightly.desc" = "Nightly is not recommended to be used as daily drive. Currently nightly builds do not support auto update. Please manually download newer builds from our <a href=\"https://nightly.iina.io\">nightly website</a>.";
+"initial.debug.desc" = "Debug builds are usually not optimized for performance, so it is not recommended to be used as daily drive. Debug builds do not support auto update.";
+"initial.bug_report" = "Report via <a href=\"https://github.com/iina/iina/issues\">GitHub issues</a>.";
+
 // MainWindowController.swift
 "main.buffering_indicator" = "バッファ中… %d%%";
 "main.opening_stream" = "ストリームを展開中…";
@@ -80,8 +87,13 @@
 "osd.file_error" = "ファイルの読み込みエラー";
 "osd.cannot_login" = "ログインできません";
 "osd.canceled" = "キャンセルされました";
+"osd.cannot_connect" = "Cannot connect";
+"osd.timed_out" = "Timed Out";
 "osd.filter_added" = "追加したフィルター: %@";
 "osd.filter_removed" = "削除したフィルター";
+"osd.file_loop" = "Loop Single File";
+"osd.playlist_loop" = "Loop Playlist";
+"osd.no_loop" = "Disable Looping";
 
 "preference.title" = "環境設定";
 "preference.general" = "一般";
@@ -92,6 +104,7 @@
 "preference.control" = "コントロール";
 "preference.keybindings" = "キーの割り当て";
 "preference.advanced" = "詳細設定";
+"preference.plugins" = "プラグイン";
 "preference.utilities" = "ユーティリティ";
 "preference.scripts" = "スクリプト";
 "preference.not_logged_in" = "ログインしていません";
@@ -104,15 +117,28 @@
 "preference.enable_adv_settings" = "高度な設定を有効化";
 
 "menu.volume" = "音量: %d";
+"menu.volume_muted" = "Volume: %d (Muted)";
 "menu.audio_delay" = "オーディオディレイ: %.2fs";
 "menu.sub_delay" = "字幕ディレイ: %.2fs";
 "menu.fullscreen" = "フルスクリーンにする";
 "menu.exit_fullscreen" = "フルスクリーンを解除";
 "menu.pip" = "ピクチャー・イン・ピクチャーを使用";
 "menu.exit_pip" = "ピクチャー・イン・ピクチャーを終了";
+"menu.mini_player" = "Enter Music Mode";
+"menu.exit_mini_player" = "Exit Music Mode";
 "menu.pause" = "一時停止";
 "menu.resume" = "再生";
 "menu.speed" = "再生速度: %.2f倍";
+"menu.chapters" = "チャプターパネルを表示";
+"menu.hide_chapters" = "チャプターパネルを隠す";
+"menu.playlist" = "プレイリストパネルを開く";
+"menu.hide_playlist" = "プレイリストパネルを隠す";
+"menu.video" = "ビデオパネルを表示";
+"menu.hide_video" = "ビデオパネルを隠す";
+"menu.audio" = "オーディオパネルを表示";
+"menu.hide_audio" = "オーディオパネルを隠す";
+"menu.subtitles" = "字幕パネルを表示";
+"menu.hide_subtitles" = "字幕パネルを隠す";
 
 "menu.seek_forward" = "%.0f秒進む";
 "menu.seek_backward" = "%.0f秒戻る";
@@ -126,6 +152,7 @@
 "menu.sub_delay_down" = "字幕ディレイ - %.1f秒";
 
 "menu.crop_custom" = "カスタム...";
+"menu.find_online_sub" = "%@ からオンライン字幕を探す";
 
 "track.none" = "<なし>";
 
@@ -141,7 +168,7 @@
 
 "alert.fatal_error" = "致命的なエラー: %@ \nアプリケーションを終了します。";
 "alert.mpv_error" = "内部エラー %@ (%@) がユーザーオプション %@ の設定中に発生しました。";
-"alert.sleep" = "ディスプレイのスリープを解除できません！";
+"alert.sleep" = "ディスプレイのスリープを防ぐことはできません！(0x%0X8)";
 
 "alert.unsupported_audio" = "対応していない外部のオーディオファイルです。";
 "alert.unsupported_sub" = "対応していない外部の字幕ファイルです。";
@@ -178,10 +205,13 @@
 
 "alert.playlist.error_deleting" = "削除エラー: %@";
 
+"alert.screenshot.error_taking" = "スクリーンショットを撮ることができません！";
+
 "alert.sub.no_selected" = "ダウンロードした字幕を最初に選択してください。";
 "alert.sub_lang_not_set" = "OpenSubtitlesを利用する前に、環境設定で字幕の優先言語を設定してください。今回は英語(eng)が使用されます。";
 "alert.sub.cannot_save_passwd" = "パスワードをキーチェーンに保存できません: %@";
 "alert.sub.cannot_login" = "ログインできません。ユーザー名とパスワード、ネットワーク環境をご確認ください。\n\n%@";
+"alert.sub.save_downloaded.title" = "ダウンロードした字幕を保存";
 
 "alert.set_default.title" = "IINAをデフォルトのアプリケーションに設定";
 "alert.set_default.message" = "対応する全てのファイル形式にIINAをデフォルトアプリケーションとして設定します。";
@@ -217,8 +247,11 @@
 "alert.clear_history.title" = "再生履歴を消去する";
 "alert.clear_history.message" = "本当にすべての再生履歴を消去しますか？";
 
-"alert.clear_watch_later.title" = "保存済み再生位置を消去する";
-"alert.clear_watch_later.message" = "本当にすべての保存済み再生位置(\"あとで見る\"情報)を消去しますか？";
+"alert.clear_watch_later.title" = "保存済みの再生進度を消去する";
+"alert.clear_watch_later.message" = "本当にすべての保存済み再生進度(\"あとで見る\"情報)を消去しますか？";
+
+"alert.restore_alerts.title" = "ダイアログの警告をリセット";
+"alert.restore_alerts.message" = "すべてのダイアログの警告をリセットします。よろしいですか？";
 
 "alert.nothing_to_open" = "開くファイルがありません。";
 
@@ -233,6 +266,17 @@
 "alert.assrt_token_prompt.message" = "開かれたWebページで登録してください。ホーム画面でトークンを取得し、以下に入力してください:";
 "alert.assrt_token_invalid" = "Assrt APIトークンが有効ではないようです。";
 
+"alert.plugin_uninstall.title" = "%@ をアンインストールしてもよろしいですか？";
+"alert.plugin_uninstall.message" = "プラグインはディスクから削除されます。";
+"alert.plugin_reinstall.title" = "%@はすでに存在しています";
+"alert.plugin_reinstall.message" = "プラグインを再インストールしますか？";
+"alert.duplicated_plugin_id" = "重複したプラグイン識別子が検出されました。2つ以上のプラグインには同じ識別子 \"%@\" があります。異常な動作を引き起こす可能性があります。 環境設定 - プラグインを見つけ、著者に報告してください。 プラグインがローカルにインストールされている場合は、プラグインの Info.json ファイル内の識別子を手動で変更することもできます。";
+"alert.plugin_no_update" = "アップデートは見つかりませんでした。";
+"alert.plugin_update_found.title" = "%@ のアップデートが見つかりました";
+"alert.plugin_update_found.message" = "最新バージョンは %@です。 今のバージョンは%@です。アップデートしますか？";
+"alert.plugin_permission" = "このプラグインには以下の権限が必要です。続行する前に確認してください。";
+"alert.plugin_permission_added" = "このアップデートには追加の権限が必要です。続行する前に確認してください。";
+
 "playlist.total_length" = "合計 %@";
 "playlist.total_length_with_selected" = "%@ / %@を選択中";
 "pl_menu.title_multi" = "%d個の項目";
@@ -244,7 +288,7 @@
 "pl_menu.delete_multi" = "選択したファイルをゴミ箱へ移動";
 "pl_menu.delete_after_play" = "再生した後にゴミ箱へ移動";
 "pl_menu.delete_after_play_multi" = "再生した後に選択したファイルをゴミ箱へ移動";
-"pl_menu.reveal_in_finder" = "Finderで表示";
+"pl_menu.show_in_finder" = "Finderで表示";
 "pl_menu.add_file" = "ファイルの追加…";
 "pl_menu.add_url" = "URLの追加…";
 "pl_menu.clear_playlist" = "プレイリストを消去する";
@@ -268,11 +312,12 @@
 "subencoding.auto" = "自動検出";
 
 "osc_toolbar.settings" = "クイック設定";
-"osc_toolbar.playlist" = "プレイリストとチャプタ";
+"osc_toolbar.playlist" = "プレイリストとチャプター";
 "osc_toolbar.pip" = "ピクチャー・イン・ピクチャーの切り替え";
 "osc_toolbar.full_screen" = "フルスクリーン切り替え";
 "osc_toolbar.music_mode" = "ミュージックモード切り替え";
 "osc_toolbar.sub_track" = "字幕トラックを選択";
+"osc_toolbar.screenshot" = "Take a screenshot";
 
 "mini_player.album_art" = "アルバムアートの切り替え";
 "mini_player.loop" = "リピート";
@@ -286,8 +331,8 @@
 
 // Touch bar
 
-"touchbar.ahead_15" = "15秒 進める";
-"touchbar.ahead_30" = "30秒 進める";
+"touchbar.ahead_15" = "15秒 進む";
+"touchbar.ahead_30" = "30秒 進む";
 "touchbar.back_15" = "15秒 戻す";
 "touchbar.back_30" = "30秒 戻す";
 "touchbar.next_video" = "次のビデオへ";
@@ -301,3 +346,31 @@
 "touchbar.time" = "再生位置";
 "touchbar.remainingTimeOrTotalDuration" = "残り時間/合計時間";
 "touchbar.toggle_pip" = "ピクチャー・イン・ピクチャーの切り替え";
+
+// Plugin permissions
+
+"permissions.network-request.name" = "ネットワークリクエスト";
+"permissions.network-request.desc" = "このプラグインは、これらのウェブサイトにデータを通信（アップロード含む）することができます：";
+"permissions.network-request.any_site" = "任意のサイト";
+"permissions.show-osd.name" = "OSDを表示";
+"permissions.show-osd.desc" = "このプラグインは OSD (オンスクリーン機能) メッセージを表示できます。";
+"permissions.show-alert.name" = "アラートを表示";
+"permissions.show-alert.desc" = "このプラグインはポップアップアラートを表示できます。";
+"permissions.video-overlay.name" = "動画にオーバーレイを追加";
+"permissions.video-overlay.desc" = "このプラグインは、ビデオに追加のコンテンツを表示することができます。";
+"permissions.file-system.name" = "ファイルシステムにアクセス";
+"permissions.file-system.desc" = "このプラグインは、機密情報を含むディスク上のファイルを読み書きすることができます。 また、お使いのコンピュータに害を与える可能性がある他のプログラムやアプリケーションを呼び出すことができます。続行する前にソースを十分に確認してください.";
+
+"plugin.install" = "インストール";
+"plugin.installed" = "インストール済";
+"plugin.not_installed" = "インストールされていません";
+"plugin.local" = "ローカルにインストールされました";
+"alert.plugin.install_error" = "インストール中にエラーが発生しました: %@";
+"alert.invalid_url" = "URLが無効です。";
+"plugin.install_error.invalid_url" = "URLが無効です。";
+"plugin.install_error.file_not_found" = "パッケージファイルが見つかりません。";
+"plugin.install_error.cannot_download" = "プラグインのダウンロードに失敗しました。\n\n結果:%@\n";
+"plugin.install_error.cannot_unpackage" = "プラグインのパッケージ解除に失敗しました。\n\n結果:%@\n";
+"plugin.install_error.cannot_load" = "IINAはこのプラグインを読み込むことができません。フォーマットが間違っている可能性があります。";
+"plugin.check_for_updates" = "アップデートを確認";
+"plugin.updating" = "アップデートをダウンロード中...";

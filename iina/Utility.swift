@@ -10,10 +10,11 @@ import Cocoa
 
 typealias PK = Preference.Key
 
+
 class Utility {
 
   static let supportedFileExt: [MPVTrack.TrackType: [String]] = [
-    .video: ["mkv", "mp4", "avi", "m4v", "mov", "3gp", "ts", "mts", "m2ts", "wmv", "flv", "f4v", "asf", "webm", "rm", "rmvb", "qt", "dv", "mpg", "mpeg", "mxf", "vob", "gif"],
+    .video: ["mkv", "mp4", "avi", "m4v", "mov", "3gp", "ts", "mts", "m2ts", "wmv", "flv", "f4v", "asf", "webm", "rm", "rmvb", "qt", "dv", "mpg", "mpeg", "mxf", "vob", "gif", "ogv", "ogm"],
     .audio: ["mp3", "aac", "mka", "dts", "flac", "ogg", "oga", "mogg", "m4a", "ac3", "opus", "wav", "wv", "aiff", "aif", "ape", "tta", "tak"],
     .sub: ["utf", "utf8", "utf-8", "idx", "sub", "srt", "smi", "rt", "ssa", "aqt", "jss", "js", "ass", "mks", "vtt", "sup", "scc"]
   ]
@@ -44,8 +45,15 @@ class Utility {
     alert.runModal()
   }
 
-  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, sheetWindow: NSWindow? = nil) {
+  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil) {
     let alert = NSAlert()
+    if let suppressionKey = suppressionKey {
+      // This alert includes a suppression button that allows the user to suppress the alert.
+      // Do not show the alert if it has been suppressed.
+      guard !Preference.bool(for: suppressionKey) else { return }
+      alert.showsSuppressionButton = true
+    }
+
     switch style {
     case .critical:
       alert.messageText = NSLocalizedString("alert.title_error", comment: "Error")
@@ -76,6 +84,11 @@ class Utility {
     } else {
       alert.runModal()
     }
+
+    // If the user asked for this alert to be suppressed set the associated preference.
+    if let suppressionButton = alert.suppressionButton, suppressionButton.state == .on {
+      Preference.set(true, for: suppressionKey!)
+    }
   }
 
   // MARK: - Panels, Alerts
@@ -91,12 +104,22 @@ class Utility {
    - Returns: Whether user dismissed the panel by clicking OK, discardable when using sheet.
    */
   @discardableResult
-  static func quickAskPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, sheetWindow: NSWindow? = nil, callback: ((NSApplication.ModalResponse) -> Void)? = nil) -> Bool {
+  static func quickAskPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, titleArgs: [CVarArg]? = nil, messageArgs: [CVarArg]? = nil, sheetWindow: NSWindow? = nil, callback: ((NSApplication.ModalResponse) -> Void)? = nil) -> Bool {
     let panel = NSAlert()
     let titleKey = "alert." + key + ".title"
     let messageKey = "alert." + key + ".message"
-    panel.messageText = NSLocalizedString(titleKey, comment: titleComment ?? titleKey)
-    panel.informativeText = NSLocalizedString(messageKey, comment: messageComment ?? messageKey)
+    let titleFormat = NSLocalizedString(titleKey, comment: titleComment ?? titleKey)
+    let messageFormat = NSLocalizedString(messageKey, comment: messageComment ?? messageKey)
+    if let args = titleArgs {
+      panel.messageText = String(format: titleFormat, arguments: args)
+    } else {
+      panel.messageText = titleFormat
+    }
+    if let args = messageArgs {
+      panel.informativeText = String(format: messageFormat, arguments: args)
+    } else {
+      panel.informativeText = messageFormat
+    }
     panel.addButton(withTitle: NSLocalizedString("general.ok", comment: "OK"))
     panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
 
@@ -171,18 +194,22 @@ class Utility {
   /**
    Pop up a save panel.
    */
-  static func quickSavePanel(title: String, types: [String], sheetWindow: NSWindow? = nil, callback: @escaping (URL) -> Void) {
+  static func quickSavePanel(title: String, filename: String? = nil, types: [String]? = nil,
+                             sheetWindow: NSWindow? = nil, callback: @escaping (URL) -> Void) {
     let panel = NSSavePanel()
     panel.title = title
     panel.canCreateDirectories = true
     panel.allowedFileTypes = types
+    if filename != nil {
+      panel.nameFieldStringValue = filename!
+    }
     let handler: (NSApplication.ModalResponse) -> Void = { result in
       if result == .OK, let url = panel.url {
         callback(url)
       }
     }
     if let sheetWindow = sheetWindow {
-      panel.beginSheet(sheetWindow, completionHandler: handler)
+      panel.beginSheetModal(for: sheetWindow, completionHandler: handler)
     } else {
       panel.begin(completionHandler: handler)
     }
@@ -199,7 +226,7 @@ class Utility {
    - Returns: Whether user dismissed the panel by clicking OK. Only works when using `.modal` mode.
    */
   @discardableResult
-  static func quickPromptPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, sheetWindow: NSWindow? = nil, callback: @escaping (String) -> Void) -> Bool {
+  static func quickPromptPanel(_ key: String, titleComment: String? = nil, messageComment: String? = nil, inputValue: String? = nil, sheetWindow: NSWindow? = nil, callback: @escaping (String) -> Void) -> Bool {
     let panel = NSAlert()
     let titleKey = "alert." + key + ".title"
     let messageKey = "alert." + key + ".message"
@@ -209,6 +236,9 @@ class Utility {
     input.lineBreakMode = .byClipping
     input.usesSingleLineMode = true
     input.cell?.isScrollable = true
+    if let inputValue = inputValue {
+      input.stringValue = inputValue
+    }
     panel.accessoryView = input
     panel.addButton(withTitle: NSLocalizedString("general.ok", comment: "OK"))
     panel.addButton(withTitle: NSLocalizedString("general.cancel", comment: "Cancel"))
@@ -295,18 +325,6 @@ class Utility {
 
   // MARK: - App functions
 
-  static func iinaCopyright() -> String {
-    let infoDic = Bundle.main.infoDictionary!
-    return infoDic["NSHumanReadableCopyright"] as! String
-  }
-
-  static func iinaVersion() -> (String, String) {
-    let infoDic = Bundle.main.infoDictionary!
-    let version = infoDic["CFBundleShortVersionString"] as! String
-    let build = infoDic["CFBundleVersion"] as! String
-    return (version, build)
-  }
-
   static func createDirIfNotExist(url: URL) {
     let path = url.path
     // check exist
@@ -316,6 +334,14 @@ class Utility {
       } catch {
         Logger.fatal("Cannot create directory: \(url)")
       }
+    }
+  }
+
+  static func createFileIfNotExist(url: URL) {
+    let path = url.path
+    // check exist
+    if !FileManager.default.fileExists(atPath: path) {
+      FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
     }
   }
 
@@ -356,23 +382,24 @@ class Utility {
     return url
   }()
 
-  static let logDirURL: URL = {
-    // get path
-    let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
-    Logger.ensure(libraryPath.count >= 1, "Cannot get path to Logs directory")
-    let logsUrl = libraryPath.first!.appendingPathComponent("Logs", isDirectory: true)
-    let bundleID = Bundle.main.bundleIdentifier!
-    let appLogsUrl = logsUrl.appendingPathComponent(bundleID, isDirectory: true)
-    createDirIfNotExist(url: appLogsUrl)
-    return appLogsUrl
-  }()
-
   static let watchLaterURL: URL = {
     let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.watchLaterFolder, isDirectory: true)
     createDirIfNotExist(url: url)
     return url
   }()
-  
+
+  static let pluginsURL: URL = {
+    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.pluginsFolder, isDirectory: true)
+    createDirIfNotExist(url: url)
+    return url
+  }()
+
+  static let binariesURL: URL = {
+    let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.binariesFolder, isDirectory: true)
+    createDirIfNotExist(url: url)
+    return url
+  }()
+
   static let cacheURL: URL = {
     let cachesPath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
     Logger.ensure(cachesPath.count >= 1, "Cannot get path to Caches directory")
@@ -386,7 +413,7 @@ class Utility {
     createDirIfNotExist(url: appThumbnailCacheUrl)
     return appThumbnailCacheUrl
   }()
-  
+
   static let screenshotCacheURL: URL = {
     let url = cacheURL.appendingPathComponent(AppData.screenshotCacheFolder, isDirectory: true)
     createDirIfNotExist(url: url)
@@ -466,18 +493,21 @@ class Utility {
     guard let contents = try? FileManager.default.contentsOfDirectory(
       at: folder,
       includingPropertiesForKeys: [.creationDateKey],
-      options: .skipsSubdirectoryDescendants) else { return nil }
+      options: .skipsSubdirectoryDescendants),
+          !contents.isEmpty else { return nil }
+    return contents.filter { $0.creationDate != nil }.max { $0.creationDate! < $1.creationDate! }
+  }
 
-    var latestDate = Date.distantPast
-    var latestFile: URL = contents[0]
-
-    for file in contents {
-      if let date = try? file.resourceValues(forKeys: [.creationDateKey]).creationDate, date > latestDate {
-        latestDate = date
-        latestFile = file
+  /// Make sure the block is executed on the main thread. Be careful since it uses `sync`. Keep the block mininal.
+  @discardableResult
+  static func executeOnMainThread<T>(block: () -> T) -> T {
+    if Thread.isMainThread {
+      return block()
+    } else {
+      return DispatchQueue.main.sync {
+        block()
       }
     }
-    return latestFile
   }
 
   // MARK: - Util classes
@@ -608,3 +638,16 @@ func bridgeTransfer<T : AnyObject>(ptr : UnsafeRawPointer) -> T {
   return Unmanaged<T>.fromOpaque(ptr).takeRetainedValue()
 }
 
+enum LoopMode {
+  case off
+  case file
+  case playlist
+
+  func next() -> LoopMode {
+    switch self {
+    case .off:      return .file
+    case .file:     return .playlist
+    default:        return .off
+    }
+  }
+}

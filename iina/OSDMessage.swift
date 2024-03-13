@@ -24,6 +24,7 @@ enum OSDType {
   case normal
   case withText(String)
   case withProgress(Double)
+//  case withButton(String)
 }
 
 enum OSDMessage {
@@ -47,7 +48,8 @@ enum OSDMessage {
   case mute
   case unMute
   case screenshot
-  case abLoop(Int)
+  case abLoop(PlaybackInfo.LoopStatus)
+  case abLoopUpdate(PlaybackInfo.LoopStatus, String)
   case stop
   case chapter(String)
   case track(MPVTrack)
@@ -71,8 +73,15 @@ enum OSDMessage {
   case fileError
   case networkError
   case canceled
-  case fileLoop(Bool)
-  case playlistLoop(Bool)
+  case cannotConnect
+  case timedOut
+
+  case fileLoop
+  case playlistLoop
+  case noLoop
+
+  case custom(String)
+  case customWithDetail(String, String)
 
   func message() -> (String, OSDType) {
     switch self {
@@ -174,12 +183,25 @@ enum OSDMessage {
       return (NSLocalizedString("osd.screenshot", comment: "Screenshot Captured"), .normal)
 
     case .abLoop(let value):
-      if value == 1 {
-        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"), .withText("{{position}} / {{duration}}"))
-      } else if value == 2 {
-        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"), .withText("{{position}} / {{duration}}"))
-      } else {
+      // The A-B loop command was invoked.
+      switch (value) {
+      case .cleared:
         return (NSLocalizedString("osd.abloop.clear", comment: "AB-Loop: Cleared"), .normal)
+      case .aSet:
+        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"), .withText("{{position}} / {{duration}}"))
+      case .bSet:
+        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"), .withText("{{position}} / {{duration}}"))
+      }
+
+    case .abLoopUpdate(let value, let position):
+      // One of the A-B loop points has been updated to the given position.
+      switch (value) {
+      case .cleared:
+        Logger.fatal("Attempt to display invalid OSD message, type: .abLoopUpdate value: .cleared position \(position)")
+      case .aSet:
+        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"), .withText("\(position) / {{duration}}"))
+      case .bSet:
+        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"), .withText("\(position) / {{duration}}"))
       }
 
     case .stop:
@@ -306,19 +328,41 @@ enum OSDMessage {
         .normal
       )
 
-    case .fileLoop(let enabled):
+    case .cannotConnect:
       return (
-        String(format: NSLocalizedString("osd.file_loop", comment: "File Loop: %@"),
-               enabled ? NSLocalizedString("general.on", comment: "On") : NSLocalizedString("general.off", comment: "Off")),
+        NSLocalizedString("osd.cannot_connect", comment: "Cannot connect"),
         .normal
       )
 
-    case .playlistLoop(let enabled):
+    case .timedOut:
       return (
-        String(format: NSLocalizedString("osd.playlist_loop", comment: "Playlist Loop: %@"),
-               enabled ? NSLocalizedString("general.on", comment: "On") : NSLocalizedString("general.off", comment: "Off")),
+        NSLocalizedString("osd.timed_out", comment: "Timed out"),
         .normal
       )
+
+    case .fileLoop:
+      return (
+        NSLocalizedString("osd.file_loop", comment: "Enable file looping"),
+          .normal
+      )
+
+    case .playlistLoop:
+      return (
+        NSLocalizedString("osd.playlist_loop", comment: "Enable playlist looping"), 
+          .normal
+      )
+
+    case .noLoop:
+      return (
+        NSLocalizedString("osd.no_loop", comment: "Disable loop"),
+          .normal
+      )
+
+    case .custom(let message):
+      return (message, .normal)
+
+    case .customWithDetail(let message, let detail):
+      return (message, .withText(detail))
     }
   }
 }

@@ -23,10 +23,11 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   }
 
   override var sectionViews: [NSView] {
-    return [sectionDefaultAppView, sectionClearCacheView, sectionBrowserExtView]
+    return [sectionDefaultAppView, sectionRestoreAlertsView, sectionClearCacheView, sectionBrowserExtView]
   }
 
   @IBOutlet var sectionDefaultAppView: NSView!
+  @IBOutlet var sectionRestoreAlertsView: NSView!
   @IBOutlet var sectionClearCacheView: NSView!
   @IBOutlet var sectionBrowserExtView: NSView!
   @IBOutlet var setAsDefaultSheet: NSWindow!
@@ -36,6 +37,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
   @IBOutlet weak var savedPlaybackProgressClearedLabel: NSTextField!
   @IBOutlet weak var playHistoryClearedLabel: NSTextField!
+  @IBOutlet weak var restoreAlertsRestoredLabel: NSTextField!
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -106,6 +108,14 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
     view.window!.endSheet(setAsDefaultSheet)
   }
 
+  @IBAction func resetSuppressedAlertsBtnAction(_ sender: Any) {
+    Utility.quickAskPanel("restore_alerts", sheetWindow: view.window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      Preference.set(false, for: .suppressCannotPreventDisplaySleep)
+      self.restoreAlertsRestoredLabel.isHidden = false
+    }
+  }
+
   @IBAction func clearWatchLaterBtnAction(_ sender: Any) {
     Utility.quickAskPanel("clear_watch_later", sheetWindow: view.window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
@@ -119,7 +129,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
     Utility.quickAskPanel("clear_history", sheetWindow: view.window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
       try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
-      NSDocumentController.shared.clearRecentDocuments(self)
+      (NSApp.delegate as! AppDelegate).clearRecentDocuments(self)
       Preference.set(nil, for: .iinaLastPlayedFilePath)
       self.playHistoryClearedLabel.isHidden = false
     }

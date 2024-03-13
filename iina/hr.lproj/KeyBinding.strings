@@ -1,0 +1,116 @@
+/*
+  KeyBinding.strings
+  iina
+
+  Created by lhc on 4/2/2017.
+  Copyright © 2017 lhc. All rights reserved.
+*/
+
+"cmd.ignore" = "Ignoriraj";
+"cmd.seek" = "Traži";
+"cmd.revert-seek" = "Preokreni traženje";
+"cmd.set" = "Postavi";
+"cmd.cycle" = "Listaj";
+"cmd.cycle-values" = "Listaj u";
+"cmd.add" = "Promijeni";
+"cmd.multiply" = "Pomnoži";
+"cmd.frame-step" = "Sljedeći okvir";
+"cmd.frame-back-step" = "Prethodan okvir";
+"cmd.ab-loop" = "A-B petlja";
+"cmd.sub-seek" = "Traži titl";
+"cmd.playlist-next" = "Sljedeći medij";
+"cmd.playlist-prev" = "Prethodni medij";
+"cmd.playlist-move" = "Premjesti stavku playliste";
+"cmd.playlist-clear" = "Izbriši playlistu";
+"cmd.playlist-remove" = "Ukloni trenutačnu";
+"cmd.playlist-shuffle" = "Odaberi nasumice";
+"cmd.write-watch-later-config" = "Povijest reprodukcija";
+"cmd.stop" = "Prekini";
+"cmd.quit" = "Izlaz";
+"cmd.quit-watch-later" = "Izlaz (spremi)";
+"cmd.screenshot" = "Snimka zaslona";
+"cmd.screenshot-to-file" = "Snimka zaslona do datoteke";
+"cmd.loadfile" = "Učitaj datotek";
+"cmd.loadlist" = "Učitaj playlistu";
+"cmd.run" = "Pokreni";
+
+"iina.flip" = "Preokreni";
+"iina.mirror" = "Zrcali";
+
+"iina.toggle-pip" = "Uključi/isključi sliku u slici";
+"iina.toggle-music-mode" = "Uključi/Isključi modus glazbe";
+"iina.open-file" = "Otvori datoteku";
+"iina.open-url" = "Otvori poveznicu";
+"iina.video-panel" = "Video ploča";
+"iina.audio-panel" = "Zvučni ploča";
+"iina.sub-panel" = "Ploča titlova";
+"iina.playlist-panel" = "Ploča playliste";
+"iina.chapter-panel" = "Ploča poglavlja";
+"iina.bigger-window" = "Veći prozor";
+"iina.smaller-window" = "Manji prozor";
+"iina.fit-to-screen" = "Prilagodi veličini ekrana";
+"iina.toggle-flip" = "Uključi/Isključi okretanje";
+"iina.toggle-mirror" = "Uključi/Isključi zrcaljenje";
+"iina.save-playlist" = "Spremi trenutačnu playlistu";
+"iina.delete-current-file" = "Izbriši trenutačnu datoteku";
+"iina.delete-current-file-hard" = "Odmah izbriši trenutačnu datoteku";
+"iina.find-online-subs" = "Pronađi titlove na internetu";
+"iina.save-downloaded-sub" = "Spremi preuzeti titl";
+
+"yes" = "Da";
+"no" = "Ne";
+"to" = "do";
+"by" = "od";
+"in" = "u";
+"add" = "povećaj";
+"minus" = "smanji";
+"forward" = "napred";
+"backward" = "unatrag";
+"seek-to" = "do";
+
+"relative" = "s";
+"absolute" = "s";
+"absolute-percent" = "%";
+"relative-percent" = "%";
+"relative+exact" = " s (točno)";
+"relative-percent+exact" = " % (točno)";
+"absolute+keyframe" = " s (ključni kadar)";
+"absolute-percent+keyframe" = " % (ključni kadar)";
+
+"opt.pause" = "Pauziraj";
+"opt.speed" = "Brzina";
+
+"opt.window-scale" = "Veličina prozora";
+
+"opt.video" = "Video traka";
+"opt.video-aspect" = "Omjer videa";
+"opt.contrast" = "Kontrast";
+"opt.brightness" = "Svjetlost";
+"opt.gamma" = "Gamut";
+"opt.saturation" = "Zasićenost";
+"opt.deinterlace" = "Preplitanje";
+
+"opt.audio" = "Zvučni zapis";
+"opt.volume" = "Glasnoća";
+"opt.mute" = "Isključi zvuk";
+"opt.audio-delay" = "Kašnjenje zvuka";
+
+"opt.sub" = "Traka titlova";
+"opt.sub-delay" = "Kašnjenje titlova";
+"opt.sub-pos" = "Položaj titla";
+"opt.sub-scale" = "Skaliranje titla";
+"opt.sub-visibility" = "Vidljivost titla";
+"opt.sub-ass-style-override" = "Prepisivanje ASS stila";
+
+"opt.fullscreen" = "Cjeloekranski prikaz";
+"opt.ontop" = "Postavi ispred";
+
+"opt.chapter" = "Poglavlje";
+
+"read.set" = "Postavi {{property}} do {{value}}";
+"read.add" = "{{property}} {{value}}";
+"read.multiply" = "Pomnoži {{property}} × {{factor}}";
+"read.cycle" = "Listaj {{property}}{{#dir_down}} prema dolje{{/dir_down}}";
+"read.cycle-values" = "Listaj {{property}} u ({{{values}}})";
+"read.seek" = "Traži {{#fwd}}prema naprijed{{/fwd}}{{#bwd}}unatrag{{/bwd}}{{#abs}}do{{/abs}} {{value}}{{#sec}}s{{/sec}}{{#per}}%{{/per}} {{#exact}}(točno){{/exact}}{{#kf}}(slika){{/kf}}";
+"read.sub-seek" = "Traži {{#skip_1}}sljedeći{{/skip_1}}{{#skip_-1}}prethodni{{/skip_-1}} titl";

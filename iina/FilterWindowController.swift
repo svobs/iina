@@ -60,7 +60,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     splitView.setPosition(splitView.frame.height - 140, ofDividerAt: 0)
 
     savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
-    filters = PlayerCore.active.mpv.getFilters(filterType)
+    filters = PlayerCore.lastActive.mpv.getFilters(filterType)
     currentFiltersTableView.reloadData()
     savedFiltersTableView.reloadData()
 
@@ -84,7 +84,13 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
 
   @objc
   func reloadTable() {
-    filters = PlayerCore.active.mpv.getFilters(filterType)
+    let pc = PlayerCore.lastActive
+    // When IINA is terminating player windows are closed, which causes the iinaMainWindowChanged
+    // notification to be posted and that results in the observer established above calling this
+    // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
+    // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
+    guard !pc.isShuttingDown, !pc.isShutdown else { return }
+    filters = pc.mpv.getFilters(filterType)
     filterIsSaved = [Bool](repeatElement(false, count: filters.count))
     savedFilters.forEach { savedFilter in
       if let asObject = MPVFilter(rawString: savedFilter.filterString),
@@ -100,7 +106,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func setFilters() {
-    PlayerCore.active.mpv.setFilters(filterType, filters: filters)
+    PlayerCore.lastActive.mpv.setFilters(filterType, filters: filters)
   }
 
   deinit {
@@ -109,12 +115,12 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
 
   func addFilter(_ filter: MPVFilter) -> Bool {
     if filterType == MPVProperty.vf {
-      guard PlayerCore.active.addVideoFilter(filter) else {
+      guard PlayerCore.lastActive.addVideoFilter(filter) else {
         Utility.showAlert("filter.incorrect", sheetWindow: window)
         return false
       }
     } else {
-      guard PlayerCore.active.addAudioFilter(filter) else {
+      guard PlayerCore.lastActive.addAudioFilter(filter) else {
         Utility.showAlert("filter.incorrect", sheetWindow: window)
         return false
       }
@@ -160,7 +166,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
   }
 
   @IBAction func removeFilterAction(_ sender: Any) {
-    let pc = PlayerCore.active
+    let pc = PlayerCore.lastActive
     let selectedRow = currentFiltersTableView.selectedRow
     if selectedRow >= 0 {
       let success: Bool
@@ -190,7 +196,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
   @IBAction func toggleSavedFilterAction(_ sender: NSButton) {
     let row = savedFiltersTableView.row(for: sender)
     let savedFilter = savedFilters[row]
-    let pc = PlayerCore.active
+    let pc = PlayerCore.lastActive
 
     // choose appropriate add/remove functions for .af/.vf
     var addFilterFunction: (String) -> Bool
@@ -249,7 +255,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     currentSavedFilter = savedFilters[row]
     editFilterNameTextField.stringValue = currentSavedFilter!.name
     editFilterStringTextField.stringValue = currentSavedFilter!.filterString
-    editFilterKeyRecordView.currentRawKey = currentSavedFilter!.shortcutKey
+    editFilterKeyRecordView.currentKey = currentSavedFilter!.shortcutKey
     editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter!.shortcutKeyModifiers
     editFilterKeyRecordViewLabel.stringValue = currentSavedFilter!.readableShortCutKey
     window!.beginSheet(editFilterSheet)
@@ -322,7 +328,7 @@ extension FilterWindowController {
     if let currentFilter = currentFilter {
       let filter = SavedFilter(name: saveFilterNameTextField.stringValue,
                                filterString: currentFilter.stringFormat,
-                               shortcutKey: keyRecordView.currentRawKey,
+                               shortcutKey: keyRecordView.currentKey,
                                modifiers: keyRecordView.currentKeyModifiers)
       savedFilters.append(filter)
       reloadTable()
@@ -339,8 +345,7 @@ extension FilterWindowController {
     if let currentFilter = currentSavedFilter {
       currentFilter.name = editFilterNameTextField.stringValue
       currentFilter.filterString = editFilterStringTextField.stringValue
-      // FIXME: shouldn't be shift-modified; should examine this carefully
-      currentFilter.shortcutKey = editFilterKeyRecordView.currentRawKey.lowercased()
+      currentFilter.shortcutKey = editFilterKeyRecordView.currentKey
       currentFilter.shortcutKeyModifiers = editFilterKeyRecordView.currentKeyModifiers
       reloadTable()
       syncSavedFilter()
@@ -409,14 +414,8 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
       stackView.addArrangedSubview(input)
       self.currentBindings[name] = input
     }
-    if let paramOrder = preset.paramOrder {
-      for name in paramOrder {
-        generateInputs(name, preset.params[name]!)
-      }
-    } else {
-      for (name, param) in preset.params {
-        generateInputs(name, param)
-      }
+    for name in preset.paramOrder {
+      generateInputs(name, preset.params[name]!)
     }
   }
 
@@ -503,7 +502,7 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     }
     // create filter
     if filterWindow.addFilter(preset.transformer(instance)) {
-      PlayerCore.active.sendOSD(.addFilter(preset.localizedName))
+      PlayerCore.lastActive.sendOSD(.addFilter(preset.localizedName))
     }
   }
 

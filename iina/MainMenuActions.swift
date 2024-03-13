@@ -29,7 +29,7 @@ class MainMenuActionHandler: NSResponder {
   }
 
   @objc func menuSavePlaylist(_ sender: NSMenuItem) {
-    Utility.quickSavePanel(title: "Save to playlist", types: ["m3u8"]) { (url) in
+    Utility.quickSavePanel(title: "Save to playlist", types: ["m3u8"], sheetWindow: player.currentWindow) { (url) in
       if url.isFileURL {
         var playlist = ""
         for item in self.player.info.playlist {
@@ -90,11 +90,15 @@ extension MainMenuActionHandler {
   }
 
   @objc func menuStep(_ sender: NSMenuItem) {
-    let seconds = Double(abs((sender.representedObject as? Int) ?? 5))
-    if sender.tag == 0 { // -> 5s
-      player.seek(relativeSecond: seconds, option: .relative)
-    } else if sender.tag == 1 { // <- 5s
-      player.seek(relativeSecond: -seconds, option: .relative)
+    if let args = sender.representedObject as? (Double, Preference.SeekOption) {
+      player.seek(relativeSecond: args.0, option: args.1)
+    } else {
+      let seconds = Double(abs((sender.representedObject as? Int) ?? 5))
+      if sender.tag == 0 { // -> 5s
+        player.seek(relativeSecond: seconds, option: Preference.SeekOption.defaultValue)
+      } else if sender.tag == 1 { // <- 5s
+        player.seek(relativeSecond: -seconds, option: Preference.SeekOption.defaultValue)
+      }
     }
   }
 
@@ -124,9 +128,9 @@ extension MainMenuActionHandler {
   }
 
   @objc func menuJumpTo(_ sender: NSMenuItem) {
-    Utility.quickPromptPanel("jump_to") { input in
+    Utility.quickPromptPanel("jump_to", inputValue: self.player.info.videoPosition?.stringRepresentationWithPrecision(3)) { input in
       if let vt = VideoTime(input) {
-        self.player.seek(absoluteSecond: Double(vt.second))
+        self.player.seek(absoluteSecond: vt.second)
       }
     }
   }
@@ -136,7 +140,7 @@ extension MainMenuActionHandler {
   }
 
   @objc func menuABLoop(_ sender: NSMenuItem) {
-    player.abLoop()
+    player.mainWindow.abLoop()
   }
 
   @objc func menuFileLoop(_ sender: NSMenuItem) {
@@ -154,8 +158,12 @@ extension MainMenuActionHandler {
 
   @objc func menuChapterSwitch(_ sender: NSMenuItem) {
     let index = sender.tag
-    player.playChapter(index)
-    let chapter = player.info.chapters[index]
+    guard let chapter = player.playChapter(index) else {
+      Logger.log("Cannot switch to chapter \(index) because it was not found! Will ignore request and reload chapters instead",
+                 subsystem: player.subsystem)
+      player.getChapters()
+      return
+    }
     player.sendOSD(.chapter(chapter.title))
   }
 
@@ -235,6 +243,44 @@ extension MainMenuActionHandler {
   @objc func menuToggleDeinterlace(_ sender: NSMenuItem) {
     player.toggleDeinterlace(sender.state != .on)
   }
+
+  @objc
+  func menuToggleVideoFilterString(_ sender: NSMenuItem) {
+    if let string = (sender.representedObject as? String) {
+      menuToggleFilterString(string, forType: MPVProperty.vf)
+    }
+  }
+
+  private func menuToggleFilterString(_ string: String, forType type: String) {
+    let isVideo = type == MPVProperty.vf
+    if let filter = MPVFilter(rawString: string) {
+      // Removing a filter based on its position within the filter list is the preferred way to do
+      // it as per discussion with the mpv project. Search the list of filters and find the index
+      // of the specified filter (if present).
+      if let index = player.mpv.getFilters(type).firstIndex(of: filter) {
+        // remove
+        if isVideo {
+          _ = player.removeVideoFilter(filter, index)
+        } else {
+          _ = player.removeAudioFilter(filter, index)
+        }
+      } else {
+        // add
+        if isVideo {
+          if !player.addVideoFilter(filter) {
+            Utility.showAlert("filter.incorrect")
+          }
+        } else {
+          if !player.addAudioFilter(filter) {
+            Utility.showAlert("filter.incorrect")
+          }
+        }
+      }
+    }
+    if let vfWindow = (NSApp.delegate as? AppDelegate)?.vfWindow, vfWindow.loaded {
+      vfWindow.reloadTable()
+    }
+  }
 }
 
 // MARK: - Audio
@@ -265,13 +311,22 @@ extension MainMenuActionHandler {
   @objc func menuResetAudioDelay(_ sender: NSMenuItem) {
     player.setAudioDelay(0)
   }
+
+  @objc
+  func menuToggleAudioFilterString(_ sender: NSMenuItem) {
+    if let string = (sender.representedObject as? String) {
+      menuToggleFilterString(string, forType: MPVProperty.af)
+    }
+  }
 }
 
 // MARK: - Sub
 
 extension MainMenuActionHandler {
   @objc func menuLoadExternalSub(_ sender: NSMenuItem) {
-    Utility.quickOpenPanel(title: "Load external subtitle file", chooseDir: false) { url in
+    let currentDir = player.info.currentURL?.deletingLastPathComponent()
+    Utility.quickOpenPanel(title: "Load external subtitle file", chooseDir: false, dir: currentDir,
+                           sheetWindow: player.currentWindow) { url in
       self.player.loadExternalSubFile(url, delay: true)
     }
   }
@@ -323,30 +378,18 @@ extension MainMenuActionHandler {
     guard let url = player.info.currentURL, !player.isSearchingOnlineSubtitle else { return }
 
     player.isSearchingOnlineSubtitle = true
-    OnlineSubtitle.getSubtitle(forFile: url, playerCore: player) { subtitles in
-      // send osd in main thread
-      self.player.sendOSD(.foundSub(subtitles.count))
-      guard !subtitles.isEmpty else {
-        self.player.isSearchingOnlineSubtitle = false
-        return
-      }
-      // download them
-      for sub in subtitles {
-        sub.download { result in
-          switch result {
-          case .ok(let urls):
-            for url in urls {
-              Logger.log("Saved subtitle to \(url.path)")
-              self.player.loadExternalSubFile(url)
-            }
-            self.player.sendOSD(.downloadedSub(
-              urls.map({ $0.lastPathComponent }).joined(separator: "\n")
-            ))
-            self.player.info.haveDownloadedSub = true
-          case .failed:
-            self.player.sendOSD(.networkError)
-          }
+    OnlineSubtitle.search(forFile: url, player: player, providerID: sender.representedObject as? String) { urls in
+      if urls.isEmpty {
+        self.player.sendOSD(.foundSub(0))
+      } else {
+        for url in urls {
+          Logger.log("Saved subtitle to \(url.path)")
+          self.player.loadExternalSubFile(url)
         }
+        self.player.sendOSD(.downloadedSub(
+          urls.map({ $0.lastPathComponent }).joined(separator: "\n")
+        ))
+        self.player.info.haveDownloadedSub = true
       }
       self.player.isSearchingOnlineSubtitle = false
     }
@@ -354,7 +397,6 @@ extension MainMenuActionHandler {
 
   @objc func saveDownloadedSub(_ sender: NSMenuItem) {
     let selected = player.info.subTracks.filter { $0.id == player.info.sid }
-    guard let currURL = player.info.currentURL else { return }
     guard selected.count > 0 else {
       Utility.showAlert("sub.no_selected")
 
@@ -368,13 +410,27 @@ extension MainMenuActionHandler {
     }
     let subURL = URL(fileURLWithPath: path)
     let subFileName = subURL.lastPathComponent
-    let destURL = currURL.deletingLastPathComponent().appendingPathComponent(subFileName, isDirectory: false)
-    do {
-      try FileManager.default.copyItem(at: subURL, to: destURL)
-      player.sendOSD(.savedSub)
-    } catch let error as NSError {
-      Utility.showAlert("error_saving_file", arguments: ["subtitle",
-                                                         error.localizedDescription])
+    let windowTitle = NSLocalizedString("alert.sub.save_downloaded.title", comment: "Save Downloaded Subtitle")
+    Utility.quickSavePanel(title: windowTitle, filename: subFileName, sheetWindow: player.currentWindow) { (destURL) in
+      do {
+        // The Save panel checks to see if a file already exists and if so asks if it should be
+        // replaced. The quickSavePanel would not have called this code if the user canceled, so if
+        // the destination file already exists move it to the trash.
+        do {
+          try FileManager.default.trashItem(at: destURL, resultingItemURL: nil)
+            Logger.log("Trashed existing subtitle file \(destURL)")
+          } catch CocoaError.fileNoSuchFile {
+            // Expected, ignore error. The Apple Secure Coding Guide in the section Race Conditions
+            // and Secure File Operations recommends attempting an operation and handling errors
+            // gracefully instead of trying to figure out ahead of time whether the operation will
+            // succeed.
+          }
+          try FileManager.default.copyItem(at: subURL, to: destURL)
+          Logger.log("Saved downloaded subtitle to \(destURL.path)")
+          self.player.sendOSD(.savedSub)
+      } catch let error as NSError {
+        Utility.showAlert("error_saving_file", arguments: ["subtitle", error.localizedDescription])
+      }
     }
   }
 
