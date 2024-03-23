@@ -89,11 +89,19 @@ class ViewLayer: CAOpenGLLayer {
   // MARK: Draw
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj, forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    if forceRender { return true }
-    return videoView.player.mpv.shouldRenderUpdateFrame()
+    var retVal: Bool
+    if forceRender { retVal = true } else {
+      retVal = videoView.player.mpv.shouldRenderUpdateFrame()
+    }
+    Logger.log("canDraw(inCGLContext...): forceRender=\(forceRender) canDraw=\(retVal)")
+    return retVal
   }
 
+  var drawCount: Int = 0
+
   override func draw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj, forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
+    Logger.log("DRAW(inCGLContext...): \(drawCount)")
+    drawCount += 1
     let mpv = videoView.player.mpv!
     needsMPVRender = false
 
@@ -143,6 +151,7 @@ class ViewLayer: CAOpenGLLayer {
   }
 
   func draw(forced: Bool = false) {
+    Logger.log("DRAW(forced...)")
     videoView.$isUninited.withLock() { isUninited in
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
@@ -184,6 +193,7 @@ class ViewLayer: CAOpenGLLayer {
     let needsFlush: Bool = videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return false }
 
+      Logger.log("DISPLAY")
       super.display()
       return true
     }

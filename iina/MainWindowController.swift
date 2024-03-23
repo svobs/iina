@@ -10,6 +10,8 @@ import Cocoa
 import Mustache
 import WebKit
 
+fileprivate let useTestTimer = false
+
 fileprivate let isMacOS11: Bool = {
   if #available(macOS 11.0, *) {
     if #unavailable(macOS 12.0) {
@@ -407,6 +409,8 @@ class MainWindowController: PlayerWindowController {
   /** Current OSC view. */
   var currentControlBar: NSView?
 
+  var testTimer: Timer? = nil
+
   @IBOutlet weak var sideBarRightConstraint: NSLayoutConstraint!
   @IBOutlet weak var sideBarWidthConstraint: NSLayoutConstraint!
   @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
@@ -524,6 +528,10 @@ class MainWindowController: PlayerWindowController {
     window.minSize = minSize
     if let wf = windowFrameFromGeometry() {
       window.setFrame(wf, display: false)
+    }
+
+    if useTestTimer {
+      testTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1.0), target: self, selector: #selector(self.doTest), userInfo: nil, repeats: true)
     }
 
     window.aspectRatio = AppData.sizeWhenNoVideo
@@ -664,6 +672,15 @@ class MainWindowController: PlayerWindowController {
       return position * percent / 100
     } else {
       return 0
+    }
+  }
+
+  @objc func doTest() {
+    // Alternative:
+    //    videoView.videoLayer.draw(forced: true)
+
+    videoView.videoLayer.mpvGLQueue.async { [self] in
+      videoView.videoLayer.draw(forced: false)
     }
   }
 

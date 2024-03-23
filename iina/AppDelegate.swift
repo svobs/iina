@@ -276,8 +276,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+//  var activity: NSObjectProtocol?
+
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log("App launched")
+//    activity = ProcessInfo().beginActivity(options: ProcessInfo.ActivityOptions.userInitiated, reason: "Playing video, allegedly")
 
     if !isReady {
       getReady()
