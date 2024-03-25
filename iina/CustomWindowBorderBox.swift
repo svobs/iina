@@ -20,27 +20,39 @@ class CustomWindowBorderBox: NSBox {
 
   // Need to send to either floating OSC or window, to patch holes when dragging OSC or resizing sidebar
   override func mouseDown(with event: NSEvent) {
+    if let playerWindowController {
+      guard event.eventNumber != playerWindowController.lastMouseDownEventID else { return }
+      playerWindowController.mouseDown(with: event)
+    }
     super.mouseDown(with: event)
-    playerWindowController?.mouseDown(with: event)
   }
 
   override func mouseDragged(with event: NSEvent) {
-    super.mouseDragged(with: event)
     playerWindowController?.mouseDragged(with: event)
+    super.mouseDragged(with: event)
   }
 
   override func mouseUp(with event: NSEvent) {
+    if let playerWindowController {
+      guard event.eventNumber != playerWindowController.lastMouseUpEventID else { return }
+      playerWindowController.mouseUp(with: event)
+    }
     super.mouseUp(with: event)
-    playerWindowController?.mouseUp(with: event)
   }
 
   override func rightMouseDown(with event: NSEvent) {
+    if let playerWindowController {
+      guard event.eventNumber != playerWindowController.lastRightMouseDownEventID else { return }
+      playerWindowController.rightMouseDown(with: event)
+    }
     super.rightMouseDown(with: event)
-    playerWindowController?.rightMouseDown(with: event)
   }
 
   override func rightMouseUp(with event: NSEvent) {
-    playerWindowController?.rightMouseUp(with: event)
+    if let playerWindowController {
+      guard event.eventNumber != playerWindowController.lastRightMouseUpEventID else { return }
+      playerWindowController.rightMouseUp(with: event)
+    }
     super.rightMouseUp(with: event)
   }
 

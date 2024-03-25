@@ -174,10 +174,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   var lastClick = Date()
 
   /// Responder chain is a mess. Use this to prevent duplicate event processing
-  private var lastMouseDownEventID: Int = -1
-  private var lastMouseUpEventID: Int = -1
-  private var lastRightMouseDownEventID: Int = -1
-  private var lastRightMouseUpEventID: Int = -1
+  var lastMouseDownEventID: Int = -1
+  var lastMouseUpEventID: Int = -1
+  var lastRightMouseDownEventID: Int = -1
+  var lastRightMouseUpEventID: Int = -1
 
   /** For force touch action */
   var isCurrentPressInSecondStage = false

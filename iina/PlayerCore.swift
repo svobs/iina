@@ -1524,11 +1524,9 @@ class PlayerCore: NSObject {
   }
 
   func setCrop(fromAspectString aspectString: String) {
-    let vwidth = info.videoParams.videoRawWidth
-    let vheight = info.videoParams.videoRawHeight
-    if let aspect = Aspect(string: aspectString) {
-      let cropped = NSMakeSize(CGFloat(vwidth), CGFloat(vheight)).crop(withAspect: aspect)
-      log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(vwidth)x\(vheight))")
+    if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoParams.videoSizeRaw {
+      let cropped = videoSizeRaw.crop(withAspect: aspect)
+      log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
       if cropped.width <= 0 || cropped.height <= 0 {
         log.error("Cannot set crop to \(cropped); width or height is <= 0")
         updateSelectedCrop(to: AppData.noneCropIdentifier)
@@ -2970,12 +2968,13 @@ class PlayerCore: NSObject {
               let aspectRatio = (width / height).roundedTo2()
               if aspectRatio == selectedAspect {
                 log.verbose("Filter \(filter.label?.quoted ?? "") matches known crop \(aspectCropLabel.quoted)")
-                updateSelectedCrop(to: aspectCropLabel)  // aspect crop
+                updateSelectedCrop(to: aspectCropLabel)  // Known aspect-based crop
                 return
               }
             }
           }
         }
+        // Unrecognized aspect-based crop? Fall through
       } else if let p = filter.params,
                   let xStr = p["x"], let x = Int(xStr),
                 let yStr = p["y"], let y = Int(yStr),
@@ -2985,9 +2984,10 @@ class PlayerCore: NSObject {
         let cropboxRect = NSRect(x: x, y: y, width: w, height: h)
         let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropboxRect)
         log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
-        updateSelectedCrop(to: customCropBoxLabel)  // rect crop
+        updateSelectedCrop(to: customCropBoxLabel)  // Custom cropbox rect crop
         return
       }
+
       // Default to removing crop
       log.error("Could not determine crop from filter \(Constants.FilterLabel.crop.quoted). Removing filter")
       updateSelectedCrop(to: AppData.noneCropIdentifier)
