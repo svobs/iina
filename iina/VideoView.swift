@@ -396,8 +396,7 @@ class VideoView: NSView {
             let ptr = ptr!.bindMemory(to: ProfileData.self, capacity: 1)
             let uuid = ptr.pointee.uuid
 
-            if current == 1, deviceID == uuid {
-              let profileURL = info["DeviceProfileURL"] as! URL
+            if current == 1, deviceID == uuid, let profileURL = info["DeviceProfileURL"] as? URL {
               ptr.pointee.profileUrl = profileURL
               return false
             }
