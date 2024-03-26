@@ -46,10 +46,15 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           windowController.toggleWindowFullScreen()
           return
         } else if !windowController.isFullScreen, scale > 1.0,
-                  let screenFrame = window.screen?.visibleFrame,
-                  (window.frame.height >= screenFrame.height || window.frame.width >= screenFrame.width) {
-          windowController.toggleWindowFullScreen()
-          return
+                  let screenFrame = window.screen?.visibleFrame {
+          let heightIsMax = window.frame.height >= screenFrame.height
+          let widthIsMax = window.frame.width >= screenFrame.width
+          // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
+          // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
+          if (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) || (heightIsMax && widthIsMax) {
+            windowController.toggleWindowFullScreen()
+            return
+          }
         }
       }
       // If full screen wasn't toggled, try window size:
