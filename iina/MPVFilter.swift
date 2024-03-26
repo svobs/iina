@@ -266,7 +266,15 @@ class MPVFilter: NSObject {
     guard label == Constants.FilterLabel.crop else {
       Logger.fatal("Trying to get crop params from a non-crop filter! (\(label.debugDescription))")
     }
-    guard let params = params, let wStr = params["w"], let hStr = params["h"], let w = Double(wStr), let h = Double(hStr) else {
+    guard let params = params else {
+      Logger.log("Could not find 'params' in crop filter (will default to entire video rect): \(self)", level: .warning)
+      return NSRect(origin: CGPointZero, size: origVideoSize)
+    }
+    return MPVFilter.cropRect(fromParams: params, origVideoSize: origVideoSize, flipY: flipY)
+  }
+
+  static func cropRect(fromParams params: [String: String], origVideoSize: NSSize, flipY: Bool = false) -> NSRect {
+    guard let wStr = params["w"], let hStr = params["h"], let w = Double(wStr), let h = Double(hStr) else {
       Logger.log("Could not find valid 'w' or 'h' in crop filter (will default to entire video rect): \(self)", level: .warning)
       return NSRect(origin: CGPointZero, size: origVideoSize)
     }
@@ -287,6 +295,10 @@ class MPVFilter: NSObject {
       y = origVideoSize.height - (y + h)
     }
     return NSRect(x: x, y: y, width: w, height: h)
+  }
+
+  static func makeCropBoxParamString(from size: NSSize) -> String {
+    return "\(Int(size.width))x\(Int(size.height))"
   }
 
   static func makeCropBoxParamString(from cropbox: NSRect) -> String {

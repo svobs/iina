@@ -3235,9 +3235,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
         player.info.videoFiltersDisabled[filterLabel] = vf
         if player.removeVideoFilter(vf) {
-          let videoParams = videoParams.clone(selectedCropLabel: AppData.noneCropIdentifier)
-          // This will check whether there is a disabled crop filter, and pick up work from there:
-          applyVidParams(newParams: videoParams)
+          /// The call to `removeVideoFilter` will trigger `applyVidParams`, which will notice the disabled filter & pick up there
           return
         } else {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")

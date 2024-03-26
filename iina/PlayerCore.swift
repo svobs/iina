@@ -1559,14 +1559,18 @@ class PlayerCore: NSObject {
       // removeVideoFilter will actually call updateSelectedCrop again, so just return here to avoid doing work twice
       return
     }
-    if info.videoParams.selectedCropLabel != newCropLabel {
-      log.verbose("Setting selectedCropLabel to \(newCropLabel.quoted)")
-      info.videoParams = info.videoParams.clone(selectedCropLabel: newCropLabel)
 
-      let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
-      sendOSD(.crop(osdLabel))
+    mpv.queue.async { [self] in
+      if info.videoParams.selectedCropLabel != newCropLabel {
+        log.verbose("Setting selectedCropLabel to \(newCropLabel.quoted)")
+        let newVidParams = info.videoParams.clone(selectedCropLabel: newCropLabel)
+        windowController.applyVidParams(newParams: newVidParams)
+
+        let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
+        sendOSD(.crop(osdLabel))
+      }
+      reloadQuickSettingsView()
     }
-    reloadQuickSettingsView()
   }
 
   func setAudioEq(fromGains gains: [Double]) {
@@ -2164,14 +2168,14 @@ class PlayerCore: NSObject {
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
-    if let priorState = info.priorState {
-      // Make sure to call this because mpv does not always trigger it.
-      // This is especially important when restoring into interactive mode because this call is needed to restore cropbox selection.
-      if let newVidParams = mpv.queryForVideoParams() {
-        // Always send this to window controller. It should be smart enough to resize only when needed:
-        windowController.applyVidParams(newParams: newVidParams)
-      }
+    // Make sure to call this because mpv does not always trigger it.
+    // This is especially important when restoring into interactive mode because this call is needed to restore cropbox selection.
+    if let newVidParams = mpv.queryForVideoParams() {
+      // Always send this to window controller. It should be smart enough to resize only when needed:
+      windowController.applyVidParams(newParams: newVidParams)
+    }
 
+    if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {
         /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
         log.verbose("Clearing mpv 'start' option now that restore is complete")
@@ -2938,7 +2942,9 @@ class PlayerCore: NSObject {
     case Constants.FilterLabel.crop:
       // CROP
       info.cropFilter = filter
-      if let p = filter.params, let wStr = p["w"], let hStr = p["h"], p["x"] == nil && p["y"] == nil, let w = Double(wStr), let h = Double(hStr) {
+      if let p = filter.params, let wStr = p["w"], let hStr = p["h"],
+          let w = Double(wStr), let h = Double(hStr),
+         p["x"] == nil && p["y"] == nil {
         // Probably a selection from the Quick Settings panel. See if there are any matches.
         guard w != 0, h != 0 else {
           log.error("Cannot set filter \(filter.label?.quoted ?? ""): w or h is 0")
@@ -2960,7 +2966,10 @@ class PlayerCore: NSObject {
             }
           }
         }
-        // Unrecognized aspect-based crop? Fall through
+        let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
+        log.verbose("Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)")
+        updateSelectedCrop(to: customCropBoxLabel)
+
       } else if let p = filter.params,
                   let xStr = p["x"], let x = Int(xStr),
                 let yStr = p["y"], let y = Int(yStr),
@@ -2971,12 +2980,11 @@ class PlayerCore: NSObject {
         let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropboxRect)
         log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
         updateSelectedCrop(to: customCropBoxLabel)  // Custom cropbox rect crop
-        return
+      } else {
+        // Default to removing crop
+        log.error("Could not determine crop from filter \(Constants.FilterLabel.crop.quoted). Removing filter")
+        updateSelectedCrop(to: AppData.noneCropIdentifier)
       }
-
-      // Default to removing crop
-      log.error("Could not determine crop from filter \(Constants.FilterLabel.crop.quoted). Removing filter")
-      updateSelectedCrop(to: AppData.noneCropIdentifier)
     case Constants.FilterLabel.flip:
       info.flipFilter = filter
     case Constants.FilterLabel.mirror:

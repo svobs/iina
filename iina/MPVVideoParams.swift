@@ -107,20 +107,35 @@ struct MPVVideoParams: CustomStringConvertible {
 
   let cropBox: CGRect?
 
-  static func makeCropBox(fromCropLabel cropLabel: String, videoRawWidth: Int, videoRawHeight: Int) -> CGRect? {
-    if let aspect = Aspect(string: cropLabel) {
-      let videoRawSize = CGSize(width: videoRawWidth, height: videoRawHeight)
-      return videoRawSize.getCropRect(withAspect: aspect)
-    } else if cropLabel == AppData.noneCropIdentifier {
+  private static func makeCropBox(fromCropLabel cropLabel: String, videoRawWidth: Int, videoRawHeight: Int) -> CGRect? {
+    if cropLabel == AppData.noneCropIdentifier {
       return nil
+    }
+
+    let videoRawSize = CGSize(width: videoRawWidth, height: videoRawHeight)
+
+    if let aspect = Aspect(string: cropLabel) {
+      return videoRawSize.getCropRect(withAspect: aspect)
     } else {
       let split1 = cropLabel.split(separator: "x")
       if split1.count == 2 {
+        if split1.firstIndex(of: "+") == nil {
+          let params: [String: String] = [
+            "w": String(split1[0]),
+            "h": String(split1[1])
+          ]
+          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
+        }
+
         let split2 = split1[1].split(separator: "+")
         if split2.count == 3 {
-          if let width = Int(String(split1[0])), let height = Int(String(split2[0])), let x = Int(String(split2[1])), let y = Int(String(split2[2])) {
-            return CGRect(x: x, y: y, width: width, height: height)
-          }
+          let params: [String: String] = [
+            "w": String(split1[0]),
+            "h": String(split2[0]),
+            "x": String(split2[1]),
+            "y": String(split2[2])
+          ]
+          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
         }
       }
       Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
@@ -138,6 +153,7 @@ struct MPVVideoParams: CustomStringConvertible {
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
   var videoSizeAC: CGSize? {
+    // FIXME: need to apply cropBox to aspect override instead
     return cropBox?.size ?? videoSizeA
   }
 
