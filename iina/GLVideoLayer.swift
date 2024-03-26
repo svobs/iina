@@ -229,13 +229,13 @@ class GLVideoLayer: CAOpenGLLayer {
     }
   }
 
-  func drawAsync() {
+  func drawAsync(forced: Bool = false) {
     mpvGLQueue.async { [self] in
-      draw()
+      draw(forced: forced)
     }
   }
 
-  func draw(forced: Bool = false) {
+  private func draw(forced: Bool = false) {
     videoView.$isUninited.withLock() { isUninited in
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
@@ -251,11 +251,22 @@ class GLVideoLayer: CAOpenGLLayer {
     videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return }
       if forced {
+        // Nothing more to do for a forced render
         forceRender = false
         return
       }
-      guard needsMPVRender else { return }
 
+      guard needsMPVRender else { return }
+      needsMPVRender = false
+
+      /// If `needsMPVRender` was still true after `display()` was called, then `draw()` was not called,
+      /// and thus `mpv_render_param` was not called.
+      /// This can happen if `canDraw()` returned false, so repeat that check here:
+      guard videoView.player.mpv.shouldRenderUpdateFrame() else { return }
+
+      /// But if MacOS decided the window was not worth drawing (most likely because it , `canDraw()` would not even be called.
+      /// Need to make sure `mpv_render_context_render` gets called to ensure proper timing is synced with mpv.
+      /// So do a skip render instead:
       if let renderContext = videoView.player.mpv.mpvRenderContext,
          let openGLContext = videoView.player.mpv.openGLContext {
         CGLLockContext(openGLContext)
@@ -269,7 +280,6 @@ class GLVideoLayer: CAOpenGLLayer {
           mpv_render_context_render(renderContext, &params);
         }
       }
-      needsMPVRender = false
     }
   }
 
