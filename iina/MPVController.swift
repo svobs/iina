@@ -1042,7 +1042,7 @@ not applying FFmpeg 9599 workaround
     case MPV_EVENT_AUDIO_RECONFIG: break
 
     case MPV_EVENT_VIDEO_RECONFIG:
-      player.onVideoReconfig()
+      break
 
     case MPV_EVENT_START_FILE:
       guard let dataPtr = UnsafeMutablePointer<mpv_event_start_file>(OpaquePointer(event.pointee.data)) else { return }
@@ -1181,33 +1181,43 @@ not applying FFmpeg 9599 workaround
       if let totalRotation = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee {
         player.log.verbose("Received mpv prop: 'video-params/rotate' = \(totalRotation)")
         player.saveState()
-        /// Any necessary resizing will be handled by `video-reconfig` callback
+        /// Any necessary resizing will be handled elsewhere
       }
 
     case MPVOption.Video.videoRotate:
       guard player.windowController.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let userRotation = Int(data)
+      
       guard userRotation != player.info.videoParams.userRotation else { break }
 
+      // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoParams.
       player.log.verbose("Received mpv prop: 'video-rotate' ≔ \(userRotation)")
-      player.info.videoParams = player.info.videoParams.clone(userRotation: userRotation)
       needReloadQuickSettingsView = true
+
+      // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
+
+      if player.windowController.pipStatus == .notInPIP {
+        DispatchQueue.main.async { [self] in
+          IINAAnimation.disableAnimation {
+            // FIXME: this isn't perfect - a bad frame briefly appears during transition
+            player.log.verbose("Resetting videoView rotation")
+            player.windowController.rotationHandler.rotateVideoView(toDegrees: 0)
+          }
+        }
+      }
+
+      // Update window geometry
+      let oldVidParams = player.info.videoParams
+      let rotationChange = userRotation - oldVidParams.userRotation
+      let newTotalRotation = (oldVidParams.totalRotation + rotationChange) %% 360
+      let newVidParams = oldVidParams.clone(totalRotation: newTotalRotation, userRotation: userRotation)
+      player.windowController.applyVidParams(newParams: newVidParams)
 
       player.sendOSD(.rotation(userRotation))
       // Thumb rotation needs updating:
       player.reloadThumbnails()
       player.saveState()
-
-      if player.windowController.pipStatus == .notInPIP {
-        DispatchQueue.main.async { [self] in
-          // FIXME: this isn't perfect - a bad frame briefly appears during transition
-          player.log.verbose("Resetting videoView rotation")
-          IINAAnimation.disableAnimation {
-            player.windowController.rotationHandler.rotateVideoView(toDegrees: 0)
-          }
-        }
-      }
 
     case MPVProperty.videoParamsPrimaries:
       fallthrough

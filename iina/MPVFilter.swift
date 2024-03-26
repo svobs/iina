@@ -34,7 +34,7 @@ class MPVFilter: NSObject {
   // MARK: - Static filters
 
   static func crop(w: Int?, h: Int?, x: Int?, y: Int?) -> MPVFilter {
-    let f = MPVFilter(name: "crop", label: nil,
+    let f = MPVFilter(name: "crop", label: Constants.FilterLabel.crop,
                       params: ["w": w?.description ?? "", "h": h?.description ?? "", "x": x?.description ?? "", "y": y?.description ?? ""])
     return f
   }

@@ -25,15 +25,19 @@ extension PlayerWindowController {
     let justOpenedFile = player.info.justOpenedFile
     let isRestoring = player.info.isRestoring
 
+    if videoParams.totalRotation != player.info.currentMediaThumbnails?.rotationDegrees {
+      player.reloadThumbnails()
+    }
+
     DispatchQueue.main.async { [self] in
       animationPipeline.submitZeroDuration({ [self] in
-        _applyVidParams(videoParams, oldVideoParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
+        applyVidParams(newParams: videoParams, oldParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
       })
     }
   }
 
   /// Only `applyVidParams` should call this.
-  private func _applyVidParams(_ videoParams: MPVVideoParams, oldVideoParams: MPVVideoParams, isRestoring: Bool, justOpenedFile: Bool) {
+  private func applyVidParams(newParams videoParams: MPVVideoParams, oldParams oldVideoParams: MPVVideoParams, isRestoring: Bool, justOpenedFile: Bool) {
     guard let videoSizeACR = videoParams.videoSizeACR else {
       log.error("[applyVidParams] Could not get videoSizeACR from mpv! Cancelling adjustment")
       return
@@ -134,7 +138,7 @@ extension PlayerWindowController {
         if justOpenedFileManually {
           log.verbose("[applyVidParams D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
           newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                           videoAspect: videoSizeACR.mpvAspect)
+                                                                   videoAspect: videoSizeACR.mpvAspect)
         } else {
           // video size changed during playback
           newWindowGeo = resizeMinimallyAfterVideoReconfig(from: windowGeo, videoSizeACR: videoSizeACR)

@@ -85,10 +85,8 @@ class MPVLogScanner {
 
     if msg.hasPrefix("Disabling filter \(Constants.FilterLabel.crop)") {
       // Sometimes the crop can fail, but mpv does not return an error msg directly
-      if player.info.cropFilter != nil {
-        player.log.warn("Removing crop filter because msg was found in mpv log: \(removeNewline(from: msg).quoted)")
-        player.removeCrop()
-      }
+      player.log.warn("Removing crop filter because msg was found in mpv log: \(removeNewline(from: msg).quoted)")
+      player.removeCrop()
       return
     }
 

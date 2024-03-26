@@ -121,9 +121,11 @@ class CropSettingsViewController: CropBoxViewController {
       player.log.verbose("User chose Done button from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
-      /// Set the filter and wait for mpv to respond with a `video-reconfig` before exiting interactive mode
-      cropBoxView.didSubmit = true
-      player.setCrop(fromFilter: newCropFilter)
+      if player.addVideoFilter(newCropFilter) {
+        // FIXME: exit interactive mode and set new mpv video params
+        /// Set the filter and wait for mpv to respond with a `video-reconfig` before exiting interactive mode
+        cropBoxView.didSubmit = true
+      }
     }
   }
 
@@ -141,12 +143,14 @@ class CropSettingsViewController: CropBoxViewController {
       cropx = Int(cropboxRect.origin.x)
       cropy = Int(cropboxRect.origin.y)
 
-      // Remove filter from disabled list
-      player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
+      /// Re-activate filter and wait for mpv to respond before exiting interactive mode
+      if player.addVideoFilter(prevCropFilter) {
+        // Remove filter from disabled list
+        player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
 
-      /// Re-activate filter and wait for mpv to respond with a `video-reconfig` before exiting interactive mode
-      cropBoxView.didSubmit = true
-      player.setCrop(fromFilter: prevCropFilter)
+        // FIXME: exit interactive mode and set new mpv video params
+        cropBoxView.didSubmit = true
+      }
     } else {
       player.log.verbose("User chose Cancel button from interactive mode; exiting")
       // No prev filter.

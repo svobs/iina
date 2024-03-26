@@ -968,7 +968,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // video view
 
     // gesture recognizers
-    rotationHandler.windowControllerController = self
+    rotationHandler.windowController = self
     magnificationHandler.windowController = self
     cv.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
     cv.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
@@ -1149,7 +1149,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = false
     } else {
-      log.verbose("Showing defaultAlbumArt because fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
+      log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = true
     }
 
@@ -3846,7 +3846,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     log.verbose("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused
     videoView.displayActive(temporary: player.info.isPaused)
-    videoView.videoLayer.draw(forced: true)
+    videoView.videoLayer.drawAsync(forced: true)
   }
 
   // MARK: - IBActions

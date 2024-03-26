@@ -14,9 +14,9 @@ class RotationGestureHandler {
   private var cgCurrentRotationDegrees: CGFloat = 0
   private var videoParams: MPVVideoParams? = nil
 
-  unowned var windowControllerController: PlayerWindowController! = nil
-  private var player: PlayerCore { windowControllerController.player }
-  private var videoView: VideoView { windowControllerController.videoView }
+  unowned var windowController: PlayerWindowController! = nil
+  private var player: PlayerCore { windowController.player }
+  private var videoView: VideoView { windowController.videoView }
 
   lazy var rotationGestureRecognizer: NSRotationGestureRecognizer = {
     return NSRotationGestureRecognizer(target: self, action: #selector(PlayerWindowController.handleRotationGesture(recognizer:)))

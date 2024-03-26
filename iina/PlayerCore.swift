@@ -1105,6 +1105,8 @@ class PlayerCore: NSObject {
   }
 
   private func deriveVideoScale(from windowGeometry: WinGeometry) -> CGFloat? {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    
     let videoWidthScaled = windowGeometry.videoSize.width
 
     // This should take into account aspect override and/or crop already
@@ -1533,10 +1535,11 @@ class PlayerCore: NSObject {
         return
       }
       let vf = MPVFilter.crop(w: Int(cropped.width), h: Int(cropped.height), x: nil, y: nil)
-      vf.label = Constants.FilterLabel.crop
       // No need to call updateSelectedCrop - it will be called by setCrop
-      setCrop(fromFilter: vf)
-      return
+      if !addVideoFilter(vf) {
+        log.error("Failed to add crop filter? Setting crop to none")
+        updateSelectedCrop(to: AppData.noneCropIdentifier)
+      }
     } else {
       if aspectString != AppData.noneCropIdentifier {
         log.error("Requested crop string is invalid: \(aspectString.quoted)")
@@ -1564,12 +1567,6 @@ class PlayerCore: NSObject {
       sendOSD(.crop(osdLabel))
     }
     reloadQuickSettingsView()
-  }
-
-  @discardableResult
-  func setCrop(fromFilter filter: MPVFilter) -> Bool {
-    filter.label = Constants.FilterLabel.crop
-    return addVideoFilter(filter)
   }
 
   func setAudioEq(fromGains gains: [Double]) {
@@ -1612,7 +1609,7 @@ class PlayerCore: NSObject {
     // check hwdec
     let hwdec = mpv.getString(MPVProperty.hwdec)
     if hwdec == "auto" {
-      let askHwdec: (() -> Bool) = {
+      let askHwdec: (() -> Bool) = { [self] in
         let panel = NSAlert()
         panel.messageText = NSLocalizedString("alert.title_warning", comment: "Warning")
         panel.informativeText = NSLocalizedString("alert.filter_hwdec.message", comment: "")
@@ -1621,11 +1618,11 @@ class PlayerCore: NSObject {
         panel.addButton(withTitle: NSLocalizedString("alert.filter_hwdec.abort", comment: "Abort"))
         switch panel.runModal() {
         case .alertFirstButtonReturn:  // turn off
-          self.mpv.setString(MPVProperty.hwdec, "no")
+          mpv.setString(MPVProperty.hwdec, "no")
           Preference.set(Preference.HardwareDecoderOption.disabled.rawValue, for: .hardwareDecoder)
           return true
         case .alertSecondButtonReturn:
-          self.mpv.setString(MPVProperty.hwdec, "auto-copy")
+          mpv.setString(MPVProperty.hwdec, "auto-copy")
           Preference.set(Preference.HardwareDecoderOption.autoCopy.rawValue, for: .hardwareDecoder)
           return true
         default:
@@ -2170,7 +2167,10 @@ class PlayerCore: NSObject {
     if let priorState = info.priorState {
       // Make sure to call this because mpv does not always trigger it.
       // This is especially important when restoring into interactive mode because this call is needed to restore cropbox selection.
-      onVideoReconfig()
+      if let newVidParams = mpv.queryForVideoParams() {
+        // Always send this to window controller. It should be smart enough to resize only when needed:
+        windowController.applyVidParams(newParams: newVidParams)
+      }
 
       if priorState.string(for: .playPosition) != nil {
         /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
@@ -2322,20 +2322,6 @@ class PlayerCore: NSObject {
       return String(num)
     }
     return "nil"
-  }
-
-  func onVideoReconfig() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard let videoParams = mpv.queryForVideoParams() else { return }
-
-    log.verbose("Got mpv `video-reconfig`; \(videoParams), isRestoring:\(info.isRestoring) justOpenedFile:\(info.justOpenedFile.yn)")
-
-    // Always send this to window controller. It should be smart enough to resize only when needed:
-    windowController.applyVidParams(newParams: videoParams)
-
-    if videoParams.totalRotation != info.currentMediaThumbnails?.rotationDegrees {
-      reloadThumbnails()
-    }
   }
 
   func vfChanged() {
