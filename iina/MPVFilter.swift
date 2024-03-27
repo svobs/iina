@@ -301,6 +301,7 @@ class MPVFilter: NSObject {
     return "\(Int(size.width))x\(Int(size.height))"
   }
 
+  /// Note: `cropbox` is expected to be in mpv coordinates (i.e. Y is not flipped)
   static func makeCropBoxParamString(from cropbox: NSRect) -> String {
     return "\(Int(cropbox.width))x\(Int(cropbox.height))+\(Int(cropbox.origin.x))+\(Int(cropbox.origin.y))"
   }

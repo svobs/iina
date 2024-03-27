@@ -1148,6 +1148,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if isVideoTrackSelected || player.info.justOpenedFile || player.isStopped {
       log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = false
+    } else if player.mpv.queryForVideoParams() == nil {
+      // mpv is idle or does not have current video size. Easier to just call `queryForVideoParams` than duplicate its logic
+      log.verbose("Hiding defaultAlbumArt because there are no videoParams")
+      showDefaultArt = false
     } else {
       log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = true
@@ -1928,6 +1932,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       attrTitle.addAttribute(.paragraphStyle, value: p, range: NSRange(location: 0, length: attrTitle.length))
     }
     updateTitle()  // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
+    window.isExcludedFromWindowsMenu = false
 
     resetCollectionBehavior()
     updateBufferIndicatorView()
@@ -3266,11 +3271,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         // If these params are present and valid, then need to apply a crop
         if let uncroppedVideoSize, let cropbox, let cropController = cropSettingsView, uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0 {
           // Do this very fast because at present the crop animation is not great
-          animationTasks.append(IINAAnimation.Task(duration: IINAAnimation.CropAnimationDuration * 0.2, { [self] in
+          animationTasks.append(IINAAnimation.Task(duration: IINAAnimation.CropAnimationDuration * 0.5, { [self] in
             let screen = bestScreen
-            log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropbox: \(cropbox)")
-
             let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropbox)
+            log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropbox: \(cropbox), cropLabel: \(customCropBoxLabel.quoted)")
             player.info.videoParams = player.info.videoParams.clone(selectedCropLabel: customCropBoxLabel)
 
             /// Updated `windowedModeGeo` even if in full screen - we are not prepared to look for changes later

@@ -251,7 +251,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Call this *before* registering for url events, to guarantee that menu is init'd
     confTableStateManager.startUp()
-    menuController.bindMenuItems()
 
     // Workaround for macOS Sonoma clearing the recent documents list when the IINA code is not signed
     // with IINA's certificate as is the case for developer and nightly builds.
@@ -328,6 +327,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log("App launched")
 
+    menuController.bindMenuItems()
     // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
     // show alpha in color panels
     NSColorPanel.shared.showsAlpha = true

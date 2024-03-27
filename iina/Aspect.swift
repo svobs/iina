@@ -63,5 +63,4 @@ class Aspect: NSObject {
       return nil
     }
   }
-
 }

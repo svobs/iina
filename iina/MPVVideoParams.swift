@@ -78,7 +78,7 @@ struct MPVVideoParams: CustomStringConvertible {
     return CGSize(width: videoRawWidth, height: videoRawHeight)
   }
 
-  // Aspect
+  // SECTION: Aspect
 
   /// The currently applied aspect, used for finding current aspect in menu & sidebar segmented control. Does not include rotation(s)
   let selectedAspectRatioLabel: String
@@ -88,60 +88,16 @@ struct MPVVideoParams: CustomStringConvertible {
 
   /// Same as `videoSizeRaw` but with aspect ratio override applied. If no aspect ratio override, then identical to `videoSizeRaw`.
   var videoSizeA: CGSize? {
-    guard let aspectRatioOverride else {
-      // No aspect override
-      return videoSizeRaw
-    }
     guard let videoSizeRaw else { return nil }
 
-    let aspectRatioDefault = videoSizeRaw.mpvAspect
-    if aspectRatioDefault > aspectRatioOverride {
-      return CGSize(width: videoSizeRaw.width, height: round(videoSizeRaw.height * aspectRatioDefault / aspectRatioOverride))
-    }
-    return CGSize(width: round(videoSizeRaw.width / aspectRatioDefault * aspectRatioOverride), height: videoSizeRaw.height)
+    return MPVVideoParams.applyAspectOverride(aspectRatioOverride, to: videoSizeRaw)
   }
 
-  // Aspect + Crop
+  // SECTION: Aspect + Crop
 
   let selectedCropLabel: String
 
   let cropBox: CGRect?
-
-  private static func makeCropBox(fromCropLabel cropLabel: String, videoRawWidth: Int, videoRawHeight: Int) -> CGRect? {
-    if cropLabel == AppData.noneCropIdentifier {
-      return nil
-    }
-
-    let videoRawSize = CGSize(width: videoRawWidth, height: videoRawHeight)
-
-    if let aspect = Aspect(string: cropLabel) {
-      return videoRawSize.getCropRect(withAspect: aspect)
-    } else {
-      let split1 = cropLabel.split(separator: "x")
-      if split1.count == 2 {
-        if split1.firstIndex(of: "+") == nil {
-          let params: [String: String] = [
-            "w": String(split1[0]),
-            "h": String(split1[1])
-          ]
-          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
-        }
-
-        let split2 = split1[1].split(separator: "+")
-        if split2.count == 3 {
-          let params: [String: String] = [
-            "w": String(split1[0]),
-            "h": String(split2[0]),
-            "x": String(split2[1]),
-            "y": String(split2[2])
-          ]
-          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
-        }
-      }
-      Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
-      return nil
-    }
-  }
 
   /// The video size, after aspect override and crop filter applied, but before rotation or final scaling.
   ///
@@ -153,8 +109,16 @@ struct MPVVideoParams: CustomStringConvertible {
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
   var videoSizeAC: CGSize? {
-    // FIXME: need to apply cropBox to aspect override instead
-    return cropBox?.size ?? videoSizeA
+    guard let videoSizeRaw, let videoSizeA else {
+      return nil
+    }
+    let widthMultiplier = videoSizeA.width / videoSizeRaw.width
+    let heightMultiplier = videoSizeA.height / videoSizeRaw.height
+
+    if let cropBox {
+      return CGSize(width: cropBox.width * widthMultiplier, height: cropBox.height * heightMultiplier)
+    }
+    return videoSizeA
   }
 
   /// Same as mpv `dwidth`. See docs for `videoSizeAC`.
@@ -185,7 +149,7 @@ struct MPVVideoParams: CustomStringConvertible {
     (totalRotation %% 180) != 0
   }
 
-  // Aspect + Crop + Rotation
+  // SECTION: Aspect + Crop + Rotation
 
   /// Like `dwidth`, but after applying `totalRotation`.
   var videoWidthACR: Int? {
@@ -240,4 +204,56 @@ struct MPVVideoParams: CustomStringConvertible {
   var description: String {
     return "MPVVideoParams:{vidSizeRaw=\(videoRawWidth)x\(videoRawHeight), vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectRatioLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel) cropBox=\(cropBox?.debugDescription ?? "nil") scale=\(videoScale), aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.debugDescription ?? "nil")}"
   }
+
+  // Static utils
+
+  /// Adjusts the dimensions of the given `CGSize` as needed to match the given aspect
+  static func applyAspectOverride(_ newAspect: CGFloat?, to origSize: CGSize) -> CGSize {
+    guard let newAspect else {
+      // No aspect override
+      return origSize
+    }
+    let origAspect = origSize.mpvAspect
+    if origAspect > newAspect {
+      return CGSize(width: origSize.width, height: round(origSize.height * origAspect / newAspect))
+    }
+    return CGSize(width: round(origSize.width / origAspect * newAspect), height: origSize.height)
+  }
+
+  private static func makeCropBox(fromCropLabel cropLabel: String, videoRawWidth: Int, videoRawHeight: Int) -> CGRect? {
+    if cropLabel == AppData.noneCropIdentifier {
+      return nil
+    }
+
+    let videoRawSize = CGSize(width: videoRawWidth, height: videoRawHeight)
+
+    if let aspect = Aspect(string: cropLabel) {
+      return videoRawSize.getCropRect(withAspect: aspect)
+    } else {
+      let split1 = cropLabel.split(separator: "x")
+      if split1.count == 2 {
+        if split1[1].firstIndex(of: "+") == nil {
+          let params: [String: String] = [
+            "w": String(split1[0]),
+            "h": String(split1[1])
+          ]
+          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
+        }
+
+        let split2 = split1[1].split(separator: "+")
+        if split2.count == 3 {
+          let params: [String: String] = [
+            "w": String(split1[0]),
+            "h": String(split2[0]),
+            "x": String(split2[1]),
+            "y": String(split2[2])
+          ]
+          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
+        }
+      }
+      Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
+      return nil
+    }
+  }
+
 }

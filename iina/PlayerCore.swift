@@ -1564,7 +1564,7 @@ class PlayerCore: NSObject {
 
     mpv.queue.async { [self] in
       if info.videoParams.selectedCropLabel != newCropLabel {
-        log.verbose("Setting selectedCropLabel to \(newCropLabel.quoted)")
+        log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVidParams")
         let newVidParams = info.videoParams.clone(selectedCropLabel: newCropLabel)
         windowController.applyVidParams(newParams: newVidParams)
 
@@ -2000,7 +2000,7 @@ class PlayerCore: NSObject {
                                      selectedCropLabel: prevParams.selectedCropLabel,
                                      videoScale: prevParams.videoScale)
 
-      log.verbose("Calling applyVidParams from resizeVideo with videoParams \(newParams)")
+      log.verbose("Calling applyVidParams from resizeVideo with \(newParams)")
       assert(info.justOpenedFile)
       windowController.applyVidParams(newParams: newParams)
     } else {
@@ -2165,17 +2165,19 @@ class PlayerCore: NSObject {
   func fileIsCompletelyDoneLoading() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard info.justOpenedFile else { return }
-    
-    log.verbose("File is completely done loading; setting justOpenedFile=N")
-    info.justOpenedFile = false
-    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
     // Make sure to call this because mpv does not always trigger it.
     // This is especially important when restoring into interactive mode because this call is needed to restore cropbox selection.
     if let newVidParams = mpv.queryForVideoParams() {
       // Always send this to window controller. It should be smart enough to resize only when needed:
+      log.verbose("Calling applyVidParams from fileIsCompletelyDoneLoading")
       windowController.applyVidParams(newParams: newVidParams)
     }
+
+    log.verbose("File is completely done loading; setting justOpenedFile=N")
+    /// Make sure to set this *after* calling `applyVidParams` but *before* calling `refreshAlbumArtDisplay`
+    info.justOpenedFile = false
+    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
     if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {

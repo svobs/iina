@@ -169,11 +169,7 @@ class GLVideoLayer: CAOpenGLLayer {
         drawCountTotal += 1
         printStats()
 
-//        if let ts = ts?.pointee {
-//          NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime), hostTS: \(ts.hostTime) layerTime: \(t)")
-//        } else {
-//          NSLog("DRAW fbo: \(fbo)")
-//        }
+//        NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime) layerTime: \(t)\(ts == nil ? "" : ", hostTS: \(ts!.hostTime)")")
 #endif
         var data = mpv_opengl_fbo(fbo: Int32(fbo),
                                   w: Int32(dims[2]),

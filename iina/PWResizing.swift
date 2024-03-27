@@ -111,7 +111,9 @@ extension PlayerWindowController {
       applyMusicModeGeometryInAnimationPipeline(newGeometry)
 
     } else { // Windowed or full screen
-      if let oldVideoSizeRaw = oldVideoParams.videoSizeRaw, let newVideoSizeRaw = videoParams.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
+      if !isInitialSizeDone,
+         let oldVideoSizeRaw = oldVideoParams.videoSizeRaw,
+         let newVideoSizeRaw = videoParams.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
          let oldVideoSizeACR = oldVideoParams.videoSizeACR, oldVideoSizeACR.equalTo(videoSizeACR) {
         log.debug("[applyVidParams F Done] No change to prev video params. Taking no action")
         return
@@ -137,6 +139,7 @@ extension PlayerWindowController {
       var duration = IINAAnimation.VideoReconfigDuration
       if !isInitialSizeDone {
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+        log.verbose("[applyVidParams D-1a] Setting isInitialSizeDone=YES")
         isInitialSizeDone = true
         duration = IINAAnimation.DefaultDuration
       }

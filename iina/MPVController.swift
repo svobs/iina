@@ -1207,6 +1207,7 @@ not applying FFmpeg 9599 workaround
         }
       }
 
+      player.log.verbose("Calling applyVidParams from mpv video-rotate prop change")
       // Update window geometry
       let oldVidParams = player.info.videoParams
       let rotationChange = userRotation - oldVidParams.userRotation
