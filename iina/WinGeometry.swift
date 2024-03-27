@@ -992,9 +992,9 @@ struct WinGeometry: Equatable, CustomStringConvertible {
 
   /// Here, `videoSizeUnscaled` and `cropbox` must be the same scale, which may be different than `self.videoSize`.
   /// The cropbox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
-  func cropVideo(from videoSizeUnscaled: NSSize, to cropbox: NSRect) -> WinGeometry {
+  func cropVideo(from videoSizeOrig: NSSize, to cropbox: NSRect) -> WinGeometry {
     // First scale the cropbox to the current window scale
-    let scaleRatio = self.videoSize.width / videoSizeUnscaled.width
+    let scaleRatio = videoSize.width / videoSizeOrig.width
     let cropboxScaled = NSRect(x: cropbox.origin.x * scaleRatio,
                                y: cropbox.origin.y * scaleRatio,
                                width: cropbox.width * scaleRatio,
@@ -1009,10 +1009,10 @@ struct WinGeometry: Equatable, CustomStringConvertible {
 
     let widthRemoved = videoSize.width - cropboxScaled.width
     let heightRemoved = videoSize.height - cropboxScaled.height
-    let newWindowFrame = NSRect(x: windowFrame.origin.x + cropboxScaled.origin.x,
-                                y: windowFrame.origin.y + cropboxScaled.origin.y,
-                                width: windowFrame.width - widthRemoved,
-                                height: windowFrame.height - heightRemoved)
+    let newWindowFrame = NSRect(x: round(windowFrame.origin.x + cropboxScaled.origin.x),
+                                y: round(windowFrame.origin.y + cropboxScaled.origin.y),
+                                width: round(windowFrame.width - widthRemoved),
+                                height: round(windowFrame.height - heightRemoved))
 
     let newVideoAspect = cropbox.size.mpvAspect
 
@@ -1021,19 +1021,19 @@ struct WinGeometry: Equatable, CustomStringConvertible {
     return self.clone(windowFrame: newWindowFrame, fitOption: newFitOption, videoAspect: newVideoAspect)
   }
 
-  func uncropVideo(videoSizeACR: NSSize, cropbox: NSRect, videoScale: CGFloat) -> WinGeometry {
+  func uncropVideo(videoSizeOrig: NSSize, cropbox: NSRect, videoScale: CGFloat) -> WinGeometry {
     let cropboxScaled = NSRect(x: cropbox.origin.x * videoScale,
                                y: cropbox.origin.y * videoScale,
                                width: cropbox.width * videoScale,
                                height: cropbox.height * videoScale)
     // Figure out part which wasn't cropped:
-    let antiCropboxSizeScaled = NSSize(width: (videoSizeACR.width - cropbox.width) * videoScale,
-                                       height: (videoSizeACR.height - cropbox.height) * videoScale)
-    let newVideoAspect = videoSizeACR.mpvAspect
-    let newWindowFrame = NSRect(x: windowFrame.origin.x - cropboxScaled.origin.x,
-                                y: windowFrame.origin.y - cropboxScaled.origin.y,
-                                width: windowFrame.width + antiCropboxSizeScaled.width,
-                                height: windowFrame.height + antiCropboxSizeScaled.height)
+    let antiCropboxSizeScaled = NSSize(width: (videoSizeOrig.width - cropbox.width) * videoScale,
+                                       height: (videoSizeOrig.height - cropbox.height) * videoScale)
+    let newVideoAspect = videoSizeOrig.mpvAspect
+    let newWindowFrame = NSRect(x: round(windowFrame.origin.x - cropboxScaled.origin.x),
+                                y: round(windowFrame.origin.y - cropboxScaled.origin.y),
+                                width: round(windowFrame.width + antiCropboxSizeScaled.width),
+                                height: round(windowFrame.height + antiCropboxSizeScaled.height))
     return self.clone(windowFrame: newWindowFrame, videoAspect: newVideoAspect).refit()
   }
 }

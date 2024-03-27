@@ -3261,47 +3261,16 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Use `immediately: true` to exit without animation.
   /// This method can be run safely even if not in interactive mode
-  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, to cropbox: NSRect? = nil, then doAfter: (() -> Void)? = nil) {
+  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil, then doAfter: (() -> Void)? = nil) {
     animationPipeline.submitZeroDuration({ [self] in
       let currentLayout = currentLayout
 
       var animationTasks: [IINAAnimation.Task] = []
 
       if currentLayout.isInteractiveMode {
-        // If these params are present and valid, then need to apply a crop
-        if let uncroppedVideoSize, let cropbox, let cropController = cropSettingsView, uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0 {
-          // Do this very fast because at present the crop animation is not great
-          animationTasks.append(IINAAnimation.Task(duration: IINAAnimation.CropAnimationDuration * 0.5, { [self] in
-            let screen = bestScreen
-            let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropbox)
-            log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropbox: \(cropbox), cropLabel: \(customCropBoxLabel.quoted)")
-            player.info.videoParams = player.info.videoParams.clone(selectedCropLabel: customCropBoxLabel)
-
-            /// Updated `windowedModeGeo` even if in full screen - we are not prepared to look for changes later
-            let croppedGeometry = windowedModeGeo.cropVideo(from: uncroppedVideoSize, to: cropbox)
-            windowedModeGeo = croppedGeometry
-            player.info.intendedViewportSize = croppedGeometry.viewportSize
-
-            // fade out all this stuff before crop
-            cropController.view.alphaValue = 0
-            cropController.view.isHidden = true
-            cropController.cropBoxView.isHidden = true
-            cropController.cropBoxView.alphaValue = 0
-
-            if currentLayout.isFullScreen {
-              let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: screen, videoAspect: croppedGeometry.videoAspect)
-              videoView.apply(fsInteractiveModeGeo)
-              interactiveModeGeo = fsInteractiveModeGeo
-            } else {
-
-              let imGeoPrev = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
-              let imGeoNew = imGeoPrev.cropVideo(from: uncroppedVideoSize, to: cropbox)
-
-              interactiveModeGeo = imGeoNew
-              player.window.setFrameImmediately(imGeoNew.windowFrame)
-            }
-          }))
-
+        // This alters state in addtion to (maybe) generating a task
+        if let cropAnimation = cropWindowIfNeeded(uncroppedVideoSize: uncroppedVideoSize, newVidParams: newVidParams) {
+          animationTasks.append(cropAnimation)
         }
 
         let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
@@ -3322,6 +3291,48 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       
       animationPipeline.submit(animationTasks)
     })
+  }
+
+  private func cropWindowIfNeeded(uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil) -> IINAAnimation.Task? {
+    // If these params are present and valid, then need to apply a crop
+    guard let uncroppedVideoSize, let cropController = cropSettingsView,
+       uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0,
+       let newVidParams, let cropBox = newVidParams.cropBox,
+          let videoViewAspect = newVidParams.videoViewAspect else {
+      return nil
+    }
+
+    log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropbox: \(cropBox)")
+
+    // fade out all this stuff before crop
+    cropController.view.alphaValue = 0
+    cropController.view.isHidden = true
+    cropController.cropBoxView.isHidden = true
+    cropController.cropBoxView.alphaValue = 0
+
+    /// Updated `windowedModeGeo` even if in full screen - we are not prepared to look for changes later
+    let croppedGeometry = windowedModeGeo.clone(videoAspect: videoViewAspect).refit()
+    windowedModeGeo = croppedGeometry
+    player.info.intendedViewportSize = croppedGeometry.viewportSize
+
+    let animationDuration = IINAAnimation.CropAnimationDuration * 0.5
+    if currentLayout.isFullScreen {
+      let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: croppedGeometry.videoAspect)
+      interactiveModeGeo = fsInteractiveModeGeo
+      return IINAAnimation.Task(duration: animationDuration) { [self] in
+        videoView.apply(fsInteractiveModeGeo)
+      }
+    } else {
+      // FIXME: get rid of interactive mode for a better animation
+      // FIXME: the sizes are slightly wrong
+      let imGeoPrev = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
+      let imGeoNew = imGeoPrev.cropVideo(from: uncroppedVideoSize, to: cropBox)
+
+      interactiveModeGeo = imGeoNew
+      return IINAAnimation.Task(duration: animationDuration) { [self] in
+        player.window.setFrameImmediately(imGeoNew.windowFrame)
+      }
+    }
   }
 
   // MARK: - UI: Thumbnail Preview

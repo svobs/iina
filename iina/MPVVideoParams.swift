@@ -97,6 +97,7 @@ struct MPVVideoParams: CustomStringConvertible {
 
   let selectedCropLabel: String
 
+  /// This is derived from `selectedCropLabel`, but has its Y value flipped so that it works with Cocoa views.
   let cropBox: CGRect?
 
   /// The video size, after aspect override and crop filter applied, but before rotation or final scaling.

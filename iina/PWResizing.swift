@@ -38,7 +38,7 @@ extension PlayerWindowController {
 
   /// Only `applyVidParams` should call this.
   private func applyVidParams(newParams videoParams: MPVVideoParams, oldParams oldVideoParams: MPVVideoParams, isRestoring: Bool, justOpenedFile: Bool) {
-    guard let videoSizeACR = videoParams.videoSizeACR else {
+    guard let videoSizeACR = videoParams.videoSizeACR, let videoSizeRaw = videoParams.videoSizeRaw else {
       log.error("[applyVidParams] Could not get videoSizeACR from mpv! Cancelling adjustment")
       return
     }
@@ -55,28 +55,30 @@ extension PlayerWindowController {
     if isInInteractiveMode, let cropController = self.cropSettingsView, cropController.cropBoxView.didSubmit {
       /// Interactive mode after submit: finish crop submission and exit interactive mode
       cropController.cropBoxView.didSubmit = false
-      let uncroppedVideoSize = cropController.cropBoxView.actualSize
-      let cropboxUnscaled = NSRect(x: cropController.cropx, y: cropController.cropyFlippedForMac,
-                                   width: cropController.cropw, height: cropController.croph)
+      let displayedUncroppedVideoSize = cropController.cropBoxView.actualSize
+      // The new crop (or removal of crop) will have already been set in the new params:
+      player.info.videoParams = videoParams
 
       log.verbose("[applyVidParams G] Looks like crop was submitted. Exiting interactive mode")
-      exitInteractiveMode(cropVideoFrom: uncroppedVideoSize, to: cropboxUnscaled)
-      // fall through
+      exitInteractiveMode(cropVideoFrom: displayedUncroppedVideoSize, newVidParams: videoParams)
+      return
 
     } else if currentLayout.canEnterInteractiveMode, let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
       // Not yet in interactive mode, but the active crop was just disabled prior to entering it,
       // so that full video can be seen during interactive mode
 
-      let prevCropbox = prevCropFilter.cropRect(origVideoSize: videoSizeACR, flipY: true)
+      // FIXME: need to un-rotate while in interactive mode
+      let prevCropbox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
       log.verbose("[applyVidParams E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
-      log.verbose("[applyVidParams E1] VideoDisplayRotatedSize: \(videoSizeACR), PrevCropbox: \(prevCropbox)")
+      log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropbox: \(prevCropbox)")
 
       player.info.videoParams = videoParams
       // Update the cached objects even if not in windowed mode
-      windowedModeGeo = windowedModeGeo.uncropVideo(videoSizeACR: videoSizeACR, cropbox: prevCropbox, videoScale: videoParams.videoScale)
+      windowedModeGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropbox: prevCropbox, videoScale: videoParams.videoScale)
 
       if currentLayout.mode == .windowed {
-        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeACR: videoSizeACR, cropbox: prevCropbox, videoScale: videoParams.videoScale)
+        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropbox: prevCropbox,
+                                                               videoScale: videoParams.videoScale)
         applyWindowGeometry(uncroppedWindowedGeo)
       } else if currentLayout.mode != .fullScreen {
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
@@ -87,16 +89,16 @@ extension PlayerWindowController {
     } else if isRestoring {
       if isInInteractiveMode {
         /// If restoring into interactive mode, we didn't have `videoSizeACR` while doing layout. Add it now (if needed)
-        let videoSize: NSSize
+        let imVideoSize: NSSize
         if currentLayout.isFullScreen {
           let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: screen, videoAspect: newVideoAspect)
-          videoSize = fsInteractiveModeGeo.videoSize
+          imVideoSize = fsInteractiveModeGeo.videoSize
           interactiveModeGeo = fsInteractiveModeGeo
         } else { // windowed
-          videoSize = interactiveModeGeo?.videoSize ?? windowedModeGeo.videoSize
+          imVideoSize = interactiveModeGeo?.videoSize ?? windowedModeGeo.videoSize
         }
-        log.debug("[applyVidParams F-1] Restoring crop box origVideoSize=\(videoSizeACR), videoSize=\(videoSize)")
-        addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, croppedVideoSize: videoSize)
+        log.debug("[applyVidParams F-1] Restoring crop box origVideoSize=\(videoSizeRaw), imVideoSize=\(imVideoSize)")
+        addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: imVideoSize)
 
       } else {
         log.verbose("[applyVidParams A Done] Restore is in progress; ignoring mpv video-reconfig")
