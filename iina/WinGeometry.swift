@@ -360,20 +360,24 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   }
 
   // This also accounts for space needed by inside sidebars, if any
-  func minViewportWidth(mode: PlayerWindowMode) -> CGFloat {
+  func minViewportWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
+    let mode = mode ?? self.mode
     return max(WinGeometry.minVideoWidth(forMode: mode) + WinGeometry.minViewportMargins(forMode: mode).totalWidth,
                insideLeadingBarWidth + insideTrailingBarWidth + Constants.Sidebar.minSpaceBetweenInsideSidebars)
   }
 
-  func minViewportHeight(mode: PlayerWindowMode) -> CGFloat {
+  func minViewportHeight(mode: PlayerWindowMode? = nil) -> CGFloat {
+    let mode = mode ?? self.mode
     return WinGeometry.minVideoHeight(forMode: mode) + WinGeometry.minViewportMargins(forMode: mode).totalHeight
   }
 
-  func minWindowWidth(mode: PlayerWindowMode) -> CGFloat {
+  func minWindowWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
+    let mode = mode ?? self.mode
     return minViewportWidth(mode: mode) + outsideBarsTotalSize.width
   }
 
-  func minWindowHeight(mode: PlayerWindowMode) -> CGFloat {
+  func minWindowHeight(mode: PlayerWindowMode? = nil) -> CGFloat {
+    let mode = mode ?? self.mode
     return minViewportHeight(mode: mode) + outsideBarsTotalSize.height
   }
 
@@ -447,9 +451,9 @@ struct WinGeometry: Equatable, CustomStringConvertible {
       return NSSize.zero
     }
 
-    let minViewportMargins = margins ?? minViewportMargins(forMode: mode)
-    let usableViewportSize = NSSize(width: viewportSize.width - minViewportMargins.totalWidth,
-                                    height: viewportSize.height - minViewportMargins.totalHeight)
+    let margins = margins ?? minViewportMargins(forMode: mode)
+    let usableViewportSize = NSSize(width: viewportSize.width - margins.totalWidth,
+                                    height: viewportSize.height - margins.totalHeight)
     let videoSize: NSSize
     /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
     if videoAspect < usableViewportSize.mpvAspect {  // video is taller, shrink to meet height
@@ -990,50 +994,56 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                         viewportMargins: viewportMargins).scaleViewport(to: desiredViewportSize, mode: newMode)
   }
 
-  /// Here, `videoSizeUnscaled` and `cropbox` must be the same scale, which may be different than `self.videoSize`.
-  /// The cropbox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
-  func cropVideo(from videoSizeOrig: NSSize, to cropbox: NSRect) -> WinGeometry {
-    // First scale the cropbox to the current window scale
+  /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
+  /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
+  /// This func assumes that the currently displayed video (`videoSize`) is uncropped. Returns a new geometry which expanding the margins
+  /// while collapsing the viewable video down to the cropped portion. The window size does not change.
+  func cropVideo(from videoSizeOrig: NSSize, to cropBox: NSRect) -> WinGeometry {
+    // First scale the cropBox to the current window scale
     let scaleRatio = videoSize.width / videoSizeOrig.width
-    let cropboxScaled = NSRect(x: cropbox.origin.x * scaleRatio,
-                               y: cropbox.origin.y * scaleRatio,
-                               width: cropbox.width * scaleRatio,
-                               height: cropbox.height * scaleRatio)
+    let cropBoxInWinCoords = NSRect(x: round(cropBox.origin.x * scaleRatio),
+                               y: round(cropBox.origin.y * scaleRatio),
+                               width: round(cropBox.width * scaleRatio),
+                               height: round(cropBox.height * scaleRatio))
 
-    if cropboxScaled.origin.x > videoSize.width || cropboxScaled.origin.y > videoSize.height {
-      Logger.log("[geo] Cannot crop video: the cropbox is completely outside the video! CropboxScaled: \(cropboxScaled), videoSize: \(videoSize)", level: .error)
+    if cropBoxInWinCoords.origin.x > videoSize.width || cropBoxInWinCoords.origin.y > videoSize.height {
+      Logger.log("[geo] Cannot crop video: the cropBox is completely outside the video! CropBoxInWinCoords: \(cropBoxInWinCoords), videoSize: \(videoSize)", level: .error)
       return self
     }
 
-    Logger.log("[geo] Cropping from cropbox: \(cropbox), scaled: \(scaleRatio)x -> \(cropboxScaled)")
+    // Collapse the viewable video without changing the window size. Do this by expanding the margins
+    let bottomHeightOutsideCropBox = round(cropBoxInWinCoords.origin.y)
+    let topHeightOutsideCropBox = max(0, videoSize.height - cropBoxInWinCoords.height - bottomHeightOutsideCropBox)    // cannot be < 0
+    let leadingWidthOutsideCropBox = round(cropBoxInWinCoords.origin.x)
+    let trailingWidthOutsideCropBox = max(0, videoSize.width - cropBoxInWinCoords.width - leadingWidthOutsideCropBox)  // cannot be < 0
+    let newViewportMargins = BoxQuad(top: viewportMargins.top + topHeightOutsideCropBox,
+                                     trailing: viewportMargins.trailing + trailingWidthOutsideCropBox,
+                                     bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
+                                     leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    let widthRemoved = videoSize.width - cropboxScaled.width
-    let heightRemoved = videoSize.height - cropboxScaled.height
-    let newWindowFrame = NSRect(x: round(windowFrame.origin.x + cropboxScaled.origin.x),
-                                y: round(windowFrame.origin.y + cropboxScaled.origin.y),
-                                width: round(windowFrame.width - widthRemoved),
-                                height: round(windowFrame.height - heightRemoved))
+    Logger.log("[geo] Cropping from cropBox \(cropBox) x windowScale (\(scaleRatio)) -> \(cropBoxInWinCoords)")
 
-    let newVideoAspect = cropbox.size.mpvAspect
+    let newVideoAspect = cropBox.size.mpvAspect
 
     let newFitOption = self.fitOption == .centerInVisibleScreen ? .keepInVisibleScreen : self.fitOption
-    Logger.log("[geo] Cropped to new windowFrame: \(newWindowFrame), videoAspect: \(newVideoAspect), screenID: \(screenID), fitOption: \(newFitOption)")
-    return self.clone(windowFrame: newWindowFrame, fitOption: newFitOption, videoAspect: newVideoAspect)
+    Logger.log("[geo] Cropped to new videoAspect: \(newVideoAspect), screenID: \(screenID), fitOption: \(newFitOption)")
+    return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, videoAspect: newVideoAspect)
   }
 
-  func uncropVideo(videoSizeOrig: NSSize, cropbox: NSRect, videoScale: CGFloat) -> WinGeometry {
-    let cropboxScaled = NSRect(x: cropbox.origin.x * videoScale,
-                               y: cropbox.origin.y * videoScale,
-                               width: cropbox.width * videoScale,
-                               height: cropbox.height * videoScale)
+  // FIXME: this messes up the window X position
+  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect, videoScale: CGFloat) -> WinGeometry {
+    let cropBoxScaled = NSRect(x: cropBox.origin.x * videoScale,
+                               y: cropBox.origin.y * videoScale,
+                               width: cropBox.width * videoScale,
+                               height: cropBox.height * videoScale)
     // Figure out part which wasn't cropped:
-    let antiCropboxSizeScaled = NSSize(width: (videoSizeOrig.width - cropbox.width) * videoScale,
-                                       height: (videoSizeOrig.height - cropbox.height) * videoScale)
+    let anticropBoxSizeScaled = NSSize(width: (videoSizeOrig.width - cropBox.width) * videoScale,
+                                       height: (videoSizeOrig.height - cropBox.height) * videoScale)
     let newVideoAspect = videoSizeOrig.mpvAspect
-    let newWindowFrame = NSRect(x: round(windowFrame.origin.x - cropboxScaled.origin.x),
-                                y: round(windowFrame.origin.y - cropboxScaled.origin.y),
-                                width: round(windowFrame.width + antiCropboxSizeScaled.width),
-                                height: round(windowFrame.height + antiCropboxSizeScaled.height))
+    let newWindowFrame = NSRect(x: round(windowFrame.origin.x - cropBoxScaled.origin.x),
+                                y: round(windowFrame.origin.y - cropBoxScaled.origin.y),
+                                width: round(windowFrame.width + anticropBoxSizeScaled.width),
+                                height: round(windowFrame.height + anticropBoxSizeScaled.height))
     return self.clone(windowFrame: newWindowFrame, videoAspect: newVideoAspect).refit()
   }
 }

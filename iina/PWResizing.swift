@@ -68,17 +68,16 @@ extension PlayerWindowController {
       // so that full video can be seen during interactive mode
 
       // FIXME: need to un-rotate while in interactive mode
-      let prevCropbox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+      let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
       log.verbose("[applyVidParams E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
-      log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropbox: \(prevCropbox)")
+      log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
 
       player.info.videoParams = videoParams
       // Update the cached objects even if not in windowed mode
-      windowedModeGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropbox: prevCropbox, videoScale: videoParams.videoScale)
+      windowedModeGeo = windowedModeGeo.clone(windowFrame: window!.frame).uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox, videoScale: videoParams.videoScale)
 
       if currentLayout.mode == .windowed {
-        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropbox: prevCropbox,
-                                                               videoScale: videoParams.videoScale)
+        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox, videoScale: videoParams.videoScale)
         applyWindowGeometry(uncroppedWindowedGeo)
       } else if currentLayout.mode != .fullScreen {
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")

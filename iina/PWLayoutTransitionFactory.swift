@@ -376,20 +376,20 @@ extension PlayerWindowController {
     // Restore window size & position
     switch inputLayout.mode {
     case .windowed:
-      return windowedModeGeo
+      return windowedModeGeo.clone(windowFrame: window!.frame)
     case .fullScreen, .fullScreenInteractive:
       return inputLayout.buildFullScreenGeometry(inside: windowedModeScreen, videoAspect: player.info.videoAspect)
     case .windowedInteractive:
       if let interactiveModeGeo {
-        return interactiveModeGeo
+        return interactiveModeGeo.clone(windowFrame: window!.frame)
       } else {
         log.warn("[\(transitionName)] Failed to find interactiveModeGeo! Will change from windowedModeGeo (may be wrong)")
-        return windowedModeGeo.toInteractiveMode()
+        return windowedModeGeo.clone(windowFrame: window!.frame).toInteractiveMode()
       }
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
-      return musicModeGeo.refit().toWinGeometry()
+      return musicModeGeo.clone(windowFrame: window!.frame).refit().toWinGeometry()
     }
   }
 

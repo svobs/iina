@@ -485,7 +485,7 @@
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="xMC-EY-bOr">
                             <rect key="frame" x="-2" y="366" width="442" height="18"/>
-                            <buttonCell key="cell" type="check" title="Reposition window when it is resized to keep it fully visible on screen" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BeX-Eq-sUG">
+                            <buttonCell key="cell" type="check" title="Move window to keep it visible on screen when changing its layout" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BeX-Eq-sUG">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>

@@ -1524,7 +1524,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     mousePosRelatedToWindow = nil
 
     if let cropSettingsView, cropSettingsView.cropBoxView.isDraggingToResize || cropSettingsView.cropBoxView.isDraggingNew {
-      log.verbose("PlayerWindow mouseUp: finishing cropboxView selection drag")
+      log.verbose("PlayerWindow mouseUp: finishing cropBoxView selection drag")
       cropSettingsView.cropBoxView.mouseUp(with: event)
     } else if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden,
         controlBarFloating.isDragging || isMouseEvent(event, inAnyOf: [controlBarFloating]) {
@@ -3302,7 +3302,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       return nil
     }
 
-    log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropbox: \(cropBox)")
+    log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
     // fade out all this stuff before crop
     cropController.view.alphaValue = 0
@@ -3323,13 +3323,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         videoView.apply(fsInteractiveModeGeo)
       }
     } else {
-      // FIXME: get rid of interactive mode for a better animation
-      // FIXME: the sizes are slightly wrong
       let imGeoPrev = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
       let imGeoNew = imGeoPrev.cropVideo(from: uncroppedVideoSize, to: cropBox)
 
       interactiveModeGeo = imGeoNew
       return IINAAnimation.Task(duration: animationDuration) { [self] in
+        videoView.apply(imGeoNew)
         player.window.setFrameImmediately(imGeoNew.windowFrame)
       }
     }

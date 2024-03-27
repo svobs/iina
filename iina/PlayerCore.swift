@@ -2167,7 +2167,7 @@ class PlayerCore: NSObject {
     guard info.justOpenedFile else { return }
 
     // Make sure to call this because mpv does not always trigger it.
-    // This is especially important when restoring into interactive mode because this call is needed to restore cropbox selection.
+    // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
     if let newVidParams = mpv.queryForVideoParams() {
       // Always send this to window controller. It should be smart enough to resize only when needed:
       log.verbose("Calling applyVidParams from fileIsCompletelyDoneLoading")
@@ -2980,10 +2980,10 @@ class PlayerCore: NSObject {
                 let wStr = p["w"], let w = Int(wStr),
                 let hStr = p["h"], let h = Int(hStr) {
         // Probably a custom crop. Use mpv formatting
-        let cropboxRect = NSRect(x: x, y: y, width: w, height: h)
-        let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropboxRect)
+        let cropBoxRect = NSRect(x: x, y: y, width: w, height: h)
+        let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropBoxRect)
         log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
-        updateSelectedCrop(to: customCropBoxLabel)  // Custom cropbox rect crop
+        updateSelectedCrop(to: customCropBoxLabel)  // Custom cropBox rect crop
       } else {
         // Default to removing crop
         log.error("Could not determine crop from filter \(Constants.FilterLabel.crop.quoted). Removing filter")
