@@ -1423,24 +1423,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           NSDocumentController.shared.recentDocumentURLs.isEmpty,
           let recentDocuments = Preference.array(for: .recentDocuments),
           !recentDocuments.isEmpty else { return }
-    var foundStale = false
-    for document in recentDocuments {
-      var isStale = false
-      guard let asData = document as? Data,
-            let bookmark = try? URL(resolvingBookmarkData: asData, bookmarkDataIsStale: &isStale) else {
-        guard let asString = document as? String, let url = URL(string: asString) else { continue }
-        // Saving as a bookmark must have failed and instead the URL was saved as a string.
-        NSDocumentController.shared.noteNewRecentDocumentURL(url)
-        continue
+
+    // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
+    // and we don't want to tie up the main thread.
+    HistoryController.shared.queue.async { [self] in
+      Logger.log("Restoring list of recent documents (\(recentDocuments.count))")
+      var foundStale = false
+      for document in recentDocuments {
+        var isStale = false
+        guard let asData = document as? Data,
+              let bookmark = try? URL(resolvingBookmarkData: asData, bookmarkDataIsStale: &isStale) else {
+          guard let asString = document as? String, let url = URL(string: asString) else { continue }
+          // Saving as a bookmark must have failed and instead the URL was saved as a string.
+          NSDocumentController.shared.noteNewRecentDocumentURL(url)
+          continue
+        }
+        foundStale = foundStale || isStale
+        NSDocumentController.shared.noteNewRecentDocumentURL(bookmark)
       }
-      foundStale = foundStale || isStale
-      NSDocumentController.shared.noteNewRecentDocumentURL(bookmark)
+      Logger.log("Done restoring list of recent documents")
+      guard foundStale else { return }
+      Logger.log("Found stale bookmarks in saved recent documents")
+      // Save the recent documents in order to refresh stale bookmarks.
+      saveRecentDocuments()
     }
-    Logger.log("Restored list of recent documents")
-    guard foundStale else { return }
-    Logger.log("Found stale bookmarks in saved recent documents")
-    // Save the recent documents in order to refresh stale bookmarks.
-    saveRecentDocuments()
   }
 
   /// Save the list of recently opened files.

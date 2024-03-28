@@ -619,7 +619,9 @@ fileprivate func displayLinkCallback(
   _ flagsOut: UnsafeMutablePointer<CVOptionFlags>,
   _ context: UnsafeMutableRawPointer?) -> CVReturn {
     let videoView = unsafeBitCast(context, to: VideoView.self)
-    guard !videoView.isUninited else { return kCVReturnSuccess }
-    videoView.player.mpv.mpvReportSwap()
+    videoView.$isUninited.withLock() { isUninited in
+      guard !isUninited else { return }
+      videoView.player.mpv.mpvReportSwap()
+    }
     return kCVReturnSuccess
   }
