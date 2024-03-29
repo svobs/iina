@@ -1,5 +1,5 @@
 //
-//  PlayerWindowLayout.swift
+//  PWLayoutTransitionExtension.swift
 //  iina
 //
 //  Created by Matt Svoboda on 8/20/23.
@@ -45,7 +45,7 @@ extension PlayerWindowController {
         musicModeGeo = priorMusicModeGeometry
         // Restore primary videoAspect
         if priorLayoutSpec.mode == .musicMode {
-          videoView.apply(priorMusicModeGeometry.toWinGeometry())
+          videoView.apply(priorMusicModeGeometry.toPWGeometry())
         }
       } else {
         log.error("Failed to get player window layout and/or geometry from prefs")
@@ -192,11 +192,11 @@ extension PlayerWindowController {
     // - Build geometries
 
     // InputGeometry
-    let inputGeometry: WinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, windowedModeScreen: windowedModeScreen)
+    let inputGeometry: PWGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, windowedModeScreen: windowedModeScreen)
     log.verbose("[\(transitionName)] InputGeometry: \(inputGeometry)")
 
     // OutputGeometry
-    let outputGeometry: WinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
+    let outputGeometry: PWGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
                                                               outputLayout: outputLayout, isInitialLayout: isInitialLayout)
 
     let transition = LayoutTransition(name: transitionName,
@@ -372,7 +372,7 @@ extension PlayerWindowController {
 
   // MARK: - Geometry
 
-  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, windowedModeScreen: NSScreen) -> WinGeometry {
+  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, windowedModeScreen: NSScreen) -> PWGeometry {
     // Restore window size & position
     switch inputLayout.mode {
     case .windowed:
@@ -389,19 +389,19 @@ extension PlayerWindowController {
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
-      return musicModeGeo.clone(windowFrame: window!.frame).refit().toWinGeometry()
+      return musicModeGeo.clone(windowFrame: window!.frame).refit().toPWGeometry()
     }
   }
 
   /// Note that the result should not necessarily overrite `windowedModeGeo`. It is used by the transition animations.
-  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: WinGeometry, 
-                                   outputLayout: LayoutState, isInitialLayout: Bool) -> WinGeometry {
+  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWGeometry, 
+                                   outputLayout: LayoutState, isInitialLayout: Bool) -> PWGeometry {
 
     switch outputLayout.mode {
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
       let musicModeGeoCorrected = musicModeGeo.clone(videoAspect: player.info.videoAspect).refit()
-      return musicModeGeoCorrected.toWinGeometry()
+      return musicModeGeoCorrected.toPWGeometry()
 
     case .fullScreen, .fullScreenInteractive:
       // Full screen always uses same screen as windowed mode
@@ -426,7 +426,7 @@ extension PlayerWindowController {
       let ΔOutsideWidth = outputGeo.outsideBarsTotalWidth - prevWindowedGeo.outsideBarsTotalWidth
       let ΔOutsideHeight = outputGeo.outsideBarsTotalHeight - prevWindowedGeo.outsideBarsTotalHeight
 
-      if let screenFrame = WinGeometry.getContainerFrame(forScreenID: prevWindowedGeo.screenID, fitOption: prevWindowedGeo.fitOption) {
+      if let screenFrame = PWGeometry.getContainerFrame(forScreenID: prevWindowedGeo.screenID, fitOption: prevWindowedGeo.fitOption) {
         // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
         // So it will seem to "stick" to the screen edges when filling the screen but if already smaller, will allow the window to shrink.
         // This should be more intuitive to the user than trying to keep track of the user's past intent.
@@ -472,7 +472,7 @@ extension PlayerWindowController {
   }
 
   // Currently there are 4 bars. Each can be either inside or outside, exclusively.
-  func buildMiddleGeometry(forTransition transition: LayoutTransition) -> WinGeometry? {
+  func buildMiddleGeometry(forTransition transition: LayoutTransition) -> PWGeometry? {
     if transition.isEnteringMusicMode {
       let middleWindowFrame: NSRect
       if transition.inputLayout.isFullScreen {
@@ -482,7 +482,7 @@ extension PlayerWindowController {
         middleWindowFrame = transition.inputGeometry.videoFrameInScreenCoords
       }
 
-      return WinGeometry(windowFrame: middleWindowFrame, screenID: transition.inputGeometry.screenID,
+      return PWGeometry(windowFrame: middleWindowFrame, screenID: transition.inputGeometry.screenID,
                              fitOption: transition.inputGeometry.fitOption, mode: .musicMode, topMarginHeight: 0,
                              outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                              insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
@@ -564,7 +564,7 @@ extension PlayerWindowController {
 
     if transition.outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
-      return WinGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
+      return PWGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
                                            mode: transition.outputLayout.mode,
                                            outsideTopBarHeight: outsideTopBarHeight,
                                            outsideTrailingBarWidth: outsideTrailingBarWidth,

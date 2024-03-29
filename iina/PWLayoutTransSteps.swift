@@ -753,7 +753,7 @@ extension PlayerWindowController {
         videoView.apply(transition.outputGeometry)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
-        let newGeo: WinGeometry
+        let newGeo: PWGeometry
         if transition.isEnteringLegacyFullScreen {
           // Deal with possible top margin needed to hide camera housing
           if transition.isInitialLayout {
@@ -1044,7 +1044,7 @@ extension PlayerWindowController {
     }
   }
 
-  func updateOSDTopOffset(_ geometry: WinGeometry, isLegacyFullScreen: Bool) {
+  func updateOSDTopOffset(_ geometry: PWGeometry, isLegacyFullScreen: Bool) {
     if isLegacyFullScreen {
       // Make sure OSD (& Additional Info) does not overlap camera housing
       let cameraHousingHeight =  NSScreen.forScreenID(geometry.screenID)?.cameraHousingHeight ?? 0

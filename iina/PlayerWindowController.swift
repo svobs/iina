@@ -265,7 +265,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // MARK: - Window geometry vars
 
-  lazy var windowedModeGeo: WinGeometry = PlayerWindowController.windowedModeGeoLastClosed {
+  lazy var windowedModeGeo: PWGeometry = PlayerWindowController.windowedModeGeoLastClosed {
     didSet {
       log.verbose("Updated windowedModeGeo := \(windowedModeGeo)")
       assert(windowedModeGeo.mode == .windowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode) (expected: \(PlayerWindowMode.windowed)")
@@ -275,12 +275,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // Remembers the geometry of the "last closed" window in windowed, so future windows will default to its layout.
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
-  static var windowedModeGeoLastClosed: WinGeometry = {
+  static var windowedModeGeoLastClosed: PWGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Will fall back to default geometry",
                  level: .verbose)
-    } else if let savedGeo = WinGeometry.fromCSV(csv) {
+    } else if let savedGeo = PWGeometry.fromCSV(csv) {
       return savedGeo
     }
     // Compute default geometry for main screen
@@ -321,7 +321,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   // Only used when in interactive mode. Discarded after exiting interactive mode.
-  var interactiveModeGeo: WinGeometry? = nil {
+  var interactiveModeGeo: PWGeometry? = nil {
     didSet {
       if let geo = interactiveModeGeo {
         log.verbose("Updated interactiveModeGeo := \(geo)")
@@ -1234,7 +1234,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow(_ geometry: WinGeometry) {
+  func addVideoViewToWindow(_ geometry: PWGeometry) {
     guard let window else { return }
     guard !viewportView.subviews.contains(videoView) else { return }
     player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
@@ -2182,7 +2182,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     /// This method only provides the desired size for the window, but we don't have access to the  desired origin.
     /// So we need to be careful not to make assumptions about which directions the window is expanding toward.
-    /// It's OK to use `WinGeometry` for size calculations, but do not save the geometry objects.
+    /// It's OK to use `PWGeometry` for size calculations, but do not save the geometry objects.
     /// After the window frame is updated, `updateCachedGeometry()` will query the window for its location & size,
     /// and will save that.
     defer {
@@ -4166,7 +4166,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     // Set frame to animate back to
-    let geo = currentLayout.mode == .musicMode ? musicModeGeo.toWinGeometry() : windowedModeGeo
+    let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWGeometry() : windowedModeGeo
     pip.replacementRect = geo.videoFrameInWindowCoords
     pip.replacementWindow = window
 
@@ -4204,7 +4204,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       /// Must set this before calling `addVideoViewToWindow()`
       pipStatus = .notInPIP
 
-      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toWinGeometry() : windowedModeGeo
+      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWGeometry() : windowedModeGeo
       addVideoViewToWindow(geo)
       videoView.apply(geo)
 

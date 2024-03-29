@@ -118,7 +118,7 @@ extension PlayerWindowController {
 
       let windowGeo = windowedModeGeo.clone(videoAspect: videoSizeACR.mpvAspect)
 
-      let newWindowGeo: WinGeometry
+      let newWindowGeo: PWGeometry
       if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: videoSizeACR) {
         newWindowGeo = resizedGeo
       } else {
@@ -159,7 +159,7 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeAfterFileOpen(justOpenedFile: Bool, windowGeo: WinGeometry, videoSizeACR: NSSize) -> WinGeometry? {
+  private func resizeAfterFileOpen(justOpenedFile: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
     guard justOpenedFile else {
       // video size changed during playback
       log.verbose("[applyVidParams C] justOpenedFile=NO → returning NO for shouldResize")
@@ -220,8 +220,8 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeMinimallyAfterVideoReconfig(from windowGeo: WinGeometry,
-                                                 videoSizeACR: NSSize) -> WinGeometry {
+  private func resizeMinimallyAfterVideoReconfig(from windowGeo: PWGeometry,
+                                                 videoSizeACR: NSSize) -> PWGeometry {
     // User is navigating in playlist. retain same window width.
     // This often isn't possible for vertical videos, which will end up shrinking the width.
     // So try to remember the preferred width so it can be restored when possible
@@ -376,7 +376,7 @@ extension PlayerWindowController {
       case .musicMode:
         musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
         if updateMPVWindowScale {
-          player.updateMPVWindowScale(using: musicModeGeo.toWinGeometry())
+          player.updateMPVWindowScale(using: musicModeGeo.toPWGeometry())
         }
         player.saveState()
       case .fullScreen, .fullScreenInteractive:
@@ -387,10 +387,10 @@ extension PlayerWindowController {
   }
 
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes
-  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> WinGeometry {
+  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> PWGeometry {
     let currentLayout = currentLayout
     assert(currentLayout.isWindowed, "Trying to resize in windowed mode but current mode is unexpected: \(currentLayout.mode)")
-    let currentGeometry: WinGeometry
+    let currentGeometry: PWGeometry
     switch currentLayout.spec.mode {
     case .windowed:
       currentGeometry = windowedModeGeo.clone(windowFrame: window.frame)
@@ -423,7 +423,7 @@ extension PlayerWindowController {
         // about whether the saved size is valid. It will be handled elsewhere.
         if savedLayoutSpec.mode == .musicMode, let savedMusicModeGeo = savedState.musicModeGeo {
           log.verbose("WinWillResize: denying request due to restore; returning saved musicMode size \(savedMusicModeGeo.windowFrame.size)")
-          return savedMusicModeGeo.toWinGeometry()
+          return savedMusicModeGeo.toPWGeometry()
         } else if savedLayoutSpec.mode == .windowed, let savedWindowedModeGeo = savedState.windowedModeGeo {
           log.verbose("WinWillResize: denying request due to restore; returning saved windowedMode size \(savedWindowedModeGeo.windowFrame.size)")
           return savedWindowedModeGeo
@@ -471,7 +471,7 @@ extension PlayerWindowController {
                                                     height: requestedVideoHeight)
     let resizeFromHeightGeo = currentGeometry.scaleVideo(to: resizeFromHeightRequestedVideoSize)
 
-    let chosenGeometry: WinGeometry
+    let chosenGeometry: PWGeometry
     if window.inLiveResize {
       /// Notes on the trickiness of live window resize:
       /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
@@ -565,7 +565,7 @@ extension PlayerWindowController {
 
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
-  func applyLegacyFullScreenGeometry(_ geometry: WinGeometry) {
+  func applyLegacyFullScreenGeometry(_ geometry: PWGeometry) {
     guard let window = window else { return }
     let currentLayout = currentLayout
     if !currentLayout.isInteractiveMode {
@@ -592,7 +592,7 @@ extension PlayerWindowController {
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.
   /// Also updates cached `windowedModeGeo` and saves updated state.
-  func applyWindowGeometryInAnimationPipeline(_ newGeometry: WinGeometry, duration: CGFloat = IINAAnimation.DefaultDuration) {
+  func applyWindowGeometryInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration) {
     var ticket: Int = 0
     $geoUpdateTicketCounter.withLock {
       $0 += 1
@@ -609,7 +609,7 @@ extension PlayerWindowController {
   }
 
   // TODO: split this into separate windowed & FS
-  func applyWindowGeometry(_ newGeometry: WinGeometry, setFrame: Bool = true) {
+  func applyWindowGeometry(_ newGeometry: PWGeometry, setFrame: Bool = true) {
     let currentLayout = currentLayout
     switch currentLayout.spec.mode {
 
@@ -642,7 +642,7 @@ extension PlayerWindowController {
 
   /// For (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.
   /// Not animated. Can be used in windowed mode or full screen modes. Can be used in music mode only if the playlist is hidden.
-  func applyWindowGeometryForSpecialResize(_ newGeometry: WinGeometry) {
+  func applyWindowGeometryForSpecialResize(_ newGeometry: PWGeometry) {
     log.verbose("ApplySpecialGeo: \(newGeometry)")
     let currentLayout = currentLayout
     // Need this if video is playing
@@ -706,7 +706,7 @@ extension PlayerWindowController {
       /// Make sure to call `apply` AFTER `applyVideoViewVisibilityConstraints`:
       miniPlayer.applyVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
       updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
-      videoView.apply(geometry.toWinGeometry())
+      videoView.apply(geometry.toPWGeometry())
     } else {
       log.verbose("Not updating music mode windowFrame or constraints - no changes needed")
     }

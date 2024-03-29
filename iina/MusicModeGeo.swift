@@ -49,9 +49,9 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                              videoAspect: videoAspect ?? self.videoAspect)
   }
 
-  func toWinGeometry() -> WinGeometry {
+  func toPWGeometry() -> PWGeometry {
     let outsideBottomBarHeight = Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? playlistHeight : 0)
-    return WinGeometry(windowFrame: windowFrame,
+    return PWGeometry(windowFrame: windowFrame,
                            screenID: screenID,
                            fitOption: .keepInVisibleScreen,
                            mode: .musicMode,
@@ -96,7 +96,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return WinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+    return PWGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
   func withVideoViewVisible(_ visible: Bool) -> MusicModeGeometry {
@@ -119,7 +119,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
   /// height-bounded instead of width-bounded.
   func refit() -> MusicModeGeometry {
-    let containerFrame = WinGeometry.getContainerFrame(forScreenID: screenID, fitOption: .keepInVisibleScreen)!
+    let containerFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: .keepInVisibleScreen)!
 
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
@@ -181,7 +181,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     Logger.log("Scaling MusicMode video to desiredSize: \(newVideoSize)", level: .verbose)
 
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect = WinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .keepInVisibleScreen)!
+    let containerFrame: NSRect = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .keepInVisibleScreen)!
 
     // Window height should not change. Only video size should be scaled
     let windowHeight = min(containerFrame.height, windowFrame.height)

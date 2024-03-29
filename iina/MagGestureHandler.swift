@@ -65,7 +65,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   private func changeWindowSize(recognizer: NSMagnificationGestureRecognizer) {
     guard !windowController.isFullScreen else { return }
 
-    var finalGeometry: WinGeometry? = nil
+    var finalGeometry: PWGeometry? = nil
     // adjust window size
     switch recognizer.state {
     case .began:
@@ -109,7 +109,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   @discardableResult
-  private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> WinGeometry? {
+  private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> PWGeometry? {
     // avoid zero and negative numbers because they will cause problems
     let scale = max(0.0001, magnification + 1.0)
     windowController.log.verbose("Scaling pinched video, target scale: \(scale)")
@@ -120,7 +120,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     if currentLayout.isMusicMode {
       windowController.miniPlayer.loadIfNeeded()
 
-      let originalGeometry = windowController.musicModeGeo.toWinGeometry()
+      let originalGeometry = windowController.musicModeGeo.toPWGeometry()
 
       if windowController.miniPlayer.isPlaylistVisible {
         guard windowController.miniPlayer.isVideoVisible else {
@@ -135,8 +135,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           /// Important: use `animate: false` so that window controller callbacks are not triggered
           newMusicModeGeometry = windowController.applyMusicModeGeometry(newMusicModeGeometry, animate: false, updateCache: false)
         }
-        // Kind of clunky to convert to WinGeometry, just to fit the function signature, then convert it back. But...could be worse.
-        return newMusicModeGeometry.toWinGeometry()
+        // Kind of clunky to convert to PWGeometry, just to fit the function signature, then convert it back. But...could be worse.
+        return newMusicModeGeometry.toPWGeometry()
       } else {
         // Scaling music mode without playlist (only fixed-height controller)
         let newViewportSize = originalGeometry.viewportSize.multiplyThenRound(scale)

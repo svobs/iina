@@ -1,5 +1,5 @@
 //
-//  WinGeometry.swift
+//  PWGeometry.swift
 //  iina
 //
 //  Created by Matt Svoboda on 7/11/23.
@@ -65,7 +65,7 @@ enum ScreenFitOption: Int {
 }
 
 /**
-`WinGeometry`
+`PWGeometry`
  Data structure which describes the basic layout configuration of a player window (`PlayerWindowController`).
 
  For `let wc = PlayerWindowController()`, an instance of this class describes:
@@ -86,7 +86,7 @@ enum ScreenFitOption: Int {
 
  Below is an example of a player window with letterboxed video, where the viewport is taller than `videoView`.
  • Identifiers beginning with `wc.` refer to fields in the `PlayerWindowController` instance.
- • Identifiers beginning with `geo.` are `WinGeometry` fields.
+ • Identifiers beginning with `geo.` are `PWGeometry` fields.
  • The window's frame (`windowFrame`) is the outermost rectangle.
  • The frame of `wc.videoView` is the innermost dotted-lined rectangle.
  • The frame of `wc.viewportView` contains `wc.videoView` and additional space for black bars.
@@ -115,7 +115,7 @@ enum ScreenFitOption: Int {
  │                                ▼   (of `wc.bottomBarView`)                  │
  └─────────────────────────────────────────────────────────────────────────────┘
  */
-struct WinGeometry: Equatable, CustomStringConvertible {
+struct PWGeometry: Equatable, CustomStringConvertible {
   // MARK: - Stored properties
 
   // The ID of the screen on which this window is displayed
@@ -182,14 +182,14 @@ struct WinGeometry: Equatable, CustomStringConvertible {
 
     self.videoAspect = videoAspect
 
-    let viewportSize = WinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth, outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth)
-    let videoSize = WinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, margins: viewportMargins, mode: mode)
+    let viewportSize = PWGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth, outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth)
+    let videoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, margins: viewportMargins, mode: mode)
     self.videoSize = videoSize
     if let viewportMargins {
       self.viewportMargins = viewportMargins
     } else {
       let insideBars = BoxQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
-      self.viewportMargins = WinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
+      self.viewportMargins = PWGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
     }
 
     assert(insideLeadingBarWidth >= 0, "Expected insideLeadingBarWidth >= 0, found \(insideLeadingBarWidth)")
@@ -210,7 +210,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                             insideTopBarHeight: CGFloat, insideTrailingBarWidth: CGFloat,
                             insideBottomBarHeight: CGFloat, insideLeadingBarWidth: CGFloat,
                             videoAspect: CGFloat,
-                            allowVideoToOverlapCameraHousing: Bool) -> WinGeometry {
+                            allowVideoToOverlapCameraHousing: Bool) -> PWGeometry {
 
     let windowFrame = fullScreenWindowFrame(in: screen, legacy: legacy)
     let fitOption: ScreenFitOption
@@ -223,7 +223,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
       fitOption = .nativeFullScreen
     }
 
-    return WinGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
+    return PWGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
                            mode: mode, topMarginHeight: topMarginHeight,
                            outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
                            outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
@@ -239,9 +239,9 @@ struct WinGeometry: Equatable, CustomStringConvertible {
              insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
              insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
              viewportMargins: BoxQuad? = nil,
-             videoAspect: CGFloat? = nil) -> WinGeometry {
+             videoAspect: CGFloat? = nil) -> PWGeometry {
 
-    return WinGeometry(windowFrame: windowFrame ?? self.windowFrame,
+    return PWGeometry(windowFrame: windowFrame ?? self.windowFrame,
                            screenID: screenID ?? self.screenID,
                            fitOption: fitOption ?? self.fitOption,
                            mode: mode ?? self.mode,
@@ -269,7 +269,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "WinGeometry (screenID: \(screenID.quoted), mode: \(mode), fit: \(fitOption), topMargin: \(topMarginHeight), outsideBars: \(outsideBars), insideBars: \(insideBars), viewportMargins: \(viewportMargins), videoAspect: \(videoAspect), videoSize: \(videoSize) windowFrame: \(windowFrame))"
+    return "PWGeometry (screenID: \(screenID.quoted), mode: \(mode), fit: \(fitOption), topMargin: \(topMarginHeight), outsideBars: \(outsideBars), insideBars: \(insideBars), viewportMargins: \(viewportMargins), videoAspect: \(videoAspect), videoSize: \(videoSize) windowFrame: \(windowFrame))"
   }
 
   /// Calculated from `windowFrame`.
@@ -329,7 +329,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   private static func minVideoWidth(forMode mode: PlayerWindowMode) -> CGFloat {
     switch mode {
     case .windowedInteractive, .fullScreenInteractive:
-      return Constants.InteractiveMode.minWindowWidth - WinGeometry.minViewportMargins(forMode: mode).totalWidth
+      return Constants.InteractiveMode.minWindowWidth - PWGeometry.minViewportMargins(forMode: mode).totalWidth
     case .musicMode:
       return Constants.Distance.MusicMode.minWindowWidth
     default:
@@ -362,13 +362,13 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   // This also accounts for space needed by inside sidebars, if any
   func minViewportWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
     let mode = mode ?? self.mode
-    return max(WinGeometry.minVideoWidth(forMode: mode) + WinGeometry.minViewportMargins(forMode: mode).totalWidth,
+    return max(PWGeometry.minVideoWidth(forMode: mode) + PWGeometry.minViewportMargins(forMode: mode).totalWidth,
                insideLeadingBarWidth + insideTrailingBarWidth + Constants.Sidebar.minSpaceBetweenInsideSidebars)
   }
 
   func minViewportHeight(mode: PlayerWindowMode? = nil) -> CGFloat {
     let mode = mode ?? self.mode
-    return WinGeometry.minVideoHeight(forMode: mode) + WinGeometry.minViewportMargins(forMode: mode).totalHeight
+    return PWGeometry.minVideoHeight(forMode: mode) + PWGeometry.minViewportMargins(forMode: mode).totalHeight
   }
 
   func minWindowWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
@@ -568,7 +568,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Instance Functions
 
   private func getContainerFrame(fitOption: ScreenFitOption? = nil) -> NSRect? {
-    return WinGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption ?? self.fitOption)
+    return PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption ?? self.fitOption)
   }
 
   fileprivate func computeMaxViewportSize(in containerSize: NSSize) -> NSSize {
@@ -581,7 +581,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   // Computes & returns the max video size with proper aspect ratio which can fit in the given container, after subtracting outside bars
   fileprivate func computeMaxVideoSize(in containerSize: NSSize) -> NSSize {
     let maxViewportSize = computeMaxViewportSize(in: containerSize)
-    return WinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: maxViewportSize, mode: mode)
+    return PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: maxViewportSize, mode: mode)
   }
 
   private func adjustWindowOrigin(forNewWindowSize newWindowSize: NSSize) -> NSPoint {
@@ -592,18 +592,18 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                    y: round(windowFrame.origin.y - deltaY))
   }
 
-  func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> WinGeometry {
+  func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWGeometry {
     return scaleViewport(fitOption: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return WinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+    return PWGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
-  /// Computes a new `WinGeometry`, attempting to attain the given window size.
+  /// Computes a new `PWGeometry`, attempting to attain the given window size.
   func scaleWindow(to desiredWindowSize: NSSize? = nil,
                    screenID: String? = nil,
-                   fitOption: ScreenFitOption? = nil) -> WinGeometry {
+                   fitOption: ScreenFitOption? = nil) -> PWGeometry {
     let requestedViewportSize: NSSize?
     if let desiredWindowSize = desiredWindowSize {
       let outsideBarsTotalSize = outsideBarsTotalSize
@@ -615,20 +615,20 @@ struct WinGeometry: Equatable, CustomStringConvertible {
     return scaleViewport(to: requestedViewportSize, screenID: screenID, fitOption: fitOption)
   }
 
-  /// Computes a new `WinGeometry` from this one:
+  /// Computes a new `PWGeometry` from this one:
   /// • If `desiredSize` is given, the `windowFrame` will be shrunk or grown as needed, as will the `videoSize` which will
   /// be resized to fit in the new `viewportSize` based on `videoAspect`.
-  /// • If `mode` is provided, it will be applied to the resulting `WinGeometry`.
+  /// • If `mode` is provided, it will be applied to the resulting `PWGeometry`.
   /// • If (1) `lockViewportToVideoSize` is specified, its value will be used (this should only be specified in rare cases).
   /// Otherwise (2) if `mode.alwaysLockViewportToVideoSize==true`, then `viewportSize` will be shrunk to the same size as `videoSize`,
   /// and `windowFrame` will be resized accordingly; otherwise, (3) `Preference.bool(for: .lockViewportToVideoSize)` will be used.
-  /// • If `screenID` is provided, it will be associated with the resulting `WinGeometry`; otherwise `self.screenID` will be used.
-  /// • If `fitOption` is provided, it will be applied to the resulting `WinGeometry`; otherwise `self.fitOption` will be used.
+  /// • If `screenID` is provided, it will be associated with the resulting `PWGeometry`; otherwise `self.screenID` will be used.
+  /// • If `fitOption` is provided, it will be applied to the resulting `PWGeometry`; otherwise `self.fitOption` will be used.
   func scaleViewport(to desiredSize: NSSize? = nil,
                      screenID: String? = nil,
                      fitOption: ScreenFitOption? = nil,
                      lockViewportToVideoSize: Bool? = nil,
-                     mode: PlayerWindowMode? = nil) -> WinGeometry {
+                     mode: PlayerWindowMode? = nil) -> PWGeometry {
 
     // -- First, set up needed variables
 
@@ -638,7 +638,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
     let newFitOption = fitOption ?? (self.fitOption == .centerInVisibleScreen ? .keepInVisibleScreen : self.fitOption)
     let outsideBarsSize = self.outsideBarsTotalSize
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect? = WinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
+    let containerFrame: NSRect? = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
     let maxViewportSize: NSSize?
     if let containerFrame {
       maxViewportSize = computeMaxViewportSize(in: containerFrame.size)
@@ -655,7 +655,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
 
     /// Make sure viewport size is at least as large as min.
     /// This is especially important when inside sidebars are taking up most of the space & `lockViewportToVideoSize` is `true`.
-    let minVideoSize = WinGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
+    let minVideoSize = PWGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
     newViewportSize = NSSize(width: max(minVideoSize.width, newViewportSize.width),
                              height: max(minVideoSize.height, newViewportSize.height))
 
@@ -668,9 +668,9 @@ struct WinGeometry: Equatable, CustomStringConvertible {
       }
 
       /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
-      let newVideoSize = WinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: newViewportSize, mode: mode)
+      let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: newViewportSize, mode: mode)
       /// Remember that interactive mode has fixed nonzero viewport margins, despite `lockViewportToVideoSize==true`
-      let minViewportMargins = WinGeometry.minViewportMargins(forMode: mode)
+      let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
       newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
                                height: newVideoSize.height + minViewportMargins.totalHeight)
     }
@@ -713,7 +713,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                   screenID: String? = nil,
                   fitOption: ScreenFitOption? = nil,
                   lockViewportToVideoSize: Bool? = nil,
-                  mode: PlayerWindowMode? = nil) -> WinGeometry {
+                  mode: PlayerWindowMode? = nil) -> PWGeometry {
 
     let mode = mode ?? self.mode
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
@@ -729,11 +729,11 @@ struct WinGeometry: Equatable, CustomStringConvertible {
       newFitOption = .noConstraints
     }
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect? = WinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
+    let containerFrame: NSRect? = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
 
     var newVideoSize = desiredVideoSize
 
-    let minVideoSize = WinGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
+    let minVideoSize = PWGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
     let newWidth = max(minVideoSize.width, desiredVideoSize.width)
     /// Enforce `videoView` aspectRatio: Recalculate height using width
     newVideoSize = NSSize(width: newWidth, height: round(newWidth / videoAspect))
@@ -749,7 +749,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
       }
     }
 
-    let minViewportMargins = WinGeometry.minViewportMargins(forMode: mode)
+    let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
     let newViewportSize: NSSize
     if lockViewportToVideoSize {
       /// Use `videoSize` for `desiredViewportSize`:
@@ -770,7 +770,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
 
   // Resizes the window appropriately
   func withResizedOutsideBars(newOutsideTopBarHeight: CGFloat? = nil, newOutsideTrailingBarWidth: CGFloat? = nil,
-                              newOutsideBottomBarHeight: CGFloat? = nil, newOutsideLeadingBarWidth: CGFloat? = nil) -> WinGeometry {
+                              newOutsideBottomBarHeight: CGFloat? = nil, newOutsideLeadingBarWidth: CGFloat? = nil) -> PWGeometry {
     assert((newOutsideTopBarHeight ?? 0) >= 0)
     assert((newOutsideTrailingBarWidth ?? 0) >= 0)
     assert((newOutsideBottomBarHeight ?? 0) >= 0)
@@ -813,7 +813,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                        outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
                        insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
                        insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
-                       videoAspect: CGFloat? = nil) -> WinGeometry {
+                       videoAspect: CGFloat? = nil) -> PWGeometry {
 
     // Inside bars
     var newGeo = clone(fitOption: fitOption,
@@ -831,7 +831,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   }
 
   /** Calculate the window frame from a parsed struct of mpv's `geometry` option. */
-  func apply(mpvGeometry: MPVGeometryDef, desiredWindowSize: NSSize) -> WinGeometry {
+  func apply(mpvGeometry: MPVGeometryDef, desiredWindowSize: NSSize) -> PWGeometry {
     guard let screenFrame: NSRect = getContainerFrame() else {
       Logger.log("Cannot apply mpv geometry: no container frame found (fitOption: \(fitOption))", level: .error)
       return self
@@ -966,7 +966,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   // MARK: Interactive mode
 
   // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes
-  func toInteractiveMode() -> WinGeometry {
+  func toInteractiveMode() -> PWGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowed)
     let newMode = PlayerWindowMode.windowedInteractive
@@ -977,11 +977,11 @@ struct WinGeometry: Equatable, CustomStringConvertible {
                                         newOutsideLeadingBarWidth: 0)
 
     // Desired viewport is current one but shrunk with fixed margin around video
-    var newVideoSize = WinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, mode: newMode)
+    var newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, mode: newMode)
     let viewportMargins = Constants.InteractiveMode.viewportMargins
 
     // Enforce min width for interactive mode window
-    let minVideoWidth = WinGeometry.minVideoWidth(forMode: newMode)
+    let minVideoWidth = PWGeometry.minVideoWidth(forMode: newMode)
     if newVideoSize.width < minVideoWidth {
       newVideoSize = NSSize(width: minVideoWidth, height: round(minVideoWidth / videoAspect))
     }
@@ -998,7 +998,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
   /// This func assumes that the currently displayed video (`videoSize`) is uncropped. Returns a new geometry which expanding the margins
   /// while collapsing the viewable video down to the cropped portion. The window size does not change.
-  func cropVideo(from videoSizeOrig: NSSize, to cropBox: NSRect) -> WinGeometry {
+  func cropVideo(from videoSizeOrig: NSSize, to cropBox: NSRect) -> PWGeometry {
     // First scale the cropBox to the current window scale
     let scaleRatio = videoSize.width / videoSizeOrig.width
     let cropBoxInWinCoords = NSRect(x: round(cropBox.origin.x * scaleRatio),
@@ -1031,7 +1031,7 @@ struct WinGeometry: Equatable, CustomStringConvertible {
   }
 
   // FIXME: this messes up the window X position
-  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect, videoScale: CGFloat) -> WinGeometry {
+  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect, videoScale: CGFloat) -> PWGeometry {
     let cropBoxScaled = NSRect(x: cropBox.origin.x * videoScale,
                                y: cropBox.origin.y * videoScale,
                                width: cropBox.width * videoScale,

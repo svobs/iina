@@ -1085,7 +1085,7 @@ class PlayerCore: NSObject {
     return nil
   }
 
-  func updateMPVWindowScale(using windowGeo: WinGeometry) {
+  func updateMPVWindowScale(using windowGeo: PWGeometry) {
     mpv.queue.async { [self] in
       guard let actualVideoScale = deriveVideoScale(from: windowGeo) else {
         log.verbose("Skipping update to mpv window-scale: could not get size info")
@@ -1106,7 +1106,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func deriveVideoScale(from windowGeometry: WinGeometry) -> CGFloat? {
+  private func deriveVideoScale(from windowGeometry: PWGeometry) -> CGFloat? {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     
     let videoWidthScaled = windowGeometry.videoSize.width

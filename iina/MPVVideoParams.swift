@@ -19,7 +19,7 @@ import Foundation
 ///           ➤ apply `totalRotation`
 ///             ➤ `videoSizeACR` (`videoWidthACR`, `videoHeightACR`)
 ///               ➤ apply `videoScale`
-///                 ➤ `videoSize` (`WinGeometry`)
+///                 ➤ `videoSize` (`PWGeometry`)
 struct MPVVideoParams: CustomStringConvertible {
   static let nullParams = MPVVideoParams(videoRawWidth: 0, videoRawHeight: 0, 
                                          selectedAspectRatioLabel: "",

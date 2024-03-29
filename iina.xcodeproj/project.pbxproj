@@ -180,20 +180,20 @@
 		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
-		D191EE152ACE763A00FEF801 /* PWLayoutTransitionSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWLayoutTransitionSteps.swift */; };
+		D191EE152ACE763A00FEF801 /* PWLayoutTransSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
-		D19CF7162AB846D300511F80 /* MusicModeGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeometry.swift */; };
+		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
-		D1A44D8A2A5E18D00089B283 /* WinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* WinGeometry.swift */; };
+		D1A44D8A2A5E18D00089B283 /* PWGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWGeometry.swift */; };
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
-		D1A8878C29D16452000D1AE4 /* RotationGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotationGestureHandler.swift */; };
-		D1A8878E29D1696C000D1AE4 /* PWSidebars.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebars.swift */; };
+		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
+		D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */; };
 		D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD32592ACC078600F86EE8 /* LayoutState.swift */; };
 		D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */; };
-		D1AE04CE2A9317CD00F58860 /* PWLayoutTransitionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWLayoutTransitionFactory.swift */; };
+		D1AE04CE2A9317CD00F58860 /* PWLayoutTransBldr.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
-		D1B492E62AA0BB9A00212E9C /* MagnificationGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagnificationGestureHandler.swift */; };
+		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PlayerWindowPreviewImageBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PlayerWindowPreviewImageBuilder.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
 		D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */; };
@@ -209,7 +209,7 @@
 		D1E1446C29E3971C005DCEA3 /* IINAAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
-		D1F64E902B2A655C0030E07E /* PWResizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWResizing.swift */; };
+		D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
@@ -1571,20 +1571,20 @@
 		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
-		D191EE142ACE763A00FEF801 /* PWLayoutTransitionSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransitionSteps.swift; sourceTree = "<group>"; };
+		D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransSteps.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
-		D19CF7152AB846D300511F80 /* MusicModeGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeometry.swift; sourceTree = "<group>"; };
+		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
-		D1A44D892A5E18D00089B283 /* WinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinGeometry.swift; sourceTree = "<group>"; };
+		D1A44D892A5E18D00089B283 /* PWGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWGeometry.swift; sourceTree = "<group>"; };
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
-		D1A8878B29D16452000D1AE4 /* RotationGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotationGestureHandler.swift; sourceTree = "<group>"; };
-		D1A8878D29D1696C000D1AE4 /* PWSidebars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebars.swift; sourceTree = "<group>"; };
+		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
+		D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebarExt.swift; sourceTree = "<group>"; };
 		D1AD32592ACC078600F86EE8 /* LayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutState.swift; sourceTree = "<group>"; };
 		D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutTransition.swift; sourceTree = "<group>"; };
-		D1AE04CD2A9317CD00F58860 /* PWLayoutTransitionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransitionFactory.swift; sourceTree = "<group>"; };
+		D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransBldr.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
-		D1B492E52AA0BB9A00212E9C /* MagnificationGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagnificationGestureHandler.swift; sourceTree = "<group>"; };
+		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PlayerWindowPreviewImageBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerWindowPreviewImageBuilder.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
 		D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVHookValue.swift; sourceTree = "<group>"; };
@@ -1600,7 +1600,7 @@
 		D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IINAAnimation.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
-		D1F64E8F2B2A655C0030E07E /* PWResizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWResizing.swift; sourceTree = "<group>"; };
+		D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWResizeExt.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
 		D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfig.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
@@ -2588,16 +2588,16 @@
 				E38BD4AE20054BD9007635FC /* PlayerWindow.swift */,
 				84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */,
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
-				D1F64E8F2B2A655C0030E07E /* PWResizing.swift */,
-				D1A8878D29D1696C000D1AE4 /* PWSidebars.swift */,
-				D1AE04CD2A9317CD00F58860 /* PWLayoutTransitionFactory.swift */,
-				D191EE142ACE763A00FEF801 /* PWLayoutTransitionSteps.swift */,
+				D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */,
+				D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */,
+				D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */,
+				D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
-				D1A44D892A5E18D00089B283 /* WinGeometry.swift */,
-				D19CF7152AB846D300511F80 /* MusicModeGeometry.swift */,
-				D1B492E52AA0BB9A00212E9C /* MagnificationGestureHandler.swift */,
-				D1A8878B29D16452000D1AE4 /* RotationGestureHandler.swift */,
+				D1A44D892A5E18D00089B283 /* PWGeometry.swift */,
+				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
+				D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */,
+				D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */,
 				84A09A0C1F2DF596000FF343 /* MiniPlayerController.swift */,
 				8F49C370213EFB7E0076C4F9 /* MiniPlayerController.xib */,
 				8466BE161D5CDD0300039D03 /* QuickSettingViewController.swift */,
@@ -3022,7 +3022,7 @@
 				E337D5E22411B64A00B5729A /* JavascriptPolyfill.swift in Sources */,
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
 				8400D5C41E17C6D2006785F5 /* AboutWindowController.swift in Sources */,
-				D1A8878E29D1696C000D1AE4 /* PWSidebars.swift in Sources */,
+				D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */,
 				D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */,
 				84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */,
 				E3CB258B2222885E00A62C47 /* JavascriptAPIOverlay.swift in Sources */,
@@ -3032,7 +3032,7 @@
 				E3CAD4AF2146DB47000B373A /* JavascriptAPI.swift in Sources */,
 				D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */,
 				E3958565253133E80096811F /* SidebarTabView.swift in Sources */,
-				D1B492E62AA0BB9A00212E9C /* MagnificationGestureHandler.swift in Sources */,
+				D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */,
 				E3C12F6B201F281F00297964 /* FirstRunManager.swift in Sources */,
 				84EB1F071D2F5E76004FA5A1 /* Utility.swift in Sources */,
 				84D0FB7E1F5E519300C6A6A7 /* FreeSelectingViewController.swift in Sources */,
@@ -3067,7 +3067,7 @@
 				E3785B092A83380E00787CB7 /* WebSocketServer.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
 				E3F698872120D878005792C9 /* ExtendedColors.swift in Sources */,
-				D191EE152ACE763A00FEF801 /* PWLayoutTransitionSteps.swift in Sources */,
+				D191EE152ACE763A00FEF801 /* PWLayoutTransSteps.swift in Sources */,
 				D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */,
 				E3839C5924FFF817007D0AB4 /* JavascriptAPIStandaloneWindow.swift in Sources */,
 				E3366AFA224A039500EF3C32 /* JavascriptAPIPreferences.swift in Sources */,
@@ -3098,7 +3098,7 @@
 				84EB1EDA1D2F51D3004FA5A1 /* AppDelegate.swift in Sources */,
 				E353070521496CE4008FE492 /* PrefPluginViewController.swift in Sources */,
 				D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */,
-				D19CF7162AB846D300511F80 /* MusicModeGeometry.swift in Sources */,
+				D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */,
 				840820111ECF6C1800361416 /* FileGroup.swift in Sources */,
 				E374160C20F138A900B4F7F9 /* CollapseView.swift in Sources */,
 				D1D4C7442B10B7D2003B09C2 /* ViewportView.swift in Sources */,
@@ -3110,12 +3110,12 @@
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
 				E38B3213214FB9EA000F6D27 /* PrefPluginPermissionView.swift in Sources */,
-				D1AE04CE2A9317CD00F58860 /* PWLayoutTransitionFactory.swift in Sources */,
+				D1AE04CE2A9317CD00F58860 /* PWLayoutTransBldr.swift in Sources */,
 				51E63DFD29CFB04C008AFC20 /* PlaySliderLoopKnob.swift in Sources */,
 				847644081D48B413004F6DF5 /* MPVOption.swift in Sources */,
 				D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */,
 				84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */,
-				D1F64E902B2A655C0030E07E /* PWResizing.swift in Sources */,
+				D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */,
 				84A886F31E26CA24008755BB /* Regex.swift in Sources */,
 				D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */,
 				8487BEC31D76A1AF00FD17B0 /* MenuController.swift in Sources */,
@@ -3144,7 +3144,7 @@
 				E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */,
 				D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */,
 				E3BA79EE2131443A00529D99 /* OpenURLWindowController.swift in Sources */,
-				D1A44D8A2A5E18D00089B283 /* WinGeometry.swift in Sources */,
+				D1A44D8A2A5E18D00089B283 /* PWGeometry.swift in Sources */,
 				E3FF5AC02938582F0019CE45 /* JavascriptDevTool.swift in Sources */,
 				84FBCB381EEACDDD0076C77C /* FFmpegController.m in Sources */,
 				84879A981E0FFC7E0004F894 /* PrefUIViewController.swift in Sources */,
@@ -3202,7 +3202,7 @@
 				845FB0C71D39462E00C011E0 /* FloatingControlBarView.swift in Sources */,
 				D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */,
 				D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */,
-				D1A8878C29D16452000D1AE4 /* RotationGestureHandler.swift in Sources */,
+				D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */,
 				E3513AFB20F120F600F8C347 /* PreferenceViewController.swift in Sources */,
 				D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */,
 				E38BD4AF20054BD9007635FC /* PlayerWindow.swift in Sources */,
