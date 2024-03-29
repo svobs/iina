@@ -977,13 +977,19 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                         newOutsideLeadingBarWidth: 0)
 
     // Desired viewport is current one but shrunk with fixed margin around video
-    var newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, mode: newMode)
-    let viewportMargins = Constants.InteractiveMode.viewportMargins
+    let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, mode: newMode)
+    var viewportMargins = Constants.InteractiveMode.viewportMargins
 
     // Enforce min width for interactive mode window
     let minVideoWidth = PWGeometry.minVideoWidth(forMode: newMode)
-    if newVideoSize.width < minVideoWidth {
-      newVideoSize = NSSize(width: minVideoWidth, height: round(minVideoWidth / videoAspect))
+    let videoWidthShortage = minVideoWidth - newVideoSize.width
+    if videoWidthShortage > 0 {
+      let extraLeading = CGFloat(ceil(videoWidthShortage * 0.5))
+      let extraTrailing = CGFloat(floor(videoWidthShortage * 0.5))
+      viewportMargins = BoxQuad(top: viewportMargins.top,
+                                trailing: viewportMargins.trailing + extraTrailing,
+                                bottom: viewportMargins.bottom,
+                                leading: viewportMargins.leading + extraLeading)
     }
 
     let desiredViewportSize = NSSize(width: newVideoSize.width + viewportMargins.totalWidth,

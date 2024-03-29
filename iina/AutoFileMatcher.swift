@@ -9,6 +9,7 @@
 import Foundation
 
 fileprivate let subsystem = Logger.makeSubsystem("fmatcher")
+fileprivate let log = subsystem
 
 class AutoFileMatcher {
 
@@ -250,7 +251,7 @@ class AutoFileMatcher {
 
       // add subs that contains video name
       if subAutoLoadOption.shouldLoadSubsContainingVideoName() {
-        Logger.log("Matching subtitles containing video name...", level: .verbose, subsystem: subsystem)
+        log.verbose("Matching subtitles containing video name...")
         try subtitles.filter {
           $0.filename.contains(video.filename) && !$0.isMatched
         }.forEach { sub in
@@ -260,7 +261,7 @@ class AutoFileMatcher {
           sub.isMatched = true
           matchedSubs.insert(sub)
         }
-        Logger.log("Finished", level: .verbose, subsystem: subsystem)
+        log.verbose("Finished")
       }
 
       // if no match

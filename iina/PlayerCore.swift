@@ -280,7 +280,7 @@ class PlayerCore: NSObject {
       Logger.log("empty file path or url", level: .error, subsystem: subsystem)
       return
     }
-    Logger.log("Open URL: \(url.absoluteString.pii.quoted)", subsystem: subsystem)
+    Logger.log("Open URL: \(url.absoluteString.pii.quoted), autoload=\(shouldAutoLoad.yn)", subsystem: subsystem)
     if shouldAutoLoad {
       info.shouldAutoLoadFiles = true
     }
@@ -297,7 +297,7 @@ class PlayerCore: NSObject {
   @discardableResult
   func openURLs(_ urls: [URL], shouldAutoLoad autoLoad: Bool = true) -> Int? {
     guard !urls.isEmpty else { return 0 }
-    Logger.log("OpenURLs (autoLoad=\(autoLoad.yn)): \(urls.map{$0.absoluteString.pii})")
+    log.debug("OpenURLs (autoLoad=\(autoLoad.yn)): \(urls.map{$0.absoluteString.pii})")
     let urls = Utility.resolveURLs(urls)
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
@@ -316,6 +316,7 @@ class PlayerCore: NSObject {
     let playableFiles = getPlayableFiles(in: urls)
     let count = playableFiles.count
 
+    log.verbose("Found \(count) playable files for \(urls.count) requested URLs")
     // check playable files count
     if count == 0 {
       return 0
@@ -330,6 +331,7 @@ class PlayerCore: NSObject {
     // open the first file
     open(playableFiles[0])
 
+    log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles)")
     addToPlaylist(urls: playableFiles[1..<count])
     return count
   }
@@ -1982,7 +1984,7 @@ class PlayerCore: NSObject {
 
   // MARK: - Listeners
 
-  func resizeVideo(forPath path: String) {
+  func preResizeVideo(forPath path: String) {
     let url = path.contains("://") ?
     URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
     URL(fileURLWithPath: path)
@@ -2000,7 +2002,7 @@ class PlayerCore: NSObject {
                                      selectedCropLabel: prevParams.selectedCropLabel,
                                      videoScale: prevParams.videoScale)
 
-      log.verbose("Calling applyVidParams from resizeVideo with \(newParams)")
+      log.verbose("Calling applyVidParams from preResizeVideo with \(newParams)")
       assert(info.justOpenedFile)
       windowController.applyVidParams(newParams: newParams)
     } else {
@@ -2017,7 +2019,7 @@ class PlayerCore: NSObject {
     log.debug("File started")
     info.justOpenedFile = true
 
-    resizeVideo(forPath: path)
+    preResizeVideo(forPath: path)
 
     info.currentURL = path.contains("://") ?
     URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
@@ -2053,12 +2055,12 @@ class PlayerCore: NSObject {
     PlayerCore.backgroundQueue.async { [self] in
       // add files in same folder
       if shouldAutoLoadFiles {
-        Logger.log("Started auto load", subsystem: self.subsystem)
+        log.debug("Started auto load of files in current folder")
         self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
       }
       // auto load matched subtitles
       if let matchedSubs = self.info.getMatchedSubs(path) {
-        Logger.log("Found \(matchedSubs.count) subs for current file", subsystem: self.subsystem)
+        log.debug("Found \(matchedSubs.count) subs for current file")
         for sub in matchedSubs {
           guard currentTicket == self.backgroundQueueTicket else { return }
           self.loadExternalSubFile(sub)
@@ -2068,6 +2070,7 @@ class PlayerCore: NSObject {
         self.setTrack(1, forType: .sub)
       }
       self.autoSearchOnlineSub()
+      log.debug("Done with auto load")
     }
 
     let url = info.currentURL
