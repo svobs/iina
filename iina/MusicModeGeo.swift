@@ -9,7 +9,13 @@
 import Foundation
 
 /**
- `MusicModeGeometry`
+ `MusicModeGeometry`: like `PWGeometry`, but for music mode.
+ Because the music mode window reuses the existing player window, it:
+ • Uses the bottom bar for the playlist (or has height 0 if playlist is hidden).
+ • Cannot have sidebars or a top bar (they exist but are reduced to zero area).
+ • The viewport area is used to display video or album art, but can be turned off, in which case it is given a height of zero.
+
+ A `MusicModeGeometry` object can be converted to a `PWGeometry` via its `toPWGeometry()` function.
  */
 struct MusicModeGeometry: Equatable, CustomStringConvertible {
   let windowFrame: NSRect
@@ -49,6 +55,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                              videoAspect: videoAspect ?? self.videoAspect)
   }
 
+  /// Converts this `MusicModeGeometry` to an equivalent `PWGeometry` object.
   func toPWGeometry() -> PWGeometry {
     let outsideBottomBarHeight = Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? playlistHeight : 0)
     return PWGeometry(windowFrame: windowFrame,
