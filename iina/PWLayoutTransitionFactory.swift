@@ -439,7 +439,6 @@ extension PlayerWindowController {
           let resizedGeo = outputGeo.scaleViewport(to: resizedViewport, mode: outputLayout.mode)
           /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize` is false.
           /// 1 of 2 - See below
-          // TODO: maybe find a more elegant solution
           if resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
             // Window origin was changed to keep it on screen. OK to use this
             return resizedGeo

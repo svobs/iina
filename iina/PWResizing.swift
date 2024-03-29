@@ -54,10 +54,9 @@ extension PlayerWindowController {
 
     if isInInteractiveMode, let cropController = self.cropSettingsView, cropController.cropBoxView.didSubmit {
       /// Interactive mode after submit: finish crop submission and exit interactive mode
+      // The new crop (or removal of crop) will have already been set in the new params.
       cropController.cropBoxView.didSubmit = false
       let displayedUncroppedVideoSize = cropController.cropBoxView.actualSize
-      // The new crop (or removal of crop) will have already been set in the new params:
-      player.info.videoParams = videoParams
 
       log.verbose("[applyVidParams G] Looks like crop was submitted. Exiting interactive mode")
       exitInteractiveMode(cropVideoFrom: displayedUncroppedVideoSize, newVidParams: videoParams)
@@ -72,11 +71,8 @@ extension PlayerWindowController {
       log.verbose("[applyVidParams E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
       log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
 
-      player.info.videoParams = videoParams
-      // Update the cached objects even if not in windowed mode
-      windowedModeGeo = windowedModeGeo.clone(windowFrame: window!.frame).uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox, videoScale: videoParams.videoScale)
-
       if currentLayout.mode == .windowed {
+        windowedModeGeo = windowedModeGeo.clone(windowFrame: window!.frame)
         let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox, videoScale: videoParams.videoScale)
         applyWindowGeometry(uncroppedWindowedGeo)
       } else if currentLayout.mode != .fullScreen {

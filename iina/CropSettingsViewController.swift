@@ -121,9 +121,9 @@ class CropSettingsViewController: CropBoxViewController {
       player.log.verbose("User chose Done button from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
+      /// Set the filter. This will result in `applyVidParams` getting called, which will trigger an exit from interactive mode.
+      /// But that task can only happen once we return and relinquish the main queue.
       if player.addVideoFilter(newCropFilter) {
-        // FIXME: exit interactive mode and set new mpv video params
-        /// Set the filter and wait for mpv to respond with a `video-reconfig` before exiting interactive mode
         cropBoxView.didSubmit = true
       }
     }
@@ -135,7 +135,7 @@ class CropSettingsViewController: CropBoxViewController {
     let player = windowController.player
     if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
       /// Prev filter exists. Re-apply it
-      player.log.verbose("User chose Cancel button from interactive mode: restoring prev crop")
+      player.log.verbose("User chose Cancel button from interactive mode: restoring prev crop and exiting interactive mode")
       let cropBoxRect = prevCropFilter.cropRect(origVideoSize: cropBoxView.actualSize)
       /// Need to update these because they will be read when `video-reconfig` is received
       cropw = Int(cropBoxRect.width)
@@ -143,12 +143,10 @@ class CropSettingsViewController: CropBoxViewController {
       cropx = Int(cropBoxRect.origin.x)
       cropy = Int(cropBoxRect.origin.y)
 
-      /// Re-activate filter and wait for mpv to respond before exiting interactive mode
+      /// Re-activate filter. This will trigger an exit from interactive mode, but not until we return.
       if player.addVideoFilter(prevCropFilter) {
         // Remove filter from disabled list
         player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
-
-        // FIXME: exit interactive mode and set new mpv video params
         cropBoxView.didSubmit = true
       }
     } else {
