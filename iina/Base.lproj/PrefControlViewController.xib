@@ -429,9 +429,9 @@
                         <font key="font" metaFont="menu"/>
                         <menu key="menu" id="B7Y-mP-CKn">
                             <items>
-                                <menuItem title="Adjust window size" state="on" id="Ols-Lr-fiH"/>
+                                <menuItem title="Scale window" state="on" id="Ols-Lr-fiH"/>
                                 <menuItem title="Enter / exit full screen" tag="1" id="Hm3-dh-jgb"/>
-                                <menuItem title="Window size, then full screen" tag="3" id="Inx-8D-mxb"/>
+                                <menuItem title="Scale window, then toggle full screen" tag="3" id="Inx-8D-mxb"/>
                                 <menuItem title="Do nothing" tag="2" id="chS-d2-TG1"/>
                             </items>
                         </menu>

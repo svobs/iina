@@ -55,8 +55,8 @@
 /* Class = "NSMenuItem"; title = "Hide Controller"; ObjectID = "OOM-jo-N4V"; */
 "OOM-jo-N4V.title" = "Hide Controller";
 
-/* Class = "NSMenuItem"; title = "Adjust window size"; ObjectID = "Ols-Lr-fiH"; */
-"Ols-Lr-fiH.title" = "Adjust window size";
+/* Class = "NSMenuItem"; title = "Scale window"; ObjectID = "Ols-Lr-fiH"; */
+"Ols-Lr-fiH.title" = "Scale window";
 
 /* Class = "NSTextFieldCell"; title = "Single click to:"; ObjectID = "QhO-As-ZLL"; */
 "QhO-As-ZLL.title" = "Single click to:";

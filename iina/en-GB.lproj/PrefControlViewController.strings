@@ -55,8 +55,8 @@
 /* Class = "NSMenuItem"; title = "Hide OSC"; ObjectID = "OOM-jo-N4V"; */
 "OOM-jo-N4V.title" = "Hide OSC";
 
-/* Class = "NSMenuItem"; title = "Adjust window size"; ObjectID = "Ols-Lr-fiH"; */
-"Ols-Lr-fiH.title" = "Adjust window size";
+/* Class = "NSMenuItem"; title = "Scale window"; ObjectID = "Ols-Lr-fiH"; */
+"Ols-Lr-fiH.title" = "Scale window";
 
 /* Class = "NSTextFieldCell"; title = "Single click to:"; ObjectID = "QhO-As-ZLL"; */
 "QhO-As-ZLL.title" = "Single click to:";
@@ -85,8 +85,8 @@
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "guu-dK-YfL"; */
 "guu-dK-YfL.title" = "None";
 
-/* Class = "NSMenuItem"; title = "Toggle fullscreen"; ObjectID = "hDh-Lk-FJe"; */
-"hDh-Lk-FJe.title" = "Toggle fullscreen";
+/* Class = "NSMenuItem"; title = "Toggle full screen"; ObjectID = "hDh-Lk-FJe"; */
+"hDh-Lk-FJe.title" = "Toggle full screen";
 
 /* Class = "NSTextFieldCell"; title = "Scroll vertically to:"; ObjectID = "hNU-dJ-5Cj"; */
 "hNU-dJ-5Cj.title" = "Scroll vertically to:";
