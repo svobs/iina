@@ -12,26 +12,26 @@ import Foundation
 extension PlayerWindowController {
 
   /// Set window size when info available, or video size changed. Mostly called after receiving `video-reconfig` msg
-  func applyVidParams(newParams videoParams: MPVVideoParams) {
+  func applyVidParams(newParams: MPVVideoParams) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
 
-    guard videoParams.hasValidSize else { return }
+    guard newParams.hasValidSize else { return }
 
     let oldVideoParams = player.info.videoParams
     // Update cached values for use elsewhere:
-    player.info.videoParams = videoParams
+    player.info.videoParams = newParams
 
     // Get this in the mpv thread to avoid race condition
     let justOpenedFile = player.info.justOpenedFile
     let isRestoring = player.info.isRestoring
 
-    if videoParams.totalRotation != player.info.currentMediaThumbnails?.rotationDegrees {
+    if newParams.totalRotation != player.info.currentMediaThumbnails?.rotationDegrees {
       player.reloadThumbnails()
     }
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitZeroDuration({ [self] in
-        applyVidParams(newParams: videoParams, oldParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
+        applyVidParams(newParams: newParams, oldParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
       })
     }
   }
@@ -142,7 +142,7 @@ extension PlayerWindowController {
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
         log.verbose("[applyVidParams D-1a] Setting isInitialSizeDone=YES")
         isInitialSizeDone = true
-        duration = IINAAnimation.DefaultDuration
+        duration = IINAAnimation.InitialVideoReconfigDuration
       }
       /// Finally call `setFrame()`
       log.debug("[applyVidParams D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")

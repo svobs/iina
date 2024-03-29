@@ -1998,7 +1998,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
-    if !AppDelegate.shared.isTerminating {
+    /// Use `!player.info.justOpenedFile` to prevent saving if there was an error loading video
+    if !AppDelegate.shared.isTerminating && !player.info.justOpenedFile {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame)

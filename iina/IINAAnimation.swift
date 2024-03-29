@@ -21,6 +21,9 @@ class IINAAnimation {
   static var VideoReconfigDuration: CGFloat {
     return DefaultDuration * 0.5
   }
+  static var InitialVideoReconfigDuration: CGFloat {
+    return DefaultDuration * 2
+  }
   static var FullScreenTransitionDuration: CGFloat {
     return CGFloat(Preference.float(for: .animationDurationFullScreen))
   }
