@@ -485,7 +485,7 @@
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="xMC-EY-bOr">
                             <rect key="frame" x="-2" y="366" width="442" height="18"/>
-                            <buttonCell key="cell" type="check" title="Move window to keep it visible on screen when changing its layout" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BeX-Eq-sUG">
+                            <buttonCell key="cell" type="check" title="Move window to keep it on screen when its layout changes" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="BeX-Eq-sUG">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -1573,7 +1573,7 @@
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
                                 <rect key="frame" x="14" y="9" width="303" height="18"/>
-                                <buttonCell key="cell" type="check" title="Always hide when cursor is outside of window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
+                                <buttonCell key="cell" type="check" title="Hide when cursor is not in window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                     <connections>
