@@ -575,7 +575,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     // Resize only the video. Panels outside the video do not change size.
     // To do this, subtract the "outside" panels from the container frame
     return NSSize(width: containerSize.width - outsideBarsTotalWidth,
-                  height: containerSize.height - outsideBarsTotalHeight)
+                  height: containerSize.height - outsideBarsTotalHeight - topMarginHeight)
   }
 
   // Computes & returns the max video size with proper aspect ratio which can fit in the given container, after subtracting outside bars
@@ -856,7 +856,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       let outputGeo = resizedBarsGeo.refit()
 
       let ΔOutsideWidth = outputGeo.outsideBarsTotalWidth - outsideBarsTotalWidth
-      let ΔOutsideHeight = outputGeo.outsideBarsTotalHeight - outsideBarsTotalHeight
+      let ΔOutsideHeight = (outputGeo.outsideBarsTotalHeight + outputGeo.topMarginHeight) - (outsideBarsTotalHeight + topMarginHeight)
 
       if let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: outputGeo.fitOption) {
         // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
@@ -880,7 +880,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
         // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
         if ΔOutsideHeight != 0, windowFrame.height == screenFrame.height {
-          let newViewportHeight = screenFrame.height - outputGeo.outsideBarsTotalHeight
+          let newViewportHeight = screenFrame.height - (outputGeo.outsideBarsTotalHeight + outputGeo.topMarginHeight)
           let heightRatio = newViewportHeight / viewportSize.height
           let widthFillsScreen = windowFrame.width == screenFrame.width
           let newViewportWidth = widthFillsScreen ? viewportSize.width : round(viewportSize.width * heightRatio)
@@ -940,7 +940,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       // Calculate height based on width and aspect
       let newViewportWidth = newWindowSize.width - outsideBarsTotalWidth
       let newViewportHeight = round(newViewportWidth / videoAspect)
-      newWindowSize.height = newViewportHeight + outsideBarsTotalHeight
+      newWindowSize.height = newViewportHeight + (outsideBarsTotalHeight + topMarginHeight)
 
       var mustRecomputeWidth = false
       if newWindowSize.height > maxWindowSize.height {
@@ -953,13 +953,13 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       }
       if mustRecomputeWidth {
         // Recalculate width based on height and aspect
-        let newViewportHeight = newWindowSize.height - outsideBarsTotalHeight
+        let newViewportHeight = newWindowSize.height - (outsideBarsTotalHeight + topMarginHeight)
         let newViewportWidth = round(newViewportHeight * videoAspect)
         newWindowSize.width = newViewportWidth + outsideBarsTotalWidth
       }
     } else if !isWidthSet && isHeightSet {
       // Calculate width based on height and aspect
-      let newViewportHeight = newWindowSize.height - outsideBarsTotalHeight
+      let newViewportHeight = newWindowSize.height - (outsideBarsTotalHeight + topMarginHeight)
       let newViewportWidth = round(newViewportHeight * videoAspect)
       newWindowSize.width = newViewportWidth + outsideBarsTotalWidth
 
@@ -976,7 +976,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
         // Recalculate height based on width and aspect
         let newViewportWidth = newWindowSize.width - outsideBarsTotalWidth
         let newViewportHeight = round(newViewportWidth / videoAspect)
-        newWindowSize.height = newViewportHeight + outsideBarsTotalHeight
+        newWindowSize.height = newViewportHeight + (outsideBarsTotalHeight + topMarginHeight)
       }
     }
 

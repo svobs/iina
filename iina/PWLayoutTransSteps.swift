@@ -1342,6 +1342,7 @@ extension PlayerWindowController {
   /// `videoRect` should be `videoView.frame`
   func addOrReplaceCropBoxSelection(origVideoSize: NSSize, videoViewSize: NSSize) {
     guard let cropController = self.cropSettingsView else { return }
+    log.error("VIDEO VIEW SIZE: \(videoView.frame.size)")
 
     if !videoView.subviews.contains(cropController.cropBoxView) {
       videoView.addSubview(cropController.cropBoxView)

@@ -2018,6 +2018,16 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // and turn off auto-hide only after all have exited legacy full screen.
     if legacyFullScreen {
       if PlayerWindowController.playersInLegacyFullScreen.isEmpty {
+        guard !NSApp.presentationOptions.contains(.fullScreen) else {
+          log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
+          return
+        }
+        // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
+        // Fall back to checking this one
+        guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
+          log.error("Cannot add presentation options for legacy full screen: option .hideMenuBar already present! Will try to avoid crashing")
+          return
+        }
         NSApp.presentationOptions.insert(.autoHideMenuBar)
         NSApp.presentationOptions.insert(.autoHideDock)
       }

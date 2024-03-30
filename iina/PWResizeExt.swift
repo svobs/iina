@@ -489,7 +489,7 @@ extension PlayerWindowController {
     }
 
     let requestedViewportSize = NSSize(width: requestedSize.width - currentGeometry.outsideBarsTotalWidth,
-                                       height: requestedSize.height - currentGeometry.outsideBarsTotalHeight)
+                                       height: requestedSize.height - currentGeometry.outsideBarsTotalHeight - currentGeometry.topMarginHeight)
 
     // Option A: resize height based on requested width
     let resizeFromWidthRequestedViewportSize = NSSize(width: requestedViewportSize.width,
