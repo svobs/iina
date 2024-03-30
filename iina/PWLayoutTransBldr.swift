@@ -462,7 +462,7 @@ extension PlayerWindowController {
       if transition.isEnteringInteractiveMode {
         return resizedGeo.scaleViewport(to: resizedGeo.videoSize)
       } else if transition.isExitingInteractiveMode {
-        return resizedGeo.scaleViewport()
+        return resizedGeo.scaleViewport(lockViewportToVideoSize: true)
       }
     }
 

@@ -655,9 +655,11 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
     /// Make sure viewport size is at least as large as min.
     /// This is especially important when inside sidebars are taking up most of the space & `lockViewportToVideoSize` is `true`.
+    /// Take min viewport margins into acocunt
     let minVideoSize = PWGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
-    newViewportSize = NSSize(width: max(minVideoSize.width, newViewportSize.width),
-                             height: max(minVideoSize.height, newViewportSize.height))
+    let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
+    newViewportSize = NSSize(width: max(newViewportSize.width, minVideoSize.width + minViewportMargins.totalWidth),
+                             height: max(newViewportSize.height, minVideoSize.height + minViewportMargins.totalHeight))
 
     if lockViewportToVideoSize {
       if let maxViewportSize {
@@ -669,10 +671,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
       /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
       let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: newViewportSize, mode: mode)
-      /// Remember that interactive mode has fixed nonzero viewport margins, despite `lockViewportToVideoSize==true`
-      let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
-      newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
-                               height: newVideoSize.height + minViewportMargins.totalHeight)
+      newViewportSize = newVideoSize
     }
 
     let minViewportWidth = minViewportWidth(mode: mode)

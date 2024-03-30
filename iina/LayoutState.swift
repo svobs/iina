@@ -17,9 +17,9 @@ enum PlayerWindowMode: Int {
 
   var alwaysLockViewportToVideoSize: Bool {
     switch self {
-    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+    case .musicMode:
       return true
-    case .fullScreen, .windowed:
+    case .fullScreen, .windowed, .windowedInteractive, .fullScreenInteractive:
       return false
     }
   }
