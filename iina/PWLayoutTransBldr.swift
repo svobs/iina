@@ -197,7 +197,7 @@ extension PlayerWindowController {
 
     // OutputGeometry
     let outputGeometry: PWGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
-                                                              outputLayout: outputLayout, isInitialLayout: isInitialLayout)
+                                                         outputLayout: outputLayout, isInitialLayout: isInitialLayout)
 
     let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
@@ -497,16 +497,15 @@ extension PlayerWindowController {
       }
 
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
-      let resizedGeo = transition.inputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
+      let resizedGeo = transition.inputGeometry.withResizedBars(mode: transition.inputLayout.mode,
+                                                                outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
                                                                 outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
       if transition.isEnteringInteractiveMode {
-        return resizedGeo.scaleViewport(to: resizedGeo.videoSize, mode: transition.inputLayout.mode)
+        return resizedGeo.scaleViewport(to: resizedGeo.videoSize)
       } else if transition.isExitingInteractiveMode {
-        // This will scale video up to viewport size (or close enough - we are removing
-        // viewportMargins, and then we won't 100% match the video aspect)
-        return resizedGeo.scaleViewport(mode: transition.inputLayout.mode)
+        return resizedGeo
       }
     }
 

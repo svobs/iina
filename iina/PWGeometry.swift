@@ -768,7 +768,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return scaleViewport(to: newViewportSize, screenID: screenID, fitOption: fitOption, mode: mode)
   }
 
-  // Resizes the window appropriately
+  // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving.
   func withResizedOutsideBars(newOutsideTopBarHeight: CGFloat? = nil, newOutsideTrailingBarWidth: CGFloat? = nil,
                               newOutsideBottomBarHeight: CGFloat? = nil, newOutsideLeadingBarWidth: CGFloat? = nil) -> PWGeometry {
     assert((newOutsideTopBarHeight ?? 0) >= 0)
@@ -808,7 +808,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                       outsideBottomBarHeight: newOutsideBottomBarHeight, outsideLeadingBarWidth: newOutsideLeadingBarWidth)
   }
 
-  func withResizedBars(fitOption: ScreenFitOption? = nil,
+  func withResizedBars(fitOption: ScreenFitOption? = nil, mode: PlayerWindowMode? = nil,
                        outsideTopBarHeight: CGFloat? = nil, outsideTrailingBarWidth: CGFloat? = nil,
                        outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
                        insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
@@ -816,7 +816,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                        videoAspect: CGFloat? = nil) -> PWGeometry {
 
     // Inside bars
-    var newGeo = clone(fitOption: fitOption,
+    var newGeo = clone(fitOption: fitOption, mode: mode,
                        insideTopBarHeight: insideTopBarHeight,
                        insideTrailingBarWidth: insideTrailingBarWidth,
                        insideBottomBarHeight: insideBottomBarHeight,
@@ -969,35 +969,15 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   func toInteractiveMode() -> PWGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowed)
-    let newMode = PlayerWindowMode.windowedInteractive
-    // Close sidebars. Top and bottom bars are resized for interactive mode controls
-    let newGeo = withResizedOutsideBars(newOutsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
-                                        newOutsideTrailingBarWidth: 0,
-                                        newOutsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                                        newOutsideLeadingBarWidth: 0)
-
-    // Desired viewport is current one but shrunk with fixed margin around video
-    let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, mode: newMode)
-    var viewportMargins = Constants.InteractiveMode.viewportMargins
-
-    // Enforce min width for interactive mode window
-    let minVideoWidth = PWGeometry.minVideoWidth(forMode: newMode)
-    let videoWidthShortage = minVideoWidth - newVideoSize.width
-    if videoWidthShortage > 0 {
-      let extraLeading = CGFloat(ceil(videoWidthShortage * 0.5))
-      let extraTrailing = CGFloat(floor(videoWidthShortage * 0.5))
-      viewportMargins = BoxQuad(top: viewportMargins.top,
-                                trailing: viewportMargins.trailing + extraTrailing,
-                                bottom: viewportMargins.bottom,
-                                leading: viewportMargins.leading + extraLeading)
-    }
-
-    let desiredViewportSize = NSSize(width: newVideoSize.width + viewportMargins.totalWidth,
-                                     height: newVideoSize.height + viewportMargins.totalHeight)
-    // This will constrain in screen
-    return newGeo.clone(insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                        insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                        viewportMargins: viewportMargins).scaleViewport(to: desiredViewportSize, mode: newMode)
+    /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
+    /// This will call `scaleViewport` which will see the new mode and resize the viewport margins appropriately.
+    return withResizedBars(mode: .windowedInteractive,
+                                 outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
+                                 outsideTrailingBarWidth: 0,
+                                 outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
+                                 outsideLeadingBarWidth: 0,
+                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
@@ -1036,20 +1016,16 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, videoAspect: newVideoAspect)
   }
 
-  // FIXME: this messes up the window X position
-  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect, videoScale: CGFloat) -> PWGeometry {
-    let cropBoxScaled = NSRect(x: cropBox.origin.x * videoScale,
-                               y: cropBox.origin.y * videoScale,
-                               width: cropBox.width * videoScale,
-                               height: cropBox.height * videoScale)
-    // Figure out part which wasn't cropped:
-    let anticropBoxSizeScaled = NSSize(width: (videoSizeOrig.width - cropBox.width) * videoScale,
-                                       height: (videoSizeOrig.height - cropBox.height) * videoScale)
+  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect) -> PWGeometry {
     let newVideoAspect = videoSizeOrig.mpvAspect
-    let newWindowFrame = NSRect(x: round(windowFrame.origin.x - cropBoxScaled.origin.x),
-                                y: round(windowFrame.origin.y - cropBoxScaled.origin.y),
-                                width: round(windowFrame.width + anticropBoxSizeScaled.width),
-                                height: round(windowFrame.height + anticropBoxSizeScaled.height))
-    return self.clone(windowFrame: newWindowFrame, videoAspect: newVideoAspect).refit()
+
+    /// Try to preserve scale ratio of current (cropped) video. This will expand the window (perhaps a lot).
+    /// Using `scaleVideo` will not let it become larger than the screen in any case.
+    let cropBoxWidthOrig = cropBox.width
+    let cropBoxWidthScaled = videoSize.width
+    let currentScaleRatio = cropBoxWidthScaled / cropBoxWidthOrig
+
+    let newDesiredVideoSize = videoSizeOrig.multiply(currentScaleRatio)
+    return self.clone(videoAspect: newVideoAspect).scaleVideo(to: newDesiredVideoSize)
   }
 }

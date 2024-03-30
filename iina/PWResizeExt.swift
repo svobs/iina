@@ -73,7 +73,7 @@ extension PlayerWindowController {
 
       if currentLayout.mode == .windowed {
         windowedModeGeo = windowedModeGeo.clone(windowFrame: window!.frame)
-        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox, videoScale: videoParams.videoScale)
+        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox)
         applyWindowGeometry(uncroppedWindowedGeo)
       } else if currentLayout.mode != .fullScreen {
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
