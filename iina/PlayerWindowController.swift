@@ -3257,7 +3257,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: Geometries? = nil) -> [IINAAnimation.Task] {
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
-    let startDuration = IINAAnimation.CropAnimationDuration
+    let startDuration = IINAAnimation.CropAnimationDuration * 0.5
     let endDuration = currentLayout.mode == .fullScreen ? startDuration * 0.5 : startDuration
     let transition = buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
@@ -3300,28 +3300,24 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
-      let animationDuration = IINAAnimation.CropAnimationDuration * 0.5
-      animationTasks.append(IINAAnimation.Task(duration: animationDuration * 0.5) {
-        // fade out all this stuff before crop
-        cropController.view.alphaValue = 0
-        cropController.view.isHidden = true
-        cropController.cropBoxView.isHidden = true
-        cropController.cropBoxView.alphaValue = 0
-      })
+      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.25
 
       if currentLayout.isFullScreen {
         /// Must update `interactiveModeGeo` outside of animation task!
         let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: videoViewAspect)
         interactiveModeGeo = fsInteractiveModeGeo
 
-        animationTasks.append(IINAAnimation.Task(duration: animationDuration) { [self] in
+        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
+          hideCropControls()
           videoView.apply(fsInteractiveModeGeo)
         })
       } else {
         let imGeoPrev = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
         let imGeoNew = imGeoPrev.cropVideo(from: uncroppedVideoSize, to: cropBox)
         interactiveModeGeo = imGeoNew
-        animationTasks.append(IINAAnimation.Task(duration: animationDuration) { [self] in
+
+        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
+          hideCropControls()
           videoView.apply(imGeoNew)
           player.window.setFrameImmediately(imGeoNew.windowFrame)
         })
@@ -3333,12 +3329,21 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
     log.verbose("[applyVidParams E5] Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
-    let halfDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
+    let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
+    let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
-                                           totalStartingDuration: halfDuration, totalEndingDuration: halfDuration)
+                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration)
     animationTasks.append(contentsOf: transition.animationTasks)
 
     return animationTasks
+  }
+
+  private func hideCropControls() {
+    guard let cropController = cropSettingsView else { return }
+    cropController.view.alphaValue = 0
+    cropController.view.isHidden = true
+    cropController.cropBoxView.isHidden = true
+    cropController.cropBoxView.alphaValue = 0
   }
 
   // MARK: - UI: Thumbnail Preview

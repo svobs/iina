@@ -73,19 +73,38 @@ extension PlayerWindowController {
 
       var tasks: [IINAAnimation.Task] = []
 
-      if currentLayout.mode == .windowed {
-        let uncroppedWindowedGeo = windowedModeGeo.clone(windowFrame: window!.frame).uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox)
+      switch currentLayout.mode {
+      case .windowed:
+        let oldVideoAspect = prevCropBox.size.mpvAspect
+        let newVideoAspect = videoSizeRaw.mpvAspect
+        // Scale viewport to roughly match window size
+        let existingGeo = windowedModeGeo.clone(windowFrame: window!.frame).clone(videoAspect: newVideoAspect)
 
-        tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration * 0.25, { [self] in
+        let uncroppedWindowedGeo: PWGeometry
+        if Preference.bool(for: .lockViewportToVideoSize) {
+          // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
+          // This heuristic seems to work ok
+          let viewportSize = existingGeo.viewportSize
+          let aspectChangeFactor = newVideoAspect / oldVideoAspect
+          let viewportSizeMultiplier = aspectChangeFactor < 0 ? (1.0 / aspectChangeFactor) : aspectChangeFactor
+          let newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
+          uncroppedWindowedGeo = existingGeo.scaleViewport(to: newViewportSize)
+        } else {
+          // If not locking viewport to video, just reuse viewport
+          uncroppedWindowedGeo = existingGeo.refit()
+        }
+
+        tasks.append(IINAAnimation.Task(duration: IINAAnimation.CropAnimationDuration * 0.05, { [self] in
           applyWindowGeometry(uncroppedWindowedGeo)
         }))
 
         // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
-        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geo(windowed: uncroppedWindowedGeo)))
-      } else if currentLayout.mode == .fullScreen {
-        // TODO: animation to change video aspect
+        let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
+        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
+      case .fullScreen:
+        // TODO: animation to change video aspect in FS
         tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop))
-      } else {
+      default:
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
         return
       }
@@ -468,6 +487,8 @@ extension PlayerWindowController {
       return intendedGeo.refit(.keepInVisibleScreen)
     }
 
+
+    // FIXME: this needs to be updated to use viewport
     // Option A: resize height based on requested width
     let widthDiff = requestedSize.width - currentGeometry.windowFrame.width
     let requestedVideoWidth = currentGeometry.videoSize.width + widthDiff

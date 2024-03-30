@@ -1084,17 +1084,4 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     Logger.log("[geo] Cropped to new videoAspect: \(newVideoAspect), screenID: \(screenID), fitOption: \(newFitOption)")
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, videoAspect: newVideoAspect)
   }
-
-  func uncropVideo(videoSizeOrig: NSSize, cropBox: NSRect) -> PWGeometry {
-    let newVideoAspect = videoSizeOrig.mpvAspect
-
-    /// Try to preserve scale ratio of current (cropped) video. This will expand the window (perhaps a lot).
-    /// Using `scaleVideo` will not let it become larger than the screen in any case.
-    let cropBoxWidthOrig = cropBox.width
-    let cropBoxWidthScaled = videoSize.width
-    let currentScaleRatio = cropBoxWidthScaled / cropBoxWidthOrig
-
-    let newDesiredVideoSize = videoSizeOrig.multiply(currentScaleRatio)
-    return self.clone(videoAspect: newVideoAspect).scaleVideo(to: newDesiredVideoSize)
-  }
 }

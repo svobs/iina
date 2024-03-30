@@ -1041,7 +1041,7 @@ struct Preference {
     // Native duration (as of MacOS 13.4) is 0.5s, which is quite sluggish. Speed it up a bit
     .animationDurationFullScreen: 0.25,
     .animationDurationOSD: 0.5,
-    .animationDurationCrop: 0.5,
+    .animationDurationCrop: 1.5,
     .recordPlaybackHistory: true,
     .recordRecentFiles: true,
     .trackAllFilesInRecentOpenMenu: true,
