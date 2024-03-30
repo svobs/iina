@@ -768,7 +768,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return scaleViewport(to: newViewportSize, screenID: screenID, fitOption: fitOption, mode: mode)
   }
 
-  // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving.
+  // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving
+  // (but clamps each dimension's size to the container/screen, if any).
   func withResizedOutsideBars(newOutsideTopBarHeight: CGFloat? = nil, newOutsideTrailingBarWidth: CGFloat? = nil,
                               newOutsideBottomBarHeight: CGFloat? = nil, newOutsideLeadingBarWidth: CGFloat? = nil) -> PWGeometry {
     assert((newOutsideTopBarHeight ?? 0) >= 0)
@@ -799,10 +800,26 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       ΔX -= ΔLeft
     }
 
-    let newWindowFrame = CGRect(x: windowFrame.origin.x + ΔX,
-                                y: windowFrame.origin.y + ΔY,
-                                width: windowFrame.width + ΔW,
-                                height: windowFrame.height + ΔH)
+    var newX = windowFrame.origin.x + ΔX
+    var newY = windowFrame.origin.y + ΔY
+    var newWindowWidth = windowFrame.width + ΔW
+    var newWindowHeight = windowFrame.height + ΔH
+
+    // Special logic if output has reached out the size of the screen.
+    // Do not allow it to get bigger than the screen.
+    if let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption) {
+      if newWindowWidth > screenFrame.width {
+        newWindowWidth = screenFrame.width
+        newX = windowFrame.origin.x  // don't move in X
+      }
+
+      if newWindowHeight > screenFrame.height {
+        newWindowHeight = screenFrame.height
+        newY = windowFrame.origin.y
+      }
+    }
+
+    let newWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
     return self.clone(windowFrame: newWindowFrame,
                       outsideTopBarHeight: newOutsideTopBarHeight, outsideTrailingBarWidth: newOutsideTrailingBarWidth,
                       outsideBottomBarHeight: newOutsideBottomBarHeight, outsideLeadingBarWidth: newOutsideLeadingBarWidth)
