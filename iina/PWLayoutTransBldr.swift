@@ -460,7 +460,7 @@ extension PlayerWindowController {
                                                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
                                                                 preserveFullSizeDimensions: true)
       if transition.isEnteringInteractiveMode {
-        return resizedGeo.scaleVideo(to: transition.inputGeometry.videoSize)
+        return resizedGeo.scaleViewport(to: transition.inputGeometry.videoSize)
       } else if transition.isExitingInteractiveMode {
         return resizedGeo.scaleViewport(lockViewportToVideoSize: true)
       }

@@ -487,21 +487,18 @@ extension PlayerWindowController {
       return intendedGeo.refit(.keepInVisibleScreen)
     }
 
+    let requestedViewportSize = NSSize(width: requestedSize.width - currentGeometry.outsideBarsTotalWidth,
+                                       height: requestedSize.height - currentGeometry.outsideBarsTotalHeight)
 
-    // FIXME: this needs to be updated to use viewport
     // Option A: resize height based on requested width
-    let widthDiff = requestedSize.width - currentGeometry.windowFrame.width
-    let requestedVideoWidth = currentGeometry.videoSize.width + widthDiff
-    let resizeFromWidthRequestedVideoSize = NSSize(width: requestedVideoWidth,
-                                                   height: round(requestedVideoWidth / currentGeometry.videoAspect))
-    let resizeFromWidthGeo = currentGeometry.scaleVideo(to: resizeFromWidthRequestedVideoSize)
+    let resizeFromWidthRequestedViewportSize = NSSize(width: requestedViewportSize.width,
+                                                   height: round(requestedViewportSize.width / currentGeometry.videoAspect))
+    let resizeFromWidthGeo = currentGeometry.scaleViewport(to: resizeFromWidthRequestedViewportSize)
 
     // Option B: resize width based on requested height
-    let heightDiff = requestedSize.height - currentGeometry.windowFrame.height
-    let requestedVideoHeight = currentGeometry.videoSize.height + heightDiff
-    let resizeFromHeightRequestedVideoSize = NSSize(width: round(requestedVideoHeight * currentGeometry.videoAspect),
-                                                    height: requestedVideoHeight)
-    let resizeFromHeightGeo = currentGeometry.scaleVideo(to: resizeFromHeightRequestedVideoSize)
+    let resizeFromHeightRequestedVideoSize = NSSize(width: round(requestedViewportSize.height * currentGeometry.videoAspect),
+                                                    height: requestedViewportSize.height)
+    let resizeFromHeightGeo = currentGeometry.scaleViewport(to: resizeFromHeightRequestedVideoSize)
 
     let chosenGeometry: PWGeometry
     if window.inLiveResize {

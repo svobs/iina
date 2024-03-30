@@ -671,7 +671,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
       /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
       let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: newViewportSize, mode: mode)
-      newViewportSize = newVideoSize
+      newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
+                               height: newVideoSize.height + minViewportMargins.totalHeight)
     }
 
     let minViewportWidth = minViewportWidth(mode: mode)
