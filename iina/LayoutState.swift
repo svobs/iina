@@ -568,55 +568,56 @@ extension PlayerWindowController {
         let fitOption: ScreenFitOption = spec.isLegacyStyle ? .legacyFullScreen : .nativeFullScreen
         let topMarginHeight = screen.cameraHousingHeight ?? 0
         return PWGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
-                               mode: mode, topMarginHeight: topMarginHeight,
-                               outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                               outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                               outsideLeadingBarWidth: 0, insideTopBarHeight: 0,
-                               insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                               viewportMargins: Constants.InteractiveMode.viewportMargins, videoAspect: videoAspect)
+                          mode: mode, topMarginHeight: topMarginHeight,
+                          outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
+                          outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
+                          outsideLeadingBarWidth: 0, insideTopBarHeight: 0,
+                          insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                          viewportMargins: Constants.InteractiveMode.viewportMargins, videoAspect: videoAspect)
       }
 
       return PWGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
-                                           outsideTopBarHeight: outsideTopBarHeight,
-                                           outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                           outsideBottomBarHeight: outsideBottomBarHeight,
-                                           outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                           insideTopBarHeight: insideTopBarHeight,
-                                           insideTrailingBarWidth: insideTrailingBarWidth,
-                                           insideBottomBarHeight: insideBottomBarHeight,
-                                           insideLeadingBarWidth: insideLeadingBarWidth,
-                                           videoAspect: videoAspect,
-                                           allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
+                                      outsideTopBarHeight: outsideTopBarHeight,
+                                      outsideTrailingBarWidth: outsideTrailingBarWidth,
+                                      outsideBottomBarHeight: outsideBottomBarHeight,
+                                      outsideLeadingBarWidth: outsideLeadingBarWidth,
+                                      insideTopBarHeight: insideTopBarHeight,
+                                      insideTrailingBarWidth: insideTrailingBarWidth,
+                                      insideBottomBarHeight: insideBottomBarHeight,
+                                      insideLeadingBarWidth: insideLeadingBarWidth,
+                                      videoAspect: videoAspect,
+                                      allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
     }
 
     // Converts & updates existing geometry to this layout
     func convertWindowedModeGeometry(from existingGeometry: PWGeometry, videoAspect: CGFloat? = nil) -> PWGeometry {
-      return existingGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
-                                              outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                              outsideBottomBarHeight: outsideBottomBarHeight,
-                                              outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                              insideTopBarHeight: insideTopBarHeight,
-                                              insideTrailingBarWidth: insideTrailingBarWidth,
-                                              insideBottomBarHeight: insideBottomBarHeight,
-                                              insideLeadingBarWidth: insideLeadingBarWidth,
-                                              videoAspect: videoAspect)
+      let resizedBarsGeo = existingGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
+                                                            outsideTrailingBarWidth: outsideTrailingBarWidth,
+                                                            outsideBottomBarHeight: outsideBottomBarHeight,
+                                                            outsideLeadingBarWidth: outsideLeadingBarWidth,
+                                                            insideTopBarHeight: insideTopBarHeight,
+                                                            insideTrailingBarWidth: insideTrailingBarWidth,
+                                                            insideBottomBarHeight: insideBottomBarHeight,
+                                                            insideLeadingBarWidth: insideLeadingBarWidth,
+                                                            videoAspect: videoAspect)
+      return resizedBarsGeo.refit()
     }
 
     func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
       assert(isWindowed, "buildGeometry(fromWindowFrame): unexpected mode: \(mode)")
 
       let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen,
-                                mode: mode,
-                                topMarginHeight: 0,  // is only nonzero when in legacy FS
-                                outsideTopBarHeight: outsideTopBarHeight,
-                                outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                outsideBottomBarHeight: outsideBottomBarHeight,
-                                outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                insideTopBarHeight: insideTopBarHeight,
-                                insideTrailingBarWidth: insideTrailingBarWidth,
-                                insideBottomBarHeight: insideBottomBarHeight,
-                                insideLeadingBarWidth: insideLeadingBarWidth,
-                                videoAspect: videoAspect)
+                           mode: mode,
+                           topMarginHeight: 0,  // is only nonzero when in legacy FS
+                           outsideTopBarHeight: outsideTopBarHeight,
+                           outsideTrailingBarWidth: outsideTrailingBarWidth,
+                           outsideBottomBarHeight: outsideBottomBarHeight,
+                           outsideLeadingBarWidth: outsideLeadingBarWidth,
+                           insideTopBarHeight: insideTopBarHeight,
+                           insideTrailingBarWidth: insideTrailingBarWidth,
+                           insideBottomBarHeight: insideBottomBarHeight,
+                           insideLeadingBarWidth: insideLeadingBarWidth,
+                           videoAspect: videoAspect)
       return geo.scaleViewport()
     }
 

@@ -505,7 +505,7 @@ extension PlayerWindowController {
       if transition.isEnteringInteractiveMode {
         return resizedGeo.scaleViewport(to: resizedGeo.videoSize)
       } else if transition.isExitingInteractiveMode {
-        return resizedGeo
+        return resizedGeo.scaleViewport()
       }
     }
 
@@ -577,13 +577,14 @@ extension PlayerWindowController {
                                            allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
-    return transition.outputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
-                                                     outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                                     outsideBottomBarHeight: outsideBottomBarHeight,
-                                                     outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                                     insideTopBarHeight: insideTopBarHeight,
-                                                     insideTrailingBarWidth: insideTrailingBarWidth,
-                                                     insideBottomBarHeight: insideBottomBarHeight,
-                                                     insideLeadingBarWidth: insideLeadingBarWidth)
+    let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
+                                                                   outsideTrailingBarWidth: outsideTrailingBarWidth,
+                                                                   outsideBottomBarHeight: outsideBottomBarHeight,
+                                                                   outsideLeadingBarWidth: outsideLeadingBarWidth,
+                                                                   insideTopBarHeight: insideTopBarHeight,
+                                                                   insideTrailingBarWidth: insideTrailingBarWidth,
+                                                                   insideBottomBarHeight: insideBottomBarHeight,
+                                                                   insideLeadingBarWidth: insideLeadingBarWidth)
+    return resizedBarsGeo.refit()
   }
 }

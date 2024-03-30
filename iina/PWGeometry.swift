@@ -825,6 +825,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                       outsideBottomBarHeight: newOutsideBottomBarHeight, outsideLeadingBarWidth: newOutsideLeadingBarWidth)
   }
 
+  /// Like `withResizedOutsideBars`, but can resize the inside bars at the same time.
   func withResizedBars(fitOption: ScreenFitOption? = nil, mode: PlayerWindowMode? = nil,
                        outsideTopBarHeight: CGFloat? = nil, outsideTrailingBarWidth: CGFloat? = nil,
                        outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
@@ -840,11 +841,10 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                        insideLeadingBarWidth: insideLeadingBarWidth,
                        videoAspect: videoAspect)
 
-    newGeo = newGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
-                                           newOutsideTrailingBarWidth: outsideTrailingBarWidth,
-                                           newOutsideBottomBarHeight: outsideBottomBarHeight,
-                                           newOutsideLeadingBarWidth: outsideLeadingBarWidth)
-    return newGeo.scaleViewport()
+    return newGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
+                                         newOutsideTrailingBarWidth: outsideTrailingBarWidth,
+                                         newOutsideBottomBarHeight: outsideBottomBarHeight,
+                                         newOutsideLeadingBarWidth: outsideLeadingBarWidth)
   }
 
   /** Calculate the window frame from a parsed struct of mpv's `geometry` option. */
@@ -987,14 +987,16 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowed)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
-    /// This will call `scaleViewport` which will see the new mode and resize the viewport margins appropriately.
-    return withResizedBars(mode: .windowedInteractive,
-                                 outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
-                                 outsideTrailingBarWidth: 0,
-                                 outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                                 outsideLeadingBarWidth: 0,
-                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
+    let resizedBarsGeo = withResizedBars(mode: .windowedInteractive,
+                                         outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
+                                         outsideTrailingBarWidth: 0,
+                                         outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
+                                         outsideLeadingBarWidth: 0,
+                                         insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                         insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
+
+    /// This will see the new mode and resize the viewport margins appropriately.
+    return resizedBarsGeo.refit()
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
