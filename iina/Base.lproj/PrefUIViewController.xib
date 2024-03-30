@@ -465,7 +465,7 @@
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Xgb-im-tqO">
                             <rect key="frame" x="-2" y="390" width="370" height="18"/>
-                            <buttonCell key="cell" type="check" title="Lock proportions to prevent empty margins around video" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9Cn-gh-mtB">
+                            <buttonCell key="cell" type="check" title="Lock proportions to prevent empty space around video" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9Cn-gh-mtB">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>

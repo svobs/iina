@@ -2670,6 +2670,18 @@ class PlayerCore: NSObject {
     saveState()
   }
 
+  func canShowOSD() -> Bool {
+    /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
+    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode {
+      return false
+    }
+    if isInMiniPlayer && !Preference.bool(for: .enableOSDInMusicMode) {
+      return false
+    }
+
+    return true
+  }
+
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
     windowController.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController, isExternal: external)

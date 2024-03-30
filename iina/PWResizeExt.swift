@@ -71,15 +71,24 @@ extension PlayerWindowController {
       log.verbose("[applyVidParams E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
       log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
 
+      var tasks: [IINAAnimation.Task] = []
+
       if currentLayout.mode == .windowed {
-        windowedModeGeo = windowedModeGeo.clone(windowFrame: window!.frame)
-        let uncroppedWindowedGeo = windowedModeGeo.uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox)
-        applyWindowGeometry(uncroppedWindowedGeo)
+        let uncroppedWindowedGeo = windowedModeGeo.clone(windowFrame: window!.frame).uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox)
+        /// Need to set this now because it's needed by `buildTransitionToEnterInteractiveMode`
+        windowedModeGeo = uncroppedWindowedGeo
+
+        tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration * 0.25, { [self] in
+          applyWindowGeometry(uncroppedWindowedGeo)
+        }))
       } else if currentLayout.mode != .fullScreen {
+        // TODO: animation to change video aspect
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
         return
       }
-      enterInteractiveMode(.crop)
+
+      tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop))
+      animationPipeline.submit(tasks)
 
     } else if isRestoring {
       if isInInteractiveMode {

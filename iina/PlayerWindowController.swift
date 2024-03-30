@@ -2963,11 +2963,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /// themselves process the display of any enqueued OSD messages.
   func displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                   accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
-    /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
-    guard loaded, Preference.bool(for: .enableOSD), !player.isUsingMpvOSD,
-          !player.info.isRestoring,
-          !player.isInInteractiveMode else { return }
-    guard !isInMiniPlayer || Preference.bool(for: .enableOSDInMusicMode) else { return }
+    guard player.canShowOSD() else { return }
 
     let disableOSDForFileLoading: Bool = player.info.justOpenedFile || player.info.timeSinceLastFileOpenFinished < 0.2
     if disableOSDForFileLoading && !isExternal {
@@ -2993,6 +2989,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   private func _displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                            accessoryViewController: NSViewController? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+
+    // Check again. May have been enqueued a while
+    guard player.canShowOSD() else { return }
 
     // Filter out unwanted OSDs first
 
@@ -3250,14 +3249,18 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // Save disabled crop video filter
       player.saveState()
 
-      let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
-      let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
-      let startDuration = IINAAnimation.CropAnimationDuration
-      let endDuration = currentLayout.mode == .fullScreen ? startDuration * 0.5 : startDuration
-      buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
-                            totalStartingDuration: startDuration, totalEndingDuration: endDuration,
-                            thenRun: true)
+      let tasks = buildTransitionToEnterInteractiveMode(mode)
+      animationPipeline.submit(tasks)
     })
+  }
+
+  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode) -> [IINAAnimation.Task] {
+    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
+    let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
+    let startDuration = IINAAnimation.CropAnimationDuration
+    let endDuration = currentLayout.mode == .fullScreen ? startDuration * 0.5 : startDuration
+    return buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
+                                 totalStartingDuration: startDuration, totalEndingDuration: endDuration).animationTasks
   }
 
   /// Use `immediately: true` to exit without animation.
