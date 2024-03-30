@@ -71,6 +71,10 @@ extension PlayerWindowController {
       window.titleVisibility = .hidden
       hideBuiltInTitleBarViews(setAlpha: true)
 
+      if transition.inputLayout.spec.isLegacyStyle && transition.isTogglingLegacyStyle {
+        updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
+      }
+
       if #unavailable(macOS 10.14) {
         // Set the appearance to match the theme so the title bar matches the theme
         let iinaTheme = Preference.enum(for: .themeMaterial) as Preference.Theme

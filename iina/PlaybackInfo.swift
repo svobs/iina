@@ -125,7 +125,7 @@ class PlaybackInfo {
     if let videoAspectACR = videoParams.videoAspectACR {
       return videoAspectACR
     }
-    // TODO: handle this situation better
+    // FIXME: handle this situation better. Invalid aspect can cause mpv to get confused and crash during render
     log.warn("No videoAspect found in videoParams! Falling back to default 16:9 aspect")
     return 16.0/9.0
   }

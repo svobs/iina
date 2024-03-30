@@ -1148,10 +1148,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if isVideoTrackSelected || player.info.justOpenedFile || player.isStopped {
       log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = false
-    } else if player.mpv.queryForVideoParams() == nil {
-      // mpv is idle or does not have current video size. Easier to just call `queryForVideoParams` than duplicate its logic
-      log.verbose("Hiding defaultAlbumArt because there are no videoParams")
-      showDefaultArt = false
     } else {
       log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = true
@@ -1267,14 +1263,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func updateUseLegacyFullScreen() {
-    resetCollectionBehavior()
-
     let oldLayout = currentLayout
     guard oldLayout.isFullScreen else { return }
     let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
     if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
       DispatchQueue.main.async { [self] in
-        log.verbose("User toggled legacy fullscreen option while in fullscreen - transitioning to windowed mode instead")
+        log.verbose("User toggled legacy FS pref to \(outputLayoutSpec.isLegacyStyle.yesno) while in FS. Will try to exit FS")
         exitFullScreen(legacy: oldLayout.isLegacyFullScreen)
       }
     }
@@ -2145,6 +2139,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     log.verbose("EnterFullScreen called (legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn))")
 
     animationPipeline.submitZeroDuration({ [self] in
+      resetCollectionBehavior()
+      
       if isLegacy {
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       } else if !isFullScreen {
@@ -2164,6 +2160,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       } else if isFullScreen {
         window.toggleFullScreen(self)
+        NSApp.presentationOptions.remove(.fullScreen)
       }
     })
   }
@@ -4077,7 +4074,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
   }
 
+  /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit
   func resetCollectionBehavior() {
+    guard !NSApp.presentationOptions.contains(.fullScreen) else {
+      log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")
+      return
+    }
     /// Set option `.fullScreenDisallowsTiling` always.
     /// As of MacOS 14.2.1, tiling is at best glitchy and at worst results in an infinite loop
     // FIXME: support tiling for at least native full screen

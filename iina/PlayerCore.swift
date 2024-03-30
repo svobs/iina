@@ -2182,6 +2182,9 @@ class PlayerCore: NSObject {
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
+    // Update art & aspect *before* switching to/from music mode for more pleasant animation
+    windowController.refreshAlbumArtDisplay()
+
     if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {
         /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
@@ -2193,8 +2196,6 @@ class PlayerCore: NSObject {
       return
     }
 
-    // Update art & aspect *before* switching to/from music mode for more pleasant animation
-    windowController.refreshAlbumArtDisplay()
     let currentMediaAudioStatus = info.currentMediaAudioStatus
 
     DispatchQueue.main.async { [self] in

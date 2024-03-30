@@ -573,7 +573,7 @@ extension PlayerWindowController {
                           outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
                           outsideLeadingBarWidth: 0, insideTopBarHeight: 0,
                           insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                          viewportMargins: Constants.InteractiveMode.viewportMargins, videoAspect: videoAspect)
+                          videoAspect: videoAspect)
       }
 
       return PWGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
