@@ -3293,7 +3293,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     // If these params are present and valid, then need to apply a crop
     if let uncroppedVideoSize, let cropController = cropSettingsView, uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0,
-       let newVidParams, let cropBox = newVidParams.cropBox, let videoViewAspect = newVidParams.videoViewAspect {
+       let newVidParams, let cropBox = newVidParams.cropBox {
 
       log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
@@ -3301,22 +3301,22 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       if currentLayout.isFullScreen {
         /// Must update `interactiveModeGeo` outside of animation task!
-        let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: videoViewAspect)
-        interactiveModeGeo = fsInteractiveModeGeo
+        let currentIMGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: uncroppedVideoSize.mpvAspect)
+        let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
 
         animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
           hideCropControls()
-          videoView.apply(fsInteractiveModeGeo)
+          videoView.apply(newIMGeo)
         })
       } else {
-        let imGeoPrev = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
-        let imGeoNew = imGeoPrev.cropVideo(from: uncroppedVideoSize, to: cropBox)
-        interactiveModeGeo = imGeoNew
+        let currentIMGeo = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
+        let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
+        interactiveModeGeo = newIMGeo
 
         animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
           hideCropControls()
-          videoView.apply(imGeoNew)
-          player.window.setFrameImmediately(imGeoNew.windowFrame)
+          videoView.apply(newIMGeo)
+          player.window.setFrameImmediately(newIMGeo.windowFrame)
         })
       }
     }
@@ -3328,8 +3328,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
+    let geo = self.geo(videoAspect: newVidParams?.cropBox?.size.mpvAspect)
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
-                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration)
+                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
     animationTasks.append(contentsOf: transition.animationTasks)
 
     return animationTasks

@@ -277,7 +277,12 @@ extension PlayerWindowController {
       // Animate the close of viewport margins:
       videoView.apply(transition.outputGeometry)
     } else if transition.isExitingInteractiveMode {
-      videoView.apply(nil)
+      if transition.outputLayout.isFullScreen {
+        videoView.apply(transition.outputGeometry)
+      } else {
+        // No margins (for a nice animation)
+        videoView.apply(nil)
+      }
     }
 
     // Update heights of top & bottom bars

@@ -36,6 +36,7 @@ extension PlayerWindowController {
     }
   }
 
+  // FIXME: refactor to use the videoScale provided (or change the flow). Currently it is ignored and then recalculated afterwards
   /// Only `applyVidParams` should call this.
   private func applyVidParams(newParams videoParams: MPVVideoParams, oldParams oldVideoParams: MPVVideoParams, isRestoring: Bool, justOpenedFile: Bool) {
     guard let videoSizeACR = videoParams.videoSizeACR, let videoSizeRaw = videoParams.videoSizeRaw else {
@@ -72,11 +73,11 @@ extension PlayerWindowController {
       log.verbose("[applyVidParams E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
 
       var tasks: [IINAAnimation.Task] = []
+      let newVideoAspect = videoSizeRaw.mpvAspect
 
       switch currentLayout.mode {
       case .windowed:
         let oldVideoAspect = prevCropBox.size.mpvAspect
-        let newVideoAspect = videoSizeRaw.mpvAspect
         // Scale viewport to roughly match window size
         let existingGeo = windowedModeGeo.clone(windowFrame: window!.frame).clone(videoAspect: newVideoAspect)
 
@@ -102,8 +103,8 @@ extension PlayerWindowController {
         let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
         tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
       case .fullScreen:
-        // TODO: animation to change video aspect in FS
-        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop))
+        let geoOverride = geo(videoAspect: newVideoAspect)
+        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
       default:
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
         return

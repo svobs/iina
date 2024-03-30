@@ -48,6 +48,7 @@ struct MPVVideoParams: CustomStringConvertible {
     self.videoScale = videoScale
   }
 
+  // FIXME: make this the SST for videoScale, instead of calculating it afterwards
   func clone(videoRawWidth: Int? = nil, videoRawHeight: Int? = nil,
              selectedAspectRatioLabel: String? = nil,
              totalRotation: Int? = nil, userRotation: Int? = nil,
