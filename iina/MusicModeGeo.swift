@@ -59,19 +59,19 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   func toPWGeometry() -> PWGeometry {
     let outsideBottomBarHeight = Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? playlistHeight : 0)
     return PWGeometry(windowFrame: windowFrame,
-                           screenID: screenID,
-                           fitOption: .keepInVisibleScreen,
-                           mode: .musicMode,
-                           topMarginHeight: 0,
-                           outsideTopBarHeight: 0,
-                           outsideTrailingBarWidth: 0,
-                           outsideBottomBarHeight: outsideBottomBarHeight,
-                           outsideLeadingBarWidth: 0,
-                           insideTopBarHeight: 0,
-                           insideTrailingBarWidth: 0,
-                           insideBottomBarHeight: 0,
-                           insideLeadingBarWidth: 0,
-                           videoAspect: videoAspect)
+                      screenID: screenID,
+                      fitOption: .keepInVisibleScreen,
+                      mode: .musicMode,
+                      topMarginHeight: 0,
+                      outsideTopBarHeight: 0,
+                      outsideTrailingBarWidth: 0,
+                      outsideBottomBarHeight: outsideBottomBarHeight,
+                      outsideLeadingBarWidth: 0,
+                      insideTopBarHeight: 0,
+                      insideTrailingBarWidth: 0,
+                      insideBottomBarHeight: 0,
+                      insideLeadingBarWidth: 0,
+                      videoAspect: videoAspect)
   }
 
   var videoHeightIfVisible: CGFloat {

@@ -75,19 +75,21 @@ extension PlayerWindowController {
 
       if currentLayout.mode == .windowed {
         let uncroppedWindowedGeo = windowedModeGeo.clone(windowFrame: window!.frame).uncropVideo(videoSizeOrig: videoSizeRaw, cropBox: prevCropBox)
-        /// Need to set this now because it's needed by `buildTransitionToEnterInteractiveMode`
-        windowedModeGeo = uncroppedWindowedGeo
 
         tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration * 0.25, { [self] in
           applyWindowGeometry(uncroppedWindowedGeo)
         }))
-      } else if currentLayout.mode != .fullScreen {
+
+        // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
+        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geo(windowed: uncroppedWindowedGeo)))
+      } else if currentLayout.mode == .fullScreen {
         // TODO: animation to change video aspect
+        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop))
+      } else {
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
         return
       }
 
-      tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop))
       animationPipeline.submit(tasks)
 
     } else if isRestoring {

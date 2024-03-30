@@ -3254,18 +3254,20 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     })
   }
 
-  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode) -> [IINAAnimation.Task] {
+  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: Geometries? = nil) -> [IINAAnimation.Task] {
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
     let startDuration = IINAAnimation.CropAnimationDuration
     let endDuration = currentLayout.mode == .fullScreen ? startDuration * 0.5 : startDuration
-    return buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
-                                 totalStartingDuration: startDuration, totalEndingDuration: endDuration).animationTasks
+    let transition = buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
+                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
+    return transition.animationTasks
   }
 
   /// Use `immediately: true` to exit without animation.
   /// This method can be run safely even if not in interactive mode
-  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil, then doAfter: (() -> Void)? = nil) {
+  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil, 
+                           then doAfter: (() -> Void)? = nil) {
     animationPipeline.submitZeroDuration({ [self] in
       let currentLayout = currentLayout
 
