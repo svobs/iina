@@ -94,7 +94,8 @@ extension PlayerWindowController {
         windowedModeGeo = initialGeo.refit(.centerInVisibleScreen)
       } else {
         // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
-        windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed)
+        windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
+                                                                    preserveFullSizeDimensions: false)
       }
 
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
@@ -418,56 +419,8 @@ extension PlayerWindowController {
 
     case .windowed:
       let prevWindowedGeo = windowedModeGeo
-      let outputGeo = outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect)
-      if isInitialLayout {
-        return outputGeo
-      }
-
-      let ΔOutsideWidth = outputGeo.outsideBarsTotalWidth - prevWindowedGeo.outsideBarsTotalWidth
-      let ΔOutsideHeight = outputGeo.outsideBarsTotalHeight - prevWindowedGeo.outsideBarsTotalHeight
-
-      if let screenFrame = PWGeometry.getContainerFrame(forScreenID: prevWindowedGeo.screenID, fitOption: prevWindowedGeo.fitOption) {
-        // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
-        // So it will seem to "stick" to the screen edges when filling the screen but if already smaller, will allow the window to shrink.
-        // This should be more intuitive to the user than trying to keep track of the user's past intent.
-        if ΔOutsideWidth != 0, prevWindowedGeo.windowFrame.width == screenFrame.width {
-          let newViewportWidth = screenFrame.width - outputGeo.outsideBarsTotalWidth
-          let widthRatio = newViewportWidth / prevWindowedGeo.viewportSize.width
-          let heightFillsScreen = prevWindowedGeo.windowFrame.height == screenFrame.height
-          let newViewportHeight = heightFillsScreen ? prevWindowedGeo.viewportSize.height : round(prevWindowedGeo.viewportSize.height * widthRatio)
-          let resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
-          let resizedGeo = outputGeo.scaleViewport(to: resizedViewport, mode: outputLayout.mode)
-          /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize` is false.
-          /// 1 of 2 - See below
-          if resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
-            // Window origin was changed to keep it on screen. OK to use this
-            return resizedGeo
-          } else {
-            // Use previous origin, because scaleViewport() causes it to move when we don't want it to
-            return resizedGeo.clone(windowFrame: prevWindowedGeo.windowFrame.clone(size: resizedGeo.windowFrame.size))
-          }
-        }
-
-        // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
-        if ΔOutsideHeight != 0, prevWindowedGeo.windowFrame.height == screenFrame.height {
-          let newViewportHeight = screenFrame.height - outputGeo.outsideBarsTotalHeight
-          let heightRatio = newViewportHeight / prevWindowedGeo.viewportSize.height
-          let widthFillsScreen = prevWindowedGeo.windowFrame.width == screenFrame.width
-          let newViewportWidth = widthFillsScreen ? prevWindowedGeo.viewportSize.width : round(prevWindowedGeo.viewportSize.width * heightRatio)
-          let resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
-          let resizedGeo = outputGeo.scaleViewport(to: resizedViewport, mode: outputLayout.mode)
-          /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize` is false.
-          /// 2 of 2
-          if resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
-            // Window origin was changed to keep it on screen. OK to use this
-            return resizedGeo
-          } else {
-            return resizedGeo.clone(windowFrame: prevWindowedGeo.windowFrame.clone(size: resizedGeo.windowFrame.size))
-          }
-        }
-      }
-
-      return outputGeo
+      return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
+                                                      preserveFullSizeDimensions: !isInitialLayout)
     }
   }
 
@@ -501,7 +454,8 @@ extension PlayerWindowController {
                                                                 outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
                                                                 outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                                insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
+                                                                insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                                                preserveFullSizeDimensions: true)
       if transition.isEnteringInteractiveMode {
         return resizedGeo.scaleViewport(to: resizedGeo.videoSize)
       } else if transition.isExitingInteractiveMode {
@@ -584,7 +538,8 @@ extension PlayerWindowController {
                                                                    insideTopBarHeight: insideTopBarHeight,
                                                                    insideTrailingBarWidth: insideTrailingBarWidth,
                                                                    insideBottomBarHeight: insideBottomBarHeight,
-                                                                   insideLeadingBarWidth: insideLeadingBarWidth)
+                                                                   insideLeadingBarWidth: insideLeadingBarWidth,
+                                                                   preserveFullSizeDimensions: true)
     return resizedBarsGeo.refit()
   }
 }

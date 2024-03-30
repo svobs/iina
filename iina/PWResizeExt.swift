@@ -126,7 +126,7 @@ extension PlayerWindowController {
         if justOpenedFileManually {
           log.verbose("[applyVidParams D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
           newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                   videoAspect: videoSizeACR.mpvAspect)
+                                                                   videoAspect: videoSizeACR.mpvAspect, preserveFullSizeDimensions: true)
         } else {
           // video size changed during playback
           newWindowGeo = resizeMinimallyAfterVideoReconfig(from: windowGeo, videoSizeACR: videoSizeACR)

@@ -590,7 +590,8 @@ extension PlayerWindowController {
     }
 
     // Converts & updates existing geometry to this layout
-    func convertWindowedModeGeometry(from existingGeometry: PWGeometry, videoAspect: CGFloat? = nil) -> PWGeometry {
+    func convertWindowedModeGeometry(from existingGeometry: PWGeometry, videoAspect: CGFloat? = nil,
+                                     preserveFullSizeDimensions: Bool) -> PWGeometry {
       let resizedBarsGeo = existingGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
                                                             outsideTrailingBarWidth: outsideTrailingBarWidth,
                                                             outsideBottomBarHeight: outsideBottomBarHeight,
@@ -599,10 +600,11 @@ extension PlayerWindowController {
                                                             insideTrailingBarWidth: insideTrailingBarWidth,
                                                             insideBottomBarHeight: insideBottomBarHeight,
                                                             insideLeadingBarWidth: insideLeadingBarWidth,
-                                                            videoAspect: videoAspect)
+                                                            videoAspect: videoAspect,
+                                                            preserveFullSizeDimensions: preserveFullSizeDimensions)
       return resizedBarsGeo.refit()
     }
-
+    
     func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
       assert(isWindowed, "buildGeometry(fromWindowFrame): unexpected mode: \(mode)")
 
