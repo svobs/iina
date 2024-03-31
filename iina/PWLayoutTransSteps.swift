@@ -784,6 +784,7 @@ extension PlayerWindowController {
           newGeo = transition.outputGeometry
         }
         log.verbose("[\(transition.name)] Calling setFrame for legacyFS in OpenNewPanels")
+        /// This calls `videoView.apply`:
         applyLegacyFullScreenGeometry(newGeo)
       }
     case .musicMode:
@@ -797,10 +798,8 @@ extension PlayerWindowController {
     }
 
     if transition.isEnteringInteractiveMode {
-      if !transition.outputLayout.isFullScreen {
-        // Already set fixed constraints. Now set new values to animate into place
-        videoView.apply(transition.outputGeometry)
-      }
+      // Already set fixed constraints. Now set new values to animate into place
+      videoView.apply(transition.outputGeometry)
 
       if let videoSizeACR = player.info.videoParams.videoSizeRaw, let cropController = cropSettingsView {
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, videoViewSize: transition.outputGeometry.videoSize)
@@ -1031,6 +1030,13 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = false
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle), Mode:\(currentLayout.mode)")
+
+    let actualVideoSize = videoView.frame.size
+    let expectedVideoSize = transition.outputGeometry.videoSize
+    if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
+      log.error("[\(transition.name)] ❌ VideoView sanity check failed! Actual=\(actualVideoSize), aspect:\(actualVideoSize.mpvAspect); Expected=\(expectedVideoSize), aspect:\(expectedVideoSize.mpvAspect)")
+    }
+
     player.saveState()
   }
 
@@ -1342,7 +1348,6 @@ extension PlayerWindowController {
   /// `videoRect` should be `videoView.frame`
   func addOrReplaceCropBoxSelection(origVideoSize: NSSize, videoViewSize: NSSize) {
     guard let cropController = self.cropSettingsView else { return }
-    log.error("VIDEO VIEW SIZE: \(videoView.frame.size)")
 
     if !videoView.subviews.contains(cropController.cropBoxView) {
       videoView.addSubview(cropController.cropBoxView)

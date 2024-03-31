@@ -562,20 +562,6 @@ extension PlayerWindowController {
 
     func buildFullScreenGeometry(inside screen: NSScreen, videoAspect: CGFloat) -> PWGeometry {
       assert(isFullScreen)
-
-      if isInteractiveMode {
-        let windowFrame = PWGeometry.fullScreenWindowFrame(in: screen, legacy: spec.isLegacyStyle)
-        let fitOption: ScreenFitOption = spec.isLegacyStyle ? .legacyFullScreen : .nativeFullScreen
-        let topMarginHeight = screen.cameraHousingHeight ?? 0
-        return PWGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
-                          mode: mode, topMarginHeight: topMarginHeight,
-                          outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                          outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                          outsideLeadingBarWidth: 0, insideTopBarHeight: 0,
-                          insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                          videoAspect: videoAspect)
-      }
-
       return PWGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
                                       outsideTopBarHeight: outsideTopBarHeight,
                                       outsideTrailingBarWidth: outsideTrailingBarWidth,

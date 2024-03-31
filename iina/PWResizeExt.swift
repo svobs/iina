@@ -102,9 +102,12 @@ extension PlayerWindowController {
         // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
         let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
         tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
+
       case .fullScreen:
+
         let geoOverride = geo(videoAspect: newVideoAspect)
         tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
+
       default:
         assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
         return
@@ -598,9 +601,7 @@ extension PlayerWindowController {
   func applyLegacyFullScreenGeometry(_ geometry: PWGeometry) {
     guard let window = window else { return }
     let currentLayout = currentLayout
-    if !currentLayout.isInteractiveMode {
-      videoView.apply(geometry)
-    }
+    videoView.apply(geometry)
 
     if currentLayout.hasFloatingOSC {
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -608,6 +609,8 @@ extension PlayerWindowController {
     }
 
     updateOSDTopOffset(geometry, isLegacyFullScreen: true)
+    let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideTopBarHeight : geometry.outsideTopBarHeight
+    updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
     guard !geometry.windowFrame.equalTo(window.frame) else {
       log.verbose("No need to update windowFrame for legacyFullScreen - no change")
@@ -616,8 +619,6 @@ extension PlayerWindowController {
 
     log.verbose("Calling setFrame for legacyFullScreen, to \(geometry)")
     player.window.setFrameImmediately(geometry.windowFrame)
-    let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideTopBarHeight : geometry.outsideTopBarHeight
-    updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
   }
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.

@@ -224,12 +224,12 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     }
 
     return PWGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
-                           mode: mode, topMarginHeight: topMarginHeight,
-                           outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
-                           outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
-                           insideTopBarHeight: insideTopBarHeight, insideTrailingBarWidth: insideTrailingBarWidth,
-                           insideBottomBarHeight: insideBottomBarHeight, insideLeadingBarWidth: insideLeadingBarWidth,
-                           videoAspect: videoAspect)
+                      mode: mode, topMarginHeight: topMarginHeight,
+                      outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
+                      outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
+                      insideTopBarHeight: insideTopBarHeight, insideTrailingBarWidth: insideTrailingBarWidth,
+                      insideBottomBarHeight: insideBottomBarHeight, insideLeadingBarWidth: insideLeadingBarWidth,
+                      videoAspect: videoAspect)
   }
 
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, fitOption: ScreenFitOption? = nil,
@@ -242,20 +242,20 @@ struct PWGeometry: Equatable, CustomStringConvertible {
              videoAspect: CGFloat? = nil) -> PWGeometry {
 
     return PWGeometry(windowFrame: windowFrame ?? self.windowFrame,
-                           screenID: screenID ?? self.screenID,
-                           fitOption: fitOption ?? self.fitOption,
-                           mode: mode ?? self.mode,
-                           topMarginHeight: topMarginHeight ?? self.topMarginHeight,
-                           outsideTopBarHeight: outsideTopBarHeight ?? self.outsideTopBarHeight,
-                           outsideTrailingBarWidth: outsideTrailingBarWidth ?? self.outsideTrailingBarWidth,
-                           outsideBottomBarHeight: outsideBottomBarHeight ?? self.outsideBottomBarHeight,
-                           outsideLeadingBarWidth: outsideLeadingBarWidth ?? self.outsideLeadingBarWidth,
-                           insideTopBarHeight: insideTopBarHeight ?? self.insideTopBarHeight,
-                           insideTrailingBarWidth: insideTrailingBarWidth ?? self.insideTrailingBarWidth,
-                           insideBottomBarHeight: insideBottomBarHeight ?? self.insideBottomBarHeight,
-                           insideLeadingBarWidth: insideLeadingBarWidth ?? self.insideLeadingBarWidth,
-                           viewportMargins: viewportMargins,
-                           videoAspect: videoAspect ?? self.videoAspect)
+                      screenID: screenID ?? self.screenID,
+                      fitOption: fitOption ?? self.fitOption,
+                      mode: mode ?? self.mode,
+                      topMarginHeight: topMarginHeight ?? self.topMarginHeight,
+                      outsideTopBarHeight: outsideTopBarHeight ?? self.outsideTopBarHeight,
+                      outsideTrailingBarWidth: outsideTrailingBarWidth ?? self.outsideTrailingBarWidth,
+                      outsideBottomBarHeight: outsideBottomBarHeight ?? self.outsideBottomBarHeight,
+                      outsideLeadingBarWidth: outsideLeadingBarWidth ?? self.outsideLeadingBarWidth,
+                      insideTopBarHeight: insideTopBarHeight ?? self.insideTopBarHeight,
+                      insideTrailingBarWidth: insideTrailingBarWidth ?? self.insideTrailingBarWidth,
+                      insideBottomBarHeight: insideBottomBarHeight ?? self.insideBottomBarHeight,
+                      insideLeadingBarWidth: insideLeadingBarWidth ?? self.insideLeadingBarWidth,
+                      viewportMargins: viewportMargins,
+                      videoAspect: videoAspect ?? self.videoAspect)
   }
 
   // MARK: - Computed properties
@@ -856,7 +856,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       let outputGeo = resizedBarsGeo.refit()
 
       let ΔOutsideWidth = outputGeo.outsideBarsTotalWidth - outsideBarsTotalWidth
-      let ΔOutsideHeight = (outputGeo.outsideBarsTotalHeight + outputGeo.topMarginHeight) - (outsideBarsTotalHeight + topMarginHeight)
+      let ΔOutsideHeight = outputGeo.outsideBarsTotalHeight - outsideBarsTotalHeight
 
       if let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: outputGeo.fitOption) {
         // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
@@ -880,7 +880,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
         // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
         if ΔOutsideHeight != 0, windowFrame.height == screenFrame.height {
-          let newViewportHeight = screenFrame.height - (outputGeo.outsideBarsTotalHeight + outputGeo.topMarginHeight)
+          let newViewportHeight = screenFrame.height - outputGeo.outsideBarsTotalHeight
           let heightRatio = newViewportHeight / viewportSize.height
           let widthFillsScreen = windowFrame.width == screenFrame.width
           let newViewportWidth = widthFillsScreen ? viewportSize.width : round(viewportSize.width * heightRatio)
@@ -1077,7 +1077,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                      bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                      leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    Logger.log("[geo] Cropping from cropBox \(cropBox) x windowScale (\(scaleRatio)) -> \(cropBoxInWinCoords)")
+    Logger.log("[geo] Cropping from cropBox \(cropBox) x windowScale (\(scaleRatio)) → newVideoSize:\(cropBoxInWinCoords), newViewportMargins:\(newViewportMargins)")
 
     let newVideoAspect = cropBox.size.mpvAspect
 
