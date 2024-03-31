@@ -1264,7 +1264,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func updateUseLegacyFullScreen() {
     let oldLayout = currentLayout
-    guard oldLayout.isFullScreen else { return }
+    // Exit from legacy FS only. Native FS will fail if not the active space
+    guard oldLayout.isLegacyFullScreen else { return }
     let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
     if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
       DispatchQueue.main.async { [self] in

@@ -271,9 +271,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func updateControlsState() {
-    updateVideoTabControl()
-    updateAudioTabControl()
-    updateSubTabControl()
+    updateVideoTabControls()
+    updateAudioTabControls()
+    updateSubTabControls()
     updateVideoEqState()
     updateAudioEqState()
   }
@@ -306,6 +306,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
+  /// Reload Aspect settings controls
   private func updateAspectControls() {
     let aspectLabel = player.info.videoParams.selectedAspectRatioLabel
     aspectPresetsSegment.selectSegment(withLabel: aspectLabel)
@@ -313,16 +314,20 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     customAspectTextField.stringValue = isAspectInPanel ? "" : aspectLabel
   }
 
+  /// Reload Crop settings controls
   private func updateCropControls() {
     let selectedCropLabel = player.info.videoParams.selectedCropLabel
     cropPresetsSegment.selectSegment(withLabel: selectedCropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
+
+    // TODO: Crop
     if !isCropInPanel {
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
     }
   }
 
-  private func updateVideoTabControl() {
+  /// Reload `Video` tab
+  private func updateVideoTabControls() {
     updateAspectControls()
     updateCropControls()
 
@@ -353,7 +358,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     redraw(indicator: speedSliderIndicator, constraint: speedSliderConstraint, slider: speedSlider, value: "\(customSpeedTextField.stringValue)x")
   }
 
-  private func updateAudioTabControl() {
+  /// Reload `Audio` tab
+  private func updateAudioTabControls() {
     let audioDelay = player.mpv.getDouble(MPVOption.Audio.audioDelay)
     audioDelaySlider.doubleValue = audioDelay
     customAudioDelayTextField.doubleValue = audioDelay
@@ -361,7 +367,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     redraw(indicator: audioDelaySliderIndicator, constraint: audioDelaySliderConstraint, slider: audioDelaySlider, value: "\(customAudioDelayTextField.stringValue)s")
   }
 
-  private func updateSubTabControl() {
+  /// Reload `Subtitles` tab
+  private func updateSubTabControls() {
     if let currSub = player.info.currentTrack(.sub) {
       // FIXME: CollorWells cannot be disable?
       let enableTextSettings = !(currSub.isAssSub || currSub.isImageSub)
@@ -516,21 +523,22 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
   }
 
+  /// Reload Quick Settings controls for the current tab
   func reload() {
     guard isViewLoaded else { return }
     switch currentTab {
     case .audio:
       audioTableView.reloadData()
-      updateAudioTabControl()
+      updateAudioTabControls()
       updateAudioEqState()
     case .video:
       videoTableView.reloadData()
-      updateVideoTabControl()
+      updateVideoTabControls()
       updateVideoEqState()
     case .sub:
       subTableView.reloadData()
       secSubTableView.reloadData()
-      updateSubTabControl()
+      updateSubTabControls()
     case .plugin(_):
       break
     }
