@@ -61,7 +61,7 @@ struct PlayerSaveState {
     case subDelay = "subDelay"        /// `MPVOption.Subtitles.subDelay`
     case abLoopA = "abLoopA"          /// `MPVOption.PlaybackControl.abLoopA`
     case abLoopB = "abLoopB"          /// `MPVOption.PlaybackControl.abLoopB`
-    case videoAspect = "aspect"       /// `MPVOption.Video.videoAspectOverride`
+    case videoAspectLabel = "aspect"  /// `MPVOption.Video.videoAspectOverride`
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
     case cropLabel = "cropLabel"
 
@@ -233,7 +233,7 @@ struct PlayerSaveState {
 
     props[PropName.videoRotation.rawValue] = String(info.videoParams.userRotation)
 
-    props[PropName.videoAspect.rawValue] = info.videoParams.selectedAspectRatioLabel
+    props[PropName.videoAspectLabel.rawValue] = info.videoParams.selectedAspectRatioLabel
 
     props[PropName.cropLabel.rawValue] = info.videoParams.selectedCropLabel
 
@@ -700,11 +700,18 @@ struct PlayerSaveState {
       mpv.setInt(MPVOption.Video.videoRotate, videoRotation)
     }
 
-    if let videoAspect = string(for: .videoAspect) {
-      player.setVideoAspectOverride(videoAspect)
+    if let videoAspectLabel = string(for: .videoAspectLabel) {
+      // Update videoParams first so that UI doesn't alert the user
+      info.videoParams = info.videoParams.clone(selectedAspectRatioLabel: videoAspectLabel)
+      if info.videoParams.aspectRatioOverride != nil {
+        let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
+        mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+      }
     }
 
     if let selectedCropLabel = string(for: .cropLabel) {
+      // Update videoParams first so that UI doesn't alert the user
+      info.videoParams = info.videoParams.clone(selectedCropLabel: selectedCropLabel)
       player.setCrop(fromAspectString: selectedCropLabel)
     }
 
