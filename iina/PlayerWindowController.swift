@@ -2964,6 +2964,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     return true
   }
 
+  func clearOSDQueue() {
+    osdQueueLock.withLock {
+      osdQueue.clear()
+    }
+  }
+
   /// Do not call `displayOSD` directly. Call `PlayerCore.sendOSD` instead.
   ///
   /// There is a timing issue that can occur when the user holds down a key to rapidly repeat a key binding or menu item equivalent,

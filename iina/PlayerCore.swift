@@ -635,6 +635,9 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
     isStopped = true
+
+    windowController.clearOSDQueue()
+
     postNotification(.iinaPlayerStopped)
   }
 
@@ -2673,7 +2676,7 @@ class PlayerCore: NSObject {
 
   func canShowOSD() -> Bool {
     /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
-    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode {
+    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode || isStopped {
       return false
     }
     if isInMiniPlayer && !Preference.bool(for: .enableOSDInMusicMode) {
