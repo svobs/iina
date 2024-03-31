@@ -2006,9 +2006,9 @@ class PlayerCore: NSObject {
       assert(info.justOpenedFile)
       windowController.applyVidParams(newParams: newParams)
     } else {
-      // Either not a video file, or info not loaded.
-      // Clear previously cached value and wait for mpv to provide new stuff
-      info.videoParams = MPVVideoParams.nullParams
+      // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
+      log.verbose("Nothing for preResizeVideo to do")
+      info.videoParams = info.videoParams.clone(videoRawWidth: 0, videoRawHeight: 0)
     }
   }
 
@@ -2751,10 +2751,16 @@ class PlayerCore: NSObject {
 
         // Generate thumbnails using video's original dimensions, before aspect ratio correction.
         // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-        guard let videoParams = mpv.queryForVideoParams() else {
-          log.debug("Cannot generate thumbnails: could not get video params")
-          return
+        var videoParams = info.videoParams
+        if !videoParams.hasValidSize {
+          // Fall back to querying mpv:
+          guard let videoParamsNew = mpv.queryForVideoParams() else {
+            log.debug("Cannot generate thumbnails: could not get video params from mpv")
+            return
+          }
+          videoParams = videoParamsNew
         }
+
         guard let videoSizeRaw = videoParams.videoSizeRaw else {
           log.debug("Cannot generate thumbnails: video height and/or width is zero")
           clearExistingThumbnails()

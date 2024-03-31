@@ -3231,8 +3231,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func enterInteractiveMode(_ mode: InteractiveMode) {
     animationPipeline.submitZeroDuration({ [self] in
-      guard let videoParams = player.mpv.queryForVideoParams() else { return }
-      guard videoParams.videoSizeACR != nil else {
+      guard player.info.videoParams.videoSizeACR != nil else {
         Utility.showAlert("no_video_track")
         return
       }
