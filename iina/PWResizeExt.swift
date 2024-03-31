@@ -168,17 +168,19 @@ extension PlayerWindowController {
       }
 
       var duration = IINAAnimation.VideoReconfigDuration
+      var timing = CAMediaTimingFunctionName.easeInEaseOut
       if !isInitialSizeDone {
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
         log.verbose("[applyVidParams D-1a] Setting isInitialSizeDone=YES")
         isInitialSizeDone = true
         duration = IINAAnimation.InitialVideoReconfigDuration
+        timing = .linear
       }
       /// Finally call `setFrame()`
       log.debug("[applyVidParams D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
 
       if currentLayout.mode == .windowed {
-        applyWindowGeometryInAnimationPipeline(newWindowGeo, duration: duration)
+        applyWindowGeometryInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
       } else if currentLayout.mode == .fullScreen {
         // TODO: break FS into separate function
         applyWindowGeometryInAnimationPipeline(newWindowGeo)
@@ -623,14 +625,15 @@ extension PlayerWindowController {
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.
   /// Also updates cached `windowedModeGeo` and saves updated state.
-  func applyWindowGeometryInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration) {
+  func applyWindowGeometryInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
+                                              timing: CAMediaTimingFunctionName = .easeInEaseOut) {
     var ticket: Int = 0
     $geoUpdateTicketCounter.withLock {
       $0 += 1
       ticket = $0
     }
 
-    animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
+    animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       guard ticket == geoUpdateTicketCounter else {
         return
       }

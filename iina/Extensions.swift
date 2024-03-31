@@ -109,8 +109,7 @@ extension NSSize {
     return cropped
   }
 
-  func expand(withAspect aspectRect: Aspect) -> NSSize {
-    let targetAspect = aspectRect.value
+  func expand(withAspect targetAspect: Double) -> NSSize {
     if aspect < targetAspect {  // self is taller, expand width, use same height
       return NSSize(width: height * targetAspect, height: height)
     } else {

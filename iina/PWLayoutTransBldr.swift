@@ -86,12 +86,17 @@ extension PlayerWindowController {
       let resizeTimingPref = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
       if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
         /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
-        /// it expands and creates a nice zooming effect.
-        let videoSize = AppData.minVideoSize
-        let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
+        /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
+        let videoSize = AppData.minVideoSize.expand(withAspect: player.info.videoAspect)
+        let windowFrame = NSRect(origin: NSPoint.zero, size: videoSize)
         let defaultScreenID = NSScreen.main!.screenID
-        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: defaultScreenID, videoAspect: videoSize.mpvAspect)
-        windowedModeGeo = initialGeo.refit(.centerInVisibleScreen)
+        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: defaultScreenID, videoAspect: videoSize.mpvAspect).refit(.keepInVisibleScreen)
+        /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
+        /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
+        let windowSize = initialGeo.windowFrame.size
+        let mouseLoc = NSEvent.mouseLocation
+        let origin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
+        windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: origin, size: windowSize)).refit(.keepInVisibleScreen)
       } else {
         // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
         windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,

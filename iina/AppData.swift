@@ -68,6 +68,8 @@ struct AppData {
   // This should help cut down on unnecessary requests.
   static let thumbnailRegenerationDelay = 0.5
   static let playerStateSaveDelay = 0.2
+  // Delay before auto-loading playlist from files in the opened file's directory
+  static let autoLoadDelay = 1.0
 
   static let minThumbnailsPerFile = 1
 

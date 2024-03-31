@@ -2052,7 +2052,7 @@ class PlayerCore: NSObject {
     $backgroundQueueTicket.withLock { $0 += 1 }
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
     let currentTicket = backgroundQueueTicket
-    PlayerCore.backgroundQueue.async { [self] in
+    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.autoLoadDelay) { [self] in
       // add files in same folder
       if shouldAutoLoadFiles {
         log.debug("Started auto load of files in current folder")
