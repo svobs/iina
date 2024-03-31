@@ -450,6 +450,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     case PK.enableAdvancedSettings.rawValue:
       animationPipeline.submit(IINAAnimation.Task({ [self] in
         updateCustomBorderBoxAndWindowOpacity(using: currentLayout)
+        // may need to hide cropbox label and other advanced stuff
+        quickSettingView.reload()
       }))
     case PK.themeMaterial.rawValue:
       applyThemeMaterial()
@@ -463,9 +465,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
     case PK.maxVolume.rawValue:
       if let newValue = change[.newKey] as? Int {
-        volumeSlider.maxValue = Double(newValue)
         if player.mpv.getDouble(MPVOption.Audio.volume) > Double(newValue) {
           player.mpv.setDouble(MPVOption.Audio.volume, Double(newValue))
+        } else {
+          updateVolumeUI()
         }
       }
     case PK.useExactSeek.rawValue:

@@ -306,6 +306,10 @@ class MPVFilter: NSObject {
     return "\(Int(cropBox.width))x\(Int(cropBox.height))+\(Int(cropBox.origin.x))+\(Int(cropBox.origin.y))"
   }
 
+  static func makeCropBoxDisplayString(from cropBox: NSRect) -> String {
+    return "(\(Int(cropBox.origin.x)), \(Int(cropBox.origin.y))) (\(Int(cropBox.width))\u{d7}\(Int(cropBox.height)))"
+  }
+
   /// Returns `true` if this filter is equal to the given filter `false` otherwise.
   ///
   /// Filters that support multiple parameters have more than one valid string representation due to there being no requirement on the

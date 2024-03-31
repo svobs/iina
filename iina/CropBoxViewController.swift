@@ -20,7 +20,7 @@ class CropBoxViewController: NSViewController {
   var cropyFlippedForMac: Int = 0
 
   var readableCropString: String {
-    return "(\(cropx), \(cropy)) (\(cropw)\u{d7}\(croph))"
+    return MPVFilter.makeCropBoxDisplayString(from: NSRect(x: cropx, y: cropy, width: cropw, height: croph))
   }
 
   lazy var cropBoxView: CropBoxView = {

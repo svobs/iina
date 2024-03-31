@@ -105,6 +105,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   @IBOutlet weak var customAspectTextField: NSTextField!
 
   @IBOutlet weak var cropPresetsSegment: NSSegmentedControl!
+  @IBOutlet weak var customCropTextField: NSTextField!
 
   @IBOutlet weak var speedSlider: NSSlider!
   @IBOutlet weak var speedSliderIndicator: NSTextField!
@@ -320,9 +321,16 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     cropPresetsSegment.selectSegment(withLabel: selectedCropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
 
-    // TODO: Crop
+    let isAdvanceEnabled = Preference.bool(for: .enableAdvancedSettings)
+
     if !isCropInPanel {
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
+      customCropTextField.isHidden = !isAdvanceEnabled
+      if isAdvanceEnabled, let cropBox = player.info.videoParams.cropBox {
+        customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropBox)
+      }
+    } else {
+      customCropTextField.isHidden = true
     }
   }
 
