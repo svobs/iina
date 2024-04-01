@@ -121,8 +121,6 @@ class PlayerCore: NSObject {
 
   lazy var info: PlaybackInfo = PlaybackInfo(log: log)
 
-  // TODO: fold hideFadeableViewsTimer into this
-  // TODO: fold hideOSDTimer into this
   var syncUITimer: Timer?
 
   var isUsingMpvOSD = false
