@@ -18,16 +18,15 @@ class MPVPlaylistItem {
     return isNetworkResource ? filename : NSString(string: filename).lastPathComponent
   }
 
-  var isCurrent: Bool
-  var isPlaying: Bool
+  // Too inefficient and infrequently used. Just set to false for now so it doesn't break JavascriptAPI
+  var isCurrent: Bool { return false }
+  var isPlaying: Bool { return false }
   var isNetworkResource: Bool
 
   var title: String?
 
-  init(filename: String, isCurrent: Bool, isPlaying: Bool, title: String?) {
+  init(filename: String, title: String?) {
     self.filename = filename
-    self.isCurrent = isCurrent
-    self.isPlaying = isPlaying
     self.title = title
     self.isNetworkResource = Regex.url.matches(filename)
   }

@@ -231,14 +231,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func scrollPlaylistToCurrentItem() {
-    let playlistItems = player.info.playlist
-    var currentPlayItemIndex = 0
-    for (rowIndex, item) in playlistItems.enumerated() {
-      if item.isPlaying {
-        currentPlayItemIndex = rowIndex
-      }
+    if let entryIndex = player.info.currentMedia?.playlistEntryID {
+      playlistTableView.scrollRowToVisible(entryIndex)
     }
-    playlistTableView.scrollRowToVisible(currentPlayItemIndex)
   }
 
   func reloadData(playlist: Bool, chapters: Bool) {
@@ -565,11 +560,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let playlistItems = info.playlist
       guard row < playlistItems.count else { return nil }
       let item = playlistItems[row]
+      let isPlaying = player.mpv.getFlag(MPVProperty.playlistNPlaying(row))
 
       if identifier == .isChosen {
         // ▶︎ Is Playing icon
         if let textField = v.textField {
-          let text = item.isPlaying ? Constants.String.play : ""
+          let text = isPlaying ? Constants.String.play : ""
           textField.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
         }
       } else if identifier == .trackName {
@@ -588,8 +584,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           return (artist, title)
         }
 
-        let textColor = item.isPlaying ? isPlayingTextColor : .controlTextColor
-        let prefixTextColor = item.isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
+        let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
+        let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
         if Preference.bool(for: .shortenFileGroupsInPlaylist), let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
            !prefix.isEmpty,
            prefix.count <= displayStr.count,  // check whether prefix length > filename length
@@ -619,12 +615,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
               // if FFmpeg got the duration successfully
               DispatchQueue.main.async { [self] in
                 let durationString = VideoTime(duration).stringRepresentation
-                cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: item.isPlaying ? isPlayingTextColor : .secondaryLabelColor)
+                cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: isPlaying ? isPlayingTextColor : .secondaryLabelColor)
                 if let progress = cached.progress {
                   cellView.playbackProgressView.percentage = progress / duration
                   cellView.playbackProgressView.needsDisplay = true
                 }
-                if item.isPlaying {
+                if isPlaying {
                   cellView.needsDisplay = true
                   cellView.needsLayout = true
                 }

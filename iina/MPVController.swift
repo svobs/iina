@@ -221,9 +221,14 @@ not applying FFmpeg 9599 workaround
     }
   }
 
+  /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
+  /// which IINA doesn't care about anymore.
+  /// 
+  /// mpv's `playlist-current-pos` tracks the lifecycle of a playlist entry from start to end.
+  /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
   func isStale() -> Bool {
     dispatchPrecondition(condition: .onQueue(queue))
-    let mpvEntryID = getInt(MPVProperty.playlistPlayingPos)
+    let mpvEntryID = getInt(MPVProperty.playlistCurrentPos)
     guard let iinaEntryID = player.info.currentMedia?.playlistEntryID else {
       // Note: not current if both are nil
       player.log.verbose("The current entryID from mpv (\(mpvEntryID)) is stale because there is no current media")

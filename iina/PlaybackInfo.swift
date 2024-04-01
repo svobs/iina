@@ -97,7 +97,7 @@ class PlaybackInfo {
   var isPaused: Bool = false {
     willSet {
       if isPaused != newValue {
-        log.verbose("Player state changing to \(newValue ? "PAUSED" : "PLAYING")")
+        log.verbose("Playback is \(newValue ? "PAUSED" : "PLAYING")")
       }
     }
   }
@@ -220,6 +220,7 @@ class PlaybackInfo {
   var videoDuration: VideoTime?
 
   var playlist: [MPVPlaylistItem] = []
+  var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
   func constrainVideoPosition() {
     guard let duration = videoDuration, let position = videoPosition else { return }

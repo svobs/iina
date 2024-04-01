@@ -1472,7 +1472,7 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       log.verbose("Changing mpv playlist-pos to \(pos)")
       mpv.setInt(MPVProperty.playlistPos, pos)
-      _reloadPlaylist()
+      updatePlaylistPlayingPos(updateUI: true)
       saveState()
     }
   }
@@ -2152,8 +2152,8 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
     trackListChanged()
-
-    _reloadPlaylist()
+    // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
+    updatePlaylistPlayingPos(updateUI: true)
     _reloadChapters()
     syncAbLoop()
     saveState()
@@ -2189,7 +2189,7 @@ class PlayerCore: NSObject {
     /// (Put this here instead of at `playback-restart` because it occurs later & will avoid triggering display of OSDs)
     fileIsCompletelyDoneLoading()
   }
-
+  
   /// The mpv `file-loaded` event is emitted before everything associated with the file (such as filters) is completely done loading.
   /// This event should be called when everything is truly done.
   func fileIsCompletelyDoneLoading() {
@@ -2207,7 +2207,7 @@ class PlayerCore: NSObject {
       windowController.applyVidParams(newParams: newVidParams)
     }
 
-    let playlistEntryID = mpv.getInt(MPVProperty.playlistPlayingPos)
+    let playlistEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
     log.verbose("File is completely done loading (entryID: \(playlistEntryID)); setting justOpenedFile=N")
     /// Make sure to set this *after* calling `applyVidParams` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
@@ -2925,14 +2925,13 @@ class PlayerCore: NSObject {
     log.verbose("Adding \(playlistCount) items to playlist")
     for index in 0..<playlistCount {
       let playlistItem = MPVPlaylistItem(filename: mpv.getString(MPVProperty.playlistNFilename(index))!,
-                                         isCurrent: mpv.getFlag(MPVProperty.playlistNCurrent(index)),
-                                         isPlaying: mpv.getFlag(MPVProperty.playlistNPlaying(index)),
                                          title: mpv.getString(MPVProperty.playlistNTitle(index)))
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist
-    let mpvCurrentEntryID = mpv.getInt(MPVProperty.playlistPlayingPos)
+    let mpvCurrentEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
     info.currentMedia?.playlistEntryID = mpvCurrentEntryID
+    updatePlaylistPlayingPos(updateUI: false)
     log.verbose("After reloading playlist: current media entryID is: \(mpvCurrentEntryID)")
     saveState()  // save playlist URLs to prefs
     if !silent {
@@ -2980,6 +2979,23 @@ class PlayerCore: NSObject {
   }
 
   // MARK: - Utils
+
+  func updatePlaylistPlayingPos(updateUI: Bool = false) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    // Update index of playing item. Don't need to reload whole playlist
+    let oldItemPlaying = info.playlistPlayingPos
+    let newItemPlaying = mpv.getInt(MPVProperty.playlistPlayingPos)
+    info.playlistPlayingPos = newItemPlaying
+    log.verbose("Updated playlistPlayingPos: \(oldItemPlaying) → \(newItemPlaying)")
+
+    guard updateUI else { return }
+    DispatchQueue.main.async { [self] in
+      let oldItem = IndexSet(integer: oldItemPlaying)
+      let newItem = IndexSet(integer: newItemPlaying)
+      windowController.playlistView.playlistTableView.reloadData(forRowIndexes: oldItem, columnIndexes: IndexSet(integersIn: 0...1))
+      windowController.playlistView.playlistTableView.reloadData(forRowIndexes: newItem, columnIndexes: IndexSet(integersIn: 0...1))
+    }
+  }
 
   func getMediaTitle(withExtension: Bool = true) -> String {
     let mediaTitle = mpv.getString(MPVProperty.mediaTitle)
