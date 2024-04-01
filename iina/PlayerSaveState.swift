@@ -62,12 +62,12 @@ struct PlayerSaveState {
     case abLoopA = "abLoopA"          /// `MPVOption.PlaybackControl.abLoopA`
     case abLoopB = "abLoopB"          /// `MPVOption.PlaybackControl.abLoopB`
 
-    case videoRawWidth = "vidRawW"    /// `MPVProperty.width`
-    case videoRawHeight = "vidRawH"   /// `MPVProperty.height`
+    case rawWidth = "vidRawW"    /// `MPVProperty.width`
+    case rawHeight = "vidRawH"   /// `MPVProperty.height`
     case videoAspectLabel = "aspect"  /// `MPVOption.Video.videoAspectOverride`-ish
     case cropLabel = "cropLabel"
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
-    case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
+    case totalRotation = "totalRotation"/// `MPVProperty.videoGeoRotate`
 
     case isSubVisible = "subVisible"  /// `MPVOption.Subtitles.subVisibility`
     case isSub2Visible = "sub2Visible"/// `MPVOption.Subtitles.secondarySubVisibility`
@@ -146,13 +146,13 @@ struct PlayerSaveState {
 
     // - Video geometry
 
-    props[PropName.videoRawWidth.rawValue] = String(info.videoParams.videoRawWidth)
-    props[PropName.videoRawHeight.rawValue] = String(info.videoParams.videoRawHeight)
-    props[PropName.videoAspectLabel.rawValue] = info.videoParams.selectedAspectRatioLabel
-    props[PropName.cropLabel.rawValue] = info.videoParams.selectedCropLabel
-    props[PropName.totalRotation.rawValue] = String(info.videoParams.totalRotation)
-    props[PropName.videoRotation.rawValue] = String(info.videoParams.userRotation)
-    props[PropName.windowScale.rawValue] = info.videoParams.videoScale.stringMaxFrac6
+    props[PropName.rawWidth.rawValue] = String(info.videoGeo.rawWidth)
+    props[PropName.rawHeight.rawValue] = String(info.videoGeo.rawHeight)
+    props[PropName.videoAspectLabel.rawValue] = info.videoGeo.selectedAspectLabel
+    props[PropName.cropLabel.rawValue] = info.videoGeo.selectedCropLabel
+    props[PropName.totalRotation.rawValue] = String(info.videoGeo.totalRotation)
+    props[PropName.videoRotation.rawValue] = String(info.videoGeo.userRotation)
+    props[PropName.windowScale.rawValue] = info.videoGeo.scale.stringMaxFrac6
 
     // - Misc window state
 
@@ -544,16 +544,16 @@ struct PlayerSaveState {
     windowController.osdLastPlaybackDuration = info.videoDuration?.second
 
     // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
-    info.videoParams = info.videoParams.clone(videoRawWidth: int(for: .videoRawWidth),
-                                              videoRawHeight: int(for: .videoRawHeight),
-                                              selectedAspectRatioLabel: string(for: .videoAspectLabel),
+    info.videoGeo = info.videoGeo.clone(rawWidth: int(for: .rawWidth),
+                                              rawHeight: int(for: .rawHeight),
+                                              selectedAspectLabel: string(for: .videoAspectLabel),
                                               totalRotation: int(for: .totalRotation),
                                               userRotation: int(for: .videoRotation),
                                               selectedCropLabel: string(for: .cropLabel))
 
     if let windowScale = double(for: .windowScale) {
       // Swift has a few rough edges still
-      info.videoParams = info.videoParams.clone(videoScale: windowScale)
+      info.videoGeo = info.videoGeo.clone(scale: windowScale)
     }
 
     // Open the window!
@@ -661,15 +661,15 @@ struct PlayerSaveState {
     }
 
     if let videoAspectLabel = string(for: .videoAspectLabel) {
-      // Update videoParams abovefirst so that UI doesn't alert the user
-      if info.videoParams.aspectRatioOverride != nil {
+      // Update videoGeo abovefirst so that UI doesn't alert the user
+      if info.videoGeo.aspectRatioOverride != nil {
         let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
         mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
       }
     }
 
     if let selectedCropLabel = string(for: .cropLabel) {
-      // Update videoParams above first so that UI doesn't alert the user
+      // Update videoGeo above first so that UI doesn't alert the user
       player.setCrop(fromAspectString: selectedCropLabel)
     }
 

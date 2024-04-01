@@ -136,9 +136,9 @@ class MPVController: NSObject {
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
     MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
-    MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
-    MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
-    MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
+    MPVProperty.videoGeoRotate: MPV_FORMAT_INT64,
+    MPVProperty.videoGeoPrimaries: MPV_FORMAT_STRING,
+    MPVProperty.videoGeoGamma: MPV_FORMAT_STRING,
     MPVProperty.idleActive: MPV_FORMAT_FLAG
   ]
 
@@ -223,7 +223,7 @@ not applying FFmpeg 9599 workaround
 
   /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
   /// which IINA doesn't care about anymore.
-  /// 
+  ///
   /// mpv's `playlist-current-pos` tracks the lifecycle of a playlist entry from start to end.
   /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
   func isStale() -> Bool {
@@ -900,41 +900,41 @@ not applying FFmpeg 9599 workaround
   }
 
   /// Makes calls to mpv to get the latest video params, then returns them.
-  func queryForVideoParams() -> MPVVideoParams? {
+  func queryForVideoGeometry() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
     guard player.info.isFileLoaded else {
-      player.log.verbose("Cannot get videoParams: file not loaded")
+      player.log.verbose("Cannot get videoGeo: file not loaded")
       return nil
     }
     // Will crash if querying mpv after stop command started
     guard !player.isStopping, !player.isStopped, !player.isShuttingDown, !player.isShutdown else {
-      player.log.verbose("Cannot get videoParams: stopping=\(player.isStopping.yn) stopped=\(player.isStopped.yn) shuttingDown=\(player.isShuttingDown.yn)")
+      player.log.verbose("Cannot get videoGeo: stopping=\(player.isStopping.yn) stopped=\(player.isStopped.yn) shuttingDown=\(player.isShuttingDown.yn)")
       return nil
     }
 
-    let videoRawWidth = getInt(MPVProperty.width)
-    let videoRawHeight = getInt(MPVProperty.height)
+    let rawWidth = getInt(MPVProperty.width)
+    let rawHeight = getInt(MPVProperty.height)
 
     let videoWidthAC = getInt(MPVProperty.dwidth)
     let videoHeightAC = getInt(MPVProperty.dheight)
-    let mpvParamRotate = getInt(MPVProperty.videoParamsRotate)
+    let mpvParamRotate = getInt(MPVProperty.videoGeoRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
     // For mpv, window size is always the same as video size, although this is not always true with IINA.
     let videoScale = getDouble(MPVOption.Window.windowScale)
 
     // filter the last video-reconfig event before quit
     if videoWidthAC == 0 && videoHeightAC == 0 && getFlag(MPVProperty.coreIdle) {
-      player.log.verbose("Cannot get videoParams: core idle & dheight or dwidth is 0")
+      player.log.verbose("Cannot get videoGeo: core idle & dheight or dwidth is 0")
       return nil
     }
 
-    let params = MPVVideoParams(videoRawWidth: videoRawWidth, videoRawHeight: videoRawHeight,
-                                selectedAspectRatioLabel: player.info.videoParams.selectedAspectRatioLabel,
-                                totalRotation: mpvParamRotate, userRotation: mpvVideoRotate, 
-                                selectedCropLabel: player.info.videoParams.selectedCropLabel,
-                                videoScale: videoScale)
+    let params = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
+                               selectedAspectLabel: player.info.videoGeo.selectedAspectLabel,
+                               totalRotation: mpvParamRotate, userRotation: mpvVideoRotate,
+                               selectedCropLabel: player.info.videoGeo.selectedCropLabel,
+                               scale: videoScale)
 
-    player.log.verbose("Latest videoParams: \(params)")
+    player.log.verbose("Latest videoGeo: \(params)")
     return params
   }
 
@@ -1154,8 +1154,8 @@ not applying FFmpeg 9599 workaround
 
     switch name {
 
-    case MPVProperty.videoParams:
-      player.log.verbose("Received mpv prop: \(MPVProperty.videoParams.quoted)")
+    case MPVProperty.videoGeo:
+      player.log.verbose("Received mpv prop: \(MPVProperty.videoGeo.quoted)")
       needReloadQuickSettingsView = true
 
     case MPVProperty.videoOutParams:
@@ -1170,7 +1170,7 @@ not applying FFmpeg 9599 workaround
       player.log.verbose("Received mpv prop: \(MPVProperty.videoOutParams.quoted)")
       break
 
-    case MPVProperty.videoParamsRotate:
+    case MPVProperty.videoGeoRotate:
         /** `video-params/rotate: Intended display rotation in degrees (clockwise).` - mpv manual
          Do not confuse with the user-configured `video-rotate` (below) */
       if let totalRotation = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee {
@@ -1184,9 +1184,9 @@ not applying FFmpeg 9599 workaround
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let userRotation = Int(data)
       
-      guard userRotation != player.info.videoParams.userRotation else { break }
+      guard userRotation != player.info.videoGeo.userRotation else { break }
 
-      // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoParams.
+      // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoGeo.
       player.log.verbose("Received mpv prop: 'video-rotate' ≔ \(userRotation)")
       needReloadQuickSettingsView = true
 
@@ -1204,21 +1204,21 @@ not applying FFmpeg 9599 workaround
 
       player.log.verbose("Calling applyVidParams from mpv video-rotate prop change")
       // Update window geometry
-      let oldVidParams = player.info.videoParams
+      let oldVidParams = player.info.videoGeo
       let rotationChange = userRotation - oldVidParams.userRotation
       let newTotalRotation = (oldVidParams.totalRotation + rotationChange) %% 360
       let newVidParams = oldVidParams.clone(totalRotation: newTotalRotation, userRotation: userRotation)
-      player.windowController.applyVidParams(newParams: newVidParams)
+      player.windowController.applyVideoGeo(newVidGeo: newVidParams)
 
       player.sendOSD(.rotation(userRotation))
       // Thumb rotation needs updating:
       player.reloadThumbnails(forItem: player.info.currentMedia)
       player.saveState()
 
-    case MPVProperty.videoParamsPrimaries:
+    case MPVProperty.videoGeoPrimaries:
       fallthrough
 
-    case MPVProperty.videoParamsGamma:
+    case MPVProperty.videoGeoGamma:
       if #available(macOS 10.15, *) {
         player.refreshEdrMode()
       }
@@ -1491,11 +1491,11 @@ not applying FFmpeg 9599 workaround
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
       let newVideoScale = getDouble(MPVOption.Window.windowScale)
-      let cachedVideoScale = player.info.videoParams.videoScale
+      let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
         player.log.verbose("Received mpv prop: 'window-scale' ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
-        player.info.videoParams = player.info.videoParams.clone(videoScale: newVideoScale)
+        player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
         DispatchQueue.main.async {
           self.player.windowController.setVideoScale(CGFloat(newVideoScale))
         }

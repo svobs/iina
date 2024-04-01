@@ -517,12 +517,12 @@ extension VideoView {
   func requestEdrMode() -> Bool? {
     guard let mpv = player.mpv else { return false }
 
-    guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
+    guard let primaries = mpv.getString(MPVProperty.videoGeoPrimaries), let gamma = mpv.getString(MPVProperty.videoGeoGamma) else {
       hdrSubsystem.debug("HDR primaries and gamma not available")
       return false
     }
   
-    let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
+    let peak = mpv.getDouble(MPVProperty.videoGeoSigPeak)
     hdrSubsystem.debug("HDR gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
 
     var name: CFString? = nil

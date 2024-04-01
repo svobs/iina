@@ -801,7 +801,7 @@ extension PlayerWindowController {
       // Already set fixed constraints. Now set new values to animate into place
       videoView.apply(transition.outputGeometry)
 
-      if let videoSizeACR = player.info.videoParams.videoSizeRaw, let cropController = cropSettingsView {
+      if let videoSizeACR = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, videoViewSize: transition.outputGeometry.videoSize)
         // Hide for now, to prepare for a nice fade-in animation
         cropController.cropBoxView.isHidden = true

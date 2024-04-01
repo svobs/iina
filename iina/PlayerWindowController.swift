@@ -3237,7 +3237,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func enterInteractiveMode(_ mode: InteractiveMode) {
     animationPipeline.submitZeroDuration({ [self] in
-      guard player.info.videoParams.videoSizeACR != nil else {
+      guard player.info.videoGeo.videoSizeACR != nil else {
         Utility.showAlert("no_video_track")
         return
       }
@@ -3256,7 +3256,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
         player.info.videoFiltersDisabled[filterLabel] = vf
         if player.removeVideoFilter(vf) {
-          /// The call to `removeVideoFilter` will trigger `applyVidParams`, which will notice the disabled filter & pick up there
+          /// The call to `removeVideoFilter` will trigger `applyVideoGeo`, which will notice the disabled filter & pick up there
           return
         } else {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
@@ -3282,7 +3282,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Use `immediately: true` to exit without animation.
   /// This method can be run safely even if not in interactive mode
-  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil, 
+  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: VideoGeometry? = nil, 
                            then doAfter: (() -> Void)? = nil) {
     animationPipeline.submitZeroDuration({ [self] in
       let currentLayout = currentLayout
@@ -3307,14 +3307,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // Exits interactive mode, using animations.
   private func exitInteractiveMode(immediately: Bool,
-                                   uncroppedVideoSize: NSSize? = nil, newVidParams: MPVVideoParams? = nil) -> [IINAAnimation.Task] {
+                                   uncroppedVideoSize: NSSize? = nil, newVidParams: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var animationTasks: [IINAAnimation.Task] = []
 
     // If these params are present and valid, then need to apply a crop
     if let uncroppedVideoSize, let cropController = cropSettingsView, uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0,
        let newVidParams, let cropBox = newVidParams.cropBox {
 
-      log.verbose("[applyVidParams E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
+      log.verbose("[applyVideoGeo E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
       let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.25
 
@@ -3343,7 +3343,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Build exit animation
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
-    log.verbose("[applyVidParams E5] Exiting interactive mode, newMode: \(newMode)")
+    log.verbose("[applyVideoGeo E5] Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
@@ -3404,11 +3404,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     // - 2. Thumbnail Preview
 
-    let videoParams = player.info.videoParams
+    let videoGeo = player.info.videoGeo
 
     guard let thumbnails = player.info.currentMedia?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second),
-          let videoAspectACR = videoParams.videoAspectACR, let currentControlBar else {
+          let videoAspectACR = videoGeo.videoAspectACR, let currentControlBar else {
       thumbnailPeekView.isHidden = true
       return
     }
@@ -3523,7 +3523,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       let finalImage: NSImage
       // Apply crop first. Then aspect
       let croppedImage: NSImage
-      if let videoSizeRaw = videoParams.videoSizeRaw, 
+      if let videoSizeRaw = videoGeo.videoSizeRaw, 
           let normalizedCropRect = player.getCurrentCropRect(videoSizeRaw: videoSizeRaw, normalized: true, flipY: false) {
         croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
       } else {

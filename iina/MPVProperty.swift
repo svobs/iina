@@ -187,45 +187,45 @@ struct MPVProperty {
   /** height */
   static let height = "height"
   /** video-params */
-  static let videoParams = "video-params"
+  static let videoGeo = "video-params"
   /** video-params/pixelformat */
-  static let videoParamsPixelformat = "video-params/pixelformat"
+  static let videoGeoPixelformat = "video-params/pixelformat"
   /** video-params/hw-pixelformat */
-  static let videoParamsHwPixelformat = "video-params/hw-pixelformat"
+  static let videoGeoHwPixelformat = "video-params/hw-pixelformat"
   /** video-params/average-bpp */
-  static let videoParamsAverageBpp = "video-params/average-bpp"
+  static let videoGeoAverageBpp = "video-params/average-bpp"
   /** video-params/w */
-  static let videoParamsW = "video-params/w"
+  static let videoGeoW = "video-params/w"
   /** video-params/h */
-  static let videoParamsH = "video-params/h"
+  static let videoGeoH = "video-params/h"
   /** video-params/dw */
-  static let videoParamsDw = "video-params/dw"
+  static let videoGeoDw = "video-params/dw"
   /** video-params/dh */
-  static let videoParamsDh = "video-params/dh"
+  static let videoGeoDh = "video-params/dh"
   /** video-params/aspect */
-  static let videoParamsAspect = "video-params/aspect"
+  static let videoGeoAspect = "video-params/aspect"
   /** video-params/par */
-  static let videoParamsPar = "video-params/par"
+  static let videoGeoPar = "video-params/par"
   /** video-params/colormatrix */
-  static let videoParamsColormatrix = "video-params/colormatrix"
+  static let videoGeoColormatrix = "video-params/colormatrix"
   /** video-params/colorlevels */
-  static let videoParamsColorlevels = "video-params/colorlevels"
+  static let videoGeoColorlevels = "video-params/colorlevels"
   /** video-params/primaries */
-  static let videoParamsPrimaries = "video-params/primaries"
+  static let videoGeoPrimaries = "video-params/primaries"
   /** video-params/gamma */
-  static let videoParamsGamma = "video-params/gamma"
+  static let videoGeoGamma = "video-params/gamma"
   /** video-params/sig-peak */
-  static let videoParamsSigPeak = "video-params/sig-peak"
+  static let videoGeoSigPeak = "video-params/sig-peak"
   /** video-params/light */
-  static let videoParamsLight = "video-params/light"
+  static let videoGeoLight = "video-params/light"
   /** video-params/chroma-location */
-  static let videoParamsChromaLocation = "video-params/chroma-location"
+  static let videoGeoChromaLocation = "video-params/chroma-location"
   /** video-params/rotate */
-  static let videoParamsRotate = "video-params/rotate"
+  static let videoGeoRotate = "video-params/rotate"
   /** video-params/stereo-in */
-  static let videoParamsStereoIn = "video-params/stereo-in"
+  static let videoGeoStereoIn = "video-params/stereo-in"
   /** video-params/alpha */
-  static let videoParamsAlpha = "video-params/alpha"
+  static let videoGeoAlpha = "video-params/alpha"
   /** dwidth */
   static let dwidth = "dwidth"
   /** dheight */

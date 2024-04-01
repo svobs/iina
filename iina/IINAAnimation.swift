@@ -19,7 +19,7 @@ class IINAAnimation {
     return CGFloat(Preference.float(for: .animationDurationDefault))
   }
   static var VideoReconfigDuration: CGFloat {
-    return DefaultDuration * 0.5
+    return DefaultDuration * 0.25
   }
   static var InitialVideoReconfigDuration: CGFloat {
     return DefaultDuration * 2

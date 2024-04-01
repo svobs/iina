@@ -148,18 +148,18 @@ class PlaybackInfo {
     }
   }
 
-  /// If displaying album art, will be `1` (square). Otherwise should match `videoParams.videoAspectACR`, which should match the aspect of
+  /// If displaying album art, will be `1` (square). Otherwise should match `videoGeo.videoAspectACR`, which should match the aspect of
   /// the currently displayed `videoView`.
   var videoAspect: CGFloat {
     if isShowingAlbumArt {
       return 1.0  // album art is always square
     }
-    if let videoAspectACR = videoParams.videoAspectACR {
+    if let videoAspectACR = videoGeo.videoAspectACR {
       return videoAspectACR
     }
     // Ideally this should never happen
     // TODO: preload video information using ffmpeg before opening window
-    log.warn("No videoAspect found in videoParams! Falling back to default 16:9 aspect")
+    log.warn("No videoAspect found in videoGeo! Falling back to default 16:9 aspect")
     return 16.0/9.0
   }
 
@@ -167,15 +167,15 @@ class PlaybackInfo {
   var isShowingAlbumArt: Bool = false
 
   /// Should be read/written on main thread only
-  var videoParams = MPVVideoParams.nullParams
+  var videoGeo = VideoGeometry.nullSet
 
-  var videoRawWidth: Int? {
-    let width = videoParams.videoRawWidth
+  var rawWidth: Int? {
+    let width = videoGeo.rawWidth
     guard width > 0 else { return nil }
     return width
   }
-  var videoRawHeight: Int? {
-    let height = videoParams.videoRawHeight
+  var rawHeight: Int? {
+    let height = videoGeo.rawHeight
     guard height > 0 else { return nil }
     return height
   }

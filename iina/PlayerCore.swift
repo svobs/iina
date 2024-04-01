@@ -602,7 +602,7 @@ class PlayerCore: NSObject {
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
       // Reset playback state
-      info.videoParams = MPVVideoParams.nullParams
+      info.videoGeo = VideoGeometry.nullSet
       info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
@@ -1052,8 +1052,8 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
-    if info.videoParams.selectedAspectRatioLabel != aspectLabel {
-      let newVideoParams = info.videoParams.clone(selectedAspectRatioLabel: aspectLabel)
+    if info.videoGeo.selectedAspectLabel != aspectLabel {
+      let newVideoParams = info.videoGeo.clone(selectedAspectLabel: aspectLabel)
 
       // Send update to mpv
       let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
@@ -1065,8 +1065,8 @@ class PlayerCore: NSObject {
 
       if newVideoParams.hasValidSize {
         // Change video size:
-        log.verbose("Calling applyVidParams from video-aspect-override")
-        windowController.applyVidParams(newParams: newVideoParams)
+        log.verbose("Calling applyVideoGeo from video-aspect-override")
+        windowController.applyVideoGeo(newVidGeo: newVideoParams)
       }
     }
 
@@ -1093,14 +1093,14 @@ class PlayerCore: NSObject {
         log.verbose("Skipping update to mpv window-scale: could not get size info")
         return
       }
-      let prevVideoScale: CGFloat = info.videoParams.videoScale
+      let prevVideoScale: CGFloat = info.videoGeo.scale
 
       if actualVideoScale != prevVideoScale {
         // Setting the window-scale property seems to result in a small hiccup during playback.
         // Not sure if this is an mpv limitation
         log.verbose("Updating mpv window-scale from videoSize \(windowGeo.videoSize), changing scale: \(prevVideoScale) → \(actualVideoScale)")
 
-        info.videoParams = info.videoParams.clone(videoScale: actualVideoScale)
+        info.videoGeo = info.videoGeo.clone(scale: actualVideoScale)
         mpv.setDouble(MPVProperty.windowScale, actualVideoScale)
       } else {
         log.verbose("Skipping update to mpv window-scale: no change from prev (\(prevVideoScale))")
@@ -1114,7 +1114,7 @@ class PlayerCore: NSObject {
     let videoWidthScaled = windowGeometry.videoSize.width
 
     // This should take into account aspect override and/or crop already
-    guard let videoWidthUnscaled = mpv.queryForVideoParams()?.videoSizeACR?.width else {
+    guard let videoWidthUnscaled = mpv.queryForVideoGeometry()?.videoSizeACR?.width else {
       return nil
     }
 
@@ -1530,7 +1530,7 @@ class PlayerCore: NSObject {
   }
 
   func setCrop(fromAspectString aspectString: String) {
-    if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoParams.videoSizeRaw {
+    if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoGeo.videoSizeRaw {
       let cropped = videoSizeRaw.crop(withAspect: aspect)
       log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
       if cropped.width <= 0 || cropped.height <= 0 {
@@ -1565,10 +1565,10 @@ class PlayerCore: NSObject {
     }
 
     mpv.queue.async { [self] in
-      if info.videoParams.selectedCropLabel != newCropLabel {
-        log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVidParams")
-        let newVidParams = info.videoParams.clone(selectedCropLabel: newCropLabel)
-        windowController.applyVidParams(newParams: newVidParams)
+      if info.videoGeo.selectedCropLabel != newCropLabel {
+        log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVideoGeo")
+        let newVidParams = info.videoGeo.clone(selectedCropLabel: newCropLabel)
+        windowController.applyVideoGeo(newVidGeo: newVidParams)
 
         let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
         sendOSD(.crop(osdLabel))
@@ -1990,14 +1990,14 @@ class PlayerCore: NSObject {
     if let videoInfo = info.currentVideosInfo.first(where: { $0.url == url }),
        let videoSize = videoInfo.videoSize {
 
-      let newParams = info.videoParams.clone(videoRawWidth: videoSize.0, videoRawHeight: videoSize.1)
-      log.verbose("Calling applyVidParams from preResizeVideo with \(newParams)")
+      let newParams = info.videoGeo.clone(rawWidth: videoSize.0, rawHeight: videoSize.1)
+      log.verbose("Calling applyVideoGeo from preResizeVideo with \(newParams)")
       assert(info.justOpenedFile)
-      windowController.applyVidParams(newParams: newParams)
+      windowController.applyVideoGeo(newVidGeo: newParams)
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
       log.verbose("Nothing for preResizeVideo to do")
-      info.videoParams = info.videoParams.clone(videoRawWidth: 0, videoRawHeight: 0)
+      info.videoGeo = info.videoGeo.clone(rawWidth: 0, rawHeight: 0)
     }
   }
 
@@ -2201,15 +2201,15 @@ class PlayerCore: NSObject {
 
     // Make sure to call this because mpv does not always trigger it.
     // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
-    if let newVidParams = mpv.queryForVideoParams() {
+    if let newVidParams = mpv.queryForVideoGeometry() {
       // Always send this to window controller. It should be smart enough to resize only when needed:
-      log.verbose("Calling applyVidParams from fileIsCompletelyDoneLoading")
-      windowController.applyVidParams(newParams: newVidParams)
+      log.verbose("Calling applyVideoGeo from fileIsCompletelyDoneLoading")
+      windowController.applyVideoGeo(newVidGeo: newVidParams)
     }
 
     let playlistEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
     log.verbose("File is completely done loading (entryID: \(playlistEntryID)); setting justOpenedFile=N")
-    /// Make sure to set this *after* calling `applyVidParams` but *before* calling `refreshAlbumArtDisplay`
+    /// Make sure to set this *after* calling `applyVideoGeo` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
@@ -2790,17 +2790,17 @@ class PlayerCore: NSObject {
 
         // Generate thumbnails using video's original dimensions, before aspect ratio correction.
         // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-        var videoParams = info.videoParams
-        if !videoParams.hasValidSize {
+        var videoGeo = info.videoGeo
+        if !videoGeo.hasValidSize {
           // Fall back to querying mpv:
-          guard let videoParamsNew = mpv.queryForVideoParams() else {
+          guard let videoGeoNew = mpv.queryForVideoGeometry() else {
             log.debug("Cannot generate thumbnails: could not get video params from mpv")
             return
           }
-          videoParams = videoParamsNew
+          videoGeo = videoGeoNew
         }
 
-        guard let videoSizeRaw = videoParams.videoSizeRaw else {
+        guard let videoSizeRaw = videoGeo.videoSizeRaw else {
           log.debug("Cannot generate thumbnails: video height and/or width is zero")
           clearExistingThumbnails(for: currentMedia)
           return
@@ -2811,8 +2811,8 @@ class PlayerCore: NSObject {
         if let oldThumbs = currentMedia.thumbnails {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == url.path,
              thumbnailWidth == oldThumbs.thumbnailWidth,
-             videoParams.totalRotation == oldThumbs.rotationDegrees {
-            log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for file (\(thumbnailWidth)px, \(videoParams.totalRotation)°). Nothing to do")
+             videoGeo.totalRotation == oldThumbs.rotationDegrees {
+            log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for file (\(thumbnailWidth)px, \(videoGeo.totalRotation)°). Nothing to do")
             return
           } else {
             clearExistingThumbnails(for: currentMedia)
@@ -2820,7 +2820,7 @@ class PlayerCore: NSObject {
         }
 
         let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
-                                                                  thumbnailWidth: thumbnailWidth, rotationDegrees: videoParams.totalRotation)
+                                                                  thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
         currentMedia.thumbnails = newMediaThumbnailLoader
         newMediaThumbnailLoader.loadThumbnails()
       }

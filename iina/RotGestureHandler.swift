@@ -12,7 +12,7 @@ class RotationGestureHandler {
 
   // Current rotation of videoView
   private var cgCurrentRotationDegrees: CGFloat = 0
-  private var videoParams: MPVVideoParams? = nil
+  private var videoGeo: VideoGeometry? = nil
 
   unowned var windowController: PlayerWindowController! = nil
   private var player: PlayerCore { windowController.player }
@@ -27,10 +27,10 @@ class RotationGestureHandler {
 
     switch recognizer.state {
     case .began, .changed:
-      guard let videoParams = player.mpv.queryForVideoParams() else {
+      guard let videoGeo = player.mpv.queryForVideoGeometry() else {
         return
       }
-      self.videoParams = videoParams
+      self.videoGeo = videoGeo
       let cgNewRotationDegrees = recognizer.rotationInDegrees
       IINAAnimation.disableAnimation {
         rotateVideoView(toDegrees: cgNewRotationDegrees)
@@ -51,18 +51,18 @@ class RotationGestureHandler {
         cgCurrentRotationDegrees -= completeCircleDegrees(of: cgCurrentRotationDegrees)
         Logger.log("Rotation gesture of \(recognizer.rotationInDegrees)° will not change video rotation. Snapping back from: \(cgCurrentRotationDegrees)°")
         rotateVideoView(toDegrees: 0)
-        self.videoParams = nil
+        self.videoGeo = nil
         return
       }
 
-      guard let videoParams = self.videoParams else {
-        player.log.error("Cannot rotate video. No videoParams!")
+      guard let videoGeo = self.videoGeo else {
+        player.log.error("Cannot rotate video. No videoGeo!")
         return
       }
 
       // Snap to one of the 4 quarter circle rotations
-      let mpvNewRotation = (videoParams.userRotation + mpvClosestQuarterRotation) %% 360
-      Logger.log("User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Adding it to current mpv rotation (\(videoParams.userRotation)°) → new rotation will be \(mpvNewRotation)°")
+      let mpvNewRotation = (videoGeo.userRotation + mpvClosestQuarterRotation) %% 360
+      Logger.log("User's gesture of \(recognizer.rotationInDegrees)° is equivalent to mpv \(mpvNormalizedRotationDegrees)°, which is closest to \(mpvClosestQuarterRotation)°. Adding it to current mpv rotation (\(videoGeo.userRotation)°) → new rotation will be \(mpvNewRotation)°")
       // Need to convert snap-to location back to CG, to feed to animation
       let cgSnapToDegrees = findNearestCGQuarterRotation(forCGRotation: recognizer.rotationInDegrees,
                                                          equalToMpvRotation: mpvClosestQuarterRotation)

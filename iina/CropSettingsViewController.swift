@@ -102,7 +102,7 @@ class CropSettingsViewController: CropBoxViewController {
 
     // Remove saved crop (if any)
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
-    guard let videoSizeRaw = player.info.videoParams.videoSizeRaw else {
+    guard let videoSizeRaw = player.info.videoGeo.videoSizeRaw else {
       player.log.error("Interactive mode submit failed: could videoRawSize is invalid!")
       return
     }
@@ -121,7 +121,7 @@ class CropSettingsViewController: CropBoxViewController {
       player.log.verbose("User chose Done button from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
-      /// Set the filter. This will result in `applyVidParams` getting called, which will trigger an exit from interactive mode.
+      /// Set the filter. This will result in `applyVideoGeo` getting called, which will trigger an exit from interactive mode.
       /// But that task can only happen once we return and relinquish the main queue.
       if player.addVideoFilter(newCropFilter) {
         cropBoxView.didSubmit = true
