@@ -56,7 +56,7 @@ class PlayerWindow: NSWindow {
           return
         }
       }
-      playerWinController.syncUIComponents()  // Call explicitly to make sure it gets attention
+      playerWinController.updateUI()  // Call explicitly to make sure it gets attention
     }
 
     if menu?.performKeyEquivalent(with: event) == true {
@@ -98,7 +98,7 @@ class PlayerWindow: NSWindow {
         break
       }
     }
-    playerWinController?.syncUIComponents()  // Call explicitly to make sure it gets attention
+    playerWinController?.updateUI()  // Call explicitly to make sure it gets attention
     return super.performKeyEquivalent(with: event)
   }
 

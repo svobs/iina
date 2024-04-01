@@ -302,14 +302,11 @@ struct PlayerSaveState {
         return
       }
 
-      player.$isShuttingDown.withLock() { isShuttingDown in
-        guard !isShuttingDown else { return }
-        let properties = generatePropDict(from: player)
-        if player.log.isTraceEnabled {
-          player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
-        }
-        Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
+      let properties = generatePropDict(from: player)
+      if player.log.isTraceEnabled {
+        player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
       }
+      Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
     }
   }
 

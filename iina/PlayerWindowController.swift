@@ -950,7 +950,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     applyThemeMaterial()
     // Update to corect values before displaying. Only useful when restoring at launch
-    syncUIComponents()
+    updateUI()
 
     leftLabel.mode = .current
     rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
@@ -1777,7 +1777,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     volumeOverride = false
 
     // Need to manually update the OSC & OSD because they may be missed otherwise
-    syncUIComponents()
+    updateUI()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -2976,7 +2976,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /// which should result in an OSD being displayed for each keypress. But for some reason, the task to update the OSD,
   /// which is enqueued via `DispatchQueue.main.async` (or even `sync`), does not run at all while the key events continue to come in.
   /// To work around this issue, we instead enqueue the tasks to display OSD using a simple LinkedList and Lock. Then we call
-  /// `syncUIComponents()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
+  /// `updateUI()` both from here (as before), and inside the key event callbacks in `PlayerWindow` so that that the key events
   /// themselves process the display of any enqueued OSD messages.
   func displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                   accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
@@ -2999,7 +2999,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
     // Need to do the UI sync in the main queue
     DispatchQueue.main.async { [self] in
-      syncUIComponents()
+      updateUI()
     }
   }
 
@@ -3680,7 +3680,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // MARK: - Sync UI with playback
 
-  func syncUIComponents() {
+  func updateUI() {
     dispatchPrecondition(condition: .onQueue(.main))
     player.updatePlaybackTimeInfo()
 

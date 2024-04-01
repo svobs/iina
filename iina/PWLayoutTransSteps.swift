@@ -668,7 +668,7 @@ extension PlayerWindowController {
       updatePanelBlendingModes(to: outputLayout)
     }
 
-    syncUIComponents()  // need this to update AdditionalInfo, volume
+    updateUI()  // need this to update AdditionalInfo, volume
 
     if !transition.isInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()

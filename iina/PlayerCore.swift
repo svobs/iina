@@ -127,7 +127,7 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false
   /// Whether shutdown of this player has been initiated.
-  @Atomic var isShuttingDown = false
+  var isShuttingDown = false
 
   /// Whether shutdown of this player has completed (mpv has shutdown).
   var isShutdown = false
@@ -2299,7 +2299,7 @@ class PlayerCore: NSObject {
     info.isSeeking = false
 
     DispatchQueue.main.async { [self] in
-      windowController.syncUIComponents()
+      windowController.updateUI()
 
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // The display link will be restarted while seeking. If playback is paused shut it down
@@ -2586,7 +2586,7 @@ class PlayerCore: NSObject {
 
     if !wasTimerRunning {
       // Do not wait for first redraw
-      windowController.syncUIComponents()
+      windowController.updateUI()
     }
 
     log.verbose("Scheduling SyncUITimer")
@@ -2611,7 +2611,7 @@ class PlayerCore: NSObject {
         guard syncUITicket == syncUITicketCounter else {
           return
         }
-        windowController.syncUIComponents()
+        windowController.updateUI()
       }
     }
   }
