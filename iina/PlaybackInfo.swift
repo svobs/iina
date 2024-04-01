@@ -8,6 +8,39 @@
 
 import Foundation
 
+class MediaItem {
+  enum LoadStatus {
+    case notStarted
+    case started
+    case loaded
+    case completelyLoaded
+    case ended
+  }
+
+  let url: URL
+  let mpvMD5: String
+
+  var playlistEntryID: Int
+  var loadStatus: LoadStatus
+
+  var thumbnails: SingleMediaThumbnailsLoader? = nil
+
+  init(url: URL, playlistEntryID: Int = 1, loadStatus: LoadStatus = .notStarted) {
+    self.url = url
+    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
+    self.playlistEntryID = playlistEntryID
+    self.loadStatus = loadStatus
+  }
+
+  convenience init?(path: String, playlistEntryID: Int = 1, loadStatus: LoadStatus = .notStarted) {
+    let url = path.contains("://") ?
+    URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
+    URL(fileURLWithPath: path)
+    guard let url else { return nil }
+    self.init(url: url, playlistEntryID: playlistEntryID, loadStatus: loadStatus)
+  }
+}
+
 class PlaybackInfo {
   unowned var log: Logger.Subsystem
 
@@ -43,6 +76,8 @@ class PlaybackInfo {
     return priorState != nil
   }
 
+  var currentMedia: MediaItem? = nil
+
   /// Opened or started file, but still waiting for `fileLoaded` event
   var justOpenedFile: Bool = true
   var timeLastFileOpenFinished: TimeInterval = 0
@@ -62,7 +97,7 @@ class PlaybackInfo {
   var isPaused: Bool = false {
     willSet {
       if isPaused != newValue {
-        log.verbose("Player mode changing to \(newValue ? "PAUSED" : "PLAYING")")
+        log.verbose("Player state changing to \(newValue ? "PAUSED" : "PLAYING")")
       }
     }
   }
@@ -72,21 +107,18 @@ class PlaybackInfo {
   var pauseStateWasChangedLocally = false
 
   var currentURL: URL? {
-    didSet {
-      if let url = currentURL {
-        mpvMd5 = Utility.mpvWatchLaterMd5(url.path)
-        isNetworkResource = !url.isFileURL
-      } else {
-        mpvMd5 = nil
-        isNetworkResource = false
-      }
-    }
+    return currentMedia?.url
   }
 
-  // Derived from currentURL (no need to persist):
-  var currentFolder: URL?
-  var isNetworkResource: Bool = false
-  var mpvMd5: String?
+  var isNetworkResource: Bool {
+    if let currentURL {
+      return !currentURL.isFileURL
+    }
+    return false
+  }
+  var mpvMd5: String? {
+    return currentMedia?.mpvMD5
+  }
 
   var isMediaOnRemoteDrive: Bool {
     if let attrs = try? currentURL?.resourceValues(forKeys: Set([.volumeIsLocalKey])), !attrs.volumeIsLocal! {
@@ -242,8 +274,6 @@ class PlaybackInfo {
   }
 
   // -- PERSISTENT PROPERTIES END --
-
-  var currentMediaThumbnails: SingleMediaThumbnailsLoader? = nil
 
   var chapter = 0
   var chapters: [MPVChapter] = []

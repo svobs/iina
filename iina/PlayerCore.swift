@@ -362,11 +362,12 @@ class PlayerCore: NSObject {
     let path: String
     if let url = url, url.absoluteString != "stdin" {
       path = url.isFileURL ? url.path : url.absoluteString
-      info.currentURL = url
+      info.currentMedia = MediaItem(url: url, playlistEntryID: 1, loadStatus: .notStarted)
       log.debug("Opening Player window for URL: \(url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
     } else {
       path = "-"
-      info.currentURL = URL(string: "stdin")!
+      let url = URL(string: "stdin")!
+      info.currentMedia = MediaItem(url: url, playlistEntryID: 1, loadStatus: .notStarted)
       log.debug("Opening Player window for stdin")
     }
 
@@ -376,9 +377,7 @@ class PlayerCore: NSObject {
     windowController.openWindow()
 
     mpv.queue.async { [self] in
-      log.debug("OpenPlayerWindow: setting fileLoaded=false")
-      // clear currentFolder since playlist is cleared, so need to auto-load again in playerCore#fileStarted
-      info.currentFolder = nil
+      log.debug("OpenPlayerWindow: setting isFileLoaded=false")
 
       // Reset state flags
       info.isFileLoaded = false
@@ -604,9 +603,7 @@ class PlayerCore: NSObject {
 
       // Reset playback state
       info.videoParams = MPVVideoParams.nullParams
-      info.currentURL = nil
-      info.currentFolder = nil
-      info.currentMediaThumbnails = nil
+      info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
 
@@ -1987,24 +1984,13 @@ class PlayerCore: NSObject {
 
   // MARK: - Listeners
 
-  func preResizeVideo(forPath path: String) {
-    let url = path.contains("://") ?
-    URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
-    URL(fileURLWithPath: path)
-
+  // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
+  // This is optional but provides a better viewer experience
+  private func preResizeVideo(forURL url: URL?) {
     if let videoInfo = info.currentVideosInfo.first(where: { $0.url == url }),
        let videoSize = videoInfo.videoSize {
-      let rawWidth = videoSize.0
-      let rawHeight = videoSize.1
 
-      let prevParams = info.videoParams
-      let newParams = MPVVideoParams(videoRawWidth: rawWidth,
-                                     videoRawHeight: rawHeight,
-                                     selectedAspectRatioLabel: prevParams.selectedAspectRatioLabel,
-                                     totalRotation: prevParams.totalRotation, userRotation: prevParams.userRotation,
-                                     selectedCropLabel: prevParams.selectedCropLabel,
-                                     videoScale: prevParams.videoScale)
-
+      let newParams = info.videoParams.clone(videoRawWidth: videoSize.0, videoRawHeight: videoSize.1)
       log.verbose("Calling applyVidParams from preResizeVideo with \(newParams)")
       assert(info.justOpenedFile)
       windowController.applyVidParams(newParams: newParams)
@@ -2015,18 +2001,27 @@ class PlayerCore: NSObject {
     }
   }
 
-  func fileStarted(path: String) {
+  func fileStarted(path: String, playlistEntryID: Int) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isShuttingDown else { return }
 
-    log.debug("File started")
     info.justOpenedFile = true
 
-    preResizeVideo(forPath: path)
+    guard let mediaFromPath = MediaItem(path: path, playlistEntryID: playlistEntryID, loadStatus: .started) else {
+      log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
+      return
+    }
+    if let existingMedia = info.currentMedia, existingMedia.url == mediaFromPath.url {
+      // update existing entry
+      existingMedia.playlistEntryID = mediaFromPath.playlistEntryID
+      existingMedia.loadStatus = mediaFromPath.loadStatus
+    } else {
+      // New media, perhaps initiated by mpv
+      log.verbose("FileStarted: media is new. EntryID: \(mediaFromPath.playlistEntryID)")
+      info.currentMedia = mediaFromPath
+    }
 
-    info.currentURL = path.contains("://") ?
-    URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
-    URL(fileURLWithPath: path)
+    preResizeVideo(forURL: info.currentMedia?.url)
 
     // set "date last opened" attribute
     if let url = info.currentURL, url.isFileURL {
@@ -2096,11 +2091,34 @@ class PlayerCore: NSObject {
   }
 
   /** This function is called right after file loaded. Should load all meta info here. */
-  func fileDidLoad() {
+  func fileLoaded() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
     // note: player may be "stopped" here
     guard !isStopping, !isShuttingDown else { return }
+
+    let pause: Bool
+    if let priorState = info.priorState {
+      if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
+        pause = true
+      } else if let wasPaused = priorState.bool(for: .paused) {
+        pause = wasPaused
+      } else {
+        pause = Preference.bool(for: .pauseWhenOpen)
+      }
+    } else {
+      pause = Preference.bool(for: .pauseWhenOpen)
+    }
+    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") url=\(info.currentURL?.absoluteString.pii.quoted ?? "nil")")
+    mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
+
+    let duration = mpv.getDouble(MPVProperty.duration)
+    info.videoDuration = VideoTime(duration)
+    if let filename = mpv.getString(MPVProperty.path) {
+      info.setCachedVideoDuration(filename, duration)
+    }
+    let position = mpv.getDouble(MPVProperty.timePos)
+    info.videoPosition = VideoTime(position)
 
     triedUsingExactSeekForCurrentFile = false
     info.isFileLoaded = true
@@ -2110,8 +2128,14 @@ class PlayerCore: NSObject {
     isStopped = false
     info.haveDownloadedSub = false
 
+    guard let currentMedia = info.currentMedia else {
+      log.verbose("FileLoaded: currentMedia was nil")
+      return
+    }
+    info.currentMedia?.loadStatus = .loaded // TODO: improve
+
     // Kick off thumbnails load/gen - it can happen in background
-    reloadThumbnails()
+    reloadThumbnails(forItem: currentMedia)
 
     // add to history
     if let url = info.currentURL {
@@ -2172,6 +2196,9 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard info.justOpenedFile else { return }
 
+    guard !mpv.isStale() else { return }
+    info.currentMedia?.loadStatus = .completelyLoaded // TODO: improve
+
     // Make sure to call this because mpv does not always trigger it.
     // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
     if let newVidParams = mpv.queryForVideoParams() {
@@ -2180,7 +2207,8 @@ class PlayerCore: NSObject {
       windowController.applyVidParams(newParams: newVidParams)
     }
 
-    log.verbose("File is completely done loading; setting justOpenedFile=N")
+    let playlistEntryID = mpv.getInt(MPVProperty.playlistPlayingPos)
+    log.verbose("File is completely done loading (entryID: \(playlistEntryID)); setting justOpenedFile=N")
     /// Make sure to set this *after* calling `applyVidParams` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
@@ -2216,6 +2244,10 @@ class PlayerCore: NSObject {
         }
       }
     }
+  }
+
+  func fileEnded() {
+    
   }
 
   func reloadAID() {
@@ -2717,26 +2749,30 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadThumbnails() {
+  func reloadThumbnails(forItem currentMedia: MediaItem?) {
+    guard let currentMedia else {
+      log.debug("Cannot generate thumbnails: no file active")
+      return
+    }
     DispatchQueue.main.asyncAfter(deadline: .now() + AppData.thumbnailRegenerationDelay) { [self] in
       guard !info.isNetworkResource, let url = info.currentURL, let mpvMD5 = info.mpvMd5 else {
         log.debug("Thumbnails reload stopped because cannot get file path")
-        clearExistingThumbnails()
+        clearExistingThumbnails(for: currentMedia)
         return
       }
       guard Preference.bool(for: .enableThumbnailPreview) else {
         log.verbose("Thumbnails reload stopped because thumbnails are disabled by user")
-        clearExistingThumbnails()
+        clearExistingThumbnails(for: currentMedia)
         return
       }
       if !Preference.bool(for: .enableThumbnailForRemoteFiles) && info.isMediaOnRemoteDrive {
         log.debug("Thumbnails reload stopped because file is on a mounted remote drive")
-        clearExistingThumbnails()
+        clearExistingThumbnails(for: currentMedia)
         return
       }
       if isInMiniPlayer && !Preference.bool(for: .enableThumbnailForMusicMode) {
         log.verbose("Thumbnails reload stopped because user has not enabled for music mode")
-        clearExistingThumbnails()
+        clearExistingThumbnails(for: currentMedia)
         return
       }
 
@@ -2766,35 +2802,35 @@ class PlayerCore: NSObject {
 
         guard let videoSizeRaw = videoParams.videoSizeRaw else {
           log.debug("Cannot generate thumbnails: video height and/or width is zero")
-          clearExistingThumbnails()
+          clearExistingThumbnails(for: currentMedia)
           return
         }
 
         let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
 
-        if let oldThumbs = info.currentMediaThumbnails {
+        if let oldThumbs = currentMedia.thumbnails {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == url.path,
              thumbnailWidth == oldThumbs.thumbnailWidth,
              videoParams.totalRotation == oldThumbs.rotationDegrees {
             log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for file (\(thumbnailWidth)px, \(videoParams.totalRotation)°). Nothing to do")
             return
           } else {
-            clearExistingThumbnails()
+            clearExistingThumbnails(for: currentMedia)
           }
         }
 
         let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
                                                                   thumbnailWidth: thumbnailWidth, rotationDegrees: videoParams.totalRotation)
-        info.currentMediaThumbnails = newMediaThumbnailLoader
+        currentMedia.thumbnails = newMediaThumbnailLoader
         newMediaThumbnailLoader.loadThumbnails()
       }
     }
   }
 
-  private func clearExistingThumbnails() {
-    if let oldThumbnailSet = info.currentMediaThumbnails {
+  private func clearExistingThumbnails(for currentMedia: MediaItem) {
+    if let oldThumbnailSet = currentMedia.thumbnails {
       oldThumbnailSet.isCancelled = true
-      info.currentMediaThumbnails = nil
+      currentMedia.thumbnails = nil
     }
     if #available(macOS 10.12.2, *) {
       self.touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
@@ -2895,6 +2931,9 @@ class PlayerCore: NSObject {
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist
+    let mpvCurrentEntryID = mpv.getInt(MPVProperty.playlistPlayingPos)
+    info.currentMedia?.playlistEntryID = mpvCurrentEntryID
+    log.verbose("After reloading playlist: current media entryID is: \(mpvCurrentEntryID)")
     saveState()  // save playlist URLs to prefs
     if !silent {
       postNotification(.iinaPlaylistChanged)

@@ -25,8 +25,8 @@ extension PlayerWindowController {
     let justOpenedFile = player.info.justOpenedFile
     let isRestoring = player.info.isRestoring
 
-    if newParams.totalRotation != player.info.currentMediaThumbnails?.rotationDegrees {
-      player.reloadThumbnails()
+    if newParams.totalRotation != player.info.currentMedia?.thumbnails?.rotationDegrees {
+      player.reloadThumbnails(forItem: player.info.currentMedia)
     }
 
     DispatchQueue.main.async { [self] in

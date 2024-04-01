@@ -537,7 +537,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("Pref \(keyPath.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
-      player.reloadThumbnails()
+      player.reloadThumbnails(forItem: player.info.currentMedia)
 
     case PK.showChapterPos.rawValue:
       if let newValue = change[.newKey] as? Bool {
@@ -3323,7 +3323,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         let currentIMGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: uncroppedVideoSize.mpvAspect)
         let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
 
-        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
+        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
           hideCropControls()
           videoView.apply(newIMGeo)
         })
@@ -3332,7 +3332,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
         interactiveModeGeo = newIMGeo
 
-        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration) { [self] in
+        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
           hideCropControls()
           videoView.apply(newIMGeo)
           player.window.setFrameImmediately(newIMGeo.windowFrame)
@@ -3406,8 +3406,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     let videoParams = player.info.videoParams
 
-    guard let currentMediaThumbnails = player.info.currentMediaThumbnails,
-          let ffThumbnail = currentMediaThumbnails.getThumbnail(forSecond: previewTime.second),
+    guard let thumbnails = player.info.currentMedia?.thumbnails,
+          let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second),
           let videoAspectACR = videoParams.videoAspectACR, let currentControlBar else {
       thumbnailPeekView.isHidden = true
       return
@@ -3517,8 +3517,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
 
     // Scaling is a potentially expensive operation, so reuse the last image if no change is needed
-    if currentMediaThumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
-      currentMediaThumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
+    if thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
+      thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
 
       let finalImage: NSImage
       // Apply crop first. Then aspect

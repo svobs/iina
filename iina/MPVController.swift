@@ -221,6 +221,19 @@ not applying FFmpeg 9599 workaround
     }
   }
 
+  func isStale() -> Bool {
+    dispatchPrecondition(condition: .onQueue(queue))
+    let mpvEntryID = getInt(MPVProperty.playlistPlayingPos)
+    guard let iinaEntryID = player.info.currentMedia?.playlistEntryID else {
+      // Note: not current if both are nil
+      player.log.verbose("The current entryID from mpv (\(mpvEntryID)) is stale because there is no current media")
+      return true
+    }
+    let isStale = mpvEntryID != iinaEntryID
+    player.log.verbose("Comparing entryID. IINA=\(iinaEntryID) mpv=\(mpvEntryID) → stale=\(isStale.yesno)")
+    return isStale
+  }
+
   /**
    Init the mpv context, set options
    */
@@ -1051,36 +1064,13 @@ not applying FFmpeg 9599 workaround
 
       player.info.isIdle = false
       guard let path = getString(MPVProperty.path) else {
-        player.log.warn("File started, but no path!")
+        player.log.warn("FileStarted: no path!")
         break
       }
-      player.fileStarted(path: path)
+      player.fileStarted(path: path, playlistEntryID: playlistEntryID)
 
     case MPV_EVENT_FILE_LOADED:
-      let pause: Bool
-      if let priorState = player.info.priorState {
-        if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
-          pause = true
-        } else if let wasPaused = priorState.bool(for: .paused) {
-          pause = wasPaused
-        } else {
-          pause = Preference.bool(for: .pauseWhenOpen)
-        }
-      } else {
-        pause = Preference.bool(for: .pauseWhenOpen)
-      }
-      player.log.verbose("FileLoaded: \(pause ? "pausing" : "playing") \(player.info.currentURL?.absoluteString.pii.quoted ?? "nil")")
-      setFlag(MPVOption.PlaybackControl.pause, pause)
-
-      let duration = getDouble(MPVProperty.duration)
-      player.info.videoDuration = VideoTime(duration)
-      if let filename = getString(MPVProperty.path) {
-        self.player.info.setCachedVideoDuration(filename, duration)
-      }
-      let position = getDouble(MPVProperty.timePos)
-      player.info.videoPosition = VideoTime(position)
-
-      player.fileDidLoad()
+      player.fileLoaded()
 
     case MPV_EVENT_SEEK:
       if needRecordSeekTime {
@@ -1217,7 +1207,7 @@ not applying FFmpeg 9599 workaround
 
       player.sendOSD(.rotation(userRotation))
       // Thumb rotation needs updating:
-      player.reloadThumbnails()
+      player.reloadThumbnails(forItem: player.info.currentMedia)
       player.saveState()
 
     case MPVProperty.videoParamsPrimaries:
@@ -1517,7 +1507,7 @@ not applying FFmpeg 9599 workaround
         if receivedEndFileWhileLoading && !player.info.isFileLoaded {
           player.log.error("Received MPV_EVENT_END_FILE + 'idle-active' while loading \(player.info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
           player.errorOpeningFileAndClosePlayerWindow(url: player.info.currentURL)
-          player.info.currentURL = nil
+          player.info.currentMedia = nil
         }
         player.info.isIdle = true
         if player.info.isFileLoaded {
