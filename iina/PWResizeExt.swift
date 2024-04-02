@@ -41,16 +41,16 @@ extension PlayerWindowController {
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
     guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else { return }
 
-    guard let videoSizeACR = newVidGeo.videoSizeACR, let videoSizeRaw = newVidGeo.videoSizeRaw else {
+    guard let newVideoSizeACR = newVidGeo.videoSizeACR, let videoSizeRaw = newVidGeo.videoSizeRaw else {
       log.error("[applyVidGeo] Could not get videoSizeACR from mpv! Cancelling adjustment")
       return
     }
 
-    let newVideoAspect = videoSizeACR.mpvAspect
-    log.verbose("[applyVidGeo Start] VideoRaw:\(newVidGeo.videoSizeRaw?.debugDescription ?? "nil") VideoACR:\(videoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
+    let newVideoAspect = newVideoSizeACR.mpvAspect
+    log.verbose("[applyVidGeo Start] VideoRaw:\(newVidGeo.videoSizeRaw?.debugDescription ?? "nil") VideoACR:\(newVideoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
 
     if #available(macOS 10.12, *) {
-      pip.aspectRatio = videoSizeACR
+      pip.aspectRatio = newVideoSizeACR
     }
     let screen = bestScreen
     let currentLayout = currentLayout
@@ -148,25 +148,27 @@ extension PlayerWindowController {
       if isInitialSizeDone,
          let oldVideoSizeRaw = oldVidGeo.videoSizeRaw,
          let newVideoSizeRaw = newVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
-         let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(videoSizeACR) {
+         let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(newVideoSizeACR),
+         // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
+         videoView.frame.size.mpvAspect == newVideoSizeACR.mpvAspect {
         log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
         return
       }
 
-      let windowGeo = windowedModeGeo.clone(videoAspect: videoSizeACR.mpvAspect)
+      let windowGeo = windowedModeGeo.clone(videoAspect: newVideoSizeACR.mpvAspect)
       let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
       let newWindowGeo: PWGeometry
-      if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: videoSizeACR) {
+      if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
         newWindowGeo = resizedGeo
       } else {
         if justOpenedFileManually {
           log.verbose("[applyVidGeo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
           newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                   videoAspect: videoSizeACR.mpvAspect, keepFullScreenDimensions: true)
+                                                                   videoAspect: newVideoSizeACR.mpvAspect, keepFullScreenDimensions: true)
         } else {
           // video size changed during playback
-          newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: videoSizeACR)
+          newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: newVideoSizeACR)
         }
       }
 

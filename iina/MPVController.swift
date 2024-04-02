@@ -1068,6 +1068,7 @@ not applying FFmpeg 9599 workaround
       break
 
     case MPV_EVENT_START_FILE:
+      /// Do not use `playlist_entry_id`. It doesn't make sense outside of FileStarted & FileEnded
       let playlistPos = getInt(MPVProperty.playlistPos)
       player.log.verbose("FileStarted playlistPos: \(playlistPos)")
 
