@@ -96,11 +96,13 @@ extension PlayerWindowController {
         let windowSize = initialGeo.windowFrame.size
         let mouseLoc = NSEvent.mouseLocation
         let origin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
+        log.verbose("Initial layout: starting with tiny window (will resize using  \(resizeTimingPref))")
         windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: origin, size: windowSize)).refit(.keepInVisibleScreen)
       } else {
         // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
+        log.verbose("Initial layout: using last closed window's geometry")
         windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                    preserveFullSizeDimensions: false)
+                                                                    keepFullScreenDimensions: false)
       }
 
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
@@ -428,7 +430,7 @@ extension PlayerWindowController {
     case .windowed:
       let prevWindowedGeo = geo.windowedMode
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
-                                                      preserveFullSizeDimensions: !isInitialLayout)
+                                                      keepFullScreenDimensions: !isInitialLayout)
     }
   }
 
@@ -463,7 +465,7 @@ extension PlayerWindowController {
                                                                 outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                                                preserveFullSizeDimensions: true)
+                                                                keepFullScreenDimensions: true)
       if transition.isEnteringInteractiveMode {
         return resizedGeo.scaleViewport(to: transition.inputGeometry.videoSize)
       } else if transition.isExitingInteractiveMode {
@@ -547,7 +549,7 @@ extension PlayerWindowController {
                                                                    insideTrailingBarWidth: insideTrailingBarWidth,
                                                                    insideBottomBarHeight: insideBottomBarHeight,
                                                                    insideLeadingBarWidth: insideLeadingBarWidth,
-                                                                   preserveFullSizeDimensions: true)
+                                                                   keepFullScreenDimensions: true)
     return resizedBarsGeo.refit()
   }
 

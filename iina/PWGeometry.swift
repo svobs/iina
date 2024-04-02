@@ -826,7 +826,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   }
 
   /// Like `withResizedOutsideBars`, but can resize the inside bars at the same time.
-  /// If `preserveFullSizeDimensions` is `true` and the window's width or height,independently, is at max, that dimension will stay at max.
+  /// If `keepFullScreenDimensions` is `true` and the window's width or height,independently, is at max, that dimension will stay at max.
   /// This way the window will seem to "stick" to the screen edges when already maximized.
   /// But if the window is already smaller, the window will be allowed to shrink or grow normally.
   /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
@@ -836,7 +836,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                        insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
                        insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
                        videoAspect: CGFloat? = nil,
-                       preserveFullSizeDimensions: Bool = false) -> PWGeometry {
+                       keepFullScreenDimensions: Bool = false) -> PWGeometry {
 
     // Inside bars
     let newGeo = clone(fitOption: fitOption, mode: mode,
@@ -851,7 +851,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                                        newOutsideBottomBarHeight: outsideBottomBarHeight,
                                                        newOutsideLeadingBarWidth: outsideLeadingBarWidth)
 
-    if preserveFullSizeDimensions {
+    if keepFullScreenDimensions {
       /// This will see the new mode and resize the viewport margins appropriately.
       let outputGeo = resizedBarsGeo.refit()
 
@@ -1047,7 +1047,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                            outsideLeadingBarWidth: 0,
                            insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                            insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                           preserveFullSizeDimensions: true)
+                           keepFullScreenDimensions: true)
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.

@@ -253,9 +253,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   // Only used for debug logging:
   @Atomic var layoutTransitionCounter: Int = 0
 
-  // Used to assign an incrementing unique ID to each geometry update animation request, so that frequent requests don't
-  // build up and result in weird freezes or short episodes of "wandering window"
-  @Atomic var geoUpdateTicketCounter: Int = 0
   /// For throttling `windowDidChangeScreen` notifications. MacOS 14 often sends hundreds in short bursts
   @Atomic var screenChangedTicketCounter: Int = 0
   /// For throttling `windowDidChangeScreenParameters` notifications. MacOS 14 often sends hundreds in short bursts
