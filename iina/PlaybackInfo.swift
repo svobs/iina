@@ -20,24 +20,24 @@ class MediaItem {
   let url: URL
   let mpvMD5: String
 
-  var playlistEntryID: Int
+  var playlistPos: Int
   var loadStatus: LoadStatus
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
-  init(url: URL, playlistEntryID: Int = 1, loadStatus: LoadStatus = .notStarted) {
+  init(url: URL, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
-    self.playlistEntryID = playlistEntryID
+    self.playlistPos = playlistPos
     self.loadStatus = loadStatus
   }
 
-  convenience init?(path: String, playlistEntryID: Int = 1, loadStatus: LoadStatus = .notStarted) {
+  convenience init?(path: String, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
     let url = path.contains("://") ?
     URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
     URL(fileURLWithPath: path)
     guard let url else { return nil }
-    self.init(url: url, playlistEntryID: playlistEntryID, loadStatus: loadStatus)
+    self.init(url: url, playlistPos: playlistPos, loadStatus: loadStatus)
   }
 }
 

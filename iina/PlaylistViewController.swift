@@ -231,7 +231,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func scrollPlaylistToCurrentItem() {
-    if let entryIndex = player.info.currentMedia?.playlistEntryID {
+    if let entryIndex = player.info.currentMedia?.playlistPos {
       playlistTableView.scrollRowToVisible(entryIndex)
     }
   }

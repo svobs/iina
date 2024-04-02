@@ -361,12 +361,12 @@ class PlayerCore: NSObject {
     let path: String
     if let url = url, url.absoluteString != "stdin" {
       path = url.isFileURL ? url.path : url.absoluteString
-      info.currentMedia = MediaItem(url: url, playlistEntryID: 1, loadStatus: .notStarted)
+      info.currentMedia = MediaItem(url: url)
       log.debug("Opening Player window for URL: \(url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
     } else {
       path = "-"
       let url = URL(string: "stdin")!
-      info.currentMedia = MediaItem(url: url, playlistEntryID: 1, loadStatus: .notStarted)
+      info.currentMedia = MediaItem(url: url)
       log.debug("Opening Player window for stdin")
     }
 
@@ -1473,7 +1473,6 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       log.verbose("Changing mpv playlist-pos to \(pos)")
       mpv.setInt(MPVProperty.playlistPos, pos)
-      updatePlaylistPlayingPos(updateUI: true)
       saveState()
     }
   }
@@ -2018,25 +2017,28 @@ class PlayerCore: NSObject {
     }
   }
 
-  func fileStarted(path: String, playlistEntryID: Int) {
+  func fileStarted(path: String, playlistPos: Int) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isShuttingDown else { return }
 
     info.justOpenedFile = true
 
-    guard let mediaFromPath = MediaItem(path: path, playlistEntryID: playlistEntryID, loadStatus: .started) else {
+    guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
     if let existingMedia = info.currentMedia, existingMedia.url == mediaFromPath.url {
       // update existing entry
-      existingMedia.playlistEntryID = mediaFromPath.playlistEntryID
+      existingMedia.playlistPos = mediaFromPath.playlistPos
       existingMedia.loadStatus = mediaFromPath.loadStatus
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: media is new. EntryID: \(mediaFromPath.playlistEntryID)")
+      log.verbose("FileStarted: media is new. PlaylistPos: \(mediaFromPath.playlistPos)")
       info.currentMedia = mediaFromPath
     }
+
+    // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
+    updatePlaylistPlayingPos(updateUI: true)
 
     preResizeVideo(forURL: info.currentMedia?.url)
 
@@ -2169,8 +2171,6 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
     trackListChanged()
-    // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-    updatePlaylistPlayingPos(updateUI: true)
     _reloadChapters()
     syncAbLoop()
     saveState()
@@ -2224,8 +2224,7 @@ class PlayerCore: NSObject {
       windowController.applyVideo(newVidGeo: newVidParams)
     }
 
-    let playlistEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
-    log.verbose("File is completely done loading (entryID: \(playlistEntryID)); setting justOpenedFile=N")
+    log.verbose("File is completely done loading; setting justOpenedFile=N")
     /// Make sure to set this *after* calling `applyVideo` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
@@ -2262,10 +2261,6 @@ class PlayerCore: NSObject {
         }
       }
     }
-  }
-
-  func fileEnded() {
-    
   }
 
   func reloadAID() {
@@ -2947,10 +2942,10 @@ class PlayerCore: NSObject {
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist
-    let mpvCurrentEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
-    info.currentMedia?.playlistEntryID = mpvCurrentEntryID
+    let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
+    info.currentMedia?.playlistPos = mpvPlaylistPos
     updatePlaylistPlayingPos(updateUI: false)
-    log.verbose("After reloading playlist: current media entryID is: \(mpvCurrentEntryID)")
+    log.verbose("After reloading playlist: playlistPos is: \(mpvPlaylistPos)")
     saveState()  // save playlist URLs to prefs
     if !silent {
       postNotification(.iinaPlaylistChanged)
@@ -3003,6 +2998,7 @@ class PlayerCore: NSObject {
     // Update index of playing item. Don't need to reload whole playlist
     let oldItemPlaying = info.playlistPlayingPos
     let newItemPlaying = mpv.getInt(MPVProperty.playlistPlayingPos)
+    guard oldItemPlaying != newItemPlaying else { return }
     info.playlistPlayingPos = newItemPlaying
     log.verbose("Updated playlistPlayingPos: \(oldItemPlaying) → \(newItemPlaying)")
 

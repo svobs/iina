@@ -141,7 +141,8 @@ extension PlayerWindowController {
       applyMusicModeGeometryInAnimationPipeline(newGeometry)
 
     } else { // Windowed or full screen
-      if !isInitialSizeDone,
+      // FIXME: incorporate scale
+      if isInitialSizeDone,
          let oldVideoSizeRaw = oldVideoParams.videoSizeRaw,
          let newVideoSizeRaw = newVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
          let oldVideoSizeACR = oldVideoParams.videoSizeACR, oldVideoSizeACR.equalTo(videoSizeACR) {

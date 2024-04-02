@@ -228,14 +228,14 @@ not applying FFmpeg 9599 workaround
   /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
   func isStale() -> Bool {
     dispatchPrecondition(condition: .onQueue(queue))
-    let mpvEntryID = getInt(MPVProperty.playlistCurrentPos)
-    guard let iinaEntryID = player.info.currentMedia?.playlistEntryID else {
+    let mpv = getInt(MPVProperty.playlistCurrentPos)
+    guard let iina = player.info.currentMedia?.playlistPos else {
       // Note: not current if both are nil
-      player.log.verbose("The current entryID from mpv (\(mpvEntryID)) is stale because there is no current media")
+      player.log.verbose("The current playlistPos from mpv (\(mpv)) is stale because there should be no media loaded")
       return true
     }
-    let isStale = mpvEntryID != iinaEntryID
-    player.log.verbose("Comparing entryID. IINA=\(iinaEntryID) mpv=\(mpvEntryID) → stale=\(isStale.yesno)")
+    let isStale = mpv != iina
+    player.log.verbose("Checking state. IINA: \(iina), mpv: \(mpv) → \(isStale.yesno)")
     return isStale
   }
 
@@ -1068,16 +1068,15 @@ not applying FFmpeg 9599 workaround
       break
 
     case MPV_EVENT_START_FILE:
-      guard let dataPtr = UnsafeMutablePointer<mpv_event_start_file>(OpaquePointer(event.pointee.data)) else { return }
-      let playlistEntryID = Int(dataPtr.pointee.playlist_entry_id)
-      player.log.verbose("FileStarted entryID: \(playlistEntryID)")
+      let playlistPos = getInt(MPVProperty.playlistPos)
+      player.log.verbose("FileStarted playlistPos: \(playlistPos)")
 
       player.info.isIdle = false
       guard let path = getString(MPVProperty.path) else {
         player.log.warn("FileStarted: no path!")
         break
       }
-      player.fileStarted(path: path, playlistEntryID: playlistEntryID)
+      player.fileStarted(path: path, playlistPos: playlistPos)
 
     case MPV_EVENT_FILE_LOADED:
       player.fileLoaded()
@@ -1101,12 +1100,9 @@ not applying FFmpeg 9599 workaround
       // if receive end-file when loading file, might be error
       // wait for idle
       guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { return }
-      let playlistEntryID = dataPtr.pointee.playlist_entry_id
-      let playlistInsertID = dataPtr.pointee.playlist_insert_id
-      let playlistInsertNumEntries = dataPtr.pointee.playlist_insert_num_entries
       let reason = dataPtr.pointee.reason
       let reasonString = dataPtr.pointee.reasonString
-      player.log.verbose("FileEnded entryID=\(playlistEntryID) insertID=\(playlistInsertID) numEntries=\(playlistInsertNumEntries) reason=\(reasonString)")
+      player.log.verbose("FileEnded reason=\(reasonString)")
       if !player.info.isFileLoaded {
         if reason != MPV_END_FILE_REASON_STOP {
           receivedEndFileWhileLoading = true
