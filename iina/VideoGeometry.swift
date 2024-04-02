@@ -21,11 +21,11 @@ import Foundation
 ///               ➤ apply `scale`
 ///                 ➤ `videoSize` (`PWGeometry`)
 struct VideoGeometry: CustomStringConvertible {
-  static let nullSet = VideoGeometry(rawWidth: 0, rawHeight: 0,
-                                     selectedAspectLabel: "",
-                                     totalRotation: 0, userRotation: 0,
-                                     selectedCropLabel: AppData.noneCropIdentifier,
-                                     scale: 0)
+  static let nullGeometry = VideoGeometry(rawWidth: 0, rawHeight: 0,
+                                          selectedAspectLabel: "",
+                                          totalRotation: 0, userRotation: 0,
+                                          selectedCropLabel: AppData.noneCropIdentifier,
+                                          scale: 0)
 
   init(rawWidth: Int, rawHeight: Int,
        selectedAspectLabel: String,

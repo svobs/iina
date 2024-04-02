@@ -797,6 +797,7 @@ not applying FFmpeg 9599 workaround
   /// - Parameter index: Index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` if the filter was not removed.
   func removeFilter(_ name: String, _ index: Int) -> Bool {
+    dispatchPrecondition(condition: .onQueue(queue))
     Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "removeFilter() does not support \(name)!")
 
     // Get the current list of filters from mpv as a mpv_node tree.
@@ -863,15 +864,19 @@ not applying FFmpeg 9599 workaround
 
   /** Set filter. only "af" or "vf" is supported for name */
   func setFilters(_ name: String, filters: [MPVFilter]) {
-    Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "setFilters() do not support \(name)!")
-    let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
-
-    let str = filters.map { $0.stringFormat }.joined(separator: ",")
-    let returnValue = command(cmd, args: ["set", str], checkError: false)
-    if returnValue < 0 {
-      Utility.showAlert("filter.incorrect")
-      // reload data in filter setting window
-      self.player.postNotification(.iinaVFChanged)
+    queue.async { [self] in
+      Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "setFilters() do not support \(name)!")
+      let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
+      
+      let str = filters.map { $0.stringFormat }.joined(separator: ",")
+      let returnValue = command(cmd, args: ["set", str], checkError: false)
+      if returnValue < 0 {
+        DispatchQueue.main.async { [self] in
+          Utility.showAlert("filter.incorrect")
+          // reload data in filter setting window
+          player.postNotification(.iinaVFChanged)
+        }
+      }
     }
   }
 

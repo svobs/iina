@@ -3236,14 +3236,19 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
 
   func enterInteractiveMode(_ mode: InteractiveMode) {
-    animationPipeline.submitZeroDuration({ [self] in
-      guard player.info.videoGeo.videoSizeACR != nil else {
-        Utility.showAlert("no_video_track")
+    let currentLayout = currentLayout
+    // Especially needed to avoid duplicate transitions
+    guard !currentLayout.isInteractiveMode else { return }
+
+    player.mpv.queue.async { [self] in
+      let videoGeo = player.info.videoGeo
+      guard videoGeo.videoSizeACR != nil else {
+        log.debug("Cannot enter interactive mode: missing videoSizeACR from \(videoGeo)")
+        DispatchQueue.main.async {
+          Utility.showAlert("no_video_track")
+        }
         return
       }
-      let currentLayout = currentLayout
-      // Especially needed to avoid duplicate transitions
-      guard !currentLayout.isInteractiveMode else { return }
 
       log.verbose("Entering interactive mode: \(mode)")
 
@@ -3265,9 +3270,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // Save disabled crop video filter
       player.saveState()
 
-      let tasks = buildTransitionToEnterInteractiveMode(mode)
-      animationPipeline.submit(tasks)
-    })
+      DispatchQueue.main.async { [self] in
+        let tasks = buildTransitionToEnterInteractiveMode(mode)
+        animationPipeline.submit(tasks)
+      }
+    }
   }
 
   func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: Geometries? = nil) -> [IINAAnimation.Task] {
@@ -3316,7 +3323,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("[applyVideoGeo E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
-      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.25
+      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.01
 
       if currentLayout.isFullScreen {
         /// Must update `interactiveModeGeo` outside of animation task!

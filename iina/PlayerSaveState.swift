@@ -62,8 +62,8 @@ struct PlayerSaveState {
     case abLoopA = "abLoopA"          /// `MPVOption.PlaybackControl.abLoopA`
     case abLoopB = "abLoopB"          /// `MPVOption.PlaybackControl.abLoopB`
 
-    case rawWidth = "vidRawW"    /// `MPVProperty.width`
-    case rawHeight = "vidRawH"   /// `MPVProperty.height`
+    case videoRawWidth = "vidRawW"    /// `MPVProperty.width`
+    case videoRawHeight = "vidRawH"   /// `MPVProperty.height`
     case videoAspectLabel = "aspect"  /// `MPVOption.Video.videoAspectOverride`-ish
     case cropLabel = "cropLabel"
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
@@ -146,8 +146,8 @@ struct PlayerSaveState {
 
     // - Video geometry
 
-    props[PropName.rawWidth.rawValue] = String(info.videoGeo.rawWidth)
-    props[PropName.rawHeight.rawValue] = String(info.videoGeo.rawHeight)
+    props[PropName.videoRawWidth.rawValue] = String(info.videoGeo.rawWidth)
+    props[PropName.videoRawHeight.rawValue] = String(info.videoGeo.rawHeight)
     props[PropName.videoAspectLabel.rawValue] = info.videoGeo.selectedAspectLabel
     props[PropName.cropLabel.rawValue] = info.videoGeo.selectedCropLabel
     props[PropName.totalRotation.rawValue] = String(info.videoGeo.totalRotation)
@@ -541,12 +541,12 @@ struct PlayerSaveState {
     windowController.osdLastPlaybackDuration = info.videoDuration?.second
 
     // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
-    info.videoGeo = info.videoGeo.clone(rawWidth: int(for: .rawWidth),
-                                              rawHeight: int(for: .rawHeight),
-                                              selectedAspectLabel: string(for: .videoAspectLabel),
-                                              totalRotation: int(for: .totalRotation),
-                                              userRotation: int(for: .videoRotation),
-                                              selectedCropLabel: string(for: .cropLabel))
+    info.videoGeo = info.videoGeo.clone(rawWidth: int(for: .videoRawWidth),
+                                        rawHeight: int(for: .videoRawHeight),
+                                        selectedAspectLabel: string(for: .videoAspectLabel),
+                                        totalRotation: int(for: .totalRotation),
+                                        userRotation: int(for: .videoRotation),
+                                        selectedCropLabel: string(for: .cropLabel))
 
     if let windowScale = double(for: .windowScale) {
       // Swift has a few rough edges still

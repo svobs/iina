@@ -600,7 +600,8 @@ class PlayerCore: NSObject {
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
       // Reset playback state
-      info.videoGeo = VideoGeometry.nullSet
+      log.verbose("Stop called: resetting playback state")
+      info.videoGeo = VideoGeometry.nullGeometry
       info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
@@ -610,7 +611,7 @@ class PlayerCore: NSObject {
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
       // initiated directly through mpv.
       guard !isStopped else { return }
-      Logger.log("Stopping playback", subsystem: subsystem)
+      log.debug("Stopping playback")
 
       sendOSD(.stop)
       isStopping = true
@@ -1117,6 +1118,7 @@ class PlayerCore: NSObject {
     }
 
     let videoScale = (videoWidthScaled / videoWidthUnscaled).truncatedTo6()
+    log.verbose("Derived video scale from vidGeo: \(videoScale)")
     return videoScale
   }
 
@@ -1528,33 +1530,39 @@ class PlayerCore: NSObject {
   }
 
   func setCrop(fromAspectString aspectString: String) {
-    if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoGeo.videoSizeRaw {
-      let cropped = videoSizeRaw.crop(withAspect: aspect)
-      log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
-      if cropped.width <= 0 || cropped.height <= 0 {
-        log.error("Cannot set crop to \(cropped); width or height is <= 0")
+    mpv.queue.async { [self] in
+      if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoGeo.videoSizeRaw {
+        let cropped = videoSizeRaw.crop(withAspect: aspect)
+        log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
+        if cropped.width <= 0 || cropped.height <= 0 {
+          log.error("Cannot set crop to \(cropped); width or height is <= 0")
+          updateSelectedCrop(to: AppData.noneCropIdentifier)
+          return
+        }
+        let vf = MPVFilter.crop(w: Int(cropped.width), h: Int(cropped.height), x: nil, y: nil)
+        // No need to call updateSelectedCrop - it will be called by setCrop
+        if !addVideoFilter(vf) {
+          log.error("Failed to add crop filter? Setting crop to none")
+          updateSelectedCrop(to: AppData.noneCropIdentifier)
+        }
+      } else {
+        if aspectString != AppData.noneCropIdentifier {
+          log.error("Requested crop string is invalid: \(aspectString.quoted)")
+        }
         updateSelectedCrop(to: AppData.noneCropIdentifier)
-        return
       }
-      let vf = MPVFilter.crop(w: Int(cropped.width), h: Int(cropped.height), x: nil, y: nil)
-      // No need to call updateSelectedCrop - it will be called by setCrop
-      if !addVideoFilter(vf) {
-        log.error("Failed to add crop filter? Setting crop to none")
-        updateSelectedCrop(to: AppData.noneCropIdentifier)
-      }
-    } else {
-      if aspectString != AppData.noneCropIdentifier {
-        log.error("Requested crop string is invalid: \(aspectString.quoted)")
-      }
-      updateSelectedCrop(to: AppData.noneCropIdentifier)
     }
   }
 
   func removeCrop() {
-    updateSelectedCrop(to: AppData.noneCropIdentifier)
+    mpv.queue.async { [self] in
+      updateSelectedCrop(to: AppData.noneCropIdentifier)
+    }
   }
 
   private func updateSelectedCrop(to newCropLabel: String) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+
     if newCropLabel == AppData.noneCropIdentifier, let cropFilter = info.cropFilter {
       log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
       removeVideoFilter(cropFilter)
@@ -1562,15 +1570,15 @@ class PlayerCore: NSObject {
       return
     }
 
-    mpv.queue.async { [self] in
-      if info.videoGeo.selectedCropLabel != newCropLabel {
-        log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVideoGeo")
-        let newVidParams = info.videoGeo.clone(selectedCropLabel: newCropLabel)
-        windowController.applyVideoGeo(newVidGeo: newVidParams)
+    if info.videoGeo.selectedCropLabel != newCropLabel {
+      log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVideoGeo")
+      let newVidParams = info.videoGeo.clone(selectedCropLabel: newCropLabel)
+      windowController.applyVideoGeo(newVidGeo: newVidParams)
 
-        let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
-        sendOSD(.crop(osdLabel))
-      }
+      let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
+      sendOSD(.crop(osdLabel))
+    }
+    DispatchQueue.main.async { [self] in
       reloadQuickSettingsView()
     }
   }
@@ -1596,6 +1604,7 @@ class PlayerCore: NSObject {
   /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
+  /// Can run on either mpv or main DispatchQueue.
   func addVideoFilter(_ filter: MPVFilter) -> Bool {
     let success = addVideoFilter(filter.stringFormat)
     if !success {
@@ -1654,7 +1663,14 @@ class PlayerCore: NSObject {
     log.debug("Add filter: \(didSucceed ? "Succeeded" : "Failed")")
 
     if didSucceed, let vf = MPVFilter(rawString: filter) {
-      setPlaybackInfoFilter(vf)
+      if Thread.isMainThread {
+        mpv.queue.async { [self] in
+          setPlaybackInfoFilter(vf)
+        }
+      } else {
+        dispatchPrecondition(condition: .onQueue(mpv.queue))
+        setPlaybackInfoFilter(vf)
+      }
     }
 
     return didSucceed
@@ -1678,6 +1694,7 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeVideoFilter(_ filter: String, _ index: Int) -> Bool {
     Logger.log("Removing video filter \(filter)...", subsystem: subsystem)
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
     Logger.log(result ? "Succeeded" : "Failed", subsystem: self.subsystem)
     return result
@@ -1695,6 +1712,8 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
   func removeVideoFilter(_ filter: MPVFilter) -> Bool {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    
     if let label = filter.label {
       // Has label: we care most about these
       log.debug("Removing video filter \(label.quoted) (\(filter.stringFormat.quoted))...")
@@ -1995,7 +2014,6 @@ class PlayerCore: NSObject {
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
       log.verbose("Nothing for preResizeVideo to do")
-      info.videoGeo = info.videoGeo.clone(rawWidth: 0, rawHeight: 0)
     }
   }
 
@@ -3020,6 +3038,8 @@ class PlayerCore: NSObject {
   }
 
   func setPlaybackInfoFilter(_ filter: MPVFilter) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+
     switch filter.label {
     case Constants.FilterLabel.crop:
       // CROP
@@ -3080,6 +3100,7 @@ class PlayerCore: NSObject {
 
   /** Check if there are IINA filters saved in watch_later file. */
   func reloadSavedIINAfilters() {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
     // vf
     // Clear cached filters first:
     info.cropFilter = nil

@@ -178,19 +178,23 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     let pc = PlayerCore.lastActive
     let selectedRow = currentFiltersTableView.selectedRow
     if selectedRow >= 0 {
-      let success: Bool
-      if filterType == MPVProperty.vf {
-        success = pc.removeVideoFilter(filters[selectedRow], selectedRow)
-      } else {
-        success = pc.removeAudioFilter(filters[selectedRow], selectedRow)
-      }
-      if success {
-        reloadTable()
-        pc.sendOSD(.removeFilter)
-        // FIXME: For some reason, after removeFilterAction is called, tableViewSelectionDidChange(_:)
-        // for currentFiltersTableView is not called. This is a workaround to ensure
-        // tableViewSelectionDidChange(_:) is called.
-        currentFiltersTableView.deselectAll(self)
+      pc.mpv.queue.async { [self] in
+        let success: Bool
+        if filterType == MPVProperty.vf {
+          success = pc.removeVideoFilter(filters[selectedRow], selectedRow)
+        } else {
+          success = pc.removeAudioFilter(filters[selectedRow], selectedRow)
+        }
+        if success {
+          DispatchQueue.main.async { [self] in
+            reloadTable()
+            pc.sendOSD(.removeFilter)
+            // FIXME: For some reason, after removeFilterAction is called, tableViewSelectionDidChange(_:)
+            // for currentFiltersTableView is not called. This is a workaround to ensure
+            // tableViewSelectionDidChange(_:) is called.
+            currentFiltersTableView.deselectAll(self)
+          }
+        }
       }
     }
   }
@@ -207,49 +211,52 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     let savedFilter = savedFilters[row]
     let pc = PlayerCore.lastActive
 
-    // choose appropriate add/remove functions for .af/.vf
-    var addFilterFunction: (String) -> Bool
-    var removeFilterFunction: (String, Int) -> Bool
-    var removeFilterUsingStringFunction: (String) -> Bool
-    if filterType == MPVProperty.vf {
-      addFilterFunction = pc.addVideoFilter
-      removeFilterFunction = pc.removeVideoFilter
-      removeFilterUsingStringFunction = pc.removeVideoFilter
-    } else {
-      addFilterFunction = pc.addAudioFilter
-      removeFilterFunction = pc.removeAudioFilter
-      removeFilterUsingStringFunction = pc.removeAudioFilter
-    }
-
-    if sender.state == .on {  // user activated filter
-      if addFilterFunction(savedFilter.filterString) {
-        pc.sendOSD(.addFilter(savedFilter.name))
-      }
-    } else {  // user deactivated filter
-      if let asObject = MPVFilter(rawString: savedFilter.filterString),
-         let index = filters.firstIndex(of: asObject) {
-        // Remove the filter based on the index within the list of configured filters. This is the
-        // preferred way to remove a filter as using the string representation is unreliable due to
-        // filters that take multiple parameters having multiple valid string representations.
-        if removeFilterFunction(savedFilter.filterString, index) {
-          pc.sendOSD(.removeFilter)
-        }
+    pc.mpv.queue.async { [self] in
+      // choose appropriate add/remove functions for .af/.vf
+      var addFilterFunction: (String) -> Bool
+      var removeFilterFunction: (String, Int) -> Bool
+      var removeFilterUsingStringFunction: (String) -> Bool
+      if filterType == MPVProperty.vf {
+        addFilterFunction = pc.addVideoFilter
+        removeFilterFunction = pc.removeVideoFilter
+        removeFilterUsingStringFunction = pc.removeVideoFilter
       } else {
-        // If this occurs the MPVFilter method parseRawParamString may have not been able to parse
-        // this kind of filter. Log the issue and attempt to remove the filter using the string
-        // representation. For filters that have multiple valid string representations mpv may or
-        // may not find and remove the filter.
-        Logger.log("""
+        addFilterFunction = pc.addAudioFilter
+        removeFilterFunction = pc.removeAudioFilter
+        removeFilterUsingStringFunction = pc.removeAudioFilter
+      }
+
+      if sender.state == .on {  // user activated filter
+        if addFilterFunction(savedFilter.filterString) {
+          pc.sendOSD(.addFilter(savedFilter.name))
+        }
+      } else {  // user deactivated filter
+        if let asObject = MPVFilter(rawString: savedFilter.filterString),
+           let index = filters.firstIndex(of: asObject) {
+          // Remove the filter based on the index within the list of configured filters. This is the
+          // preferred way to remove a filter as using the string representation is unreliable due to
+          // filters that take multiple parameters having multiple valid string representations.
+          if removeFilterFunction(savedFilter.filterString, index) {
+            pc.sendOSD(.removeFilter)
+          }
+        } else {
+          // If this occurs the MPVFilter method parseRawParamString may have not been able to parse
+          // this kind of filter. Log the issue and attempt to remove the filter using the string
+          // representation. For filters that have multiple valid string representations mpv may or
+          // may not find and remove the filter.
+          Logger.log("""
           Failed to locate filter: \(savedFilter.filterString)\nIn the list of filters:
           \n\(filtersAsString())
           """, level: .warning)
-        if removeFilterUsingStringFunction(savedFilter.filterString) {
-          pc.sendOSD(.removeFilter)
+          if removeFilterUsingStringFunction(savedFilter.filterString) {
+            pc.sendOSD(.removeFilter)
+          }
         }
       }
+      DispatchQueue.main.async { [self] in
+        reloadTable()
+      }
     }
-
-    reloadTable()
   }
 
   @IBAction func deleteSavedFilterAction(_ sender: NSButton) {

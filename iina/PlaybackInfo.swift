@@ -167,7 +167,11 @@ class PlaybackInfo {
   var isShowingAlbumArt: Bool = false
 
   /// Should be read/written on main thread only
-  var videoGeo = VideoGeometry.nullSet
+  var videoGeo = VideoGeometry.nullGeometry {
+    didSet {
+      log.verbose("Updated videoGeo to: \(videoGeo)")
+    }
+  }
 
   var rawWidth: Int? {
     let width = videoGeo.rawWidth

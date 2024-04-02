@@ -101,11 +101,11 @@ class CropSettingsViewController: CropBoxViewController {
     player.log.verbose("Interactive mode: user activated Done")
 
     // Remove saved crop (if any)
-    player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
     guard let videoSizeRaw = player.info.videoGeo.videoSizeRaw else {
-      player.log.error("Interactive mode submit failed: could videoRawSize is invalid!")
+      player.log.error("Interactive mode submit failed: missing/invalid videoRawSize in \(player.info.videoGeo)")
       return
     }
+    player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
     animateHideCropSelection()
 
     // Use <=, >= to account for imprecision

@@ -227,34 +227,40 @@ extension PlayerWindowController {
   }
 
   private func menuToggleFilterString(_ string: String, forType type: String) {
-    let isVideo = type == MPVProperty.vf
-    if let filter = MPVFilter(rawString: string) {
-      // Removing a filter based on its position within the filter list is the preferred way to do
-      // it as per discussion with the mpv project. Search the list of filters and find the index
-      // of the specified filter (if present).
-      if let index = player.mpv.getFilters(type).firstIndex(of: filter) {
-        // remove
-        if isVideo {
-          _ = player.removeVideoFilter(filter, index)
-        } else {
-          _ = player.removeAudioFilter(filter, index)
-        }
-      } else {
-        // add
-        if isVideo {
-          if !player.addVideoFilter(filter) {
-            Utility.showAlert("filter.incorrect")
+    player.mpv.queue.async { [self] in
+      let isVideo = type == MPVProperty.vf
+      if let filter = MPVFilter(rawString: string) {
+        // Removing a filter based on its position within the filter list is the preferred way to do
+        // it as per discussion with the mpv project. Search the list of filters and find the index
+        // of the specified filter (if present).
+        if let index = player.mpv.getFilters(type).firstIndex(of: filter) {
+          // remove
+          if isVideo {
+            _ = player.removeVideoFilter(filter, index)
+          } else {
+            _ = player.removeAudioFilter(filter, index)
           }
         } else {
-          if !player.addAudioFilter(filter) {
-            Utility.showAlert("filter.incorrect")
+          // add
+          if isVideo {
+            if !player.addVideoFilter(filter) {
+              DispatchQueue.main.async {
+                Utility.showAlert("filter.incorrect")
+              }
+            }
+          } else {
+            if !player.addAudioFilter(filter) {
+              DispatchQueue.main.async {
+                Utility.showAlert("filter.incorrect")
+              }
+            }
           }
         }
       }
-    }
-    let vfWindow = AppDelegate.shared.vfWindow
-    if vfWindow.isWindowLoaded {
-      vfWindow.reloadTable()
+      let vfWindow = AppDelegate.shared.vfWindow
+      if vfWindow.isWindowLoaded {
+        vfWindow.reloadTable()
+      }
     }
   }
 
@@ -492,8 +498,10 @@ extension PlayerWindowController {
   @objc func menuSetDelogo(_ sender: NSMenuItem) {
     if sender.state == .on {
       if let filter = player.info.delogoFilter {
-        let _ = player.removeVideoFilter(filter)
-        player.info.delogoFilter = nil
+        player.mpv.queue.async { [self] in
+          let _ = player.removeVideoFilter(filter)
+          player.info.delogoFilter = nil
+        }
       }
     } else {
       self.enterInteractiveMode(.freeSelecting)
