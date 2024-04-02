@@ -28,14 +28,14 @@ class PlayerWindow: NSWindow {
    */
   func setFrameImmediately(_ newFrame: NSRect, animate: Bool = true) {
     guard !frame.equalTo(newFrame) else {
-      log.verbose("SetFrameImmediately: no change; will not update windowFrame")
+      log.verbose("[setFrame] no change, skipping")
       return
     }
 
     playerWinController?.videoView.videoLayer.enterAsynchronousMode()
 
     useZeroDurationForNextResize = true
-    log.verbose("SetFrameImmediately: animate=\(animate.yn) frame=\(newFrame)")
+    log.verbose("[setFrame] animate=\(animate.yn) frame=\(newFrame)")
     setFrame(newFrame, display: true, animate: animate)
   }
 

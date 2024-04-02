@@ -333,7 +333,7 @@ extension PlayerWindowController {
         videoView.apply(intermediateGeo)
         if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
           // Entering music mode when album art is hidden
-          miniPlayer.applyVideoViewVisibilityConstraints(isVideoVisible: false)
+          miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: false)
         }
       }))
     }
@@ -364,7 +364,7 @@ extension PlayerWindowController {
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, topMarginHeight: topBlackBarHeight)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock")
-        applyLegacyFullScreenGeometry(newGeo)
+        applyLegacyFSGeo(newGeo)
       }))
     }
 

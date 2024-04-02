@@ -881,7 +881,7 @@ extension PlayerWindowController {
       }
 
       if let newGeo {
-        applyWindowGeometryForSpecialResize(newGeo)
+        applyWindowGeoSpecialResize(newGeo)
 
         switch currentLayout.mode {
         case .windowed:

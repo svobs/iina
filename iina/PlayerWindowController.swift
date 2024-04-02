@@ -537,7 +537,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("Pref \(keyPath.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
-      player.reloadThumbnails(forItem: player.info.currentMedia)
+      player.reloadThumbnails(forMedia: player.info.currentMedia)
 
     case PK.showChapterPos.rawValue:
       if let newValue = change[.newKey] as? Bool {
@@ -1183,7 +1183,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
         /// If `isMiniPlayerWaitingToShowVideo` is true, need to update the cached geometry & other state vars,
         /// but do not update frame because that will be handled right after
-        applyMusicModeGeometryInAnimationPipeline(newMusicModeGeometry, setFrame: !player.isMiniPlayerWaitingToShowVideo)
+        applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry, setFrame: !player.isMiniPlayerWaitingToShowVideo)
       case .windowed:
         var newGeo = windowedModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
 
@@ -1195,13 +1195,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           viewportSize = newGeo.viewportSize
         }
         newGeo = newGeo.scaleViewport(to: viewportSize, fitOption: .keepInVisibleScreen)
-        applyWindowGeometryInAnimationPipeline(newGeo)
+        applyWindowGeoInAnimationPipeline(newGeo)
       case .fullScreen:
         animationPipeline.submit(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
           guard let screen = window.screen else { return }
           let fsGeo = layout.buildFullScreenGeometry(inside: screen, videoAspect: newAspectRatio)
           if layout.isLegacyFullScreen {
-            applyLegacyFullScreenGeometry(fsGeo)
+            applyLegacyFSGeo(fsGeo)
           } else if layout.mode != .fullScreenInteractive {
             videoView.apply(fsGeo)
           }
@@ -2350,7 +2350,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to WindowDidChangeScreen")
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, videoAspect: player.info.videoAspect)
-          applyLegacyFullScreenGeometry(fsGeo)
+          applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
           player.saveState()
@@ -2405,7 +2405,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to ScreenParametersNotification")
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
-          applyLegacyFullScreenGeometry(fsGeo)
+          applyLegacyFSGeo(fsGeo)
         } else if currentLayout.mode == .windowed {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
@@ -2451,7 +2451,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           log.verbose("Updating legacy full screen window in response to unexpected windowDidMove")
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
-          applyLegacyFullScreenGeometry(fsGeo)
+          applyLegacyFSGeo(fsGeo)
         }
       } else {
         updateCachedGeometry()
@@ -3261,7 +3261,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
         player.info.videoFiltersDisabled[filterLabel] = vf
         if player.removeVideoFilter(vf) {
-          /// The call to `removeVideoFilter` will trigger `applyVideo`, which will notice the disabled filter & pick up there
+          /// The call to `removeVideoFilter` will trigger `applyVidGeo`, which will notice the disabled filter & pick up there
           return
         } else {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
@@ -3350,7 +3350,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if let cropController = cropSettingsView {
       let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
       animationTasks.append(IINAAnimation.zeroDurationTask{ [self] in
-        /// Set the filter. This will result in `applyVideo` getting called, which will trigger an exit from interactive mode.
+        /// Set the filter. This will result in `applyVidGeo` getting called, which will trigger an exit from interactive mode.
         /// But that task can only happen once we return and relinquish the main queue.
         _ = player.addVideoFilter(newCropFilter)
       })
@@ -3359,7 +3359,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Build exit animation
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
-    log.verbose("[applyVideo E5] Exiting interactive mode, newMode: \(newMode)")
+    log.verbose("[applyVidGeo E5] Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25

@@ -306,7 +306,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
     // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
     let newMusicModeGeometry = oldGeometry.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
-    windowController.applyMusicModeGeometryInAnimationPipeline(newMusicModeGeometry)
+    windowController.applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
   }
 
   @IBAction func toggleVideoView(_ sender: Any) {
@@ -319,17 +319,17 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
-        applyVideoViewVisibility(showVideo: false)
+        applyVideoVisibility(showVideo: false)
       }
     })
   }
 
   func showVideo() {
-    applyVideoViewVisibility(showVideo: true)
+    applyVideoVisibility(showVideo: true)
   }
 
   // TODO: develop a nice sliding animation if possible
-  private func applyVideoViewVisibility(showVideo: Bool) {
+  private func applyVideoVisibility(showVideo: Bool) {
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.zeroDurationTask{ [self] in
       // Hide OSD during animation
@@ -341,7 +341,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       windowController.thumbnailPeekView.isHidden = true
 
       /// If needing to reactivate this constraint, do it before the toggle animation, so that window doesn't jump.
-      /// (See note in `applyMusicModeGeometry` for why this constraint needed to be disabled in the first place)
+      /// (See note in `applyMusicModeGeo` for why this constraint needed to be disabled in the first place)
       if showVideo {
         windowController.viewportBottomOffsetFromContentViewBottomConstraint.isActive = true
       }
@@ -350,7 +350,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
       let newGeometry = windowController.musicModeGeo.withVideoViewVisible(showVideo)
       log.verbose("VideoView setting videoViewVisible=\(showVideo), videoHeight=\(newGeometry.videoHeight)")
-      windowController.applyMusicModeGeometry(newGeometry)
+      windowController.applyMusicModeGeo(newGeometry)
     }))
 
     tasks.append(IINAAnimation.Task{ [self] in
@@ -391,7 +391,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame)
     IINAAnimation.disableAnimation{
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
-      newGeometry = windowController.applyMusicModeGeometry(newGeometry, setFrame: false, animate: false, updateCache: false)
+      newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
     }
 
     return newGeometry.windowFrame.size
@@ -421,7 +421,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     windowController.closeButtonView.isHidden = true
 
     // Make sure to restore video
-    applyVideoViewVisibilityConstraints(isVideoVisible: true)
+    updateVideoViewVisibilityConstraints(isVideoVisible: true)
     windowController.viewportBottomOffsetFromContentViewBottomConstraint.isActive = true
 
     windowController.leftLabel.font = NSFont.messageFont(ofSize: 11)
@@ -432,7 +432,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     hideControllerButtons()
   }
 
-  func applyVideoViewVisibilityConstraints(isVideoVisible: Bool) {
+  func updateVideoViewVisibilityConstraints(isVideoVisible: Bool) {
     log.verbose("Applying videoView visibility constraints, using visible=\(isVideoVisible.yn)")
 
     if isVideoVisible {

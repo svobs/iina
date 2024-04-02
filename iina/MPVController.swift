@@ -235,7 +235,7 @@ not applying FFmpeg 9599 workaround
       return true
     }
     let isStale = mpv != iina
-    player.log.verbose("Checking state. IINA: \(iina), mpv: \(mpv) → \(isStale.yesno)")
+    player.log.verbose("IsStale: IINA \(iina), mpv \(mpv) → \(isStale.yesno)")
     return isStale
   }
 
@@ -1156,7 +1156,7 @@ not applying FFmpeg 9599 workaround
     switch name {
 
     case MPVProperty.videoGeo:
-      player.log.verbose("Received mpv prop: \(MPVProperty.videoGeo.quoted)")
+      player.log.verbose("Δ mpv prop: \(MPVProperty.videoGeo.quoted)")
       needReloadQuickSettingsView = true
 
     case MPVProperty.videoOutParams:
@@ -1168,14 +1168,14 @@ not applying FFmpeg 9599 workaround
        Has the same sub-properties as video-params.
        ```
        */
-      player.log.verbose("Received mpv prop: \(MPVProperty.videoOutParams.quoted)")
+      player.log.verbose("Δ mpv prop: \(MPVProperty.videoOutParams.quoted)")
       break
 
     case MPVProperty.videoGeoRotate:
         /** `video-params/rotate: Intended display rotation in degrees (clockwise).` - mpv manual
          Do not confuse with the user-configured `video-rotate` (below) */
       if let totalRotation = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee {
-        player.log.verbose("Received mpv prop: 'video-params/rotate' = \(totalRotation)")
+        player.log.verbose("Δ mpv prop: 'video-params/rotate' = \(totalRotation)")
         player.saveState()
         /// Any necessary resizing will be handled elsewhere
       }
@@ -1188,7 +1188,7 @@ not applying FFmpeg 9599 workaround
       guard userRotation != player.info.videoGeo.userRotation else { break }
 
       // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoGeo.
-      player.log.verbose("Received mpv prop: 'video-rotate' ≔ \(userRotation)")
+      player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
       needReloadQuickSettingsView = true
 
       // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
@@ -1209,11 +1209,11 @@ not applying FFmpeg 9599 workaround
       let rotationChange = userRotation - oldVidGeo.userRotation
       let newTotalRotation = (oldVidGeo.totalRotation + rotationChange) %% 360
       let newVidGeo = oldVidGeo.clone(totalRotation: newTotalRotation, userRotation: userRotation)
-      player.windowController.applyVideo(newVidGeo: newVidGeo)
+      player.windowController.applyVidGeo(newVidGeo)
 
       player.sendOSD(.rotation(userRotation))
       // Thumb rotation needs updating:
-      player.reloadThumbnails(forItem: player.info.currentMedia)
+      player.reloadThumbnails(forMedia: player.info.currentMedia)
       player.saveState()
 
     case MPVProperty.videoGeoPrimaries:
@@ -1238,11 +1238,11 @@ not applying FFmpeg 9599 workaround
 
     case MPVOption.PlaybackControl.pause:
       guard let paused = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
-        player.log.error("Failed to parse mpv pause!")
+        player.log.error("Failed to parse mpv pause data!")
         break
       }
 
-      player.log.verbose("Received mpv prop: 'pause' = \(paused)")
+      player.log.verbose("Δ mpv prop: 'pause' = \(paused)")
       if player.info.isPaused != paused || player.info.pauseStateWasChangedLocally {
         player.info.isPaused = paused
         player.info.pauseStateWasChangedLocally = false
@@ -1271,7 +1271,7 @@ not applying FFmpeg 9599 workaround
 
     case MPVProperty.chapter:
       player.info.chapter = Int(getInt(MPVProperty.chapter))
-      player.log.verbose("Received mpv prop: `chapter` = \(player.info.chapter)")
+      player.log.verbose("Δ mpv prop: `chapter` = \(player.info.chapter)")
       player.syncUI(.chapterList)
       player.postNotification(.iinaMediaTitleChanged)
 
@@ -1279,7 +1279,7 @@ not applying FFmpeg 9599 workaround
       needReloadQuickSettingsView = true
       if let speed = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee {
 
-        player.log.verbose("Received mpv prop: `speed` = \(speed)")
+        player.log.verbose("Δ mpv prop: `speed` = \(speed)")
         player.info.playSpeed = speed
         player.sendOSD(.speed(speed))
         player.saveState()  // record the new speed
@@ -1296,7 +1296,7 @@ not applying FFmpeg 9599 workaround
       if let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
         // this property will fire a change event at file start
         if player.info.deinterlace != data {
-          player.log.verbose("Received mpv prop: `deinterlace` = \(data)")
+          player.log.verbose("Δ mpv prop: `deinterlace` = \(data)")
           player.info.deinterlace = data
           player.sendOSD(.deinterlace(data))
         }
@@ -1447,31 +1447,31 @@ not applying FFmpeg 9599 workaround
     // following properties may change before file loaded
 
     case MPVProperty.playlistCount:
-      player.log.verbose("Received mpv prop: 'playlist-count'")
+      player.log.verbose("Δ mpv prop: 'playlist-count'")
       player.reloadPlaylist()
 
     case MPVProperty.trackList:
-      player.log.verbose("Received mpv prop change: \(MPVProperty.trackList.quoted)")
+      player.log.verbose("Δ mpv prop: 'track-list'")
       player.trackListChanged()
 
     case MPVProperty.vf:
-      player.log.verbose("Received mpv prop: \(MPVProperty.vf.quoted)")
+      player.log.verbose("Δ mpv prop: 'vf'")
       needReloadQuickSettingsView = true
       player.vfChanged()
 
     case MPVProperty.af:
-      player.log.verbose("Received mpv prop: \(MPVProperty.af.quoted)")
+      player.log.verbose("Δ mpv prop: 'af'")
       player.afChanged()
 
     case MPVOption.Video.videoAspectOverride:
       guard player.windowController.loaded, !player.isShuttingDown else { break }
       guard let aspect = getString(MPVOption.Video.videoAspectOverride) else { break }
-      player.log.verbose("Received mpv prop: \(MPVOption.Video.videoAspectOverride.quoted) = \(aspect.quoted)")
+      player.log.verbose("Δ mpv prop: 'video-aspect-override' = \(aspect.quoted)")
       player._setVideoAspectOverride(aspect)
 
     case MPVOption.Window.fullscreen:
       let fs = getFlag(MPVOption.Window.fullscreen)
-      player.log.verbose("Received mpv prop: \(MPVOption.Window.fullscreen.quoted) = \(fs.yesno)")
+      player.log.verbose("Δ mpv prop: 'fullscreen' = \(fs.yesno)")
       guard player.windowController.loaded else { break }
       if fs != player.windowController.isFullScreen {
         DispatchQueue.main.async(execute: self.player.windowController.toggleWindowFullScreen)
@@ -1479,7 +1479,7 @@ not applying FFmpeg 9599 workaround
 
     case MPVOption.Window.ontop:
       let ontop = getFlag(MPVOption.Window.ontop)
-      player.log.verbose("Received mpv prop: \(MPVOption.Window.ontop.quoted) = \(ontop.yesno)")
+      player.log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
       guard player.windowController.loaded else { break }
       if ontop != player.windowController.isOnTop {
         DispatchQueue.main.async {
@@ -1495,13 +1495,13 @@ not applying FFmpeg 9599 workaround
       let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
-        player.log.verbose("Received mpv prop: 'window-scale' ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
+        player.log.verbose("Δ mpv prop: 'window-scale' ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
         player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
         DispatchQueue.main.async {
           self.player.windowController.setVideoScale(CGFloat(newVideoScale))
         }
       } else {
-        player.log.verbose("Received mpv prop: 'window-scale' ≔ \(newVideoScale), but no change from cache")
+        player.log.verbose("Δ mpv prop: 'window-scale' ≔ \(newVideoScale), but no change from cache")
       }
 
     case MPVProperty.mediaTitle:
@@ -1534,7 +1534,7 @@ not applying FFmpeg 9599 workaround
           return "\t\(String(format: "%03d", index))   \(mapping.confFileFormat)"
         }.joined(separator: "\n")
 
-        player.log.verbose("Received mpv prop: \(MPVProperty.inputBindings.quoted)≔\n\(mappingListStr)")
+        player.log.verbose("Δ mpv prop: \(MPVProperty.inputBindings.quoted)≔\n\(mappingListStr)")
       } catch {
         player.log.error("Failed to parse property data for \(MPVProperty.inputBindings.quoted)!")
       }

@@ -164,7 +164,7 @@ class VideoView: NSView {
 
   private func setFixedOffsetConstraints(margins: BoxQuad) {
 
-    log.verbose("Constraining videoView for fixed offsets only: \(margins.top) \(margins.trailing) \(margins.bottom) \(margins.leading)")
+    log.verbose("Constraining videoView for fixed offsets: \(margins)")
     // Use only EQ. Remove all other constraints
     rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
                        eqIsActive: true, eqPriority: .required,

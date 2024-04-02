@@ -10,10 +10,10 @@ import Foundation
 
 class MediaItem {
   enum LoadStatus {
-    case notStarted
-    case started
-    case loaded
-    case completelyLoaded
+    case notStarted       /// set before mpv is aware of it
+    case started          /// set after mpv sends `fileStarted` notification
+    case loaded           /// set after mpv sends `fileLoaded` notification
+    case completelyLoaded /// everything loaded, including filters
     case ended
   }
 
@@ -61,7 +61,6 @@ class PlaybackInfo {
   }
 
   // MARK: - Playback lifecycle state
-  // TODO: turn into enum?
 
   var isIdle: Bool = true {
     didSet {
@@ -69,16 +68,15 @@ class PlaybackInfo {
     }
   }
 
-  /// Will be non-`nil` while restoring from a previous launch. Contains info needed to restore the UI state.
+  /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
+  var isRestoring = false
+
+  /// Contains info needed to restore the UI state from a previous launch. Should only be used if `isRestoring==true`
   var priorState: PlayerSaveState? = nil {
     didSet {
       Logger.log("Updated priorState to: \(priorState.debugDescription)")
     }
   }
-
-  var isRestoring = false
-
-  var currentMedia: MediaItem? = nil
 
   /// Opened or started file, but still waiting for `fileLoaded` event
   var justOpenedFile: Bool = true
@@ -107,6 +105,8 @@ class PlaybackInfo {
     return !isPaused
   }
   var pauseStateWasChangedLocally = false
+
+  var currentMedia: MediaItem? = nil
 
   var currentURL: URL? {
     return currentMedia?.url

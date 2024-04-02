@@ -1065,8 +1065,8 @@ class PlayerCore: NSObject {
 
       if newVideoGeo.hasValidSize {
         // Change video size:
-        log.verbose("Calling applyVideo from video-aspect-override")
-        windowController.applyVideo(newVidGeo: newVideoGeo)
+        log.verbose("Calling applyVidGeo from video-aspect-override")
+        windowController.applyVidGeo(newVideoGeo)
       }
     }
 
@@ -1571,9 +1571,9 @@ class PlayerCore: NSObject {
     }
 
     if info.videoGeo.selectedCropLabel != newCropLabel {
-      log.verbose("Calling applyVideo with new selectedCropLabel: \(newCropLabel.quoted)")
+      log.verbose("Calling applyVidGeo with new selectedCropLabel: \(newCropLabel.quoted)")
       let newVidGeo = info.videoGeo.clone(selectedCropLabel: newCropLabel)
-      windowController.applyVideo(newVidGeo: newVidGeo)
+      windowController.applyVidGeo(newVidGeo)
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
@@ -2008,9 +2008,9 @@ class PlayerCore: NSObject {
        let videoSize = videoInfo.videoSize {
 
       let newParams = info.videoGeo.clone(rawWidth: videoSize.0, rawHeight: videoSize.1)
-      log.verbose("Calling applyVideo from preResizeVideo with \(newParams)")
+      log.verbose("Calling applyVidGeo from preResizeVideo with \(newParams)")
       assert(info.justOpenedFile)
-      windowController.applyVideo(newVidGeo: newParams)
+      windowController.applyVidGeo(newParams)
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
       log.verbose("Nothing for preResizeVideo to do")
@@ -2154,7 +2154,7 @@ class PlayerCore: NSObject {
     info.currentMedia?.loadStatus = .loaded // TODO: improve
 
     // Kick off thumbnails load/gen - it can happen in background
-    reloadThumbnails(forItem: currentMedia)
+    reloadThumbnails(forMedia: currentMedia)
 
     // add to history
     if let url = info.currentURL {
@@ -2218,14 +2218,14 @@ class PlayerCore: NSObject {
 
     // Make sure to call this because mpv does not always trigger it.
     // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
-    if let newVidParams = mpv.queryForVideoGeometry() {
+    if let newVidGeo = mpv.queryForVideoGeometry() {
       // Always send this to window controller. It should be smart enough to resize only when needed:
-      log.verbose("Calling applyVideo from fileIsCompletelyDoneLoading")
-      windowController.applyVideo(newVidGeo: newVidParams)
+      log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
+      windowController.applyVidGeo(newVidGeo)
     }
 
     log.verbose("File is completely done loading; setting justOpenedFile=N")
-    /// Make sure to set this *after* calling `applyVideo` but *before* calling `refreshAlbumArtDisplay`
+    /// Make sure to set this *after* calling `applyVidGeo` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
@@ -2403,7 +2403,7 @@ class PlayerCore: NSObject {
 
     log.verbose("Video track changed to: \(vid)")
 
-    /// Do this first, before `applyVideoViewVisibility`, for a nicer animation`
+    /// Do this first, before `applyVideoVisibility`, for a nicer animation`
     windowController.refreshAlbumArtDisplay()
 
     DispatchQueue.main.async{ [self] in
@@ -2762,7 +2762,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadThumbnails(forItem currentMedia: MediaItem?) {
+  func reloadThumbnails(forMedia currentMedia: MediaItem?) {
     guard let currentMedia else {
       log.debug("Cannot generate thumbnails: no file active")
       return

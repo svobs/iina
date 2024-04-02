@@ -698,7 +698,7 @@ extension PlayerWindowController {
     log.verbose("[\(transition.name)] OpenNewPanels. TitleBar_H: \(outputLayout.titleBarHeight), TopOSC_H: \(outputLayout.topOSCHeight)")
 
     if transition.isEnteringMusicMode {
-      miniPlayer.applyVideoViewVisibilityConstraints(isVideoVisible: musicModeGeo.isVideoVisible)
+      miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: musicModeGeo.isVideoVisible)
     }
 
     // Update heights to their final values:
@@ -785,11 +785,11 @@ extension PlayerWindowController {
         }
         log.verbose("[\(transition.name)] Calling setFrame for legacyFS in OpenNewPanels")
         /// This calls `videoView.apply`:
-        applyLegacyFullScreenGeometry(newGeo)
+        applyLegacyFSGeo(newGeo)
       }
     case .musicMode:
       // Especially needed when applying initial layout:
-      applyMusicModeGeometry(musicModeGeo)
+      applyMusicModeGeo(musicModeGeo)
     case .windowed, .windowedInteractive:
       let newWindowFrame = transition.outputGeometry.windowFrame
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(newWindowFrame)")

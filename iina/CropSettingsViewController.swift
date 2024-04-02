@@ -127,8 +127,8 @@ class CropSettingsViewController: CropBoxViewController {
         return
       }
       player.mpv.queue.async { [self] in
-        let newVidParams = player.info.videoGeo.clone(selectedCropLabel: newCropLabel)
-        windowController.applyVideo(newVidGeo: newVidParams)
+        let newVidGeo = player.info.videoGeo.clone(selectedCropLabel: newCropLabel)
+        windowController.applyVidGeo(newVidGeo)
       }
     }
   }

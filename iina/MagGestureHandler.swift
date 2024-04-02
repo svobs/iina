@@ -97,7 +97,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       if windowController.currentLayout.isMusicMode {
         windowController.log.verbose("Updating musicModeGeo from magnification gesture state \(recognizer.state.rawValue)")
         let musicModeGeo = windowController.musicModeGeo.clone(windowFrame: finalGeometry.windowFrame)
-        windowController.applyMusicModeGeometry(musicModeGeo, setFrame: false, updateCache: true)
+        windowController.applyMusicModeGeo(musicModeGeo, setFrame: false, updateCache: true)
       } else {
         windowController.log.verbose("Updating windowedModeGeo from magnification gesture state \(recognizer.state.rawValue)")
         windowController.windowedModeGeo = finalGeometry
@@ -133,7 +133,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
         IINAAnimation.disableAnimation{
           /// Important: use `animate: false` so that window controller callbacks are not triggered
-          newMusicModeGeometry = windowController.applyMusicModeGeometry(newMusicModeGeometry, animate: false, updateCache: false)
+          newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, animate: false, updateCache: false)
         }
         // Kind of clunky to convert to PWGeometry, just to fit the function signature, then convert it back. But...could be worse.
         return newMusicModeGeometry.toPWGeometry()
@@ -143,7 +143,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
         // TODO: modify this to keep either leading or trailing edge fixed (as above)
         let newGeometry = originalGeometry.scaleViewport(to: newViewportSize, fitOption: .keepInVisibleScreen, mode: .musicMode)
-        windowController.applyWindowGeometryForSpecialResize(newGeometry)
+        windowController.applyWindowGeoSpecialResize(newGeometry)
         return newGeometry
       }
     }
@@ -159,7 +159,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
 
     let newGeometry = intendedGeo.refit(.keepInVisibleScreen)
-    windowController.applyWindowGeometryForSpecialResize(newGeometry)
+    windowController.applyWindowGeoSpecialResize(newGeometry)
     return newGeometry
   }
 }
