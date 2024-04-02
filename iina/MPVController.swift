@@ -867,7 +867,7 @@ not applying FFmpeg 9599 workaround
     queue.async { [self] in
       Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "setFilters() do not support \(name)!")
       let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
-      
+
       let str = filters.map { $0.stringFormat }.joined(separator: ",")
       let returnValue = command(cmd, args: ["set", str], checkError: false)
       if returnValue < 0 {
@@ -1209,11 +1209,11 @@ not applying FFmpeg 9599 workaround
 
       player.log.verbose("Calling applyVidParams from mpv video-rotate prop change")
       // Update window geometry
-      let oldVidParams = player.info.videoGeo
-      let rotationChange = userRotation - oldVidParams.userRotation
-      let newTotalRotation = (oldVidParams.totalRotation + rotationChange) %% 360
-      let newVidParams = oldVidParams.clone(totalRotation: newTotalRotation, userRotation: userRotation)
-      player.windowController.applyVideoGeo(newVidGeo: newVidParams)
+      let oldVidGeo = player.info.videoGeo
+      let rotationChange = userRotation - oldVidGeo.userRotation
+      let newTotalRotation = (oldVidGeo.totalRotation + rotationChange) %% 360
+      let newVidGeo = oldVidGeo.clone(totalRotation: newTotalRotation, userRotation: userRotation)
+      player.windowController.applyVideo(newVidGeo: newVidGeo)
 
       player.sendOSD(.rotation(userRotation))
       // Thumb rotation needs updating:

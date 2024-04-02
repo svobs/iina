@@ -70,11 +70,13 @@ class PlaybackInfo {
   }
 
   /// Will be non-`nil` while restoring from a previous launch. Contains info needed to restore the UI state.
-  var priorState: PlayerSaveState? =  nil
-
-  var isRestoring: Bool {
-    return priorState != nil
+  var priorState: PlayerSaveState? = nil {
+    didSet {
+      Logger.log("Updated priorState to: \(priorState.debugDescription)")
+    }
   }
+
+  var isRestoring = false
 
   var currentMedia: MediaItem? = nil
 

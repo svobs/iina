@@ -119,7 +119,7 @@ class PlayerCore: NSObject {
   private var pluginMap: [String: JavascriptPluginInstance] = [:]
   var events = EventController()
 
-  lazy var info: PlaybackInfo = PlaybackInfo(log: log)
+  var info: PlaybackInfo
 
   var syncUITimer: Timer?
 
@@ -226,6 +226,7 @@ class PlayerCore: NSObject {
     log.debug("PlayerCore \(label) init")
     self.label = label
     self.subsystem = log
+    self.info = PlaybackInfo(log: log)
     super.init()
     self.mpv = MPVController(playerCore: self)
     self.bindingController = PlayerBindingController(playerCore: self)
@@ -1052,7 +1053,7 @@ class PlayerCore: NSObject {
     }
 
     if info.videoGeo.selectedAspectLabel != aspectLabel {
-      let newVideoParams = info.videoGeo.clone(selectedAspectLabel: aspectLabel)
+      let newVideoGeo = info.videoGeo.clone(selectedAspectLabel: aspectLabel)
 
       // Send update to mpv
       let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
@@ -1062,10 +1063,10 @@ class PlayerCore: NSObject {
       // FIXME: Default aspect needs i18n
       sendOSD(.aspect(aspectLabel))
 
-      if newVideoParams.hasValidSize {
+      if newVideoGeo.hasValidSize {
         // Change video size:
-        log.verbose("Calling applyVideoGeo from video-aspect-override")
-        windowController.applyVideoGeo(newVidGeo: newVideoParams)
+        log.verbose("Calling applyVideo from video-aspect-override")
+        windowController.applyVideo(newVidGeo: newVideoGeo)
       }
     }
 
@@ -1571,9 +1572,9 @@ class PlayerCore: NSObject {
     }
 
     if info.videoGeo.selectedCropLabel != newCropLabel {
-      log.verbose("Changing selectedCropLabel to \(newCropLabel.quoted). Calling applyVideoGeo")
-      let newVidParams = info.videoGeo.clone(selectedCropLabel: newCropLabel)
-      windowController.applyVideoGeo(newVidGeo: newVidParams)
+      log.verbose("Calling applyVideo with new selectedCropLabel: \(newCropLabel.quoted)")
+      let newVidGeo = info.videoGeo.clone(selectedCropLabel: newCropLabel)
+      windowController.applyVideo(newVidGeo: newVidGeo)
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
@@ -2008,9 +2009,9 @@ class PlayerCore: NSObject {
        let videoSize = videoInfo.videoSize {
 
       let newParams = info.videoGeo.clone(rawWidth: videoSize.0, rawHeight: videoSize.1)
-      log.verbose("Calling applyVideoGeo from preResizeVideo with \(newParams)")
+      log.verbose("Calling applyVideo from preResizeVideo with \(newParams)")
       assert(info.justOpenedFile)
-      windowController.applyVideoGeo(newVidGeo: newParams)
+      windowController.applyVideo(newVidGeo: newParams)
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
       log.verbose("Nothing for preResizeVideo to do")
@@ -2219,13 +2220,13 @@ class PlayerCore: NSObject {
     // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
     if let newVidParams = mpv.queryForVideoGeometry() {
       // Always send this to window controller. It should be smart enough to resize only when needed:
-      log.verbose("Calling applyVideoGeo from fileIsCompletelyDoneLoading")
-      windowController.applyVideoGeo(newVidGeo: newVidParams)
+      log.verbose("Calling applyVideo from fileIsCompletelyDoneLoading")
+      windowController.applyVideo(newVidGeo: newVidParams)
     }
 
     let playlistEntryID = mpv.getInt(MPVProperty.playlistCurrentPos)
     log.verbose("File is completely done loading (entryID: \(playlistEntryID)); setting justOpenedFile=N")
-    /// Make sure to set this *after* calling `applyVideoGeo` but *before* calling `refreshAlbumArtDisplay`
+    /// Make sure to set this *after* calling `applyVideo` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
@@ -2239,6 +2240,7 @@ class PlayerCore: NSObject {
         mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
       }
       info.priorState = nil
+      info.isRestoring = false
       log.debug("Done with restore")
       return
     }
@@ -3037,6 +3039,47 @@ class PlayerCore: NSObject {
     }
   }
 
+  func deriveCropLabel(from filter: MPVFilter) -> String? {
+    if let p = filter.params, let wStr = p["w"], let hStr = p["h"],
+       let w = Double(wStr), let h = Double(hStr),
+       p["x"] == nil && p["y"] == nil {
+      // Probably a selection from the Quick Settings panel. See if there are any matches.
+      guard w != 0, h != 0 else {
+        log.error("Cannot get crop from filter \(filter.label?.quoted ?? ""): w or h is 0")
+        return nil
+      }
+      // Truncate to 2 decimal places precision for comparison.
+      let selectedAspect = (w / h).roundedTo2()
+      log.verbose("Determined aspect=\(selectedAspect) from filter \(filter.label?.quoted ?? "")")
+      if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
+        for aspectCropLabel in segmentLabels {
+          let tokens = aspectCropLabel.split(separator: ":")
+          if tokens.count == 2, let width = Double(tokens[0]), let height = Double(tokens[1]) {
+            let aspectRatio = (width / height).roundedTo2()
+            if aspectRatio == selectedAspect {
+              log.verbose("Filter \(filter.label?.quoted ?? "") matches known crop \(aspectCropLabel.quoted)")
+              return aspectCropLabel  // Known aspect-based crop
+            }
+          }
+        }
+      }
+      let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
+      log.verbose("Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)")
+      return customCropBoxLabel  // Custom aspect-based crop
+    } else if let p = filter.params,
+              let xStr = p["x"], let x = Int(xStr),
+              let yStr = p["y"], let y = Int(yStr),
+              let wStr = p["w"], let w = Int(wStr),
+              let hStr = p["h"], let h = Int(hStr) {
+      // Probably a custom crop. Use mpv formatting
+      let cropBoxRect = NSRect(x: x, y: y, width: w, height: h)
+      let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropBoxRect)
+      log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
+      return customCropBoxLabel  // Custom cropBox rect crop
+    }
+    return nil
+  }
+
   func setPlaybackInfoFilter(_ filter: MPVFilter) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
@@ -3044,46 +3087,10 @@ class PlayerCore: NSObject {
     case Constants.FilterLabel.crop:
       // CROP
       info.cropFilter = filter
-      if let p = filter.params, let wStr = p["w"], let hStr = p["h"],
-          let w = Double(wStr), let h = Double(hStr),
-         p["x"] == nil && p["y"] == nil {
-        // Probably a selection from the Quick Settings panel. See if there are any matches.
-        guard w != 0, h != 0 else {
-          log.error("Cannot set filter \(filter.label?.quoted ?? ""): w or h is 0")
-          return
-        }
-        // Truncate to 2 decimal places precision for comparison.
-        let selectedAspect = (w / h).roundedTo2()
-        log.verbose("Determined aspect=\(selectedAspect) from filter \(filter.label?.quoted ?? "")")
-        if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
-          for aspectCropLabel in segmentLabels {
-            let tokens = aspectCropLabel.split(separator: ":")
-            if tokens.count == 2, let width = Double(tokens[0]), let height = Double(tokens[1]) {
-              let aspectRatio = (width / height).roundedTo2()
-              if aspectRatio == selectedAspect {
-                log.verbose("Filter \(filter.label?.quoted ?? "") matches known crop \(aspectCropLabel.quoted)")
-                updateSelectedCrop(to: aspectCropLabel)  // Known aspect-based crop
-                return
-              }
-            }
-          }
-        }
-        let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
-        log.verbose("Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)")
-        updateSelectedCrop(to: customCropBoxLabel)
-
-      } else if let p = filter.params,
-                  let xStr = p["x"], let x = Int(xStr),
-                let yStr = p["y"], let y = Int(yStr),
-                let wStr = p["w"], let w = Int(wStr),
-                let hStr = p["h"], let h = Int(hStr) {
-        // Probably a custom crop. Use mpv formatting
-        let cropBoxRect = NSRect(x: x, y: y, width: w, height: h)
-        let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: cropBoxRect)
-        log.verbose("Filter \(filter.label?.quoted ?? "") looks like custom crop. Sending selected crop to \(customCropBoxLabel.quoted)")
-        updateSelectedCrop(to: customCropBoxLabel)  // Custom cropBox rect crop
+      if let cropLabel = deriveCropLabel(from: filter) {
+        updateSelectedCrop(to: cropLabel)  // Known aspect-based crop
       } else {
-        // Default to removing crop
+        // Cannot parse IINA crop filter? Remove crop
         log.error("Could not determine crop from filter \(Constants.FilterLabel.crop.quoted). Removing filter")
         updateSelectedCrop(to: AppData.noneCropIdentifier)
       }

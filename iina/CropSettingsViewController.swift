@@ -121,10 +121,14 @@ class CropSettingsViewController: CropBoxViewController {
       player.log.verbose("User chose Done button from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
-      /// Set the filter. This will result in `applyVideoGeo` getting called, which will trigger an exit from interactive mode.
-      /// But that task can only happen once we return and relinquish the main queue.
-      if player.addVideoFilter(newCropFilter) {
-        cropBoxView.didSubmit = true
+      cropBoxView.didSubmit = true
+      guard let newCropLabel = player.deriveCropLabel(from: newCropFilter) else {
+        player.log.error("Could not generate crop label from the newly created filter!")
+        return
+      }
+      player.mpv.queue.async { [self] in
+        let newVidParams = player.info.videoGeo.clone(selectedCropLabel: newCropLabel)
+        windowController.applyVideo(newVidGeo: newVidParams)
       }
     }
   }

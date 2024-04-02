@@ -12,7 +12,7 @@ import Foundation
 extension PlayerWindowController {
 
   /// Set window size when info available, or video size changed. Mostly called after receiving `video-reconfig` msg
-  func applyVideoGeo(newVidGeo: VideoGeometry) {
+  func applyVideo(newVidGeo: VideoGeometry) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
 
     guard newVidGeo.hasValidSize else { return }
@@ -31,21 +31,21 @@ extension PlayerWindowController {
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitZeroDuration({ [self] in
-        applyVideoGeo(newVidGeo: newVidGeo, oldParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
+        applyVideo(newVidGeo: newVidGeo, oldParams: oldVideoParams, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
       })
     }
   }
 
   // FIXME: refactor to use the videoScale provided (or change the flow). Currently it is ignored and then recalculated afterwards
-  /// Only `applyVideoGeo` should call this.
-  private func applyVideoGeo(newVidGeo: VideoGeometry, oldParams oldVideoParams: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
+  /// Only `applyVideo` should call this.
+  private func applyVideo(newVidGeo: VideoGeometry, oldParams oldVideoParams: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
     guard let videoSizeACR = newVidGeo.videoSizeACR, let videoSizeRaw = newVidGeo.videoSizeRaw else {
-      log.error("[applyVideoGeo] Could not get videoSizeACR from mpv! Cancelling adjustment")
+      log.error("[applyVideo] Could not get videoSizeACR from mpv! Cancelling adjustment")
       return
     }
 
     let newVideoAspect = videoSizeACR.mpvAspect
-    log.verbose("[applyVideoGeo Start] VideoRaw:\(newVidGeo.videoSizeRaw?.debugDescription ?? "nil") VideoACR:\(videoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale)")
+    log.verbose("[applyVideo Start] VideoRaw:\(newVidGeo.videoSizeRaw?.debugDescription ?? "nil") VideoACR:\(videoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
 
     if #available(macOS 10.12, *) {
       pip.aspectRatio = videoSizeACR
@@ -57,10 +57,9 @@ extension PlayerWindowController {
       /// Interactive mode after submit: finish crop submission and exit interactive mode
       // The new crop (or removal of crop) will have already been set in the new params.
       cropController.cropBoxView.didSubmit = false
-      let displayedUncroppedVideoSize = cropController.cropBoxView.actualSize
 
-      log.verbose("[applyVideoGeo G] Looks like crop was submitted. Exiting interactive mode")
-      exitInteractiveMode(cropVideoFrom: displayedUncroppedVideoSize, newVidParams: newVidGeo)
+      log.verbose("[applyVideo G] Looks like crop was submitted. Exiting interactive mode")
+      exitInteractiveMode(newVidGeo: newVidGeo)
       return
 
     } else if currentLayout.canEnterInteractiveMode, let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
@@ -69,8 +68,8 @@ extension PlayerWindowController {
 
       // FIXME: need to un-rotate while in interactive mode
       let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-      log.verbose("[applyVideoGeo E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
-      log.verbose("[applyVideoGeo E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
+      log.verbose("[applyVideo E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
+      log.verbose("[applyVideo E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
 
       var tasks: [IINAAnimation.Task] = []
       let newVideoAspect = videoSizeRaw.mpvAspect
@@ -126,16 +125,16 @@ extension PlayerWindowController {
         } else { // windowed
           imVideoSize = interactiveModeGeo?.videoSize ?? windowedModeGeo.videoSize
         }
-        log.debug("[applyVideoGeo F-1] Restoring crop box origVideoSize=\(videoSizeRaw), imVideoSize=\(imVideoSize)")
+        log.debug("[applyVideo F-1] Restoring crop box origVideoSize=\(videoSizeRaw), imVideoSize=\(imVideoSize)")
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: imVideoSize)
 
       } else {
-        log.verbose("[applyVideoGeo A Done] Restore is in progress; ignoring mpv video-reconfig")
+        log.verbose("[applyVideo A Done] Restore is in progress; ignoring mpv video-reconfig")
       }
       return
 
     } else if currentLayout.mode == .musicMode {
-      log.debug("[applyVideoGeo M Apply] Player is in music mode; calling applyMusicModeGeometry")
+      log.debug("[applyVideo M Apply] Player is in music mode; calling applyMusicModeGeometry")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeometry()`)
       let newGeometry = musicModeGeo.clone(videoAspect: newVideoAspect)
@@ -146,7 +145,7 @@ extension PlayerWindowController {
          let oldVideoSizeRaw = oldVideoParams.videoSizeRaw,
          let newVideoSizeRaw = newVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
          let oldVideoSizeACR = oldVideoParams.videoSizeACR, oldVideoSizeACR.equalTo(videoSizeACR) {
-        log.debug("[applyVideoGeo F Done] No change to prev video params. Taking no action")
+        log.debug("[applyVideo F Done] No change to prev video params. Taking no action")
         return
       }
 
@@ -158,7 +157,7 @@ extension PlayerWindowController {
       } else {
         let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
         if justOpenedFileManually {
-          log.verbose("[applyVideoGeo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
+          log.verbose("[applyVideo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
           newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                                    videoAspect: videoSizeACR.mpvAspect, preserveFullSizeDimensions: true)
         } else {
@@ -171,13 +170,13 @@ extension PlayerWindowController {
       var timing = CAMediaTimingFunctionName.easeInEaseOut
       if !isInitialSizeDone {
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
-        log.verbose("[applyVideoGeo D-1a] Setting isInitialSizeDone=YES")
+        log.verbose("[applyVideo D-1a] Setting isInitialSizeDone=YES")
         isInitialSizeDone = true
         duration = IINAAnimation.InitialVideoReconfigDuration
         timing = .linear
       }
       /// Finally call `setFrame()`
-      log.debug("[applyVideoGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
+      log.debug("[applyVideo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
 
       if currentLayout.mode == .windowed {
         applyWindowGeometryInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
@@ -190,7 +189,7 @@ extension PlayerWindowController {
       }
 
       // UI and slider
-      log.debug("[applyVideoGeo Done] Emitting windowSizeAdjusted")
+      log.debug("[applyVideo Done] Emitting windowSizeAdjusted")
       player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
     }
   }
@@ -198,7 +197,7 @@ extension PlayerWindowController {
   private func resizeAfterFileOpen(justOpenedFile: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
     guard justOpenedFile else {
       // video size changed during playback
-      log.verbose("[applyVideoGeo C] justOpenedFile=NO → returning NO for shouldResize")
+      log.verbose("[applyVideo C] justOpenedFile=NO → returning NO for shouldResize")
       return nil
     }
 
@@ -206,14 +205,14 @@ extension PlayerWindowController {
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
-      log.verbose("[applyVideoGeo C] justOpenedFile & resizeTiming='Always' → returning YES for shouldResize")
+      log.verbose("[applyVideo C] justOpenedFile & resizeTiming='Always' → returning YES for shouldResize")
     case .onlyWhenOpen:
-      log.verbose("[applyVideoGeo C] justOpenedFile & resizeTiming='OnlyWhenOpen' → returning justOpenedFile (\(justOpenedFile.yesno)) for shouldResize")
+      log.verbose("[applyVideo C] justOpenedFile & resizeTiming='OnlyWhenOpen' → returning justOpenedFile (\(justOpenedFile.yesno)) for shouldResize")
       guard justOpenedFile else {
         return nil
       }
     case .never:
-      log.verbose("[applyVideoGeo C] justOpenedFile & resizeTiming='Never' → returning NO for shouldResize")
+      log.verbose("[applyVideo C] justOpenedFile & resizeTiming='Never' → returning NO for shouldResize")
       return nil
     }
 
@@ -228,19 +227,19 @@ extension PlayerWindowController {
       if let mpvGeometry = player.getMPVGeometry() {
         var preferredGeo = windowGeo
         if Preference.bool(for: .lockViewportToVideoSize), let intendedViewportSize = player.info.intendedViewportSize  {
-          log.verbose("[applyVideoGeo C-6] Using intendedViewportSize \(intendedViewportSize)")
+          log.verbose("[applyVideo C-6] Using intendedViewportSize \(intendedViewportSize)")
           preferredGeo = windowGeo.scaleViewport(to: intendedViewportSize)
         }
-        log.verbose("[applyVideoGeo C-3] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
+        log.verbose("[applyVideo C-3] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
         return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
       } else {
-        log.debug("[applyVideoGeo C-5] No mpv geometry found. Will fall back to default scheme")
+        log.debug("[applyVideo C-5] No mpv geometry found. Will fall back to default scheme")
         return nil
       }
     case .simpleVideoSizeMultiple:
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
-        log.verbose("[applyVideoGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
+        log.verbose("[applyVideo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
         /// When opening a new window and sizing it to match the video, do not add unnecessary margins around video,
         /// even if `lockViewportToVideoSize` is enabled
         let forceLockViewportToVideo = isInitialSizeDone ? nil : true
@@ -249,7 +248,7 @@ extension PlayerWindowController {
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
-        log.verbose("[applyVideoGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
+        log.verbose("[applyVideo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
         let forceLockViewportToVideo = isInitialSizeDone ? nil : true
         return windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInVisibleScreen, lockViewportToVideoSize: forceLockViewportToVideo)
       }
@@ -267,7 +266,7 @@ extension PlayerWindowController {
       if let intendedViewportSize = player.info.intendedViewportSize  {
         // Just use existing size in this case:
         desiredViewportSize = intendedViewportSize
-        log.verbose("[applyVideoGeo D-2] Using intendedViewportSize \(intendedViewportSize)")
+        log.verbose("[applyVideo D-2] Using intendedViewportSize \(intendedViewportSize)")
       }
 
       let minNewViewportHeight = round(desiredViewportSize.width / videoSizeACR.mpvAspect)
@@ -277,7 +276,7 @@ extension PlayerWindowController {
       }
     }
 
-    log.verbose("[applyVideoGeo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
+    log.verbose("[applyVideo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
     return windowGeo.scaleViewport(to: desiredViewportSize)
   }
 

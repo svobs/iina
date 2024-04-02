@@ -3261,7 +3261,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
         player.info.videoFiltersDisabled[filterLabel] = vf
         if player.removeVideoFilter(vf) {
-          /// The call to `removeVideoFilter` will trigger `applyVideoGeo`, which will notice the disabled filter & pick up there
+          /// The call to `removeVideoFilter` will trigger `applyVideo`, which will notice the disabled filter & pick up there
           return
         } else {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
@@ -3289,8 +3289,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Use `immediately: true` to exit without animation.
   /// This method can be run safely even if not in interactive mode
-  func exitInteractiveMode(immediately: Bool = false, cropVideoFrom uncroppedVideoSize: NSSize? = nil, newVidParams: VideoGeometry? = nil, 
-                           then doAfter: (() -> Void)? = nil) {
+  func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil,  then doAfter: (() -> Void)? = nil) {
     animationPipeline.submitZeroDuration({ [self] in
       let currentLayout = currentLayout
 
@@ -3298,7 +3297,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       if currentLayout.isInteractiveMode {
         // This alters state in addtion to (maybe) generating a task
-        let animations = exitInteractiveMode(immediately: immediately, uncroppedVideoSize: uncroppedVideoSize, newVidParams: newVidParams)
+        let animations = exitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
         animationTasks.append(contentsOf: animations)
       }
 
@@ -3313,22 +3312,21 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   // Exits interactive mode, using animations.
-  private func exitInteractiveMode(immediately: Bool,
-                                   uncroppedVideoSize: NSSize? = nil, newVidParams: VideoGeometry? = nil) -> [IINAAnimation.Task] {
+  private func exitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var animationTasks: [IINAAnimation.Task] = []
 
     // If these params are present and valid, then need to apply a crop
-    if let uncroppedVideoSize, let cropController = cropSettingsView, uncroppedVideoSize.width > 0, uncroppedVideoSize.height > 0,
-       let newVidParams, let cropBox = newVidParams.cropBox {
+    if let cropController = cropSettingsView, let videoSizeRaw = newVidGeo?.videoSizeRaw, let cropBox = newVidGeo?.cropBox {
 
-      log.verbose("[applyVideoGeo E4] Cropping video from uncroppedVideoSize: \(uncroppedVideoSize), currentVideoSize: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
+      log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
       let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.01
 
+      // Crop animation:
       if currentLayout.isFullScreen {
         /// Must update `interactiveModeGeo` outside of animation task!
-        let currentIMGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: uncroppedVideoSize.mpvAspect)
-        let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
+        let currentIMGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: videoSizeRaw.mpvAspect)
+        let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
 
         animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
           hideCropControls()
@@ -3336,7 +3334,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         })
       } else {
         let currentIMGeo = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
-        let newIMGeo = currentIMGeo.cropVideo(from: uncroppedVideoSize, to: cropBox)
+        let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
         interactiveModeGeo = newIMGeo
 
         animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
@@ -3347,14 +3345,25 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
     }
 
+    // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
+    // It's not perfect but better than before
+    if let cropController = cropSettingsView {
+      let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
+      animationTasks.append(IINAAnimation.zeroDurationTask{ [self] in
+        /// Set the filter. This will result in `applyVideo` getting called, which will trigger an exit from interactive mode.
+        /// But that task can only happen once we return and relinquish the main queue.
+        _ = player.addVideoFilter(newCropFilter)
+      })
+    }
+
     // Build exit animation
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
-    log.verbose("[applyVideoGeo E5] Exiting interactive mode, newMode: \(newMode)")
+    log.verbose("[applyVideo E5] Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
-    let geo = self.geo(videoAspect: newVidParams?.cropBox?.size.mpvAspect)
+    let geo = self.geo(videoAspect: newVidGeo?.cropBox?.size.mpvAspect)
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
     animationTasks.append(contentsOf: transition.animationTasks)

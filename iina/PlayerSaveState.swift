@@ -466,6 +466,7 @@ struct PlayerSaveState {
     }
     let info = player.info
     info.priorState = self
+    info.isRestoring = true
 
     let windowController = player.windowController!
 
