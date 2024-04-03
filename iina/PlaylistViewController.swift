@@ -86,6 +86,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   
   private var playlistTotalLengthIsReady = false
   private var playlistTotalLength: Double? = nil
+  private var lastNowPlayingIndex: Int = -1
 
   private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
   internal var observedPrefKeys: [Preference.Key] = [
@@ -310,6 +311,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     updateTabButtons(activeTab: tab)
     switch tab {
     case .playlist:
+      refreshNowPlayingIndex()
       tabView.selectTabViewItem(at: 0)
     case .chapters:
       tabView.selectTabViewItem(at: 1)
@@ -550,6 +552,26 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
+  // Updates index of playing item Don't need to reload whole playlist
+  func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil) {
+    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    guard isViewLoaded else { return }
+    guard !view.isHidden else { return }
+
+    let oldNowPlayingIndex = self.lastNowPlayingIndex
+    let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentMedia?.playlistPos ?? oldNowPlayingIndex
+    if newNowPlayingIndex != oldNowPlayingIndex {
+      player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
+      self.lastNowPlayingIndex = newNowPlayingIndex
+      DispatchQueue.main.async { [self] in
+        // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
+        playlistTableView.reloadData(forRowIndexes: IndexSet(integer: newNowPlayingIndex), columnIndexes: IndexSet(integersIn: 0...1))
+        // ... also make sure the old "now playing" row is redrawn so it loses its status
+        playlistTableView.reloadData(forRowIndexes: IndexSet(integer: oldNowPlayingIndex), columnIndexes: IndexSet(integersIn: 0...1))
+      }
+    }
+  }
+
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
     let info = player.info
@@ -560,7 +582,10 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let playlistItems = info.playlist
       guard row < playlistItems.count else { return nil }
       let item = playlistItems[row]
-      let isPlaying = player.mpv.getFlag(MPVProperty.playlistNPlaying(row))
+
+      refreshNowPlayingIndex()
+      // use cached value
+      let isPlaying = self.lastNowPlayingIndex == row
 
       if identifier == .isChosen {
         // ▶︎ Is Playing icon

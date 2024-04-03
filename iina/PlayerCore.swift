@@ -450,6 +450,7 @@ class PlayerCore: NSObject {
 
   /// Launches background task which scans video files and collects video size metadata using ffmpeg
   func loadVideoSizes() {
+    log.verbose("Filling in video sizes...")
     PlayerCore.backgroundQueue.async { [self] in
       AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
     }
@@ -606,6 +607,7 @@ class PlayerCore: NSObject {
       info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
+      info.playlist = []
 
       info.$matchedSubs.withLock { $0.removeAll() }
 
@@ -2037,8 +2039,12 @@ class PlayerCore: NSObject {
       info.currentMedia = mediaFromPath
     }
 
-    // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
-    updatePlaylistPlayingPos(updateUI: true)
+    if isPlaylistVisible {
+      DispatchQueue.main.async { [self] in
+        // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
+        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
+      }
+    }
 
     preResizeVideo(forURL: info.currentMedia?.url)
 
@@ -2944,7 +2950,11 @@ class PlayerCore: NSObject {
     info.playlist = newPlaylist
     let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
     info.currentMedia?.playlistPos = mpvPlaylistPos
-    updatePlaylistPlayingPos(updateUI: false)
+    if isPlaylistVisible {
+      DispatchQueue.main.async { [self] in
+        windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: mpvPlaylistPos)
+      }
+    }
     log.verbose("After reloading playlist: playlistPos is: \(mpvPlaylistPos)")
     saveState()  // save playlist URLs to prefs
     if !silent {
@@ -2992,24 +3002,6 @@ class PlayerCore: NSObject {
   }
 
   // MARK: - Utils
-
-  func updatePlaylistPlayingPos(updateUI: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
-    // Update index of playing item. Don't need to reload whole playlist
-    let oldItemPlaying = info.playlistPlayingPos
-    let newItemPlaying = mpv.getInt(MPVProperty.playlistPlayingPos)
-    guard oldItemPlaying != newItemPlaying else { return }
-    info.playlistPlayingPos = newItemPlaying
-    log.verbose("Updated playlistPlayingPos: \(oldItemPlaying) → \(newItemPlaying)")
-
-    guard updateUI else { return }
-    DispatchQueue.main.async { [self] in
-      let oldItem = IndexSet(integer: oldItemPlaying)
-      let newItem = IndexSet(integer: newItemPlaying)
-      windowController.playlistView.playlistTableView.reloadData(forRowIndexes: oldItem, columnIndexes: IndexSet(integersIn: 0...1))
-      windowController.playlistView.playlistTableView.reloadData(forRowIndexes: newItem, columnIndexes: IndexSet(integersIn: 0...1))
-    }
-  }
 
   func getMediaTitle(withExtension: Bool = true) -> String {
     let mediaTitle = mpv.getString(MPVProperty.mediaTitle)

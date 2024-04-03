@@ -74,13 +74,17 @@ class AutoFileMatcher {
   }
 
   static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
+    log.verbose("Filling in video sizes...")
+    var successCount = 0
     for fileInfo in videoFiles {
       if fileInfo.videoSize == nil {
         if let sizeArray = FFmpegController.readVideoSize(forFile: fileInfo.path) {
           fileInfo.videoSize = (Int(sizeArray[0]), Int(sizeArray[1]))
+          successCount += 1
         }
       }
     }
+    log.verbose("Filled in \(successCount)/\(videoFiles.count) video sizes")
   }
 
   private func getAllPossibleSubs() -> [FileInfo] {
@@ -134,7 +138,7 @@ class AutoFileMatcher {
     var addedCurrentVideo = false
     var needQuit = false
 
-    Logger.log("Adding files to playlist", subsystem: subsystem)
+    Logger.log("Adding \(videoFiles.count) video files & \(audioFiles.count) audio files to playlist", subsystem: subsystem)
     // add videos
     for video in videoFiles + audioFiles {
       // add to playlist
@@ -160,6 +164,7 @@ class AutoFileMatcher {
       }
       if needQuit { break }
     }
+    log.verbose("Done adding files to playlist; sending reload notification")
     player.reloadPlaylist()
   }
 
