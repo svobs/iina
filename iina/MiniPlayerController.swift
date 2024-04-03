@@ -179,7 +179,9 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     artistAlbumLabel.reset()
   }
 
-  private func saveDefaultPlaylistHeight() {
+  func saveCurrentPlaylistHeightToPrefs() {
+    guard isPlaylistVisible else { return }
+
     let playlistHeight = round(currentDisplayedPlaylistHeight)
     guard playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight else { return }
 
@@ -293,7 +295,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       newWindowFrame.size.height += targetHeightToAdd
     } else { // hide playlist
       // Save playlist height first
-      saveDefaultPlaylistHeight()
+      saveCurrentPlaylistHeightToPrefs()
 
       // If video is also hidden, do not try to shrink smaller than the control view, which would cause
       // a constraint violation. This is possible due to small imprecisions in various layout calculations.
@@ -401,13 +403,6 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     _ = view
     resetScrollingLabels()
     // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled below.
-  }
-
-  func windowDidEndLiveResize() {
-    if isPlaylistVisible {
-      // Presumably, playlist size was affected by the resize. Update the default playlist size to match
-      saveDefaultPlaylistHeight()
-    }
   }
 
   func cleanUpForMusicModeExit() {

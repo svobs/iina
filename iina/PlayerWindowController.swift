@@ -2243,18 +2243,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         // Re-evaluate space requirements for labels. May need to start scrolling.
         // Will also update saved state
         miniPlayer.windowDidResize()
-        return
-      case .windowed:
-        if currentLayout.oscPosition == .floating {
-          // Update floating control bar position
-          updateFloatingOSCAfterWindowDidResize()
-        }
+      case .windowed, .fullScreen:
+        // Update floating control bar position
+        updateFloatingOSCAfterWindowDidResize()
       case .windowedInteractive, .fullScreenInteractive:
         // Update interactive mode selectable box size. Origin is relative to viewport origin
-        let selectableRect = NSRect(origin: CGPointZero, size: videoView.frame.size)
-        cropSettingsView?.cropBoxView.resized(with: selectableRect)
-      case .fullScreen:
-        return
+        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
       }
     }
 
@@ -2274,13 +2268,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       switch currentLayout.mode {
       case .windowed:
         updateCachedGeometry(updateMPVWindowScale: true)
-        if currentLayout.oscPosition == .floating {
-          updateFloatingOSCAfterWindowDidResize()
-        }
-      case .windowedInteractive:
-        updateCachedGeometry()
-      case .musicMode:
-        miniPlayer.windowDidEndLiveResize()
+        updateFloatingOSCAfterWindowDidResize()
+      case .windowedInteractive, .musicMode:
         updateCachedGeometry()
       default:
         break

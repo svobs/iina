@@ -423,6 +423,7 @@ extension PlayerWindowController {
       return spec.mode == .windowed || spec.mode == .fullScreen
     }
 
+    /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
     var hasFloatingOSC: Bool {
       return enableOSC && oscPosition == .floating
     }

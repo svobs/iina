@@ -422,6 +422,7 @@ extension PlayerWindowController {
         }
         player.saveState()
       case .musicMode:
+        miniPlayer.saveCurrentPlaylistHeightToPrefs()
         musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
         if updateMPVWindowScale {
           player.updateMPVWindowScale(using: musicModeGeo.toPWGeometry())
@@ -569,7 +570,7 @@ extension PlayerWindowController {
   }
 
   func updateFloatingOSCAfterWindowDidResize() {
-    guard let window = window, currentLayout.oscPosition == .floating else { return }
+    guard let window = window, currentLayout.hasFloatingOSC else { return }
     controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH,
                               originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: viewportView.frame.size)
 

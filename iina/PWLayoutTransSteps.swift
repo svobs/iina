@@ -875,8 +875,7 @@ extension PlayerWindowController {
         videoView.layer?.shadowRadius = 3
       }
 
-      let selectableRect = NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
-      cropController.cropBoxView.resized(with: selectableRect)
+      cropController.cropBoxView.resized(with: videoView.bounds)
       cropController.cropBoxView.layoutSubtreeIfNeeded()
     }
 
