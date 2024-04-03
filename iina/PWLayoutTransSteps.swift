@@ -101,7 +101,7 @@ extension PlayerWindowController {
         window.styleMask.remove(.resizable)
 
         // auto hide menubar and dock (this will freeze all other animations, so must do it last)
-        updatePresentationOptions(legacyFullScreen: true)
+        updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: true)
 
         window.level = .iinaFloating
       }
@@ -985,7 +985,7 @@ extension PlayerWindowController {
       }
 
       if transition.isExitingLegacyFullScreen {
-        updatePresentationOptions(legacyFullScreen: false)
+        updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: false)
       }
 
       if Preference.bool(for: .blackOutMonitor) {

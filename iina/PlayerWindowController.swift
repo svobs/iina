@@ -78,8 +78,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /** For blacking out other screens. */
   var cachedScreens: [UInt32: ScreenMeta] = PlayerWindowController.buildScreenMap()
   var blackWindows: [NSWindow] = []
-  /// For supporting legacy full screen with multiple players. Uses player label as key
-  private static var playersInLegacyFullScreen = Set<String>()
 
   /** The quick setting sidebar (video, audio, subtitles). */
   lazy var quickSettingView: QuickSettingViewController = {
@@ -1979,7 +1977,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
 
     if currentLayout.isLegacyFullScreen {
-      updatePresentationOptions(legacyFullScreen: false)
+      updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: false)
     }
 
     // Stop playing. This will save state if configured to do so:
@@ -2011,34 +2009,31 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     player.events.emit(.windowWillClose)
   }
 
-  func updatePresentationOptions(legacyFullScreen: Bool) {
+  /// Hide menu bar & dock if current window is in legacy full screen.
+  /// Show menu bar & dock if current window is not in full screen (either legacy or native).
+  func updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: Bool? = nil) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
 
-    // Keep track of which players are in legacy full screen.
-    // We want to hide the menu bar & dock if at least one window is in legacy full screen,
-    // and turn off auto-hide only after all have exited legacy full screen.
-    if legacyFullScreen {
-      if PlayerWindowController.playersInLegacyFullScreen.isEmpty {
-        guard !NSApp.presentationOptions.contains(.fullScreen) else {
-          log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
-          return
-        }
-        // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
-        // Fall back to checking this one
-        guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
-          log.error("Cannot add presentation options for legacy full screen: option .hideMenuBar already present! Will try to avoid crashing")
-          return
-        }
-        NSApp.presentationOptions.insert(.autoHideMenuBar)
-        NSApp.presentationOptions.insert(.autoHideDock)
+    // Use currentLayout if not explicitly specified
+    let legacyFullScreenActive = legacyFullScreenActive ?? currentLayout.isLegacyFullScreen
+
+    guard !NSApp.presentationOptions.contains(.fullScreen) else {
+      log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
+      return
+    }
+
+    if legacyFullScreenActive {
+      // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
+      // Fall back to checking this one
+      guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
+        log.error("Cannot add presentation options for legacy full screen: option .hideMenuBar already present! Will try to avoid crashing")
+        return
       }
-      PlayerWindowController.playersInLegacyFullScreen.insert(player.label)
+      NSApp.presentationOptions.insert(.autoHideMenuBar)
+      NSApp.presentationOptions.insert(.autoHideDock)
     } else {
-      PlayerWindowController.playersInLegacyFullScreen.remove(player.label)
-      if PlayerWindowController.playersInLegacyFullScreen.isEmpty {
-        NSApp.presentationOptions.remove(.autoHideMenuBar)
-        NSApp.presentationOptions.remove(.autoHideDock)
-      }
+      NSApp.presentationOptions.remove(.autoHideMenuBar)
+      NSApp.presentationOptions.remove(.autoHideDock)
     }
   }
 
@@ -2452,6 +2447,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if currentLayout.isLegacyFullScreen {
       window?.level = .iinaFloating
     }
+    updatePresentationOptionsForLegacyFullScreen()
 
     // If focus changed from a different window, need to recalculate the current bindings
     // so that this window's input sections are included and the other window's are not:
