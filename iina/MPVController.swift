@@ -286,8 +286,10 @@ not applying FFmpeg 9599 workaround
     }
 
     chkErr(mpv_set_option_string(mpv, "watch-later-directory", Utility.watchLaterURL.path))
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit)
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback")
+    if Preference.bool(for: .resumeLastPosition) {
+      setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit)
+      setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback")
+    }
 
     setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry)
 
