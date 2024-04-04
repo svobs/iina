@@ -71,7 +71,7 @@ extension Preference {
     private static var disableForThisInstance = false
 
     static var isSaveEnabled: Bool {
-      return !disableForThisInstance && Preference.bool(for: .enableSaveUIState)
+      return isRestoreEnabled
     }
 
     static var isRestoreEnabled: Bool {

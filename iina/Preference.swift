@@ -449,12 +449,8 @@ struct Preference {
     /// appropriately.
     static let launchCount = Key("LaunchCount")
 
-    /// If true, saves the state of UI components as they change. This includes things like open windows & their sizes & positions,
-    /// current scroll offsets, search entries, and more.
-    /// NOTE: Do not use this directly. Use `Preference.UIState.isSaveEnabled()` so that runtime overrides can work.
-    static let enableSaveUIState = Key("enableSaveUIState")
-    /// If true, initializes the state of UI components to their previous values (presumably from the previous launch).
-    /// Note that a saved state must exist for these components (see `enableSaveUIState`).
+    /// If true, enables save of IINA's playback state & UI as it changes, and enables restore to the previous values when IINA is relaunched.
+    ///
     /// NOTE: Do not use this directly. Use `Preference.UIState.isRestoreEnabled()` so that runtime overrides work.
     static let enableRestoreUIState = Key("enableRestoreUIState")
 
@@ -1224,7 +1220,6 @@ struct Preference {
     .animateKeyBindingTableReloadAll: true,
     .tableEditKeyNavContinuesBetweenRows: false,
     .launchCount: 0,
-    .enableSaveUIState: true,
     .enableRestoreUIState: true,
     .alwaysAskBeforeRestoreAtLaunch: false,
     .alwaysPauseMediaWhenRestoringAtLaunch: false,
