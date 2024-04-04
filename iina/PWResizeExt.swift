@@ -86,7 +86,7 @@ extension PlayerWindowController {
     } else if currentLayout.mode == .musicMode {
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
-      /// (unless it doesn't fit in screen; see `applyMusicModeGeo()`)
+      /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
       let newGeometry = musicModeGeo.clone(videoAspect: newVideoAspect)
       applyMusicModeGeoInAnimationPipeline(newGeometry)
 
@@ -625,11 +625,15 @@ extension PlayerWindowController {
       // Make sure this is up-to-date
       videoView.apply(newGeometry)
 
+
+
+      
       // These will no longer be aligned correctly. Just hide them
       thumbnailPeekView.isHidden = true
       timePositionHoverLabel.isHidden = true
 
       if currentLayout.hasFloatingOSC {
+        updateFloatingOSCAfterWindowDidResize()
         // Update floating control bar position
         controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH,
                                   originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: newGeometry.viewportSize)
@@ -637,7 +641,7 @@ extension PlayerWindowController {
     }
   }
 
-  /// Same as `applyMusicModeGeo()`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
+  /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
   func applyMusicModeGeoInAnimationPipeline(_ geometry: MusicModeGeometry, setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true) {
     animationPipeline.submit(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
       applyMusicModeGeo(geometry)

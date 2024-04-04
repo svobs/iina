@@ -2216,38 +2216,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   func windowDidResize(_ notification: Notification) {
-    guard let window = notification.object as? NSWindow else { return }
     // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
     guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
-
-    defer {
-      updateCachedGeometry()
+    if log.isTraceEnabled {
+      log.trace("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
     }
 
-    IINAAnimation.disableAnimation {
-      if log.isTraceEnabled {
-        log.trace("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window.frame)")
-      }
-
-      // These may no longer be aligned correctly. Just hide them
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
-
-      switch currentLayout.mode {
-      case .musicMode:
-        // Re-evaluate space requirements for labels. May need to start scrolling.
-        // Will also update saved state
-        miniPlayer.windowDidResize()
-      case .windowed, .fullScreen:
-        // Update floating control bar position
-        updateFloatingOSCAfterWindowDidResize()
-      case .windowedInteractive, .fullScreenInteractive:
-        // Update interactive mode selectable box size. Origin is relative to viewport origin
-        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
-      }
-    }
-
-    player.events.emit(.windowResized, data: window.frame)
+    applyWindowResize()
   }
 
   /// Called when done with user drag of window border.
@@ -2255,22 +2230,42 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func windowDidEndLiveResize(_ notification: Notification) {
     // Must not access mpv while it is asynchronously processing stop and quit commands. See comments in windowWillExitFullScreen for details.
     guard !isClosing, !isAnimating, !isMagnifying else { return }
+    log.verbose("WindowDidEndLiveResize mode: \(currentLayout.mode)")
 
-    animationPipeline.submitZeroDuration({ [self] in
-      let currentLayout = currentLayout
-      log.verbose("WindowDidEndLiveResize mode: \(currentLayout.mode)")
+    applyWindowResize()
+  }
 
-      switch currentLayout.mode {
-      case .windowed:
-        updateCachedGeometry(updateMPVWindowScale: true)
-        updateFloatingOSCAfterWindowDidResize()
-      case .windowedInteractive, .musicMode:
-        updateCachedGeometry()
-      default:
-        break
+  func applyWindowResize() {
+    guard let window else { return }
+    videoView.videoLayer.enterAsynchronousMode()
+
+    defer {
+      if !isFullScreen {
+        updateCachedGeometry(updateMPVWindowScale: currentLayout.mode == .windowed)
+        player.saveState()
       }
-      player.saveState()
-    })
+    }
+
+    IINAAnimation.disableAnimation {
+      // These may no longer be aligned correctly. Just hide them
+      thumbnailPeekView.isHidden = true
+      timePositionHoverLabel.isHidden = true
+
+      if currentLayout.isMusicMode {
+        // Re-evaluate space requirements for labels. May need to start scrolling.
+        // Will also update saved state
+        miniPlayer.windowDidResize()
+      }
+
+      // Update floating control bar position if applicable
+      updateFloatingOSCAfterWindowDidResize()
+
+      if currentLayout.isInteractiveMode {
+        // Update interactive mode selectable box size. Origin is relative to viewport origin
+        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
+      }
+    }
+    player.events.emit(.windowResized, data: window.frame)
   }
 
   // MARK: - Window Delegate: window move, screen changes

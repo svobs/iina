@@ -354,7 +354,6 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
     let sizeKeepingMinWidth = NSSize(width: minWidth, height: round(minWidth / aspect))
     if sizeKeepingMinWidth.height >= minHeight {
-      assert(aspect <= 1, "Expected aspect <= 1; got: \(aspect)")
       return sizeKeepingMinWidth
     } else {
       assert(aspect > 1, "Expected aspect > 1; got: \(aspect)")
