@@ -200,6 +200,10 @@ extension NSSize {
     return NSSize(width: width + multiplier, height: height + multiplier)
   }
 
+  func subtract(_ subtrahend: NSSize) -> NSSize {
+    return NSSize(width: width - subtrahend.width, height: height - subtrahend.height)
+  }
+
 }
 
 

@@ -348,14 +348,17 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   }
 
   static func computeMinVideoSize(forAspectRatio aspect: CGFloat, mode: PlayerWindowMode) -> CGSize {
-    let minWidth = minVideoWidth(forMode: mode)
-    let minHeight = minVideoHeight(forMode: mode)
-    let size1 = NSSize(width: minWidth, height: round(minWidth / aspect))
-    let size2 = NSSize(width: round(minHeight * aspect), height: minHeight)
-    if size1.height >= minHeight {
-      return size1
+    return computeMinSize(withAspect: aspect, minWidth: minVideoWidth(forMode: mode), minHeight: minVideoHeight(forMode: mode))
+  }
+
+  static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
+    let sizeKeepingMinWidth = NSSize(width: minWidth, height: round(minWidth / aspect))
+    if sizeKeepingMinWidth.height >= minHeight {
+      assert(aspect <= 1, "Expected aspect <= 1; got: \(aspect)")
+      return sizeKeepingMinWidth
     } else {
-      return size2
+      assert(aspect > 1, "Expected aspect > 1; got: \(aspect)")
+      return NSSize(width: round(minHeight * aspect), height: minHeight)
     }
   }
 

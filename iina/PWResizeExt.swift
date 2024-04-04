@@ -64,59 +64,6 @@ extension PlayerWindowController {
       exitInteractiveMode(newVidGeo: newVidGeo)
       return
 
-    } else if currentLayout.canEnterInteractiveMode, let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-      // Not yet in interactive mode, but the active crop was just disabled prior to entering it,
-      // so that full video can be seen during interactive mode
-
-      // FIXME: need to un-rotate while in interactive mode
-      let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-      log.verbose("[applyVidGeo E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
-      log.verbose("[applyVidGeo E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
-
-      var tasks: [IINAAnimation.Task] = []
-      let newVideoAspect = videoSizeRaw.mpvAspect
-
-      switch currentLayout.mode {
-      case .windowed:
-        let oldVideoAspect = prevCropBox.size.mpvAspect
-        // Scale viewport to roughly match window size
-        let existingGeo = windowedModeGeo.clone(windowFrame: window!.frame).clone(videoAspect: newVideoAspect)
-
-        let uncroppedWindowedGeo: PWGeometry
-        if Preference.bool(for: .lockViewportToVideoSize) {
-          // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
-          // This heuristic seems to work ok
-          let viewportSize = existingGeo.viewportSize
-          let aspectChangeFactor = newVideoAspect / oldVideoAspect
-          let viewportSizeMultiplier = aspectChangeFactor < 0 ? (1.0 / aspectChangeFactor) : aspectChangeFactor
-          let newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
-          uncroppedWindowedGeo = existingGeo.scaleViewport(to: newViewportSize)
-        } else {
-          // If not locking viewport to video, just reuse viewport
-          uncroppedWindowedGeo = existingGeo.refit()
-        }
-
-        tasks.append(IINAAnimation.Task(duration: IINAAnimation.CropAnimationDuration * 0.05, { [self] in
-          videoView.apply(uncroppedWindowedGeo)
-          player.window.setFrameImmediately(uncroppedWindowedGeo.windowFrame)
-        }))
-
-        // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
-        let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
-        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
-
-      case .fullScreen:
-
-        let geoOverride = geo(videoAspect: newVideoAspect)
-        tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
-
-      default:
-        assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
-        return
-      }
-
-      animationPipeline.submit(tasks)
-
     } else if isRestoring {
       if isInInteractiveMode {
         /// If restoring into interactive mode, we didn't have `videoSizeACR` while doing layout. Add it now (if needed)
@@ -410,7 +357,7 @@ extension PlayerWindowController {
         // This method should only be called for changes to windowFrame (origin or size)
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: windowedModeGeo.videoAspect)
         if currentLayout.mode == .windowedInteractive {
-          assert(interactiveModeGeo?.videoAspect == geo.videoAspect)
+          assert(interactiveModeGeo?.videoAspect == geo.videoAspect, "InteractiveModeVideoAspect (\(interactiveModeGeo?.videoAspect.description ?? "nil")) != WindowedModeVideoAspect (\(geo.videoAspect))")
           interactiveModeGeo = geo
         } else {
           assert(currentLayout.mode == .windowed)
@@ -506,8 +453,8 @@ extension PlayerWindowController {
       return intendedGeo.refit(.keepInVisibleScreen)
     }
 
-    let requestedViewportSize = NSSize(width: requestedSize.width - currentGeometry.outsideBarsTotalWidth,
-                                       height: requestedSize.height - currentGeometry.outsideBarsTotalHeight - currentGeometry.topMarginHeight)
+    let nonViewportAreaSize = currentGeometry.windowFrame.size.subtract(currentGeometry.viewportSize)
+    let requestedViewportSize = requestedSize.subtract(nonViewportAreaSize)
 
     // Option A: resize height based on requested width
     let resizeFromWidthRequestedViewportSize = NSSize(width: requestedViewportSize.width,
@@ -641,9 +588,14 @@ extension PlayerWindowController {
   /// Also updates cached `windowedModeGeo` and saves updated state. Windowed mode only!
   func applyWindowGeoInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
                                          timing: CAMediaTimingFunctionName = .easeInEaseOut) {
-    assert(currentLayout.spec.mode == .windowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+    let task = buildApplyWindowGeoTask(newGeometry, duration: duration, timing: timing)
+    animationPipeline.submit(task)
+  }
 
-    animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
+  func buildApplyWindowGeoTask(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
+                               timing: CAMediaTimingFunctionName = .easeInEaseOut) -> IINAAnimation.Task {
+    assert(currentLayout.spec.mode == .windowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+    return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame: \(newGeometry.windowFrame), videoAspect: \(newGeometry.videoAspect)")
       if !isWindowHidden {
         player.window.setFrameImmediately(newGeometry.windowFrame)
@@ -655,7 +607,7 @@ extension PlayerWindowController {
       log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize: \(newGeometry.videoSize)")
       player.updateMPVWindowScale(using: newGeometry)
       player.saveState()
-    }))
+    })
   }
 
   /// For (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.

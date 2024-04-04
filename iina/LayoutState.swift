@@ -48,6 +48,12 @@ enum PlayerWindowMode: Int {
   }
 }
 
+enum InteractiveModeState {
+  case enteringCrop(oldCropFilterString: String)
+  case crop(oldCropFilterString: String)
+  case submittingCrop(cropFilterString: String)
+}
+
 extension PlayerWindowController {
 
   /// `LayoutSpec`: data structure containing a player window's layout configuration, and contains all the info needed to build a `LayoutState`.

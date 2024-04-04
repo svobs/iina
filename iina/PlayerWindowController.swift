@@ -3220,11 +3220,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func enterInteractiveMode(_ mode: InteractiveMode) {
     let currentLayout = currentLayout
     // Especially needed to avoid duplicate transitions
-    guard !currentLayout.isInteractiveMode else { return }
+    guard currentLayout.canEnterInteractiveMode else { return }
 
     player.mpv.queue.async { [self] in
       let videoGeo = player.info.videoGeo
-      guard videoGeo.videoSizeACR != nil else {
+      guard let videoSizeRaw = videoGeo.videoSizeRaw, videoGeo.videoSizeACR != nil else {
         log.debug("Cannot enter interactive mode: missing videoSizeACR from \(videoGeo)")
         DispatchQueue.main.async {
           Utility.showAlert("no_video_track")
@@ -3242,10 +3242,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         // so that a new crop can be chosen. But keep info from the old filter in case the user cancels.
         assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
         player.info.videoFiltersDisabled[filterLabel] = vf
-        if player.removeVideoFilter(vf) {
-          /// The call to `removeVideoFilter` will trigger `applyVidGeo`, which will notice the disabled filter & pick up there
-          return
-        } else {
+        // Change this pre-emptively so that removeVideoFilter doesn't trigger a window geometry change
+        player.info.videoGeo = player.info.videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
+        if !player.removeVideoFilter(vf) {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
         }
       }
@@ -3253,7 +3252,70 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       player.saveState()
 
       DispatchQueue.main.async { [self] in
-        let tasks = buildTransitionToEnterInteractiveMode(mode)
+        guard currentLayout.canEnterInteractiveMode else { return }
+        var tasks: [IINAAnimation.Task] = []
+
+        if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+          // Not yet in interactive mode, but the active crop was just disabled prior to entering it,
+          // so that full video can be seen during interactive mode
+
+          // FIXME: need to un-rotate while in interactive mode
+          let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+          log.verbose("[applyVidGeo E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
+          log.verbose("[applyVidGeo E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
+
+          let newVideoAspect = videoSizeRaw.mpvAspect
+
+          switch currentLayout.mode {
+          case .windowed:
+            let oldVideoAspect = prevCropBox.size.mpvAspect
+            // Scale viewport to roughly match window size
+            let existingGeoWithNewAspect = windowedModeGeo.clone(windowFrame: window!.frame).clone(videoAspect: newVideoAspect)
+
+            let uncroppedWindowedGeo: PWGeometry
+            if Preference.bool(for: .lockViewportToVideoSize) {
+              // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
+              // This heuristic seems to work ok
+              let viewportSize = existingGeoWithNewAspect.viewportSize
+              let aspectChangeFactor = newVideoAspect / oldVideoAspect
+              let viewportSizeMultiplier = aspectChangeFactor < 0 ? (1.0 / aspectChangeFactor) : aspectChangeFactor
+              var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
+
+              // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
+              let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: newVideoAspect, mode: .windowedInteractive)
+              let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
+              let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
+                                                                      minWidth: minVideoSizeIM.width + minViewportMarginsIM.totalWidth,
+                                                                      minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
+              newViewportSize = NSSize(width: max(newViewportSize.width, minViewportSizeWindowed.width),
+                                       height: max(newViewportSize.height, minViewportSizeWindowed.height))
+
+              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize)
+            } else {
+              // If not locking viewport to video, just reuse viewport
+              uncroppedWindowedGeo = existingGeoWithNewAspect.refit()
+            }
+
+            let uncropDuration = IINAAnimation.CropAnimationDuration * 0.05
+            tasks.append(buildApplyWindowGeoTask(uncroppedWindowedGeo, duration: uncropDuration))
+
+            // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
+            let geos = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
+            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geos))
+
+          case .fullScreen:
+
+            let geoOverride = geo(videoAspect: newVideoAspect)
+            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
+
+          default:
+            assert(false, "Bad state! Invalid mode: \(currentLayout.spec.mode)")
+            return
+          }
+        } else {
+          tasks = buildTransitionToEnterInteractiveMode(mode)
+        }
+
         animationPipeline.submit(tasks)
       }
     }
@@ -4222,6 +4284,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     var animationTasks: [IINAAnimation.Task] = []
 
     if isWindowHidden {
+      animationTasks.append(buildApplyWindowGeoTask(windowedModeGeo)) // may have skipped updates while hidden
       animationTasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
         if let window {

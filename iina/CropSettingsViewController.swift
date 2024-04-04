@@ -96,18 +96,13 @@ class CropSettingsViewController: CropBoxViewController {
     }
   }
 
-  @IBAction func doneBtnAction(_ sender: AnyObject) {
+  func submitCrop() {
     let player = windowController.player
-    player.log.verbose("Interactive mode: user activated Done")
-
     // Remove saved crop (if any)
-    guard let videoSizeRaw = player.info.videoGeo.videoSizeRaw else {
-      player.log.error("Interactive mode submit failed: missing/invalid videoRawSize in \(player.info.videoGeo)")
-      return
-    }
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
     animateHideCropSelection()
 
+    let videoSizeRaw = cropBoxView.actualSize
     // Use <=, >= to account for imprecision
     let isAllSelected = cropx <= 0 && cropy <= 0 && cropw >= Int(videoSizeRaw.width) && croph >= Int(videoSizeRaw.height)
     let isNoSelection = cropw <= 0 || croph <= 0
@@ -118,7 +113,7 @@ class CropSettingsViewController: CropBoxViewController {
       player.removeCrop()
       windowController.exitInteractiveMode()
     } else {
-      player.log.verbose("User chose Done button from interactive mode with new crop")
+      player.log.verbose("Submitting from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
       cropBoxView.didSubmit = true
@@ -133,9 +128,13 @@ class CropSettingsViewController: CropBoxViewController {
     }
   }
 
+  @IBAction func doneBtnAction(_ sender: AnyObject) {
+    windowController.player.log.verbose("Interactive mode: user activated Done")
+
+    submitCrop()
+  }
+
   @IBAction func cancelBtnAction(_ sender: AnyObject) {
-    animateHideCropSelection()
-    
     let player = windowController.player
     if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
       /// Prev filter exists. Re-apply it
@@ -146,18 +145,15 @@ class CropSettingsViewController: CropBoxViewController {
       croph = Int(cropBoxRect.height)
       cropx = Int(cropBoxRect.origin.x)
       cropy = Int(cropBoxRect.origin.y)
-
-      /// Re-activate filter. This will trigger an exit from interactive mode, but not until we return.
-      if player.addVideoFilter(prevCropFilter) {
-        // Remove filter from disabled list
-        player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
-        cropBoxView.didSubmit = true
-      }
     } else {
-      player.log.verbose("User chose Cancel button from interactive mode; exiting")
-      // No prev filter.
-      windowController.exitInteractiveMode()
+      player.log.verbose("User chose Cancel button from interactive mode (no prev crop)")
+      let videoSizeRaw = cropBoxView.actualSize
+      cropw = Int(videoSizeRaw.width)
+      croph = Int(videoSizeRaw.height)
+      cropx = 0
+      cropy = 0
     }
+    submitCrop()
   }
 
   @IBAction func predefinedAspectValueAction(_ sender: NSSegmentedControl) {

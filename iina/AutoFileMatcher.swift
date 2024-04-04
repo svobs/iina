@@ -121,7 +121,6 @@ class AutoFileMatcher {
     }
 
     Logger.log("Searching subtitles from \(subDirs.count) directories...", subsystem: subsystem)
-    Logger.log("\(subDirs)", level: .verbose, subsystem: subsystem)
     // get all possible sub files
     var subtitles = subFiles
     for subDir in subDirs {
