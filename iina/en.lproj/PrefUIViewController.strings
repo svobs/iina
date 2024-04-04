@@ -218,7 +218,7 @@
 "xtL-XT-xzb.title" = "Hide";
 
 /* Class = "NSButtonCell"; title = "Always"; ObjectID = "yIN-jg-MxS"; */
-"yIN-jg-MxS.title" = "When any media opens";
+"yIN-jg-MxS.title" = "When media opens:";
 
 /* Class = "NSTextFieldCell"; title = "Theme:"; ObjectID = "yLF-vu-1Gl"; */
 "yLF-vu-1Gl.title" = "Theme:";

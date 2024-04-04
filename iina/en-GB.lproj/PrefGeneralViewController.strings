@@ -65,7 +65,7 @@
 "KfL-r7-Uav.title" = "Switch to “music mode” automatically when playing an audio file";
 
 /* Class = "NSButtonCell"; title = "Play next item automatically"; ObjectID = "Lac-Ol-g6E"; */
-"Lac-Ol-g6E.title" = "Play next item automatically";
+"Lac-Ol-g6E.title" = "Open next item in playlist automatically";
 
 /* Class = "NSButtonCell"; title = "Always open media in new window"; ObjectID = "M0z-bI-88d"; */
 "M0z-bI-88d.title" = "Always open media in new window";
