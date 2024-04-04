@@ -541,7 +541,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func restoreWindowsFromPreviousLaunch() -> Bool {
     guard Preference.UIState.isRestoreEnabled else {
-      Logger.log("Not restoring windows because restore is disabled", level: .verbose)
+      Logger.log("Restore is disabled. Wll not restore windows")
       return false
     }
 
@@ -580,7 +580,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let savedWindowsBackToFront = Preference.UIState.consolidateOpenWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
-      Logger.log("Not restoring windows: stored window list empty")
+      Logger.log("Will not restore windows: stored window list empty")
       return false
     }
 
@@ -589,7 +589,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       if onlyWindow == WindowAutosaveName.inspector {
         // Do not restore this on its own
-        Logger.log("Not restoring windows because only open window was Inspector", level: .verbose)
+        Logger.log("Will not restore windows: only open window was Inspector", level: .verbose)
         return false
       }
 
@@ -597,7 +597,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
           || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
           || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        Logger.log("Not restoring windows because only open window was identical to launch action (\(action))",
+        Logger.log("Will not restore windows: the only open window was identical to launch action (\(action))",
                    level: .verbose)
         // Skip the prompts below because they are just unnecessary nagging
         return false
