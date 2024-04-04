@@ -1364,9 +1364,9 @@
 	<false/>
 	<key>com.iina-advance.build.date</key>
 	<string>IINA_BUILD_DATE</string>
-	<key>com.colliderli.iina.build.sdk</key>
+	<key>com.iina-advance.build.sdk</key>
 	<string>$(SDK_VERSION)</string>
-	<key>com.colliderli.iina.build.xcode</key>
+	<key>com.iina-advance.build.xcode</key>
 	<string>$(XCODE_VERSION_ACTUAL)</string>
 </dict>
 </plist>
