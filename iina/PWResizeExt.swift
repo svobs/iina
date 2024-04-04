@@ -516,10 +516,12 @@ extension PlayerWindowController {
     return chosenGeometry
   }
 
-  func updateFloatingOSCAfterWindowDidResize() {
+  func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
+
+    let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
     controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH,
-                              originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: viewportView.frame.size)
+                              originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: newViewportSize)
 
     // Detach the views in oscFloatingUpperView manually on macOS 11 only; as it will cause freeze
     if #available(macOS 11.0, *) {
@@ -557,6 +559,51 @@ extension PlayerWindowController {
   }
 
   // MARK: - Apply Geometry
+
+  /// Use for resizing window. Not animated. Can be used in windowed or full screen modes. Can be used in music mode only if playlist is hidden.
+  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved
+  func applyWindowResize(usingGeometry newGeometry: PWGeometry? = nil) {
+    guard let window else { return }
+    videoView.videoLayer.enterAsynchronousMode()
+
+    defer {
+      // Do not cache supplied geometry. Assume caller will handle it.
+      if !isFullScreen, newGeometry == nil {
+        updateCachedGeometry(updateMPVWindowScale: currentLayout.mode == .windowed)
+        player.saveState()
+      }
+    }
+
+    IINAAnimation.disableAnimation {
+      if let newGeometry {
+        log.verbose("ApplyWindowResize: \(newGeometry)")
+        if !isFullScreen {
+          player.window.setFrameImmediately(newGeometry.windowFrame, animate: false)
+        }
+        // Make sure this is up-to-date
+        videoView.apply(newGeometry)
+      }
+
+      // These may no longer be aligned correctly. Just hide them
+      thumbnailPeekView.isHidden = true
+      timePositionHoverLabel.isHidden = true
+
+      if currentLayout.isMusicMode {
+        // Re-evaluate space requirements for labels. May need to start scrolling.
+        // Will also update saved state
+        miniPlayer.windowDidResize()
+      }
+
+      // Update floating control bar position if applicable
+      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
+
+      if currentLayout.isInteractiveMode {
+        // Update interactive mode selectable box size. Origin is relative to viewport origin
+        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
+      }
+    }
+    player.events.emit(.windowResized, data: window.frame)
+  }
 
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
@@ -608,37 +655,6 @@ extension PlayerWindowController {
       player.updateMPVWindowScale(using: newGeometry)
       player.saveState()
     })
-  }
-
-  /// For (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved.
-  /// Not animated. Can be used in windowed mode or full screen modes. Can be used in music mode only if the playlist is hidden.
-  func applyWindowGeoSpecialResize(_ newGeometry: PWGeometry) {
-    log.verbose("ApplyWindowSpecialResize: \(newGeometry)")
-    let currentLayout = currentLayout
-    // Need this if video is playing
-    videoView.videoLayer.enterAsynchronousMode()
-
-    IINAAnimation.disableAnimation{
-      if !isFullScreen {
-        player.window.setFrameImmediately(newGeometry.windowFrame, animate: false)
-      }
-      // Make sure this is up-to-date
-      videoView.apply(newGeometry)
-
-
-
-      
-      // These will no longer be aligned correctly. Just hide them
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
-
-      if currentLayout.hasFloatingOSC {
-        updateFloatingOSCAfterWindowDidResize()
-        // Update floating control bar position
-        controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH,
-                                  originRatioV: floatingOSCOriginRatioV, layout: currentLayout, viewportSize: newGeometry.viewportSize)
-      }
-    }
   }
 
   /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation

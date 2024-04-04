@@ -2235,39 +2235,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     applyWindowResize()
   }
 
-  func applyWindowResize() {
-    guard let window else { return }
-    videoView.videoLayer.enterAsynchronousMode()
-
-    defer {
-      if !isFullScreen {
-        updateCachedGeometry(updateMPVWindowScale: currentLayout.mode == .windowed)
-        player.saveState()
-      }
-    }
-
-    IINAAnimation.disableAnimation {
-      // These may no longer be aligned correctly. Just hide them
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
-
-      if currentLayout.isMusicMode {
-        // Re-evaluate space requirements for labels. May need to start scrolling.
-        // Will also update saved state
-        miniPlayer.windowDidResize()
-      }
-
-      // Update floating control bar position if applicable
-      updateFloatingOSCAfterWindowDidResize()
-
-      if currentLayout.isInteractiveMode {
-        // Update interactive mode selectable box size. Origin is relative to viewport origin
-        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
-      }
-    }
-    player.events.emit(.windowResized, data: window.frame)
-  }
-
   // MARK: - Window Delegate: window move, screen changes
 
   func windowDidChangeBackingProperties(_ notification: Notification) {

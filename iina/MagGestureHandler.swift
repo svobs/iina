@@ -143,7 +143,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
         // TODO: modify this to keep either leading or trailing edge fixed (as above)
         let newGeometry = originalGeometry.scaleViewport(to: newViewportSize, fitOption: .keepInVisibleScreen, mode: .musicMode)
-        windowController.applyWindowGeoSpecialResize(newGeometry)
+        windowController.applyWindowResize(usingGeometry: newGeometry)
         return newGeometry
       }
     }
@@ -159,7 +159,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
 
     let newGeometry = intendedGeo.refit(.keepInVisibleScreen)
-    windowController.applyWindowGeoSpecialResize(newGeometry)
+    windowController.applyWindowResize(usingGeometry: newGeometry)
     return newGeometry
   }
 }
