@@ -3223,9 +3223,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
           // FIXME: need to un-rotate while in interactive mode
           let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-          log.verbose("[applyVidGeo E1] Found a disabled crop filter: \(prevCropFilter.stringFormat.quoted). Will enter interactive crop.")
-          log.verbose("[applyVidGeo E1] VideoDisplayRaw: \(videoSizeRaw), PrevCropBox: \(prevCropBox)")
-
+          log.verbose("EnterInteractiveMode: Uncropping video, to videoSizeRaw: \(videoSizeRaw), from cropRectRaw: \(prevCropBox)")
           let newVideoAspect = videoSizeRaw.mpvAspect
 
           switch currentLayout.mode {
@@ -3242,6 +3240,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
               let viewportSizeMultiplier = aspectChangeFactor < 0 ? (1.0 / aspectChangeFactor) : aspectChangeFactor
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
+              log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: newVideoAspect, mode: .windowedInteractive)
@@ -3257,13 +3256,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               // If not locking viewport to video, just reuse viewport
               uncroppedWindowedGeo = existingGeoWithNewAspect.refit()
             }
+            log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedWindowedGeo)")
 
             let uncropDuration = IINAAnimation.CropAnimationDuration * 0.05
             tasks.append(buildApplyWindowGeoTask(uncroppedWindowedGeo, duration: uncropDuration))
 
             // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
-            let geos = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
-            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geos))
+            let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
+            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
 
           case .fullScreen:
 

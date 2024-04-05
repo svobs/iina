@@ -355,7 +355,7 @@ extension PlayerWindowController {
       case .windowed, .windowedInteractive:
         // Use previous geometry's aspect. This method should never be called if aspect is changing - that should be set elsewhere.
         // This method should only be called for changes to windowFrame (origin or size)
-        let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: windowedModeGeo.videoAspect)
+        let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
         if currentLayout.mode == .windowedInteractive {
           assert(interactiveModeGeo?.videoAspect == geo.videoAspect, "InteractiveModeVideoAspect (\(interactiveModeGeo?.videoAspect.description ?? "nil")) != WindowedModeVideoAspect (\(geo.videoAspect))")
           interactiveModeGeo = geo

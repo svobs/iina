@@ -153,6 +153,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   private func hideControllerButtonsInPipeline() {
+    guard windowController.isInMiniPlayer else { return }
     windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.MusicModeShowButtonsDuration, { [self] in
       hideControllerButtons()
     }))
@@ -174,7 +175,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   func resetScrollingLabels() {
-    _ = view  // make sure views load to avoid crashes from unwrapping nil Optionals
+    loadIfNeeded()
     titleLabel.reset()
     artistAlbumLabel.reset()
   }

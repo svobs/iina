@@ -790,16 +790,12 @@ extension PlayerWindowController {
       // Especially needed when applying initial layout:
       applyMusicModeGeo(musicModeGeo)
     case .windowed, .windowedInteractive:
-      let newWindowFrame = transition.outputGeometry.windowFrame
-      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(newWindowFrame)")
-      player.window.setFrameImmediately(newWindowFrame)
+      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(transition.outputGeometry.windowFrame)")
+      player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
       videoView.apply(transition.outputGeometry)
     }
 
     if transition.isEnteringInteractiveMode {
-      // Already set fixed constraints. Now set new values to animate into place
-      videoView.apply(transition.outputGeometry)
-
       if let videoSizeACR = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, videoViewSize: transition.outputGeometry.videoSize)
         // Hide for now, to prepare for a nice fade-in animation

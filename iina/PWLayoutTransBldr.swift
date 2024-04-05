@@ -383,6 +383,7 @@ extension PlayerWindowController {
 
   // MARK: - Geometry
 
+  /// Builds `inputGeometry`.
   private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ geo: Geometries, windowedModeScreen: NSScreen) -> PWGeometry {
     // Restore window size & position
     switch inputLayout.mode {
@@ -404,6 +405,7 @@ extension PlayerWindowController {
     }
   }
 
+  /// Builds `outputGeometry`.
   /// Note that the result should not necessarily overrite `windowedModeGeo`. It is used by the transition animations.
   private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWGeometry, 
                                    outputLayout: LayoutState, _ geo: Geometries, isInitialLayout: Bool) -> PWGeometry {
@@ -435,6 +437,7 @@ extension PlayerWindowController {
     }
   }
 
+  /// Builds `middleGeometry`.
   // Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildMiddleGeometry(forTransition transition: LayoutTransition, _ geo: Geometries) -> PWGeometry? {
     if transition.isTogglingInteractiveMode {
@@ -449,7 +452,7 @@ extension PlayerWindowController {
                                                                 outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                                 insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                                                keepFullScreenDimensions: true)
+                                                                keepFullScreenDimensions: false)
       if transition.isEnteringInteractiveMode {
         return resizedGeo.scaleViewport(to: transition.inputGeometry.videoSize)
       } else if transition.isExitingInteractiveMode {

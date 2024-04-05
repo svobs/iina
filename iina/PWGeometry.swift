@@ -1049,7 +1049,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                            outsideLeadingBarWidth: 0,
                            insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                            insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                           keepFullScreenDimensions: true)
+                           keepFullScreenDimensions: false).refit()
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
