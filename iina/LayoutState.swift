@@ -98,6 +98,13 @@ extension PlayerWindowController {
       self.mode = mode
 
       switch mode {
+      case .windowed, .fullScreen:
+        self.leadingSidebar = leadingSidebar
+        self.trailingSidebar = trailingSidebar
+        self.topBarPlacement = topBarPlacement
+        self.bottomBarPlacement = bottomBarPlacement
+        self.enableOSC = enableOSC
+        self.interactiveMode = nil
       case .musicMode, .windowedInteractive, .fullScreenInteractive:
         // Override most properties for music mode & interactive mode
         self.leadingSidebar = leadingSidebar.clone(visibility: .hide)
@@ -106,13 +113,6 @@ extension PlayerWindowController {
         self.bottomBarPlacement = .outsideViewport
         self.enableOSC = false
         self.interactiveMode = interactiveMode
-      case .windowed, .fullScreen:
-        self.leadingSidebar = leadingSidebar
-        self.trailingSidebar = trailingSidebar
-        self.topBarPlacement = topBarPlacement
-        self.bottomBarPlacement = bottomBarPlacement
-        self.enableOSC = enableOSC
-        self.interactiveMode = nil
       }
 
       self.isLegacyStyle = isLegacyStyle

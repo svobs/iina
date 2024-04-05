@@ -1174,11 +1174,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // TODO: can maybe replace all the following code with a call to refresh video params
       let layout = currentLayout
       switch layout.mode {
-      case .musicMode:
-        let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
-        /// If `isMiniPlayerWaitingToShowVideo` is true, need to update the cached geometry & other state vars,
-        /// but do not update frame because that will be handled right after
-        applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry, setFrame: !player.isMiniPlayerWaitingToShowVideo)
       case .windowed:
         var newGeo = windowedModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
 
@@ -1204,6 +1199,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         break
       case .fullScreenInteractive, .windowedInteractive:
         break
+      case .musicMode:
+        let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
+        /// If `isMiniPlayerWaitingToShowVideo` is true, need to update the cached geometry & other state vars,
+        /// but do not update frame because that will be handled right after
+        applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry, setFrame: !player.isMiniPlayerWaitingToShowVideo)
       }
     }
   }

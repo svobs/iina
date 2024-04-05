@@ -51,13 +51,12 @@ extension PlayerWindowController {
     switch transition.outputLayout.mode {
     case .windowed:
       windowedModeGeo = transition.outputGeometry
-    case .musicMode:
-      musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, videoAspect: transition.outputGeometry.videoAspect)
     case .windowedInteractive:
       interactiveModeGeo = transition.outputGeometry
     case .fullScreen, .fullScreenInteractive:
-      // Not applicable when entering full screen
-      break
+      break  // Not applicable when entering full screen
+    case .musicMode:
+      musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, videoAspect: transition.outputGeometry.videoAspect)
     }
 
     guard let window = window else { return }

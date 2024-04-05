@@ -123,13 +123,13 @@ extension PlayerWindowController {
     /// artifacts in the process if we start with an undefined layout.
     /// To smooth out the process, restore window position & size before laying out its internals.
     switch initialLayoutSpec.mode {
+    case .windowed, .windowedInteractive, .musicMode:
+      player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
+      videoView.apply(initialTransition.outputGeometry)
     case .fullScreen, .fullScreenInteractive:
       /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
       /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
       break
-    case .windowed, .windowedInteractive, .musicMode:
-      player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
-      videoView.apply(initialTransition.outputGeometry)
     }
 
     // For initial layout (when window is first shown), to reduce jitteriness when drawing,
@@ -409,14 +409,10 @@ extension PlayerWindowController {
                                    outputLayout: LayoutState, _ geo: Geometries, isInitialLayout: Bool) -> PWGeometry {
 
     switch outputLayout.mode {
-    case .musicMode:
-      /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
-      let musicModeGeoCorrected = geo.musicMode.clone(videoAspect: geo.videoAspect).refit()
-      return musicModeGeoCorrected.toPWGeometry()
-
-    case .fullScreen, .fullScreenInteractive:
-      // Full screen always uses same screen as windowed mode
-      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, videoAspect: geo.videoAspect)
+    case .windowed:
+      let prevWindowedGeo = geo.windowedMode
+      return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
+                                                      keepFullScreenDimensions: !isInitialLayout)
 
     case .windowedInteractive:
       if let cachedInteractiveModeGeometry = geo.interactiveMode {
@@ -427,33 +423,21 @@ extension PlayerWindowController {
       log.verbose("Derived interactiveModeGeo from windowedModeGeo for outputGeo: \(imGeo)")
       return imGeo
 
-    case .windowed:
-      let prevWindowedGeo = geo.windowedMode
-      return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
-                                                      keepFullScreenDimensions: !isInitialLayout)
+    case .fullScreen, .fullScreenInteractive:
+      // Full screen always uses same screen as windowed mode
+      return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, videoAspect: geo.videoAspect)
+
+    case .musicMode:
+      /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
+      let musicModeGeoCorrected = geo.musicMode.clone(videoAspect: geo.videoAspect).refit()
+      return musicModeGeoCorrected.toPWGeometry()
+
     }
   }
 
   // Currently there are 4 bars. Each can be either inside or outside, exclusively.
   func buildMiddleGeometry(forTransition transition: LayoutTransition, _ geo: Geometries) -> PWGeometry? {
-    if transition.isEnteringMusicMode {
-      let middleWindowFrame: NSRect
-      if transition.inputLayout.isFullScreen {
-        // Need middle geo so that sidebars get closed
-        middleWindowFrame = geo.windowedMode.videoFrameInScreenCoords
-      } else {
-        middleWindowFrame = transition.inputGeometry.videoFrameInScreenCoords
-      }
-
-      return PWGeometry(windowFrame: middleWindowFrame, screenID: transition.inputGeometry.screenID,
-                             fitOption: transition.inputGeometry.fitOption, mode: .musicMode, topMarginHeight: 0,
-                             outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                             insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                             videoAspect: transition.inputGeometry.videoAspect)
-    } else if transition.isExitingMusicMode {
-      // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedOutsideBars(newOutsideBottomBarHeight: 0)
-    } else if transition.isTogglingInteractiveMode {
+    if transition.isTogglingInteractiveMode {
       if transition.inputLayout.isFullScreen {
         // Need to hide sidebars when entering interactive mode in full screen
         return transition.outputGeometry
@@ -471,6 +455,24 @@ extension PlayerWindowController {
       } else if transition.isExitingInteractiveMode {
         return resizedGeo.scaleViewport(lockViewportToVideoSize: true)
       }
+
+    } else if transition.isEnteringMusicMode {
+      let middleWindowFrame: NSRect
+      if transition.inputLayout.isFullScreen {
+        // Need middle geo so that sidebars get closed
+        middleWindowFrame = geo.windowedMode.videoFrameInScreenCoords
+      } else {
+        middleWindowFrame = transition.inputGeometry.videoFrameInScreenCoords
+      }
+
+      return PWGeometry(windowFrame: middleWindowFrame, screenID: transition.inputGeometry.screenID,
+                        fitOption: transition.inputGeometry.fitOption, mode: .musicMode, topMarginHeight: 0,
+                        outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                        insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                        videoAspect: transition.inputGeometry.videoAspect)
+    } else if transition.isExitingMusicMode {
+      // Only bottom bar needs to be closed. No need to constrain in screen
+      return transition.inputGeometry.withResizedOutsideBars(newOutsideBottomBarHeight: 0)
     }
 
     // TOP
