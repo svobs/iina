@@ -42,6 +42,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var toggleAlbumArtButton: NSButton!
   @IBOutlet weak var leftArrowToPlayButtonSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playButtonToRightArrowSpaceConstraint: NSLayoutConstraint!
+  @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
 
   unowned var windowController: PlayerWindowController!
   var player: PlayerCore {
