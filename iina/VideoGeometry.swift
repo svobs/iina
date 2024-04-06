@@ -222,7 +222,7 @@ struct VideoGeometry: CustomStringConvertible {
     return CGSize(width: round(origSize.width / origAspect * newAspect), height: origSize.height)
   }
 
-  private static func makeCropBox(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
+  static func makeCropBox(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
     if cropLabel == AppData.noneCropIdentifier {
       return nil
     }

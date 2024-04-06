@@ -1549,27 +1549,43 @@ class PlayerCore: NSObject {
     return normRect
   }
 
-  func setCrop(fromAspectString aspectString: String) {
+  func setCrop(fromLabel aspectString: String) {
     mpv.queue.async { [self] in
-      if let aspect = Aspect(string: aspectString), let videoSizeRaw = info.videoGeo.videoSizeRaw {
+      guard let videoSizeRaw = info.videoGeo.videoSizeRaw else {
+        log.error("Cannot set crop to \(aspectString.quoted): videoSizeRaw is invalid")
+        updateSelectedCrop(to: AppData.noneCropIdentifier)
+        return
+      }
+
+      if let aspect = Aspect(string: aspectString)  {
         let cropped = videoSizeRaw.crop(withAspect: aspect)
         log.verbose("Setting crop from requested string \(aspectString.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
-        if cropped.width <= 0 || cropped.height <= 0 {
+        guard cropped.width > 0 && cropped.height > 0 else {
           log.error("Cannot set crop to \(cropped); width or height is <= 0")
           updateSelectedCrop(to: AppData.noneCropIdentifier)
           return
         }
         let vf = MPVFilter.crop(w: Int(cropped.width), h: Int(cropped.height), x: nil, y: nil)
         // No need to call updateSelectedCrop - it will be called by setCrop
-        if !addVideoFilter(vf) {
-          log.error("Failed to add crop filter? Setting crop to none")
+        guard addVideoFilter(vf) else {
+          log.error("Failed to add aspect-based crop filter \(aspectString.quoted); setting crop to None")
           updateSelectedCrop(to: AppData.noneCropIdentifier)
+          return
         }
-      } else {
-        if aspectString != AppData.noneCropIdentifier {
-          log.error("Requested crop string is invalid: \(aspectString.quoted)")
+        // fall through
+      } else if let cropBox = VideoGeometry.makeCropBox(fromCropLabel: aspectString,
+                                                        rawWidth: Int(videoSizeRaw.width), rawHeight: Int(videoSizeRaw.height)) {
+        let vf = MPVFilter.crop(w: Int(cropBox.width), h: Int(cropBox.height), x: Int(cropBox.origin.x), y: Int(cropBox.origin.y))
+        guard addVideoFilter(vf) else {
+          log.error("Failed to add rect-based crop filter \(aspectString.quoted); setting crop to None")
+          updateSelectedCrop(to: AppData.noneCropIdentifier)
+          return
         }
+        // fall through
+      } else if aspectString != AppData.noneCropIdentifier {
+        log.error("Not a valid aspect-based crop string: \(aspectString.quoted)")
         updateSelectedCrop(to: AppData.noneCropIdentifier)
+        return
       }
     }
   }
@@ -3058,7 +3074,9 @@ class PlayerCore: NSObject {
       let selectedAspect = (w / h).roundedTo2()
       log.verbose("Determined aspect=\(selectedAspect) from filter \(filter.label?.quoted ?? "")")
       if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
-        for aspectCropLabel in segmentLabels {
+        // Resolve against built-in labels as well as user labels:
+        let allRecognizedAspects = AppData.aspectsInMenu + segmentLabels
+        for aspectCropLabel in allRecognizedAspects {
           let tokens = aspectCropLabel.split(separator: ":")
           if tokens.count == 2, let width = Double(tokens[0]), let height = Double(tokens[1]) {
             let aspectRatio = (width / height).roundedTo2()

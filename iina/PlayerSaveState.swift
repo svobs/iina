@@ -668,9 +668,8 @@ struct PlayerSaveState {
 
     if let selectedCropLabel = string(for: .cropLabel) {
       // Update videoGeo above first so that UI doesn't alert the user
-      player.setCrop(fromAspectString: selectedCropLabel)
+      player.setCrop(fromLabel: selectedCropLabel)
     }
-
 
     if let brightness = int(for: .brightness) {
       mpv.setInt(MPVOption.Equalizer.brightness, brightness)

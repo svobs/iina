@@ -187,7 +187,7 @@ extension PlayerWindowController {
         player.windowController.enterInteractiveMode(.crop)
         return
       }
-      player.setCrop(fromAspectString: cropStr)
+      player.setCrop(fromLabel: cropStr)
     } else {
       Logger.log("sender.representedObject is not a string in menuChangeCrop()", level: .error)
     }

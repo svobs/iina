@@ -674,7 +674,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         player.log.error("Bad crop segment: \(sender.selectedSegment)")
         return
       }
-      player.setCrop(fromAspectString: selectedCropString)
+      player.setCrop(fromLabel: selectedCropString)
     }
   }
 

@@ -1042,14 +1042,16 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowed)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
-    return withResizedBars(mode: .windowedInteractive,
-                           outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
-                           outsideTrailingBarWidth: 0,
-                           outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                           outsideLeadingBarWidth: 0,
-                           insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                           insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                           keepFullScreenDimensions: false).refit()
+    let resizedGeo = withResizedBars(mode: .windowedInteractive,
+                                     outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
+                                     outsideTrailingBarWidth: 0,
+                                     outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
+                                     outsideLeadingBarWidth: 0,
+                                     insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                     insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                     keepFullScreenDimensions: false)
+    let refittedGeo = resizedGeo.refit()
+    return refittedGeo
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
