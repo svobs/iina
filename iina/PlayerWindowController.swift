@@ -3327,13 +3327,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         windowedModeGeo = newIMGeo
       }
 
-      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.005
+      let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
       animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
         hideCropControls()
         videoView.apply(newIMGeo)
-        if newIMGeo.mode.isWindowed {
-          player.window.setFrameImmediately(newIMGeo.windowFrame)
-        }
+        player.window.setFrameImmediately(newIMGeo.windowFrame)
 
         // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
         // It's not perfect but better than before

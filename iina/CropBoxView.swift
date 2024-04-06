@@ -32,9 +32,6 @@ class CropBoxView: NSView {
 
   weak var settingsViewController: CropBoxViewController!
 
-  // If true, crop was submitted, waiting on result
-  var didSubmit = false
-
   /** Original video size. */
   var actualSize: NSSize = NSSize()
   /** VideoView's frame. */

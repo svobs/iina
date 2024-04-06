@@ -55,16 +55,7 @@ extension PlayerWindowController {
     let screen = bestScreen
     let currentLayout = currentLayout
 
-    if isInInteractiveMode, let cropController = self.cropSettingsView, cropController.cropBoxView.didSubmit {
-      /// Interactive mode after submit: finish crop submission and exit interactive mode
-      // The new crop (or removal of crop) will have already been set in the new params.
-      cropController.cropBoxView.didSubmit = false
-
-      log.verbose("[applyVidGeo G] Looks like crop was submitted. Exiting interactive mode")
-      exitInteractiveMode(newVidGeo: newVidGeo)
-      return
-
-    } else if isRestoring {
+    if isRestoring {
       if isInInteractiveMode {
         /// If restoring into interactive mode, we didn't have `videoSizeACR` while doing layout. Add it now (if needed)
         let imVideoSize: NSSize
@@ -80,7 +71,6 @@ extension PlayerWindowController {
       } else {
         log.verbose("[applyVidGeo A Done] Restore is in progress; ignoring mpv video-reconfig")
       }
-      return
 
     } else if currentLayout.mode == .musicMode {
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")

@@ -116,14 +116,16 @@ class CropSettingsViewController: CropBoxViewController {
       player.log.verbose("Submitting from interactive mode with new crop")
       let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
 
-      cropBoxView.didSubmit = true
       guard let newCropLabel = player.deriveCropLabel(from: newCropFilter) else {
         player.log.error("Could not generate crop label from the newly created filter!")
         return
       }
       player.mpv.queue.async { [self] in
         let newVidGeo = player.info.videoGeo.clone(selectedCropLabel: newCropLabel)
-        windowController.applyVidGeo(newVidGeo)
+        player.info.videoGeo = newVidGeo
+        DispatchQueue.main.async { [self] in
+          windowController.exitInteractiveMode(newVidGeo: newVidGeo)
+        }
       }
     }
   }
