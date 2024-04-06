@@ -418,7 +418,7 @@ extension PlayerWindowController {
     case .windowed:
       var prevWindowedGeo = geo.windowedMode
       if inputGeometry.mode == .windowedInteractive {
-        prevWindowedGeo = prevWindowedGeo.clone(mode: .windowed)
+        prevWindowedGeo = prevWindowedGeo.fromWindowedInteractiveMode()
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
                                                       keepFullScreenDimensions: !isInitialLayout)
@@ -454,13 +454,13 @@ extension PlayerWindowController {
       }
 
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
-      let resizedGeo = transition.inputGeometry.withResizedBars(mode: transition.inputLayout.mode,
-                                                                outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
-                                                                outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                                                insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                                insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                                                keepFullScreenDimensions: false)
       if transition.isEnteringInteractiveMode {
+        let resizedGeo = transition.inputGeometry.withResizedBars(mode: transition.inputLayout.mode,
+                                                                  outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
+                                                                  outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                                                                  insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                                                  insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                                                  keepFullScreenDimensions: false)
         let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
         // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
         let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: transition.inputGeometry.videoAspect, mode: .windowedInteractive)
@@ -472,7 +472,10 @@ extension PlayerWindowController {
 
         return resizedGeo.scaleViewport(to: newViewportSize)
       } else if transition.isExitingInteractiveMode {
-        return resizedGeo.scaleViewport(lockViewportToVideoSize: true)
+        let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
+        let newWindowFrame = NSRect(origin: videoFrame.origin, size: CGSize(width: videoFrame.width, height: videoFrame.height + outsideTopBarHeight))
+        let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0, insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0, videoAspect: transition.outputGeometry.videoAspect)
+        return resizedGeo//.scaleViewport(lockViewportToVideoSize: true)
       }
 
     } else if transition.isEnteringMusicMode {
