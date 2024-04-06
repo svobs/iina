@@ -1572,7 +1572,6 @@ class PlayerCore: NSObject {
           updateSelectedCrop(to: AppData.noneCropIdentifier)
           return
         }
-        // fall through
       } else if let cropBox = VideoGeometry.makeCropBox(fromCropLabel: aspectString,
                                                         rawWidth: Int(videoSizeRaw.width), rawHeight: Int(videoSizeRaw.height)) {
         let vf = MPVFilter.crop(w: Int(cropBox.width), h: Int(cropBox.height), x: Int(cropBox.origin.x), y: Int(cropBox.origin.y))
@@ -1581,11 +1580,11 @@ class PlayerCore: NSObject {
           updateSelectedCrop(to: AppData.noneCropIdentifier)
           return
         }
-        // fall through
-      } else if aspectString != AppData.noneCropIdentifier {
-        log.error("Not a valid aspect-based crop string: \(aspectString.quoted)")
+      } else {  // no crop
+        if aspectString != AppData.noneCropIdentifier {
+          log.error("Not a valid aspect-based crop string: \(aspectString.quoted)")
+        }
         updateSelectedCrop(to: AppData.noneCropIdentifier)
-        return
       }
     }
   }

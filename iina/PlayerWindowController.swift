@@ -3879,6 +3879,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Show only in music mode when video is hidden
     closeButtonBackgroundViewBox.isHidden = miniPlayer.isVideoVisible
 
+    guard isInMiniPlayer else { return }
+    
+    miniPlayer.loadIfNeeded()
     // Push the volume button to the right if the buttons on at the same vertical position
     miniPlayer.volumeButtonLeadingConstraint.animateToConstant(miniPlayer.isVideoVisible ? 12 : 24)
   }
