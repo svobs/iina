@@ -263,7 +263,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   lazy var windowedModeGeo: PWGeometry = PlayerWindowController.windowedModeGeoLastClosed {
     didSet {
       log.verbose("Updated windowedModeGeo := \(windowedModeGeo)")
-      assert(windowedModeGeo.mode == .windowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode) (expected: \(PlayerWindowMode.windowed)")
+      assert(windowedModeGeo.mode.isWindowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode)")
       assert(!windowedModeGeo.fitOption.isFullScreen, "windowedModeGeo has invalid fitOption: \(windowedModeGeo.fitOption)")
     }
   }
@@ -312,18 +312,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     didSet {
       Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
       Logger.log("Updated musicModeGeoLastClosed := \(musicModeGeoLastClosed)", level: .verbose)
-    }
-  }
-
-  // Only used when in interactive mode. Discarded after exiting interactive mode.
-  var interactiveModeGeo: PWGeometry? = nil {
-    didSet {
-      if let geo = interactiveModeGeo {
-        log.verbose("Updated interactiveModeGeo := \(geo)")
-        assert(geo.mode == .windowedInteractive || geo.mode == .fullScreenInteractive, "unexpected mode for interactiveModeGeo: \(geo.mode)")
-      } else {
-        log.verbose("Updated interactiveModeGeo := nil")
-      }
     }
   }
 
@@ -3230,7 +3218,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           case .windowed:
             let oldVideoAspect = prevCropBox.size.mpvAspect
             // Scale viewport to roughly match window size
-            let existingGeoWithNewAspect = windowedModeGeo.clone(windowFrame: window!.frame).clone(videoAspect: newVideoAspect)
+            let existingGeoWithNewAspect = windowedModeGeo.clone(windowFrame: window!.frame, videoAspect: newVideoAspect)
 
             let uncroppedWindowedGeo: PWGeometry
             if Preference.bool(for: .lockViewportToVideoSize) {
@@ -3326,29 +3314,22 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
-      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.01
-
       // Crop animation:
-      if currentLayout.isFullScreen {
-        /// Must update `interactiveModeGeo` outside of animation task!
-        let currentIMGeo = currentLayout.buildFullScreenGeometry(inside: bestScreen, videoAspect: videoSizeRaw.mpvAspect)
-        let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
+      /// Must update `windowedModeGeo` outside of animation task!
+      assert(windowedModeGeo.mode.isInteractiveMode, "Expected interactiveWindowed mode for \(windowedModeGeo)")
+      // this works for full screen modes too
+      let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, videoAspect: videoSizeRaw.mpvAspect)
+      let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
+      windowedModeGeo = newIMGeo
 
-        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
-          hideCropControls()
-          videoView.apply(newIMGeo)
-        })
-      } else {
-        let currentIMGeo = interactiveModeGeo ?? windowedModeGeo.toInteractiveMode()
-        let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
-        interactiveModeGeo = newIMGeo
-
-        animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
-          hideCropControls()
-          videoView.apply(newIMGeo)
+      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.01
+      animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
+        hideCropControls()
+        videoView.apply(newIMGeo)
+        if newIMGeo.mode.isWindowed {
           player.window.setFrameImmediately(newIMGeo.windowFrame)
-        })
-      }
+        }
+      })
     }
 
     // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.

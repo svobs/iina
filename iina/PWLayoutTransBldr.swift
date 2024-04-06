@@ -225,13 +225,21 @@ extension PlayerWindowController {
 
     log.verbose("[\(transitionName)] OutputGeometry: \(outputGeometry)")
 
-    let panelTimingName: CAMediaTimingFunctionName
+    let closeOldPanelsTiming: CAMediaTimingFunctionName
+    let openFinalPanelsTiming: CAMediaTimingFunctionName
+    let fadeInNewViewsTiming: CAMediaTimingFunctionName = .linear
     if transition.isTogglingFullScreen {
-      panelTimingName = .easeInEaseOut
+      closeOldPanelsTiming = .easeInEaseOut
+      openFinalPanelsTiming = .easeInEaseOut
     } else if transition.isTogglingVisibilityOfAnySidebar {
-      panelTimingName = .easeIn
+      closeOldPanelsTiming = .easeIn
+      openFinalPanelsTiming = .easeIn
+    } else if transition.isExitingInteractiveMode {
+      closeOldPanelsTiming = .easeOut
+      openFinalPanelsTiming = .linear
     } else {
-      panelTimingName = .linear
+      closeOldPanelsTiming = .linear
+      openFinalPanelsTiming = .linear
     }
 
     // - Determine durations
@@ -308,7 +316,7 @@ extension PlayerWindowController {
     // StartingAnimation 3: Close/Minimize panels which are no longer needed. Applies middleGeometry if it exists.
     // Not enabled for fullScreen transitions.
     if transition.needsCloseOldPanels {
-      transition.animationTasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: panelTimingName, { [self] in
+      transition.animationTasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: closeOldPanelsTiming, { [self] in
         closeOldPanels(transition)
       }))
     }
@@ -343,7 +351,7 @@ extension PlayerWindowController {
     // - Ending animations:
 
     // EndingAnimation: Open new panels and fade in new views
-    transition.animationTasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: panelTimingName, { [self] in
+    transition.animationTasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
 
@@ -355,7 +363,7 @@ extension PlayerWindowController {
 
     // EndingAnimation: Fade in new views
     if !transition.isTogglingFullScreen && transition.needsFadeInNewViews {
-      transition.animationTasks.append(IINAAnimation.Task(duration: fadeInNewViewsDuration, timing: panelTimingName, { [self] in
+      transition.animationTasks.append(IINAAnimation.Task(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming, { [self] in
         fadeInNewViews(transition)
       }))
     }
@@ -392,12 +400,8 @@ extension PlayerWindowController {
     case .fullScreen, .fullScreenInteractive:
       return inputLayout.buildFullScreenGeometry(inside: windowedModeScreen, videoAspect: geo.videoAspect)
     case .windowedInteractive:
-      if let interactiveModeGeo = geo.interactiveMode {
-        return interactiveModeGeo
-      } else {
-        log.warn("[\(transitionName)] Failed to find interactiveModeGeo! Will change from windowedModeGeo (may be wrong)")
-        return geo.windowedMode.toInteractiveMode()
-      }
+      return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
+                                                videoAspect: geo.windowedMode.videoAspect)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
@@ -412,18 +416,21 @@ extension PlayerWindowController {
 
     switch outputLayout.mode {
     case .windowed:
-      let prevWindowedGeo = geo.windowedMode
+      var prevWindowedGeo = geo.windowedMode
+      if inputGeometry.mode == .windowedInteractive {
+        prevWindowedGeo = prevWindowedGeo.clone(mode: .windowed)
+      }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
                                                       keepFullScreenDimensions: !isInitialLayout)
 
     case .windowedInteractive:
-      if let cachedInteractiveModeGeometry = geo.interactiveMode {
-        log.verbose("Using cached interactiveModeGeo for outputGeo: \(cachedInteractiveModeGeometry)")
-        return cachedInteractiveModeGeometry
+      if inputGeometry.mode == .windowedInteractive {
+        // Already in interactive mode: reuse windowedMode geo
+        return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
+                                                  videoAspect: geo.windowedMode.videoAspect)
       }
-      let imGeo = geo.windowedMode.toInteractiveMode()
-      log.verbose("Derived interactiveModeGeo from windowedModeGeo for outputGeo: \(imGeo)")
-      return imGeo
+      // Entering interactive mode: convert
+      return geo.windowedMode.toInteractiveMode()
 
     case .fullScreen, .fullScreenInteractive:
       // Full screen always uses same screen as windowed mode
@@ -563,23 +570,19 @@ extension PlayerWindowController {
   struct Geometries {
     let windowedMode: PWGeometry
     let musicMode: MusicModeGeometry
-    let interactiveMode: PWGeometry?
     let videoAspect: CGFloat
 
-    init(windowedMode: PWGeometry, musicMode: MusicModeGeometry, interactiveMode: PWGeometry?, videoAspect: CGFloat) {
+    init(windowedMode: PWGeometry, musicMode: MusicModeGeometry, videoAspect: CGFloat) {
       self.windowedMode = windowedMode
       self.musicMode = musicMode
-      self.interactiveMode = interactiveMode
       self.videoAspect = videoAspect
     }
   }
 
-  func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil,
-           interactiveMode: PWGeometry? = nil, videoAspect: CGFloat? = nil) -> Geometries {
+  func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, videoAspect: CGFloat? = nil) -> Geometries {
 
     return Geometries(windowedMode: windowed ?? windowedModeGeo,
                       musicMode: musicMode ?? musicModeGeo,
-                      interactiveMode: interactiveMode ?? interactiveModeGeo,
                       videoAspect: videoAspect ?? self.player.info.videoAspect)
   }
 

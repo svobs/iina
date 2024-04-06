@@ -20,69 +20,25 @@ import Foundation
 struct MusicModeGeometry: Equatable, CustomStringConvertible {
   let windowFrame: NSRect
   let screenID: String
-  let playlistHeight: CGFloat  /// indicates playlist height when visible, even if not currently visible
   let isVideoVisible: Bool
-  let isPlaylistVisible: Bool  /// indicates if playlist is currently visible
   let videoAspect: CGFloat
 
-  init(windowFrame: NSRect, screenID: String, playlistHeight: CGFloat, 
-       isVideoVisible: Bool, isPlaylistVisible: Bool, videoAspect: CGFloat) {
-    self.windowFrame = windowFrame
-    self.screenID = screenID
-    if isPlaylistVisible {
-      /// Ignore given `playlistHeight` and calculate it from the other params
-      let videoHeight = isVideoVisible ? windowFrame.width / videoAspect : 0
-      let musicModeOSCHeight = Constants.Distance.MusicMode.oscHeight
-      self.playlistHeight = round(windowFrame.height - musicModeOSCHeight - videoHeight)
-    } else {
-      /// Sometimes `playlistHeight` can fall slightly below due to rounding errors. Just correct it:
-      self.playlistHeight = max(playlistHeight, Constants.Distance.MusicMode.minPlaylistHeight)
-    }
-    self.isVideoVisible = isVideoVisible
-    self.isPlaylistVisible = isPlaylistVisible
-    self.videoAspect = videoAspect
+  /// indicates if playlist is currently visible
+  var isPlaylistVisible: Bool {
+    return playlistHeight > 0
   }
 
-  func clone(windowFrame: NSRect? = nil, screenID: String? = nil, playlistHeight: CGFloat? = nil,
-             isVideoVisible: Bool? = nil, isPlaylistVisible: Bool? = nil,
-             videoAspect: CGFloat? = nil) -> MusicModeGeometry {
-    return MusicModeGeometry(windowFrame: windowFrame ?? self.windowFrame,
-                             screenID: screenID ?? self.screenID,
-                             // if playlist is visible, this will be ignored and recalculated in the constructor
-                             playlistHeight: playlistHeight ?? self.playlistHeight,
-                             isVideoVisible: isVideoVisible ?? self.isVideoVisible,
-                             isPlaylistVisible: isPlaylistVisible ?? self.isPlaylistVisible,
-                             videoAspect: videoAspect ?? self.videoAspect)
-  }
-
-  /// Converts this `MusicModeGeometry` to an equivalent `PWGeometry` object.
-  func toPWGeometry() -> PWGeometry {
-    let outsideBottomBarHeight = Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? playlistHeight : 0)
-    return PWGeometry(windowFrame: windowFrame,
-                      screenID: screenID,
-                      fitOption: .keepInVisibleScreen,
-                      mode: .musicMode,
-                      topMarginHeight: 0,
-                      outsideTopBarHeight: 0,
-                      outsideTrailingBarWidth: 0,
-                      outsideBottomBarHeight: outsideBottomBarHeight,
-                      outsideLeadingBarWidth: 0,
-                      insideTopBarHeight: 0,
-                      insideTrailingBarWidth: 0,
-                      insideBottomBarHeight: 0,
-                      insideLeadingBarWidth: 0,
-                      videoAspect: videoAspect)
+  /// indicates playlist height when visible, even if not currently visible
+  var playlistHeight: CGFloat {
+    return round(windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight)
   }
 
   var videoHeightIfVisible: CGFloat {
-    let videoHeightByDivision = round(windowFrame.width / videoAspect)
-    let otherControlsHeight = Constants.Distance.MusicMode.oscHeight + playlistHeight
-    let videoHeightBySubtraction = windowFrame.height - otherControlsHeight
-    // Align to other controls if within 1 px to smooth out division imprecision
-    if abs(videoHeightByDivision - videoHeightBySubtraction) < 1 {
-      return videoHeightBySubtraction
-    }
-    return videoHeightByDivision
+    return MusicModeGeometry.videoHeightIfVisible(windowFrame: windowFrame, videoAspect: videoAspect)
+  }
+
+  var videoHeight: CGFloat {
+    return isVideoVisible ? videoHeightIfVisible : 0
   }
 
   var videoSize: NSSize? {
@@ -94,12 +50,75 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return videoSize
   }
 
-  var videoHeight: CGFloat {
-    return isVideoVisible ? videoHeightIfVisible : 0
-  }
-
   var bottomBarHeight: CGFloat {
     return windowFrame.height - videoHeight
+  }
+
+  init(windowFrame: NSRect, screenID: String, videoAspect: CGFloat, isVideoVisible: Bool, isPlaylistVisible: Bool) {
+    var windowFrame = windowFrame
+    let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, videoAspect: videoAspect, isVideoVisible: isVideoVisible)
+    let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+
+    let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
+    if extraWidthNeeded > 0 {
+      if Logger.isTraceEnabled {
+        Logger.log("MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)")
+      }
+      windowFrame = NSRect(origin: windowFrame.origin, size: CGSize(width: windowFrame.width + extraWidthNeeded, height: windowFrame.height))
+    }
+
+    if isPlaylistVisible {
+      let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - playlistHeight
+      if extraHeightNeeded > 0 {
+        if Logger.isTraceEnabled {
+          Logger.log("MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)")
+        }
+        windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
+                             width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
+      }
+    } else {
+      let extraHeightNeeded = -playlistHeight
+      if extraHeightNeeded != 0 {
+        if Logger.isTraceEnabled {
+          Logger.log("MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)")
+        }
+        windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
+                             width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
+      }
+    }
+    self.windowFrame = windowFrame
+    self.screenID = screenID
+    self.isVideoVisible = isVideoVisible
+    self.videoAspect = videoAspect
+    assert(isPlaylistVisible ? (self.playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (self.playlistHeight == 0),
+           "Playlist height invalid: isPlaylistVisible==\(isPlaylistVisible), playlistHeight==\(self.playlistHeight))")
+  }
+
+  func clone(windowFrame: NSRect? = nil, screenID: String? = nil, videoAspect: CGFloat? = nil,
+             isVideoVisible: Bool? = nil, isPlaylistVisible: Bool? = nil) -> MusicModeGeometry {
+    return MusicModeGeometry(windowFrame: windowFrame ?? self.windowFrame,
+                             screenID: screenID ?? self.screenID,
+                             videoAspect: videoAspect ?? self.videoAspect,
+                             isVideoVisible: isVideoVisible ?? self.isVideoVisible,
+                             isPlaylistVisible: isPlaylistVisible ?? self.isPlaylistVisible)
+  }
+
+  /// Converts this `MusicModeGeometry` to an equivalent `PWGeometry` object.
+  func toPWGeometry() -> PWGeometry {
+    return PWGeometry(windowFrame: windowFrame,
+                      screenID: screenID,
+                      fitOption: .keepInVisibleScreen,
+                      mode: .musicMode,
+                      topMarginHeight: 0,
+                      outsideTopBarHeight: 0,
+                      outsideTrailingBarWidth: 0,
+                      outsideBottomBarHeight: Constants.Distance.MusicMode.oscHeight + playlistHeight,
+                      outsideLeadingBarWidth: 0,
+                      insideTopBarHeight: 0,
+                      insideTrailingBarWidth: 0,
+                      insideBottomBarHeight: 0,
+                      insideLeadingBarWidth: 0,
+                      videoAspect: videoAspect)
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
@@ -235,4 +254,24 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   var description: String {
     return "MusicModeGeometry(Video={show:\(isVideoVisible.yn) H:\(videoHeight) aspect:\(videoAspect.aspectNormalDecimalString)} PL={show:\(isPlaylistVisible.yn) H:\(playlistHeight)} BtmBarH:\(bottomBarHeight) windowFrame:\(windowFrame))"
   }
+
+  static func playlistHeight(windowFrame: CGRect, videoAspect: CGFloat, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
+    guard isPlaylistVisible else {
+      return 0
+    }
+    let videoHeight = videoHeight(windowFrame: windowFrame, videoAspect: videoAspect, isVideoVisible: isVideoVisible)
+    return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+  }
+
+  static func videoHeight(windowFrame: CGRect, videoAspect: CGFloat, isVideoVisible: Bool) -> CGFloat {
+    guard isVideoVisible else {
+      return 0
+    }
+    return round(windowFrame.width / videoAspect)
+  }
+
+  static func videoHeightIfVisible(windowFrame: CGRect, videoAspect: CGFloat) -> CGFloat {
+    return round(windowFrame.width / videoAspect)
+  }
+
 }

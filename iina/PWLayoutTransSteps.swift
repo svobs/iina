@@ -49,12 +49,10 @@ extension PlayerWindowController {
 
     /// Set this here because we are setting `currentLayout`
     switch transition.outputLayout.mode {
-    case .windowed:
+    case .windowed, .windowedInteractive:
       windowedModeGeo = transition.outputGeometry
-    case .windowedInteractive:
-      interactiveModeGeo = transition.outputGeometry
     case .fullScreen, .fullScreenInteractive:
-      break  // Not applicable when entering full screen
+      break  // Not applicable
     case .musicMode:
       musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, videoAspect: transition.outputGeometry.videoAspect)
     }
@@ -1005,10 +1003,6 @@ extension PlayerWindowController {
       } else {
         player.updateMPVWindowScale(using: transition.outputGeometry)
       }
-    }
-
-    if transition.isExitingInteractiveMode {
-      interactiveModeGeo = nil
     }
 
     refreshHidesOnDeactivateStatus()

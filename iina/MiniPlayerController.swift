@@ -188,7 +188,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
     // save playlist height
     log.verbose("Saving playlist height: \(playlistHeight)")
-    Preference.set(playlistHeight, for: .musicModePlaylistHeight)
+    Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
   }
 
   func updateTitle(mediaTitle: String, mediaAlbum: String, mediaArtist: String) {
@@ -279,15 +279,14 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   private func _togglePlaylist() {
     guard let window = windowController.window else { return }
-    let oldGeometry = windowController.musicModeGeo
     let showPlaylist = !isPlaylistVisible
     log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
     let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
     var newWindowFrame = window.frame
 
     if showPlaylist {
-      // Try to show playlist using previous height
-      let desiredPlaylistHeight = oldGeometry.playlistHeight
+      // Try to show playlist using stored height
+      let desiredPlaylistHeight = CGFloat(Preference.integer(for: .musicModePlaylistHeight))
       // The window may be in the middle of a previous toggle, so we can't just assume window's current frame
       // represents a state where the playlist is fully shown or fully hidden. Instead, start by computing the height
       // we want to set, and then figure out the changes needed to the window's existing frame.
@@ -308,7 +307,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
 
     // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
-    let newMusicModeGeometry = oldGeometry.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
+    let newMusicModeGeometry = windowController.musicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
     windowController.applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
   }
 
@@ -391,7 +390,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
     let oldGeometry = windowController.musicModeGeo
     let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-    var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame)
+    var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame).refit()
     IINAAnimation.disableAnimation{
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
       newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
@@ -455,16 +454,15 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     let isVideoVisible = Preference.bool(for: .musicModeShowAlbumArt)
     let desiredPlaylistHeight = CGFloat(Preference.float(for: .musicModePlaylistHeight))
     let desiredWindowWidth = Constants.Distance.MusicMode.defaultWindowWidth
-    let desiredVideoHeight = isVideoVisible ? desiredWindowWidth / videoAspect : 0
+    let desiredVideoHeight = isVideoVisible ? round(desiredWindowWidth / videoAspect) : 0
     let desiredWindowHeight = desiredVideoHeight + Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? desiredPlaylistHeight : 0)
 
     let screenFrame = screen.visibleFrame
     let windowSize = NSSize(width: desiredWindowWidth, height: desiredWindowHeight)
     let windowOrigin = NSPoint(x: screenFrame.origin.x, y: screenFrame.maxY - windowSize.height)
     let windowFrame = NSRect(origin: windowOrigin, size: windowSize)
-    let desiredGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screen.screenID, playlistHeight: desiredPlaylistHeight,
-                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible,
-                                       videoAspect: videoAspect)
+    let desiredGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screen.screenID, videoAspect: videoAspect,
+                                       isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     // Resize as needed to fit on screen:
     return desiredGeo.refit()
   }

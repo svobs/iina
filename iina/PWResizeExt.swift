@@ -71,9 +71,8 @@ extension PlayerWindowController {
         if currentLayout.isFullScreen {
           let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: screen, videoAspect: newVideoAspect)
           imVideoSize = fsInteractiveModeGeo.videoSize
-          interactiveModeGeo = fsInteractiveModeGeo
         } else { // windowed
-          imVideoSize = interactiveModeGeo?.videoSize ?? windowedModeGeo.videoSize
+          imVideoSize = windowedModeGeo.videoSize
         }
         log.debug("[applyVidGeo F-1] Restoring crop box origVideoSize=\(videoSizeRaw), imVideoSize=\(imVideoSize)")
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: imVideoSize)
@@ -356,14 +355,8 @@ extension PlayerWindowController {
         // Use previous geometry's aspect. This method should never be called if aspect is changing - that should be set elsewhere.
         // This method should only be called for changes to windowFrame (origin or size)
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
-        if currentLayout.mode == .windowedInteractive {
-          assert(interactiveModeGeo?.videoAspect == geo.videoAspect, "InteractiveModeVideoAspect (\(interactiveModeGeo?.videoAspect.description ?? "nil")) != WindowedModeVideoAspect (\(geo.videoAspect))")
-          interactiveModeGeo = geo
-        } else {
-          assert(currentLayout.mode == .windowed)
-          assert(windowedModeGeo.videoAspect == geo.videoAspect)
-          windowedModeGeo = geo
-        }
+        assert(windowedModeGeo.videoAspect == geo.videoAspect)
+        windowedModeGeo = geo
         if updateMPVWindowScale {
           player.updateMPVWindowScale(using: geo)
         }
@@ -388,16 +381,8 @@ extension PlayerWindowController {
     assert(currentLayout.isWindowed, "Trying to resize in windowed mode but current mode is unexpected: \(currentLayout.mode)")
     let currentGeometry: PWGeometry
     switch currentLayout.spec.mode {
-    case .windowed:
+    case .windowed, .windowedInteractive:
       currentGeometry = windowedModeGeo.clone(windowFrame: window.frame)
-    case .windowedInteractive:
-      if let interactiveModeGeo {
-        currentGeometry = interactiveModeGeo.clone(windowFrame: window.frame)
-      } else {
-        log.error("WinWillResize: could not find interactiveModeGeo; will substitute windowedModeGeo")
-        let updatedWindowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
-        currentGeometry = updatedWindowedModeGeo.toInteractiveMode()
-      }
     default:
       log.error("WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo")
       return windowedModeGeo

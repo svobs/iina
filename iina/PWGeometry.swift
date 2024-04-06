@@ -1037,6 +1037,10 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Interactive mode
 
+  static func forInteractiveMode(frame windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
+    return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen, mode: .windowedInteractive, topMarginHeight: 0, outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight, outsideTrailingBarWidth: 0, outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight, outsideLeadingBarWidth: 0, insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0, videoAspect: videoAspect)
+  }
+
   // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes
   func toInteractiveMode() -> PWGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
@@ -1049,7 +1053,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                      outsideLeadingBarWidth: 0,
                                      insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                      insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                     keepFullScreenDimensions: false)
+                                     keepFullScreenDimensions: true)
     let refittedGeo = resizedGeo.refit()
     return refittedGeo
   }

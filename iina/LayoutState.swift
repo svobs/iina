@@ -33,6 +33,10 @@ enum PlayerWindowMode: Int {
     }
   }
 
+  var isWindowed: Bool {
+    return self == .windowed || self == .windowedInteractive
+  }
+
   var isInteractiveMode: Bool {
     return self == .windowedInteractive || self == .fullScreenInteractive
   }
@@ -202,7 +206,7 @@ extension PlayerWindowController {
     }
 
     var isWindowed: Bool {
-      return mode == .windowed || mode == .windowedInteractive
+      return mode.isWindowed
     }
 
     var isNativeFullScreen: Bool {
@@ -599,21 +603,32 @@ extension PlayerWindowController {
     }
     
     func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
-      assert(isWindowed, "buildGeometry(fromWindowFrame): unexpected mode: \(mode)")
+      switch mode {
+      case .fullScreen, .fullScreenInteractive:
+        return buildFullScreenGeometry(inScreenID: screenID, videoAspect: videoAspect)
+      case .windowedInteractive:
+        return PWGeometry.forInteractiveMode(frame: windowFrame, screenID: screenID, videoAspect: videoAspect)
+      case .windowed:
+        let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen,
+                             mode: mode,
+                             topMarginHeight: 0,  // is only nonzero when in legacy FS
+                             outsideTopBarHeight: outsideTopBarHeight,
+                             outsideTrailingBarWidth: outsideTrailingBarWidth,
+                             outsideBottomBarHeight: outsideBottomBarHeight,
+                             outsideLeadingBarWidth: outsideLeadingBarWidth,
+                             insideTopBarHeight: insideTopBarHeight,
+                             insideTrailingBarWidth: insideTrailingBarWidth,
+                             insideBottomBarHeight: insideBottomBarHeight,
+                             insideLeadingBarWidth: insideLeadingBarWidth,
+                             videoAspect: videoAspect)
+        return geo.scaleViewport()
+      case .musicMode:
+        let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect,
+                                             isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
+                                             isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
+        return musicModeGeo.toPWGeometry()
+      }
 
-      let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen,
-                           mode: mode,
-                           topMarginHeight: 0,  // is only nonzero when in legacy FS
-                           outsideTopBarHeight: outsideTopBarHeight,
-                           outsideTrailingBarWidth: outsideTrailingBarWidth,
-                           outsideBottomBarHeight: outsideBottomBarHeight,
-                           outsideLeadingBarWidth: outsideLeadingBarWidth,
-                           insideTopBarHeight: insideTopBarHeight,
-                           insideTrailingBarWidth: insideTrailingBarWidth,
-                           insideBottomBarHeight: insideBottomBarHeight,
-                           insideLeadingBarWidth: insideLeadingBarWidth,
-                           videoAspect: videoAspect)
-      return geo.scaleViewport()
     }
 
     /// Only for windowed modes!

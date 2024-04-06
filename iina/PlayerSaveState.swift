@@ -830,7 +830,7 @@ extension MusicModeGeometry {
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),
             let winHeight = Double(iter.next()!),
-            let playlistHeight = Double(iter.next()!),
+            let _ = Double(iter.next()!),  /// was `playlistHeight` (defunct as of 1.1)
             let isVideoVisible = Bool.yn(iter.next()!),
             let isPlaylistVisible = Bool.yn(iter.next()!),
             let videoAspect = Double(iter.next()!),
@@ -843,9 +843,8 @@ extension MusicModeGeometry {
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return MusicModeGeometry(windowFrame: windowFrame,
                                screenID: screenID,
-                               playlistHeight: playlistHeight,
-                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible,
-                               videoAspect: videoAspect)
+                               videoAspect: videoAspect,
+                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     })
   }
 
