@@ -1054,8 +1054,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                      insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                      insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
                                      keepFullScreenDimensions: true)
-    let refittedGeo = resizedGeo.refit()
-    return refittedGeo
+    return resizedGeo
   }
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.

@@ -53,7 +53,7 @@ extension PlayerWindowController {
     }
 
     var needsFadeOutOldViews: Bool {
-      return !isExitingMusicMode && 
+      return !isExitingMusicMode && !isTogglingInteractiveMode &&
       (isTogglingLegacyStyle || isTopBarPlacementChanging
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .insideViewport && outputLayout.bottomBarPlacement == .outsideViewport)

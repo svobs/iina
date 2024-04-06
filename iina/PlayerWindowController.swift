@@ -3218,7 +3218,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           case .windowed:
             let oldVideoAspect = prevCropBox.size.mpvAspect
             // Scale viewport to roughly match window size
-            let existingGeoWithNewAspect = windowedModeGeo.clone(windowFrame: window!.frame, videoAspect: newVideoAspect)
+            assert(windowedModeGeo.mode == .windowed)
+            let existingGeoWithNewAspect = windowedModeGeo.clone(videoAspect: newVideoAspect)
 
             let uncroppedWindowedGeo: PWGeometry
             if Preference.bool(for: .lockViewportToVideoSize) {
@@ -3226,19 +3227,19 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               // This heuristic seems to work ok
               let viewportSize = existingGeoWithNewAspect.viewportSize
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
-              let viewportSizeMultiplier = aspectChangeFactor < 0 ? (1.0 / aspectChangeFactor) : aspectChangeFactor
+              let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
-              log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
 
+              let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: newVideoAspect, mode: .windowedInteractive)
-              let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
               let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
                                                                       minWidth: minVideoSizeIM.width + minViewportMarginsIM.totalWidth,
                                                                       minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
-              newViewportSize = NSSize(width: max(newViewportSize.width, minViewportSizeWindowed.width),
-                                       height: max(newViewportSize.height, minViewportSizeWindowed.height))
+              newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width),
+                                       height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
+              log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
               uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize)
             } else {
               // If not locking viewport to video, just reuse viewport
@@ -3247,7 +3248,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
             log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedWindowedGeo)")
 
             let uncropDuration = IINAAnimation.CropAnimationDuration * 0.05
-            tasks.append(buildApplyWindowGeoTask(uncroppedWindowedGeo, duration: uncropDuration))
+            tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
+              videoView.apply(uncroppedWindowedGeo)
+              player.window.setFrameImmediately(uncroppedWindowedGeo.windowFrame)
+            })
 
             // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
             let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
@@ -3316,39 +3320,39 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       // Crop animation:
       /// Must update `windowedModeGeo` outside of animation task!
-      assert(windowedModeGeo.mode.isInteractiveMode, "Expected interactiveWindowed mode for \(windowedModeGeo)")
       // this works for full screen modes too
       let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, videoAspect: videoSizeRaw.mpvAspect)
       let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
-      windowedModeGeo = newIMGeo
+      if currentLayout.mode == .windowedInteractive {
+        windowedModeGeo = newIMGeo
+      }
 
-      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.01
-      animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .easeOut) { [self] in
+      let cropAnimationDuration = IINAAnimation.CropAnimationDuration * 0.005
+      animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
         hideCropControls()
         videoView.apply(newIMGeo)
         if newIMGeo.mode.isWindowed {
           player.window.setFrameImmediately(newIMGeo.windowFrame)
         }
+
+        // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
+        // It's not perfect but better than before
+        if let cropController = cropSettingsView {
+          let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
+          /// Set the filter. This will result in `applyVidGeo` getting called, which will trigger an exit from interactive mode.
+          /// But that task can only happen once we return and relinquish the main queue.
+          _ = player.addVideoFilter(newCropFilter)
+        }
       })
     }
 
-    // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
-    // It's not perfect but better than before
-    if let cropController = cropSettingsView {
-      let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
-      animationTasks.append(IINAAnimation.zeroDurationTask{ [self] in
-        /// Set the filter. This will result in `applyVidGeo` getting called, which will trigger an exit from interactive mode.
-        /// But that task can only happen once we return and relinquish the main queue.
-        _ = player.addVideoFilter(newCropFilter)
-      })
-    }
 
     // Build exit animation
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
     log.verbose("[applyVidGeo E5] Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
-    let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.5
+    let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.75
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
     let geo = self.geo(videoAspect: newVidGeo?.cropBox?.size.mpvAspect)
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
@@ -3880,7 +3884,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     closeButtonBackgroundViewBox.isHidden = miniPlayer.isVideoVisible
 
     guard isInMiniPlayer else { return }
-    
+
     miniPlayer.loadIfNeeded()
     // Push the volume button to the right if the buttons on at the same vertical position
     miniPlayer.volumeButtonLeadingConstraint.animateToConstant(miniPlayer.isVideoVisible ? 12 : 24)

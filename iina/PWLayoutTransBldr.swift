@@ -461,7 +461,16 @@ extension PlayerWindowController {
                                                                 insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
                                                                 keepFullScreenDimensions: false)
       if transition.isEnteringInteractiveMode {
-        return resizedGeo.scaleViewport(to: transition.inputGeometry.videoSize)
+        let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
+        // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
+        let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: transition.inputGeometry.videoAspect, mode: .windowedInteractive)
+        let minViewportSize = PWGeometry.computeMinSize(withAspect: transition.inputGeometry.videoAspect,
+                                                                minWidth: minVideoSizeIM.width + minViewportMarginsIM.totalWidth,
+                                                                minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
+        let newViewportSize = NSSize(width: max(resizedGeo.videoSize.width, minViewportSize.width),
+                                 height: max(resizedGeo.videoSize.height, minViewportSize.height))
+
+        return resizedGeo.scaleViewport(to: newViewportSize)
       } else if transition.isExitingInteractiveMode {
         return resizedGeo.scaleViewport(lockViewportToVideoSize: true)
       }
