@@ -2086,10 +2086,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   }
 
-  // Animation: Exit FullScreen
+  // Animation: Exit Full Screen
   private func animateExitFromFullScreen(withDuration duration: TimeInterval, isLegacy: Bool) {
-    log.verbose("Animating exit from \(isLegacy ? "legacy " : "")full screen, duration: \(duration)")
-
     // If a window is closed while in full screen mode (control-w pressed) AppKit will still call
     // this method. Because windows are tied to player cores and cores are cached and reused some
     // processing must be performed to leave the window in a consistent state for reuse. However
@@ -2101,19 +2099,31 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     let oldLayout = currentLayout
 
-    // support exiting native FS and directly into music mode
-    let newMode = modeToSetAfterExitingFullScreen ?? .windowed
-    modeToSetAfterExitingFullScreen = nil
-    let windowedLayout = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: oldLayout.spec)
+    let newMode: PlayerWindowMode
 
+    if let modeToSetAfterExitingFullScreen {
+      // support exiting native FS and directly into music mode
+      newMode = modeToSetAfterExitingFullScreen
+    } else if oldLayout.mode == .fullScreenInteractive {
+      newMode = .windowedInteractive
+    } else {
+      newMode = .windowed
+    }
+    modeToSetAfterExitingFullScreen = nil
+    let windowedLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: oldLayout.spec)
+
+    log.verbose("Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutSpec.mode)")
+    assert(!windowedLayoutSpec.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutSpec.mode)! Spec: \(windowedLayoutSpec)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
-    let transition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "")FullScreen", from: oldLayout, to: windowedLayout, totalStartingDuration: 0, totalEndingDuration: duration)
+    let transition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "")FullScreen",
+                                           from: oldLayout, to: windowedLayoutSpec,
+                                           totalStartingDuration: 0, totalEndingDuration: duration)
 
     animationPipeline.submit(transition.animationTasks)
   }
 
   func toggleWindowFullScreen() {
-    log.verbose("ToggleWindowFullScreen() entered")
+    log.verbose("ToggleWindowFullScreen")
     let layout = currentLayout
 
     switch layout.mode {
@@ -2130,7 +2140,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose("EnterFullScreen called (legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn))")
+    log.verbose("EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
 
     animationPipeline.submitZeroDuration({ [self] in
       resetCollectionBehavior()
@@ -2146,7 +2156,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func exitFullScreen(legacy: Bool) {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose("ExitFullScreen called (legacy: \(legacy.yn), isNativeFullScreenNow: \(isFullScreen.yn))")
+    log.verbose("ExitFullScreen called. Legacy: \(legacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
 
     animationPipeline.submitZeroDuration({ [self] in
       // If "legacy" pref was toggled while in fullscreen, still need to exit native FS

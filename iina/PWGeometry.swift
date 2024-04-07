@@ -353,14 +353,31 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return computeMinSize(withAspect: aspect, minWidth: minVideoWidth(forMode: mode), minHeight: minVideoHeight(forMode: mode))
   }
 
+  /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
+  /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
   static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
     let sizeKeepingMinWidth = NSSize(width: minWidth, height: round(minWidth / aspect))
     if sizeKeepingMinWidth.height >= minHeight {
       return sizeKeepingMinWidth
-    } else {
-      assert(aspect > 1, "Expected aspect > 1; got: \(aspect)")
-      return NSSize(width: round(minHeight * aspect), height: minHeight)
     }
+
+    let sizeKeepingMinHeight = NSSize(width: round(minHeight * aspect), height: minHeight)
+    if sizeKeepingMinHeight.width >= minWidth {
+      return sizeKeepingMinHeight
+    }
+
+    // Negative aspect, but just barely?
+    if minWidth < minHeight {
+      let width = round(minWidth * aspect)
+      let sizeScalingUpWidth = NSSize(width: width, height: round(width / aspect))
+      if sizeScalingUpWidth.width >= minWidth, sizeScalingUpWidth.height >= minHeight {
+        return sizeScalingUpWidth
+      }
+    }
+    let scaledUpHeight = round(minHeight * aspect)
+    let sizeScalingUpHeight = NSSize(width: round(scaledUpHeight * aspect), height: scaledUpHeight)
+    assert(sizeScalingUpHeight.width >= minWidth && sizeScalingUpHeight.height >= minHeight, "sizeScalingUpHeight \(sizeScalingUpHeight) < \(minWidth)x\(minHeight)")
+    return sizeScalingUpHeight
   }
 
   // This also accounts for space needed by inside sidebars, if any
@@ -460,18 +477,18 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                     height: viewportSize.height - margins.totalHeight)
     let videoSize: NSSize
     /// Compute `videoSize` to fit within `viewportSize` while maintaining `videoAspect`:
-    if videoAspect < usableViewportSize.mpvAspect {  // video is taller, shrink to meet height
-      var videoWidth = usableViewportSize.height * videoAspect
-      videoWidth = snap(videoWidth, to: usableViewportSize.width)
-      videoSize = NSSize(width: round(videoWidth), height: usableViewportSize.height)
+    let videoWidth = snap(usableViewportSize.height * videoAspect, to: usableViewportSize.width)
+    if videoWidth <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
+      videoSize = NSSize(width: videoWidth, height: usableViewportSize.height)
     } else {  // video is wider, shrink to meet width
-      var videoHeight = usableViewportSize.width / videoAspect
-      videoHeight = snap(videoHeight, to: usableViewportSize.height)
+      let videoHeight = snap(usableViewportSize.width / videoAspect, to: usableViewportSize.height)
       // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
       // mpv, Core Graphics, AppKit, which will cause animation glitches
-      videoSize = NSSize(width: usableViewportSize.width, height: round(videoHeight))
+      videoSize = NSSize(width: usableViewportSize.width, height: videoHeight)
     }
 
+    assert((usableViewportSize.width - videoSize.width >= 0) && (usableViewportSize.height - videoSize.height >= 0),
+           "videoSize \(videoSize) cannot be larger than usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), viewportMargins: \(margins))")
     return videoSize
   }
 
@@ -870,7 +887,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     let ΔOutsideWidth = geo.outsideBarsTotalWidth - outsideBarsTotalWidth
     let ΔOutsideHeight = geo.outsideBarsTotalHeight - outsideBarsTotalHeight
 
-    Logger.log("WithResizedBars: isFullScreenWidth=\(isFullScreenWidth.yn) isFullScreenHeight=\(isFullScreenHeight) keepInContainer=\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
+    Logger.log("[ResizeBars] ΔW:\(ΔOutsideWidth) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
 
     let resizedViewport: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.

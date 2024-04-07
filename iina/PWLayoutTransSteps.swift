@@ -137,6 +137,11 @@ extension PlayerWindowController {
 
       isPausedPriorToInteractiveMode = player.info.isPaused
       player.pause()
+
+      videoView.layer?.shadowColor = .black
+      videoView.layer?.shadowOffset = .zero
+      videoView.layer?.shadowOpacity = 1
+      videoView.layer?.shadowRadius = 3
     }
 
     // Music mode
@@ -588,17 +593,13 @@ extension PlayerWindowController {
         }
 
         // Add crop settings at bottom
-        let cropController = transition.outputLayout.spec.interactiveMode!.viewController()
+        let cropController = self.cropSettingsView ?? transition.outputLayout.spec.interactiveMode!.viewController()
         cropController.windowController = self
+        self.cropSettingsView = cropController
         bottomBarView.addSubview(cropController.view)
         cropController.view.addConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
-        self.cropSettingsView = cropController
 
-        if !transition.outputLayout.isFullScreen {
-          // Need to hug the walls of viewport to match existing layout. Will animate with updated constraints in next stage
-          videoView.apply(nil)
-        }
       } else if transition.isExitingInteractiveMode {
         // Exiting interactive mode
         setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
@@ -793,7 +794,7 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
-    if transition.isEnteringInteractiveMode {
+    if transition.outputGeometry.mode.isInteractiveMode {
       if let videoSizeACR = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
         addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, videoViewSize: transition.outputGeometry.videoSize)
         // Hide for now, to prepare for a nice fade-in animation
@@ -857,18 +858,17 @@ extension PlayerWindowController {
     }
 
     if let cropController = cropSettingsView {
-      if transition.isEnteringInteractiveMode {
+      if transition.outputLayout.isInteractiveMode {
         // show crop settings view
         cropController.view.alphaValue = 1
         cropController.cropBoxView.isHidden = false
         cropController.cropBoxView.alphaValue = 1
-        videoView.layer?.shadowColor = .black
-        videoView.layer?.shadowOpacity = 1
-        videoView.layer?.shadowOffset = .zero
-        videoView.layer?.shadowRadius = 3
       }
 
-      cropController.cropBoxView.resized(with: videoView.bounds)
+      // Native FS seems to change frame sizes on its own in some undocumented way, so just measure whatever is displayed for that.
+      // But all other modes should use precalculated values because NSView bounds is sometimes not reliable depending on timing
+      let cropBoxBounds = outputLayout.isNativeFullScreen ? videoView.bounds : NSRect(origin: CGPointZero, size: transition.outputGeometry.videoSize)
+      cropController.cropBoxView.resized(with: cropBoxBounds)
       cropController.cropBoxView.layoutSubtreeIfNeeded()
     }
 

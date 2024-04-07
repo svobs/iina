@@ -400,8 +400,10 @@ extension PlayerWindowController {
     case .fullScreen, .fullScreenInteractive:
       return inputLayout.buildFullScreenGeometry(inside: windowedModeScreen, videoAspect: geo.videoAspect)
     case .windowedInteractive:
-      return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
-                                                videoAspect: geo.windowedMode.videoAspect)
+      /// `geo.windowedMode` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
+      /// from a small number of variables, and safer to do that than assume it is correct:
+      return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+                                           videoAspect: geo.windowedMode.videoAspect)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
@@ -416,11 +418,15 @@ extension PlayerWindowController {
 
     switch outputLayout.mode {
     case .windowed:
-      var prevWindowedGeo = inputGeometry
+      let prevWindowedGeo: PWGeometry
       if inputGeometry.mode == .windowedInteractive {
         /// `windowedInteractive` -> `windowed`
         log.verbose("Exiting interactive mode: converting windowedInteractive geo to windowed for outputGeo")
         prevWindowedGeo = inputGeometry.fromWindowedInteractiveMode()
+      } else if geo.windowedMode.mode == .windowedInteractive {
+        prevWindowedGeo = geo.windowedMode.fromWindowedInteractiveMode()
+      } else {
+        prevWindowedGeo = geo.windowedMode
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
                                                       keepFullScreenDimensions: !isInitialLayout)
@@ -430,6 +436,12 @@ extension PlayerWindowController {
         log.verbose("Already in interactive mode: converting windowed geo to interactiveWindowed for outputGeo")
         return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
                                              videoAspect: geo.windowedMode.videoAspect)
+      } else if inputGeometry.mode == .fullScreenInteractive {
+        if geo.windowedMode.mode == .windowedInteractive {
+          return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
+                                               videoAspect: inputGeometry.videoAspect)
+        }
+        return geo.windowedMode.clone(videoAspect: inputGeometry.videoAspect).toInteractiveMode()
       }
       /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
       return inputGeometry.toInteractiveMode()
