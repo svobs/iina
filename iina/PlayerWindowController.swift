@@ -2192,24 +2192,27 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
 
     switch currentLayout.mode {
-    case .musicMode:
-      return miniPlayer.resizeWindow(window, to: requestedSize)
-
-    case .fullScreen, .fullScreenInteractive:
-      if currentLayout.isLegacyFullScreen {
-        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, videoAspect: player.info.videoAspect)
-        return newGeometry.windowFrame.size
-      } else {  // is native full screen
-        // This method can be called as a side effect of the animation. If so, ignore.
-        return requestedSize
-      }
-
     case .windowed, .windowedInteractive:
       let newGeometry = resizeWindow(window, to: requestedSize)
       IINAAnimation.disableAnimation { [self] in
         videoView.apply(newGeometry)
       }
       return newGeometry.windowFrame.size
+
+    case .fullScreen, .fullScreenInteractive:
+      if currentLayout.isLegacyFullScreen {
+        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, videoAspect: player.info.videoAspect)
+        IINAAnimation.disableAnimation { [self] in
+          videoView.apply(newGeometry)
+        }
+        return newGeometry.windowFrame.size
+      } else {  // is native full screen
+        // This method can be called as a side effect of the animation. If so, ignore.
+        return requestedSize
+      }
+
+    case .musicMode:
+      return miniPlayer.resizeWindow(window, to: requestedSize)
     }
   }
 
@@ -3340,7 +3343,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // Crop animation:
       let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
       animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
-        hideCropControls()
         videoView.apply(newIMGeo)
         player.window.setFrameImmediately(newIMGeo.windowFrame)
 
@@ -3369,14 +3371,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     animationTasks.append(contentsOf: transition.animationTasks)
 
     return animationTasks
-  }
-
-  private func hideCropControls() {
-    guard let cropController = cropSettingsView else { return }
-    cropController.view.alphaValue = 0
-    cropController.view.isHidden = true
-    cropController.cropBoxView.isHidden = true
-    cropController.cropBoxView.alphaValue = 0
   }
 
   // MARK: - UI: Thumbnail Preview

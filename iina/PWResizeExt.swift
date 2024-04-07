@@ -307,8 +307,7 @@ extension PlayerWindowController {
   }
 
   /// Updates the appropriate in-memory cached geometry (based on the current window mode) using the current window & view frames.
-  /// Param `updatePreferredSizeAlso` only applies to `.windowed` mode.
-  func updateCachedGeometry(updateMPVWindowScale: Bool = false) {
+  func updateCachedGeometry() {
     guard !currentLayout.isFullScreen, !player.info.isRestoring else {
       log.verbose("Not updating cached geometry: isFS=\(currentLayout.isFullScreen.yn), isRestoring=\(player.info.isRestoring)")
       return
@@ -334,16 +333,10 @@ extension PlayerWindowController {
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
         assert(windowedModeGeo.videoAspect == geo.videoAspect, "windowedMode videoAspect (\(windowedModeGeo.videoAspect)) != new videoAspect (\(geo.videoAspect))")
         windowedModeGeo = geo
-        if updateMPVWindowScale {
-          player.updateMPVWindowScale(using: geo)
-        }
         player.saveState()
       case .musicMode:
         miniPlayer.saveCurrentPlaylistHeightToPrefs()
         musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-        if updateMPVWindowScale {
-          player.updateMPVWindowScale(using: musicModeGeo.toPWGeometry())
-        }
         player.saveState()
       case .fullScreen, .fullScreenInteractive:
         return  // will never get here; see guard above
@@ -491,22 +484,14 @@ extension PlayerWindowController {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
 
-    defer {
-      // Do not cache supplied geometry. Assume caller will handle it.
-      if !isFullScreen, newGeometry == nil {
-        updateCachedGeometry(updateMPVWindowScale: currentLayout.mode == .windowed)
-        player.saveState()
-      }
-    }
-
     IINAAnimation.disableAnimation {
       if let newGeometry {
         log.verbose("ApplyWindowResize: \(newGeometry)")
+        /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
+        videoView.apply(newGeometry)
         if !isFullScreen {
           player.window.setFrameImmediately(newGeometry.windowFrame, animate: false)
         }
-        // Make sure this is up-to-date
-        videoView.apply(newGeometry)
       }
 
       // These may no longer be aligned correctly. Just hide them
@@ -524,9 +509,25 @@ extension PlayerWindowController {
 
       if currentLayout.isInteractiveMode {
         // Update interactive mode selectable box size. Origin is relative to viewport origin
-        cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
+        if let newGeometry {
+          let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
+          cropSettingsView?.cropBoxView.resized(with: newVideoRect)
+        } else {
+          cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
+        }
       }
     }
+
+    // Do not cache supplied geometry. Assume caller will handle it.
+    let isTransientResize = newGeometry != nil
+    if !isFullScreen && !isTransientResize {
+      updateCachedGeometry()
+      player.saveState()
+      if currentLayout.mode == .windowed {
+        player.updateMPVWindowScale(using: windowedModeGeo)
+      }
+    }
+
     player.events.emit(.windowResized, data: window.frame)
   }
 

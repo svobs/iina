@@ -259,6 +259,9 @@ extension PlayerWindowController {
     if transition.isEnteringMusicMode {
       showFadeableViewsDuration = startingAnimationDuration * 0.5
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5
+    } else if transition.isExitingInteractiveMode {
+      showFadeableViewsDuration = 0
+      fadeOutOldViewsDuration = startingAnimationDuration * 0.5
     } else {
       if !transition.needsAnimationForShowFadeables {
         showFadeableViewsDuration = 0
@@ -480,15 +483,17 @@ extension PlayerWindowController {
         // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
         let minVideoSizeIM = PWGeometry.computeMinVideoSize(forAspectRatio: transition.inputGeometry.videoAspect, mode: .windowedInteractive)
         let minViewportSize = PWGeometry.computeMinSize(withAspect: transition.inputGeometry.videoAspect,
-                                                                minWidth: minVideoSizeIM.width + minViewportMarginsIM.totalWidth,
-                                                                minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
+                                                        minWidth: minVideoSizeIM.width + minViewportMarginsIM.totalWidth,
+                                                        minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
         let newViewportSize = NSSize(width: max(resizedGeo.videoSize.width, minViewportSize.width),
-                                 height: max(resizedGeo.videoSize.height, minViewportSize.height))
+                                     height: max(resizedGeo.videoSize.height, minViewportSize.height))
         return resizedGeo.scaleViewport(to: newViewportSize)
 
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
-        let newWindowFrame = NSRect(origin: videoFrame.origin, size: CGSize(width: videoFrame.width, height: videoFrame.height + outsideTopBarHeight))
+        let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
+        let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
+                                    size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
         let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0, insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0, videoAspect: transition.outputGeometry.videoAspect)
         return resizedGeo
       }

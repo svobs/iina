@@ -462,7 +462,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     if abs(value - otherValue) < 1 {
       return otherValue
     } else {
-      return round(value)
+      let intVal = Int(round(value))
+      return CGFloat(intVal.isOdd ? intVal : intVal)
     }
   }
 
@@ -608,10 +609,11 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
   private func adjustWindowOrigin(forNewWindowSize newWindowSize: NSSize) -> NSPoint {
     // Round the results to prevent excessive window drift due to small imprecisions in calculation
-    let deltaX = (newWindowSize.width - windowFrame.size.width) / 2
-    let deltaY = (newWindowSize.height - windowFrame.size.height) / 2
-    return NSPoint(x: round(windowFrame.origin.x - deltaX),
-                   y: round(windowFrame.origin.y - deltaY))
+    let deltaX = round((newWindowSize.width - windowFrame.size.width) / 2)
+    let deltaY = round((newWindowSize.height - windowFrame.size.height) / 2)
+    let newOrigin = NSPoint(x: windowFrame.origin.x - deltaX,
+                            y: windowFrame.origin.y - deltaY)
+    return newOrigin
   }
 
   func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWGeometry {
@@ -707,6 +709,10 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       newViewportSize = NSSize(width: min(newViewportSize.width, maxViewportSize.width),
                                height: min(newViewportSize.height, maxViewportSize.height))
     }
+
+    let oldViewportSize = viewportSize
+    newViewportSize = NSSize(width: PWGeometry.snap(newViewportSize.width, to: oldViewportSize.width),
+                             height: PWGeometry.snap(newViewportSize.height, to: oldViewportSize.height))
 
     // -- Window size calculation
 

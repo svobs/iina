@@ -162,7 +162,7 @@ class PlaybackInfo {
     // Ideally this should never happen
     // TODO: preload video information using ffmpeg before opening window
     log.warn("No videoAspect found in videoGeo! Falling back to default 16:9 aspect")
-    return 16.0/9.0
+    return CGSize(width: 16.0, height: 9.0).mpvAspect
   }
 
   /// If `true`, then `videoView` is used to display album art, or default album art, which is always square

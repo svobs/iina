@@ -16,6 +16,13 @@ extension Int {
   static  func %% (_ left: Int, _ right: Int) -> Int {
     return (left % right + right) % right
   }
+
+  var isEven: Bool {
+    return self % 2 == 0
+  }
+  var isOdd: Bool {
+    return self % 2 != 0
+  }
 }
 
 extension NSSlider {
