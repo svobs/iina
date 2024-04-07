@@ -416,21 +416,23 @@ extension PlayerWindowController {
 
     switch outputLayout.mode {
     case .windowed:
-      var prevWindowedGeo = geo.windowedMode
+      var prevWindowedGeo = inputGeometry
       if inputGeometry.mode == .windowedInteractive {
-        prevWindowedGeo = prevWindowedGeo.fromWindowedInteractiveMode()
+        /// `windowedInteractive` -> `windowed`
+        log.verbose("Exiting interactive mode: converting windowedInteractive geo to windowed for outputGeo")
+        prevWindowedGeo = inputGeometry.fromWindowedInteractiveMode()
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, videoAspect: inputGeometry.videoAspect,
                                                       keepFullScreenDimensions: !isInitialLayout)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
-        // Already in interactive mode: reuse windowedMode geo
-        return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
-                                                  videoAspect: geo.windowedMode.videoAspect)
+        log.verbose("Already in interactive mode: converting windowed geo to interactiveWindowed for outputGeo")
+        return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+                                             videoAspect: geo.windowedMode.videoAspect)
       }
-      // Entering interactive mode: convert
-      return geo.windowedMode.toInteractiveMode()
+      /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
+      return inputGeometry.toInteractiveMode()
 
     case .fullScreen, .fullScreenInteractive:
       // Full screen always uses same screen as windowed mode
@@ -454,6 +456,7 @@ extension PlayerWindowController {
       }
 
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
+
       if transition.isEnteringInteractiveMode {
         let resizedGeo = transition.inputGeometry.withResizedBars(mode: transition.inputLayout.mode,
                                                                   outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
@@ -469,13 +472,13 @@ extension PlayerWindowController {
                                                                 minHeight: minVideoSizeIM.height + minViewportMarginsIM.totalHeight)
         let newViewportSize = NSSize(width: max(resizedGeo.videoSize.width, minViewportSize.width),
                                  height: max(resizedGeo.videoSize.height, minViewportSize.height))
-
         return resizedGeo.scaleViewport(to: newViewportSize)
+
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
         let newWindowFrame = NSRect(origin: videoFrame.origin, size: CGSize(width: videoFrame.width, height: videoFrame.height + outsideTopBarHeight))
         let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0, insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0, videoAspect: transition.outputGeometry.videoAspect)
-        return resizedGeo//.scaleViewport(lockViewportToVideoSize: true)
+        return resizedGeo
       }
 
     } else if transition.isEnteringMusicMode {

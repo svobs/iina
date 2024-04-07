@@ -345,7 +345,7 @@ extension PlayerWindowController {
         // Use previous geometry's aspect. This method should never be called if aspect is changing - that should be set elsewhere.
         // This method should only be called for changes to windowFrame (origin or size)
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
-        assert(windowedModeGeo.videoAspect == geo.videoAspect)
+        assert(windowedModeGeo.videoAspect == geo.videoAspect, "windowedMode videoAspect (\(windowedModeGeo.videoAspect)) != new videoAspect (\(geo.videoAspect))")
         windowedModeGeo = geo
         if updateMPVWindowScale {
           player.updateMPVWindowScale(using: geo)

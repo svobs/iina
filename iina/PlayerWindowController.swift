@@ -3240,7 +3240,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
               log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
-              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize)
+              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize, lockViewportToVideoSize: false)
             } else {
               // If not locking viewport to video, just reuse viewport
               uncroppedWindowedGeo = existingGeoWithNewAspect.refit()
@@ -3318,7 +3318,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
 
-      // Crop animation:
       /// Must update `windowedModeGeo` outside of animation task!
       // this works for full screen modes too
       let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, videoAspect: videoSizeRaw.mpvAspect)
@@ -3327,6 +3326,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         windowedModeGeo = newIMGeo
       }
 
+      // Crop animation:
       let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
       animationTasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
         hideCropControls()

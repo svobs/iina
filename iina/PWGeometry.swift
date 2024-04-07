@@ -192,6 +192,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       self.viewportMargins = PWGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
     }
 
+    assert((viewportSize.width - videoSize.width >= 0) && (viewportSize.height - videoSize.height >= 0),
+           "viewportSize \(viewportSize) cannot be smaller than videoSize \(videoSize)")
     assert(insideLeadingBarWidth >= 0, "Expected insideLeadingBarWidth >= 0, found \(insideLeadingBarWidth)")
   }
 
@@ -580,7 +582,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                   height: containerSize.height - outsideBarsTotalHeight - topMarginHeight)
   }
 
-  // Computes & returns the max video size with proper aspect ratio which can fit in the given container, after subtracting outside bars
+  // Computes & returns the max video size with proper aspect ratio which can fit in the given container, 
+  // after subtracting outside bars
   fileprivate func computeMaxVideoSize(in containerSize: NSSize) -> NSSize {
     let maxViewportSize = computeMaxViewportSize(in: containerSize)
     return PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: maxViewportSize, mode: mode)
@@ -841,65 +844,63 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                        keepFullScreenDimensions: Bool = false) -> PWGeometry {
 
     // Inside bars
-    let newGeo = clone(fitOption: fitOption, mode: mode,
-                       insideTopBarHeight: insideTopBarHeight,
-                       insideTrailingBarWidth: insideTrailingBarWidth,
-                       insideBottomBarHeight: insideBottomBarHeight,
-                       insideLeadingBarWidth: insideLeadingBarWidth,
-                       videoAspect: videoAspect)
+    var resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode,
+                                     insideTopBarHeight: insideTopBarHeight,
+                                     insideTrailingBarWidth: insideTrailingBarWidth,
+                                     insideBottomBarHeight: insideBottomBarHeight,
+                                     insideLeadingBarWidth: insideLeadingBarWidth,
+                                     videoAspect: videoAspect)
 
-    let resizedBarsGeo = newGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
-                                                       newOutsideTrailingBarWidth: outsideTrailingBarWidth,
-                                                       newOutsideBottomBarHeight: outsideBottomBarHeight,
-                                                       newOutsideLeadingBarWidth: outsideLeadingBarWidth)
+    var resizedBarsGeo = resizedInsideBarsGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
+                                                                     newOutsideTrailingBarWidth: outsideTrailingBarWidth,
+                                                                     newOutsideBottomBarHeight: outsideBottomBarHeight,
+                                                                     newOutsideLeadingBarWidth: outsideLeadingBarWidth)
 
     if keepFullScreenDimensions {
-      /// This will see the new mode and resize the viewport margins appropriately.
-      let outputGeo = resizedBarsGeo.refit()
-
-      let ΔOutsideWidth = outputGeo.outsideBarsTotalWidth - outsideBarsTotalWidth
-      let ΔOutsideHeight = outputGeo.outsideBarsTotalHeight - outsideBarsTotalHeight
-
-      if let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: outputGeo.fitOption) {
-        // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
-        if ΔOutsideWidth != 0, windowFrame.width == screenFrame.width {
-          let newViewportWidth = screenFrame.width - outputGeo.outsideBarsTotalWidth
-          let widthRatio = newViewportWidth / viewportSize.width
-          let heightFillsScreen = windowFrame.height == screenFrame.height
-          let newViewportHeight = heightFillsScreen ? viewportSize.height : round(viewportSize.height * widthRatio)
-          let resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
-          let resizedGeo = outputGeo.scaleViewport(to: resizedViewport, mode: outputGeo.mode)
-          /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize` is false.
-          /// 1 of 2 - See below
-          if resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
-            // Window origin was changed to keep it on screen. OK to use this
-            return resizedGeo
-          } else {
-            // Use previous origin, because scaleViewport() causes it to move when we don't want it to
-            return resizedGeo.clone(windowFrame: windowFrame.clone(size: resizedGeo.windowFrame.size))
-          }
-        }
-
-        // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
-        if ΔOutsideHeight != 0, windowFrame.height == screenFrame.height {
-          let newViewportHeight = screenFrame.height - outputGeo.outsideBarsTotalHeight
-          let heightRatio = newViewportHeight / viewportSize.height
-          let widthFillsScreen = windowFrame.width == screenFrame.width
-          let newViewportWidth = widthFillsScreen ? viewportSize.width : round(viewportSize.width * heightRatio)
-          let resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
-          let resizedGeo = outputGeo.scaleViewport(to: resizedViewport, mode: outputGeo.mode)
-          /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize` is false.
-          /// 2 of 2
-          if resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
-            // Window origin was changed to keep it on screen. OK to use this
-            return resizedGeo
-          } else {
-            return resizedGeo.clone(windowFrame: windowFrame.clone(size: resizedGeo.windowFrame.size))
-          }
-        }
-      }
+      resizedBarsGeo = preserveFullScreenDimensions(resizedBarsGeo)
     }
     return resizedBarsGeo
+  }
+
+  private func preserveFullScreenDimensions(_ geo: PWGeometry) -> PWGeometry {
+    guard let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: geo.fitOption) else { return geo }
+    let isFullScreenWidth = windowFrame.width == screenFrame.width
+    let isFullScreenHeight = windowFrame.height == screenFrame.height
+
+    let ΔOutsideWidth = geo.outsideBarsTotalWidth - outsideBarsTotalWidth
+    let ΔOutsideHeight = geo.outsideBarsTotalHeight - outsideBarsTotalHeight
+
+    Logger.log("WithResizedBars: isFullScreenWidth=\(isFullScreenWidth.yn) isFullScreenHeight=\(isFullScreenHeight) keepInContainer=\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
+
+    let resizedViewport: NSSize
+    // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
+    if ΔOutsideWidth != 0, isFullScreenWidth {
+      let newViewportWidth = screenFrame.width - geo.outsideBarsTotalWidth
+      let widthRatio = newViewportWidth / viewportSize.width
+      let newViewportHeight = isFullScreenHeight ? viewportSize.height : round(viewportSize.height * widthRatio)
+      resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
+    } else if ΔOutsideHeight != 0, isFullScreenHeight {
+      // If window already fills screen height, keep window height (do not shrink window) when collapsing outside bars.
+      let newViewportHeight = screenFrame.height - geo.outsideBarsTotalHeight
+      let heightRatio = newViewportHeight / viewportSize.height
+      let newViewportWidth = isFullScreenWidth ? viewportSize.width : round(viewportSize.width * heightRatio)
+      resizedViewport = NSSize(width: newViewportWidth, height: newViewportHeight)
+    } else {
+      return geo
+    }
+
+    var resizedGeo = geo.scaleViewport(to: resizedViewport, mode: geo.mode)
+
+    if !resizedGeo.fitOption.shouldMoveWindowToKeepInContainer {
+      /// Kludge to fix unwanted window movement when opening/closing sidebars and `Preference.moveWindowIntoVisibleScreenOnResize==false`.
+      // Use previous origin, because scaleViewport() causes it to move when we don't want it to.
+      let newOrigin = CGPoint(x: isFullScreenWidth ? windowFrame.origin.x : resizedGeo.windowFrame.origin.x,
+                              y: isFullScreenHeight ? windowFrame.origin.y : resizedGeo.windowFrame.origin.y)
+      let newWindowFrame = NSRect(origin: newOrigin, size: resizedGeo.windowFrame.size)
+      resizedGeo = resizedGeo.clone(windowFrame: newWindowFrame)
+    }
+    /// Else window origin was already changed by `scaleViewport` to keep it on screen. No change needed
+    return resizedGeo
   }
 
   /** Calculate the window frame from a parsed struct of mpv's `geometry` option. */
@@ -1064,7 +1065,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return resizedGeo.refit()
   }
 
-  // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes
+  /// Transition `windowedInteractive` mode geometry to `windowed` geometry.
+  /// Note that this is not a direct conversion; it will modify the view sizes.
   func fromWindowedInteractiveMode() -> PWGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowedInteractive)
