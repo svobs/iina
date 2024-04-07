@@ -41,106 +41,93 @@ extension PlayerWindowController {
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
     guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else { return }
 
-    guard let newVideoSizeACR = newVidGeo.videoSizeACR, let videoSizeRaw = newVidGeo.videoSizeRaw else {
+    guard !isRestoring else {
+      log.verbose("[applyVidGeo] Restore is in progress; no op")
+      return
+    }
+
+    guard let newVideoSizeACR = newVidGeo.videoSizeACR, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
       log.error("[applyVidGeo] Could not get videoSizeACR from mpv! Cancelling adjustment")
       return
     }
 
     let newVideoAspect = newVideoSizeACR.mpvAspect
-    log.verbose("[applyVidGeo Start] VideoRaw:\(newVidGeo.videoSizeRaw?.debugDescription ?? "nil") VideoACR:\(newVideoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
+    log.verbose("[applyVidGeo Start] VideoRaw:\(newVideoSizeRaw) VideoACR:\(newVideoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
 
     if #available(macOS 10.12, *) {
       pip.aspectRatio = newVideoSizeACR
     }
-    let screen = bestScreen
     let currentLayout = currentLayout
 
-    if isRestoring {
-      if isInInteractiveMode {
-        /// If restoring into interactive mode, we didn't have `videoSizeACR` while doing layout. Add it now (if needed)
-        let imVideoSize: NSSize
-        if currentLayout.isFullScreen {
-          let fsInteractiveModeGeo = currentLayout.buildFullScreenGeometry(inside: screen, videoAspect: newVideoAspect)
-          imVideoSize = fsInteractiveModeGeo.videoSize
-        } else { // windowed
-          imVideoSize = windowedModeGeo.videoSize
-        }
-        log.debug("[applyVidGeo F-1] Restoring crop box origVideoSize=\(videoSizeRaw), imVideoSize=\(imVideoSize)")
-        addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: imVideoSize)
-
-      } else {
-        log.verbose("[applyVidGeo A Done] Restore is in progress; ignoring mpv video-reconfig")
-      }
-
-    } else if currentLayout.mode == .musicMode {
+    if currentLayout.mode == .musicMode {
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
       let newGeometry = musicModeGeo.clone(videoAspect: newVideoAspect)
       applyMusicModeGeoInAnimationPipeline(newGeometry)
-
-    } else { // Windowed or full screen
-      // FIXME: incorporate scale
-      if isInitialSizeDone,
-         let oldVideoSizeRaw = oldVidGeo.videoSizeRaw,
-         let newVideoSizeRaw = newVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
-         let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(newVideoSizeACR),
-         // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
-         videoView.frame.size.mpvAspect == newVideoSizeACR.mpvAspect {
-        log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
-        return
-      }
-
-      let windowGeo = windowedModeGeo.clone(videoAspect: newVideoSizeACR.mpvAspect)
-      let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
-
-      let newWindowGeo: PWGeometry
-      if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
-        newWindowGeo = resizedGeo
-      } else {
-        if justOpenedFileManually {
-          log.verbose("[applyVidGeo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
-          newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                   videoAspect: newVideoSizeACR.mpvAspect, keepFullScreenDimensions: true)
-        } else {
-          // video size changed during playback
-          newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: newVideoSizeACR)
-        }
-      }
-
-      var duration = IINAAnimation.VideoReconfigDuration
-      var timing = CAMediaTimingFunctionName.easeInEaseOut
-      if !isInitialSizeDone {
-        // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
-        log.verbose("[applyVidGeo D-1a] Setting isInitialSizeDone=YES")
-        isInitialSizeDone = true
-        duration = IINAAnimation.InitialVideoReconfigDuration
-        timing = .linear
-      }
-      /// Finally call `setFrame()`
-      log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
-
-      if currentLayout.mode == .windowed {
-        applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
-
-      } else if currentLayout.mode == .fullScreen {
-        let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, videoAspect: newWindowGeo.videoAspect)
-
-        animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-          // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-          log.verbose("[applyVidGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
-          videoView.apply(fsGeo)
-        }))
-
-      } else {
-        // Update this for later use if not currently in windowed mode
-        windowedModeGeo = newWindowGeo
-      }
-
-      // UI and slider
-      log.debug("[applyVidGeo Done] Emitting windowSizeAdjusted")
-      player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
+      return
     }
+
+    // Windowed or full screen
+    // FIXME: incorporate scale
+    if isInitialSizeDone,
+       let oldVideoSizeRaw = oldVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
+       let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(newVideoSizeACR),
+       // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
+       videoView.frame.size.mpvAspect == newVideoSizeACR.mpvAspect {
+      log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
+      return
+    }
+
+    let windowGeo = windowedModeGeo.clone(videoAspect: newVideoSizeACR.mpvAspect)
+    let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
+
+    let newWindowGeo: PWGeometry
+    if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
+      newWindowGeo = resizedGeo
+    } else {
+      if justOpenedFileManually {
+        log.verbose("[applyVidGeo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
+        newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
+                                                                 videoAspect: newVideoSizeACR.mpvAspect, keepFullScreenDimensions: true)
+      } else {
+        // video size changed during playback
+        newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: newVideoSizeACR)
+      }
+    }
+
+    var duration = IINAAnimation.VideoReconfigDuration
+    var timing = CAMediaTimingFunctionName.easeInEaseOut
+    if !isInitialSizeDone {
+      // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+      log.verbose("[applyVidGeo D-1a] Setting isInitialSizeDone=YES")
+      isInitialSizeDone = true
+      duration = IINAAnimation.InitialVideoReconfigDuration
+      timing = .linear
+    }
+    /// Finally call `setFrame()`
+    log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
+
+    if currentLayout.mode == .windowed {
+      applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
+
+    } else if currentLayout.mode == .fullScreen {
+      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, videoAspect: newWindowGeo.videoAspect)
+
+      animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
+        // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
+        log.verbose("[applyVidGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
+        videoView.apply(fsGeo)
+      }))
+
+    } else {
+      // Update this for later use if not currently in windowed mode
+      windowedModeGeo = newWindowGeo
+    }
+
+    // UI and slider
+    log.debug("[applyVidGeo Done] Emitting windowSizeAdjusted")
+    player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
   }
 
   private func resizeAfterFileOpen(justOpenedFile: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {

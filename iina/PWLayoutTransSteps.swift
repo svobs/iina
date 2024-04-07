@@ -795,12 +795,14 @@ extension PlayerWindowController {
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
-      if let videoSizeACR = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
-        addOrReplaceCropBoxSelection(origVideoSize: videoSizeACR, videoViewSize: transition.outputGeometry.videoSize)
-        // Hide for now, to prepare for a nice fade-in animation
-        cropController.cropBoxView.isHidden = true
-        cropController.cropBoxView.alphaValue = 0
-        cropController.cropBoxView.layoutSubtreeIfNeeded()
+      if let videoSizeRaw = player.info.videoGeo.videoSizeRaw {
+        if let cropController = cropSettingsView {
+          addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+          // Hide for now, to prepare for a nice fade-in animation
+          cropController.cropBoxView.isHidden = true
+          cropController.cropBoxView.alphaValue = 0
+          cropController.cropBoxView.layoutSubtreeIfNeeded()
+        }
       } else if !player.info.isRestoring {  // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
       }

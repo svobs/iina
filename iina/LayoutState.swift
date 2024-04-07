@@ -37,6 +37,10 @@ enum PlayerWindowMode: Int {
     return self == .windowed || self == .windowedInteractive
   }
 
+  var isFullScreen: Bool {
+    return self == .fullScreen || self == .fullScreenInteractive
+  }
+
   var isInteractiveMode: Bool {
     return self == .windowedInteractive || self == .fullScreenInteractive
   }
@@ -165,7 +169,7 @@ extension PlayerWindowController {
                                     lastVisibleTab: trailingSidebarLastVisibleTab)
       let mode = newMode ?? oldSpec.mode
       let interactiveMode = interactiveMode ?? oldSpec.interactiveMode
-      let isLegacyStyle = isLegacyStyle ?? (mode == .fullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
+      let isLegacyStyle = isLegacyStyle ?? (mode.isFullScreen ? Preference.bool(for: .useLegacyFullScreen) : Preference.bool(for: .useLegacyWindowedMode))
       return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar,
                         mode: mode,
                         isLegacyStyle: isLegacyStyle,
@@ -202,7 +206,7 @@ extension PlayerWindowController {
     }
 
     var isFullScreen: Bool {
-      return mode == .fullScreen || mode == .fullScreenInteractive
+      return mode.isFullScreen
     }
 
     var isWindowed: Bool {

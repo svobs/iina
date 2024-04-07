@@ -2055,11 +2055,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // Animation: Enter FullScreen
   private func animateEntryIntoFullScreen(withDuration duration: TimeInterval, isLegacy: Bool) {
-    log.verbose("Animating entry into \(isLegacy ? "legacy " : "")full screen, duration: \(duration)")
     let oldLayout = currentLayout
 
+    let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreen
+    log.verbose("Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "")\(newMode)")
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
-    let fullscreenLayout = LayoutSpec.fromPreferences(andMode: .fullScreen, isLegacyStyle: isLegacy, fillingInFrom: lastWindowedLayoutSpec)
+    let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
 
     buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "")FullScreen", from: oldLayout, to: fullscreenLayout, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
   }
