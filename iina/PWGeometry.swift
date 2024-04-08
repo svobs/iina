@@ -9,7 +9,7 @@
 import Foundation
 
 /// Data structure containing size values of four sides
-struct BoxQuad: Equatable {
+struct MarginQuad: Equatable {
   let top: CGFloat
   let trailing: CGFloat
   let bottom: CGFloat
@@ -23,7 +23,7 @@ struct BoxQuad: Equatable {
     return top + bottom
   }
 
-  static let zero = BoxQuad(top: 0, trailing: 0, bottom: 0, leading: 0)
+  static let zero = MarginQuad(top: 0, trailing: 0, bottom: 0, leading: 0)
 }
 
 /// Describes how a given player window must fit inside its given screen.
@@ -142,7 +142,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   let insideBottomBarHeight: CGFloat
   let insideLeadingBarWidth: CGFloat
 
-  let viewportMargins: BoxQuad
+  let viewportMargins: MarginQuad
   let videoAspect: CGFloat
   let videoSize: NSSize
 
@@ -152,7 +152,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption, mode: PlayerWindowMode, topMarginHeight: CGFloat,
        outsideTopBarHeight: CGFloat, outsideTrailingBarWidth: CGFloat, outsideBottomBarHeight: CGFloat, outsideLeadingBarWidth: CGFloat,
        insideTopBarHeight: CGFloat, insideTrailingBarWidth: CGFloat, insideBottomBarHeight: CGFloat, insideLeadingBarWidth: CGFloat,
-       viewportMargins: BoxQuad? = nil, videoAspect: CGFloat) {
+       viewportMargins: MarginQuad? = nil, videoAspect: CGFloat) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -188,7 +188,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     if let viewportMargins {
       self.viewportMargins = viewportMargins
     } else {
-      let insideBars = BoxQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+      let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
       self.viewportMargins = PWGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
     }
 
@@ -240,7 +240,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
              outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
              insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
              insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
-             viewportMargins: BoxQuad? = nil,
+             viewportMargins: MarginQuad? = nil,
              videoAspect: CGFloat? = nil) -> PWGeometry {
 
     return PWGeometry(windowFrame: windowFrame ?? self.windowFrame,
@@ -262,12 +262,12 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Computed properties
 
-  var outsideBars: BoxQuad {
-    BoxQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+  var outsideBars: MarginQuad {
+    MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
   }
 
-  var insideBars: BoxQuad {
-    BoxQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+  var insideBars: MarginQuad {
+    MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
   }
 
   var description: String {
@@ -318,12 +318,12 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return NSSize(width: outsideBarsTotalWidth, height: outsideBarsTotalHeight)
   }
 
-  static func minViewportMargins(forMode mode: PlayerWindowMode) -> BoxQuad {
+  static func minViewportMargins(forMode mode: PlayerWindowMode) -> MarginQuad {
     switch mode {
     case .windowedInteractive, .fullScreenInteractive:
       return Constants.InteractiveMode.viewportMargins
     default:
-      return BoxQuad.zero
+      return MarginQuad.zero
     }
   }
 
@@ -468,7 +468,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   }
 
   private static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
-                                       margins: BoxQuad? = nil, mode: PlayerWindowMode) -> NSSize {
+                                       margins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
     if viewportSize.width == 0 || viewportSize.height == 0 {
       return NSSize.zero
     }
@@ -493,13 +493,13 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     return videoSize
   }
 
-  static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: BoxQuad, mode: PlayerWindowMode) -> BoxQuad {
+  static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: MarginQuad, mode: PlayerWindowMode) -> MarginQuad {
     guard viewportSize.width > 0 && viewportSize.height > 0 else {
-      return BoxQuad.zero
+      return MarginQuad.zero
     }
     if mode == .musicMode {
       // Viewport size is always equal to video size in music mode
-      return BoxQuad.zero
+      return MarginQuad.zero
     }
     var leadingMargin: CGFloat = 0
     var trailingMargin: CGFloat = 0
@@ -582,7 +582,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       Logger.log("Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
     }
     let unusedHeight = viewportSize.height - videoSize.height
-    let computedMargins = BoxQuad(top: (unusedHeight * 0.5).rounded(.down), trailing: trailingMargin,
+    let computedMargins = MarginQuad(top: (unusedHeight * 0.5).rounded(.down), trailing: trailingMargin,
                                   bottom: (unusedHeight * 0.5).rounded(.up), leading: leadingMargin)
     return computedMargins
   }
@@ -1125,7 +1125,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     let topHeightOutsideCropBox = max(0, videoSize.height - cropBoxInWinCoords.height - bottomHeightOutsideCropBox)    // cannot be < 0
     let leadingWidthOutsideCropBox = round(cropBoxInWinCoords.origin.x)
     let trailingWidthOutsideCropBox = max(0, videoSize.width - cropBoxInWinCoords.width - leadingWidthOutsideCropBox)  // cannot be < 0
-    let newViewportMargins = BoxQuad(top: viewportMargins.top + topHeightOutsideCropBox,
+    let newViewportMargins = MarginQuad(top: viewportMargins.top + topHeightOutsideCropBox,
                                      trailing: viewportMargins.trailing + trailingWidthOutsideCropBox,
                                      bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                      leading: viewportMargins.leading + leadingWidthOutsideCropBox)

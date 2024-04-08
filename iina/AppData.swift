@@ -195,7 +195,7 @@ struct Constants {
     static let outsideTopBarHeight = PlayerWindowController.standardTitleBarHeight
 
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
-    static let viewportMargins = BoxQuad(top: PlayerWindowController.standardTitleBarHeight, trailing: 24,
+    static let viewportMargins = MarginQuad(top: PlayerWindowController.standardTitleBarHeight, trailing: 24,
                                          bottom: PlayerWindowController.standardTitleBarHeight, leading: 24)
   }
   struct Distance {

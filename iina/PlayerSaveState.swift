@@ -938,7 +938,7 @@ extension PWGeometry {
         return nil
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
-      let viewportMargins = BoxQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
+      let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
                                     bottom: viewportMarginBottom, leading: viewportMarginLeading)
       return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
                              outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
