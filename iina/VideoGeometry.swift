@@ -204,7 +204,7 @@ struct VideoGeometry: CustomStringConvertible {
   // Etc
 
   var description: String {
-    return "VideoGeometry:{vidSizeRaw=\(rawWidth)x\(rawHeight) vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropBox=\(cropBox?.debugDescription ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.debugDescription ?? "nil")}"
+    return "VideoGeometry:{vidSizeRaw=\(rawWidth)x\(rawHeight) vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropBox=\(cropBox?.description ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil")}"
   }
 
   // Static utils

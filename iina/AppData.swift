@@ -181,7 +181,7 @@ struct Constants {
     static let settingsWidth: CGFloat = 360
 
     /// This needs to fit floating OSC + the margin around it
-    static let minSpaceBetweenInsideSidebars: CGFloat = 220
+    static let minWidthBetweenInsideSidebars: CGFloat = 220
 
     /// Sidebar tab buttons
     static let defaultDownshift: CGFloat = 0
@@ -218,6 +218,10 @@ struct Constants {
       static let minPlaylistHeight: CGFloat = 138
 
       static let playSliderKnobHeight: CGFloat = 12
+    }
+
+    struct PWGeometry {
+      static let minViewportHeight = PlayerWindowController.standardTitleBarHeight + 80
     }
 
     static let musicModePlaySliderKnobHeight: CGFloat = 12

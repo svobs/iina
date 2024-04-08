@@ -386,12 +386,17 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   func minViewportWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
     let mode = mode ?? self.mode
     return max(PWGeometry.minVideoWidth(forMode: mode) + PWGeometry.minViewportMargins(forMode: mode).totalWidth,
-               insideLeadingBarWidth + insideTrailingBarWidth + Constants.Sidebar.minSpaceBetweenInsideSidebars)
+               insideLeadingBarWidth + insideTrailingBarWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
   }
 
   func minViewportHeight(mode: PlayerWindowMode? = nil) -> CGFloat {
     let mode = mode ?? self.mode
-    return PWGeometry.minVideoHeight(forMode: mode) + PWGeometry.minViewportMargins(forMode: mode).totalHeight
+    return max(PWGeometry.minVideoHeight(forMode: mode) + PWGeometry.minViewportMargins(forMode: mode).totalHeight,
+               Constants.Distance.PWGeometry.minViewportHeight + insideBottomBarHeight + insideTopBarHeight)
+  }
+
+  func minViewportSize(forMode mode: PlayerWindowMode? = nil) -> NSSize {
+    return NSSize(width: minViewportWidth(mode: mode), height: minViewportHeight(mode: mode))
   }
 
   func minWindowWidth(mode: PlayerWindowMode? = nil) -> CGFloat {
@@ -675,6 +680,9 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     } else {
       maxViewportSize = nil
     }
+    let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
+    let minViewportWidth = minViewportWidth(mode: mode)
+    let minViewportHeight = minViewportHeight(mode: mode)
 
     var newViewportSize = desiredSize ?? viewportSize
     if Logger.isTraceEnabled {
@@ -683,16 +691,14 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
     // -- Viewport size calculation
 
-    /// Make sure viewport size is at least as large as min.
-    /// This is especially important when inside sidebars are taking up most of the space & `lockViewportToVideoSize` is `true`.
-    /// Take min viewport margins into acocunt
-    let minVideoSize = PWGeometry.computeMinVideoSize(forAspectRatio: videoAspect, mode: mode)
-    let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
-    newViewportSize = NSSize(width: max(newViewportSize.width, minVideoSize.width + minViewportMargins.totalWidth),
-                             height: max(newViewportSize.height, minVideoSize.height + minViewportMargins.totalHeight))
-
     if lockViewportToVideoSize {
       if let maxViewportSize {
+        /// Make sure viewport size is at least as large as min.
+        /// This is especially important when inside sidebars are taking up most of the space & `lockViewportToVideoSize` is `true`.
+        /// Take min viewport margins into acocunt
+        newViewportSize = NSSize(width: max(minViewportWidth, newViewportSize.width),
+                                 height: max(minViewportHeight, newViewportSize.height))
+
         /// Constrain `viewportSize` within `containerFrame`. Gotta do this BEFORE computing videoSize.
         /// So we do it again below. Big deal. Been mucking with this code way too long. It's fine.
         newViewportSize = NSSize(width: min(newViewportSize.width, maxViewportSize.width),
@@ -705,12 +711,9 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                height: newVideoSize.height + minViewportMargins.totalHeight)
     }
 
-    let minViewportWidth = minViewportWidth(mode: mode)
-    let minViewportHeight = minViewportHeight(mode: mode)
+    // Now enforce min & max viewport size [again]:
     newViewportSize = NSSize(width: max(minViewportWidth, newViewportSize.width),
                              height: max(minViewportHeight, newViewportSize.height))
-
-    /// Constrain `viewportSize` within `containerFrame` if relevant:
     if let maxViewportSize {
       newViewportSize = NSSize(width: min(newViewportSize.width, maxViewportSize.width),
                                height: min(newViewportSize.height, maxViewportSize.height))
@@ -873,7 +876,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                        keepFullScreenDimensions: Bool = false) -> PWGeometry {
 
     // Inside bars
-    var resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode,
+    let resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode,
                                      insideTopBarHeight: insideTopBarHeight,
                                      insideTrailingBarWidth: insideTrailingBarWidth,
                                      insideBottomBarHeight: insideBottomBarHeight,
