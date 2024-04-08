@@ -77,8 +77,8 @@
 /* Class = "NSTextFieldCell"; title = "Destination:"; ObjectID = "PhL-vP-i7L"; */
 "PhL-vP-i7L.title" = "Destination:";
 
-/* Class = "NSButtonCell"; title = "Add files in the same folder automatically"; ObjectID = "QJq-fO-hhK"; */
-"QJq-fO-hhK.title" = "Add files in the same folder automatically";
+/* Class = "NSButtonCell"; title = "Automatically add files in the same folder to playlist"; ObjectID = "QJq-fO-hhK"; */
+"QJq-fO-hhK.title" = "Automatically add files in the same folder to playlist";
 
 /* Class = "NSMenuItem"; title = "Monthly"; ObjectID = "REP-70-XOi"; */
 "REP-70-XOi.title" = "Monthly";
