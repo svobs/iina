@@ -83,7 +83,8 @@ extension PlayerWindowController {
     let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
     let newWindowGeo: PWGeometry
-    if let resizedGeo = resizeAfterFileOpen(justOpenedFile: justOpenedFile, windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
+    if justOpenedFile, let resizedGeo = resizeAfterFileOpen(justOpenedFileManually: justOpenedFileManually,
+                                                            windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
       newWindowGeo = resizedGeo
     } else {
       if justOpenedFileManually {
@@ -130,21 +131,15 @@ extension PlayerWindowController {
     player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
   }
 
-  private func resizeAfterFileOpen(justOpenedFile: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
-    guard justOpenedFile else {
-      // video size changed during playback
-      log.verbose("[applyVidGeo C] justOpenedFile=NO → returning NO for shouldResize")
-      return nil
-    }
-
+  private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
       log.verbose("[applyVidGeo C] justOpenedFile & resizeTiming='Always' → returning YES for shouldResize")
     case .onlyWhenOpen:
-      log.verbose("[applyVidGeo C] justOpenedFile & resizeTiming='OnlyWhenOpen' → returning justOpenedFile (\(justOpenedFile.yesno)) for shouldResize")
-      guard justOpenedFile else {
+      log.verbose("[applyVidGeo C] justOpenedFile & resizeTiming='OnlyWhenOpen' → returning justOpenedFileManually (\(justOpenedFileManually.yesno)) for shouldResize")
+      guard justOpenedFileManually else {
         return nil
       }
     case .never:

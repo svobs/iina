@@ -1868,6 +1868,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func openWindow() {
     guard let window = self.window, let cv = window.contentView else { return }
     isClosing = false
+    isInitialSizeDone = false  // reset for reopen
 
     log.verbose("PlayerWindow openWindow starting")
 
@@ -1955,7 +1956,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     log.verbose("Window will close")
 
     isClosing = true
-    isInitialSizeDone = false  // reset for reopen
 
     // Close PIP
     if pipStatus == .inPIP {

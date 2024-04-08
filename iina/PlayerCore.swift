@@ -2760,7 +2760,7 @@ class PlayerCore: NSObject {
 
   func canShowOSD() -> Bool {
     /// Note: use `loaded` (querying `isWindowLoaded` will initialize windowController unexpectedly)
-    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode || isStopped {
+    if !windowController.loaded || !Preference.bool(for: .enableOSD) || isUsingMpvOSD || info.isRestoring || isInInteractiveMode {
       return false
     }
     if isInMiniPlayer && !Preference.bool(for: .enableOSDInMusicMode) {

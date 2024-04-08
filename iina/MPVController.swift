@@ -1243,6 +1243,10 @@ not applying FFmpeg 9599 workaround
         break
       }
 
+      if !paused {
+        player.isStopped = false
+      }
+
       player.log.verbose("Δ mpv prop: 'pause' = \(paused)")
       if player.info.isPaused != paused || player.info.pauseStateWasChangedLocally {
         player.info.isPaused = paused
