@@ -394,21 +394,17 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     switch mode {
     case .windowed, .fullScreen:
       viewportMinW = Constants.WindowedMode.minViewportSize.width
+      // Take sidebars into account:
+      viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
+      return NSSize(width: viewportMinW, height: Constants.WindowedMode.minViewportSize.height)
     case .windowedInteractive, .fullScreenInteractive:
       viewportMinW = Constants.InteractiveMode.minWindowWidth
       // assume viewport aspect is same as video for now
+      return NSSize(width: viewportMinW, height: Constants.WindowedMode.minViewportSize.height)
     case .musicMode:
-      viewportMinW = Constants.Distance.MusicMode.minWindowWidth
       // note that a viewport height of zero would be ok if video was disabled in music mode
+      return NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: 0)
     }
-
-    // Take sidebars into account:
-    viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
-    let minMargins = minViewportMargins(forMode: mode)
-    let videoMinW = viewportMinW - minMargins.totalWidth
-    let videoMinH = (videoMinW / videoAspect).rounded(.toNearestOrEven)
-    let viewportMinH = videoMinH + minMargins.totalHeight
-    return NSSize(width: viewportMinW, height: viewportMinH)
   }
 
   static func minWindowSize(mode: PlayerWindowMode, videoAspect: CGFloat, outsideBars: MarginQuad, insideBars: MarginQuad) -> NSSize {
@@ -680,7 +676,6 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     } else {
       maxViewportSize = nil
     }
-    let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
     let minViewportSize = minViewportSize(mode: mode)
 
     var newViewportSize = desiredSize ?? viewportSize
@@ -706,8 +701,10 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
       /// Compute `videoSize` to fit within `viewportSize` (minus `viewportMargins`) while maintaining `videoAspect`:
       let newVideoSize = PWGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: newViewportSize, mode: mode)
-      newViewportSize = NSSize(width: newVideoSize.width,
-                               height: newVideoSize.height)
+      // Add min margins back in (needed for Interactive Mode)
+      let minViewportMargins = PWGeometry.minViewportMargins(forMode: mode)
+      newViewportSize = NSSize(width: newVideoSize.width + minViewportMargins.totalWidth,
+                               height: newVideoSize.height + minViewportMargins.totalHeight)
     }
 
     // Now enforce min & max viewport size [again]:
@@ -1134,9 +1131,9 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     let leadingWidthOutsideCropBox = round(cropBoxInWinCoords.origin.x)
     let trailingWidthOutsideCropBox = max(0, videoSize.width - cropBoxInWinCoords.width - leadingWidthOutsideCropBox)  // cannot be < 0
     let newViewportMargins = MarginQuad(top: viewportMargins.top + topHeightOutsideCropBox,
-                                     trailing: viewportMargins.trailing + trailingWidthOutsideCropBox,
-                                     bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
-                                     leading: viewportMargins.leading + leadingWidthOutsideCropBox)
+                                        trailing: viewportMargins.trailing + trailingWidthOutsideCropBox,
+                                        bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
+                                        leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
     Logger.log("[geo] Cropping from cropBox \(cropBox) x windowScale (\(scaleRatio)) → newVideoSize:\(cropBoxInWinCoords), newViewportMargins:\(newViewportMargins)")
 

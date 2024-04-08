@@ -265,14 +265,15 @@ extension PlayerWindowController {
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
   func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false) {
-    guard currentLayout.mode == .windowed || currentLayout.mode == .musicMode else { return }
     guard let window else { return }
 
     switch currentLayout.mode {
-    case .windowed:
+    case .windowed, .windowedInteractive:
       let newGeoUnconstrained = windowedModeGeo.clone(windowFrame: window.frame).scaleViewport(to: desiredViewportSize, fitOption: .noConstraints)
-      // User has actively resized the video. Assume this is the new preferred resolution
-      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+      if currentLayout.mode == .windowed {
+        // User has actively resized the video. Assume this is the new preferred resolution
+        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+      }
 
       let fitOption: ScreenFitOption = centerOnScreen ? .centerInVisibleScreen : .keepInVisibleScreen
       let newGeometry = newGeoUnconstrained.refit(fitOption)
@@ -567,7 +568,7 @@ extension PlayerWindowController {
 
   func buildApplyWindowGeoTask(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
                                timing: CAMediaTimingFunctionName = .easeInEaseOut) -> IINAAnimation.Task {
-    assert(currentLayout.spec.mode == .windowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+    assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
     return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame: \(newGeometry.windowFrame), videoAspect: \(newGeometry.videoAspect)")
       if !isWindowHidden {
