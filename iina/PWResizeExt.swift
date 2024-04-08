@@ -108,6 +108,9 @@ extension PlayerWindowController {
     }
     /// Finally call `setFrame()`
     log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
+    /// Update this now to prevent race condition with `updateCachedGeometry`, which might overwrite rotation & other complex changes.
+    /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
+    windowedModeGeo = newWindowGeo
 
     if currentLayout.mode == .windowed {
       applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
@@ -121,9 +124,6 @@ extension PlayerWindowController {
         videoView.apply(fsGeo)
       }))
 
-    } else {
-      // Update this for later use if not currently in windowed mode
-      windowedModeGeo = newWindowGeo
     }
 
     // UI and slider
@@ -327,7 +327,10 @@ extension PlayerWindowController {
         // Use previous geometry's aspect. This method should never be called if aspect is changing - that should be set elsewhere.
         // This method should only be called for changes to windowFrame (origin or size)
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
-        assert(windowedModeGeo.videoAspect == geo.videoAspect, "windowedMode videoAspect (\(windowedModeGeo.videoAspect)) != new videoAspect (\(geo.videoAspect))")
+        guard windowedModeGeo.videoAspect == geo.videoAspect else {
+          log.error("Cannot update cached geometry: windowedMode videoAspect (\(windowedModeGeo.videoAspect)) != new videoAspect (\(geo.videoAspect))")
+          return
+        }
         windowedModeGeo = geo
         player.saveState()
       case .musicMode:

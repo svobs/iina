@@ -2251,24 +2251,22 @@ class PlayerCore: NSObject {
   func fileIsCompletelyDoneLoading() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard info.justOpenedFile else { return }
-
     guard !mpv.isStale() else { return }
-    info.currentMedia?.loadStatus = .completelyLoaded // TODO: improve
 
     // Make sure to call this because mpv does not always trigger it.
-    // This is especially important when restoring into interactive mode because this call is needed to restore cropBox selection.
-    if let newVidGeo = mpv.queryForVideoGeometry() {
-      // Always send this to window controller. It should be smart enough to resize only when needed:
-      log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
-      windowController.applyVidGeo(newVidGeo)
-    }
+    guard let newVidGeo = mpv.queryForVideoGeometry() else { return }
+
+    // Always send this to window controller. It should be smart enough to resize only when needed:
+    log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
+    windowController.applyVidGeo(newVidGeo)
 
     log.verbose("File is completely done loading; setting justOpenedFile=N")
     /// Make sure to set this *after* calling `applyVidGeo` but *before* calling `refreshAlbumArtDisplay`
     info.justOpenedFile = false
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
+    info.currentMedia?.loadStatus = .completelyLoaded // TODO: improve
 
-    // Update art & aspect *before* switching to/from music mode for more pleasant animation
+    // Update art & aspect *before* switching to/from music mode for more pleasant animation (but after updating state booleans)
     windowController.refreshAlbumArtDisplay()
 
     if let priorState = info.priorState {

@@ -939,7 +939,7 @@ not applying FFmpeg 9599 workaround
                                selectedCropLabel: player.info.videoGeo.selectedCropLabel,
                                scale: videoScale)
 
-    player.log.verbose("Latest videoGeo: \(params)")
+    player.log.verbose("Latest videoGeo after syncing from mpv: \(params)")
     return params
   }
 

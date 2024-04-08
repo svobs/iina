@@ -576,8 +576,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       }
 
       // Round to integers for a smoother animation
-      leadingMargin = leadingMargin.rounded(.toNearestOrEven)
-      trailingMargin = trailingMargin.rounded(.toNearestOrEven)
+      leadingMargin = leadingMargin.rounded(.down)
+      trailingMargin = trailingMargin.rounded(.up)
     }
 
     if Logger.isTraceEnabled {
@@ -585,8 +585,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       Logger.log("Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
     }
     let unusedHeight = viewportSize.height - videoSize.height
-    let computedMargins = MarginQuad(top: (unusedHeight * 0.5).rounded(.toNearestOrEven), trailing: trailingMargin,
-                                  bottom: (unusedHeight * 0.5).rounded(.toNearestOrEven), leading: leadingMargin)
+    let computedMargins = MarginQuad(top: (unusedHeight * 0.5).rounded(.down), trailing: trailingMargin,
+                                  bottom: (unusedHeight * 0.5).rounded(.up), leading: leadingMargin)
     return computedMargins
   }
 
@@ -612,8 +612,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
   private func adjustWindowOrigin(forNewWindowSize newWindowSize: NSSize) -> NSPoint {
     // Round the results to prevent excessive window drift due to small imprecisions in calculation
-    let deltaX = round((newWindowSize.width - windowFrame.size.width) / 2)
-    let deltaY = round((newWindowSize.height - windowFrame.size.height) / 2)
+    let deltaX = ((newWindowSize.width - windowFrame.size.width) / 2).rounded(.down)
+    let deltaY = ((newWindowSize.height - windowFrame.size.height) / 2).rounded(.down)
     let newOrigin = NSPoint(x: windowFrame.origin.x - deltaX,
                             y: windowFrame.origin.y - deltaY)
     return newOrigin

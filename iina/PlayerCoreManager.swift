@@ -87,7 +87,7 @@ class PlayerCoreManager {
   }
 
   private func _findIdlePlayerCore() -> PlayerCore? {
-    return playerCores.first { $0.info.isIdle && !$0.info.isFileLoaded }
+    return playerCores.first { $0.info.isIdle && !$0.info.isFileLoaded && $0.isStopped }
   }
 
   func getNonIdle() -> [PlayerCore] {
