@@ -429,7 +429,7 @@ extension PlayerWindowController {
     }
 
     let chosenGeometry = intendedGeo.refit(currentGeometry.fitOption)
-    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:Y prevVideoSize:\(currentGeometry.videoSize) returning:\(chosenGeometry.windowFrame.size)")
+    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:Y prevWinSize:\(currentGeometry.windowFrame.size) returning:\(chosenGeometry.windowFrame.size)")
 
     return chosenGeometry
   }

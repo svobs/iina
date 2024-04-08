@@ -479,9 +479,8 @@ extension PlayerWindowController {
                                                                   insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                                                   insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
                                                                   keepFullScreenDimensions: false)
-        let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
         // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
-        let minViewportSizeIM = transition.inputGeometry.minViewportSize(forMode: .windowedInteractive)
+        let minViewportSizeIM = transition.inputGeometry.minViewportSize(mode: .windowedInteractive)
         let minViewportSize = PWGeometry.computeMinSize(withAspect: transition.inputGeometry.videoAspect,
                                                         minWidth: minViewportSizeIM.width,
                                                         minHeight: minViewportSizeIM.height)

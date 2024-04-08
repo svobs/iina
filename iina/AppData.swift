@@ -190,9 +190,12 @@ struct Constants {
     static let minTabHeight: CGFloat = 16
     static let maxTabHeight: CGFloat = 70
   }
+  struct WindowedMode {
+    static let minViewportSize = CGSize(width: 285, height: 120)
+  }
   struct InteractiveMode {
-    // Need enough space to display all the buttons at the bottom:
-    static let minWindowWidth: CGFloat = 450
+    // Need enough space to display all the buttons and field at the bottom:
+    static let minWindowWidth: CGFloat = 510
     static let outsideBottomBarHeight: CGFloat = 68
     // Show title bar only in windowed mode
     static let outsideTopBarHeight = PlayerWindowController.standardTitleBarHeight
@@ -210,6 +213,7 @@ struct Constants {
     static let minOSCBarHeight: CGFloat = 24
     static let minThumbnailHeight: CGFloat = 24
 
+    // TODO: move this outside Distance
     struct MusicMode {
       static let oscHeight: CGFloat = 72
       static let minWindowWidth: CGFloat = AppData.minVideoSize.width

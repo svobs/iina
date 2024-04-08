@@ -3245,7 +3245,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
-              let minViewportSizeIM = existingGeoWithNewAspect.minViewportSize(forMode: .windowedInteractive)
+              let minViewportSizeIM = existingGeoWithNewAspect.minViewportSize(mode: .windowedInteractive)
               let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
                                                                       minWidth: minViewportSizeIM.width,
                                                                       minHeight: minViewportSizeIM.height)
