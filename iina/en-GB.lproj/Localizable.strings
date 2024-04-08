@@ -269,6 +269,8 @@
 "alert.filter_hwdec.turn_off" = "Turn off hardware decoding";
 "alert.filter_hwdec.use_copy" = "Switch to Auto(Copy)";
 
+"alert.crop_too_extreme" = "Crop is too extreme. Please choose a height and width which are closer in value.";
+
 "alert.clear_cache.title" = "Clear Thumbnail Cache";
 "alert.clear_cache.message" = "Are you sure to clear all thumbnail Cache?";
 

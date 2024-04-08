@@ -119,8 +119,8 @@ struct AppData {
   /// Based on mpv default
   static let defaultVideoSize = NSSize(width: 640, height: 480)
 
-  /// Minimum allowed video size. Does not include any panels which are outside the video.
-  static let minVideoSize = NSMakeSize(260, 120)
+  /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
+  static let minVideoSize = NSMakeSize(8, 8)
 }
 
 struct Constants {

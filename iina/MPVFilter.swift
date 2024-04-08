@@ -307,7 +307,7 @@ class MPVFilter: NSObject {
   }
 
   static func makeCropBoxDisplayString(from cropBox: NSRect) -> String {
-    return "(\(Int(cropBox.origin.x)), \(Int(cropBox.origin.y))) (\(Int(cropBox.width))\u{d7}\(Int(cropBox.height)))"
+    return "(\(Int(cropBox.origin.x)), \(Int(cropBox.origin.y))) \(Int(cropBox.width))\u{d7}\(Int(cropBox.height))"
   }
 
   /// Returns `true` if this filter is equal to the given filter `false` otherwise.

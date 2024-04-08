@@ -70,7 +70,7 @@ class CropBoxView: NSView {
   }
 
   // set boxRect, and update selectedRect
-  func boxRectChanged(to rect: NSRect) {
+  private func boxRectChanged(to rect: NSRect) {
     boxRect = rect
     updateSelectedRect()
   }
@@ -232,7 +232,7 @@ class CropBoxView: NSView {
     addCursorRect(rectRight, cursor: .resizeLeftRight)
   }
 
-  func updateCursorRects() {
+  private func updateCursorRects() {
     let x = boxRect.origin.x
     let y = boxRect.origin.y
     let w = boxRect.size.width

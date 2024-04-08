@@ -334,8 +334,6 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   /// Note: this does not preserve aspect ratio
   private static func minVideoWidth(forMode mode: PlayerWindowMode) -> CGFloat {
     switch mode {
-    case .windowedInteractive, .fullScreenInteractive:
-      return Constants.InteractiveMode.minWindowWidth - PWGeometry.minViewportMargins(forMode: mode).totalWidth
     case .musicMode:
       return Constants.Distance.MusicMode.minWindowWidth
     default:
@@ -657,6 +655,10 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                      fitOption: ScreenFitOption? = nil,
                      lockViewportToVideoSize: Bool? = nil,
                      mode: PlayerWindowMode? = nil) -> PWGeometry {
+    guard videoAspect >= 0 else {
+      Logger.log("PWGeometry cannot scale viewport: videoAspect (\(videoAspect)) is invalid!", level: .error)
+      return self
+    }
 
     // -- First, set up needed variables
 

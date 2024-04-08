@@ -601,6 +601,25 @@ extension PlayerWindowController {
         bottomBarView.addSubview(cropController.view)
         cropController.view.addConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
+        if let videoSizeRaw = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
+          addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+
+          /// `selectedRect` should be subrect of`actualSize`
+          let selectedRect: NSRect
+          switch currentLayout.spec.interactiveMode {
+          case .crop:
+            if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
+              selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
+              log.verbose("Setting crop box selection from prevFilter: \(selectedRect)")
+            } else {
+              selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
+              log.verbose("Setting crop box selection to default entire video size: \(selectedRect)")
+            }
+          case .freeSelecting, .none:
+            selectedRect = .zero
+          }
+          cropController.cropBoxView.selectedRect = selectedRect
+        }
 
       } else if transition.isExitingInteractiveMode {
         // Exiting interactive mode
@@ -799,7 +818,7 @@ extension PlayerWindowController {
     if transition.outputGeometry.mode.isInteractiveMode {
       if let videoSizeRaw = player.info.videoGeo.videoSizeRaw {
         if let cropController = cropSettingsView {
-          addOrReplaceCropBoxSelection(origVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+          addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
           // Hide for now, to prepare for a nice fade-in animation
           cropController.cropBoxView.isHidden = true
           cropController.cropBoxView.alphaValue = 0
@@ -1338,7 +1357,7 @@ extension PlayerWindowController {
 
   /// Call this when `origVideoSize` is known.
   /// `videoRect` should be `videoView.frame`
-  func addOrReplaceCropBoxSelection(origVideoSize: NSSize, videoViewSize: NSSize) {
+  func addOrReplaceCropBoxSelection(rawVideoSize: NSSize, videoViewSize: NSSize) {
     guard let cropController = self.cropSettingsView else { return }
 
     if !videoView.subviews.contains(cropController.cropBoxView) {
@@ -1346,23 +1365,7 @@ extension PlayerWindowController {
       cropController.cropBoxView.addConstraintsToFillSuperview()
     }
 
-    /// `selectedRect` should be subrect of`actualSize`
-    let selectedRect: NSRect
-    switch currentLayout.spec.interactiveMode {
-    case .crop:
-      if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
-        selectedRect = prevCropFilter.cropRect(origVideoSize: origVideoSize, flipY: true)
-        log.verbose("Setting crop box selection from prevFilter: \(selectedRect)")
-      } else {
-        selectedRect = NSRect(origin: .zero, size: origVideoSize)
-        log.verbose("Setting crop box selection to default entire video size: \(selectedRect)")
-      }
-    case .freeSelecting, .none:
-      selectedRect = .zero
-    }
-
-    cropController.cropBoxView.actualSize = origVideoSize
-    cropController.cropBoxView.selectedRect = selectedRect
+    cropController.cropBoxView.actualSize = rawVideoSize
     cropController.cropBoxView.resized(with: NSRect(origin: .zero, size: videoViewSize))
   }
 

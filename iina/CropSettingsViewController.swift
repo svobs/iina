@@ -77,14 +77,6 @@ class CropSettingsViewController: CropBoxViewController {
     abs(Int(cropped.origin.y) - cropy) <= 1
   }
 
-  private func animateHideCropSelection() {
-    windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration * 0.5, { [self] in
-      // Fade out cropBox selection rect
-      cropBoxView.isHidden = true
-      cropBoxView.alphaValue = 0
-    }))
-  }
-
   override func handleKeyDown(keySeq: String) {
     switch keySeq {
     case "ESC":
@@ -97,10 +89,16 @@ class CropSettingsViewController: CropBoxViewController {
   }
 
   func submitCrop() {
+    // If crop is too tall, the aspect will round to zero, which won't work
+    let cropBoxSize = CGSize(width: self.cropw, height: self.croph)
+    guard cropBoxSize.mpvAspect > 0 else {
+      Utility.showAlert("crop_too_extreme")
+      return
+    }
+
     let player = windowController.player
     // Remove saved crop (if any)
     player.info.videoFiltersDisabled.removeValue(forKey: Constants.FilterLabel.crop)
-    animateHideCropSelection()
 
     let videoSizeRaw = cropBoxView.actualSize
     // Use <=, >= to account for imprecision
@@ -131,7 +129,7 @@ class CropSettingsViewController: CropBoxViewController {
   }
 
   @IBAction func doneBtnAction(_ sender: AnyObject) {
-    windowController.player.log.verbose("Interactive mode: user activated Done")
+    windowController.player.log.verbose("Interactive mode: user chose Done button")
 
     submitCrop()
   }

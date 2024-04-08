@@ -3354,6 +3354,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           /// But that task can only happen once we return and relinquish the main queue.
           _ = player.addVideoFilter(newCropFilter)
         }
+
+        // Fade out cropBox selection rect
+        cropController.cropBoxView.isHidden = true
+        cropController.cropBoxView.alphaValue = 0
       })
     }
 

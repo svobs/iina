@@ -67,7 +67,7 @@ extension NSSize {
   var aspect: CGFloat {
     get {
       if width == 0 || height == 0 {
-        Logger.log("Returning 1 for window aspectRatio because width or height is 0", level: .warning)
+        Logger.log("Returning 1 for NSSize aspectRatio because width or height is 0", level: .warning)
         return 1
       }
       return width / height
