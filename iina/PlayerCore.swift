@@ -222,7 +222,7 @@ class PlayerCore: NSObject {
   }
 
   init(_ label: String) {
-    let log = Logger.Subsystem(rawValue: "play-\(label)")
+    let log = Logger.Subsystem(rawValue: "PLR-\(label)")
     log.debug("PlayerCore \(label) init")
     self.label = label
     self.subsystem = log

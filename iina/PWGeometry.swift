@@ -9,7 +9,7 @@
 import Foundation
 
 /// Data structure containing size values of four sides
-struct MarginQuad: Equatable {
+struct MarginQuad: Equatable, CustomStringConvertible {
   let top: CGFloat
   let trailing: CGFloat
   let bottom: CGFloat
@@ -21,6 +21,10 @@ struct MarginQuad: Equatable {
 
   var totalHeight: CGFloat {
     return top + bottom
+  }
+
+  var description: String {
+    return "(↑:\(top.strMin) →:\(trailing.strMin) ↓:\(bottom.strMin) ←:\(leading.strMin))"
   }
 
   static let zero = MarginQuad(top: 0, trailing: 0, bottom: 0, leading: 0)
@@ -271,7 +275,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "PWGeometry (screenID: \(screenID.quoted), mode: \(mode), fit: \(fitOption), topMargin: \(topMarginHeight), outsideBars: \(outsideBars), insideBars: \(insideBars), viewportMargins: \(viewportMargins), videoAspect: \(videoAspect), videoSize: \(videoSize) windowFrame: \(windowFrame))"
+    return "PWGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.strMin) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) videoSize=\(videoSize) aspect=\(videoAspect) windowFrame=\(windowFrame))"
   }
 
   /// Calculated from `windowFrame`.
@@ -893,7 +897,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     let ΔOutsideWidth = geo.outsideBarsTotalWidth - outsideBarsTotalWidth
     let ΔOutsideHeight = geo.outsideBarsTotalHeight - outsideBarsTotalHeight
 
-    Logger.log("[ResizeBars] ΔW:\(ΔOutsideWidth) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
+    Logger.log("[ResizeBars] ΔW:\(ΔOutsideWidth.strMin) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight.strMin) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
 
     let resizedViewport: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.

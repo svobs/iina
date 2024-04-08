@@ -146,10 +146,11 @@ class PlayerCoreManager {
       }
       pc = PlayerCore(label)
     } else {
-      while _playerExists(withLabel: "\(AppDelegate.launchID)m\(playerCoreCounter)") {
+      let playerLabel = AppData.label(forPlayerCore: playerCoreCounter)
+      while _playerExists(withLabel: playerLabel) {
         playerCoreCounter += 1
       }
-      pc = PlayerCore("\(AppDelegate.launchID)m\(playerCoreCounter)")
+      pc = PlayerCore(playerLabel)
       playerCoreCounter += 1
     }
     Logger.log("Successfully created PlayerCore \(pc.label)")

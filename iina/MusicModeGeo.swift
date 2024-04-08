@@ -252,7 +252,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeometry(Video={show:\(isVideoVisible.yn) H:\(videoHeight) aspect:\(videoAspect.aspectNormalDecimalString)} PL={show:\(isPlaylistVisible.yn) H:\(playlistHeight)} BtmBarH:\(bottomBarHeight) windowFrame:\(windowFrame))"
+    return "MusicModeGeometry(video={show:\(isVideoVisible.yn) H:\(videoHeight.strMin) aspect:\(videoAspect.aspectNormalDecimalString)} PL={show:\(isPlaylistVisible.yn) H:\(playlistHeight.strMin)} BtmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
   }
 
   static func playlistHeight(windowFrame: CGRect, videoAspect: CGFloat, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {

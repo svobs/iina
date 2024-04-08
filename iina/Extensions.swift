@@ -327,6 +327,11 @@ extension CGFloat {
       return Double(copysign(1, self))
     }
   }
+
+  /// Do not use trailing zeros
+  var strMin: String {
+    fmtDecimalOmitTrailingZeroes.string(for: self)!
+  }
 }
 
 extension Bool {
@@ -456,6 +461,26 @@ fileprivate let fmtDecimalMaxFractionDigits6: NumberFormatter = {
   fmt.maximumFractionDigits = 6
   return fmt
 }()
+
+// Formats a decimal number but will omit trailing zeroes, and will not use commas or other formatting for large numbers
+fileprivate let fmtDecimalOmitTrailingZeroes: NumberFormatter = {
+  let fmt = NumberFormatter()
+  fmt.numberStyle = .decimal
+  fmt.usesGroupingSeparator = false
+  return fmt
+}()
+
+extension CGRect: CustomStringConvertible {
+  public var description: String {
+    return "(\(origin.x.strMin), \(origin.y.strMin), \(size.width.strMin) x \(size.height.strMin))"
+  }
+}
+
+extension CGSize: CustomStringConvertible {
+  public var description: String {
+    return "(\(width.strMin) x \(height.strMin))"
+  }
+}
 
 /// Applies to `Double`, `CGFloat`, ...
 extension FloatingPoint {

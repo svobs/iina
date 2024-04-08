@@ -274,6 +274,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
       if identifier == .filename {
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
+        // FIXME: this will hang if there are network problems! Put all FileManager stuff in background queue
         let fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
         filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
         filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
