@@ -272,9 +272,9 @@ class InspectorWindowController: NSWindowController, NSWindowDelegate, NSTableVi
         self.setLabelColor(v, by: value != nil)
       }
 
-      let sigPeak = controller.getDouble(MPVProperty.videoGeoSigPeak);
+      let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
       self.vprimariesField.stringValue = sigPeak > 0
-        ? "\(controller.getString(MPVProperty.videoGeoPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoGeoGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
+        ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
         : "N/A";
       self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
@@ -292,9 +292,9 @@ class InspectorWindowController: NSWindowController, NSWindowDelegate, NSTableVi
       self.setLabelColor(self.vcolorspaceField, by: player.info.isFileLoaded)
 
       if player.windowController.loaded && player.info.isFileLoaded {
-        if let hwPf = controller.getString(MPVProperty.videoGeoHwPixelformat) {
+        if let hwPf = controller.getString(MPVProperty.videoParamsHwPixelformat) {
           self.vPixelFormat.stringValue = "\(hwPf) (HW)"
-        } else if let swPf = controller.getString(MPVProperty.videoGeoPixelformat) {
+        } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
           self.vPixelFormat.stringValue = "\(swPf) (SW)"
         } else {
           self.vPixelFormat.stringValue = "N/A"

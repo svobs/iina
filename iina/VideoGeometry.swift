@@ -12,14 +12,14 @@ import Foundation
 ///
 /// Processing pipeline:
 /// `videoSizeRaw` (`rawWidth`, `rawHeight`)
-///   ➤ apply `aspectRatioOverride`
+///   ➤ Parse `selectedAspectLabel` into `aspectRatioOverride`, then apply it
 ///     ➤ `videoSizeA`
-///       ➤ apply `cropBox`
-///         ➤ `videoSizeAC` (`videoWidthAC`, `videoHeightAC`). AKA "dsize", per mpv usage
-///           ➤ apply `totalRotation`
+///       ➤ Parse `selectedCropLabel` into `cropBox`, then apply it
+///         ➤ `videoSizeAC` (`videoWidthAC` x `videoHeightAC`). AKA "dsize", per mpv usage
+///           ➤ apply `totalRotation` (== `userRotation` + rotation specified by video)
 ///             ➤ `videoSizeACR` (`videoWidthACR`, `videoHeightACR`)
 ///               ➤ apply `scale`
-///                 ➤ `videoSize` (`PWGeometry`)
+///                 ➤ `videoSizeACRS` (AKA `videoSize` in `PWGeometry`)
 struct VideoGeometry: CustomStringConvertible {
   static let nullGeometry = VideoGeometry(rawWidth: 0, rawHeight: 0,
                                           selectedAspectLabel: "",
@@ -62,7 +62,8 @@ struct VideoGeometry: CustomStringConvertible {
 
   }
 
-  /// Current video's native stored dimensions, before aspect correction applied.
+  /// The native ("raw") stored dimensions of the current video, before any transformation is applied.
+  /// Either `rawWidth` or `rawHeight` should be 0 if the raw video size is unknown or not loaded yet.
   /// From the mpv manual:
   /// ```
   /// width, height
@@ -73,29 +74,39 @@ struct VideoGeometry: CustomStringConvertible {
   let rawHeight: Int
 
   /// The native size of the current video, before any filters, rotations, or other transformations applied.
-  /// Returns `nil` if its width or height is considered missing or invalid (i.e., not positive)
+  /// Returns `nil` if its width or height is considered missing or invalid (i.e., not positive).
   var videoSizeRaw: CGSize? {
     guard rawWidth > 0, rawHeight > 0 else { return nil}
     return CGSize(width: rawWidth, height: rawHeight)
   }
 
-  // SECTION: Aspect
+  // MARK: - TRANSFORMATION 1: Aspect
 
-  /// The currently applied aspect, used for finding current aspect in menu & sidebar segmented control. Does not include rotation(s)
+  /// The currently applied aspect ratio override.
+  ///
+  /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
+  /// sidebar's segmented control.
+  /// • If this is an aspect-based crop, it ideally should be in the format `"W:H"` to match in the UI, but can also be a decimal number.
+  /// • If this is a crop rect, it should be in mpv format. This can be either `WxH` or `WxH+x+y` forms. See `MPVFilter.cropRect()`
   let selectedAspectLabel: String
 
-  /// Truncates aspect to the first 2 digits after decimal.
+  /// Optional aspect ratio override (mpv property `video-aspect-override`). Truncates aspect to the first 2 digits after decimal.
   let aspectRatioOverride: CGFloat?
 
-  /// Same as `videoSizeRaw` but with aspect ratio override applied. If no aspect ratio override, then identical to `videoSizeRaw`.
+  /// Equal to `videoSizeRaw` + `aspectRatioOverride` applied. If there is no aspect ratio override, then identical to `videoSizeRaw`.
   var videoSizeA: CGSize? {
     guard let videoSizeRaw else { return nil }
 
     return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSizeRaw)
   }
 
-  // SECTION: Aspect + Crop
+  // MARK: - TRANSFORMATION 2: Crop
+  // (Aspect + Crop)
 
+  /// The currently applied crop (`iina_crop` filter), or `None` if no crop.
+  ///
+  /// This is a string so that it can be used to identify the currently selected crop in the Video menu & in the Video Settings
+  /// sidebar's segmented control.
   let selectedCropLabel: String
 
   /// This is derived from `selectedCropLabel`, but has its Y value flipped so that it works with Cocoa views.
@@ -134,24 +145,25 @@ struct VideoGeometry: CustomStringConvertible {
     return Int(videoSizeAC.height)
   }
 
-  /// `MPVProperty.videoGeoRotate`.
+  // MARK: - TRANSFORMATION 3: Rotation
+  // (Aspect + Crop + Rotation)
+
+  /// `MPVProperty.videoParamsRotate`.
   ///
-  /// Is refreshed as property change events arrive for `MPVProperty.videoGeoRotate` ("video-params/rotate")
+  /// Is refreshed as property change events arrive for `MPVProperty.videoParamsRotate` ("video-params/rotate")
   /// IINA only supports one of [0, 90, 180, 270]
   let totalRotation: Int
 
   /// `MPVProperty.videoRotate`.
   ///
   /// Is refreshed as property change events arrive for `MPVOption.Video.videoRotate` ("video-rotate").
-  /// Not to be confused with the `MPVProperty.videoGeoRotate` ("video-params/rotate")
+  /// Not to be confused with the `MPVProperty.videoParamsRotate` ("video-params/rotate")
   let userRotation: Int
 
   var isWidthSwappedWithHeightByRotation: Bool {
     // 90, 270, etc...
     (totalRotation %% 180) != 0
   }
-
-  // SECTION: Aspect + Crop + Rotation
 
   /// Like `dwidth`, but after applying `totalRotation`.
   var videoWidthACR: Int? {
@@ -186,6 +198,9 @@ struct VideoGeometry: CustomStringConvertible {
     return videoSizeACR.mpvAspect
   }
 
+  // MARK: - TRANSFORMATION 4: Scale
+  // (Aspect + Crop + Rotation + Scale)
+
   /// `MPVProperty.windowScale`:
   var scale: CGFloat
 
@@ -196,18 +211,18 @@ struct VideoGeometry: CustomStringConvertible {
                   height: round(videoSizeACR.height * scale))
   }
 
-  /// Final aspect ratio of `videoView` (scale-invariant)
+  /// Final aspect ratio of `videoView`, equal to `videoAspectACR`. Takes into account aspect override, crop, and rotation (scale-invariant).
   var videoViewAspect: CGFloat? {
     return videoAspectACR
   }
 
-  // Etc
+  // MARK: - Etc
 
   var description: String {
     return "VideoGeometry:{vidSizeRaw=\(rawWidth)x\(rawHeight) vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropBox=\(cropBox?.description ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil")}"
   }
 
-  // Static utils
+  // MARK: Static util functions
 
   /// Adjusts the dimensions of the given `CGSize` as needed to match the given aspect
   static func applyAspectOverride(_ newAspect: CGFloat?, to origSize: CGSize) -> CGSize {
@@ -230,32 +245,34 @@ struct VideoGeometry: CustomStringConvertible {
     let videoRawSize = CGSize(width: rawWidth, height: rawHeight)
 
     if let aspect = Aspect(string: cropLabel) {
+      /// Aspect ratio, e.g. `16:9` or `1.33`
       return videoRawSize.getCropRect(withAspect: aspect)
-    } else {
-      let split1 = cropLabel.split(separator: "x")
-      if split1.count == 2 {
-        if split1[1].firstIndex(of: "+") == nil {
-          let params: [String: String] = [
-            "w": String(split1[0]),
-            "h": String(split1[1])
-          ]
-          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
-        }
-
-        let split2 = split1[1].split(separator: "+")
-        if split2.count == 3 {
-          let params: [String: String] = [
-            "w": String(split1[0]),
-            "h": String(split2[0]),
-            "x": String(split2[1]),
-            "y": String(split2[2])
-          ]
-          return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
-        }
-      }
-      Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
-      return nil
     }
+
+    /// mpv format, either `WxH`, or `WxH+x+y` forms.
+    let split1 = cropLabel.split(separator: "x")
+    if split1.count == 2 {
+      if split1[1].firstIndex(of: "+") == nil {
+        let params: [String: String] = [
+          "w": String(split1[0]),
+          "h": String(split1[1])
+        ]
+        return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
+      }
+
+      let split2 = split1[1].split(separator: "+")
+      if split2.count == 3 {
+        let params: [String: String] = [
+          "w": String(split1[0]),
+          "h": String(split2[0]),
+          "x": String(split2[1]),
+          "y": String(split2[2])
+        ]
+        return MPVFilter.cropRect(fromParams: params, origVideoSize: videoRawSize, flipY: true)
+      }
+    }
+    Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
+    return nil
   }
 
 }

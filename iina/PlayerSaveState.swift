@@ -67,7 +67,7 @@ struct PlayerSaveState {
     case videoAspectLabel = "aspect"  /// `MPVOption.Video.videoAspectOverride`-ish
     case cropLabel = "cropLabel"
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
-    case totalRotation = "totalRotation"/// `MPVProperty.videoGeoRotate`
+    case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
 
     case isSubVisible = "subVisible"  /// `MPVOption.Subtitles.subVisibility`
     case isSub2Visible = "sub2Visible"/// `MPVOption.Subtitles.secondarySubVisibility`
@@ -659,7 +659,7 @@ struct PlayerSaveState {
     }
 
     if let videoAspectLabel = string(for: .videoAspectLabel) {
-      // Update videoGeo abovefirst so that UI doesn't alert the user
+      // Update videoGeo above first so that UI doesn't alert the user
       if info.videoGeo.aspectRatioOverride != nil {
         let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
         mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)

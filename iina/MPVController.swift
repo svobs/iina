@@ -136,9 +136,9 @@ class MPVController: NSObject {
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
     MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
-    MPVProperty.videoGeoRotate: MPV_FORMAT_INT64,
-    MPVProperty.videoGeoPrimaries: MPV_FORMAT_STRING,
-    MPVProperty.videoGeoGamma: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
+    MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
     MPVProperty.idleActive: MPV_FORMAT_FLAG
   ]
 
@@ -922,7 +922,7 @@ not applying FFmpeg 9599 workaround
 
     let videoWidthAC = getInt(MPVProperty.dwidth)
     let videoHeightAC = getInt(MPVProperty.dheight)
-    let mpvParamRotate = getInt(MPVProperty.videoGeoRotate)
+    let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
     // For mpv, window size is always the same as video size, although this is not always true with IINA.
     let videoScale = getDouble(MPVOption.Window.windowScale)
@@ -935,11 +935,14 @@ not applying FFmpeg 9599 workaround
 
     let params = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                                selectedAspectLabel: player.info.videoGeo.selectedAspectLabel,
-                               totalRotation: mpvParamRotate, userRotation: mpvVideoRotate,
+                               totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.info.videoGeo.selectedCropLabel,
                                scale: videoScale)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(params)")
+    if let videoSizeAC = params.videoSizeAC, Int(videoSizeAC.width) != videoWidthAC || Int(videoSizeAC.height) != videoHeightAC {
+      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(videoWidthAC) x \(videoHeightAC)) != videoSizeAC \(videoSizeAC)")
+    }
     return params
   }
 
@@ -1156,8 +1159,8 @@ not applying FFmpeg 9599 workaround
 
     switch name {
 
-    case MPVProperty.videoGeo:
-      player.log.verbose("Δ mpv prop: \(MPVProperty.videoGeo.quoted)")
+    case MPVProperty.videoParams:
+      player.log.verbose("Δ mpv prop: \(MPVProperty.videoParams.quoted)")
       needReloadQuickSettingsView = true
 
     case MPVProperty.videoOutParams:
@@ -1172,11 +1175,11 @@ not applying FFmpeg 9599 workaround
       player.log.verbose("Δ mpv prop: \(MPVProperty.videoOutParams.quoted)")
       break
 
-    case MPVProperty.videoGeoRotate:
+    case MPVProperty.videoParamsRotate:
         /** `video-params/rotate: Intended display rotation in degrees (clockwise).` - mpv manual
          Do not confuse with the user-configured `video-rotate` (below) */
       if let totalRotation = UnsafePointer<Int>(OpaquePointer(property.data))?.pointee {
-        player.log.verbose("Δ mpv prop: 'video-params/rotate' = \(totalRotation)")
+        player.log.verbose("Δ mpv prop: 'video-params/rotate' ≔ \(totalRotation)")
         player.saveState()
         /// Any necessary resizing will be handled elsewhere
       }
@@ -1217,10 +1220,10 @@ not applying FFmpeg 9599 workaround
       player.reloadThumbnails(forMedia: player.info.currentMedia)
       player.saveState()
 
-    case MPVProperty.videoGeoPrimaries:
+    case MPVProperty.videoParamsPrimaries:
       fallthrough
 
-    case MPVProperty.videoGeoGamma:
+    case MPVProperty.videoParamsGamma:
       if #available(macOS 10.15, *) {
         player.refreshEdrMode()
       }
