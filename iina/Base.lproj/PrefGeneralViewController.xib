@@ -781,7 +781,7 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitlePlaylist" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6gO-wx-MWj">
-                    <rect key="frame" x="-2" y="56" width="56" height="16"/>
+                    <rect key="frame" x="-2" y="56" width="124" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Playlist:" id="6TV-DG-503">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -789,10 +789,10 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XlS-gh-24j" userLabel="Playlist-RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="589" height="64"/>
+                    <rect key="frame" x="120" y="8" width="589" height="72"/>
                     <subviews>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hse-Ce-rRe" userLabel="AddFilesAutomatically VStack View">
-                            <rect key="frame" x="0.0" y="64" width="589" height="0.0"/>
+                            <rect key="frame" x="0.0" y="72" width="589" height="0.0"/>
                         </stackView>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YDQ-cu-7vE">
                             <rect key="frame" x="-2" y="47" width="370" height="18"/>
@@ -861,8 +861,7 @@
                 <constraint firstAttribute="trailing" secondItem="XlS-gh-24j" secondAttribute="trailing" constant="8" id="Ooa-nV-TsF"/>
                 <constraint firstItem="6gO-wx-MWj" firstAttribute="top" secondItem="y7O-rd-dnT" secondAttribute="top" constant="8" id="R9Q-BW-yNL"/>
                 <constraint firstItem="YDQ-cu-7vE" firstAttribute="firstBaseline" secondItem="6gO-wx-MWj" secondAttribute="firstBaseline" id="VQF-c4-eXA"/>
-                <constraint firstItem="6gO-wx-MWj" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="y7O-rd-dnT" secondAttribute="leading" constant="120" id="hMc-8k-u0x"/>
-                <constraint firstItem="XlS-gh-24j" firstAttribute="top" secondItem="y7O-rd-dnT" secondAttribute="top" constant="8" id="iZ3-mm-jTs"/>
+                <constraint firstAttribute="leading" relation="lessThanOrEqual" secondItem="6gO-wx-MWj" secondAttribute="trailing" constant="-120" id="hMc-8k-u0x"/>
                 <constraint firstItem="XlS-gh-24j" firstAttribute="leading" secondItem="y7O-rd-dnT" secondAttribute="leading" constant="120" id="wGO-XT-AhZ"/>
             </constraints>
             <point key="canvasLocation" x="-2203" y="725"/>

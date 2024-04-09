@@ -622,9 +622,16 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   func tableViewSelectionDidChange(_ notification: Notification) {
     withAllTableViews { (view, type) in
       if view.numberOfSelectedRows > 0 {
-        // note that track ids start from 1
-        let subId = view.selectedRow > 0 ? player.info.trackList(type)[view.selectedRow-1].id : 0
-        self.player.setTrack(subId, forType: type)
+        var trackID = 0  // default
+        if view.selectedRow > 0 {
+          // note that track ids start from 1
+          let trackIndex = view.selectedRow - 1
+          let trackList = player.info.trackList(type)
+          if trackIndex < trackList.count {
+            trackID = trackList[trackIndex].id
+          }
+        }
+        self.player.setTrack(trackID, forType: type)
         view.deselectAll(self)
       }
     }

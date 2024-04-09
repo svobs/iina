@@ -131,9 +131,11 @@ class PlayerCore: NSObject {
   var isShutdown = false
 
   /// Whether stopping of this player has been initiated.
+  /// Should always be updated in mpv DQ
   var isStopping = false
 
   /// Whether mpv playback has stopped and the media has been unloaded.
+  /// Should always be updated in main DQ 
   var isStopped = true
 
   var isInMiniPlayer: Bool {
@@ -651,11 +653,13 @@ class PlayerCore: NSObject {
     log.debug("Playback has stopped")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
-    isStopped = true
+    DispatchQueue.main.async { [self] in
+      isStopped = true
 
-    windowController.clearOSDQueue()
+      windowController.clearOSDQueue()
 
-    postNotification(.iinaPlayerStopped)
+      postNotification(.iinaPlayerStopped)
+    }
   }
 
   func toggleMute(_ set: Bool? = nil) {
@@ -2183,7 +2187,6 @@ class PlayerCore: NSObject {
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
     isStopping = false
-    isStopped = false
     info.haveDownloadedSub = false
 
     guard let currentMedia = info.currentMedia else {
@@ -2204,6 +2207,7 @@ class PlayerCore: NSObject {
 
     // main thread stuff
     DispatchQueue.main.async { [self] in
+      isStopped = false
       refreshSyncUITimer()
 
       if #available(macOS 10.12.2, *) {
