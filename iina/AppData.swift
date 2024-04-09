@@ -163,6 +163,9 @@ struct Constants {
   struct Time {
     static let infinite = VideoTime(999, 0, 0)
   }
+  struct TimeInterval {
+    static let historyTableCompleteFileStatusReload = 600.0
+  }
   struct FilterLabel {
     static let crop = "iina_crop"
     static let flip = "iina_flip"

@@ -49,6 +49,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
   private var historyData: [String: [PlaybackHistory]] = [:]
   private var historyDataKeys: [String] = []
 
+  private var lastCompleteStatusReloadTime = Date()
+
   private var observedPrefKeys: [Preference.Key] = [
     .uiHistoryTableGroupBy,
     .uiHistoryTableSearchType,
@@ -112,12 +114,12 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     outlineView.menu?.delegate = self
     outlineView.target = self
     outlineView.doubleAction = #selector(doubleAction)
-    reloadData()
   }
 
   override func showWindow(_ sender: Any?) {
     Logger.log("Showing History window", level: .verbose)
     super.showWindow(sender)
+    reloadData()
   }
 
   private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
@@ -167,11 +169,6 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
 
   private func reloadData() {
     // reconstruct data
-    historyData.removeAll()
-    historyDataKeys.removeAll()
-
-    adjustTimeColumnMinWidth()
-
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
       historyList = HistoryController.shared.history
@@ -183,16 +180,48 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
       }
     }
     Logger.log("Reloading history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn)", level: .verbose)
+    var historyDataUpdated: [String: [PlaybackHistory]] = [:]
+    var historyDataKeysUpdated: [String] = []
 
     for entry in historyList {
       let key = getKey[groupBy]!(entry)
 
-      if historyData[key] == nil {
-        historyData[key] = []
-        historyDataKeys.append(key)
+      if historyDataUpdated[key] == nil {
+        historyDataUpdated[key] = []
+        historyDataKeysUpdated.append(key)
       }
-      historyData[key]!.append(entry)
+      historyDataUpdated[key]!.append(entry)
     }
+
+    // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
+    HistoryController.shared.queue.async { [self] in
+      let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
+      let sw = Utility.Stopwatch()
+
+      var count: Int = 0
+      for entry in historyList {
+        // Fill in fileExists
+        if forceFullStatusReload || entry.fileExists == nil {
+          entry.fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+          count += 1
+        }
+      }
+      Logger.log("Filled in fileExists for \(count) history entries in \(sw) ms (forced: \(forceFullStatusReload.yn))", level: .verbose)
+      if forceFullStatusReload {
+        lastCompleteStatusReloadTime = Date()
+      }
+
+      DispatchQueue.main.async { [self] in
+        // Reload table again to refresh statuses
+        outlineView.reloadData()
+        outlineView.expandItem(nil, expandChildren: true)
+      }
+    }
+
+    // Update data and reload UI
+    historyData = historyDataUpdated
+    historyDataKeys = historyDataKeysUpdated
+    adjustTimeColumnMinWidth()
 
     outlineView.reloadData()
     outlineView.expandItem(nil, expandChildren: true)
@@ -277,10 +306,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
       if identifier == .filename {
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
-        // FIXME: this will hang if there are network problems! Put all FileManager stuff in background queue
-        let fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
         filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
-        filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
+        filenameView.textField?.textColor = (entry.fileExists ?? true) ? .controlTextColor : .disabledControlTextColor
         filenameView.docImage.image = NSWorkspace.shared.icon(forFileType: entry.url.pathExtension)
       } else if identifier == .progress {
         // Progress cell
@@ -343,13 +370,13 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     switch menuItem.tag {
     case MenuItemTagShowInFinder:
       if selectedEntries.isEmpty { return false }
-      return selectedEntries.contains { FileManager.default.fileExists(atPath: $0.url.path) }
+      return selectedEntries.contains { $0.url.isFileURL && ($0.fileExists ?? false) }
     case MenuItemTagDelete:
       // "Delete" in this case only removes from history
       return !selectedEntries.isEmpty
     case MenuItemTagPlay, MenuItemTagPlayInNewWindow:
       if selectedEntries.isEmpty { return false }
-      return selectedEntries.contains { !$0.url.isFileURL || FileManager.default.fileExists(atPath: $0.url.path) }
+      return selectedEntries.contains { !$0.url.isFileURL || ($0.fileExists ?? false) }
     case MenuItemTagSearchFilename:
       menuItem.state = searchType == .filename ? .on : .off
     case MenuItemTagSearchFullPath:

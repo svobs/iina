@@ -27,6 +27,9 @@ class PlaybackHistory: NSObject, NSCoding {
   var duration: VideoTime
   var mpvProgress: VideoTime?
 
+  /// this is not persisted
+  var fileExists: Bool?
+
   required init?(coder aDecoder: NSCoder) {
     guard
     let url = (aDecoder.decodeObject(forKey: KeyUrl) as? URL),

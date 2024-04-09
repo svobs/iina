@@ -1308,11 +1308,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   @IBAction func showHistoryWindow(_ sender: AnyObject) {
-    Logger.log("Showing History window", level: .verbose)
     historyWindow.showWindow(self)
   }
 
   @IBAction func showLogWindow(_ sender: AnyObject) {
+    Logger.log("Showing Log window", level: .verbose)
     logWindow.showWindow(self)
   }
 
