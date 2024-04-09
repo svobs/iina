@@ -450,12 +450,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Note: UI state saving is disabled")
     }
 
-    if #available(macOS 10.13, *) {
-      if RemoteCommandController.useSystemMediaControl {
-        Logger.log("Setting up MediaPlayer integration")
-        RemoteCommandController.setup()
-        NowPlayingInfoManager.updateInfo(state: .unknown)
-      }
+    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+      Logger.log("Setting up MediaPlayer integration")
+      RemoteCommandController.setup()
+      NowPlayingInfoManager.updateInfo(state: .unknown)
     }
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])

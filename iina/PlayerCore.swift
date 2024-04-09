@@ -3212,7 +3212,7 @@ class NowPlayingInfoManager {
     var info = center.nowPlayingInfo ?? [String: Any]()
 
     let activePlayer = PlayerCore.lastActive
-    guard !activePlayer.isShuttingDown else { return }
+    guard !activePlayer.isStopping, !activePlayer.isStopped, !activePlayer.isShuttingDown, !activePlayer.isShutdown else { return }
 
     if withTitle {
       if activePlayer.info.currentMediaAudioStatus == .isAudio {
