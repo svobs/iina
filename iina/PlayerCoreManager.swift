@@ -78,7 +78,7 @@ class PlayerCoreManager {
         if Preference.bool(for: .alwaysOpenInNewWindow) {
           core = _getIdleOrCreateNew()
         } else {
-          core = getActive()
+          core = _getActive()
         }
       }
     }
@@ -119,13 +119,16 @@ class PlayerCoreManager {
   }
 
   func getActive() -> PlayerCore {
+    lock.withLock {
+      return _getActive()
+    }
+  }
+
+  func _getActive() -> PlayerCore {
     if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController {
       return wc.player
     } else {
-      var core: PlayerCore!
-      lock.withLock {
-        core = _getOrCreateFirst()
-      }
+      let core: PlayerCore! = _getOrCreateFirst()
       core.start()
       return core
     }
