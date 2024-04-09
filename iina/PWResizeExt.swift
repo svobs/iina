@@ -11,7 +11,7 @@ import Foundation
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
 
-  /// Set window size when info available, or video size changed. Mostly called after receiving `video-reconfig` msg
+  /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVidGeo(_ newVidGeo: VideoGeometry) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
 
@@ -40,6 +40,7 @@ extension PlayerWindowController {
   /// Only `applyVidGeo` should call this.
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
     guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else { return }
+    guard let window else { return }
 
     guard !isRestoring else {
       log.verbose("[applyVidGeo] Restore is in progress; no op")
@@ -63,7 +64,7 @@ extension PlayerWindowController {
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      let newGeometry = musicModeGeo.clone(videoAspect: newVideoAspect)
+      let newGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newVideoAspect)
       applyMusicModeGeoInAnimationPipeline(newGeometry)
       return
     }
@@ -79,7 +80,9 @@ extension PlayerWindowController {
       return
     }
 
-    let windowGeo = windowedModeGeo.clone(videoAspect: newVideoSizeACR.mpvAspect)
+    // If user moved the window recently, window frame might not be completely up to date
+    let currentWindowFrame = currentLayout.mode.isWindowed ? window.frame : nil
+    let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, videoAspect: newVideoSizeACR.mpvAspect)
     let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
     let newWindowGeo: PWGeometry
@@ -302,7 +305,10 @@ extension PlayerWindowController {
     resizeViewport(to: desiredViewportSize)
   }
 
+  // TODO: consider removing this entirely, and instead just update windowFrame of geometries at the time they need to be used
   /// Updates the appropriate in-memory cached geometry (based on the current window mode) using the current window & view frames.
+  /// This method is intended mostly for changes to windowFrame (origin or size), and never be called if aspect, rotation, or other
+  /// `VideoGeometry` values are changing (that should be set elsewhere).
   func updateCachedGeometry() {
     guard !currentLayout.isFullScreen, !player.info.isRestoring else {
       log.verbose("Not updating cached geometry: isFS=\(currentLayout.isFullScreen.yn), isRestoring=\(player.info.isRestoring)")
@@ -324,11 +330,10 @@ extension PlayerWindowController {
 
       switch currentLayout.mode {
       case .windowed, .windowedInteractive:
-        // Use previous geometry's aspect. This method should never be called if aspect is changing - that should be set elsewhere.
-        // This method should only be called for changes to windowFrame (origin or size)
+        // Use previous geometry's aspect.
         let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
         guard windowedModeGeo.videoAspect == geo.videoAspect else {
-          log.error("Cannot update cached geometry: windowedMode videoAspect (\(windowedModeGeo.videoAspect)) != new videoAspect (\(geo.videoAspect))")
+          log.verbose("Aborting update of cached geometry: videoAspect from windowedMode (\(windowedModeGeo.videoAspect)) != new computed value (\(geo.videoAspect))")
           return
         }
         windowedModeGeo = geo

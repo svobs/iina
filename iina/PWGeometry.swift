@@ -1081,6 +1081,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   func toInteractiveMode() -> PWGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowed)
+    // TODO: preserve window size better when lockViewportToVideoSize==false
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
     let resizedGeo = withResizedBars(mode: .windowedInteractive,
                                      outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
@@ -1089,7 +1091,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                      outsideLeadingBarWidth: 0,
                                      insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                      insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                     keepFullScreenDimensions: false)
+                                     keepFullScreenDimensions: !lockViewportToVideoSize)
     return resizedGeo.refit()
   }
 
