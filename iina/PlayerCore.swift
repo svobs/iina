@@ -2195,18 +2195,6 @@ class PlayerCore: NSObject {
     // Kick off thumbnails load/gen - it can happen in background
     reloadThumbnails(forMedia: currentMedia)
 
-    // add to history
-    if let url = info.currentURL {
-      let duration = info.videoDuration ?? .zero
-      HistoryController.shared.queue.async {
-        HistoryController.shared.add(url, duration: duration.second)
-
-        if Preference.bool(for: .recordRecentFiles) && Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-          NSDocumentController.shared.noteNewRecentDocumentURL(url)
-        }
-      }
-    }
-
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
     trackListChanged()
@@ -2221,18 +2209,21 @@ class PlayerCore: NSObject {
       if #available(macOS 10.12.2, *) {
         touchBarSupport.setupTouchBarUI()
       }
+
+      let appDelegate = AppDelegate.shared  // must dereference this only from main thread
+      // add to history
+      if let url = info.currentURL {
+        let duration = info.videoDuration ?? .zero
+        HistoryController.shared.queue.async {
+          HistoryController.shared.add(url, duration: duration.second)
+
+          if Preference.bool(for: .recordRecentFiles) && Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+            appDelegate.noteNewRecentDocumentURL(url)
+          }
+        }
+      }
     }
 
-    // add to history
-    if let url = info.currentURL {
-      let duration = info.videoDuration ?? .zero
-      HistoryController.shared.queue.async {
-        HistoryController.shared.add(url, duration: duration.second)
-      }
-      if Preference.bool(for: .recordRecentFiles) && Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-        DispatchQueue.main.sync { AppDelegate.shared.noteNewRecentDocumentURL(url) }
-      }
-    }
     postNotification(.iinaFileLoaded)
     events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
   }

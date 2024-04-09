@@ -115,6 +115,11 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     reloadData()
   }
 
+  override func showWindow(_ sender: Any?) {
+    Logger.log("Showing History window", level: .verbose)
+    super.showWindow(sender)
+  }
+
   private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
     return Preference.UIState.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
   }
@@ -180,19 +185,17 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     Logger.log("Reloading history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn)", level: .verbose)
 
     for entry in historyList {
-      addToData(entry, forKey: getKey[groupBy]!(entry))
+      let key = getKey[groupBy]!(entry)
+
+      if historyData[key] == nil {
+        historyData[key] = []
+        historyDataKeys.append(key)
+      }
+      historyData[key]!.append(entry)
     }
 
     outlineView.reloadData()
     outlineView.expandItem(nil, expandChildren: true)
-  }
-
-  private func addToData(_ entry: PlaybackHistory, forKey key: String) {
-    if historyData[key] == nil {
-      historyData[key] = []
-      historyDataKeys.append(key)
-    }
-    historyData[key]!.append(entry)
   }
 
   private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {

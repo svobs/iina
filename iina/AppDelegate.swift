@@ -689,12 +689,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if result == .OK {  /// OK
         Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
         if Preference.bool(for: .recordRecentFiles) {
-          for url in panel.urls {
-            noteNewRecentDocumentURL(url)
-          }
+          HistoryController.shared.queue.async { [self] in
+            for url in panel.urls {
+              noteNewRecentDocumentURL(url)
+            }
 #if DEBUG
-          saveRecentDocuments()
+            saveRecentDocuments()
 #endif
+          }
         }
         let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternativeAction)
         if playerCore.openURLs(panel.urls) == 0 {
@@ -1387,8 +1389,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// - Parameter sender: The object that initiated the clearing of the recent documents.
   @IBAction
   func clearRecentDocuments(_ sender: Any?) {
-    NSDocumentController.shared.clearRecentDocuments(sender)
-    saveRecentDocuments()
+    HistoryController.shared.queue.async { [self] in
+      NSDocumentController.shared.clearRecentDocuments(sender)
+      saveRecentDocuments()
+    }
   }
 
   /// Adds or replaces an Open Recent menu item corresponding to the data located by the URL.
@@ -1398,6 +1402,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// information..
   /// - Parameter url: The URL to evaluate.
   func noteNewRecentDocumentURL(_ url: URL) {
+    dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
+
     NSDocumentController.shared.noteNewRecentDocumentURL(url)
     saveRecentDocuments()
   }
@@ -1422,14 +1428,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// Then this method assumes that the macOS daemon `sharedfilelistd` cleared the list and it populates the list of recent
   /// document URLs with the list stored in IINA's settings.
   private func restoreRecentDocuments() {
-    guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
-          NSDocumentController.shared.recentDocumentURLs.isEmpty,
-          let recentDocuments = Preference.array(for: .recentDocuments),
-          !recentDocuments.isEmpty else { return }
-
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     HistoryController.shared.queue.async { [self] in
+
+      guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
+            NSDocumentController.shared.recentDocumentURLs.isEmpty,
+            let recentDocuments = Preference.array(for: .recentDocuments),
+            !recentDocuments.isEmpty else { return }
+
       Logger.log("Restoring list of recent documents (\(recentDocuments.count))")
       var foundStale = false
       for document in recentDocuments {
@@ -1461,6 +1468,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// `restoreRecentDocuments` and the issue [#4688](https://github.com/iina/iina/issues/4688) for more
   /// information..
   func saveRecentDocuments() {
+    dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
+
     guard #available(macOS 14, *) else { return }
     var recentDocuments: [Any] = []
     for document in NSDocumentController.shared.recentDocumentURLs {
