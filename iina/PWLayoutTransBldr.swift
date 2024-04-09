@@ -259,6 +259,9 @@ extension PlayerWindowController {
     if transition.isEnteringMusicMode {
       showFadeableViewsDuration = startingAnimationDuration * 0.5
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5
+    } else if transition.isEnteringInteractiveMode {
+      showFadeableViewsDuration = startingAnimationDuration * 0.25
+      fadeOutOldViewsDuration = startingAnimationDuration * 0.5
     } else if transition.isExitingInteractiveMode {
       showFadeableViewsDuration = 0
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5
@@ -473,20 +476,7 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
-        let resizedGeo = transition.inputGeometry.withResizedBars(mode: transition.inputLayout.mode,
-                                                                  outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
-                                                                  outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                                                  insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                                  insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                                                  keepFullScreenDimensions: false)
-        // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
-        let minViewportSizeIM = transition.inputGeometry.minViewportSize(mode: .windowedInteractive)
-        let minViewportSize = PWGeometry.computeMinSize(withAspect: transition.inputGeometry.videoAspect,
-                                                        minWidth: minViewportSizeIM.width,
-                                                        minHeight: minViewportSizeIM.height)
-        let newViewportSize = NSSize(width: max(resizedGeo.videoSize.width, minViewportSize.width),
-                                     height: max(resizedGeo.videoSize.height, minViewportSize.height))
-        return resizedGeo.scaleViewport(to: newViewportSize)
+        return transition.outputGeometry
 
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords

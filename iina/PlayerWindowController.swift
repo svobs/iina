@@ -3225,7 +3225,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
           // FIXME: need to un-rotate while in interactive mode
           let prevCropBox = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-          log.verbose("EnterInteractiveMode: Uncropping video, to videoSizeRaw: \(videoSizeRaw), from cropRectRaw: \(prevCropBox)")
+          log.verbose("EnterInteractiveMode: Uncropping video from cropRectRaw: \(prevCropBox) to videoSizeRaw: \(videoSizeRaw)")
           let newVideoAspect = videoSizeRaw.mpvAspect
 
           switch currentLayout.mode {
@@ -3254,14 +3254,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
               log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
-              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize, lockViewportToVideoSize: false)
+              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize)
             } else {
               // If not locking viewport to video, just reuse viewport
               uncroppedWindowedGeo = existingGeoWithNewAspect.refit()
             }
             log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedWindowedGeo)")
 
-            let uncropDuration = IINAAnimation.CropAnimationDuration * 0.05
+            let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
             tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
               videoView.apply(uncroppedWindowedGeo)
               player.window.setFrameImmediately(uncroppedWindowedGeo.windowFrame)
