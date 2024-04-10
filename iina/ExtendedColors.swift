@@ -33,8 +33,10 @@ extension NSColor.Name {
   static let initialWindowDebugLabel = NSColor.Name("InitialWindowDebugLabel")
 
   static let cropBoxFill = NSColor.Name("CropBoxFill")
-  static let playlistProgressBar = NSColor.Name("PlaylistProgressBar")
   
+  static let playlistProgressBarActive = NSColor.Name("PlaylistProgressBarActive")
+  static let playlistProgressBarBackground = NSColor.Name("PlaylistProgressBarBackground")
+
   static let sidebarTabTint = NSColor.Name("SidebarTabTint")
   static let sidebarTabTintActive = NSColor.Name("SidebarTabTintActive")
 }
@@ -43,4 +45,6 @@ extension NSColor.Name {
 extension NSColor {
   static let sidebarTabTint: NSColor = NSColor(named: .sidebarTabTint)!
   static let sidebarTabTintActive: NSColor = NSColor(named: .sidebarTabTintActive)!
+  static let playlistProgressBarActive = NSColor(named: .playlistProgressBarActive)!
+  static let playlistProgressBarBackground = NSColor(named: .playlistProgressBarBackground)!
 }

@@ -644,6 +644,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                 if let progress = cached.progress {
                   cellView.playbackProgressView.percentage = progress / duration
                   cellView.playbackProgressView.needsDisplay = true
+                  cellView.playbackProgressView.isHidden = false
+                } else {
+                  cellView.playbackProgressView.isHidden = true
                 }
                 if isPlaying {
                   cellView.needsDisplay = true

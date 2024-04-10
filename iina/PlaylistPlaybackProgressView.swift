@@ -8,28 +8,21 @@
 
 import Cocoa
 
-fileprivate extension NSColor {
-  static let playlistProgressBar: NSColor = {
-    if #available(macOS 10.14, *) {
-      return NSColor(named: .playlistProgressBar)!
-    } else {
-      return NSColor(calibratedWhite: 1, alpha: 0.6)
-    }
-  }()
-}
-
 class PlaylistPlaybackProgressView: NSView {
-
-  private static let fillColor = NSColor.playlistProgressBar
+  private static let playlistProgressBarBackground = NSColor.playlistProgressBarBackground
+  private static let playlistProgressBarActive = NSColor.playlistProgressBarActive
 
   /// The percentage from 0 to 1.
   var percentage: Double = 0
 
-
   override func draw(_ dirtyRect: NSRect) {
-    let rect = NSRect(x: 0, y: 0, width: bounds.width * CGFloat(percentage), height: bounds.height)
-    PlaylistPlaybackProgressView.fillColor.setFill()
-    NSBezierPath(rect: rect).fill()
+    let bgRect = NSRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
+    PlaylistPlaybackProgressView.playlistProgressBarBackground.setFill()
+    NSBezierPath(rect: bgRect).fill()
+
+    let fgRect = NSRect(x: 0, y: 0, width: bounds.width * CGFloat(percentage), height: bounds.height)
+    PlaylistPlaybackProgressView.playlistProgressBarActive.setFill()
+    NSBezierPath(rect: fgRect).fill()
   }
 
 }
