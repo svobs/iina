@@ -195,8 +195,10 @@ struct VideoGeometry: CustomStringConvertible {
     }
 
     if let cropRect = VideoGeometry.makeCropRect(fromCropLabel: cropLabel,
-                                                rawWidth: Int(videoSizeRaw.width), rawHeight: Int(videoSizeRaw.height)) {
-      return MPVFilter.crop(w: Int(cropRect.width), h: Int(cropRect.height), x: Int(cropRect.origin.x), y: Int(cropRect.origin.y))
+                                                 rawWidth: Int(videoSizeRaw.width), rawHeight: Int(videoSizeRaw.height)) {
+
+      let unflippedY = videoSizeRaw.height - (cropRect.origin.y + cropRect.height)
+      return MPVFilter.crop(w: Int(cropRect.width), h: Int(cropRect.height), x: Int(cropRect.origin.x), y: Int(unflippedY))
     }
 
     log.error("Not a valid aspect-based crop string: \(cropLabel.quoted)")
