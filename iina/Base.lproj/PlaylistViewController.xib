@@ -96,7 +96,8 @@
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="0.0"/>
                                                     <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.080000000000000002" colorSpace="calibratedRGB"/>
-                                                    <color key="gridColor" red="1" green="1" blue="1" alpha="0.10000000000000001" colorSpace="calibratedRGB"/>
+                                                    <tableViewGridLines key="gridStyleMask" horizontal="YES"/>
+                                                    <color key="gridColor" red="1" green="1" blue="1" alpha="0.050000000000000003" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                                     <tableColumns>
                                                         <tableColumn identifier="IsChosen" editable="NO" width="16" minWidth="16" maxWidth="16" id="no0-xJ-G1t">
                                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="justified">
@@ -205,9 +206,9 @@
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="K4f-mB-ja8" customClass="PlaylistPlaybackProgressView" customModule="IINA" customModuleProvider="target">
-                                                                            <rect key="frame" x="0.0" y="4" width="214" height="3"/>
+                                                                            <rect key="frame" x="0.0" y="3" width="210" height="3"/>
                                                                             <constraints>
-                                                                                <constraint firstAttribute="height" constant="2.5" id="07t-ih-NtZ"/>
+                                                                                <constraint firstAttribute="height" constant="3" id="07t-ih-NtZ"/>
                                                                             </constraints>
                                                                         </customView>
                                                                     </subviews>
@@ -217,12 +218,12 @@
                                                                         <constraint firstAttribute="trailing" secondItem="yEn-uv-K8Z" secondAttribute="trailing" constant="4" id="G6G-5M-gSa"/>
                                                                         <constraint firstItem="yEn-uv-K8Z" firstAttribute="leading" secondItem="MbV-7g-8Gm" secondAttribute="trailing" constant="4" id="IXf-e2-j8t"/>
                                                                         <constraint firstItem="rsK-ba-ojP" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="mzW-2W-iPg" secondAttribute="trailing" constant="4" id="V7g-16-fmO"/>
-                                                                        <constraint firstAttribute="bottom" secondItem="K4f-mB-ja8" secondAttribute="bottom" constant="4" id="XZo-GL-gZh"/>
+                                                                        <constraint firstAttribute="bottom" secondItem="K4f-mB-ja8" secondAttribute="bottom" constant="3" id="XZo-GL-gZh"/>
                                                                         <constraint firstItem="mzW-2W-iPg" firstAttribute="leading" secondItem="U4W-Xv-hkh" secondAttribute="trailing" id="XeG-0c-05U"/>
                                                                         <constraint firstItem="rsK-ba-ojP" firstAttribute="firstBaseline" secondItem="mzW-2W-iPg" secondAttribute="firstBaseline" id="c3b-62-9Tr"/>
                                                                         <constraint firstItem="U4W-Xv-hkh" firstAttribute="centerY" secondItem="yTp-yO-UE2" secondAttribute="centerY" id="g5U-ZA-Kco"/>
                                                                         <constraint firstItem="MbV-7g-8Gm" firstAttribute="leading" secondItem="rsK-ba-ojP" secondAttribute="trailing" constant="4" id="hoP-Vl-aD1"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="K4f-mB-ja8" secondAttribute="trailing" id="mSL-zL-ggu"/>
+                                                                        <constraint firstItem="yEn-uv-K8Z" firstAttribute="trailing" secondItem="K4f-mB-ja8" secondAttribute="trailing" id="mSL-zL-ggu"/>
                                                                         <constraint firstItem="U4W-Xv-hkh" firstAttribute="leading" secondItem="yTp-yO-UE2" secondAttribute="leading" id="pTq-Bj-ICm"/>
                                                                         <constraint firstItem="mzW-2W-iPg" firstAttribute="centerY" secondItem="yTp-yO-UE2" secondAttribute="centerY" id="qW6-QF-Yl2"/>
                                                                         <constraint firstItem="MbV-7g-8Gm" firstAttribute="centerY" secondItem="yTp-yO-UE2" secondAttribute="centerY" id="wxw-4Y-UJ4"/>

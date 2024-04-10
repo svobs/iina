@@ -572,6 +572,22 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
+  fileprivate class ClearBackgroundRowView: NSTableRowView {
+    override func drawBackground(in dirtyRect: NSRect) {
+      layer?.backgroundColor = .clear
+
+      // Y origin is at top
+      let dash = NSRect(x: 0, y: bounds.height - 1, width: bounds.width, height: 1)
+      NSColor.playlistProgressBarBackground.setFill()
+      NSBezierPath(rect: dash).fill()
+    }
+  }
+
+//  func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+//    // uses custom highlight for table row
+//    return ClearBackgroundRowView()
+//  }
+
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
     let info = player.info

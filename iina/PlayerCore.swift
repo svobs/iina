@@ -2129,9 +2129,6 @@ class PlayerCore: NSObject {
     _ = getAudioFilters()
     saveState()
     postNotification(.iinaAFChanged)
-    /// The first filter msg after starting a file means that the file is officially done loading.
-    /// (Put this here instead of at `playback-restart` because it occurs later & will avoid triggering display of OSDs)
-    fileIsCompletelyDoneLoading()
   }
   
   /// The mpv `file-loaded` event is emitted before everything associated with the file (such as filters) is completely done loading.
@@ -2326,8 +2323,6 @@ class PlayerCore: NSObject {
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid != info.vid else { return }
     info.vid = vid
-
-    log.verbose("Video track changed to: \(vid)")
 
     /// Do this first, before `applyVideoVisibility`, for a nicer animation`
     windowController.refreshAlbumArtDisplay()

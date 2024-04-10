@@ -236,7 +236,11 @@ class PlaybackInfo {
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
   var aid: Int?
   var sid: Int?
-  var vid: Int?
+  var vid: Int? {
+    didSet {
+      log.verbose("Video track changed to: \(vid?.description ?? "nil")")
+    }
+  }
   var secondSid: Int?
 
   var isAudioTrackSelected: Bool {

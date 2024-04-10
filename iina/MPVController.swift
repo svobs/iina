@@ -413,7 +413,8 @@ not applying FFmpeg 9599 workaround
     setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions)
     /// Reset window-scale when changing tracks to prevent green screen errors
     chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.resetOnNextFile,
-                                 [MPVOption.PlaybackControl.abLoopA,
+                                 [//MPVOption.PlaybackControl.start,
+                                  MPVOption.PlaybackControl.abLoopA,
                                   MPVOption.PlaybackControl.abLoopB].joined(separator: ",")))
 
     // Set user defined conf dir.

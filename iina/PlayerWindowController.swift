@@ -1131,7 +1131,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let showDefaultArt: Bool
     // if received video size before switching to music mode, hide default album art
     // Don't show art if currently loading
-    if isVideoTrackSelected || player.info.justOpenedFile || player.isStopped {
+    if isVideoTrackSelected || player.info.justOpenedFile || player.isStopping || player.isStopped {
       log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = false
     } else {
@@ -1141,6 +1141,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     // Part 2: default audio aspect ratio
 
+    // FIXME
     let oldAspectRatio = player.info.videoAspect
     let showAlbumArt = currentMediaAudioStatus == .isAudio
     /// This can change `player.info.videoAspect`
