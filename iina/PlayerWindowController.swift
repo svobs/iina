@@ -3688,12 +3688,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState) {
     let windowOpacity = Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0
-    setWindowOpacity(to: windowOpacity)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
     customWindowBorderBox.isHidden = hide
     customWindowBorderTopHighlightBox.isHidden = hide
+
+    // Set this *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards
+    setWindowOpacity(to: windowOpacity)
   }
 
   // MARK: - Sync UI with playback
