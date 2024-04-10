@@ -181,6 +181,7 @@
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
 		D191EE152ACE763A00FEF801 /* PWLayoutTransSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */; };
+		D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
 		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
@@ -1572,6 +1573,7 @@
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
 		D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransSteps.swift; sourceTree = "<group>"; };
+		D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCrop.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
 		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
@@ -2616,6 +2618,7 @@
 			children = (
 				84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */,
 				D1FF15742A7E072200C0CE86 /* PlayerCoreManager.swift */,
+				D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */,
 				84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */,
 				D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */,
 				D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */,
@@ -3166,6 +3169,7 @@
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,
 				E33BA5C4204315740069A0F6 /* AssrtSubtitle.swift in Sources */,
+				D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */,
 				E32693F924BA138000BF7ADC /* JavascriptPluginSubtitleItem.swift in Sources */,
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
 				844DE1BF1D3E2B9900272589 /* MPVEvent.swift in Sources */,

@@ -325,8 +325,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       customCropTextField.isHidden = true
     } else {
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
-      if Preference.bool(for: .enableAdvancedSettings), let cropBox = player.info.videoGeo.cropBox {
-        customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropBox)
+      if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.info.videoGeo.cropRect {
+        customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropRect)
         customCropTextField.isHidden = false
       } else {
         customCropTextField.isHidden = true

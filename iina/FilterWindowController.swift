@@ -60,6 +60,16 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     super.windowDidLoad()
     window?.delegate = self
 
+    keyRecordView.delegate = self
+    editFilterKeyRecordView.delegate = self
+
+    savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
+
+    // notifications
+    let notiName: Notification.Name = filterType == MPVProperty.af ? .iinaAFChanged : .iinaVFChanged
+    NotificationCenter.default.addObserver(self, selector: #selector(reloadTableInMainThread), name: notiName, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(reloadTable), name: .iinaPlayerWindowChanged, object: nil)
+
     // title
     window?.title = filterType == MPVProperty.af ? NSLocalizedString("filter.audio_filters", comment: "Audio Filters") : NSLocalizedString("filter.video_filters", comment: "Video Filters")
 
@@ -68,20 +78,9 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     Utility.quickConstraints(["H:|[v]|", "V:|[v]|", "H:|[w]|", "V:|[w]|"], ["v": upperView, "w": lowerView])
     splitView.setPosition(splitView.frame.height - 140, ofDividerAt: 0)
 
-    savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
-    filters = PlayerCore.lastActive.mpv.getFilters(filterType)
-    currentFiltersTableView.reloadData()
-    savedFiltersTableView.reloadData()
-
-    keyRecordView.delegate = self
-    editFilterKeyRecordView.delegate = self
-
     updateButtonStatus()
 
-    // notifications
-    let notiName: Notification.Name = filterType == MPVProperty.af ? .iinaAFChanged : .iinaVFChanged
-    NotificationCenter.default.addObserver(self, selector: #selector(reloadTableInMainThread), name: notiName, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(reloadTable), name: .iinaPlayerWindowChanged, object: nil)
+    reloadTableInMainThread()
   }
 
   @objc
@@ -94,27 +93,35 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
   @objc
   func reloadTable() {
     let pc = PlayerCore.lastActive
-    // When IINA is terminating player windows are closed, which causes the iinaPlayerWindowChanged
-    // notification to be posted and that results in the observer established above calling this
-    // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
-    // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
-    guard !pc.isShuttingDown, !pc.isShutdown else { return }
-    filters = pc.mpv.getFilters(filterType)
-    filterIsSaved = [Bool](repeatElement(false, count: filters.count))
-    savedFilters.forEach { savedFilter in
-      if let asObject = MPVFilter(rawString: savedFilter.filterString),
-         let index = filters.firstIndex(of: asObject) {
-        savedFilter.isEnabled = true
-        filterIsSaved[index] = true
-      } else {
-        savedFilter.isEnabled = false
+    pc.log.verbose("Reloading \(filterType) table")
+    let savedFilters = self.savedFilters
+    pc.mpv.queue.async { [self] in
+      // When IINA is terminating player windows are closed, which causes the iinaPlayerWindowChanged
+      // notification to be posted and that results in the observer established above calling this
+      // method. Thus this method may be called after IINA has commanded mpv to shutdown. Once mpv has
+      // been told to shutdown mpv APIs must not be called as it can trigger a crash in mpv.
+      guard !pc.isShuttingDown, !pc.isShutdown, !pc.isStopping, !pc.isStopped else { return }
+      let filters = (filterType == MPVProperty.af) ? pc.getAudioFilters() : pc.getVideoFilters()
+      var filterIsSaved = [Bool](repeatElement(false, count: filters.count))
+      savedFilters.forEach { savedFilter in
+        if let asObject = MPVFilter(rawString: savedFilter.filterString),
+           let index = filters.firstIndex(of: asObject) {
+          savedFilter.isEnabled = true
+          filterIsSaved[index] = true
+        } else {
+          savedFilter.isEnabled = false
+        }
+      }
+      DispatchQueue.main.async { [self] in
+        self.filters = filters
+        self.filterIsSaved = filterIsSaved
+        currentFiltersTableView.reloadData()
+        savedFiltersTableView.reloadData()
       }
     }
-    currentFiltersTableView.reloadData()
-    savedFiltersTableView.reloadData()
   }
 
-  func setFilters() {
+  private func setFilters() {
     PlayerCore.lastActive.mpv.setFilters(filterType, filters: filters)
   }
 
@@ -210,6 +217,8 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     let row = savedFiltersTableView.row(for: sender)
     let savedFilter = savedFilters[row]
     let pc = PlayerCore.lastActive
+    let toggleOn = sender.state == .on
+    let filters = filters
 
     pc.mpv.queue.async { [self] in
       // choose appropriate add/remove functions for .af/.vf
@@ -226,7 +235,7 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
         removeFilterUsingStringFunction = pc.removeAudioFilter
       }
 
-      if sender.state == .on {  // user activated filter
+      if toggleOn {  // user activated filter
         if addFilterFunction(savedFilter.filterString) {
           pc.sendOSD(.addFilter(savedFilter.name))
         }

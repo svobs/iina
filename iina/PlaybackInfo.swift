@@ -188,7 +188,6 @@ class PlaybackInfo {
 
   // MARK: - Filters & Equalizers
 
-  var cropFilter: MPVFilter?
   var flipFilter: MPVFilter?
   var mirrorFilter: MPVFilter?
   var audioEqFilters: [MPVFilter?]?

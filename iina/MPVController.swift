@@ -865,6 +865,7 @@ not applying FFmpeg 9599 workaround
   /** Set filter. only "af" or "vf" is supported for name */
   func setFilters(_ name: String, filters: [MPVFilter]) {
     queue.async { [self] in
+      guard !player.isShuttingDown, !player.isShutdown, !player.isStopping, !player.isStopped else { return }
       Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "setFilters() do not support \(name)!")
       let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
 
@@ -937,7 +938,7 @@ not applying FFmpeg 9599 workaround
                                selectedAspectLabel: player.info.videoGeo.selectedAspectLabel,
                                totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.info.videoGeo.selectedCropLabel,
-                               scale: videoScale)
+                               scale: videoScale, log: player.log)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(params)")
     if let videoSizeAC = params.videoSizeAC, Int(videoSizeAC.width) != videoWidthAC || Int(videoSizeAC.height) != videoHeightAC {
@@ -1096,7 +1097,6 @@ not applying FFmpeg 9599 workaround
         recordedSeekTimeListener?(CACurrentMediaTime() - recordedSeekStartTime)
         recordedSeekTimeListener = nil
       }
-      player.reloadSavedIINAfilters()
 
       player.playbackRestarted()
 

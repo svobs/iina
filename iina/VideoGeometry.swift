@@ -14,7 +14,7 @@ import Foundation
 /// `videoSizeRaw` (`rawWidth`, `rawHeight`)
 ///   ➤ Parse `selectedAspectLabel` into `aspectRatioOverride`, then apply it
 ///     ➤ `videoSizeA`
-///       ➤ Parse `selectedCropLabel` into `cropBox`, then apply it
+///       ➤ Parse `selectedCropLabel` into `cropRect`, then apply it
 ///         ➤ `videoSizeAC` (`videoWidthAC` x `videoHeightAC`). AKA "dsize", per mpv usage
 ///           ➤ apply `totalRotation` (== `userRotation` + rotation specified by video)
 ///             ➤ `videoSizeACR` (`videoWidthACR`, `videoHeightACR`)
@@ -25,13 +25,16 @@ struct VideoGeometry: CustomStringConvertible {
                                           selectedAspectLabel: "",
                                           totalRotation: 0, userRotation: 0,
                                           selectedCropLabel: AppData.noneCropIdentifier,
-                                          scale: 0)
+                                          scale: 0, log: Logger.Subsystem(rawValue: "null"))
+
+  private let log: Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
        selectedAspectLabel: String,
        totalRotation: Int, userRotation: Int,
        selectedCropLabel: String,
-       scale: CGFloat) {
+       scale: CGFloat,
+       log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
     if let aspectRatioOverride = Aspect(string: selectedAspectLabel) {
@@ -44,8 +47,9 @@ struct VideoGeometry: CustomStringConvertible {
     self.totalRotation = totalRotation
     self.userRotation = userRotation
     self.selectedCropLabel = selectedCropLabel
-    self.cropBox = VideoGeometry.makeCropBox(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
+    self.cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
     self.scale = scale
+    self.log = log
   }
 
   // FIXME: make this the SST for scale, instead of calculating it afterwards
@@ -58,7 +62,7 @@ struct VideoGeometry: CustomStringConvertible {
                          selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
                          totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
                          selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
-                         scale: scale ?? self.scale)
+                         scale: scale ?? self.scale, log: self.log)
 
   }
 
@@ -109,8 +113,29 @@ struct VideoGeometry: CustomStringConvertible {
   /// sidebar's segmented control.
   let selectedCropLabel: String
 
+  var hasCrop: Bool {
+    return selectedCropLabel != AppData.noneCropIdentifier
+  }
+
   /// This is derived from `selectedCropLabel`, but has its Y value flipped so that it works with Cocoa views.
-  let cropBox: CGRect?
+  let cropRect: CGRect?
+
+  lazy var cropRectNormalized: CGRect? = {
+    guard let videoSizeRaw, let cropRect else { return nil }
+    let xNorm = cropRect.origin.x / videoSizeRaw.width
+    let yNorm = cropRect.origin.y / videoSizeRaw.height
+    let widthNorm = cropRect.width / videoSizeRaw.width
+    let heightNorm = cropRect.height / videoSizeRaw.height
+    let normRect = NSRect(x: xNorm, y: yNorm, width: widthNorm, height: heightNorm)
+    if log.isTraceEnabled {
+      log.trace("Normalized cropRect \(cropRect) → \(normRect)")
+    }
+    guard widthNorm > 0, heightNorm > 0 else {
+      log.warn("Invalid cropRect! Returning nil")
+      return nil
+    }
+    return normRect
+  }()
 
   /// The video size, after aspect override and crop filter applied, but before rotation or final scaling.
   ///
@@ -128,8 +153,8 @@ struct VideoGeometry: CustomStringConvertible {
     let widthMultiplier = videoSizeA.width / videoSizeRaw.width
     let heightMultiplier = videoSizeA.height / videoSizeRaw.height
 
-    if let cropBox {
-      return CGSize(width: cropBox.width * widthMultiplier, height: cropBox.height * heightMultiplier)
+    if let cropRect {
+      return CGSize(width: cropRect.width * widthMultiplier, height: cropRect.height * heightMultiplier)
     }
     return videoSizeA
   }
@@ -145,6 +170,39 @@ struct VideoGeometry: CustomStringConvertible {
     return Int(videoSizeAC.height)
   }
 
+  var cropFilter: MPVFilter? {
+    return buildCropFilter(from: selectedCropLabel)
+  }
+
+  func buildCropFilter(from cropLabel: String) -> MPVFilter? {
+    if cropLabel.isEmpty || cropLabel == AppData.noneCropIdentifier {
+      return nil
+    }
+
+    guard let videoSizeRaw else {
+      log.error("Cannot build crop filter from \(cropLabel.quoted): videoSizeRaw is invalid")
+      return nil
+    }
+
+    if let aspect = Aspect(string: cropLabel)  {
+      let cropped = videoSizeRaw.crop(withAspect: aspect)
+      log.verbose("Building crop filter from requested string \(cropLabel.quoted) to: \(cropped.width)x\(cropped.height) (origSize: \(videoSizeRaw))")
+      guard cropped.width > 0 && cropped.height > 0 else {
+        log.error("Cannot build crop filter from \(cropped); width or height is <= 0")
+        return nil
+      }
+      return MPVFilter.crop(w: Int(cropped.width), h: Int(cropped.height), x: nil, y: nil)
+    }
+
+    if let cropRect = VideoGeometry.makeCropRect(fromCropLabel: cropLabel,
+                                                rawWidth: Int(videoSizeRaw.width), rawHeight: Int(videoSizeRaw.height)) {
+      return MPVFilter.crop(w: Int(cropRect.width), h: Int(cropRect.height), x: Int(cropRect.origin.x), y: Int(cropRect.origin.y))
+    }
+
+    log.error("Not a valid aspect-based crop string: \(cropLabel.quoted)")
+    return nil
+  }
+  
   // MARK: - TRANSFORMATION 3: Rotation
   // (Aspect + Crop + Rotation)
 
@@ -219,7 +277,7 @@ struct VideoGeometry: CustomStringConvertible {
   // MARK: - Etc
 
   var description: String {
-    return "VideoGeometry:{vidSizeRaw=\(rawWidth)x\(rawHeight) vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropBox=\(cropBox?.description ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil")}"
+    return "VideoGeometry:{vidSizeRaw=\(rawWidth)x\(rawHeight) vidSizeAC=\(videoWidthAC?.description ?? "nil")x\(videoHeightAC?.description ?? "nil") selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropRect=\(cropRect?.description ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil")}"
   }
 
   // MARK: Static util functions
@@ -237,7 +295,7 @@ struct VideoGeometry: CustomStringConvertible {
     return CGSize(width: round(origSize.width / origAspect * newAspect), height: origSize.height)
   }
 
-  static func makeCropBox(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
+  static func makeCropRect(fromCropLabel cropLabel: String, rawWidth: Int, rawHeight: Int) -> CGRect? {
     if cropLabel == AppData.noneCropIdentifier {
       return nil
     }

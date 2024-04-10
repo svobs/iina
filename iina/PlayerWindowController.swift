@@ -3200,12 +3200,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
 
-      if mode == .crop, let vf = player.info.cropFilter, let filterLabel = vf.label {
+      if mode == .crop, let vf = player.info.videoGeo.cropFilter {
         log.error("Crop mode requested, but found an existing crop filter (\(vf.stringFormat.quoted)). Will remove it before entering")
         // A crop is already set. Need to temporarily remove it so that the whole video can be seen again,
         // so that a new crop can be chosen. But keep info from the old filter in case the user cancels.
-        assert(vf.label == Constants.FilterLabel.crop, "Unexpected label for crop filter: \(vf.name.quoted)")
-        player.info.videoFiltersDisabled[filterLabel] = vf
+        player.info.videoFiltersDisabled[vf.label!] = vf
         // Change this pre-emptively so that removeVideoFilter doesn't trigger a window geometry change
         player.info.videoGeo = player.info.videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
         if !player.removeVideoFilter(vf) {
@@ -3233,19 +3232,24 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
             let oldVideoAspect = prevCropBox.size.mpvAspect
             // Scale viewport to roughly match window size
             assert(windowedModeGeo.mode == .windowed)
-            let existingGeoWithNewAspect = windowedModeGeo.clone(videoAspect: newVideoAspect)
+            let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
+            var uncroppedClosedBarsGeo = windowedModeGeo.withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
+                                                                         outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                                                                         insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                                                         insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                                                         videoAspect: newVideoAspect,
+                                                                         keepFullScreenDimensions: !lockViewportToVideoSize)
 
-            let uncroppedWindowedGeo: PWGeometry
-            if Preference.bool(for: .lockViewportToVideoSize) {
+            if lockViewportToVideoSize {
               // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
               // This heuristic seems to work ok
-              let viewportSize = existingGeoWithNewAspect.viewportSize
+              let viewportSize = uncroppedClosedBarsGeo.viewportSize
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
               let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
-              let minViewportSizeIM = existingGeoWithNewAspect.minViewportSize(mode: .windowedInteractive)
+              let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
               let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
                                                                       minWidth: minViewportSizeIM.width,
                                                                       minHeight: minViewportSizeIM.height)
@@ -3254,21 +3258,21 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
               log.verbose("EnterInteractiveMode: aspectChangeFactor:\(aspectChangeFactor), viewportSizeMultiplier: \(viewportSizeMultiplier), newViewportSize:\(newViewportSize)")
-              uncroppedWindowedGeo = existingGeoWithNewAspect.scaleViewport(to: newViewportSize)
+              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.scaleViewport(to: newViewportSize)
             } else {
               // If not locking viewport to video, just reuse viewport
-              uncroppedWindowedGeo = existingGeoWithNewAspect.refit()
+              uncroppedClosedBarsGeo = uncroppedClosedBarsGeo.refit()
             }
-            log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedWindowedGeo)")
+            log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)")
 
             let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
             tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
-              videoView.apply(uncroppedWindowedGeo)
-              player.window.setFrameImmediately(uncroppedWindowedGeo.windowFrame)
+              videoView.apply(uncroppedClosedBarsGeo)
+              player.window.setFrameImmediately(uncroppedClosedBarsGeo.windowFrame)
             })
 
             // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
-            let geoOverride = geo(windowed: uncroppedWindowedGeo, videoAspect: newVideoAspect)
+            let geoOverride = geo(windowed: uncroppedClosedBarsGeo, videoAspect: newVideoAspect)
             tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
 
           case .fullScreen:
@@ -3328,14 +3332,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     var animationTasks: [IINAAnimation.Task] = []
 
     // If these params are present and valid, then need to apply a crop
-    if let cropController = cropSettingsView, let videoSizeRaw = newVidGeo?.videoSizeRaw, let cropBox = newVidGeo?.cropBox {
+    if let cropController = cropSettingsView, let videoSizeRaw = newVidGeo?.videoSizeRaw, let cropRect = newVidGeo?.cropRect {
 
-      log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropBox: \(cropBox)")
+      log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)")
 
       /// Must update `windowedModeGeo` outside of animation task!
       // this works for full screen modes too
       let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, videoAspect: videoSizeRaw.mpvAspect)
-      let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropBox)
+      let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropRect)
       if currentLayout.mode == .windowedInteractive {
         windowedModeGeo = newIMGeo
       }
@@ -3369,7 +3373,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.75
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
-    let geo = self.geo(videoAspect: newVidGeo?.cropBox?.size.mpvAspect)
+    let geo = self.geo(videoAspect: newVidGeo?.cropRect?.size.mpvAspect)
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
     animationTasks.append(contentsOf: transition.animationTasks)
@@ -3538,7 +3542,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // Apply crop first. Then aspect
       let croppedImage: NSImage
       if let videoSizeRaw = videoGeo.videoSizeRaw, 
-          let normalizedCropRect = player.getCurrentCropRect(videoSizeRaw: videoSizeRaw, normalized: true, flipY: false) {
+          let normalizedCropRect = player.info.videoGeo.cropRectNormalized {
         croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
       } else {
         croppedImage = rotatedImage

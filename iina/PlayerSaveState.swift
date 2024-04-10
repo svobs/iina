@@ -64,8 +64,8 @@ struct PlayerSaveState {
 
     case videoRawWidth = "vidRawW"    /// `MPVProperty.width`
     case videoRawHeight = "vidRawH"   /// `MPVProperty.height`
-    case videoAspectLabel = "aspect"  /// `MPVOption.Video.videoAspectOverride`-ish
-    case cropLabel = "cropLabel"
+    case videoAspectLabel = "aspect"  /// Converted into `MPVOption.Video.videoAspectOverride`
+    case cropLabel = "cropLabel"      /// Converted into `MPVOption.Video.videoAspectOverride`
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
     case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
 
