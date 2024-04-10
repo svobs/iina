@@ -183,24 +183,25 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
 
   @IBAction func removeFilterAction(_ sender: Any) {
     let pc = PlayerCore.lastActive
-    let selectedRow = currentFiltersTableView.selectedRow
-    if selectedRow >= 0 {
+    let selectedRows = currentFiltersTableView.selectedRowIndexes
+    if !selectedRows.isEmpty {
       pc.mpv.queue.async { [self] in
-        let success: Bool
         if filterType == MPVProperty.vf {
-          success = pc.removeVideoFilter(filters[selectedRow], selectedRow)
-        } else {
-          success = pc.removeAudioFilter(filters[selectedRow], selectedRow)
-        }
-        if success {
-          DispatchQueue.main.async { [self] in
-            reloadTable()
-            pc.sendOSD(.removeFilter)
-            // FIXME: For some reason, after removeFilterAction is called, tableViewSelectionDidChange(_:)
-            // for currentFiltersTableView is not called. This is a workaround to ensure
-            // tableViewSelectionDidChange(_:) is called.
-            currentFiltersTableView.deselectAll(self)
+          for row in selectedRows.sorted().reversed() {
+            _ = pc.removeVideoFilter(filters[row], row)
           }
+        } else {
+          for row in selectedRows.sorted().reversed() {
+            _ = pc.removeAudioFilter(filters[row], row)
+          }
+        }
+        DispatchQueue.main.async { [self] in
+          reloadTable()
+          pc.sendOSD(.removeFilter)
+          // FIXME: For some reason, after removeFilterAction is called, tableViewSelectionDidChange(_:)
+          // for currentFiltersTableView is not called. This is a workaround to ensure
+          // tableViewSelectionDidChange(_:) is called.
+          currentFiltersTableView.deselectAll(self)
         }
       }
     }
