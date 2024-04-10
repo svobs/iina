@@ -10,7 +10,6 @@ import Cocoa
 
 @available(macOS 10.13, *)
 extension NSColor.Name {
-  static let sidebarTableBackground = NSColor.Name("SidebarTableBackground")
   static let aboutWindowBackground = NSColor.Name("AboutWindowBackground")
 
   static let mainSliderBarLeft = NSColor.Name("MainSliderBarLeft")
@@ -19,6 +18,9 @@ extension NSColor.Name {
   static let mainSliderKnob = NSColor.Name("MainSliderKnob")
   static let mainSliderKnobActive = NSColor.Name("MainSliderKnobActive")
   static let mainSliderLoopKnob = NSColor.Name("MainSliderLoopKnob")
+
+  static let playlistProgressBarActive = NSColor.Name("PlaylistProgressBarActive")
+  static let playlistProgressBarBackground = NSColor.Name("PlaylistProgressBarBackground")
 
   static let titleBarBorder = NSColor.Name("TitleBarBorder")
 
@@ -33,10 +35,8 @@ extension NSColor.Name {
   static let initialWindowDebugLabel = NSColor.Name("InitialWindowDebugLabel")
 
   static let cropBoxFill = NSColor.Name("CropBoxFill")
-  
-  static let playlistProgressBarActive = NSColor.Name("PlaylistProgressBarActive")
-  static let playlistProgressBarBackground = NSColor.Name("PlaylistProgressBarBackground")
 
+  static let sidebarTableBackground = NSColor.Name("SidebarTableBackground")
   static let sidebarTabTint = NSColor.Name("SidebarTabTint")
   static let sidebarTabTintActive = NSColor.Name("SidebarTabTintActive")
 }
@@ -45,6 +45,7 @@ extension NSColor.Name {
 extension NSColor {
   static let sidebarTabTint: NSColor = NSColor(named: .sidebarTabTint)!
   static let sidebarTabTintActive: NSColor = NSColor(named: .sidebarTabTintActive)!
+
   static let playlistProgressBarActive = NSColor(named: .playlistProgressBarActive)!
   static let playlistProgressBarBackground = NSColor(named: .playlistProgressBarBackground)!
 }

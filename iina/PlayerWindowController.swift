@@ -3542,8 +3542,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       let finalImage: NSImage
       // Apply crop first. Then aspect
       let croppedImage: NSImage
-      if let videoSizeRaw = videoGeo.videoSizeRaw, 
-          let normalizedCropRect = player.info.videoGeo.cropRectNormalized {
+      if let normalizedCropRect = player.info.videoGeo.cropRectNormalized {
         croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
       } else {
         croppedImage = rotatedImage
@@ -3717,7 +3716,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     updateAdditionalInfo()
 
     if isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
       miniPlayer.updateScrollingLabels()
     }
     if player.info.isNetworkResource {
@@ -3725,6 +3723,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
     // Need to also sync volume slider here, because this is called in response to repeated key presses
     updateVolumeUI()
+
   }
 
   private func updatePlaybackTimeUI() {

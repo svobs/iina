@@ -171,6 +171,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   // MARK: - UI
 
   func updateScrollingLabels() {
+    loadIfNeeded()
     titleLabel.stepNext()
     artistAlbumLabel.stepNext()
   }

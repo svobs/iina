@@ -28,11 +28,11 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" customClass="PlaylistView" customModule="IINA" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="241" height="325"/>
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" customClass="PlaylistView" customModule="IINA" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="241" height="323"/>
             <subviews>
                 <stackView distribution="fillEqually" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EHy-pe-5wJ" userLabel="TabButtons Stack View">
-                    <rect key="frame" x="0.0" y="277" width="241" height="48"/>
+                    <rect key="frame" x="0.0" y="275" width="241" height="48"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="5Zq-JQ-XO4">
                             <rect key="frame" x="8" y="0.0" width="109" height="48"/>
@@ -71,28 +71,28 @@
                     </customSpacing>
                 </stackView>
                 <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="glW-5x-LJr">
-                    <rect key="frame" x="0.0" y="275" width="241" height="5"/>
+                    <rect key="frame" x="0.0" y="273" width="241" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="pO7-Tt-PmN"/>
                     </constraints>
                 </box>
                 <tabView drawsBackground="NO" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="Yym-Zw-Hd8" userLabel="PlaylistChapters Tab View">
-                    <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
+                    <rect key="frame" x="0.0" y="0.0" width="241" height="276"/>
                     <font key="font" metaFont="system"/>
                     <tabViewItems>
                         <tabViewItem label="Playlist" identifier="1" id="rjs-Qf-mT6" userLabel="Playlist Tab View Item">
                             <view key="view" id="BXH-zz-cse" userLabel="PlaylistTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
+                                <rect key="frame" x="0.0" y="0.0" width="241" height="277"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="28" horizontalPageScroll="10" verticalLineScroll="28" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n5h-uy-hbd">
-                                        <rect key="frame" x="0.0" y="24" width="241" height="254"/>
+                                        <rect key="frame" x="0.0" y="24" width="241" height="253"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2M9-8L-veI">
-                                            <rect key="frame" x="0.0" y="0.0" width="241" height="254"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="241" height="253"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" tableStyle="fullWidth" columnResizing="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="28" usesAutomaticRowHeights="YES" viewBased="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xIa-sI-0Xn">
-                                                    <rect key="frame" x="0.0" y="0.0" width="241" height="254"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="241" height="253"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="0.0"/>
                                                     <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.080000000000000002" colorSpace="calibratedRGB"/>
@@ -206,7 +206,7 @@
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="K4f-mB-ja8" customClass="PlaylistPlaybackProgressView" customModule="IINA" customModuleProvider="target">
-                                                                            <rect key="frame" x="0.0" y="3" width="210" height="3"/>
+                                                                            <rect key="frame" x="0.0" y="2" width="210" height="3"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="height" constant="3" id="07t-ih-NtZ"/>
                                                                             </constraints>
@@ -218,7 +218,7 @@
                                                                         <constraint firstAttribute="trailing" secondItem="yEn-uv-K8Z" secondAttribute="trailing" constant="4" id="G6G-5M-gSa"/>
                                                                         <constraint firstItem="yEn-uv-K8Z" firstAttribute="leading" secondItem="MbV-7g-8Gm" secondAttribute="trailing" constant="4" id="IXf-e2-j8t"/>
                                                                         <constraint firstItem="rsK-ba-ojP" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="mzW-2W-iPg" secondAttribute="trailing" constant="4" id="V7g-16-fmO"/>
-                                                                        <constraint firstAttribute="bottom" secondItem="K4f-mB-ja8" secondAttribute="bottom" constant="3" id="XZo-GL-gZh"/>
+                                                                        <constraint firstAttribute="bottom" secondItem="K4f-mB-ja8" secondAttribute="bottom" constant="2" id="XZo-GL-gZh"/>
                                                                         <constraint firstItem="mzW-2W-iPg" firstAttribute="leading" secondItem="U4W-Xv-hkh" secondAttribute="trailing" id="XeG-0c-05U"/>
                                                                         <constraint firstItem="rsK-ba-ojP" firstAttribute="firstBaseline" secondItem="mzW-2W-iPg" secondAttribute="firstBaseline" id="c3b-62-9Tr"/>
                                                                         <constraint firstItem="U4W-Xv-hkh" firstAttribute="centerY" secondItem="yTp-yO-UE2" secondAttribute="centerY" id="g5U-ZA-Kco"/>
@@ -373,22 +373,22 @@
                         </tabViewItem>
                         <tabViewItem label="Chapters" identifier="2" id="aaR-kR-im0" userLabel="Chapters Tab View Item">
                             <view key="view" id="8o0-5f-a79" userLabel="ChaptersTab View">
-                                <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
+                                <rect key="frame" x="0.0" y="0.0" width="241" height="276"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="33" horizontalPageScroll="10" verticalLineScroll="33" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Lmd-sc-A3b">
-                                        <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="241" height="276"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="6tr-hz-bdD">
-                                            <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
-                                            <autoresizingMask key="autoresizingMask"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="241" height="276"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="31" rowSizeStyle="automatic" viewBased="YES" id="BvG-MR-6LX">
-                                                    <rect key="frame" x="0.0" y="0.0" width="241" height="278"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="241" height="276"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="2"/>
                                                     <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.080000000000000002" colorSpace="calibratedRGB"/>
                                                     <tableViewGridLines key="gridStyleMask" horizontal="YES"/>
-                                                    <color key="gridColor" red="1" green="1" blue="1" alpha="0.10000000000000001" colorSpace="calibratedRGB"/>
+                                                    <color key="gridColor" red="1" green="1" blue="1" alpha="0.050000000000000003" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                                     <tableColumns>
                                                         <tableColumn identifier="IsChosen" editable="NO" width="20" minWidth="20" maxWidth="20" id="ELm-UL-i3q">
                                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="right">
