@@ -174,11 +174,7 @@ extension PlayerWindowController {
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
         log.verbose("[applyVidGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
-        /// When opening a new window and sizing it to match the video, do not add unnecessary margins around video,
-        /// even if `lockViewportToVideoSize` is enabled
-        let forceLockViewportToVideo = isInitialSizeDone ? nil : true
-        return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInVisibleScreen,
-                                       lockViewportToVideoSize: forceLockViewportToVideo)
+        return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInVisibleScreen)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
