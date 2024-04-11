@@ -565,28 +565,26 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.lastNowPlayingIndex = newNowPlayingIndex
       DispatchQueue.main.async { [self] in
         // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-        playlistTableView.reloadData(forRowIndexes: IndexSet(integer: newNowPlayingIndex), columnIndexes: IndexSet(integersIn: 0...1))
+        reloadPlaylistRow(newNowPlayingIndex)
         // ... also make sure the old "now playing" row is redrawn so it loses its status
-        playlistTableView.reloadData(forRowIndexes: IndexSet(integer: oldNowPlayingIndex), columnIndexes: IndexSet(integersIn: 0...1))
+        reloadPlaylistRow(oldNowPlayingIndex)
       }
     }
   }
 
-  fileprivate class ClearBackgroundRowView: NSTableRowView {
-    override func drawBackground(in dirtyRect: NSRect) {
-      layer?.backgroundColor = .clear
-
-      // Y origin is at top
-      let dash = NSRect(x: 0, y: bounds.height - 1, width: bounds.width, height: 1)
-      NSColor.playlistProgressBarBackground.setFill()
-      NSBezierPath(rect: dash).fill()
+  func reloadPlaylistRow(_ rowIndex: Int) {
+    let playlistItems = player.info.playlist
+    if rowIndex >= 0, rowIndex < playlistItems.count {
+      let item = playlistItems[rowIndex]
+      player.refreshCachedVideoInfo(forVideoPath: item.filename)
     }
+    self.playlistTableView.reloadData(forRowIndexes: IndexSet(integer: rowIndex), columnIndexes: IndexSet(integersIn: 0...1))
   }
 
-//  func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-//    // uses custom highlight for table row
-//    return ClearBackgroundRowView()
-//  }
+  func reloadPlaylistRows(_ rows: IndexSet) {
+    self.playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+  }
+
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
@@ -680,8 +678,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                  let duration = cached.duration, duration > 0 {
                 // if FFmpeg got the duration successfully
                 self.refreshTotalLength()
-                DispatchQueue.main.async {
-                  self.playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
+                DispatchQueue.main.async { [self] in
+                  reloadPlaylistRow(row)
                 }
               }
             }
@@ -830,7 +828,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         guard Utility.supportedFileExt[.sub]!.contains(subURL.pathExtension.lowercased()) else { return }
         self.player.info.$matchedSubs.withLock { $0[filename, default: []].append(subURL) }
       }
-      self.playlistTableView.reloadData(forRowIndexes: sender.targetRows, columnIndexes: IndexSet(integersIn: 0...1))
+      self.reloadPlaylistRows(sender.targetRows)
     }
   }
 
@@ -840,7 +838,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard index < playlistItems.count else { continue }
       let filename = playlistItems[index].filename
       player.info.$matchedSubs.withLock { $0[filename]?.removeAll() }
-      playlistTableView.reloadData(forRowIndexes: sender.targetRows, columnIndexes: IndexSet(integersIn: 0...1))
+      self.reloadPlaylistRows(sender.targetRows)
     }
   }
 

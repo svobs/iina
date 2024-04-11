@@ -3723,7 +3723,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
     // Need to also sync volume slider here, because this is called in response to repeated key presses
     updateVolumeUI()
-
   }
 
   private func updatePlaybackTimeUI() {
