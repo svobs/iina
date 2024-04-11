@@ -63,6 +63,9 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
     keyRecordView.delegate = self
     editFilterKeyRecordView.delegate = self
 
+    // Double-click saved filter to edit
+    savedFiltersTableView.doubleAction = #selector(self.editSavedFilterAction(_:))
+
     savedFilters = (Preference.array(for: filterType == MPVProperty.af ? .savedAudioFilters : .savedVideoFilters) ?? []).compactMap(SavedFilter.init(dict:))
 
     // notifications
@@ -277,7 +280,15 @@ class FilterWindowController: NSWindowController, NSWindowDelegate {
   }
 
   @IBAction func editSavedFilterAction(_ sender: NSButton) {
-    let row = savedFiltersTableView.row(for: sender)
+    var row = savedFiltersTableView.clickedRow  // if double-clicking
+    if row < 0 {
+      row = savedFiltersTableView.row(for: sender)  // If using Edit button
+    }
+    guard row >= 0 && row < savedFiltersTableView.numberOfRows else {
+      Logger.log("Cannot edit saved filter! Invalid row: \(row)", level: .verbose)
+      return
+    }
+    Logger.log("Editing saved filter for row \(row)", level: .verbose)
     currentSavedFilter = savedFilters[row]
     editFilterNameTextField.stringValue = currentSavedFilter!.name
     editFilterStringTextField.stringValue = currentSavedFilter!.filterString
