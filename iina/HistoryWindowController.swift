@@ -206,7 +206,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
           count += 1
         }
       }
-      Logger.log("Filled in fileExists for \(count) history entries in \(sw) ms (forced: \(forceFullStatusReload.yn))", level: .verbose)
+      Logger.log("Filled in fileExists for \(count) history entries in \(sw) ms", level: .verbose)
       if forceFullStatusReload {
         lastCompleteStatusReloadTime = Date()
       }

@@ -505,10 +505,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.nextLoopMode()
   }
 
-  @IBAction func loopFileBtnAction(_ sender: AnyObject) {
-    player.toggleFileLoop()
-  }
-  
   @IBAction func shuffleBtnAction(_ sender: AnyObject) {
     player.toggleShuffle()
   }
@@ -565,18 +561,20 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.lastNowPlayingIndex = newNowPlayingIndex
       DispatchQueue.main.async { [self] in
         // If "now playing" row changed, make sure the new "now playing" row is redrawn to show its new status...
-        reloadPlaylistRow(newNowPlayingIndex)
+        reloadPlaylistRow(newNowPlayingIndex, reloadCache: true)
         // ... also make sure the old "now playing" row is redrawn so it loses its status
-        reloadPlaylistRow(oldNowPlayingIndex)
+        reloadPlaylistRow(oldNowPlayingIndex, reloadCache: true)
       }
     }
   }
 
-  func reloadPlaylistRow(_ rowIndex: Int) {
-    let playlistItems = player.info.playlist
-    if rowIndex >= 0, rowIndex < playlistItems.count {
-      let item = playlistItems[rowIndex]
-      player.refreshCachedVideoInfo(forVideoPath: item.filename)
+  func reloadPlaylistRow(_ rowIndex: Int, reloadCache: Bool = false) {
+    if reloadCache {
+      let playlistItems = player.info.playlist
+      if rowIndex >= 0, rowIndex < playlistItems.count {
+        let item = playlistItems[rowIndex]
+        player.refreshCachedVideoInfo(forVideoPath: item.filename)
+      }
     }
     self.playlistTableView.reloadData(forRowIndexes: IndexSet(integer: rowIndex), columnIndexes: IndexSet(integersIn: 0...1))
   }

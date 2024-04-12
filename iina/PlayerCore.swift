@@ -1655,7 +1655,6 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     
     let filterString: String
-    let succeeded: Bool
     if let label = filter.label {
       // Has label: we care most about these
       // The vf remove command will return 0 even if the filter didn't exist in mpv. So need to do this check ourselves.

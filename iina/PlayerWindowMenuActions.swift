@@ -257,9 +257,11 @@ extension PlayerWindowController {
           }
         }
       }
-      let vfWindow = AppDelegate.shared.vfWindow
-      if vfWindow.isWindowLoaded {
-        vfWindow.reloadTable()
+      DispatchQueue.main.async {
+        let vfWindow = AppDelegate.shared.vfWindow
+        if vfWindow.isWindowLoaded {
+          vfWindow.reloadTable()
+        }
       }
     }
   }
