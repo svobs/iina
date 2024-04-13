@@ -9,19 +9,40 @@
 import Foundation
 
 class MediaItem {
-  enum LoadStatus {
-    case notStarted       /// set before mpv is aware of it
+  enum LoadStatus: Int, CustomStringConvertible {
+    case notStarted = 1       /// set before mpv is aware of it
     case started          /// set after mpv sends `fileStarted` notification
     case loaded           /// set after mpv sends `fileLoaded` notification
     case completelyLoaded /// everything loaded, including filters
     case ended
+
+    var description: String {
+      switch self {
+      case .notStarted:
+        return "notStarted"
+      case .started:
+        return "started"
+      case .loaded:
+        return "loaded"
+      case .completelyLoaded:
+        return "completelyLoaded"
+      case .ended:
+        return "ended"
+      }
+    }
   }
 
   let url: URL
   let mpvMD5: String
 
   var playlistPos: Int
-  var loadStatus: LoadStatus
+  var loadStatus: LoadStatus {
+    willSet {
+      if newValue != loadStatus {
+        Logger.log("Δ Media LoadStatus: \(loadStatus) → \(newValue)")
+      }
+    }
+  }
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
@@ -78,8 +99,10 @@ class PlaybackInfo {
     }
   }
 
-  /// Opened or started file, but still waiting for `fileLoaded` event
-  var justOpenedFile: Bool = true
+  /// File not completely done loading
+  var justOpenedFile: Bool {
+    return (currentMedia?.loadStatus.rawValue ?? MediaItem.LoadStatus.notStarted.rawValue) < MediaItem.LoadStatus.completelyLoaded.rawValue
+  }
   var timeLastFileOpenFinished: TimeInterval = 0
   var timeSinceLastFileOpenFinished: TimeInterval {
     Date().timeIntervalSince1970 - timeLastFileOpenFinished

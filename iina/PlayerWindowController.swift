@@ -1132,10 +1132,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // if received video size before switching to music mode, hide default album art
     // Don't show art if currently loading
     if isVideoTrackSelected || player.info.justOpenedFile || player.isStopping || player.isStopped {
-      log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
+      log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = false
     } else {
-      log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) fileLoaded=\(player.info.isFileLoaded.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
+      log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
       showDefaultArt = true
     }
 
@@ -1994,6 +1994,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
     }
     lastWindowedLayoutSpec = LayoutSpec.defaultLayout()
+
+    player.info.currentMedia = nil
 
     player.events.emit(.windowWillClose)
   }

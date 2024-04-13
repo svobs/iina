@@ -400,7 +400,6 @@ class PlayerCore: NSObject {
 
       // Reset state flags
       info.isFileLoaded = false
-      info.justOpenedFile = true
       isStopping = false
 
       // Send load file command
@@ -1485,11 +1484,12 @@ class PlayerCore: NSObject {
 
   func playFile(_ path: String) {
     mpv.queue.async { [self] in
-      info.justOpenedFile = true
       info.shouldAutoLoadFiles = true
       mpv.command(.loadfile, args: [path, "replace"])
-      _reloadPlaylist()
-      saveState()
+      mpv.queue.async { [self] in
+        _reloadPlaylist()
+        saveState()
+      }
     }
   }
 
@@ -1939,7 +1939,6 @@ class PlayerCore: NSObject {
 
       let newParams = info.videoGeo.clone(rawWidth: videoSize.0, rawHeight: videoSize.1)
       log.verbose("Calling applyVidGeo from preResizeVideo with \(newParams)")
-      assert(info.justOpenedFile)
       windowController.applyVidGeo(newParams)
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
@@ -1951,13 +1950,15 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isShuttingDown else { return }
 
-    info.justOpenedFile = true
-
     guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
     if let existingMedia = info.currentMedia, existingMedia.url == mediaFromPath.url {
+      guard existingMedia.loadStatus.rawValue < MediaItem.LoadStatus.started.rawValue else {
+        log.warn("FileStarted: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil") (\(existingMedia.loadStatus.rawValue)), which is less than \(MediaItem.LoadStatus.started.rawValue)")
+        return
+      }
       // update existing entry
       existingMedia.playlistPos = mediaFromPath.playlistPos
       existingMedia.loadStatus = mediaFromPath.loadStatus
@@ -2085,7 +2086,14 @@ class PlayerCore: NSObject {
       log.verbose("FileLoaded: currentMedia was nil")
       return
     }
-    info.currentMedia?.loadStatus = .loaded // TODO: improve
+
+    if !mpv.isStale() {
+      if let loadStatus = info.currentMedia?.loadStatus, loadStatus.rawValue < MediaItem.LoadStatus.loaded.rawValue {
+        info.currentMedia?.loadStatus = .loaded
+      } else {
+        log.warn("FileLoaded: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil")")
+      }
+    }
 
     // Kick off thumbnails load/gen - it can happen in background
     reloadThumbnails(forMedia: currentMedia)
@@ -2135,8 +2143,10 @@ class PlayerCore: NSObject {
   /// This event should be called when everything is truly done.
   func fileIsCompletelyDoneLoading() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard info.justOpenedFile else { return }
     guard !mpv.isStale() else { return }
+
+    reloadTrackInfo()
+    reloadSelectedTracks()
 
     // Make sure to call this because mpv does not always trigger it.
     guard let newVidGeo = mpv.queryForVideoGeometry() else { return }
@@ -2147,9 +2157,12 @@ class PlayerCore: NSObject {
 
     log.verbose("File is completely done loading; setting justOpenedFile=N")
     /// Make sure to set this *after* calling `applyVidGeo` but *before* calling `refreshAlbumArtDisplay`
-    info.justOpenedFile = false
-    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
-    info.currentMedia?.loadStatus = .completelyLoaded // TODO: improve
+    if let loadStatus = info.currentMedia?.loadStatus, loadStatus.rawValue < MediaItem.LoadStatus.completelyLoaded.rawValue {
+      info.currentMedia?.loadStatus = .completelyLoaded
+      info.timeLastFileOpenFinished = Date().timeIntervalSince1970
+    } else {
+      log.warn("FileCompletelyLoaded: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil")")
+    }
 
     // Update art & aspect *before* switching to/from music mode for more pleasant animation (but after updating state booleans)
     windowController.refreshAlbumArtDisplay()
