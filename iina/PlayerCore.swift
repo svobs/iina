@@ -1967,8 +1967,9 @@ class PlayerCore: NSObject {
       info.currentMedia = mediaFromPath
     }
 
-    if isPlaylistVisible {
-      DispatchQueue.main.async { [self] in
+    DispatchQueue.main.async { [self] in
+      // Check this inside main DispatchQueue
+      if isPlaylistVisible {
         // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
@@ -1977,7 +1978,7 @@ class PlayerCore: NSObject {
     preResizeVideo(forURL: info.currentMedia?.url)
 
     // set "date last opened" attribute
-    if let url = info.currentURL, url.isFileURL {
+    if let url = info.currentURL, url.isFileURL, !info.isMediaOnRemoteDrive {
       // the required data is a timespec struct
       var ts = timespec()
       let time = Date().timeIntervalSince1970
