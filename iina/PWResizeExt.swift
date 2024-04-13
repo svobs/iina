@@ -180,7 +180,11 @@ extension PlayerWindowController {
         newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
         log.verbose("[applyVidGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
         let forceLockViewportToVideo = isInitialSizeDone ? nil : true
-        return windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInVisibleScreen, lockViewportToVideoSize: forceLockViewportToVideo)
+        let newGeoUnconstrained = windowedModeGeo.scaleVideo(to: newVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
+        // User has actively resized the video. Assume this is the new preferred resolution
+        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+
+        return newGeoUnconstrained.refit(.centerInVisibleScreen)
       }
     }
   }
