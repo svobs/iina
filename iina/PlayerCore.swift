@@ -1123,8 +1123,9 @@ class PlayerCore: NSObject {
         // Not sure if this is an mpv limitation
         log.verbose("Updating mpv window-scale from videoSize \(windowGeo.videoSize), changing scale: \(prevVideoScale) → \(actualVideoScale)")
 
-        info.videoGeo = info.videoGeo.clone(scale: actualVideoScale)
-        mpv.setDouble(MPVProperty.windowScale, actualVideoScale)
+        let newVidGeo = info.videoGeo.clone(scale: actualVideoScale)
+        windowController.applyVidGeo(newVidGeo)
+        /// Allow `applyVidGeo` to call `mpv.setDouble(MPVProperty.windowScale, actualVideoScale)`
       } else {
         log.verbose("Skipping update to mpv window-scale: no change from prev (\(prevVideoScale))")
       }

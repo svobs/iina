@@ -3188,6 +3188,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let currentLayout = currentLayout
     // Especially needed to avoid duplicate transitions
     guard currentLayout.canEnterInteractiveMode else { return }
+    guard let window else { return }
 
     player.mpv.queue.async { [self] in
       let videoGeo = player.info.videoGeo
@@ -3236,12 +3237,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
             // Scale viewport to roughly match window size
             assert(windowedModeGeo.mode == .windowed)
             let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
-            var uncroppedClosedBarsGeo = windowedModeGeo.withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                                                                         outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                                                         insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                                         insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                                                         videoAspect: newVideoAspect,
-                                                                         keepFullScreenDimensions: !lockViewportToVideoSize)
+            var uncroppedClosedBarsGeo = windowedModeGeo.clone(windowFrame: window.frame)
+              .withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
+                               outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                               insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                               insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                               videoAspect: newVideoAspect,
+                               keepFullScreenDimensions: !lockViewportToVideoSize)
 
             if lockViewportToVideoSize {
               // Otherwise try to avoid shrinking the window too much if the aspect changes dramatically.
@@ -3250,7 +3252,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
               let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
-
+              
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
               let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,

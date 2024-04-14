@@ -843,13 +843,21 @@ extension PlayerWindowController {
   }
 
   func startResizingSidebar(with event: NSEvent) -> Bool {
+    guard let window else { return false }
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
       Logger.log("User started resize of leading sidebar", level: .verbose, subsystem: player.subsystem)
       leadingSidebarIsResizing = true
+      if currentLayout.isWindowed {
+        // Update to latest frame in case window has moved
+        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
+      }
       return true
     } else if isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
       Logger.log("User started resize of trailing sidebar", level: .verbose, subsystem: player.subsystem)
       trailingSidebarIsResizing = true
+      if currentLayout.isWindowed {
+        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
+      }
       return true
     }
     return false

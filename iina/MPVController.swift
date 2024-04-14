@@ -943,7 +943,7 @@ not applying FFmpeg 9599 workaround
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(params)")
     if let videoSizeAC = params.videoSizeAC, Int(videoSizeAC.width) != videoWidthAC || Int(videoSizeAC.height) != videoHeightAC {
-      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(videoWidthAC) x \(videoHeightAC)) != videoSizeAC \(videoSizeAC)")
+      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(videoWidthAC) x \(videoHeightAC)) != cached videoSizeAC \(videoSizeAC)")
     }
     return params
   }

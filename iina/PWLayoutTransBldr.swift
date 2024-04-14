@@ -184,7 +184,8 @@ extension PlayerWindowController {
                              thenRun: Bool = false,
                              _ geo: Geometries? = nil) -> LayoutTransition {
 
-    let geo = geo ?? self.geo()
+    // use latest window frame in case it exists and was moved
+    let geo = geo ?? self.geo(from: inputLayout)
 
     var transitionID: Int = 0
     $layoutTransitionCounter.withLock {
@@ -600,10 +601,11 @@ extension PlayerWindowController {
     }
   }
 
-  func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, videoAspect: CGFloat? = nil) -> Geometries {
-
-    return Geometries(windowedMode: windowed ?? windowedModeGeo,
-                      musicMode: musicMode ?? musicModeGeo,
+  func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, 
+           videoAspect: CGFloat? = nil, from inputLayout: LayoutState? = nil) -> Geometries {
+    let latestFrame = window?.frame
+    return Geometries(windowedMode: windowed ?? ((inputLayout?.mode.isWindowed ?? false) ? windowedModeGeo.clone(windowFrame: latestFrame) : windowedModeGeo),
+                      musicMode: musicMode ?? ((inputLayout?.mode == .musicMode) ? musicModeGeo.clone(windowFrame: latestFrame) : musicModeGeo),
                       videoAspect: videoAspect ?? self.player.info.videoAspect)
   }
 
