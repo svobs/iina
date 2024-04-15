@@ -397,10 +397,14 @@ class PlayerCore: NSObject {
 
     mpv.queue.async { [self] in
       log.debug("OpenPlayerWindow: setting isFileLoaded=false")
-
       // Reset state flags
       info.isFileLoaded = false
       isStopping = false
+
+      if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
+        info.videoGeo = info.videoGeo.clone(rawWidth: Int(sizeArray[0]), rawHeight: Int(sizeArray[1]))
+        log.debug("OpenPlayerWindow: read videoSize: \(info.videoGeo.rawWidth) x \(info.videoGeo.rawHeight)")
+      }
 
       // Send load file command
       mpv.command(.loadfile, args: [path])
@@ -465,14 +469,6 @@ class PlayerCore: NSObject {
     videoView.videoLayer.display()
     mpv.mpvInitRendering()
     videoView.startDisplayLink()
-  }
-
-  /// Launches background task which scans video files and collects video size metadata using ffmpeg
-  func loadVideoSizes() {
-    log.verbose("Filling in video sizes...")
-    PlayerCore.backgroundQueue.async { [self] in
-      AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
-    }
   }
 
   func saveState() {

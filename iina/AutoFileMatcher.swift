@@ -75,6 +75,7 @@ class AutoFileMatcher {
 
   static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
     log.verbose("Filling in video sizes...")
+    var sw = Utility.Stopwatch()
     var successCount = 0
     for fileInfo in videoFiles {
       if fileInfo.videoSize == nil {
@@ -84,7 +85,7 @@ class AutoFileMatcher {
         }
       }
     }
-    log.verbose("Filled in \(successCount)/\(videoFiles.count) video sizes")
+    log.verbose("Filled in \(successCount)/\(videoFiles.count) video sizes in \(sw) ms")
   }
 
   private func getAllPossibleSubs() -> [FileInfo] {

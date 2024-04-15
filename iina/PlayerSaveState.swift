@@ -557,8 +557,10 @@ struct PlayerSaveState {
     // Open the window!
     player.openURLs([url], shouldAutoLoad: false)
 
-    // Launch task to fill in video sizes because they are not saved
-    player.loadVideoSizes()
+    /// Launches background task which scans video files and collects video size metadata using ffmpeg
+    PlayerCore.backgroundQueue.async {
+      AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
+    }
 
     let isOnTop = bool(for: .isOnTop) ?? false
     windowController.setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)

@@ -108,11 +108,13 @@ extension PlayerWindowController {
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
-    log.verbose("Setting initial \(initialLayoutSpec), windowedModeGeo: \(windowedModeGeo), musicModeGeo: \(musicModeGeo)")
+    // Send Geometries object to builder so that it doesn't default to current window frame
+    let geo = Geometries(windowedMode: windowedModeGeo, musicMode: musicModeGeo, videoAspect: player.info.videoAspect)
+    log.verbose("Setting initial \(initialLayoutSpec), windowedModeGeo: \(geo.windowedMode), musicModeGeo: \(geo.musicMode)")
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: initialLayoutSpec, isInitialLayout: true)
+                                                  from: currentLayout, to: initialLayoutSpec, isInitialLayout: true, geo)
 
     if !isRestoringFromPrevLaunch && initialLayoutSpec.mode == .windowed {
       player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
@@ -134,7 +136,7 @@ extension PlayerWindowController {
 
     // For initial layout (when window is first shown), to reduce jitteriness when drawing,
     // do all the layout in a single animation block
-    IINAAnimation.disableAnimation{
+    IINAAnimation.disableAnimation {
       for task in initialTransition.animationTasks {
         task.runFunc()
       }
