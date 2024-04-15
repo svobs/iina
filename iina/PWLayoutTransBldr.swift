@@ -87,16 +87,21 @@ extension PlayerWindowController {
       if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
         /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
         /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
-        let videoSize = AppData.minVideoSize.expand(withAspect: player.info.videoAspect)
-        let windowFrame = NSRect(origin: NSPoint.zero, size: videoSize)
+        let videoAspect = player.info.videoAspect
+        let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
+                                                     minWidth: Constants.WindowedMode.minViewportSize.width,
+                                                     minHeight: Constants.WindowedMode.minViewportSize.height)
+        let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
+                                        height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
+        let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
         let defaultScreenID = NSScreen.main!.screenID
-        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: defaultScreenID, videoAspect: videoSize.mpvAspect).refit(.keepInVisibleScreen)
+        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: defaultScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
         /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
         /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
         let windowSize = initialGeo.windowFrame.size
         let mouseLoc = NSEvent.mouseLocation
         let origin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-        log.verbose("Initial layout: starting with tiny window (will resize using  \(resizeTimingPref))")
+        log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
         windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: origin, size: windowSize)).refit(.keepInVisibleScreen)
       } else {
         // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
@@ -126,8 +131,8 @@ extension PlayerWindowController {
     /// To smooth out the process, restore window position & size before laying out its internals.
     switch initialLayoutSpec.mode {
     case .windowed, .windowedInteractive, .musicMode:
-      player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
       videoView.apply(initialTransition.outputGeometry)
+      player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
     case .fullScreen, .fullScreenInteractive:
       /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
       /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
@@ -348,8 +353,8 @@ extension PlayerWindowController {
                                                               outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                               insideTopBarHeight: 0, insideTrailingBarWidth: 0,
                                                               insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
-        player.window.setFrameImmediately(intermediateGeo.windowFrame)
         videoView.apply(intermediateGeo)
+        player.window.setFrameImmediately(intermediateGeo.windowFrame)
         if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
           // Entering music mode when album art is hidden
           miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: false)

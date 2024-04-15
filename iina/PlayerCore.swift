@@ -378,24 +378,19 @@ class PlayerCore: NSObject {
 
   /// if `url` is `nil`, assumed to be `stdin`
   private func openPlayerWindow(url: URL? = nil) {
-    let path: String
-    if let url = url, url.absoluteString != "stdin" {
-      path = url.isFileURL ? url.path : url.absoluteString
-      info.currentMedia = MediaItem(url: url)
-      log.debug("Opening Player window for URL: \(url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
-    } else {
-      path = "-"
-      let url = URL(string: "stdin")!
-      info.currentMedia = MediaItem(url: url)
-      log.debug("Opening Player window for stdin")
-    }
-
-    if !info.isRestoring {
-      AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
-    }
-    windowController.openWindow()
-
     mpv.queue.async { [self] in
+      let path: String
+      if let url = url, url.absoluteString != "stdin" {
+        path = url.isFileURL ? url.path : url.absoluteString
+        info.currentMedia = MediaItem(url: url)
+        log.debug("Opening Player window for URL: \(url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
+      } else {
+        path = "-"
+        let url = URL(string: "stdin")!
+        info.currentMedia = MediaItem(url: url)
+        log.debug("Opening Player window for stdin")
+      }
+
       log.debug("OpenPlayerWindow: setting isFileLoaded=false")
       // Reset state flags
       info.isFileLoaded = false
@@ -403,18 +398,27 @@ class PlayerCore: NSObject {
 
       if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
         info.videoGeo = info.videoGeo.clone(rawWidth: Int(sizeArray[0]), rawHeight: Int(sizeArray[1]))
-        log.debug("OpenPlayerWindow: read videoSize: \(info.videoGeo.rawWidth) x \(info.videoGeo.rawHeight)")
+        log.debug("OpenPlayerWindow: got videoSize from ffmpeg: \(info.videoGeo.rawWidth) x \(info.videoGeo.rawHeight)")
       }
 
-      // Send load file command
-      mpv.command(.loadfile, args: [path])
-
-      if !info.isRestoring {  // restore state has higher precedence
-        if Preference.bool(for: .enablePlaylistLoop) {
-          mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
+      DispatchQueue.main.async { [self] in
+        if !info.isRestoring {
+          AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
         }
-        if Preference.bool(for: .enableFileLoop) {
-          mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
+        windowController.openWindow()
+        
+        mpv.queue.async { [self] in
+          // Send load file command
+          mpv.command(.loadfile, args: [path])
+
+          if !info.isRestoring {  // restore state has higher precedence
+            if Preference.bool(for: .enablePlaylistLoop) {
+              mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
+            }
+            if Preference.bool(for: .enableFileLoop) {
+              mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
+            }
+          }
         }
       }
     }
@@ -618,7 +622,6 @@ class PlayerCore: NSObject {
 
       // Reset playback state
       log.verbose("Stop called: resetting playback state")
-      info.videoGeo = VideoGeometry.nullGeometry
       info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil

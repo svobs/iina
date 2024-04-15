@@ -777,8 +777,8 @@ extension PlayerWindowController {
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose("[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)")
-        player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
         videoView.apply(transition.outputGeometry)
+        player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWGeometry
@@ -811,8 +811,8 @@ extension PlayerWindowController {
       applyMusicModeGeo(musicModeGeo)
     case .windowed, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(transition.outputGeometry.windowFrame)")
-      player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
       videoView.apply(transition.outputGeometry)
+      player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {

@@ -189,7 +189,6 @@ class VideoView: NSView {
       }
       setFixedOffsetConstraints(margins: .zero)
     }
-    layoutSubtreeIfNeeded()
   }
 
   // MARK: - Mouse events

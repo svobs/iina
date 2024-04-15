@@ -573,11 +573,11 @@ extension PlayerWindowController {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
     return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame: \(newGeometry.windowFrame), videoAspect: \(newGeometry.videoAspect)")
+      /// Make sure this is up-to-date. Do this before `setFrame`
+      videoView.apply(newGeometry)
       if !isWindowHidden {
         player.window.setFrameImmediately(newGeometry.windowFrame)
       }
-      // Make sure this is up-to-date
-      videoView.apply(newGeometry)
       windowedModeGeo = newGeometry
 
       log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize: \(newGeometry.videoSize)")
@@ -619,13 +619,13 @@ extension PlayerWindowController {
     }
 
     if hasChange {
-      if setFrame {
-        player.window.setFrameImmediately(geometry.windowFrame, animate: animate)
-      }
       /// Make sure to call `apply` AFTER `updateVideoViewVisibilityConstraints`:
       miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
       updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
       videoView.apply(geometry.toPWGeometry())
+      if setFrame {
+        player.window.setFrameImmediately(geometry.windowFrame, animate: animate)
+      }
     } else {
       log.verbose("Not updating music mode windowFrame or constraints - no changes needed")
     }

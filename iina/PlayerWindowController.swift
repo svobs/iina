@@ -2366,8 +2366,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           }
           let newWindowFrame = newGeo.windowFrame
           log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newWindowFrame), videoSize \(newGeo.videoSize)")
-          player.window.setFrameImmediately(newWindowFrame)
           videoView.apply(newGeo)
+          player.window.setFrameImmediately(newWindowFrame)
         }
       }))
     }
@@ -3252,7 +3252,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
               let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
               var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
-              
+
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
               let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
