@@ -48,6 +48,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private var pendingSwitchRequest: TabViewType?
 
   var playlistChangeObserver: NSObjectProtocol?
+  var fileHistoryUpdateObserver: NSObjectProtocol?
 
   /** Enum for tab switching */
   enum TabViewType: String {
@@ -192,6 +193,21 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       self.reloadData(playlist: true, chapters: false)
     }
 
+    fileHistoryUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
+      guard let url = note.userInfo?["url"] as? URL else {
+        player.log.error("Cannot update file history: no url found in userInfo!")
+        return
+      }
+      guard url.isFileURL else { return }
+      let filePath = url.path
+      let playlist = player.info.playlist
+      for (index, item) in playlist.enumerated() {
+        if item.filename == filePath {
+          reloadPlaylistRow(index, reloadCache: true)
+        }
+      }
+    }
+
     // register for double click action
     let action = #selector(performDoubleAction(sender:))
     playlistTableView.doubleAction = action
@@ -228,7 +244,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     distObservers = []
     UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
-    NotificationCenter.default.removeObserver(self.playlistChangeObserver!)
+    if let playlistChangeObserver {
+      NotificationCenter.default.removeObserver(playlistChangeObserver)
+    }
+    if let fileHistoryUpdateObserver {
+      NotificationCenter.default.removeObserver(fileHistoryUpdateObserver)
+    }
   }
 
   func scrollPlaylistToCurrentItem() {
@@ -576,11 +597,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         player.refreshCachedVideoInfo(forVideoPath: item.filename)
       }
     }
-    self.playlistTableView.reloadData(forRowIndexes: IndexSet(integer: rowIndex), columnIndexes: IndexSet(integersIn: 0...1))
+    reloadPlaylistRows(IndexSet(integer: rowIndex))
   }
 
   func reloadPlaylistRows(_ rows: IndexSet) {
-    self.playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
+    playlistTableView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integersIn: 0...1))
   }
 
 

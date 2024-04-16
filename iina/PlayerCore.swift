@@ -1880,12 +1880,16 @@ class PlayerCore: NSObject {
       log.debug("Cannot save iinaLastPlayedFilePosition; no position found")
     }
 
+    // Ensure playlist is updated in real time
+    postFileHistoryUpdateNotification()
+
     // Ensure Playback History window is updated in real time
+    // TODO: use previous notification only
     if Preference.bool(for: .recordPlaybackHistory) {
-      HistoryController.shared.queue.async {
+      HistoryController.shared.queue.async { [self] in
         /// this will reload the `mpvProgress` field from the `watch-later` config files
         HistoryController.shared.reloadAll()
-        NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+        postNotification(.iinaHistoryUpdated)
       }
     }
   }
@@ -2127,12 +2131,14 @@ class PlayerCore: NSObject {
       // add to history
       if let url = info.currentURL {
         let duration = info.videoDuration ?? .zero
-        HistoryController.shared.queue.async {
+        HistoryController.shared.queue.async { [self] in
           HistoryController.shared.add(url, duration: duration.second)
 
           if Preference.bool(for: .recordRecentFiles) && Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
             appDelegate.noteNewRecentDocumentURL(url)
           }
+
+          postFileHistoryUpdateNotification()
         }
       }
     }
@@ -2937,6 +2943,12 @@ class PlayerCore: NSObject {
     log.debug("Posting notification: \(name.rawValue)")
     NotificationCenter.default.post(Notification(name: name, object: self))
   }
+
+    func postFileHistoryUpdateNotification() {
+      guard let url = info.currentURL else { return }
+      let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
+      NotificationCenter.default.post(note)
+    }
 
   // MARK: - Utils
 
