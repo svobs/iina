@@ -406,7 +406,7 @@ class PlayerCore: NSObject {
           AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
         }
         windowController.openWindow()
-        
+
         mpv.queue.async { [self] in
           // Send load file command
           mpv.command(.loadfile, args: [path])
@@ -1878,6 +1878,15 @@ class PlayerCore: NSObject {
       Preference.set(position, for: .iinaLastPlayedFilePosition)
     } else {
       log.debug("Cannot save iinaLastPlayedFilePosition; no position found")
+    }
+
+    // Ensure Playback History window is updated in real time
+    if Preference.bool(for: .recordPlaybackHistory) {
+      HistoryController.shared.queue.async {
+        /// this will reload the `mpvProgress` field from the `watch-later` config files
+        HistoryController.shared.reloadAll()
+        NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+      }
     }
   }
 

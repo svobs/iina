@@ -885,12 +885,12 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                                                                      newOutsideLeadingBarWidth: outsideLeadingBarWidth)
 
     if keepFullScreenDimensions {
-      resizedBarsGeo = preserveFullScreenDimensions(resizedBarsGeo)
+      resizedBarsGeo = preserveFullScreenDimensions(of: resizedBarsGeo)
     }
     return resizedBarsGeo
   }
 
-  private func preserveFullScreenDimensions(_ geo: PWGeometry) -> PWGeometry {
+  private func preserveFullScreenDimensions(of geo: PWGeometry) -> PWGeometry {
     guard let screenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: geo.fitOption) else { return geo }
     let isFullScreenWidth = windowFrame.width == screenFrame.width
     let isFullScreenHeight = windowFrame.height == screenFrame.height
@@ -1066,7 +1066,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
   // MARK: Interactive mode
 
-  static func forInteractiveMode(frame windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
+  static func buildInteractiveModeWindow(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
     return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen, 
                       mode: .windowedInteractive, topMarginHeight: 0,
                       outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight, 

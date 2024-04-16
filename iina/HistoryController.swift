@@ -19,17 +19,17 @@ class HistoryController {
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL
     self.history = []
-    read()
+    reloadAll()
   }
 
-  private func read() {
-    Logger.log("Reading playback history from \(plistURL.path.pii.quoted)")
+  func reloadAll() {
+    Logger.log("Reloading playback history from \(plistURL.path.pii.quoted)")
     let sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
-    Logger.log("Finished reading playback history in \(sw) ms")
+    Logger.log("Finished reloading playback history in \(sw) ms")
   }
 
-  func save() {
+  private func save() {
     let result = NSKeyedArchiver.archiveRootObject(history, toFile: plistURL.path)
     if !result {
       Logger.log("Cannot save playback history!", level: .error)

@@ -416,8 +416,8 @@ extension PlayerWindowController {
     case .windowedInteractive:
       /// `geo.windowedMode` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
-      return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
-                                           videoAspect: geo.windowedMode.videoAspect)
+      return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+                                                   videoAspect: geo.windowedMode.videoAspect)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
@@ -448,12 +448,12 @@ extension PlayerWindowController {
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
         log.verbose("Already in interactive mode: converting windowed geo to interactiveWindowed for outputGeo")
-        return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
-                                             videoAspect: geo.windowedMode.videoAspect)
+        return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+                                                     videoAspect: geo.windowedMode.videoAspect)
       } else if inputGeometry.mode == .fullScreenInteractive {
         if geo.windowedMode.mode == .windowedInteractive {
-          return PWGeometry.forInteractiveMode(frame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID, 
-                                               videoAspect: inputGeometry.videoAspect)
+          return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+                                                       videoAspect: inputGeometry.videoAspect)
         }
         return geo.windowedMode.clone(videoAspect: inputGeometry.videoAspect).toInteractiveMode()
       }

@@ -239,10 +239,9 @@ extension PlayerWindowController {
     switch currentLayout.mode {
     case .windowed:
       let newGeoUnconstrained = windowedModeGeo.scaleVideo(to: desiredVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
+      let newGeometry = newGeoUnconstrained.refit(.keepInVisibleScreen)
       // User has actively resized the video. Assume this is the new preferred resolution
       player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-
-      let newGeometry = newGeoUnconstrained.refit(.keepInVisibleScreen)
       log.verbose("SetVideoScale: calling applyWindowGeo")
       applyWindowGeoInAnimationPipeline(newGeometry)
     case .musicMode:

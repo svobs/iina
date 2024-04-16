@@ -50,6 +50,7 @@ class PlaybackHistory: NSObject, NSCoding {
     self.addedDate = date
     self.duration = VideoTime(duration)
 
+    // FIXME: this is a long-running operation. Load this asynchronously
     self.mpvProgress = Utility.playbackProgressFromWatchLater(mpvMd5)
   }
 

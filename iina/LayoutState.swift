@@ -611,7 +611,7 @@ extension PlayerWindowController {
       case .fullScreen, .fullScreenInteractive:
         return buildFullScreenGeometry(inScreenID: screenID, videoAspect: videoAspect)
       case .windowedInteractive:
-        return PWGeometry.forInteractiveMode(frame: windowFrame, screenID: screenID, videoAspect: videoAspect)
+        return PWGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
       case .windowed:
         let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen,
                              mode: mode,

@@ -75,7 +75,7 @@ class AutoFileMatcher {
 
   static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
     log.verbose("Filling in video sizes...")
-    var sw = Utility.Stopwatch()
+    let sw = Utility.Stopwatch()
     var successCount = 0
     for fileInfo in videoFiles {
       if fileInfo.videoSize == nil {
