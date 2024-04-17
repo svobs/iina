@@ -1279,9 +1279,13 @@ class PlayerCore: NSObject {
         return
       }
 
-      let code = mpv.command(.subAdd, args: [url.path], checkError: false)
+      /// Use `auto` flag to override the default:
+      /// ```<select>  Select the subtitle immediately (default).
+      ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
+      ///              selection mechanism decide.)```
+      let code = mpv.command(.subAdd, args: [url.path, "auto"], checkError: false)
       if code < 0 {
-        Logger.log("Unsupported sub: \(url.path)", level: .error, subsystem: self.subsystem)
+        log.error("Failed to load sub (probably unsupported format): \(url.path)")
         // if another modal panel is shown, popping up an alert now will cause some infinite loop.
         if delay {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
@@ -2017,8 +2021,12 @@ class PlayerCore: NSObject {
       }
     }
 
-    // Cannot restore playlist until after fileStarted event received and mpv knows the current item position
-    if info.isRestoring, let priorState = info.priorState,
+    // Cache this for use by background task
+    let isRestoring = info.isRestoring
+    let priorState = info.priorState
+
+    // Cannot restore playlist until after fileStarted event & mpv has a position for current item
+    if isRestoring, let priorState,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
       restorePlaylist(itemPathList: playlistPathList)
 
@@ -2040,16 +2048,30 @@ class PlayerCore: NSObject {
       }
       // auto load matched subtitles
       if let matchedSubs = self.info.getMatchedSubs(path) {
-        log.debug("Found \(matchedSubs.count) subs for current file")
+        log.debug("Found \(matchedSubs.count) external subs for current file")
         for sub in matchedSubs {
           guard currentTicket == self.backgroundQueueTicket else { return }
           self.loadExternalSubFile(sub)
         }
-        // set sub to the first one
-        guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
-        self.setTrack(1, forType: .sub)
+        if !isRestoring {
+          // set sub to the first one
+          // TODO: why?
+          guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
+          self.setTrack(1, forType: .sub)
+        }
       }
+
       self.autoSearchOnlineSub()
+
+      // Set SID & S2ID now that all subs are available
+      if isRestoring, let priorState {
+        if let priorSID = priorState.int(for: .sid) {
+          setTrack(priorSID, forType: .sub)
+        }
+        if let priorS2ID = priorState.int(for: .s2id) {
+          setTrack(priorS2ID, forType: .secondSub)
+        }
+      }
       log.debug("Done with auto load")
     }
 
@@ -2311,9 +2333,10 @@ class PlayerCore: NSObject {
     guard sid != info.sid else { return }
     info.sid = sid
 
+    sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     log.verbose("SID changed to \(sid)")
     postNotification(.iinaSIDChanged)
-    sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
+    saveState()
   }
 
   func reloadSecondSID() {
@@ -2325,6 +2348,7 @@ class PlayerCore: NSObject {
 
     log.verbose("SSID changed to \(ssid)")
     postNotification(.iinaSIDChanged)
+    saveState()
   }
 
   func trackListChanged() {
@@ -2336,9 +2360,9 @@ class PlayerCore: NSObject {
     log.debug("Track list changed")
     reloadTrackInfo()
     reloadSelectedTracks()
-    saveState()
-    log.verbose("Posting iinaTracklistChanged, vid=\(optString(info.vid)), aid=\(optString(info.aid)), sid=\(optString(info.sid))")
+    log.verbose("Posting iinaTracklistChanged vid=\(optString(info.vid)) aid=\(optString(info.aid)) sid=\(optString(info.sid))")
     postNotification(.iinaTracklistChanged)
+    saveState()
   }
 
   private func optString(_ num: Int?) -> String {
@@ -2351,12 +2375,12 @@ class PlayerCore: NSObject {
   func vfChanged() {
     guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
     _ = getVideoFilters()
-    saveState()
     postNotification(.iinaVFChanged)
 
     /// The first filter msg after starting a file means that the file is officially done loading.
     /// (Put this here instead of at `playback-restart` because it occurs later & will avoid triggering display of OSDs)
     fileIsCompletelyDoneLoading()
+    saveState()
   }
 
   func reloadVID() {

@@ -37,7 +37,7 @@ struct PlayerSaveState {
     case vid = "vid"                  /// `MPVOption.TrackSelection.vid`
     case aid = "aid"                  /// `MPVOption.TrackSelection.aid`
     case sid = "sid"                  /// `MPVOption.TrackSelection.sid`
-    case sid2 = "sid2"                /// `MPVOption.Subtitles.secondarySid`
+    case s2id = "sid2"                /// `MPVOption.Subtitles.secondarySid`
 
     case hwdec = "hwdec"              /// `MPVOption.Video.hwdec`
     case deinterlace = "deinterlace"  /// `MPVOption.Video.deinterlace`
@@ -220,7 +220,7 @@ struct PlayerSaveState {
       props[PropName.sid.rawValue] = String(intVal)
     }
     if let intVal = info.secondSid {
-      props[PropName.sid2.rawValue] = String(intVal)
+      props[PropName.s2id.rawValue] = String(intVal)
     }
     props[PropName.brightness.rawValue] = String(info.brightness)
     props[PropName.contrast.rawValue] = String(info.contrast)
@@ -534,8 +534,8 @@ struct PlayerSaveState {
     if let sid = int(for: .sid) {
       info.sid = sid
     }
-    if let sid2 = int(for: .sid2) {
-      info.secondSid = sid2
+    if let s2id = int(for: .s2id) {
+      info.secondSid = s2id
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
@@ -626,12 +626,7 @@ struct PlayerSaveState {
       if let aid = info.aid {
         mpv.setInt(MPVOption.TrackSelection.aid, aid)
       }
-      if let sid = info.sid {
-        mpv.setInt(MPVOption.TrackSelection.sid, sid)
-      }
-      if let sid2 = info.secondSid {
-        mpv.setInt(MPVOption.Subtitles.secondarySid, sid2)
-      }
+      /// Don't set sub tracks until `fileStarted`, after external subtitles are loaded.
 
       if let hwdec = string(for: .hwdec) {
         mpv.setString(MPVOption.Video.hwdec, hwdec)
