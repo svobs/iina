@@ -610,7 +610,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let info = player.info
     let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
 
-    // playlist
+    // Playlist table
     if tableView == playlistTableView {
       let playlistItems = info.playlist
       guard row < playlistItems.count else { return nil }
@@ -627,102 +627,16 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
           textField.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
         }
       } else if identifier == .trackName {
-        // Track title
         let cellView = v as! PlaylistTrackCellView
-        let filename = item.filenameForDisplay
-        let displayStr: String = NSString(string: filename).deletingPathExtension
-
-        func getCachedMetadata() -> (artist: String, title: String)? {
-          guard Preference.bool(for: .playlistShowMetadata) else { return nil }
-          if Preference.bool(for: .playlistShowMetadataInMusicMode) && !player.isInMiniPlayer {
-            return nil
-          }
-          guard let metadata = info.getCachedMetadata(item.filename) else { return nil }
-          guard let artist = metadata.artist, let title = metadata.title else { return nil }
-          return (artist, title)
-        }
-
-        let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
-        let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
-        if Preference.bool(for: .shortenFileGroupsInPlaylist), let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
-           !prefix.isEmpty,
-           prefix.count <= displayStr.count,  // check whether prefix length > filename length
-           prefix.count >= PrefixMinLength,
-           filename.count > FilenameMinLength {
-          cellView.setPrefix(prefix, textColor: prefixTextColor)
-          cellView.setTitle(String(filename[filename.index(filename.startIndex, offsetBy: prefix.count)...]), textColor: textColor)
-        } else {
-          cellView.setPrefix(nil, textColor: prefixTextColor)
-          cellView.setAdditionalInfo(nil)
-          cellView.setTitle(filename, textColor: textColor)
-        }
-        // playback progress and duration
-        cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
-        cellView.durationLabel.stringValue = ""
-        PlayerCore.playlistQueue.async {
-          if let (artist, title) = getCachedMetadata() {
-            DispatchQueue.main.async {
-              cellView.setTitle(title, textColor: textColor)
-              cellView.setAdditionalInfo(artist, textColor: textColor)
-            }
-          }
-          if let cached = self.player.info.getCachedVideoDurationAndProgress(item.filename),
-             let duration = cached.duration {
-            // if it's cached
-            if duration > 0 {
-              // if FFmpeg got the duration successfully
-              DispatchQueue.main.async { [self] in
-                let durationString = VideoTime(duration).stringRepresentation
-                cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: isPlaying ? isPlayingTextColor : .secondaryLabelColor)
-                if let progress = cached.progress {
-                  cellView.playbackProgressView.percentage = progress / duration
-                  cellView.playbackProgressView.needsDisplay = true
-                  cellView.playbackProgressView.isHidden = false
-                } else {
-                  cellView.playbackProgressView.isHidden = true
-                }
-                if isPlaying {
-                  cellView.needsDisplay = true
-                  cellView.needsLayout = true
-                }
-              }
-              self.refreshTotalLength()
-            }
-          } else {
-            // get related data and schedule a reload
-            if Preference.bool(for: .prefetchPlaylistVideoDuration) {
-              self.player.refreshCachedVideoInfo(forVideoPath: item.filename)
-              // Only schedule a reload if data was obtained and cached to avoid looping
-              if let cached = self.player.info.getCachedVideoDurationAndProgress(item.filename),
-                 let duration = cached.duration, duration > 0 {
-                // if FFmpeg got the duration successfully
-                self.refreshTotalLength()
-                DispatchQueue.main.async { [self] in
-                  reloadPlaylistRow(row)
-                }
-              }
-            }
-          }
-        }
-        // sub button
-        if !info.isMatchingSubtitles,
-           let matchedSubs = player.info.getMatchedSubs(item.filename), !matchedSubs.isEmpty {
-          cellView.setDisplaySubButton(true)
-        } else {
-          cellView.setDisplaySubButton(false)
-        }
-        // not sure why this line exists, but let's keep it for now
-        cellView.subBtn.image?.isTemplate = true
+        updateCellForTrackNameColumn(cellView, rowIndex: row, fromPlaylistItem: item, isPlaying: isPlaying)
       }
-      return v
-    }
-    // chapter
-    else if tableView == chapterTableView {
+
+    // Chapters table
+    } else if tableView == chapterTableView {
       let chapters = info.chapters
-      guard row < chapters.count else {
-        return nil
-      }
+      guard row < chapters.count else { return nil }
       let chapter = chapters[row]
+
       // next chapter time
       let nextChapterTime = chapters[at: row+1]?.time ?? .infinite
       // construct view
@@ -732,21 +646,112 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       if identifier == .isChosen {
         // left column
         v.setTitle(isCurrentChapter ? Constants.String.play : "", textColor: textColor)
-        return v
       } else if identifier == .trackName {
         // right column
         let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
         v.setTitle(titleString, textColor: textColor)
         let cellView = v as! ChapterTableCellView
         cellView.durationTextField.setText("\(chapter.time.stringRepresentation) → \(nextChapterTime.stringRepresentation)", textColor: textColor)
-        return cellView
       } else {
         return nil
       }
-    }
-    else {
+    } else {
       return nil
     }
+
+    return v
+  }
+
+  // Playlist Table: Track Name column cell
+  private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int,
+                                          fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
+    let filename = item.filenameForDisplay
+    let displayStr: String = NSString(string: filename).deletingPathExtension
+
+    func getCachedMetadata() -> (artist: String, title: String)? {
+      guard Preference.bool(for: .playlistShowMetadata) else { return nil }
+      if Preference.bool(for: .playlistShowMetadataInMusicMode) && !player.isInMiniPlayer { return nil }
+      guard let metadata = player.info.getCachedMetadata(item.filename) else { return nil }
+      guard let artist = metadata.artist, let title = metadata.title else { return nil }
+      return (artist, title)
+    }
+
+    let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
+    let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
+    if Preference.bool(for: .shortenFileGroupsInPlaylist), let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
+       !prefix.isEmpty,
+       prefix.count <= displayStr.count,  // check whether prefix length > filename length
+       prefix.count >= PrefixMinLength,
+       filename.count > FilenameMinLength {
+      cellView.setPrefix(prefix, textColor: prefixTextColor)
+      cellView.setTitle(String(filename[filename.index(filename.startIndex, offsetBy: prefix.count)...]), textColor: textColor)
+    } else {
+      cellView.setPrefix(nil, textColor: prefixTextColor)
+      cellView.setAdditionalInfo(nil)
+      cellView.setTitle(filename, textColor: textColor)
+    }
+
+    // playback progress and duration
+    cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+    cellView.durationLabel.stringValue = ""
+    /// Default progress to none, because `playbackProgressView` takes a long time to load
+    cellView.playbackProgressView.isHidden = true
+
+    // FIXME: refactor to streamline load flow + improve appearance during load
+    PlayerCore.playlistQueue.async { [self] in
+      if let (artist, title) = getCachedMetadata() {
+        DispatchQueue.main.async {
+          cellView.setTitle(title, textColor: textColor)
+          cellView.setAdditionalInfo(artist, textColor: textColor)
+        }
+      }
+      if let cached = player.info.getCachedVideoDurationAndProgress(item.filename),
+         let duration = cached.duration {
+        // if it's cached
+        if duration > 0 {
+          // if FFmpeg got the duration successfully
+          DispatchQueue.main.async { [self] in
+            let durationString = VideoTime(duration).stringRepresentation
+            cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: isPlaying ? isPlayingTextColor : .secondaryLabelColor)
+            if let progress = cached.progress {
+              cellView.playbackProgressView.percentage = progress / duration
+              cellView.playbackProgressView.isHidden = false
+            } else {
+              cellView.playbackProgressView.isHidden = true
+            }
+            if isPlaying {
+              cellView.needsDisplay = true
+              cellView.needsLayout = true
+            }
+          }
+          self.refreshTotalLength()
+        }
+      } else {
+        // get related data and schedule a reload
+        if Preference.bool(for: .prefetchPlaylistVideoDuration) {
+          self.player.refreshCachedVideoInfo(forVideoPath: item.filename)
+          // Only schedule a reload if data was obtained and cached to avoid looping
+          if let cached = self.player.info.getCachedVideoDurationAndProgress(item.filename),
+             let duration = cached.duration, duration > 0 {
+            // if FFmpeg got the duration successfully
+            self.refreshTotalLength()
+            DispatchQueue.main.async { [self] in
+              reloadPlaylistRow(rowIndex)
+            }
+          }
+        }
+      }
+    }
+
+    // sub button
+    if !player.info.isMatchingSubtitles,
+       let matchedSubs = player.info.getMatchedSubs(item.filename), !matchedSubs.isEmpty {
+      cellView.setDisplaySubButton(true)
+    } else {
+      cellView.setDisplaySubButton(false)
+    }
+    // not sure why this line exists, but let's keep it for now
+    cellView.subBtn.image?.isTemplate = true
   }
 
   // MARK: - Context menu
