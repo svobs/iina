@@ -1891,7 +1891,6 @@ class PlayerCore: NSObject {
     postFileHistoryUpdateNotification()
 
     // Ensure Playback History window is updated in real time
-    // TODO: use previous notification only
     if Preference.bool(for: .recordPlaybackHistory) {
       HistoryController.shared.queue.async { [self] in
         /// this will reload the `mpvProgress` field from the `watch-later` config files

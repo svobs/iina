@@ -19,14 +19,17 @@ class HistoryController {
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL
     self.history = []
-    reloadAll()
+    reloadAll(silent: true)
   }
 
-  func reloadAll() {
+  func reloadAll(silent: Bool = false) {
     Logger.log("Reloading playback history from \(plistURL.path.pii.quoted)")
     let sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
     Logger.log("Finished reloading playback history in \(sw) ms")
+    if !silent {
+      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+    }
   }
 
   private func save() {

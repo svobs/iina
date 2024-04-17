@@ -48,6 +48,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
 
   private var historyData: [String: [PlaybackHistory]] = [:]
   private var historyDataKeys: [String] = []
+  private var fileExistsMap: [URL: Bool] = [:]
 
   private var lastCompleteStatusReloadTime = Date()
 
@@ -198,15 +199,18 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
       let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
       let sw = Utility.Stopwatch()
 
+      var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
+
       var count: Int = 0
       for entry in historyList {
         // Fill in fileExists
-        if forceFullStatusReload || entry.fileExists == nil {
-          entry.fileExists = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+        if fileExistsMap[entry.url] == nil {
+          fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
           count += 1
         }
       }
       Logger.log("Filled in fileExists for \(count) history entries in \(sw) ms", level: .verbose)
+      self.fileExistsMap = fileExistsMap
       if forceFullStatusReload {
         lastCompleteStatusReloadTime = Date()
       }
@@ -307,7 +311,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
         filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
-        filenameView.textField?.textColor = (entry.fileExists ?? true) ? .controlTextColor : .disabledControlTextColor
+        let fileExists = fileExistsMap[entry.url] ?? true
+        filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
         filenameView.docImage.image = NSWorkspace.shared.icon(forFileType: entry.url.pathExtension)
       } else if identifier == .progress {
         // Progress cell
@@ -370,13 +375,13 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     switch menuItem.tag {
     case MenuItemTagShowInFinder:
       if selectedEntries.isEmpty { return false }
-      return selectedEntries.contains { $0.url.isFileURL && ($0.fileExists ?? false) }
+      return selectedEntries.contains { $0.url.isFileURL && (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagDelete:
       // "Delete" in this case only removes from history
       return !selectedEntries.isEmpty
     case MenuItemTagPlay, MenuItemTagPlayInNewWindow:
       if selectedEntries.isEmpty { return false }
-      return selectedEntries.contains { !$0.url.isFileURL || ($0.fileExists ?? false) }
+      return selectedEntries.contains { !$0.url.isFileURL || (fileExistsMap[$0.url] ?? false) }
     case MenuItemTagSearchFilename:
       menuItem.state = searchType == .filename ? .on : .off
     case MenuItemTagSearchFullPath:
