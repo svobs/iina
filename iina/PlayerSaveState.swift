@@ -181,8 +181,9 @@ struct PlayerSaveState {
       props[PropName.url.rawValue] = urlString
     }
 
-    let playlistPaths: [String] = info.playlist.compactMap{ $0.filename }
-    if playlistPaths.count > 1 {
+    let playlist = info.playlist
+    let playlistPaths: [String] = playlist.compactMap{ $0.filename }
+    if !playlistPaths.isEmpty {
       props[PropName.playlistPaths.rawValue] = playlistPaths
     }
 
@@ -557,11 +558,6 @@ struct PlayerSaveState {
     // Open the window!
     player.openURLs([url], shouldAutoLoad: false)
 
-    /// Launches background task which scans video files and collects video size metadata using ffmpeg
-    PlayerCore.backgroundQueue.async {
-      AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
-    }
-
     let isOnTop = bool(for: .isOnTop) ?? false
     windowController.setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
 
@@ -603,14 +599,6 @@ struct PlayerSaveState {
       }
     }
 
-    // Playlist
-
-    if let playlistPathList = properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
-      if playlistPathList.count > 1 {
-        player.addFilesToPlaylist(pathList: playlistPathList)
-      }
-    }
-
     if let overrideAutoMusicMode = bool(for: .overrideAutoMusicMode) {
       player.overrideAutoMusicMode = overrideAutoMusicMode
     }
@@ -622,123 +610,125 @@ struct PlayerSaveState {
     /// `MPVOption.PlaybackControl.start` will skip any files in the playlist which have durations shorter than its start time).
     let mpv: MPVController = player.mpv
 
-    if let videoPosition = string(for: .playPosition) {
-      log.verbose("Restoring playback position: \(videoPosition)")
-      mpv.setString(MPVOption.PlaybackControl.start, videoPosition)
-    }
-
-    // Better to always pause when starting, because there may be a slight delay before it can be enforced later
-    mpv.setFlag(MPVOption.PlaybackControl.pause, true)
-
-    /// already read these into `info` up above. Now set in mpv
-    if let vid = info.vid {
-      mpv.setInt(MPVOption.TrackSelection.vid, vid)
-    }
-    if let aid = info.aid {
-      mpv.setInt(MPVOption.TrackSelection.aid, aid)
-    }
-    if let sid = info.sid {
-      mpv.setInt(MPVOption.TrackSelection.sid, sid)
-    }
-    if let sid2 = info.secondSid {
-      mpv.setInt(MPVOption.Subtitles.secondarySid, sid2)
-    }
-
-    if let hwdec = string(for: .hwdec) {
-      mpv.setString(MPVOption.Video.hwdec, hwdec)
-    }
-
-    if let deinterlace = bool(for: .deinterlace) {
-      mpv.setFlag(MPVOption.Video.deinterlace, deinterlace)
-    }
-
-    if let userRotation = int(for: .videoRotation) {
-      mpv.setInt(MPVOption.Video.videoRotate, userRotation)
-    }
-
-    if let windowScale = double(for: .windowScale) {
-      mpv.setDouble(MPVProperty.windowScale, windowScale)
-    }
-
-    if let videoAspectLabel = string(for: .videoAspectLabel) {
-      // Update videoGeo above first so that UI doesn't alert the user
-      if info.videoGeo.aspectRatioOverride != nil {
-        let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
-        mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+    mpv.queue.async { [self] in
+      if let videoPosition = string(for: .playPosition) {
+        log.verbose("Restoring playback position: \(videoPosition)")
+        mpv.setString(MPVOption.PlaybackControl.start, videoPosition)
       }
-    }
 
-    if let selectedCropLabel = string(for: .cropLabel) {
-      // Update videoGeo above first so that UI doesn't alert the user
-      player.setCrop(fromLabel: selectedCropLabel)
-    }
+      // Better to always pause when starting, because there may be a slight delay before it can be enforced later
+      mpv.setFlag(MPVOption.PlaybackControl.pause, true)
 
-    if let brightness = int(for: .brightness) {
-      mpv.setInt(MPVOption.Equalizer.brightness, brightness)
-    }
-    if let contrast = int(for: .contrast) {
-      mpv.setInt(MPVOption.Equalizer.contrast, contrast)
-    }
-    if let saturation = int(for: .saturation) {
-      mpv.setInt(MPVOption.Equalizer.saturation, saturation)
-    }
-    if let gamma = int(for: .gamma) {
-      mpv.setInt(MPVOption.Equalizer.gamma, gamma)
-    }
-    if let hue = int(for: .hue) {
-      mpv.setInt(MPVOption.Equalizer.hue, hue)
-    }
-
-    if let playSpeed = double(for: .playSpeed) {
-      mpv.setDouble(MPVOption.PlaybackControl.speed, playSpeed)
-    }
-    if let volume = double(for: .volume) {
-      info.volume = volume
-      mpv.setDouble(MPVOption.Audio.volume, volume)
-    }
-    if let isMuted = bool(for: .isMuted) {
-      info.isMuted = isMuted
-      mpv.setFlag(MPVOption.Audio.mute, isMuted)
-    }
-    if let maxVolume = int(for: .maxVolume) {
-      mpv.setInt(MPVOption.Audio.volumeMax, maxVolume)
-    }
-    if let audioDelay = double(for: .audioDelay) {
-      mpv.setDouble(MPVOption.Audio.audioDelay, audioDelay)
-    }
-    if let subDelay = double(for: .subDelay) {
-      mpv.setDouble(MPVOption.Subtitles.subDelay, subDelay)
-    }
-    if let isSubVisible = bool(for: .isSubVisible) {
-      mpv.setFlag(MPVOption.Subtitles.subVisibility, isSubVisible)
-    }
-    if let isSub2Visible = bool(for: .isSub2Visible) {
-      mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, isSub2Visible)
-    }
-    if let subScale = double(for: .subScale) {
-      mpv.setDouble(MPVOption.Subtitles.subScale, subScale)
-    }
-    if let subPos = int(for: .subPos) {
-      mpv.setInt(MPVOption.Subtitles.subPos, subPos)
-    }
-    if let loopPlaylist = string(for: .loopPlaylist) {
-      mpv.setString(MPVOption.PlaybackControl.loopPlaylist, loopPlaylist)
-    }
-    if let loopFile = string(for: .loopFile) {
-      mpv.setString(MPVOption.PlaybackControl.loopFile, loopFile)
-    }
-    if let abLoopA = double(for: .abLoopA) {
-      if let abLoopB = double(for: .abLoopB) {
-        mpv.setDouble(MPVOption.PlaybackControl.abLoopB, abLoopB)
+      /// already read these into `info` up above. Now set in mpv
+      if let vid = info.vid {
+        mpv.setInt(MPVOption.TrackSelection.vid, vid)
       }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, abLoopA)
-    }
+      if let aid = info.aid {
+        mpv.setInt(MPVOption.TrackSelection.aid, aid)
+      }
+      if let sid = info.sid {
+        mpv.setInt(MPVOption.TrackSelection.sid, sid)
+      }
+      if let sid2 = info.secondSid {
+        mpv.setInt(MPVOption.Subtitles.secondarySid, sid2)
+      }
 
-    if let audioFilters = string(for: .audioFilters) {
-      mpv.setString(MPVProperty.af, audioFilters)
-    }
-    if let videoFilters = string(for: .videoFilters) {
-      mpv.setString(MPVProperty.vf, videoFilters)
+      if let hwdec = string(for: .hwdec) {
+        mpv.setString(MPVOption.Video.hwdec, hwdec)
+      }
+
+      if let deinterlace = bool(for: .deinterlace) {
+        mpv.setFlag(MPVOption.Video.deinterlace, deinterlace)
+      }
+
+      if let userRotation = int(for: .videoRotation) {
+        mpv.setInt(MPVOption.Video.videoRotate, userRotation)
+      }
+
+      if let windowScale = double(for: .windowScale) {
+        mpv.setDouble(MPVProperty.windowScale, windowScale)
+      }
+
+      if let videoAspectLabel = string(for: .videoAspectLabel) {
+        // Update videoGeo above first so that UI doesn't alert the user
+        if info.videoGeo.aspectRatioOverride != nil {
+          let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
+          mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+        }
+      }
+
+      if let selectedCropLabel = string(for: .cropLabel) {
+        // Update videoGeo above first so that UI doesn't alert the user
+        player.setCrop(fromLabel: selectedCropLabel)
+      }
+
+      if let brightness = int(for: .brightness) {
+        mpv.setInt(MPVOption.Equalizer.brightness, brightness)
+      }
+      if let contrast = int(for: .contrast) {
+        mpv.setInt(MPVOption.Equalizer.contrast, contrast)
+      }
+      if let saturation = int(for: .saturation) {
+        mpv.setInt(MPVOption.Equalizer.saturation, saturation)
+      }
+      if let gamma = int(for: .gamma) {
+        mpv.setInt(MPVOption.Equalizer.gamma, gamma)
+      }
+      if let hue = int(for: .hue) {
+        mpv.setInt(MPVOption.Equalizer.hue, hue)
+      }
+
+      if let playSpeed = double(for: .playSpeed) {
+        mpv.setDouble(MPVOption.PlaybackControl.speed, playSpeed)
+      }
+      if let volume = double(for: .volume) {
+        info.volume = volume
+        mpv.setDouble(MPVOption.Audio.volume, volume)
+      }
+      if let isMuted = bool(for: .isMuted) {
+        info.isMuted = isMuted
+        mpv.setFlag(MPVOption.Audio.mute, isMuted)
+      }
+      if let maxVolume = int(for: .maxVolume) {
+        mpv.setInt(MPVOption.Audio.volumeMax, maxVolume)
+      }
+      if let audioDelay = double(for: .audioDelay) {
+        mpv.setDouble(MPVOption.Audio.audioDelay, audioDelay)
+      }
+      if let subDelay = double(for: .subDelay) {
+        mpv.setDouble(MPVOption.Subtitles.subDelay, subDelay)
+      }
+      if let isSubVisible = bool(for: .isSubVisible) {
+        mpv.setFlag(MPVOption.Subtitles.subVisibility, isSubVisible)
+      }
+      if let isSub2Visible = bool(for: .isSub2Visible) {
+        mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, isSub2Visible)
+      }
+      if let subScale = double(for: .subScale) {
+        mpv.setDouble(MPVOption.Subtitles.subScale, subScale)
+      }
+      if let subPos = int(for: .subPos) {
+        mpv.setInt(MPVOption.Subtitles.subPos, subPos)
+      }
+      if let loopPlaylist = string(for: .loopPlaylist) {
+        mpv.setString(MPVOption.PlaybackControl.loopPlaylist, loopPlaylist)
+      }
+      if let loopFile = string(for: .loopFile) {
+        mpv.setString(MPVOption.PlaybackControl.loopFile, loopFile)
+      }
+      if let abLoopA = double(for: .abLoopA) {
+        if let abLoopB = double(for: .abLoopB) {
+          mpv.setDouble(MPVOption.PlaybackControl.abLoopB, abLoopB)
+        }
+        mpv.setDouble(MPVOption.PlaybackControl.abLoopA, abLoopA)
+      }
+
+      if let audioFilters = string(for: .audioFilters) {
+        mpv.setString(MPVProperty.af, audioFilters)
+      }
+      if let videoFilters = string(for: .videoFilters) {
+        mpv.setString(MPVProperty.vf, videoFilters)
+      }
     }
   }
 }  /// end `struct PlayerSaveState`

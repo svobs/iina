@@ -365,8 +365,6 @@ class AutoFileMatcher {
       player.info.isMatchingSubtitles = true
       getAllMediaFiles()
 
-      AutoFileMatcher.fillInVideoSizes(videoFiles)
-
       // get all possible subtitles
       subtitles = getAllPossibleSubs()
       player.info.currentSubsInfo = subtitles
@@ -394,8 +392,11 @@ class AutoFileMatcher {
       if shouldAutoLoad {
         try forceMatchUnmatchedVideos()
       }
-
       player.info.isMatchingSubtitles = false
+
+      // Fill in file sizes after everything else is finished
+      AutoFileMatcher.fillInVideoSizes(videoFiles)
+
       Logger.log("**Finished matching", subsystem: subsystem)
     } catch let err {
       player.info.isMatchingSubtitles = false

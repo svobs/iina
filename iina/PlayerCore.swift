@@ -1332,34 +1332,37 @@ class PlayerCore: NSObject {
   /// This checks whether the currently playing item is in the list, so that it may end up in the middle of the playlist.
   /// Also note that each item in `pathList` may be either a file path or a
   /// network URl.
-  func addFilesToPlaylist(pathList: [String]) {
-    mpv.queue.async { [self] in
-      var addedCurrentItem = false
+  private func restorePlaylist(itemPathList: [String]) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
 
-      log.debug("Adding \(pathList.count) files to playlist")
-      for path in pathList {
-        if path == info.currentURL?.path {
-          addedCurrentItem = true
-        } else if addedCurrentItem {
-          _addToPlaylist(path)
-        } else {
-          let count = mpv.getInt(MPVProperty.playlistCount)
-          let current = mpv.getInt(MPVProperty.playlistPos)
-          _addToPlaylist(path)
-          let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
-          if err != 0 {
-            log.error("Error \(err) when adding files to playlist")
-            if err == MPV_ERROR_COMMAND.rawValue {
-              return
-            }
+    _reloadPlaylist(silent: true)
+
+    var addedCurrentItem = false
+
+    log.debug("Adding \(itemPathList.count) files to playlist")
+    for path in itemPathList {
+      if path == info.currentURL?.path {
+        addedCurrentItem = true
+      } else if addedCurrentItem {
+        _addToPlaylist(path)
+      } else {
+        let count = mpv.getInt(MPVProperty.playlistCount)
+        let current = mpv.getInt(MPVProperty.playlistPos)
+        _addToPlaylist(path)
+        let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
+        if err != 0 {
+          log.error("Error \(err) when adding files to playlist")
+          if err == MPV_ERROR_COMMAND.rawValue {
+            return
           }
         }
       }
-      _reloadPlaylist()
     }
+    _reloadPlaylist()
   }
 
   func _addToPlaylist(_ path: String) {
+    log.debug("Appending to mpv playlist: \(path.pii.quoted)")
     mpv.command(.loadfile, args: [path, "append"])
   }
 
@@ -2011,6 +2014,17 @@ class PlayerCore: NSObject {
     if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
       DispatchQueue.main.async {
         NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
+      }
+    }
+
+    // Cannot restore playlist until after fileStarted event received and mpv knows the current item position
+    if info.isRestoring, let priorState = info.priorState,
+       let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
+      restorePlaylist(itemPathList: playlistPathList)
+
+      /// Launches background task which scans video files and collects video size metadata using ffmpeg
+      PlayerCore.backgroundQueue.async { [self] in
+        AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
       }
     }
 
@@ -2880,11 +2894,11 @@ class PlayerCore: NSObject {
   }
 
   private func _reloadPlaylist(silent: Bool = false) {
-    log.verbose("Removing all items from playlist")
+    log.verbose("Reloading playlist")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     var newPlaylist: [MPVPlaylistItem] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
-    log.verbose("Adding \(playlistCount) items to playlist")
+    log.verbose("Reloaded playlist will have \(playlistCount) items")
     for index in 0..<playlistCount {
       let playlistItem = MPVPlaylistItem(filename: mpv.getString(MPVProperty.playlistNFilename(index))!,
                                          title: mpv.getString(MPVProperty.playlistNTitle(index)))
