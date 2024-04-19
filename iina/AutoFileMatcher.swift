@@ -398,9 +398,17 @@ class AutoFileMatcher {
       AutoFileMatcher.fillInVideoSizes(videoFiles)
 
       Logger.log("**Finished matching", subsystem: subsystem)
+    } catch let err as AutoMatchingError {
+      player.info.isMatchingSubtitles = false
+      guard case .ticketExpired = err else {
+        log.error(err.localizedDescription)
+        return
+      }
+      log.debug("Automatching cancelled: ticket expired")
+      return
     } catch let err {
       player.info.isMatchingSubtitles = false
-      Logger.log(err.localizedDescription, level: .error, subsystem: subsystem)
+      log.error(err.localizedDescription)
       return
     }
   }
