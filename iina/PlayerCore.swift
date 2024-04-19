@@ -1961,6 +1961,8 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isShuttingDown else { return }
 
+    // TODO: consider putting call to FFmpegController.readVideoSize here
+
     guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
@@ -2190,7 +2192,16 @@ class PlayerCore: NSObject {
     reloadSelectedTracks()
 
     // Make sure to call this because mpv does not always trigger it.
-    guard let newVidGeo = mpv.queryForVideoGeometry() else { return }
+    let newVidGeo: VideoGeometry
+    if let mpvVidGeo = mpv.queryForVideoGeometry() {
+      newVidGeo = mpvVidGeo
+    } else {
+      // Sometimes when closing & reopening player windows too quickly, mpv falls behind
+      // and reports 0 for width or height.
+      // But should be fine to ignore because we now get videoSize from ffmpeg before opening in mpv.
+      log.verbose("Falling back to cached vidGeo because mpv failed to return a valid rawSize")
+      newVidGeo = info.videoGeo
+    }
 
     // Always send this to window controller. It should be smart enough to resize only when needed:
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")

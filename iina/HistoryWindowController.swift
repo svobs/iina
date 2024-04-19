@@ -238,8 +238,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
           count += 1
         }
       }
-      Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw) ms", level: .verbose)
       self.fileExistsMap = fileExistsMap
+      Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw) ms", level: .verbose)
       if forceFullStatusReload {
         lastCompleteStatusReloadTime = Date()
       }
