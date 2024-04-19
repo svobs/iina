@@ -1954,14 +1954,13 @@ class PlayerCore: NSObject {
     } else {
       // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
       log.verbose("Nothing for preResizeVideo to do")
+      // FIXME: put call to FFmpegController.readVideoSize here
     }
   }
 
   func fileStarted(path: String, playlistPos: Int) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isShuttingDown else { return }
-
-    // TODO: consider putting call to FFmpegController.readVideoSize here
 
     guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")

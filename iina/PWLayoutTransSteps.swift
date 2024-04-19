@@ -62,10 +62,6 @@ extension PlayerWindowController {
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
-      if transition.outputLayout.isLegacyFullScreen {
-        // Native FS has done this already
-        resetCollectionBehavior()
-      }
  
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.

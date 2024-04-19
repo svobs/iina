@@ -2143,12 +2143,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
     log.verbose("EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
+    resetCollectionBehavior() // need to do this before entering FS
 
     animationPipeline.submitZeroDuration({ [self] in
       if isLegacy {
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       } else if !isFullScreen {
-        resetCollectionBehavior() // need to do this before entering FS (legacy FS can do it in the transition steps)
         window.toggleFullScreen(self)
       }
     })
