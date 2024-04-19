@@ -2674,7 +2674,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
     })
 
-    animationTasks.append(IINAAnimation.zeroDurationTask { [self] in
+    animationTasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
       // if no interrupt then hide animation
       guard fadeableViewsAnimationState == .willHide else { return }
 
