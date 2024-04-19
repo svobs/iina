@@ -211,22 +211,9 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     volumeSlider.isEnabled = hasAudio
     volumeSlider.doubleValue = volume
     volumeLabel.intValue = Int32(volume)
-    if isMuted {
-      volumeButton.image = NSImage(named: "mute")
-    } else {
-      switch volumeLabel.intValue {
-      case 0:
-        volumeButton.image = NSImage(named: "volume-0")
-      case 1...33:
-        volumeButton.image = NSImage(named: "volume-1")
-      case 34...66:
-        volumeButton.image = NSImage(named: "volume-2")
-      case 67...1000:
-        volumeButton.image = NSImage(named: "volume")
-      default:
-        break
-      }
-    }
+    let image = windowController.volumeIcon(volume: volume, isMuted: isMuted)
+    volumeButton.image = image
+    muteButton.image = image
   }
 
   /// From `NSPopoverDelegate`: close volume popover
