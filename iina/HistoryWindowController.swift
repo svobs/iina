@@ -39,6 +39,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     return NSNib.Name("HistoryWindowController")
   }
 
+  @Atomic var reloadTicketCounter: Int = 0
+
   @IBOutlet weak var outlineView: NSOutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
 
@@ -169,6 +171,25 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
   }
 
   private func reloadData() {
+    dispatchPrecondition(condition: .onQueue(.main))
+
+    // Reloads are expensive and many things can trigger them.
+    // Use a counter + a delay to reduce duplicated work (except for initial load)
+    let isInitialLoad = reloadTicketCounter == 0
+    reloadTicketCounter += 1
+    let ticket = reloadTicketCounter
+
+    if isInitialLoad {
+      _reloadData()
+    } else {
+      DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+        guard ticket == reloadTicketCounter else { return }
+        _reloadData()
+      }
+    }
+  }
+
+  private func _reloadData() {
     // reconstruct data
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
@@ -180,7 +201,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
         return string.localizedStandardContains(searchString)
       }
     }
-    Logger.log("Reloading history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn)", level: .verbose)
+    Logger.log("Reloading history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn) (tkt \(reloadTicketCounter))", level: .verbose)
     var historyDataUpdated: [String: [PlaybackHistory]] = [:]
     var historyDataKeysUpdated: [String] = []
 
@@ -193,6 +214,14 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
       }
       historyDataUpdated[key]!.append(entry)
     }
+
+    // Update data and reload UI
+    historyData = historyDataUpdated
+    historyDataKeys = historyDataKeysUpdated
+    adjustTimeColumnMinWidth()
+
+    outlineView.reloadData()
+    outlineView.expandItem(nil, expandChildren: true)
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
     HistoryController.shared.queue.async { [self] in
@@ -209,7 +238,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
           count += 1
         }
       }
-      Logger.log("Filled in fileExists for \(count) history entries in \(sw) ms", level: .verbose)
+      Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw) ms", level: .verbose)
       self.fileExistsMap = fileExistsMap
       if forceFullStatusReload {
         lastCompleteStatusReloadTime = Date()
@@ -221,14 +250,6 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
         outlineView.expandItem(nil, expandChildren: true)
       }
     }
-
-    // Update data and reload UI
-    historyData = historyDataUpdated
-    historyDataKeys = historyDataKeysUpdated
-    adjustTimeColumnMinWidth()
-
-    outlineView.reloadData()
-    outlineView.expandItem(nil, expandChildren: true)
   }
 
   private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {
