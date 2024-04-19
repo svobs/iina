@@ -16,6 +16,7 @@ extension PlayerWindowController {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
 
     guard newVidGeo.hasValidSize else { return }
+    guard let currentMedia = player.info.currentMedia else { return }
 
     let oldVidGeo = player.info.videoGeo
     // Update cached values for use elsewhere:
@@ -25,12 +26,41 @@ extension PlayerWindowController {
     let justOpenedFile = player.info.justOpenedFile
     let isRestoring = player.info.isRestoring
 
-    if newVidGeo.totalRotation != player.info.currentMedia?.thumbnails?.rotationDegrees {
+    if newVidGeo.totalRotation != currentMedia.thumbnails?.rotationDegrees {
       player.reloadThumbnails(forMedia: player.info.currentMedia)
+    }
+
+    // Show default album art?
+    let showDefaultArt: Bool?
+    // if received video size before switching to music mode, hide default album art
+    // Don't show art if currently loading
+    let isCompletelyLoaded = currentMedia.loadStatus.isAtLeast(.completelyLoaded)
+    if isCompletelyLoaded, !player.isStopping, !player.isStopped {
+      if player.info.isVideoTrackSelected {
+        log.verbose("Hiding defaultAlbumArt because vidSelected=Y")
+        showDefaultArt = false
+      } else {
+        log.verbose("Showing defaultAlbumArt because vidSelected=N")
+        showDefaultArt = true
+      }
+
+      // Check whether to show album art
+      let showAlbumArt = player.info.currentMediaAudioStatus == .isAudio
+      /// If `true`, then `player.info.videoAspect` will return 1:1.
+      // FIXME: 1:1 is not honored
+      player.info.isShowingAlbumArt = showDefaultArt! || showAlbumArt
+    } else {
+      showDefaultArt = nil
     }
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitZeroDuration({ [self] in
+
+        if let showDefaultArt {
+          // Update default album art visibility:
+          defaultAlbumArtView.isHidden = !showDefaultArt
+        }
+
         updateVidGeo(from: oldVidGeo, to: newVidGeo, isRestoring: isRestoring, justOpenedFile: justOpenedFile)
       })
     }

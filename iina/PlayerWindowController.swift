@@ -1115,87 +1115,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     return newMap
   }
 
-  // Check whether to show album art, which may require changing videoView aspect ratio to 1:1.
-  // Also show or hide default album art if needed.
-  func refreshAlbumArtDisplay() {
-    dispatchPrecondition(condition: .onQueue(player.mpv.queue))
-    guard loaded else { return }
-
-    // Get these while in mpv queue
-    let isVideoTrackSelected = player.info.isVideoTrackSelected
-    let currentMediaAudioStatus = player.info.currentMediaAudioStatus
-
-    // Part 1: default album art
-
-    let showDefaultArt: Bool
-    // if received video size before switching to music mode, hide default album art
-    // Don't show art if currently loading
-    if isVideoTrackSelected || player.info.justOpenedFile || player.isStopping || player.isStopped {
-      log.verbose("Hiding defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
-      showDefaultArt = false
-    } else {
-      log.verbose("Showing defaultAlbumArt because justOpenedFile=\(player.info.justOpenedFile.yn) stopped=\(player.isStopped.yn) vidSelected=\(isVideoTrackSelected.yn)")
-      showDefaultArt = true
-    }
-
-    // Part 2: default audio aspect ratio
-
-    // FIXME
-    let oldAspectRatio = player.info.videoAspect
-    let showAlbumArt = currentMediaAudioStatus == .isAudio
-    /// This can change `player.info.videoAspect`
-    player.info.isShowingAlbumArt = showDefaultArt || showAlbumArt
-    let newAspectRatio = player.info.videoAspect
-
-    DispatchQueue.main.async { [self] in
-      guard let window else { return }
-      // 1. Apply default album art visibility:
-      defaultAlbumArtView.isHidden = !showDefaultArt
-
-      // 2. Apply aspect ratio:
-      guard newAspectRatio != oldAspectRatio else {
-        log.verbose("After updating defaultAlbumArt: no change to videoAspect (\(oldAspectRatio)); no more work needed")
-        return
-      }
-      log.verbose("Updating videoAspect from: \(oldAspectRatio.aspectNormalDecimalString) to: \(newAspectRatio.aspectNormalDecimalString)")
-
-      // TODO: can maybe replace all the following code with a call to refresh video params
-      let layout = currentLayout
-      switch layout.mode {
-      case .windowed:
-        var newGeo = windowedModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
-
-        let viewportSize: NSSize
-        if Preference.bool(for: .lockViewportToVideoSize),
-           let intendedViewportSize = player.info.intendedViewportSize {
-          viewportSize = intendedViewportSize
-        } else {
-          viewportSize = newGeo.viewportSize
-        }
-        newGeo = newGeo.scaleViewport(to: viewportSize, fitOption: .keepInVisibleScreen)
-        applyWindowGeoInAnimationPipeline(newGeo)
-      case .fullScreen:
-        animationPipeline.submit(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
-          guard let screen = window.screen else { return }
-          let fsGeo = layout.buildFullScreenGeometry(inside: screen, videoAspect: newAspectRatio)
-          if layout.isLegacyFullScreen {
-            applyLegacyFSGeo(fsGeo)
-          } else if layout.mode != .fullScreenInteractive {
-            videoView.apply(fsGeo)
-          }
-        }))
-        break
-      case .fullScreenInteractive, .windowedInteractive:
-        break
-      case .musicMode:
-        let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newAspectRatio)
-        /// If `isMiniPlayerWaitingToShowVideo` is true, need to update the cached geometry & other state vars,
-        /// but do not update frame because that will be handled right after
-        applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry, setFrame: !player.isMiniPlayerWaitingToShowVideo)
-      }
-    }
-  }
-
   /// Returns the position in seconds for the given percent of the total duration of the video the percentage represents.
   ///
   /// The number of seconds returned must be considered an estimate that could change. The duration of the video is obtained from
@@ -3346,7 +3265,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Build exit animation
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
-    log.verbose("[applyVidGeo E5] Exiting interactive mode, newMode: \(newMode)")
+    log.verbose("Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.75
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25

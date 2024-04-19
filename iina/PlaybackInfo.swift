@@ -14,6 +14,7 @@ class MediaItem {
     case started          /// set after mpv sends `fileStarted` notification
     case loaded           /// set after mpv sends `fileLoaded` notification
     case completelyLoaded /// everything loaded, including filters
+    case processedByIINA /// + video geometry has been applied
     case ended
 
     var description: String {
@@ -26,9 +27,19 @@ class MediaItem {
         return "loaded"
       case .completelyLoaded:
         return "completelyLoaded"
+      case .processedByIINA:
+        return "processedByIINA"
       case .ended:
         return "ended"
       }
+    }
+
+    func isAtLeast(_ minStatus: LoadStatus) -> Bool {
+      return rawValue >= minStatus.rawValue
+    }
+
+    func isNotYet(_ status: LoadStatus) -> Bool {
+      return rawValue < status.rawValue
     }
   }
 
@@ -115,7 +126,8 @@ class PlaybackInfo {
 
   /// File not completely done loading
   var justOpenedFile: Bool {
-    return (currentMedia?.loadStatus.rawValue ?? MediaItem.LoadStatus.notStarted.rawValue) < MediaItem.LoadStatus.completelyLoaded.rawValue
+    guard let currentMedia else { return false }
+    return currentMedia.loadStatus.isNotYet(.processedByIINA)
   }
   var timeLastFileOpenFinished: TimeInterval = 0
   var timeSinceLastFileOpenFinished: TimeInterval {

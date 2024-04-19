@@ -1967,8 +1967,8 @@ class PlayerCore: NSObject {
       return
     }
     if let existingMedia = info.currentMedia, existingMedia.url == mediaFromPath.url {
-      guard existingMedia.loadStatus.rawValue < MediaItem.LoadStatus.started.rawValue else {
-        log.warn("FileStarted: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil") (\(existingMedia.loadStatus.rawValue)), which is less than \(MediaItem.LoadStatus.started.rawValue)")
+      guard existingMedia.loadStatus.isNotYet(.started) else {
+        log.warn("FileStarted: loadStatus is not yet started for \(existingMedia.url.absoluteString.pii.quoted) (found: \(existingMedia.loadStatus.rawValue))")
         return
       }
       // update existing entry
@@ -2128,10 +2128,10 @@ class PlayerCore: NSObject {
     }
 
     if !mpv.isStale() {
-      if let loadStatus = info.currentMedia?.loadStatus, loadStatus.rawValue < MediaItem.LoadStatus.loaded.rawValue {
-        info.currentMedia?.loadStatus = .loaded
+      if currentMedia.loadStatus.isNotYet(.loaded) {
+        currentMedia.loadStatus = .loaded
       } else {
-        log.warn("FileLoaded: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil")")
+        log.warn("FileLoaded: loadStatus is \(currentMedia.loadStatus.description.quoted)")
       }
     }
 
@@ -2185,7 +2185,7 @@ class PlayerCore: NSObject {
   /// This event should be called when everything is truly done.
   func fileIsCompletelyDoneLoading() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !mpv.isStale() else { return }
+    guard !mpv.isStale(), let currentMedia = info.currentMedia else { return }
 
     reloadTrackInfo()
     reloadSelectedTracks()
@@ -2202,21 +2202,22 @@ class PlayerCore: NSObject {
       newVidGeo = info.videoGeo
     }
 
+    log.verbose("File is completely done loading; setting justOpenedFile=N")
+    /// Make sure to set this *after* calling `applyVidGeo`
+    guard currentMedia.loadStatus.isNotYet(.completelyLoaded) else {
+      log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")
+      return
+    }
+    currentMedia.loadStatus = .completelyLoaded
+    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
+
     // Always send this to window controller. It should be smart enough to resize only when needed:
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
     windowController.applyVidGeo(newVidGeo)
 
-    log.verbose("File is completely done loading; setting justOpenedFile=N")
-    /// Make sure to set this *after* calling `applyVidGeo` but *before* calling `refreshAlbumArtDisplay`
-    if let loadStatus = info.currentMedia?.loadStatus, loadStatus.rawValue < MediaItem.LoadStatus.completelyLoaded.rawValue {
-      info.currentMedia?.loadStatus = .completelyLoaded
-      info.timeLastFileOpenFinished = Date().timeIntervalSince1970
-    } else {
-      log.warn("FileCompletelyLoaded: loadStatus is \(info.currentMedia?.loadStatus.description.quoted ?? "nil")")
-    }
+    currentMedia.loadStatus = .processedByIINA
 
     // Update art & aspect *before* switching to/from music mode for more pleasant animation (but after updating state booleans)
-    windowController.refreshAlbumArtDisplay()
 
     if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {
@@ -2390,8 +2391,9 @@ class PlayerCore: NSObject {
     guard vid != info.vid else { return }
     info.vid = vid
 
-    /// Do this first, before `applyVideoVisibility`, for a nicer animation`
-    windowController.refreshAlbumArtDisplay()
+    /// This will refresh album art display.
+    /// Do this first, before `applyVideoVisibility`, for a nicer animation.
+    windowController.applyVidGeo(info.videoGeo)
 
     DispatchQueue.main.async{ [self] in
       guard info.isFileLoaded else {
