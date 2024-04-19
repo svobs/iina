@@ -98,6 +98,7 @@ class PlayerCore: NSObject {
    `autoLoadFilesInCurrentFolder(ticket:)`
    */
   @Atomic var backgroundQueueTicket = 0
+  @Atomic var thumbnailQueueTicket = 0
 
   // Ticket for sync UI update request
   @Atomic private var syncUITicketCounter: Int = 0
@@ -613,6 +614,7 @@ class PlayerCore: NSObject {
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
     $backgroundQueueTicket.withLock { $0 += 1 }
+    $thumbnailQueueTicket.withLock { $0 += 1 }
 
     videoView.stopDisplayLink()
 
@@ -2775,17 +2777,23 @@ class PlayerCore: NSObject {
         return
       }
 
-      var ticket: Int = 0
+      var reloadTicket: Int = 0
       $thumbnailReloadTicketCounter.withLock {
         $0 += 1
-        ticket = $0
+        reloadTicket = $0
       }
 
       // Run the following in the background at lower priority, so the UI is not slowed down
       PlayerCore.thumbnailQueue.asyncAfter(deadline: .now() + 0.5) { [self] in
-        guard ticket == thumbnailReloadTicketCounter else { return }
+        guard reloadTicket == thumbnailReloadTicketCounter else { return }
         guard !isStopping, !isStopped, !isShuttingDown else { return }
-        log.debug("Reloading thumbnails (tkt \(ticket))")
+        log.debug("Reloading thumbnails (tkt \(reloadTicket))")
+
+        var queueTicket: Int = 0
+        $thumbnailQueueTicket.withLock {
+          $0 += 1  // this will cancel any previous thumbnail loads for this player
+          queueTicket = $0
+        }
 
         // Generate thumbnails using video's original dimensions, before aspect ratio correction.
         // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
@@ -2794,6 +2802,7 @@ class PlayerCore: NSObject {
           // Fall back to querying mpv:
           guard let videoGeoNew = mpv.queryForVideoGeometry() else {
             log.debug("Cannot generate thumbnails: could not get video params from mpv")
+            clearExistingThumbnails(for: currentMedia)
             return
           }
           videoGeo = videoGeoNew
@@ -2818,17 +2827,17 @@ class PlayerCore: NSObject {
           }
         }
 
-        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
+        let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
                                                                   thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
         currentMedia.thumbnails = newMediaThumbnailLoader
+        guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()
       }
     }
   }
 
   private func clearExistingThumbnails(for currentMedia: MediaItem) {
-    if let oldThumbnailSet = currentMedia.thumbnails {
-      oldThumbnailSet.isCancelled = true
+    if currentMedia.thumbnails != nil {
       currentMedia.thumbnails = nil
     }
     if #available(macOS 10.12.2, *) {

@@ -15,12 +15,13 @@ struct Thumbnail {
 
 class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   unowned let player: PlayerCore!
+  let queueTicket: Int
   let mediaFilePath: String
   let mediaFilePathMD5: String
   let thumbnailWidth: Int
   let rotationDegrees: Int
 
-  var isCancelled = false
+  private(set) var isCancelled = false
   var thumbnailsProgress: Double = 0
   var ffThumbnails: [FFThumbnail] = []
   var thumbnails: [Thumbnail] = []
@@ -36,8 +37,9 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     return player.log
   }
 
-  init(_ player: PlayerCore, mediaFilePath: String, mediaFilePathMD5: String, thumbnailWidth: Int, rotationDegrees: Int) {
+  init(_ player: PlayerCore, queueTicket: Int, mediaFilePath: String, mediaFilePathMD5: String, thumbnailWidth: Int, rotationDegrees: Int) {
     self.player = player
+    self.queueTicket = queueTicket
     self.mediaFilePath = mediaFilePath
     self.mediaFilePathMD5 = mediaFilePathMD5
     self.thumbnailWidth = thumbnailWidth
@@ -167,6 +169,10 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     }
     let targetCount = ffmpegController.thumbnailCount
     PlayerCore.thumbnailQueue.async { [self] in
+      guard queueTicket == player.thumbnailQueueTicket else {
+        isCancelled = true
+        return
+      }
       if let thumbnails = thumbnails, thumbnails.count > 0 {
         addThumbnails(thumbnails)
       }
@@ -190,6 +196,10 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     }
 
     PlayerCore.thumbnailQueue.async { [self] in
+      guard queueTicket == player.thumbnailQueueTicket else {
+        isCancelled = true
+        return
+      }
       if thumbnails.count > 0 {
         log.verbose("Got final count of \(thumbnails.count) thumbs, width=\(width)px")
         addThumbnails(thumbnails)
