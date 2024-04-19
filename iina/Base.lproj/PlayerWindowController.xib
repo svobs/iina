@@ -120,7 +120,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="Window-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -308,7 +308,7 @@
                                 <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                             </box>
-                            <stackView identifier="OSC-Bottom-Horizontal-Stack-View" distribution="fill" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Qmi-hb-0aM" userLabel="OSC-Bottom Horizontal Stack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
+                            <stackView identifier="OSC-Bottom-HStack-View" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qmi-hb-0aM" userLabel="OSC-Bottom HStack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="8" y="0.0" width="624" height="0.0"/>
                             </stackView>
                         </subviews>
@@ -465,7 +465,7 @@
                             <customView identifier="OSC-Top-View" translatesAutoresizingMaskIntoConstraints="NO" id="pgt-r3-Vbf" userLabel="ControlBarTop View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="0.0"/>
                                 <subviews>
-                                    <stackView identifier="OSC-Top-Stack-View" distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="fDY-vk-Ylv" userLabel="OSC-Top Horizontal Stack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
+                                    <stackView identifier="OSC-Top-Stack-View" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fDY-vk-Ylv" userLabel="OSC-Top Horizontal Stack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
                                         <rect key="frame" x="8" y="0.0" width="624" height="0.0"/>
                                     </stackView>
                                 </subviews>
