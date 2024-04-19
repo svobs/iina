@@ -255,7 +255,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   @Atomic var screenChangedTicketCounter: Int = 0
   /// For throttling `windowDidChangeScreenParameters` notifications. MacOS 14 often sends hundreds in short bursts
   @Atomic var screenParamsChangedTicketCounter: Int = 0
-  @Atomic var updateCachedGeometryTicketCounter: Int = 0
   @Atomic var thumbDisplayTicketCounter: Int = 0
 
   // MARK: - Window geometry vars
@@ -1516,8 +1515,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // if it's a mouseup after dragging window
       log.verbose("PlayerWindow mouseUp: finished drag of window")
       isDragging = false
-      // Update geometry with new position, because windowDidUpdate does not always seem to fire
-      updateCachedGeometry()
     } else if finishResizingSidebar(with: event) {
       log.verbose("PlayerWindow mouseUp: finished resizing sidebar")
     } else {
@@ -2065,7 +2062,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
 
-    buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "")FullScreen", from: oldLayout, to: fullscreenLayout, totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
+    buildLayoutTransition(named: "Enter\(isLegacy ? "Legacy" : "")FullScreen", from: oldLayout, to: fullscreenLayout,
+                          totalStartingDuration: 0, totalEndingDuration: duration, thenRun: true)
   }
 
   func window(_ window: NSWindow, startCustomAnimationToExitFullScreenWithDuration duration: TimeInterval) {
@@ -2147,11 +2145,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     log.verbose("EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
 
     animationPipeline.submitZeroDuration({ [self] in
-      resetCollectionBehavior()
-      
       if isLegacy {
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       } else if !isFullScreen {
+        resetCollectionBehavior() // need to do this before entering FS (legacy FS can do it in the transition steps)
         window.toggleFullScreen(self)
       }
     })
@@ -2184,15 +2181,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let currentLayout = currentLayout
     log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingLayoutTransition=\(isAnimatingLayoutTransition)")
     videoView.videoLayer.enterAsynchronousMode()
-
-    /// This method only provides the desired size for the window, but we don't have access to the  desired origin.
-    /// So we need to be careful not to make assumptions about which directions the window is expanding toward.
-    /// It's OK to use `PWGeometry` for size calculations, but do not save the geometry objects.
-    /// After the window frame is updated, `updateCachedGeometry()` will query the window for its location & size,
-    /// and will save that.
-    defer {
-      updateCachedGeometry()
-    }
 
     switch currentLayout.mode {
     case .windowed, .windowedInteractive:
@@ -2230,14 +2218,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     applyWindowResize()
   }
 
-  /// Called when done with user drag of window border.
-  /// Do not use for most things! Use `windowDidResize` instead.
+  /// Called when done with user drag of window border, but also called at seemingly random times when the window is resized by any means.
+  /// Do not use this! It is unreliable. Use `windowDidResize` instead.
   func windowDidEndLiveResize(_ notification: Notification) {
-    // Must not access mpv while it is asynchronously processing stop and quit commands. See comments in windowWillExitFullScreen for details.
-    guard !isClosing, !isAnimating, !isMagnifying else { return }
-    log.verbose("WindowDidEndLiveResize mode: \(currentLayout.mode)")
-
-    applyWindowResize()
   }
 
   // MARK: - Window Delegate: window move, screen changes
@@ -2373,16 +2356,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
   }
 
-  func windowWillMove(_ notification: Notification) {
-    guard let window = window else { return }
-
-    animationPipeline.submitZeroDuration({ [self] in
-      log.verbose("WindowWillMove frame: \(window.frame)")
-      /// Sometimes there is a `windowWillMove` notification without a `windowDidMove`. So do the update here too:
-      updateCachedGeometry()
-    })
-  }
-
   func windowDidMove(_ notification: Notification) {
     guard !isAnimating, !isMagnifying, !player.info.isRestoring else { return }
     guard let window = window else { return }
@@ -2402,7 +2375,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           applyLegacyFSGeo(fsGeo)
         }
       } else {
-        updateCachedGeometry()
         player.events.emit(.windowMoved, data: window.frame)
       }
     })

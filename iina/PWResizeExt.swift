@@ -111,7 +111,6 @@ extension PlayerWindowController {
     }
     /// Finally call `setFrame()`
     log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
-    /// Update this now to prevent race condition with `updateCachedGeometry`, which might overwrite rotation & other complex changes.
     /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
     windowedModeGeo = newWindowGeo
 
@@ -303,50 +302,6 @@ extension PlayerWindowController {
     resizeViewport(to: desiredViewportSize)
   }
 
-  // TODO: consider removing this entirely, and instead just update windowFrame of geometries at the time they need to be used
-  /// Updates the appropriate in-memory cached geometry (based on the current window mode) using the current window & view frames.
-  /// This method is intended mostly for changes to windowFrame (origin or size), and never be called if aspect, rotation, or other
-  /// `VideoGeometry` values are changing (that should be set elsewhere).
-  func updateCachedGeometry() {
-    guard !currentLayout.isFullScreen, !player.info.isRestoring else {
-      log.verbose("Not updating cached geometry: isFS=\(currentLayout.isFullScreen.yn), isRestoring=\(player.info.isRestoring)")
-      return
-    }
-
-    var ticket: Int = 0
-    $updateCachedGeometryTicketCounter.withLock {
-      $0 += 1
-      ticket = $0
-    }
-
-    animationPipeline.submitZeroDuration({ [self] in
-      guard ticket == updateCachedGeometryTicketCounter else { return }
-      log.verbose("Updating cached \(currentLayout.mode) geometry from current window (tkt \(ticket))")
-      let currentLayout = currentLayout
-
-      guard let window else { return }
-
-      switch currentLayout.mode {
-      case .windowed, .windowedInteractive:
-        // Use previous geometry's aspect.
-        let geo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect)
-        guard windowedModeGeo.videoAspect == geo.videoAspect else {
-          log.verbose("Aborting update of cached geometry: videoAspect from windowedMode (\(windowedModeGeo.videoAspect)) != new computed value (\(geo.videoAspect))")
-          return
-        }
-        windowedModeGeo = geo
-        player.saveState()
-      case .musicMode:
-        miniPlayer.saveCurrentPlaylistHeightToPrefs()
-        musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-        player.saveState()
-      case .fullScreen, .fullScreenInteractive:
-        return  // will never get here; see guard above
-      }
-
-    })
-  }
-
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes
   func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> PWGeometry {
     let currentLayout = currentLayout
@@ -523,7 +478,6 @@ extension PlayerWindowController {
     // Do not cache supplied geometry. Assume caller will handle it.
     let isTransientResize = newGeometry != nil
     if !isFullScreen && !isTransientResize {
-      updateCachedGeometry()
       player.saveState()
       if currentLayout.mode == .windowed {
         player.updateMPVWindowScale(using: windowedModeGeo)
