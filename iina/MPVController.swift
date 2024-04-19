@@ -1520,14 +1520,11 @@ not applying FFmpeg 9599 workaround
         if receivedEndFileWhileLoading && !player.info.isFileLoaded {
           player.log.error("Received fileEnded + 'idle-active' from mpv while loading \(player.info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
           player.errorOpeningFileAndClosePlayerWindow(url: player.info.currentURL)
-          player.info.currentMedia = nil
-        }
-        player.info.isIdle = true
-        if player.info.isFileLoaded {
-          player.log.error("Received fileEnded + 'idle-active' from mpv after fileLoaded. Closing window")
-          player.info.isFileLoaded = false
+        } else {
           player.closeWindow()
         }
+        player.info.isIdle = true
+        player.info.currentMedia = nil
         receivedEndFileWhileLoading = false
       }
 

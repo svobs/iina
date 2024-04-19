@@ -44,9 +44,23 @@ class MediaItem {
     }
   }
 
+  var path: String {
+    if url.absoluteString == "stdin" {
+      return "-"
+    } else {
+      return url.isFileURL ? url.path : url.absoluteString
+    }
+  }
+
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
-  init(url: URL, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
+  var isFileLoaded: Bool {
+    return loadStatus.rawValue >= LoadStatus.loaded.rawValue
+  }
+
+  /// if `url` is `nil`, assumed to be `stdin`
+  init(url: URL?, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
+    let url = url ?? URL(string: "stdin")!
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.playlistPos = playlistPos
@@ -108,7 +122,9 @@ class PlaybackInfo {
     Date().timeIntervalSince1970 - timeLastFileOpenFinished
   }
 
-  var isFileLoaded: Bool = false
+  var isFileLoaded: Bool {
+    return currentMedia?.isFileLoaded ?? false
+  }
 
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false

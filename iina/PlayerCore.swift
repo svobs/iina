@@ -377,24 +377,14 @@ class PlayerCore: NSObject {
     }
   }
 
-  /// if `url` is `nil`, assumed to be `stdin`
   private func openPlayerWindow(url: URL? = nil) {
     mpv.queue.async { [self] in
-      let path: String
-      if let url = url, url.absoluteString != "stdin" {
-        path = url.isFileURL ? url.path : url.absoluteString
-        info.currentMedia = MediaItem(url: url)
-        log.debug("Opening Player window for URL: \(url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
-      } else {
-        path = "-"
-        let url = URL(string: "stdin")!
-        info.currentMedia = MediaItem(url: url)
-        log.debug("Opening Player window for stdin")
-      }
+      let mediaItem = MediaItem(url: url)
+      let path = mediaItem.path
+      info.currentMedia = mediaItem
+      log.debug("Opening Player window for URL: \(mediaItem.url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
 
-      log.debug("OpenPlayerWindow: setting isFileLoaded=false")
       // Reset state flags
-      info.isFileLoaded = false
       isStopping = false
 
       if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
@@ -2126,7 +2116,6 @@ class PlayerCore: NSObject {
     info.videoPosition = VideoTime(position)
 
     triedUsingExactSeekForCurrentFile = false
-    info.isFileLoaded = true
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
     isStopping = false
@@ -2738,13 +2727,14 @@ class PlayerCore: NSObject {
         Utility.showAlert("error_open")
       }
 
-      self.isStopped = true
-      self.windowController.close()
+      isStopped = true
+      windowController.close()
     }
   }
 
   func closeWindow() {
     DispatchQueue.main.async { [self] in
+      log.verbose("Closing window")
       isStopped = true
       windowController.close()
     }
