@@ -2417,6 +2417,7 @@ class PlayerCore: NSObject {
   ///  `showMiniPlayerVideo` is only used if `enable` is true
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
     dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    log.verbose("Setting video track enabled=\(enable.yn), showMiniPlayerVideo=\(showMiniPlayerVideo.yn)")
 
     if enable {
       // Go to first video track found (unless one is already selected):

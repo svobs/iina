@@ -148,7 +148,7 @@ extension PlayerWindowController {
     if transition.isTogglingMusicMode {
       resetViewsForModeTransition()
 
-      if transition.isExitingMusicMode {
+      if transition.isExitingMusicMode && !miniPlayer.isVideoVisible {
         // Restore video if needed
         player.setVideoTrackEnabled(true)
       }

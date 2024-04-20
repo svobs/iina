@@ -334,6 +334,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   // TODO: develop a nice sliding animation if possible
   private func applyVideoVisibility(showVideo: Bool) {
+    log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.zeroDurationTask{ [self] in
       // Hide OSD during animation
