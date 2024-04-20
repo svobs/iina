@@ -557,6 +557,11 @@ extension PlayerWindowController {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
     return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame: \(newGeometry.windowFrame), videoAspect: \(newGeometry.videoAspect)")
+
+      // If window was just opened, it will have been at 0% opacity. Fade it in:
+      let windowOpacity = Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0
+      setWindowOpacity(to: windowOpacity)
+
       /// Make sure this is up-to-date. Do this before `setFrame`
       videoView.apply(newGeometry)
       if !isWindowHidden {

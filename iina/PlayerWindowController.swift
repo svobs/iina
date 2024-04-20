@@ -1788,6 +1788,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     isInitialSizeDone = false  // reset for reopen
 
     log.verbose("PlayerWindow openWindow starting")
+    setWindowOpacity(to: 0.0)
 
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
     // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It
@@ -3572,7 +3573,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  private func setWindowOpacity(to newValue: Float) {
+  func setWindowOpacity(to newValue: Float) {
     guard let window else { return }
     let existingValue = window.contentView?.layer?.opacity ?? -1
     guard existingValue != newValue else { return }
