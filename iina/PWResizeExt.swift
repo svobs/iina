@@ -105,14 +105,14 @@ extension PlayerWindowController {
        let oldVideoSizeRaw = oldVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
        let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(newVideoSizeACR),
        // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
-       videoView.frame.size.mpvAspect == newVideoSizeACR.mpvAspect {
+       videoView.frame.size.mpvAspect == newVideoAspect {
       log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
       return
     }
 
     // If user moved the window recently, window frame might not be completely up to date
     let currentWindowFrame = currentLayout.mode.isWindowed ? window.frame : nil
-    let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, videoAspect: newVideoSizeACR.mpvAspect)
+    let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, videoAspect: newVideoAspect)
     let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
     let newWindowGeo: PWGeometry
@@ -123,7 +123,7 @@ extension PlayerWindowController {
       if justOpenedFileManually {
         log.verbose("[applyVidGeo D-1] Just opened file manually with no resize strategy. Using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
         newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                 videoAspect: newVideoSizeACR.mpvAspect, keepFullScreenDimensions: true)
+                                                                 videoAspect: newVideoAspect, keepFullScreenDimensions: true)
       } else {
         // video size changed during playback
         newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: newVideoSizeACR)
@@ -164,6 +164,7 @@ extension PlayerWindowController {
   }
 
   private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
+    assert(windowGeo.videoAspect == videoSizeACR.mpvAspect, "Expected videoSizeACR aspect: \(videoSizeACR.mpvAspect), found: \(windowGeo.videoAspect)")
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
@@ -179,9 +180,8 @@ extension PlayerWindowController {
       return nil
     }
 
-    let screenID = player.isInMiniPlayer ? musicModeGeo.screenID : windowedModeGeo.screenID
+    let screenID = player.isInMiniPlayer ? musicModeGeo.screenID : windowGeo.screenID
     let screenVisibleFrame = NSScreen.getScreenOrDefault(screenID: screenID).visibleFrame
-    var newVideoSize = windowGeo.videoSize
 
     let resizeScheme: Preference.ResizeWindowScheme = Preference.enum(for: .resizeWindowScheme)
     switch resizeScheme {
@@ -193,7 +193,7 @@ extension PlayerWindowController {
           log.verbose("[applyVidGeo C-6] Using intendedViewportSize \(intendedViewportSize)")
           preferredGeo = windowGeo.scaleViewport(to: intendedViewportSize)
         }
-        log.verbose("[applyVidGeo C-3] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
+        log.verbose("[applyVidGeo C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
         return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
       } else {
         log.debug("[applyVidGeo C-5] No mpv geometry found. Will fall back to default scheme")
@@ -206,12 +206,13 @@ extension PlayerWindowController {
         return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInVisibleScreen)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
-        newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
+        let newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
         log.verbose("[applyVidGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
-        let newGeoUnconstrained = windowedModeGeo.scaleVideo(to: newVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
+        let newGeoUnconstrained = windowGeo.scaleVideo(to: newVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
 
+        log.verbose("[applyVidGeo C-3] After scaleVideo: \(newGeoUnconstrained)")
         return newGeoUnconstrained.refit(.centerInVisibleScreen)
       }
     }
