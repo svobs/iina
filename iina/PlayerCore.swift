@@ -333,7 +333,7 @@ class PlayerCore: NSObject {
     // open the first file
     open(playableFiles[0])
 
-    log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles)")
+    log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
     addToPlaylist(urls: playableFiles[1..<count])
     return count
   }
@@ -642,11 +642,13 @@ class PlayerCore: NSObject {
   func playbackStopped() {
     log.debug("Playback has stopped")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
+    windowController.clearOSDQueue()  // do this in mpv queue
 
     DispatchQueue.main.async { [self] in
       isStopped = true
 
-      windowController.clearOSDQueue()
+      // In case of window reuse, do not display the last OSD of the previous player (e.g. this one at this point in the code)
+      windowController.hideOSD(immediately: true)
 
       postNotification(.iinaPlayerStopped)
     }

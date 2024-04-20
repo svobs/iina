@@ -510,7 +510,7 @@ struct PlayerSaveState {
         }
       }
     }
-    player.log.verbose("Restored info for \(info.currentVideosInfo.count) videos, \(info.currentSubsInfo.count) subs")
+    player.log.verbose("Restored playlist info for \(info.currentVideosInfo.count) videos, \(info.currentSubsInfo.count) subs")
 
     if let videoFiltersDisabledCSV = string(for: .videoFiltersDisabled) {
       let filters = videoFiltersDisabledCSV.split(separator: ",").compactMap({MPVFilter(rawString: String($0))})
