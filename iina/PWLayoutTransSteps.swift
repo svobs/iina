@@ -906,7 +906,7 @@ extension PlayerWindowController {
       window.titleVisibility = .visible
     }
 
-    if !transition.isInitialLayout {
+    if !transition.isInitialLayout || transition.outputLayout.isFullScreen {
       updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
     }
   }

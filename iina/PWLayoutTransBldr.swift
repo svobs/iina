@@ -121,10 +121,13 @@ extension PlayerWindowController {
     let initialTransition = buildLayoutTransition(named: transitionName,
                                                   from: currentLayout, to: initialLayoutSpec, isInitialLayout: true, geo)
 
-    if !isRestoringFromPrevLaunch && initialLayoutSpec.mode == .windowed {
-      player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
+    if !isRestoringFromPrevLaunch {
+      setWindowOpacity(to: 0.0)
+
+      if initialLayoutSpec.mode == .windowed {
+        player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
+      }
     }
-    setWindowOpacity(to: 0.0)
 
     /// Although the animations in the `LayoutTransition` below will set the window layout, they
     /// mostly assume they are incrementally changing a previous layout, which can result in brief visual

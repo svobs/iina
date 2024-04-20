@@ -1788,7 +1788,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     isInitialSizeDone = false  // reset for reopen
 
     log.verbose("PlayerWindow openWindow starting")
-    setWindowOpacity(to: 0.0)
 
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
     // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It
