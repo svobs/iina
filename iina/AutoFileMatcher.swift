@@ -76,16 +76,15 @@ class AutoFileMatcher {
   static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
     log.verbose("Filling in video sizes...")
     let sw = Utility.Stopwatch()
-    var successCount = 0
+    var updateCount = 0
     for fileInfo in videoFiles {
-      if fileInfo.videoSize == nil {
-        if let sizeArray = FFmpegController.readVideoSize(forFile: fileInfo.path) {
-          fileInfo.videoSize = (Int(sizeArray[0]), Int(sizeArray[1]))
-          successCount += 1
+      if PlaybackInfo.getVideoSize(forURL: fileInfo.url) == nil {
+        if PlaybackInfo.updateCachedVideoSize(forURL: fileInfo.url) != nil {
+          updateCount += 1
         }
       }
     }
-    log.verbose("Filled in \(successCount)/\(videoFiles.count) video sizes in \(sw) ms")
+    log.verbose("Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms")
   }
 
   private func getAllPossibleSubs() -> [FileInfo] {

@@ -1945,16 +1945,16 @@ class PlayerCore: NSObject {
   // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
   // This is optional but provides a better viewer experience
   private func preResizeVideo(forURL url: URL?) {
-    if let videoInfo = info.currentVideosInfo.first(where: { $0.url == url }),
-       let videoSize = videoInfo.videoSize {
-
-      let newParams = info.videoGeo.clone(rawWidth: videoSize.0, rawHeight: videoSize.1)
-      log.verbose("Calling applyVidGeo from preResizeVideo with \(newParams)")
+    if let videoSize = PlaybackInfo.getVideoSize(forURL: url) {
+      let newParams = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+      log.verbose("Calling applyVidGeo from preResizeVideo using cached size, \(newParams)")
+      windowController.applyVidGeo(newParams)
+    } else if let videoSize = PlaybackInfo.updateCachedVideoSize(forURL: url) {
+      let newParams = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+      log.verbose("Calling applyVidGeo from preResizeVideo using fetched size, \(newParams)")
       windowController.applyVidGeo(newParams)
     } else {
-      // Either not a video file, or info not loaded. Null out video raw size for now (but keep prior settings)
-      log.verbose("Nothing for preResizeVideo to do")
-      // FIXME: put call to FFmpegController.readVideoSize here
+      log.error("Unable to find videoSize in applyVidGeo; skipping")
     }
   }
 
@@ -2120,7 +2120,6 @@ class PlayerCore: NSObject {
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
     isStopping = false
-    info.haveDownloadedSub = false
 
     guard let currentMedia = info.currentMedia else {
       log.verbose("FileLoaded: currentMedia was nil")

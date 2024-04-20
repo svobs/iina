@@ -378,7 +378,6 @@ extension PlayerWindowController {
         player.sendOSD(.downloadedSub(
           urls.map({ $0.lastPathComponent }).joined(separator: "\n")
         ))
-        player.info.haveDownloadedSub = true
       }
       player.isSearchingOnlineSubtitle = false
     }

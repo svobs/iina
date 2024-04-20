@@ -225,6 +225,8 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
     HistoryController.shared.queue.async { [self] in
+      // Network or file system can change over time and cause our info to become out of date.
+      // Do a full reload if too much time has gone by since the last full reload
       let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
       let sw = Utility.Stopwatch()
 

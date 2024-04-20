@@ -41,7 +41,7 @@ class MediaItem {
     func isNotYet(_ status: LoadStatus) -> Bool {
       return rawValue < status.rawValue
     }
-  }
+  }  /// `MediaItem.LoadStatus`
 
   let url: URL
   let mpvMD5: String
@@ -285,13 +285,13 @@ class PlaybackInfo {
   }
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */
-  var aid: Int?
-  var sid: Int?
   var vid: Int? {
     didSet {
       log.verbose("Video track changed to: \(vid?.description ?? "nil")")
     }
   }
+  var aid: Int?
+  var sid: Int?
   var secondSid: Int?
 
   var isAudioTrackSelected: Bool {
@@ -391,19 +391,15 @@ class PlaybackInfo {
     }
   }
 
-  // MARK: - Subtitles
-
   var subEncoding: String?
 
-  var haveDownloadedSub: Bool = false
-
+  // Playlist metadata:
+  var currentVideosInfo: [FileInfo] = []
+  var currentSubsInfo: [FileInfo] = []
   /// Map: { video `path` for each `info` of `currentVideosInfo` -> `url` for each of `info.relatedSubs` }
   @Atomic var matchedSubs: [String: [URL]] = [:]
 
   func getMatchedSubs(_ file: String) -> [URL]? { $matchedSubs.withLock { $0[file] } }
-
-  var currentSubsInfo: [FileInfo] = []
-  var currentVideosInfo: [FileInfo] = []
 
   // MARK: - Cache
 
@@ -417,8 +413,39 @@ class PlaybackInfo {
   // must be through the class methods that properly coordinate thread access.
   private var cachedVideoDurationAndProgress: [String: (duration: Double?, progress: Double?)] = [:]
   private var cachedMetadata: [String: (title: String?, album: String?, artist: String?)] = [:]
+  private static var cachedVideoSizes: [URL: NSSize] = [:]
 
   private let infoLock = Lock()
+
+  private static let staticInfoLock = Lock()
+  static func getVideoSize(forURL url: URL?) -> NSSize? {
+    guard let url else { return nil }
+
+    var videoSize: NSSize? = nil
+    staticInfoLock.withLock {
+      if let cachedSize = cachedVideoSizes[url] {
+        videoSize = cachedSize
+      }
+    }
+    return videoSize
+  }
+
+  static func updateCachedVideoSize(forURL url: URL?) -> NSSize? {
+    guard let url else { return nil }
+    if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
+      let videoSize = NSSize(width: Int(sizeArray[0]), height: Int(sizeArray[1]))
+      staticInfoLock.withLock {
+        // Don't let this get too big
+        if cachedVideoSizes.count > Constants.SizeLimit.maxCachedVideoSizes {
+          Logger.log("Too many cached video sizes (count=\(cachedVideoSizes.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached sizes...", level: .debug)
+          cachedVideoSizes.removeAll()
+        }
+        cachedVideoSizes[url] = videoSize
+      }
+      return videoSize
+    }
+    return nil
+  }
 
   func calculateTotalDuration() -> Double? {
     infoLock.withLock {
@@ -476,4 +503,6 @@ class PlaybackInfo {
       cachedMetadata[file] = value
     }
   }
+
+  
 }

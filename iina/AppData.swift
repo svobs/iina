@@ -160,6 +160,9 @@ struct Constants {
     static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
     static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
   }
+  struct SizeLimit {
+    static let maxCachedVideoSizes: Int = 100000
+  }
   struct Time {
     static let infinite = VideoTime(999, 0, 0)
   }
