@@ -124,6 +124,7 @@ extension PlayerWindowController {
     if !isRestoringFromPrevLaunch && initialLayoutSpec.mode == .windowed {
       player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
     }
+    setWindowOpacity(to: 0.0)
 
     /// Although the animations in the `LayoutTransition` below will set the window layout, they
     /// mostly assume they are incrementally changing a previous layout, which can result in brief visual

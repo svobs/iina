@@ -68,7 +68,7 @@ extension PlayerWindowController {
       window.titleVisibility = .hidden
       hideBuiltInTitleBarViews(setAlpha: true)
 
-      if transition.inputLayout.spec.isLegacyStyle && transition.isTogglingLegacyStyle {
+      if !transition.isInitialLayout {
         updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
       }
 
@@ -906,7 +906,9 @@ extension PlayerWindowController {
       window.titleVisibility = .visible
     }
 
-    updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
+    if !transition.isInitialLayout {
+      updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
+    }
   }
 
   /// -------------------------------------------------
