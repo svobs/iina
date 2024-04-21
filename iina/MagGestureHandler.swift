@@ -153,6 +153,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     let newViewportSize = originalGeometry.viewportSize.multiplyThenRound(scale)
 
+    /// Using `noConstraints` here has the bonus effect of allowing viewport to be resized via pinch when the video is already maximized
+    /// (only useful when in windowed mode and `lockViewportToVideoSize` is disabled)
     let intendedGeo = originalGeometry.scaleViewport(to: newViewportSize, fitOption: .noConstraints, mode: currentLayout.mode)
     // User has actively resized the video. Assume this is the new intended resolution, even if it is outside the current screen size.
     // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.

@@ -468,7 +468,7 @@ class PlaybackInfo {
     infoLock.withLock {
       let playlist = playlist
       return indexes
-        .compactMap { cachedVideoDurationAndProgress[playlist[$0].filename]?.duration }
+        .compactMap { $0 >= playlist.count ? nil : (cachedVideoDurationAndProgress[playlist[$0].filename]?.duration) }
         .compactMap { $0 > 0 ? $0 : 0 }
         .reduce(0, +)
     }

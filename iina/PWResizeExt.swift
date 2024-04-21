@@ -125,8 +125,8 @@ extension PlayerWindowController {
         newWindowGeo = currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                                  videoAspect: newVideoAspect, keepFullScreenDimensions: true)
       } else {
-        // video size changed during playback
-        newWindowGeo = resizeMinimallyToApplyVidGeometry(from: windowGeo, videoSizeACR: newVideoSizeACR)
+        // File opened via playlist navigation, or some other change occurred for file
+        newWindowGeo = resizeMinimallyForNewVideoAspect(from: windowGeo, newVideoAspect: newVideoAspect)
       }
     }
 
@@ -208,19 +208,18 @@ extension PlayerWindowController {
         let resizeRatio = resizeWindowStrategy.ratio
         let newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
         log.verbose("[applyVidGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
-        let newGeoUnconstrained = windowGeo.scaleVideo(to: newVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
+        let centeredScaledGeo = windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInVisibleScreen, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
-        player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
-
-        log.verbose("[applyVidGeo C-3] After scaleVideo: \(newGeoUnconstrained)")
-        return newGeoUnconstrained.refit(.centerInVisibleScreen)
+        player.info.intendedViewportSize = centeredScaledGeo.viewportSize
+        log.verbose("[applyVidGeo C-3] After scaleVideo: \(centeredScaledGeo)")
+        return centeredScaledGeo
       }
     }
   }
 
-  private func resizeMinimallyToApplyVidGeometry(from windowGeo: PWGeometry,
-                                                 videoSizeACR: NSSize) -> PWGeometry {
-    // User is navigating in playlist. retain same window width.
+  private func resizeMinimallyForNewVideoAspect(from windowGeo: PWGeometry,
+                                                newVideoAspect: CGFloat) -> PWGeometry {
+    // User is navigating in playlist. Try to retain same window width.
     // This often isn't possible for vertical videos, which will end up shrinking the width.
     // So try to remember the preferred width so it can be restored when possible
     var desiredViewportSize = windowGeo.viewportSize
@@ -232,7 +231,7 @@ extension PlayerWindowController {
         log.verbose("[applyVidGeo D-2] Using intendedViewportSize \(intendedViewportSize)")
       }
 
-      let minNewViewportHeight = round(desiredViewportSize.width / videoSizeACR.mpvAspect)
+      let minNewViewportHeight = round(desiredViewportSize.width / newVideoAspect)
       if desiredViewportSize.height < minNewViewportHeight {
         // Try to increase height if possible, though it may still be shrunk to fit screen
         desiredViewportSize = NSSize(width: desiredViewportSize.width, height: minNewViewportHeight)
@@ -245,6 +244,7 @@ extension PlayerWindowController {
 
   // MARK: - Window geometry functions
 
+  // FIXME: merge this into applyVidGeo()
   func setVideoScale(_ desiredVideoScale: CGFloat) {
     guard let window = window else { return }
     let currentLayout = currentLayout
@@ -268,14 +268,15 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowed:
-      let newGeoUnconstrained = windowedModeGeo.scaleVideo(to: desiredVideoSize, fitOption: .noConstraints, mode: currentLayout.mode)
-      let newGeometry = newGeoUnconstrained.refit(.keepInVisibleScreen)
+      let windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
+      let newGeometry = windowedModeGeo.scaleVideo(to: desiredVideoSize, mode: currentLayout.mode)
       // User has actively resized the video. Assume this is the new preferred resolution
-      player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
+      player.info.intendedViewportSize = newGeometry.viewportSize
       log.verbose("SetVideoScale: calling applyWindowGeo")
       applyWindowGeoInAnimationPipeline(newGeometry)
     case .musicMode:
       // will return nil if video is not visible
+      let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame)
       guard let newMusicModeGeometry = musicModeGeo.scaleVideo(to: desiredVideoSize) else { return }
       log.verbose("SetVideoScale: calling applyMusicModeGeo")
       applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
@@ -337,28 +338,28 @@ extension PlayerWindowController {
   func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> PWGeometry {
     let currentLayout = currentLayout
     assert(currentLayout.isWindowed, "Trying to resize in windowed mode but current mode is unexpected: \(currentLayout.mode)")
-    let currentGeometry: PWGeometry
+    let currentGeo: PWGeometry
     switch currentLayout.spec.mode {
     case .windowed, .windowedInteractive:
-      currentGeometry = windowedModeGeo.clone(windowFrame: window.frame)
+      currentGeo = windowedModeGeo.clone(windowFrame: window.frame)
     default:
       log.error("WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo")
       return windowedModeGeo
     }
-    assert(currentGeometry.mode == currentLayout.mode)
+    assert(currentGeo.mode == currentLayout.mode)
 
     guard !denyNextWindowResize else {
-      log.verbose("WinWillResize: denying this resize; will stay at \(currentGeometry.windowFrame.size)")
+      log.verbose("WinWillResize: denying this resize; will stay at \(currentGeo.windowFrame.size)")
       denyNextWindowResize = false
-      return currentGeometry
+      return currentGeo
     }
 
     guard !player.info.isRestoring else {
-      log.error("WinWillResize was fired before restore was complete! Returning existing geometry: \(currentGeometry.windowFrame.size)")
-      return currentGeometry
+      log.error("WinWillResize was fired before restore was complete! Returning existing geometry: \(currentGeo.windowFrame.size)")
+      return currentGeo
     }
 
-    let intendedGeo: PWGeometry
+    let chosenGeo: PWGeometry
     // Need to resize window to match video aspect ratio, while taking into account any outside panels.
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
     if lockViewportToVideoSize && window.inLiveResize {
@@ -373,53 +374,52 @@ extension PlayerWindowController {
         /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
         /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
         if isLiveResizingWidth == nil {
-          if currentGeometry.windowFrame.height != requestedSize.height {
+          if currentGeo.windowFrame.height != requestedSize.height {
             isLiveResizingWidth = false
-          } else if currentGeometry.windowFrame.width != requestedSize.width {
+          } else if currentGeo.windowFrame.width != requestedSize.width {
             isLiveResizingWidth = true
           }
         }
-        log.verbose("WinWillResize: PREV:\(currentGeometry.windowFrame.size), REQ:\(requestedSize) choseWidth:\(isLiveResizingWidth?.yesno ?? "nil")")
+        log.verbose("WinWillResize: PREV:\(currentGeo.windowFrame.size), REQ:\(requestedSize) choseWidth:\(isLiveResizingWidth?.yesno ?? "nil")")
 
-        let nonViewportAreaSize = currentGeometry.windowFrame.size.subtract(currentGeometry.viewportSize)
+        let nonViewportAreaSize = currentGeo.windowFrame.size.subtract(currentGeo.viewportSize)
         let requestedViewportSize = requestedSize.subtract(nonViewportAreaSize)
 
         if isLiveResizingWidth ?? true {
           // Option A: resize height based on requested width
           let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
-                                                height: round(requestedViewportSize.width / currentGeometry.videoAspect))
-          intendedGeo = currentGeometry.scaleViewport(to: resizedWidthViewportSize, fitOption: .noConstraints)
+                                                height: round(requestedViewportSize.width / currentGeo.videoAspect))
+          chosenGeo = currentGeo.scaleViewport(to: resizedWidthViewportSize)
         } else {
           // Option B: resize width based on requested height
-          let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeometry.videoAspect),
+          let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.videoAspect),
                                                  height: requestedViewportSize.height)
-          intendedGeo = currentGeometry.scaleViewport(to: resizedHeightViewportSize, fitOption: .noConstraints)
+          chosenGeo = currentGeo.scaleViewport(to: resizedHeightViewportSize)
         }
     } else {
       if !window.inLiveResize {  // Only applies to system requests to resize (not user resize)
-        let minWindowSize = currentGeometry.minWindowSize(mode: currentLayout.mode)
+        let minWindowSize = currentGeo.minWindowSize(mode: currentLayout.mode)
         if (requestedSize.width < minWindowSize.width) || (requestedSize.height < minWindowSize.height) {
           // Sending the current size seems to work much better with accessibilty requests
           // than trying to change to the min size
-          log.verbose("WinWillResize: requested smaller than min (\(minWindowSize.width) x \(minWindowSize.height)); returning existing \(currentGeometry.windowFrame.size)")
-          return currentGeometry
+          log.verbose("WinWillResize: requested smaller than min (\(minWindowSize.width) x \(minWindowSize.height)); returning existing \(currentGeo.windowFrame.size)")
+          return currentGeo
         }
       }
       /// If `!inLiveResize`: resize request is not coming from the user. Could be BetterTouchTool, Retangle, or some window manager, or the OS.
       /// These tools seem to expect that both dimensions of the returned size are less than the requested dimensions, so check for this.
       /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refit()` below will constrain as needed.
-      intendedGeo = currentGeometry.scaleWindow(to: requestedSize, fitOption: .noConstraints)
+      chosenGeo = currentGeo.scaleWindow(to: requestedSize)
     }
 
     if currentLayout.mode == .windowed && window.inLiveResize {
       // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
-      player.info.intendedViewportSize = intendedGeo.viewportSize
+      player.info.intendedViewportSize = chosenGeo.viewportSize
     }
 
-    let chosenGeometry = intendedGeo.refit(currentGeometry.fitOption)
-    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:Y prevWinSize:\(currentGeometry.windowFrame.size) returning:\(chosenGeometry.windowFrame.size)")
+    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:Y currWinSize:\(currentGeo.windowFrame.size) returning:\(chosenGeo.windowFrame.size)")
 
-    return chosenGeometry
+    return chosenGeo
   }
 
   func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWGeometry? = nil) {

@@ -761,8 +761,6 @@ struct PWGeometry: Equatable, CustomStringConvertible {
       Logger.log("[geo] ScaleVideo: invalid fit option: \(newFitOption). Defaulting to 'none'", level: .error)
       newFitOption = .noConstraints
     }
-    let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect? = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
 
     var newVideoSize = desiredVideoSize
 
@@ -771,6 +769,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     /// Enforce `videoView` aspectRatio: Recalculate height using width
     newVideoSize = NSSize(width: newWidth, height: round(newWidth / videoAspect))
 
+    let containerFrame: NSRect? = PWGeometry.getContainerFrame(forScreenID: screenID ?? self.screenID, fitOption: newFitOption)
     if let containerFrame {
       // Scale down to fit in bounds of container
       if newVideoSize.width > containerFrame.width {

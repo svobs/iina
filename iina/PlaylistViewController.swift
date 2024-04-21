@@ -259,8 +259,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func reloadData(playlist: Bool, chapters: Bool) {
+    player.log.verbose("Reloading sidebar tables: playlist=\(playlist.yn) chapters=\(chapters.yn)")
     if playlist {
-      player.log.verbose("Reloading playlist table")
+      player.log.verbose("Reloading playlist table for \(player.info.playlist.count) entries")
       playlistTableView.reloadData()
     }
     if chapters {
