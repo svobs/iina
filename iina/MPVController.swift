@@ -921,13 +921,17 @@ not applying FFmpeg 9599 workaround
     let rawWidth = getInt(MPVProperty.width)
     let rawHeight = getInt(MPVProperty.height)
 
-    let videoWidthAC = getInt(MPVProperty.dwidth)
-    let videoHeightAC = getInt(MPVProperty.dheight)
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
     // For mpv, window size is always the same as video size, although this is not always true with IINA.
-    let videoScale = getDouble(MPVOption.Window.windowScale)
+    // Also, mpv uses the backing scale factor for calcalations. IINA Advance does not, because that has no correlation with the
+    // screen's actual scale factor and is at best a number which is usually less wrong.
+    let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
+    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
+    let videoScale = mpvVideoScale / backingScaleFactor
 
+    let videoWidthAC = getInt(MPVProperty.dwidth)
+    let videoHeightAC = getInt(MPVProperty.dheight)
     // filter the last video-reconfig event before quit
     if videoWidthAC == 0 && videoHeightAC == 0 && getFlag(MPVProperty.coreIdle) {
       player.log.verbose("Cannot get videoGeo: core idle & dheight or dwidth is 0")
@@ -1498,17 +1502,22 @@ not applying FFmpeg 9599 workaround
       guard player.windowController.loaded else { break }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
-      let newVideoScale = getDouble(MPVOption.Window.windowScale)
+
+      /// See notes on `backingScaleFactor` in `queryForVideoGeometry()`
+      let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
+      let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
+      let newVideoScale = mpvVideoScale / backingScaleFactor
+
       let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
-        player.log.verbose("Δ mpv prop: 'window-scale' ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
+        player.log.verbose("Δ mpv prop: 'window-scale' / \(backingScaleFactor) ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
         player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
         DispatchQueue.main.async {
           self.player.windowController.setVideoScale(CGFloat(newVideoScale))
         }
       } else {
-        player.log.verbose("Δ mpv prop: 'window-scale' ≔ \(newVideoScale), but no change from cache")
+        player.log.verbose("Δ mpv prop: 'window-scale' / \(backingScaleFactor) ≔ \(newVideoScale), but no change from cache")
       }
 
     case MPVProperty.mediaTitle:

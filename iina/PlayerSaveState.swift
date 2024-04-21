@@ -730,7 +730,7 @@ struct PlayerSaveState {
 
 struct ScreenMeta {
   static private let expectedCSVTokenCount = 14
-  static private let csvVersion = String(1)
+  static private let csvVersion: Int = 2
 
   let displayID: UInt32
   let name: String
@@ -739,13 +739,15 @@ struct ScreenMeta {
   let visibleFrame: NSRect
   let nativeResolution: CGSize
   let cameraHousingHeight: CGFloat
+  let backingScaleFactor: CGFloat
 
   func toCSV() -> String {
-    return [ScreenMeta.csvVersion, String(displayID), name,
+    return [String(ScreenMeta.csvVersion), String(displayID), name,
             frame.origin.x.stringMaxFrac2, frame.origin.y.stringMaxFrac2, frame.size.width.stringMaxFrac2, frame.size.height.stringMaxFrac2,
             visibleFrame.origin.x.stringMaxFrac2, visibleFrame.origin.y.stringMaxFrac2, visibleFrame.size.width.stringMaxFrac2, visibleFrame.size.height.stringMaxFrac2,
             nativeResolution.width.stringMaxFrac2, nativeResolution.height.stringMaxFrac2,
-            cameraHousingHeight.stringMaxFrac2
+            cameraHousingHeight.stringMaxFrac2,
+            backingScaleFactor.stringMaxFrac2
     ].joined(separator: ",")
   }
 
@@ -758,7 +760,8 @@ struct ScreenMeta {
       name = ""
     }
     return ScreenMeta(displayID: screen.displayId, name: name, frame: screen.frame, visibleFrame: screen.visibleFrame,
-                      nativeResolution: screen.nativeResolution ?? CGSizeZero, cameraHousingHeight: screen.cameraHousingHeight ?? 0)
+                      nativeResolution: screen.nativeResolution ?? CGSizeZero, cameraHousingHeight: screen.cameraHousingHeight ?? 0,
+                      backingScaleFactor: screen.backingScaleFactor)
   }
 
   static func from(_ csv: String) -> ScreenMeta? {
@@ -769,33 +772,41 @@ struct ScreenMeta {
     }
     var iter = tokens.makeIterator()
 
-    let version = iter.next()
+    guard let versionStr = iter.next(), let version = Int(versionStr) else {
+      Logger.log("While parsing ScreenMeta from CSV: failed to parse version", level: .error)
+      return nil
+    }
     guard version == csvVersion else {
-      Logger.log("While parsing ScreenMeta from CSV: bad version (expected \(csvVersion.quoted) but found \(version?.quoted ?? "nil"))", level: .error)
+      if version == 1 {
+        Logger.log("Discarding ScreenMeta from CSV: format is obsolete (expected version \(csvVersion) but found \(version))", level: .error)
+      } else {
+        Logger.log("While parsing ScreenMeta from CSV: bad version (expected \(csvVersion) but found \(version))", level: .error)
+      }
       return nil
     }
 
-      guard let displayID = UInt32(iter.next()!),
-            let name = iter.next(),
-            let frameX = Double(iter.next()!),
-            let frameY = Double(iter.next()!),
-            let frameW = Double(iter.next()!),
-            let frameH = Double(iter.next()!),
-            let visibleFrameX = Double(iter.next()!),
-            let visibleFrameY = Double(iter.next()!),
-            let visibleFrameW = Double(iter.next()!),
-            let visibleFrameH = Double(iter.next()!),
-            let nativeResW = Double(iter.next()!),
-            let nativeResH = Double(iter.next()!),
-            let cameraHousingHeight = Double(iter.next()!) else {
-        Logger.log("While parsing ScreenMeta from CSV: could not parse one or more tokens", level: .error)
-        return nil
-      }
+    guard let displayID = UInt32(iter.next()!),
+          let name = iter.next(),
+          let frameX = Double(iter.next()!),
+          let frameY = Double(iter.next()!),
+          let frameW = Double(iter.next()!),
+          let frameH = Double(iter.next()!),
+          let visibleFrameX = Double(iter.next()!),
+          let visibleFrameY = Double(iter.next()!),
+          let visibleFrameW = Double(iter.next()!),
+          let visibleFrameH = Double(iter.next()!),
+          let nativeResW = Double(iter.next()!),
+          let nativeResH = Double(iter.next()!),
+          let cameraHousingHeight = Double(iter.next()!),
+          let backingScaleFactor = Double(iter.next()!) else {
+      Logger.log("While parsing ScreenMeta from CSV: could not parse one or more tokens", level: .error)
+      return nil
+    }
 
     let frame = NSRect(x: frameX, y: frameY, width: frameW, height: frameH)
     let visibleFrame = NSRect(x: visibleFrameX, y: visibleFrameY, width: visibleFrameW, height: visibleFrameH)
     let nativeResolution = NSSize(width: nativeResW, height: nativeResH)
-    return ScreenMeta(displayID: displayID, name: name, frame: frame, visibleFrame: visibleFrame, nativeResolution: nativeResolution, cameraHousingHeight: cameraHousingHeight)
+    return ScreenMeta(displayID: displayID, name: name, frame: frame, visibleFrame: visibleFrame, nativeResolution: nativeResolution, cameraHousingHeight: cameraHousingHeight, backingScaleFactor: backingScaleFactor)
   }
 }
 

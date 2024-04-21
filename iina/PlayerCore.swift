@@ -1118,7 +1118,12 @@ class PlayerCore: NSObject {
 
         let newVidGeo = info.videoGeo.clone(scale: actualVideoScale)
         windowController.applyVidGeo(newVidGeo)
-        /// Allow `applyVidGeo` to call `mpv.setDouble(MPVProperty.windowScale, actualVideoScale)`
+
+        let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).backingScaleFactor
+        let adjustedVideoScale = (actualVideoScale * backingScaleFactor).truncatedTo6()
+        log.verbose("Adjusted video scale from windowGeo * \(backingScaleFactor) → \(adjustedVideoScale)")
+        mpv.setDouble(MPVProperty.windowScale, adjustedVideoScale)
+
       } else {
         log.verbose("Skipping update to mpv window-scale: no change from prev (\(prevVideoScale))")
       }
