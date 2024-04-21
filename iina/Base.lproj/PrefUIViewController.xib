@@ -147,7 +147,7 @@
                         </button>
                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="FzN-vg-jJ7">
                             <rect key="frame" x="-2" y="33" width="360" height="14"/>
-                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="For smoother full screen transitions, enable custom full screen also." id="DrH-3F-GvB">
+                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="⚠️ Window may flicker while switching between windowed and full screen modes.&#xA;For smoothest results, also enable custom full screen." id="DrH-3F-GvB">
                                 <font key="font" metaFont="label" size="11"/>
                                 <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1573,7 +1573,7 @@
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
                                 <rect key="frame" x="14" y="9" width="303" height="18"/>
-                                <buttonCell key="cell" type="check" title="Hide when cursor is not in window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
+                                <buttonCell key="cell" type="check" title="Show only if cursor is inside window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                     <connections>
