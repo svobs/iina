@@ -328,6 +328,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   // TODO: develop a nice sliding animation if possible
   private func applyVideoVisibility(to showVideo: Bool) {
+    guard let window else { return }
     log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.zeroDurationTask{ [self] in
@@ -347,7 +348,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
 
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
-      let newGeometry = windowController.musicModeGeo.withVideoViewVisible(showVideo)
+      let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame).withVideoViewVisible(showVideo)
       log.verbose("VideoView setting videoViewVisible=\(showVideo), videoHeight=\(newGeometry.videoHeight)")
       windowController.applyMusicModeGeo(newGeometry)
     }))
