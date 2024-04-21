@@ -312,6 +312,7 @@ struct PlayerSaveState {
   }
 
   static func saveSynchronously(_ player: PlayerCore) {
+    dispatchPrecondition(condition: .onQueue(.main))
     let properties = generatePropDict(from: player)
     if player.log.isTraceEnabled {
       player.log.trace("Saving player state: \(properties)")

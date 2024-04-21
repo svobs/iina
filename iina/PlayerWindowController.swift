@@ -1919,7 +1919,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /// Hide menu bar & dock if current window is in legacy full screen.
   /// Show menu bar & dock if current window is not in full screen (either legacy or native).
   func updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: Bool? = nil) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
 
     // Use currentLayout if not explicitly specified
     let legacyFullScreenActive = legacyFullScreenActive ?? currentLayout.isLegacyFullScreen
@@ -2689,7 +2689,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   private func setOSDViews(fromMessage message: OSDMessage) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     let (osdText, osdType) = message.details()
 
     var icon: NSImage? = nil
@@ -2845,7 +2845,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   private func _displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                            accessoryViewController: NSViewController? = nil) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
 
     // Check again. May have been enqueued a while
     guard player.canShowOSD() else { return }
@@ -2985,7 +2985,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   @objc
   func hideOSD(immediately: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     log.verbose("Hiding OSD")
     osdAnimationState = .willHide
     isShowingPersistentOSD = false
@@ -3477,7 +3477,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func abLoop() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
 
     player.mpv.queue.async { [self] in
       _abLoop()
@@ -3662,7 +3662,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func updateVolumeUI() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard loaded, !isClosing, !player.isShuttingDown else { return }
     guard player.info.isFileLoaded || player.info.isRestoring else { return }
 
@@ -3683,7 +3683,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func updatePlayButtonAndSpeedUI() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard loaded else { return }
 
     let isPaused = player.info.isPaused
@@ -3798,7 +3798,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func forceDraw() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
       log.verbose("Will not force video redraw: no video track selected")
       return

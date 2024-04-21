@@ -334,7 +334,7 @@ class VideoView: NSView {
   /// Starts the display link if it has been stopped in order to save energy.
   func displayActive(temporary: Bool = false) {
     log.trace("VideoView displayActive")
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     if !temporary {
       displayIdleTimer?.invalidate()
     }
@@ -360,7 +360,7 @@ class VideoView: NSView {
   ///         full screen mode.
   func displayIdle() {
     log.trace("VideoView displayIdle")
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     displayIdleTimer?.invalidate()
     // The time of 6 seconds was picked to match up with the time QuickTime delays once playback is
     // paused before stopping audio. As mpv does not provide an event indicating a frame step has

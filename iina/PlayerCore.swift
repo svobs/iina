@@ -473,7 +473,7 @@ class PlayerCore: NSObject {
 
   // unload main window video view
   private func uninitVideo() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard didInitVideo else { return }
     log.debug("Uninit video")
     videoView.stopDisplayLink()
@@ -489,7 +489,7 @@ class PlayerCore: NSObject {
   ///     sent to mpv using the synchronous API mpv executes the quit command asynchronously. The player is not fully shutdown
   ///     until mpv finishes executing the quit command and shuts down.
   func shutdown() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard !isShuttingDown else {
       log.verbose("Player is already shutting down")
       return
@@ -504,7 +504,7 @@ class PlayerCore: NSObject {
   }
 
   func mpvHasShutdown(isMPVInitiated: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
     isStopped = true
@@ -563,7 +563,7 @@ class PlayerCore: NSObject {
   ///     asleep. Thus `setFlag` **must not** be called if the `mpv` core is idle or stopping. See issue
   ///     [#4520](https://github.com/iina/iina/issues/4520)
   func pause() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     let isNormalSpeed = info.playSpeed == 1
     info.isPaused = true  // set preemptively to prevent inconsistencies in UI
     mpv.queue.async { [self] in
@@ -599,7 +599,7 @@ class PlayerCore: NSObject {
 
   /// Stop playback and unload the media.
   func stop() {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
 
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
@@ -762,7 +762,7 @@ class PlayerCore: NSObject {
   /// `Preference.Key.screenshotIncludeSubtitle` to decide between `subtitles` or `video`.
   @discardableResult
   func screenshot(fromKeyBinding keyBinding: KeyMapping? = nil) -> Bool {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     guard isScreenshotEnabled() else {
       Logger.log("Ignoring screenshot request\(keyBinding == nil ? "" : " from key binding") because all forms of screenshots are disabled in prefs")
       return false
@@ -2422,7 +2422,7 @@ class PlayerCore: NSObject {
 
   ///  `showMiniPlayerVideo` is only used if `enable` is true
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
     log.verbose("Setting video track enabled=\(enable.yn), showMiniPlayerVideo=\(showMiniPlayerVideo.yn)")
 
     if enable {
@@ -2511,7 +2511,7 @@ class PlayerCore: NSObject {
   /// etc.) are set *before* calling this method, not after, so that it makes the correct decisions.
   func refreshSyncUITimer(logMsg: String = "") {
     // Check if timer should start/restart
-    dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+    dispatchPrecondition(condition: .onQueue(.main))
 
     let useTimer: Bool
     if isStopping || isStopped || isShuttingDown || isShutdown {
