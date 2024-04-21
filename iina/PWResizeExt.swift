@@ -274,9 +274,9 @@ extension PlayerWindowController {
       player.info.intendedViewportSize = newGeometry.viewportSize
       log.verbose("SetVideoScale: calling applyWindowGeo")
       applyWindowGeoInAnimationPipeline(newGeometry)
-    case .musicMode:
-      // will return nil if video is not visible
+      case .musicMode:
       let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame)
+      // will return nil if video is not visible
       guard let newMusicModeGeometry = musicModeGeo.scaleVideo(to: desiredVideoSize) else { return }
       log.verbose("SetVideoScale: calling applyMusicModeGeo")
       applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)

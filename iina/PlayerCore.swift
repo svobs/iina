@@ -2934,6 +2934,13 @@ class PlayerCore: NSObject {
     saveState()
   }
 
+  /// Reloads playlist from mpv, then enqueues state save & sends `iinaPlaylistChanged` notification.
+  func reloadPlaylist() {
+    mpv.queue.async { [self] in
+      _reloadPlaylist()
+    }
+  }
+
   private func _reloadPlaylist(silent: Bool = false) {
     log.verbose("Reloading playlist")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
@@ -2960,11 +2967,11 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadPlaylist() {
+  func reloadChapters() {
     mpv.queue.async { [self] in
-      _reloadPlaylist()
-      saveState()  // save playlist URLs to prefs
+      _reloadChapters()
     }
+    syncUI(.chapterList)
   }
 
   func _reloadChapters() {
@@ -2982,13 +2989,6 @@ class PlayerCore: NSObject {
     // This will avoid concurrent modification crashes
     info.chapters = chapters
 
-    syncUI(.chapterList)
-  }
-
-  func reloadChapters() {
-    mpv.queue.async { [self] in
-      _reloadChapters()
-    }
     syncUI(.chapterList)
   }
 

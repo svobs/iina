@@ -121,13 +121,15 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     log.verbose("MiniPlayer viewDidLoad done")
   }
 
-  // MARK: - Mouse / Trackpad events
+  // MARK: - UI: Controller
 
+  /// Shows Controller on hover
   override func mouseEntered(with event: NSEvent) {
     guard player.isInMiniPlayer else { return }
     showControl()
   }
 
+  /// Hides Controller when hover leaves controller area
   override func mouseExited(with event: NSEvent) {
     guard player.isInMiniPlayer else { return }
 
@@ -141,8 +143,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     hideControllerButtonsInPipeline()
   }
 
-  // MARK: - UI: Show / Hide
-
+  // Shows OSC controls, hides media info
   private func showControl() {
     windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.MusicModeShowButtonsDuration, { [self] in
       windowController.osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .required
@@ -153,6 +154,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     }))
   }
 
+  /// Hides media info, shows OSC controls (runs as async task in animationPipeline)
   private func hideControllerButtonsInPipeline() {
     guard windowController.isInMiniPlayer else { return }
     windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.MusicModeShowButtonsDuration, { [self] in
@@ -160,6 +162,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     }))
   }
 
+  /// Hides media info, shows OSC controls (synchronous version)
   private func hideControllerButtons() {
     windowController.osdLeadingToMiniPlayerButtonsTrailingConstraint.priority = .defaultLow
 
@@ -168,7 +171,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     mediaInfoView.animator().alphaValue = 1
   }
 
-  // MARK: - UI
+  // MARK: - UI: Media Info
 
   func updateScrollingLabels() {
     loadIfNeeded()
@@ -180,17 +183,6 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     loadIfNeeded()
     titleLabel.reset()
     artistAlbumLabel.reset()
-  }
-
-  func saveCurrentPlaylistHeightToPrefs() {
-    guard isPlaylistVisible else { return }
-
-    let playlistHeight = round(currentDisplayedPlaylistHeight)
-    guard playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight else { return }
-
-    // save playlist height
-    log.verbose("Saving playlist height: \(playlistHeight)")
-    Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
   }
 
   func updateTitle(mediaTitle: String, mediaAlbum: String, mediaArtist: String) {
@@ -208,6 +200,8 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       }
     }
   }
+
+  // MARK: - Volume UI
 
   func updateVolumeUI(volume: Double, isMuted: Bool, hasAudio: Bool) {
     volumeSlider.isEnabled = hasAudio
@@ -231,14 +225,14 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     }
   }
 
-  // MARK: - NSPopoverDelegate
-
+  /// From `NSPopoverDelegate`: close volume popover
   func popoverWillClose(_ notification: Notification) {
     if NSWindow.windowNumber(at: NSEvent.mouseLocation, belowWindowWithWindowNumber: 0) != window!.windowNumber {
       hideControllerButtonsInPipeline()
     }
   }
 
+  /// From `NSPopoverDelegate`: open volume popover
   func handleVolumePopover(_ isTrackpadBegan: Bool, _ isTrackpadEnd: Bool, _ isMouse: Bool) {
     hideVolumePopover.cancel()
     hideVolumePopover = DispatchWorkItem {
@@ -323,17 +317,17 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
-        applyVideoVisibility(showVideo: false)
+        applyVideoVisibility(to: false)
       }
     })
   }
 
   func showVideo() {
-    applyVideoVisibility(showVideo: true)
+    applyVideoVisibility(to: true)
   }
 
   // TODO: develop a nice sliding animation if possible
-  private func applyVideoVisibility(showVideo: Bool) {
+  private func applyVideoVisibility(to showVideo: Bool) {
     log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.zeroDurationTask{ [self] in
@@ -376,7 +370,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Window size & layout
 
-  /// `windowWillResize`, but specfically applied when in music mode
+  /// `windowWillResize`, but specfically applied to window when in music mode
   func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     resetScrollingLabels()
 
@@ -394,7 +388,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     let oldGeometry = windowController.musicModeGeo
     let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
     var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame).refit()
-    IINAAnimation.disableAnimation{
+    IINAAnimation.disableAnimation {
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
       newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
     }
@@ -406,6 +400,17 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     loadIfNeeded()
     resetScrollingLabels()
     // Do not save musicModeGeo here! Pinch gesture will handle itself. Drag-to-resize will be handled below.
+  }
+
+  func saveCurrentPlaylistHeightToPrefs() {
+    guard isPlaylistVisible else { return }
+
+    let playlistHeight = round(currentDisplayedPlaylistHeight)
+    guard playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight else { return }
+
+    // save playlist height
+    log.verbose("Saving playlist height: \(playlistHeight)")
+    Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
   }
 
   func cleanUpForMusicModeExit() {
