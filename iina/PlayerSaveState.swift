@@ -111,7 +111,7 @@ struct PlayerSaveState {
   // MARK: - Save State / Serialize to prefs strings
 
   /// Generates a Dictionary of properties for storage into a Preference entry
-  static private func generatePropDict(from player: PlayerCore) -> [String: Any] {
+  static private func generatePropDict(from player: PlayerCore, _ geo: PlayerWindowController.Geometries) -> [String: Any] {
     var props: [String: Any] = [:]
     let info = player.info
     /// Must *not* access `window`: this is not the main thread
@@ -125,12 +125,12 @@ struct PlayerSaveState {
     /// `layoutSpec`
     props[PropName.layoutSpec.rawValue] = layout.spec.toCSV()
 
-    /// `windowedModeGeo`
-    let windowedModeGeo = wc.windowedModeGeo
+    /// `windowedModeGeo`: use supplied Geometries for most up-to-date window frame
+    let windowedModeGeo = geo.windowedMode
     props[PropName.windowedModeGeo.rawValue] = windowedModeGeo.toCSV()
 
-    /// `musicModeGeo`
-    props[PropName.musicModeGeo.rawValue] = wc.musicModeGeo.toCSV()
+    /// `musicModeGeo`: use supplied Geometries for most up-to-date window frame
+    props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
 
     let screenMetaCSVList: [String] = wc.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
@@ -303,17 +303,27 @@ struct PlayerSaveState {
         return
       }
 
-      let properties = generatePropDict(from: player)
-      if player.log.isTraceEnabled {
-        player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
+      DispatchQueue.main.async {
+        let wc = player.windowController!
+        // Retrieve appropriate geometry values, updating to latest window frame if needed:
+        let geo = wc.geo(from: wc.currentLayout)
+        PlayerCore.backgroundQueue.async {
+          let properties = generatePropDict(from: player, geo)
+          if player.log.isTraceEnabled {
+            player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
+          }
+          Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
+        }
       }
-      Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
     }
   }
 
   static func saveSynchronously(_ player: PlayerCore) {
     dispatchPrecondition(condition: .onQueue(.main))
-    let properties = generatePropDict(from: player)
+    let wc = player.windowController!
+    // Retrieve appropriate geometry values, updating to latest window frame if needed:
+    let geo = wc.geo(from: wc.currentLayout)
+    let properties = generatePropDict(from: player, geo)
     if player.log.isTraceEnabled {
       player.log.trace("Saving player state: \(properties)")
     }
