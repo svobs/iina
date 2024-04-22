@@ -45,7 +45,8 @@ class Utility {
     alert.runModal()
   }
 
-  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil) {
+  static func showAlert(_ key: String, comment: String? = nil, arguments: [CVarArg]? = nil, style: NSAlert.Style = .critical, 
+                        sheetWindow: NSWindow? = nil, suppressionKey: PK? = nil, logAlert: Bool = true) {
     let alert = NSAlert()
     if let suppressionKey = suppressionKey {
       // This alert includes a suppression button that allows the user to suppress the alert.
@@ -78,7 +79,9 @@ class Utility {
       alert.informativeText = String(format: format)
     }
 
-    Logger.log("Showing alert: \"\(alert.informativeText)\"")
+    if logAlert {
+      Logger.log("Showing alert: \"\(alert.informativeText)\"")
+    }
 
     alert.alertStyle = style
     if let sheetWindow = sheetWindow {

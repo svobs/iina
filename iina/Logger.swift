@@ -36,8 +36,8 @@ class Logger: NSObject {
     return Preference.bool(for: .enablePiiMaskingInLog)
   }
 
-  /// Is ignored unless `Preference.enablePiiMaskingInLog` is true. If `writeUnmaskedPiiToFile` is true, each PII token and its value is written to a separate file
-  /// which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.
+  /// Is ignored unless `Preference.enablePiiMaskingInLog` is true. If `writeUnmaskedPiiToFile` is true, each PII token and its value is written to
+  /// a separate file which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.
   static let writeUnmaskedPiiToFile = true
 
   // Try to prevent false positives duing search & replace by not allowing matches which are too short to
@@ -284,7 +284,9 @@ class Logger: NSObject {
     // Lock to avoid closing the log file while another thread is writing to it.
     lock.withLock {
       close(logFile, logFileHandle)
-      close(piiFile, piiFileHandle)
+      if !piiDict.isEmpty { /// Do not access `piiFileHandle` unless needed
+        close(piiFile, piiFileHandle)
+      }
     }
   }
 
@@ -421,7 +423,8 @@ class Logger: NSObject {
   }
 
   private static func showAlertAndExit(_ message: String, _ cleanup: () -> Void = {}) -> Never {
-    Utility.showAlert("fatal_error", arguments: [message])
+    // Set logAlert to false to avoid recursion
+    Utility.showAlert("fatal_error", arguments: [message], logAlert: false)
     cleanup()
     exit(1)
   }
