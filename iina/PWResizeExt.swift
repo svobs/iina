@@ -246,7 +246,7 @@ extension PlayerWindowController {
   // MARK: - Window geometry functions
 
   // FIXME: merge this into applyVidGeo()
-  func setVideoScale(_ desiredVideoScale: CGFloat) {
+  func setVideoScale(_ desiredVideoScale: Double) {
     guard let window = window else { return }
     let currentLayout = currentLayout
     guard currentLayout.mode == .windowed || currentLayout.mode == .musicMode else { return }

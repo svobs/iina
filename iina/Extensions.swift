@@ -1146,6 +1146,10 @@ extension NSScreen {
 
     for screen in NSScreen.screens {
       if screen.displayId == displayID {
+        // TODO: better matching logic. There is no guarantee that displayId will be consistent for the same screen across launches
+        if screen.screenID != screenID {
+          Logger.log("NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned", level: .error)
+        }
         return screen
       }
     }

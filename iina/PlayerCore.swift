@@ -1142,10 +1142,10 @@ class PlayerCore: NSObject {
     let videoScale: CGFloat
     if let videoSizeACR = info.videoGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from cached vidGeo (BSF: \(backingScaleFactor)): \(videoScale)")
-    } else if let mpvVidGeo = mpv.queryForVideoGeometry(), let videoSizeACR = info.videoGeo.videoSizeACR {
+      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(windowGeometry.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+    } else if let mpvVidGeo = mpv.queryForVideoGeometry(), let videoSizeACR = mpvVidGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from mpv (BSF: \(backingScaleFactor)): \(videoScale)")
+      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(windowGeometry.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else {
       log.error("Could not derive videoScale from mpv or from cache!")
       return nil
@@ -2229,7 +2229,7 @@ class PlayerCore: NSObject {
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
     windowController.applyVidGeo(newVidGeo)
 
-    currentMedia.loadStatus = .processedByIINA
+    currentMedia.loadStatus = .videoGeometryApplied
 
     // Update art & aspect *before* switching to/from music mode for more pleasant animation (but after updating state booleans)
 

@@ -33,7 +33,7 @@ struct VideoGeometry: CustomStringConvertible {
        selectedAspectLabel: String,
        totalRotation: Int, userRotation: Int,
        selectedCropLabel: String,
-       scale: CGFloat,
+       scale: Double,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
@@ -57,7 +57,7 @@ struct VideoGeometry: CustomStringConvertible {
              selectedAspectLabel: String? = nil,
              totalRotation: Int? = nil, userRotation: Int? = nil,
              selectedCropLabel: String? = nil,
-             scale: CGFloat? = nil) -> VideoGeometry {
+             scale: Double? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
                          totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
@@ -95,7 +95,7 @@ struct VideoGeometry: CustomStringConvertible {
   let selectedAspectLabel: String
 
   /// Optional aspect ratio override (mpv property `video-aspect-override`). Truncates aspect to the first 2 digits after decimal.
-  let aspectRatioOverride: CGFloat?
+  let aspectRatioOverride: Double?
 
   /// Equal to `videoSizeRaw` + `aspectRatioOverride` applied. If there is no aspect ratio override, then identical to `videoSizeRaw`.
   var videoSizeA: CGSize? {
@@ -253,7 +253,7 @@ struct VideoGeometry: CustomStringConvertible {
     return videoWidthACR != nil && videoHeightACR != nil
   }
 
-  var videoAspectACR: CGFloat? {
+  var videoAspectACR: Double? {
     guard let videoSizeACR else { return nil }
     return videoSizeACR.mpvAspect
   }
@@ -262,7 +262,7 @@ struct VideoGeometry: CustomStringConvertible {
   // (Aspect + Crop + Rotation + Scale)
 
   /// `MPVProperty.windowScale`:
-  var scale: CGFloat
+  var scale: Double
 
   /// Like `videoSizeACR`, but after applying `scale`.
   var videoSizeACRS: CGSize? {
@@ -273,7 +273,7 @@ struct VideoGeometry: CustomStringConvertible {
   }
 
   /// Final aspect ratio of `videoView`, equal to `videoAspectACR`. Takes into account aspect override, crop, and rotation (scale-invariant).
-  var videoViewAspect: CGFloat? {
+  var videoViewAspect: Double? {
     return videoAspectACR
   }
 
@@ -286,7 +286,7 @@ struct VideoGeometry: CustomStringConvertible {
   // MARK: Static util functions
 
   /// Adjusts the dimensions of the given `CGSize` as needed to match the given aspect
-  static func applyAspectOverride(_ newAspect: CGFloat?, to origSize: CGSize) -> CGSize {
+  static func applyAspectOverride(_ newAspect: Double?, to origSize: CGSize) -> CGSize {
     guard let newAspect else {
       // No aspect override
       return origSize

@@ -559,12 +559,8 @@ struct PlayerSaveState {
                                         selectedAspectLabel: string(for: .videoAspectLabel),
                                         totalRotation: int(for: .totalRotation),
                                         userRotation: int(for: .videoRotation),
-                                        selectedCropLabel: string(for: .cropLabel))
-
-    if let windowScale = double(for: .windowScale) {
-      // Swift has a few rough edges still
-      info.videoGeo = info.videoGeo.clone(scale: windowScale)
-    }
+                                        selectedCropLabel: string(for: .cropLabel),
+                                        scale: double(for: .windowScale))
 
     // Open the window!
     player.openURLs([url], shouldAutoLoad: false)

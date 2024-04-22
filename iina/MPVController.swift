@@ -1508,6 +1508,8 @@ not applying FFmpeg 9599 workaround
       guard player.windowController.loaded else { break }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
+      let isAlreadySized = player.info.currentMedia?.loadStatus.isAtLeast(.videoGeometryApplied) ?? false
+      guard isAlreadySized else { break }
 
       let newVideoScale = getVideoScale()
       let cachedVideoScale = player.info.videoGeo.scale
@@ -1517,7 +1519,7 @@ not applying FFmpeg 9599 workaround
         player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
         DispatchQueue.main.async { [self] in
           player.log.verbose("Calling SetVideoScale \(newVideoScale)x")
-          player.windowController.setVideoScale(CGFloat(newVideoScale))
+          player.windowController.setVideoScale(newVideoScale)
         }
       } else {
         player.log.verbose("Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed")
