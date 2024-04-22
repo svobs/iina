@@ -392,15 +392,20 @@ struct PlayerSaveState {
     guard let csv = csvString else { return nil }
     Logger.log("Parsing CSV: \(csv.quoted)", level: .verbose)
     let tokens = csv.split(separator: ",").map{String($0)}
-    guard tokens.count == expectedTokenCount else {
-      Logger.log("\(errPreamble) wrong token count (expected \(expectedTokenCount) but found \(tokens.count))", level: .error)
+    // Check version first, for a cleaner error msg
+    guard tokens.count > 0 else {
+      Logger.log("\(errPreamble) could not parse any tokens!", level: .error)
       return nil
     }
     var iter = tokens.makeIterator()
-
     let version = iter.next()
     guard version == expectedVersion else {
       Logger.log("\(errPreamble) bad version (expected \(expectedVersion.quoted) but found \(version?.quoted ?? "nil"))", level: .error)
+      return nil
+    }
+
+    guard tokens.count == expectedTokenCount else {
+      Logger.log("\(errPreamble) wrong token count (expected \(expectedTokenCount) but found \(tokens.count))", level: .error)
       return nil
     }
 
@@ -773,10 +778,6 @@ struct ScreenMeta {
 
   static func from(_ csv: String) -> ScreenMeta? {
     let tokens = csv.split(separator: ",").map{String($0)}
-    guard tokens.count == expectedCSVTokenCount else {
-      Logger.log("While parsing ScreenMeta from CSV: wrong token count (expected \(expectedCSVTokenCount) but found \(tokens.count))", level: .error)
-      return nil
-    }
     var iter = tokens.makeIterator()
 
     guard let versionStr = iter.next(), let version = Int(versionStr) else {
@@ -789,6 +790,11 @@ struct ScreenMeta {
       } else {
         Logger.log("While parsing ScreenMeta from CSV: bad version (expected \(csvVersion) but found \(version))", level: .error)
       }
+      return nil
+    }
+    // Check this after parsing version, for cleaner error messages
+    guard tokens.count == expectedCSVTokenCount else {
+      Logger.log("While parsing ScreenMeta from CSV: wrong token count (expected \(expectedCSVTokenCount) but found \(tokens.count))", level: .error)
       return nil
     }
 
