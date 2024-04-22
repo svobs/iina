@@ -2098,8 +2098,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     let currentLayout = currentLayout
-    log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingLayoutTransition=\(isAnimatingLayoutTransition)")
+    log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingTx=\(isAnimatingLayoutTransition.yn) denyNext=\(denyNextWindowResize.yn)")
     videoView.videoLayer.enterAsynchronousMode()
+
+    if !currentLayout.isFullScreen && denyNextWindowResize {
+      log.verbose("WinWillResize: denying this resize; will stay at \(window.frame.size)")
+      denyNextWindowResize = false
+      return window.frame.size
+    }
 
     switch currentLayout.mode {
     case .windowed, .windowedInteractive:

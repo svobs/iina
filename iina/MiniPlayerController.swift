@@ -388,10 +388,9 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       return window.frame.size
     }
 
-    let oldGeometry = windowController.musicModeGeo
+    let currentGeo = windowController.musicModeGeo
     let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-    var screenID = windowController.bestScreen.screenID
-    var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame, screenID: screenID).refit()
+    var newGeometry = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID).refit()
     IINAAnimation.disableAnimation {
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
       newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)

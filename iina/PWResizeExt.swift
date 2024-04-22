@@ -340,22 +340,13 @@ extension PlayerWindowController {
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes
   func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> PWGeometry {
     let currentLayout = currentLayout
-    assert(currentLayout.isWindowed, "Trying to resize in windowed mode but current mode is unexpected: \(currentLayout.mode)")
-    let currentGeo: PWGeometry
-    switch currentLayout.spec.mode {
-    case .windowed, .windowedInteractive:
-      currentGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-    default:
+    guard currentLayout.isWindowed else {
       log.error("WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo")
       return windowedModeGeo
     }
-    assert(currentGeo.mode == currentLayout.mode)
-
-    guard !denyNextWindowResize else {
-      log.verbose("WinWillResize: denying this resize; will stay at \(currentGeo.windowFrame.size)")
-      denyNextWindowResize = false
-      return currentGeo
-    }
+    let currentGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+    assert(currentGeo.mode == currentLayout.mode,
+           "WinWillResize: currentGeo.mode (\(currentGeo.mode)) != currentLayout.mode (\(currentLayout.mode))")
 
     guard !player.info.isRestoring else {
       log.error("WinWillResize was fired before restore was complete! Returning existing geometry: \(currentGeo.windowFrame.size)")
