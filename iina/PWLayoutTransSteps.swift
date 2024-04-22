@@ -47,6 +47,12 @@ extension PlayerWindowController {
     /// To avoid possible bugs as a result, let's update this at the very beginning.
     currentLayout = transition.outputLayout
 
+    if !transition.outputLayout.isWindowed && transition.inputLayout.isWindowed {
+      /// `inputGeometry` may contain the most up-to-date `windowFrame` for `windowedModeGeo`, which `windowedModeGeo` does not have.
+      /// Make sure to save it for later use:
+      windowedModeGeo = transition.inputGeometry
+    }
+
     /// Set this here because we are setting `currentLayout`
     switch transition.outputLayout.mode {
     case .windowed, .windowedInteractive:
