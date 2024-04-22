@@ -2640,6 +2640,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   @objc
   func updateTitle() {
     guard let window else { return }
+    guard let currentMedia = player.info.currentMedia else {
+      log.debug("Cannot update window title: no current media")
+      return
+    }
 
     let title: String
     if isInMiniPlayer {
@@ -2671,8 +2675,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // This problem has been reported to Apple as:
       // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
       // Feedback number FB9789129
-      title = player.info.currentURL?.lastPathComponent ?? ""
-      window.setTitleWithRepresentedFilename(player.info.currentURL?.path ?? "")
+      title = currentMedia.url.lastPathComponent
+      window.setTitleWithRepresentedFilename(currentMedia.url.path)
     }
 
     /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.

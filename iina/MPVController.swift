@@ -1530,11 +1530,12 @@ not applying FFmpeg 9599 workaround
 
     case MPVProperty.idleActive:
       if let idleActive = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee, idleActive {
-        player.log.verbose("Got mpv 'idle-active': \(idleActive.yn)")
-        if receivedEndFileWhileLoading && !player.info.isFileLoaded {
+        let isFileLoaded = player.info.isFileLoaded
+        player.log.verbose("Got mpv 'idle-active': \(idleActive.yn) (isFileLoaded: \(isFileLoaded.yn))")
+        if receivedEndFileWhileLoading && !isFileLoaded {
           player.log.error("Received fileEnded + 'idle-active' from mpv while loading \(player.info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
           player.errorOpeningFileAndClosePlayerWindow(url: player.info.currentURL)
-        } else {
+        } else if isFileLoaded {
           player.closeWindow()
         }
         player.info.isIdle = true

@@ -186,6 +186,10 @@ class CustomTitleBarViewController: NSViewController {
   }
 
   func refreshTitle() {
+    guard let currentMedia = windowController.player.info.currentMedia else {
+      windowController.player.log.debug("Cannot update window title for custom title bar: no current media")
+      return
+    }
     let drawAsMainWindow = titleText.window?.isMainWindow ?? false
     titleText.alphaValue = drawAsMainWindow ? activeTitleTextOpacity : inactiveTitleTextOpacity
     let controlAlpha = drawAsMainWindow ? 1 : inactiveTitleControlOpacity
@@ -195,7 +199,7 @@ class CustomTitleBarViewController: NSViewController {
       view.alphaValue = controlAlpha
     }
 
-    let title = windowController.player.info.currentURL?.lastPathComponent ?? ""
+    let title = currentMedia.url.lastPathComponent
     titleText.textColor = NSColor.windowFrameTextColor
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
     titleText.string = title
