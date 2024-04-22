@@ -96,11 +96,11 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
     if let finalGeometry {
       if windowController.currentLayout.isMusicMode {
-        windowController.log.verbose("Updating musicModeGeo from magnification gesture state \(recognizer.state.rawValue)")
+        windowController.log.verbose("Updating musicModeGeo from mag gesture state \(recognizer.state.rawValue)")
         let musicModeGeo = windowController.musicModeGeo.clone(windowFrame: finalGeometry.windowFrame)
         windowController.applyMusicModeGeo(musicModeGeo, setFrame: false, updateCache: true)
       } else {
-        windowController.log.verbose("Updating windowedModeGeo from magnification gesture state \(recognizer.state.rawValue)")
+        windowController.log.verbose("Updating windowedModeGeo & calling updateMPVWindowScale from mag gesture state \(recognizer.state.rawValue)")
         windowController.windowedModeGeo = finalGeometry
         windowController.player.updateMPVWindowScale(using: finalGeometry)
         windowController.player.info.intendedViewportSize = finalGeometry.viewportSize

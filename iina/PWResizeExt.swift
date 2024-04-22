@@ -83,7 +83,7 @@ extension PlayerWindowController {
     }
 
     let newVideoAspect = newVideoSizeACR.mpvAspect
-    log.verbose("[applyVidGeo Start] VideoRaw:\(newVideoSizeRaw) VideoACR:\(newVideoSizeACR) AspectACR:\(newVideoAspect) Rotation:\(newVidGeo.totalRotation) Scale:\(newVidGeo.scale) restoring=\(isRestoring.yn)")
+    log.verbose("[applyVidGeo Start] restoring=\(isRestoring.yn) justOpenedFile=\(justOpenedFile.yn) NewVidGeo=\(newVidGeo)")
 
     if #available(macOS 10.12, *) {
       pip.aspectRatio = newVideoSizeACR
@@ -252,7 +252,7 @@ extension PlayerWindowController {
     guard currentLayout.mode == .windowed || currentLayout.mode == .musicMode else { return }
 
     guard let videoSizeACR = player.info.videoGeo.videoSizeACR else {
-      log.error("SetWindowScale failed: could not get videoSizeACR")
+      log.error("SetVideoScale failed: could not get videoSizeACR")
       return
     }
 
@@ -264,7 +264,7 @@ extension PlayerWindowController {
     // TODO
     if false && Preference.bool(for: .usePhysicalResolution) {
       desiredVideoSize = window.convertFromBacking(NSRect(origin: window.frame.origin, size: desiredVideoSize)).size
-      log.verbose("SetWindowScale: converted desiredVideoSize to physical resolution: \(desiredVideoSize)")
+      log.verbose("SetVideoScale: converted desiredVideoSize to physical resolution: \(desiredVideoSize)")
     }
 
     switch currentLayout.mode {
@@ -505,6 +505,7 @@ extension PlayerWindowController {
     if !isFullScreen && !isTransientResize {
       player.saveState()
       if currentLayout.mode == .windowed {
+        log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
         player.updateMPVWindowScale(using: windowedModeGeo)
       }
     }
@@ -550,7 +551,7 @@ extension PlayerWindowController {
                                timing: CAMediaTimingFunctionName = .easeInEaseOut) -> IINAAnimation.Task {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
     return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-      log.verbose("ApplyWindowGeo: windowFrame: \(newGeometry.windowFrame), videoAspect: \(newGeometry.videoAspect)")
+      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
 
       // If window was just opened, it will have been at 0% opacity. Fade it in:
       let windowOpacity = Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0
@@ -563,7 +564,7 @@ extension PlayerWindowController {
       }
       windowedModeGeo = newGeometry
 
-      log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize: \(newGeometry.videoSize)")
+      log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)")
       player.updateMPVWindowScale(using: newGeometry)
       player.saveState()
     })

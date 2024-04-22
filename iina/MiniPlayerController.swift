@@ -279,7 +279,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
     let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
     var newWindowFrame = window.frame
-    var newScreenID = windowController.bestScreen.screenID
+    let newScreenID = windowController.bestScreen.screenID
 
     if showPlaylist {
       // Try to show playlist using stored height
@@ -349,7 +349,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
 
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
-      var screenID = windowController.bestScreen.screenID
+      let screenID = windowController.bestScreen.screenID
       let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID).withVideoViewVisible(showVideo)
       log.verbose("VideoView setting videoViewVisible=\(showVideo), videoHeight=\(newGeometry.videoHeight)")
       windowController.applyMusicModeGeo(newGeometry)

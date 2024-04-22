@@ -267,6 +267,7 @@ struct VideoGeometry: CustomStringConvertible {
   /// Like `videoSizeACR`, but after applying `scale`.
   var videoSizeACRS: CGSize? {
     guard let videoSizeACR else { return nil }
+    guard scale > 0.0 else { return nil }
     return CGSize(width: round(videoSizeACR.width * scale),
                   height: round(videoSizeACR.height * scale))
   }
@@ -279,7 +280,7 @@ struct VideoGeometry: CustomStringConvertible {
   // MARK: - Etc
 
   var description: String {
-    return "VideoGeometry:{vidSizeRaw=(\(rawWidth) x \(rawHeight)) vidSizeAC=(\(videoWidthAC?.description ?? "nil") x \(videoHeightAC?.description ?? "nil")) selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropRect=\(cropRect?.description ?? "nil") scale=\(scale) aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil")}"
+    return "VideoGeometry:{vidSizeRaw=(\(rawWidth) x \(rawHeight)) vidSizeAC=(\(videoWidthAC?.description ?? "nil") x \(videoHeightAC?.description ?? "nil")) selectedAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotTotal=\(totalRotation) rotUser=\(userRotation) cropLabel=\(selectedCropLabel.description.quoted) cropRect=\(cropRect?.description ?? "nil") aspectACR=\(videoAspectACR?.description ?? "nil") vidSizeACR=\(videoSizeACR?.description ?? "nil") scale=\(scale) videoSizeACRS=\(videoSizeACRS?.description ?? "nil")}"
   }
 
   // MARK: Static util functions

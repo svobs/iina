@@ -923,12 +923,7 @@ not applying FFmpeg 9599 workaround
 
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
-    // For mpv, window size is always the same as video size, although this is not always true with IINA.
-    // Also, mpv uses the backing scale factor for calcalations. IINA Advance does not, because that has no correlation with the
-    // screen's actual scale factor and is at best a number which is usually less wrong.
-    let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
-    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
-    let videoScale = mpvVideoScale / backingScaleFactor
+    let videoScale = getVideoScale()
 
     let videoWidthAC = getInt(MPVProperty.dwidth)
     let videoHeightAC = getInt(MPVProperty.dheight)
@@ -949,6 +944,17 @@ not applying FFmpeg 9599 workaround
       player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(videoWidthAC) x \(videoHeightAC)) != cached videoSizeAC \(videoSizeAC)")
     }
     return params
+  }
+
+  /// See notes on `backingScaleFactor` in `queryForVideoGeometry()`
+  /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
+  /// Also, mpv uses `backingScaleFactor` for calcalations. IINA Advance does not, because that has no correlation with the
+  /// screen's actual scale factor and is at best an oversimplification which is less wrong on average. It is like assuming
+  /// "all men have a shoe size of 10 and all women have a shoe size of 8", which is only slightly better than "all humans have a shoe size of 9".
+  func getVideoScale() -> Double {
+    let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
+    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
+    return mpvVideoScale / backingScaleFactor
   }
 
   // MARK: - Hooks
@@ -1503,21 +1509,18 @@ not applying FFmpeg 9599 workaround
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
 
-      /// See notes on `backingScaleFactor` in `queryForVideoGeometry()`
-      let mpvVideoScale = getDouble(MPVOption.Window.windowScale)
-      let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: player.windowController.windowedModeGeo.screenID).backingScaleFactor
-      let newVideoScale = mpvVideoScale / backingScaleFactor
-
+      let newVideoScale = getVideoScale()
       let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
-        player.log.verbose("Δ mpv prop: 'window-scale' / \(backingScaleFactor) ≔ \(newVideoScale) → changed from cached (\(cachedVideoScale))")
+        player.log.verbose("Δ mpv prop: 'window-scale'; changing videoScale: \(cachedVideoScale) → \(newVideoScale)")
         player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
-        DispatchQueue.main.async {
-          self.player.windowController.setVideoScale(CGFloat(newVideoScale))
+        DispatchQueue.main.async { [self] in
+          player.log.verbose("Calling SetVideoScale \(newVideoScale)x")
+          player.windowController.setVideoScale(CGFloat(newVideoScale))
         }
       } else {
-        player.log.verbose("Δ mpv prop: 'window-scale' / \(backingScaleFactor) ≔ \(newVideoScale), but no change from cache")
+        player.log.verbose("Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed")
       }
 
     case MPVProperty.mediaTitle:

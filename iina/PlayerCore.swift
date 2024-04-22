@@ -1104,28 +1104,31 @@ class PlayerCore: NSObject {
   }
 
   func updateMPVWindowScale(using windowGeo: PWGeometry) {
+    guard windowGeo.mode == .windowed else {
+      return
+    }
     mpv.queue.async { [self] in
-      guard let actualVideoScale = deriveVideoScale(from: windowGeo) else {
-        log.verbose("Skipping update to mpv window-scale: could not get size info")
+      guard let desiredVideoScale = deriveVideoScale(from: windowGeo) else {
+        log.verbose("UpdateMPVWindowScale: could not get size info; skipping")
         return
       }
-      let prevVideoScale: CGFloat = info.videoGeo.scale
+      let currentVideoScale = mpv.getVideoScale()
 
-      if actualVideoScale != prevVideoScale {
+      if desiredVideoScale != currentVideoScale {
         // Setting the window-scale property seems to result in a small hiccup during playback.
         // Not sure if this is an mpv limitation
-        log.verbose("Updating mpv window-scale from videoSize \(windowGeo.videoSize), changing scale: \(prevVideoScale) → \(actualVideoScale)")
+        log.verbose("Updating mpv window-scale from videoSize \(windowGeo.videoSize) (changing videoScale: \(currentVideoScale) → \(desiredVideoScale))")
 
-        let newVidGeo = info.videoGeo.clone(scale: actualVideoScale)
+        let newVidGeo = info.videoGeo.clone(scale: desiredVideoScale)
         windowController.applyVidGeo(newVidGeo)
 
         let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).backingScaleFactor
-        let adjustedVideoScale = (actualVideoScale * backingScaleFactor).truncatedTo6()
-        log.verbose("Adjusted video scale from windowGeo * \(backingScaleFactor) → \(adjustedVideoScale)")
+        let adjustedVideoScale = (desiredVideoScale * backingScaleFactor).truncatedTo6()
+        log.verbose("Adjusted videoScale from windowGeo (\(desiredVideoScale)) * BSF (\(backingScaleFactor)) → sending mpv \(adjustedVideoScale)")
         mpv.setDouble(MPVProperty.windowScale, adjustedVideoScale)
 
       } else {
-        log.verbose("Skipping update to mpv window-scale: no change from prev (\(prevVideoScale))")
+        log.verbose("Skipping update to mpv window-scale: no change from existing (\(currentVideoScale))")
       }
     }
   }
@@ -1133,15 +1136,20 @@ class PlayerCore: NSObject {
   private func deriveVideoScale(from windowGeometry: PWGeometry) -> CGFloat? {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     
-    let videoWidthScaled = windowGeometry.videoSize.width
+    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeometry.screenID).backingScaleFactor
+    let videoWidthScaled = (windowGeometry.videoSize.width * backingScaleFactor).truncatedTo6()
 
-    // This should take into account aspect override and/or crop already
-    guard let videoWidthUnscaled = mpv.queryForVideoGeometry()?.videoSizeACR?.width else {
+    let videoScale: CGFloat
+    if let videoSizeACR = info.videoGeo.videoSizeACR {
+      videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
+      log.verbose("Derived videoScale from cached vidGeo (BSF: \(backingScaleFactor)): \(videoScale)")
+    } else if let mpvVidGeo = mpv.queryForVideoGeometry(), let videoSizeACR = info.videoGeo.videoSizeACR {
+      videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
+      log.verbose("Derived videoScale from mpv (BSF: \(backingScaleFactor)): \(videoScale)")
+    } else {
+      log.error("Could not derive videoScale from mpv or from cache!")
       return nil
     }
-
-    let videoScale = (videoWidthScaled / videoWidthUnscaled).truncatedTo6()
-    log.verbose("Derived video scale from vidGeo: \(videoScale)")
     return videoScale
   }
 
