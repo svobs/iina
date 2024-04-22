@@ -94,15 +94,15 @@ extension PlayerWindowController {
         let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
                                         height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
         let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
-        let defaultScreenID = NSScreen.main!.screenID
-        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: defaultScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
         /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
         /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
-        let windowSize = initialGeo.windowFrame.size
         let mouseLoc = NSEvent.mouseLocation
-        let origin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
+        let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
+        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
+        let windowSize = initialGeo.windowFrame.size
+        let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
         log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
-        windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: origin, size: windowSize)).refit(.keepInVisibleScreen)
+        windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.keepInVisibleScreen)
       } else {
         // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
         log.verbose("Initial layout: using last closed window's geometry")
@@ -390,7 +390,7 @@ extension PlayerWindowController {
     if useExtraAnimationForEnteringLegacyFullScreen {
       transition.animationTasks.append(IINAAnimation.Task(duration: endingAnimationDuration * 0.2, timing: .easeIn, { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
-        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, topMarginHeight: topBlackBarHeight)
+        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock")
         applyLegacyFSGeo(newGeo)
       }))
@@ -615,8 +615,8 @@ extension PlayerWindowController {
   func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, 
            videoAspect: CGFloat? = nil, from inputLayout: LayoutState? = nil) -> Geometries {
     let latestFrame = window?.frame
-    return Geometries(windowedMode: windowed ?? ((inputLayout?.mode.isWindowed ?? false) ? windowedModeGeo.clone(windowFrame: latestFrame) : windowedModeGeo),
-                      musicMode: musicMode ?? ((inputLayout?.mode == .musicMode) ? musicModeGeo.clone(windowFrame: latestFrame) : musicModeGeo),
+    return Geometries(windowedMode: windowed ?? ((inputLayout?.mode.isWindowed ?? false) ? windowedModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID) : windowedModeGeo),
+                      musicMode: musicMode ?? ((inputLayout?.mode == .musicMode) ? musicModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID) : musicModeGeo),
                       videoAspect: videoAspect ?? self.player.info.videoAspect)
   }
 

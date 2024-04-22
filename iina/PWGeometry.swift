@@ -852,7 +852,8 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     }
 
     let newWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
-    return self.clone(windowFrame: newWindowFrame,
+    let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame)
+    return self.clone(windowFrame: newWindowFrame, screenID: newScreenID,
                       outsideTopBarHeight: newOutsideTopBarHeight, outsideTrailingBarWidth: newOutsideTrailingBarWidth,
                       outsideBottomBarHeight: newOutsideBottomBarHeight, outsideLeadingBarWidth: newOutsideLeadingBarWidth)
   }

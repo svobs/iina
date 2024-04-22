@@ -1900,11 +1900,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if !AppDelegate.shared.isTerminating && !player.info.justOpenedFile {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame)
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
       } else {
         if currentLayout.mode == .windowed {
           // Update frame since it may have moved
-          windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
+          windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
         }
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       }
@@ -2294,6 +2294,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           applyLegacyFSGeo(fsGeo)
         }
       } else {
+        player.saveState()
         player.events.emit(.windowMoved, data: window.frame)
       }
     })
@@ -3128,7 +3129,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
             // Scale viewport to roughly match window size
             assert(windowedModeGeo.mode == .windowed)
             let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
-            var uncroppedClosedBarsGeo = windowedModeGeo.clone(windowFrame: window.frame)
+            var uncroppedClosedBarsGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
               .withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
                                outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                insideTopBarHeight: 0, insideTrailingBarWidth: 0,

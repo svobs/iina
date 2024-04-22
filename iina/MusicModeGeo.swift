@@ -10,10 +10,13 @@ import Foundation
 
 /**
  `MusicModeGeometry`: like `PWGeometry`, but for music mode.
+
  Because the music mode window reuses the existing player window, it:
- • Uses the bottom bar for the playlist (or has height 0 if playlist is hidden).
- • Cannot have sidebars or a top bar (they exist but are reduced to zero area).
- • The viewport area is used to display video or album art, but can be turned off, in which case it is given a height of zero.
+ * Uses the viewport to display video or album art, but can be turned off, in which case it is given a height of zero. The viewport has 0 margins on all sides when in music mode.
+ * Uses the outside bottom bar for:
+ * 1. Either current media info, or OSC on hover. This is always displayed in music mode and has constant height.
+ * 2. Playlist if shown. Playlist has 0 height if hidden, otherwise is bounded by `minPlaylistHeight` and remaining height on screen.
+ *  Never has any inside bars, outside sidebars or top bar (the views exist but are reduced to zero area).
 
  A `MusicModeGeometry` object can be converted to a `PWGeometry` via its `toPWGeometry()` function.
  */

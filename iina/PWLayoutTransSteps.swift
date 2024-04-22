@@ -54,7 +54,9 @@ extension PlayerWindowController {
     case .fullScreen, .fullScreenInteractive:
       break  // Not applicable
     case .musicMode:
-      musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, videoAspect: transition.outputGeometry.videoAspect)
+      let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame)
+      musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, screenID: screenID,
+                                        videoAspect: transition.outputGeometry.videoAspect)
     }
 
     guard let window = window else { return }
@@ -791,12 +793,13 @@ extension PlayerWindowController {
             /// Entering legacy FS on a screen with camera housing.
             /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
             /// (will expand window to cover `cameraHousingHeight` in next animation)
-            newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, topMarginHeight: 0)
+            newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, topMarginHeight: 0)
           } else {
             /// Set window size to `visibleFrame` for now. This excludes menu bar which needs a separate animation to hide.
             /// Later, when menu bar is hidden, a `NSApplicationDidChangeScreenParametersNotification` will be sent, which will
             /// trigger the window to resize again and cover the whole screen.
-            newGeo = transition.outputGeometry.clone(windowFrame: screen.visibleFrame, topMarginHeight: transition.outputGeometry.topMarginHeight)
+            newGeo = transition.outputGeometry.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID,
+                                                     topMarginHeight: transition.outputGeometry.topMarginHeight)
           }
         } else {
           /// Either already in legacy FS, or entering legacy FS. Apply final geometry.

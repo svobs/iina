@@ -94,7 +94,7 @@ extension PlayerWindowController {
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      let newGeometry = musicModeGeo.clone(windowFrame: window.frame, videoAspect: newVideoAspect)
+      let newGeometry = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: newVideoAspect)
       applyMusicModeGeoInAnimationPipeline(newGeometry)
       return
     }
@@ -112,7 +112,8 @@ extension PlayerWindowController {
 
     // If user moved the window recently, window frame might not be completely up to date
     let currentWindowFrame = currentLayout.mode.isWindowed ? window.frame : nil
-    let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, videoAspect: newVideoAspect)
+    let currentScreenID = currentLayout.mode.isWindowed ? bestScreen.screenID : nil
+    let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, screenID: currentScreenID, videoAspect: newVideoAspect)
     let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
     let newWindowGeo: PWGeometry
@@ -268,14 +269,14 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowed:
-      let windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame)
+      let windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
       let newGeometry = windowedModeGeo.scaleVideo(to: desiredVideoSize, mode: currentLayout.mode)
       // User has actively resized the video. Assume this is the new preferred resolution
       player.info.intendedViewportSize = newGeometry.viewportSize
       log.verbose("SetVideoScale: calling applyWindowGeo")
       applyWindowGeoInAnimationPipeline(newGeometry)
       case .musicMode:
-      let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame)
+      let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
       // will return nil if video is not visible
       guard let newMusicModeGeometry = musicModeGeo.scaleVideo(to: desiredVideoSize) else { return }
       log.verbose("SetVideoScale: calling applyMusicModeGeo")
@@ -296,7 +297,8 @@ extension PlayerWindowController {
 
     switch currentLayout.mode {
     case .windowed, .windowedInteractive:
-      let newGeoUnconstrained = windowedModeGeo.clone(windowFrame: window.frame).scaleViewport(to: desiredViewportSize, fitOption: .noConstraints)
+      let newGeoUnconstrained = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        .scaleViewport(to: desiredViewportSize, fitOption: .noConstraints)
       if currentLayout.mode == .windowed {
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
@@ -308,7 +310,8 @@ extension PlayerWindowController {
       applyWindowGeoInAnimationPipeline(newGeometry)
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
-      guard let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame).scaleVideo(to: desiredViewportSize) else { return }
+      guard let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        .scaleVideo(to: desiredViewportSize) else { return }
       log.verbose("Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeometry.windowFrame)")
       applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
     default:
@@ -321,9 +324,9 @@ extension PlayerWindowController {
     let currentViewportSize: NSSize
     switch currentLayout.mode {
     case .windowed:
-      currentViewportSize = windowedModeGeo.clone(windowFrame: window.frame).viewportSize
+      currentViewportSize = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID).viewportSize
     case .musicMode:
-      guard let viewportSize = musicModeGeo.clone(windowFrame: window.frame).viewportSize else { return }
+      guard let viewportSize = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID).viewportSize else { return }
       currentViewportSize = viewportSize
     default:
       return
@@ -341,7 +344,7 @@ extension PlayerWindowController {
     let currentGeo: PWGeometry
     switch currentLayout.spec.mode {
     case .windowed, .windowedInteractive:
-      currentGeo = windowedModeGeo.clone(windowFrame: window.frame)
+      currentGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
     default:
       log.error("WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo")
       return windowedModeGeo

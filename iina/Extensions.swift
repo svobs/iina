@@ -1114,6 +1114,28 @@ extension NSAppearance {
 }
 
 extension NSScreen {
+  static func getOwnerScreenID(forPoint point: NSPoint) -> String? {
+    for screen in NSScreen.screens {
+      if screen.frame.contains(point) {
+        return screen.screenID
+      }
+    }
+    return nil
+  }
+
+  static func getOwnerScreenID(forViewRect viewRect: NSRect) -> String? {
+    // Use origin of view to make the determination. May wish to try a different heuristic in the future.
+    return getOwnerScreenID(forPoint: viewRect.origin)
+  }
+
+  static func getOwnerOrDefaultScreenID(forViewRect viewRect: NSRect) -> String {
+    return getOwnerScreenID(forViewRect: viewRect) ?? screens[0].screenID
+  }
+
+  static func getOwnerOrDefaultScreenID(forPoint point: NSPoint) -> String {
+    return getOwnerScreenID(forPoint: point) ?? screens[0].screenID
+  }
+
   static func forScreenID(_ screenID: String) -> NSScreen? {
     let splitted = screenID.split(separator: ":")
     guard splitted.count > 0,

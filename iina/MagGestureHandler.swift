@@ -70,12 +70,13 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     switch recognizer.state {
     case .began:
       guard let window = windowController.window else { return }
+      let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: window.frame)
 
       windowController.isMagnifying = true
       if windowController.currentLayout.isMusicMode {
-        windowController.musicModeGeo = windowController.musicModeGeo.clone(windowFrame: window.frame)
+        windowController.musicModeGeo = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID)
       } else {
-        windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: window.frame)
+        windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: window.frame, screenID: screenID)
       }
       scaleVideoFromPinchGesture(to: recognizer.magnification)
     case .changed:

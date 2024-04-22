@@ -279,6 +279,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     log.verbose("Toggling playlist visibility from \((!showPlaylist).yn) to \(showPlaylist.yn)")
     let currentDisplayedPlaylistHeight = currentDisplayedPlaylistHeight
     var newWindowFrame = window.frame
+    var newScreenID = windowController.bestScreen.screenID
 
     if showPlaylist {
       // Try to show playlist using stored height
@@ -303,7 +304,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     newWindowFrame.origin.y = newWindowFrame.origin.y - heightDifference
 
     // Constrain window so that it doesn't expand below bottom of screen, or fall offscreen
-    let newMusicModeGeometry = windowController.musicModeGeo.clone(windowFrame: newWindowFrame, isPlaylistVisible: showPlaylist)
+    let newMusicModeGeometry = windowController.musicModeGeo.clone(windowFrame: newWindowFrame, screenID: newScreenID, isPlaylistVisible: showPlaylist)
     windowController.applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
   }
 
@@ -348,7 +349,8 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
 
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
-      let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame).withVideoViewVisible(showVideo)
+      var screenID = windowController.bestScreen.screenID
+      let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID).withVideoViewVisible(showVideo)
       log.verbose("VideoView setting videoViewVisible=\(showVideo), videoHeight=\(newGeometry.videoHeight)")
       windowController.applyMusicModeGeo(newGeometry)
     }))
@@ -388,7 +390,8 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
     let oldGeometry = windowController.musicModeGeo
     let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-    var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame).refit()
+    var screenID = windowController.bestScreen.screenID
+    var newGeometry = oldGeometry.clone(windowFrame: requestedWindowFrame, screenID: screenID).refit()
     IINAAnimation.disableAnimation {
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
       newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
