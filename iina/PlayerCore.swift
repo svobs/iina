@@ -137,7 +137,11 @@ class PlayerCore: NSObject {
 
   /// Whether mpv playback has stopped and the media has been unloaded.
   /// Should always be updated in main DQ
-  var isStopped = true
+  var isStopped = true {
+    didSet {
+      log.verbose("Updated isStopped to \(isStopped.yesno)")
+    }
+  }
 
   var isInMiniPlayer: Bool {
     return windowController.isInMiniPlayer
@@ -609,11 +613,12 @@ class PlayerCore: NSObject {
     videoView.stopDisplayLink()
 
     mpv.queue.async { [self] in
+      // Reset playback state
+      log.verbose("Stop called")
+
       saveState()            // Save state to IINA prefs (if enabled)
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
-      // Reset playback state
-      log.verbose("Stop called: resetting playback state")
       info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
