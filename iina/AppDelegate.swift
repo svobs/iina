@@ -330,6 +330,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log("App launched")
 
+    HistoryController.shared.reloadAll(silent: true)
+
     menuController.bindMenuItems()
     // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
     // show alpha in color panels

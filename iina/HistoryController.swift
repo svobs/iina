@@ -19,7 +19,6 @@ class HistoryController {
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL
     self.history = []
-    reloadAll(silent: true)
   }
 
   func reloadAll(silent: Bool = false) {
