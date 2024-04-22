@@ -426,6 +426,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   ]
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+    guard isOpen else { return }  // do not want to respond to some things like blackOutOtherMonitors while closed!
     guard let keyPath = keyPath, let change = change else { return }
 
     switch keyPath {
@@ -1013,6 +1014,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     // add notification observers
 
+    // FIXME: these should be added at window open instead, and removed at window close!
+
     NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: nil, using: { [unowned self] _ in
       // FIXME: this is not ready for production yet! Need to fix issues with freezing video
       guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
@@ -1093,6 +1096,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   deinit {
+    removeObservers()
+  }
+
+  private func removeObservers() {
     ObjcUtils.silenced {
       for key in PlayerWindowController.observedPrefKeys {
         UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
