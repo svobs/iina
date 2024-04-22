@@ -658,7 +658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Preference.set(false, for: .isRestoreInProgress)
 
     // Count only "important windows" (IINA startup can open other windows which are hidden, such as color picker)
-    let openWindowCount = NSApp.windows.reduce(0, {count, win in (win.isImportant && win.isOpen()) ? count + 1 : count})
+    let openWindowCount = NSApp.windows.reduce(0, {count, win in (win.isImportant && win.isOpen) ? count + 1 : count})
     if openWindowCount == 0 {
       Logger.log("Looks like none of the windows was restored successfully. Falling back to user launch preference")
       return false

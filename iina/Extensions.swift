@@ -1113,6 +1113,13 @@ extension NSAppearance {
   }
 }
 
+extension NSApplication {
+  /// Returns `PlayerWindowController` array for all open player windows.
+  static var playerWindows: [PlayerWindowController] {
+    return NSApp.windows.compactMap{ $0.windowController as? PlayerWindowController }.filter{ $0.isOpen }
+  }
+}
+
 extension NSScreen {
   static func getOwnerScreenID(forPoint point: NSPoint) -> String? {
     for screen in NSScreen.screens {
@@ -1289,7 +1296,7 @@ extension NSWindow {
       return false
     }
     for window in NSApp.windows {
-      if window != self, let knownWindowName = WindowAutosaveName(window.savedStateName), knownWindowName != .inspector {
+      if window != self, let knownWindowName = WindowAutosaveName(window.savedStateName), knownWindowName != .inspector, window.isOpen {
         return false
       }
     }
@@ -1302,10 +1309,10 @@ extension NSWindow {
     return !savedStateName.isEmpty
   }
 
-  func isOpen() -> Bool {
+  var isOpen: Bool {
     if let windowController = self.windowController as? PlayerWindowController, windowController.isOpen {
       return true
-    } else if self.isVisible {
+    } else if self.isVisible || self.isMiniaturized {
       return true
     }
     return false

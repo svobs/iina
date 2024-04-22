@@ -1413,8 +1413,7 @@ extension PlayerWindowController {
     // needless processing. It must be running while transitioning to/from full screen mode.
     videoView.displayActive()
 
-    thumbnailPeekView.isHidden = true
-    timePositionHoverLabel.isHidden = true
+    hideSeekTimeAndThumbnail()
   }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {

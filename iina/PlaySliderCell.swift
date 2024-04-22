@@ -200,7 +200,7 @@ class PlaySliderCell: NSSliderCell {
     let result = super.startTracking(at: startPoint, in: controlView)
     if result {
       playerCore.pause()
-      playerCore.windowController.thumbnailPeekView.isHidden = true
+      playerCore.windowController.hideSeekTimeAndThumbnail()
     }
     return result
   }

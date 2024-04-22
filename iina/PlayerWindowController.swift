@@ -1050,8 +1050,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     addObserver(to: .default, forName: .iinaFileLoaded, object: player) { [self] note in
       log.verbose("Got iinaFileLoaded notification")
 
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
+      hideSeekTimeAndThumbnail()
 
       quickSettingView.reload()
 
@@ -1733,6 +1732,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func mouseMoved(with event: NSEvent) {
+    /// When using multiple monitors, `mouseExited` may not get fired when cursor moves directly from OSC to other screen.
+    /// In this case, thumbnail & seek time can get stuck in the visible state. We can make this less annoying by hiding when other windows'
+    /// events fire, like here...
+    for playerWinCon in NSApplication.playerWindows {
+      if playerWinCon != self {
+        playerWinCon.hideSeekTimeAndThumbnail()
+      }
+    }
     guard !isInInteractiveMode else { return }
 
     /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
@@ -2313,7 +2320,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     })
   }
 
-  // MARK: - Window delegate: Activeness status
+  // MARK: - Window delegate: Active status
 
   func windowDidBecomeKey(_ notification: Notification) {
     if currentLayout.isLegacyFullScreen {
@@ -3310,14 +3317,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let isCoveredBySidebar = isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView])
     let isMouseInPlaySlider = isMouseEvent(event, inAnyOf: [playSlider])
     guard isMouseInPlaySlider, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.videoDuration else {
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
+      hideSeekTimeAndThumbnail()
       return
     }
 
     // - 1. Time Hover Label
-
-    timePositionHoverLabel.isHidden = false
 
     let mousePosX = playSlider.convert(event.locationInWindow, from: nil).x
     let originalPosX = event.locationInWindow.x
@@ -3329,6 +3333,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if timePositionHoverLabel.stringValue != previewTime.stringRepresentation {
       timePositionHoverLabel.stringValue = previewTime.stringRepresentation
     }
+    timePositionHoverLabel.isHidden = false
 
     // - 2. Thumbnail Preview
 
@@ -3484,6 +3489,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   // MARK: - UI: Other
+
+  func hideSeekTimeAndThumbnail() {
+    thumbnailPeekView.isHidden = true
+    timePositionHoverLabel.isHidden = true
+  }
 
   func refreshHidesOnDeactivateStatus() {
     guard let window else { return }

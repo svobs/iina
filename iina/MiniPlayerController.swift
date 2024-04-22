@@ -339,7 +339,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
       windowController.closeButtonView.isHidden = true
 
-      windowController.thumbnailPeekView.isHidden = true
+      windowController.hideSeekTimeAndThumbnail()
 
       /// If needing to reactivate this constraint, do it before the toggle animation, so that window doesn't jump.
       /// (See note in `applyMusicModeGeo` for why this constraint needed to be disabled in the first place)

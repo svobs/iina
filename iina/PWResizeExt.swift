@@ -477,8 +477,7 @@ extension PlayerWindowController {
       }
 
       // These may no longer be aligned correctly. Just hide them
-      thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
+      hideSeekTimeAndThumbnail()
 
       if currentLayout.isMusicMode {
         // Re-evaluate space requirements for labels. May need to start scrolling.
