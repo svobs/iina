@@ -446,8 +446,8 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
 
     IINAAnimation.disableAnimation {
+      log.verbose("ApplyWindowResize: newGeo=\(newGeometry?.description ?? "nil")")
       if let newGeometry {
-        log.verbose("ApplyWindowResize: \(newGeometry)")
         /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
         videoView.apply(newGeometry)
         if !isFullScreen {
@@ -529,19 +529,23 @@ extension PlayerWindowController {
                                timing: CAMediaTimingFunctionName = .easeInEaseOut) -> IINAAnimation.Task {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
     return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
-
-      /// Make sure this is up-to-date. Do this before `setFrame`
-      videoView.apply(newGeometry)
-      if !isWindowHidden {
-        player.window.setFrameImmediately(newGeometry.windowFrame)
-      }
-      windowedModeGeo = newGeometry
-
-      log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)")
-      player.updateMPVWindowScale(using: newGeometry)
-      player.saveState()
+      applyWindowGeo(newGeometry)
     })
+  }
+
+  func applyWindowGeo(_ newGeometry: PWGeometry) {
+    log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
+
+    /// Make sure this is up-to-date. Do this before `setFrame`
+    videoView.apply(newGeometry)
+    if !isWindowHidden {
+      player.window.setFrameImmediately(newGeometry.windowFrame)
+    }
+    windowedModeGeo = newGeometry
+
+    log.verbose("ApplyWindowGeo: Calling updateMPVWindowScale, videoSize=\(newGeometry.videoSize)")
+    player.updateMPVWindowScale(using: newGeometry)
+    player.saveState()
   }
 
   /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation

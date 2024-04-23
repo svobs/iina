@@ -71,6 +71,8 @@ extension PlayerWindowController {
 
     guard let window = window else { return }
 
+    updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout, windowOpacity: transition.isInitialLayout ? 0.0 : nil)
+
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
       log.verbose("[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
@@ -79,10 +81,6 @@ extension PlayerWindowController {
       // Do not move this block. It needs to go here.
       window.titleVisibility = .hidden
       hideBuiltInTitleBarViews(setAlpha: true)
-
-      if !transition.isInitialLayout {
-        updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
-      }
 
       if #unavailable(macOS 10.14) {
         // Set the appearance to match the theme so the title bar matches the theme

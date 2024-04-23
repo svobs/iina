@@ -80,18 +80,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   var blackWindows: [NSWindow] = []
 
   /** The quick setting sidebar (video, audio, subtitles). */
-  lazy var quickSettingView: QuickSettingViewController = {
-    let quickSettingView = QuickSettingViewController()
-    quickSettingView.windowController = self
-    return quickSettingView
-  }()
+  let quickSettingView = QuickSettingViewController()
 
   /** The playlist and chapter sidebar. */
-  lazy var playlistView: PlaylistViewController = {
-    let playlistView = PlaylistViewController()
-    playlistView.windowController = self
-    return playlistView
-  }()
+  let playlistView = PlaylistViewController()
 
   var miniPlayer: MiniPlayerController!
 
@@ -235,7 +227,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // - Window Layout State
 
-  var pipStatus = PIPStatus.notInPIP
+  var pipStatus = PIPStatus.notInPIP {
+    didSet {
+      log.verbose("Updated pipStatus to: \(pipStatus)")
+    }
+  }
 
   var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.defaultLayout()) {
     didSet {
@@ -990,8 +986,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     defaultAlbumArtView.centerXAnchor.constraint(equalTo: defaultAlbumArtView.superview!.centerXAnchor).isActive = true
     defaultAlbumArtView.centerYAnchor.constraint(equalTo: defaultAlbumArtView.superview!.centerYAnchor).isActive = true
 
-    // init quick setting view now
-    let _ = quickSettingView
+    playlistView.windowController = self
+    quickSettingView.windowController = self
 
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
@@ -1865,12 +1861,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       setInitialWindowLayout()
     }
 
-    // Unfortunately, seems that window must be visible for mpv init, or it will crash...
-    // TODO: find way to delay until after fileLoaded. We don't know the video dimensions yet!
-    if window.isMiniaturized {
-      log.verbose("De-miniturizing Player Window")
-      window.deminiaturize(self)
-    } else {
+    if !window.isMiniaturized {
       log.verbose("Showing Player Window")
       window.setIsVisible(true)
     }
@@ -2319,10 +2310,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     guard !isAnimating, !isMagnifying, !player.info.isRestoring else { return }
     guard let window = window else { return }
 
-    animationPipeline.submitZeroDuration({ [self] in
-      log.verbose("WindowDidMove to frame: \(window.frame)")
-      let layout = currentLayout
-      if layout.isLegacyFullScreen {
+    let layout = currentLayout
+    if layout.isLegacyFullScreen {
+      animationPipeline.submitZeroDuration({ [self] in
+        log.verbose("WindowDidMove to frame: \(window.frame)")
         // We can get here if external calls from accessibility APIs change the window location.
         // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
@@ -2333,11 +2324,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
         }
-      } else {
-        player.saveState()
-        player.events.emit(.windowMoved, data: window.frame)
-      }
-    })
+      })
+    } else {
+      player.saveState()
+      player.events.emit(.windowMoved, data: window.frame)
+    }
   }
 
   // MARK: - Window delegate: Active status
@@ -2376,45 +2367,48 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowDidBecomeMain(_ notification: Notification) {
     guard let window else { return }
-    log.verbose("Window became main: \(window.savedStateName.quoted)")
+    animationPipeline.submitZeroDuration { [self] in
+      log.verbose("Window became main: \(window.savedStateName.quoted)")
 
-    PlayerCore.lastActive = player
-    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
-      NowPlayingInfoManager.updateInfo(withTitle: true)
+      PlayerCore.lastActive = player
+      if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+        NowPlayingInfoManager.updateInfo(withTitle: true)
+      }
+      AppDelegate.shared.menuController?.updatePluginMenu()
+
+      if isFullScreen && Preference.bool(for: .blackOutMonitor) {
+        blackOutOtherMonitors()
+      }
+
+      if let customTitleBar {
+        // The traffic light buttons should change to active
+        customTitleBar.leadingTitleBarView.markButtonsDirty()
+        customTitleBar.refreshTitle()
+      }
+
+      player.events.emit(.windowMainStatusChanged, data: true)
+      NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: true)
     }
-    AppDelegate.shared.menuController?.updatePluginMenu()
-
-    if isFullScreen && Preference.bool(for: .blackOutMonitor) {
-      blackOutOtherMonitors()
-    }
-
-    if let customTitleBar {
-      // The traffic light buttons should change to active
-      customTitleBar.leadingTitleBarView.markButtonsDirty()
-      customTitleBar.refreshTitle()
-    }
-
-
-    player.events.emit(.windowMainStatusChanged, data: true)
-    NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: true)
   }
 
   func windowDidResignMain(_ notification: Notification) {
     guard let window else { return }
-    log.verbose("Window is no longer main: \(window.savedStateName.quoted)")
+    animationPipeline.submitZeroDuration { [self] in
+      log.verbose("Window is no longer main: \(window.savedStateName.quoted)")
 
-    if Preference.bool(for: .blackOutMonitor) {
-      removeBlackWindows()
+      if Preference.bool(for: .blackOutMonitor) {
+        removeBlackWindows()
+      }
+
+      if let customTitleBar {
+        // The traffic light buttons should change to inactive
+        customTitleBar.leadingTitleBarView.markButtonsDirty()
+        customTitleBar.refreshTitle()
+      }
+
+      player.events.emit(.windowMainStatusChanged, data: false)
+      NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: false)
     }
-
-    if let customTitleBar {
-      // The traffic light buttons should change to inactive
-      customTitleBar.leadingTitleBarView.markButtonsDirty()
-      customTitleBar.refreshTitle()
-    }
-
-    player.events.emit(.windowMainStatusChanged, data: false)
-    NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: false)
   }
 
   func windowWillMiniaturize(_ notification: Notification) {
@@ -2425,29 +2419,32 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowDidMiniaturize(_ notification: Notification) {
-    log.verbose("Window did miniaturize")
-    isWindowMiniturized = true
-    if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
-      if #available(macOS 10.12, *) {
-        enterPIP()
+    animationPipeline.submitZeroDuration { [self] in
+      log.verbose("Window did miniaturize")
+      isWindowMiniturized = true
+      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
+        if #available(macOS 10.12, *) {
+          enterPIP()
+        }
       }
+      player.events.emit(.windowMiniaturized)
     }
-    player.events.emit(.windowMiniaturized)
   }
 
   func windowDidDeminiaturize(_ notification: Notification) {
-    log.verbose("Window did deminiaturize")
-    isWindowMiniturized = false
-    if Preference.bool(for: .pauseWhenMinimized) && isPausedDueToMiniaturization {
-      player.resume()
-      isPausedDueToMiniaturization = false
-    }
-    if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
-      if #available(macOS 10.12, *) {
+    animationPipeline.submitZeroDuration { [self] in
+      log.verbose("Window did deminiaturize")
+      isWindowMiniturized = false
+      if Preference.bool(for: .pauseWhenMinimized) && isPausedDueToMiniaturization {
+        player.resume()
+        isPausedDueToMiniaturization = false
+      }
+      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip, 
+          #available(macOS 10.12, *) {
         exitPIP()
       }
+      player.events.emit(.windowDeminiaturized)
     }
-    player.events.emit(.windowDeminiaturized)
   }
 
   // MARK: - UI: Show / Hide Fadeable Views
@@ -2573,7 +2570,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   @discardableResult
   private func hideFadeableViews() -> Bool {
-    guard pipStatus == .notInPIP && fadeableViewsAnimationState == .shown else {
+    guard pipStatus == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
       return false
     }
 
@@ -3629,9 +3626,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     window.contentView?.layer?.opacity = newValue
   }
 
-  func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil) {
+  func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
-    let windowOpacity = Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0
+    let windowOpacity: Float = windowOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0

@@ -2455,7 +2455,7 @@ class PlayerCore: NSObject {
         }
         log.verbose("Sending mpv request to cycle video track")
         mpv.queue.sync { [self] in
-          mpv.command(.cycle, args: ["video"])
+          _ = mpv.command(.cycle, args: ["video"])
         }
       } else {
         if showMiniPlayerVideo {
