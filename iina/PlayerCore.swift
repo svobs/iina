@@ -2238,7 +2238,7 @@ class PlayerCore: NSObject {
 
     // Window opacity was until now set to 0%, to conceal partial drawing. Now that it is complete, we can show it:
     DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration) { [self] in
+      windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.InitialVideoReconfigDuration) { [self] in
         windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
       })
     }
@@ -2768,17 +2768,21 @@ class PlayerCore: NSObject {
         Utility.showAlert("error_open")
       }
 
-      isStopped = true
-      windowController.close()
+      _closeWindow()
     }
   }
 
   func closeWindow() {
     DispatchQueue.main.async { [self] in
-      log.verbose("Closing window")
-      isStopped = true
-      windowController.close()
+      _closeWindow()
     }
+  }
+
+  private func _closeWindow() {
+    log.verbose("Closing window")
+    isStopped = true
+    info.currentMedia = nil
+    windowController.close()
   }
 
   func reloadThumbnails(forMedia currentMedia: MediaItem?) {

@@ -610,6 +610,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Starting restore of \(savedWindowsBackToFront.count) windows", level: .verbose)
     Preference.set(true, for: .isRestoreInProgress)
 
+    var playerWinCons: [PlayerWindowController] = []
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
       var wc: NSWindowController? = nil
@@ -645,6 +646,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .playerWindow(let id):
         let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id)
         wc = player.windowController
+        playerWinCons.append(player.windowController)
       default:
         Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
         break
@@ -660,6 +662,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Count only "important windows" (IINA startup can open other windows which are hidden, such as color picker)
     let openWindowCount = NSApp.windows.reduce(0, {count, win in (win.isImportant && win.isOpen) ? count + 1 : count})
     if openWindowCount == 0 {
+      for pwin in playerWinCons {
+        if pwin.player.info.currentMedia != nil {
+          Logger.log("Restored player window(s) are still loading - will assume success for now", level: .verbose)
+          return true
+        }
+      }
       Logger.log("Looks like none of the windows was restored successfully. Falling back to user launch preference")
       return false
     }

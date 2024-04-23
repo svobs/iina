@@ -3632,6 +3632,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
+    log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
     customWindowBorderBox.isHidden = hide
     customWindowBorderTopHighlightBox.isHidden = hide
 

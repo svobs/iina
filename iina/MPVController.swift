@@ -1539,7 +1539,6 @@ not applying FFmpeg 9599 workaround
           player.closeWindow()
         }
         player.info.isIdle = true
-        player.info.currentMedia = nil
         receivedEndFileWhileLoading = false
       }
 
