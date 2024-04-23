@@ -35,7 +35,7 @@ class PlayerWindow: NSWindow {
     playerWinController?.videoView.videoLayer.enterAsynchronousMode()
 
     useZeroDurationForNextResize = true
-    log.verbose("[setFrame] animate=\(animate.yn) frame=\(newFrame)")
+    log.verbose("[PWin.setFrame] animate=\(animate.yn) frame=\(newFrame)")
     setFrame(newFrame, display: true, animate: animate)
   }
 

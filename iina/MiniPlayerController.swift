@@ -333,6 +333,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.zeroDurationTask{ [self] in
+      windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
       // Hide OSD during animation
       windowController.hideOSD(immediately: true)
 
@@ -351,7 +352,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
       let screenID = windowController.bestScreen.screenID
       let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID).withVideoViewVisible(showVideo)
-      log.verbose("VideoView setting videoViewVisible=\(showVideo), videoHeight=\(newGeometry.videoHeight)")
+      log.verbose("VideoView setting videoViewVisible=\(showVideo.yn), videoHeight=\(newGeometry.videoHeight)")
       windowController.applyMusicModeGeo(newGeometry)
     }))
 
@@ -366,6 +367,10 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       if !showVideo {
         player.setVideoTrackEnabled(false)
       }
+    })
+
+    tasks.append(IINAAnimation.zeroDurationTask{ [self] in
+      windowController.isAnimatingLayoutTransition = false
     })
 
     windowController.animationPipeline.submit(tasks)

@@ -51,6 +51,9 @@ extension PlayerWindowController {
       /// `inputGeometry` may contain the most up-to-date `windowFrame` for `windowedModeGeo`, which `windowedModeGeo` does not have.
       /// Make sure to save it for later use:
       windowedModeGeo = transition.inputGeometry
+    } else if !transition.outputLayout.isMusicMode && transition.inputLayout.isMusicMode {
+      // Ditto with musicMode
+      musicModeGeo = musicModeGeo.clone(windowFrame: transition.inputGeometry.windowFrame, screenID: transition.inputGeometry.screenID)
     }
 
     /// Set this here because we are setting `currentLayout`
@@ -60,6 +63,7 @@ extension PlayerWindowController {
     case .fullScreen, .fullScreenInteractive:
       break  // Not applicable
     case .musicMode:
+      // TODO: extend musicModeGeo from PWGeometry and then use outputGeo instead of musicModeGeo reference
       let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame)
       musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, screenID: screenID,
                                         videoAspect: transition.outputGeometry.videoAspect)
