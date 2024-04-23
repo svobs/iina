@@ -619,7 +619,6 @@ class PlayerCore: NSObject {
       saveState()            // Save state to IINA prefs (if enabled)
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
-      info.currentMedia = nil
       info.videoPosition = nil
       info.videoDuration = nil
       info.playlist = []
