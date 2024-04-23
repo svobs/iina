@@ -1428,12 +1428,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// Then this method assumes that the macOS daemon `sharedfilelistd` cleared the list and it populates the list of recent
   /// document URLs with the list stored in IINA's settings.
   private func restoreRecentDocuments() {
+    // try to init in main thread to avoid sporadic crash
+    let recentDocumentsURLs = NSDocumentController.shared.recentDocumentURLs
+
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     HistoryController.shared.queue.async { [self] in
 
       guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
-            NSDocumentController.shared.recentDocumentURLs.isEmpty,
+            recentDocumentsURLs.isEmpty,
             let recentDocuments = Preference.array(for: .recentDocuments),
             !recentDocuments.isEmpty else { return }
 
