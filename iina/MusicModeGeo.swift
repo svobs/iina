@@ -94,7 +94,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     self.isVideoVisible = isVideoVisible
     self.videoAspect = videoAspect
     assert(isPlaylistVisible ? (self.playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight) : (self.playlistHeight == 0),
-           "Playlist height invalid: isPlaylistVisible==\(isPlaylistVisible), playlistHeight==\(self.playlistHeight))")
+           "Playlist height invalid: isPlaylistVisible==\(isPlaylistVisible.yn) but playlistHeight==\(self.playlistHeight) < min (\(Constants.Distance.MusicMode.minPlaylistHeight))")
   }
 
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, videoAspect: CGFloat? = nil,

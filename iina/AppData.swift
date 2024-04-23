@@ -222,7 +222,7 @@ struct Constants {
     // TODO: move this outside Distance
     struct MusicMode {
       static let oscHeight: CGFloat = 72
-      static let minWindowWidth: CGFloat = AppData.minVideoSize.width
+      static let minWindowWidth: CGFloat = Constants.WindowedMode.minViewportSize.width
       static let defaultWindowWidth: CGFloat = minWindowWidth
       // Hide playlist if its height is too small to display at least 3 items:
       static let minPlaylistHeight: CGFloat = 138

@@ -377,20 +377,21 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     resetScrollingLabels()
 
+    /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
+    /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
+    /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
+    var requestedSize = requestedSize
     if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
-      // Responding with the current size seems to work much better with certain window management tools
-      // (e.g. BetterTouchTool's window snapping) than trying to respond with the min size,
-      // which seems to result in the window manager retrying with different sizes, which results in flickering.
-      log.verbose("WindowWillResize: requestedSize smaller than min \(Constants.Distance.MusicMode.minWindowWidth); returning existing size")
-      return window.frame.size
+      log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
+      requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
     } else if requestedSize.width > MiniPlayerController.maxWindowWidth {
-      log.verbose("WindowWillResize: requestedSize larger than max \(MiniPlayerController.maxWindowWidth); returning existing size")
-      return window.frame.size
+      log.verbose("WindowWillResize: constraining to max width \(MiniPlayerController.maxWindowWidth)")
+      requestedSize = NSSize(width: MiniPlayerController.maxWindowWidth, height: requestedSize.height)
     }
 
     let currentGeo = windowController.musicModeGeo
     let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-    var newGeometry = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID).refit()
+    var newGeometry = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID)
     IINAAnimation.disableAnimation {
       /// This will set `windowController.musicModeGeo` after applying any necessary constraints
       newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
