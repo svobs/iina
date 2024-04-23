@@ -432,7 +432,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     switch keyPath {
     case PK.enableAdvancedSettings.rawValue:
       animationPipeline.submit(IINAAnimation.Task({ [self] in
-        updateCustomBorderBoxAndWindowOpacity(using: currentLayout)
+        updateCustomBorderBoxAndWindowOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
       }))
@@ -440,7 +440,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       applyThemeMaterial()
     case PK.playerWindowOpacity.rawValue:
       animationPipeline.submit(IINAAnimation.Task({ [self] in
-        updateCustomBorderBoxAndWindowOpacity(using: currentLayout)
+        updateCustomBorderBoxAndWindowOpacity()
       }))
     case PK.showRemainingTime.rawValue:
       if let newValue = change[.newKey] as? Bool {
@@ -3629,7 +3629,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     window.contentView?.layer?.opacity = newValue
   }
 
-  func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState) {
+  func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil) {
+    let layout = layout ?? currentLayout
     let windowOpacity = Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window

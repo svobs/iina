@@ -2245,6 +2245,13 @@ class PlayerCore: NSObject {
       }
       info.priorState = nil
       info.isRestoring = false
+
+      // Window opacity was until now set to 0%, to conceal partial drawing. Now that it is complete, we can show it:
+      DispatchQueue.main.async { [self] in
+        windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.InitialVideoReconfigDuration) { [self] in
+          windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
+        })
+      }
       log.debug("Done with restore")
       return
     }
