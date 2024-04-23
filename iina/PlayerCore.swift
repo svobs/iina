@@ -2226,6 +2226,9 @@ class PlayerCore: NSObject {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")
       return
     }
+    /// Need to distinguish between `completelyLoaded` and `videoGeometryApplied`:
+    /// - `completelyLoaded` means that `fileIsCompletelyDoneLoading` will not get called again, but `applyVidGeo` has to finish up
+    /// - `videoGeometryApplied` means that file is completely done loading for `applyVidGeo` too
     currentMedia.loadStatus = .completelyLoaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
@@ -2233,9 +2236,15 @@ class PlayerCore: NSObject {
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
     windowController.applyVidGeo(newVidGeo)
 
-    currentMedia.loadStatus = .videoGeometryApplied
+    // Window opacity was until now set to 0%, to conceal partial drawing. Now that it is complete, we can show it:
+    DispatchQueue.main.async { [self] in
+      windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration) { [self] in
+        windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
+      })
+    }
 
-    // Update art & aspect *before* switching to/from music mode for more pleasant animation (but after updating state booleans)
+    /// Once this is set, `info.justOpenedFile` will return `false`
+    currentMedia.loadStatus = .videoGeometryApplied
 
     if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {
@@ -2246,12 +2255,6 @@ class PlayerCore: NSObject {
       info.priorState = nil
       info.isRestoring = false
 
-      // Window opacity was until now set to 0%, to conceal partial drawing. Now that it is complete, we can show it:
-      DispatchQueue.main.async { [self] in
-        windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.InitialVideoReconfigDuration) { [self] in
-          windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
-        })
-      }
       log.debug("Done with restore")
       return
     }

@@ -121,9 +121,8 @@ extension PlayerWindowController {
     let initialTransition = buildLayoutTransition(named: transitionName,
                                                   from: currentLayout, to: initialLayoutSpec, isInitialLayout: true, geo)
 
-    animationPipeline.submitZeroDuration { [self] in
-      setWindowOpacity(to: 0.0)
-    }
+    setWindowOpacity(to: 0.0)
+
 
     if !isRestoringFromPrevLaunch {
       if initialLayoutSpec.mode == .windowed {
