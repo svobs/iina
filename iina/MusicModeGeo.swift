@@ -198,16 +198,16 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return fittedGeo
   }
 
-  func scaleVideo(to desiredSize: NSSize? = nil,
+  func scaleViewport(to desiredSize: NSSize? = nil,
                      screenID: String? = nil) -> MusicModeGeometry? {
+    return scaleVideo(to: desiredSize?.width, screenID: screenID)
+  }
 
-    guard isVideoVisible else {
-      Logger.log("Cannot scale video of MusicMode: isVideoVisible=\(isVideoVisible.yesno)", level: .error)
-      return nil
-    }
+  func scaleVideo(to desiredWidth: CGFloat? = nil,
+                  screenID: String? = nil) -> MusicModeGeometry? {
 
-    let newVideoSize = desiredSize ?? videoSize!
-    Logger.log("Scaling MusicMode video to desiredSize: \(newVideoSize)", level: .verbose)
+    var newVideoWidth = desiredWidth ?? windowFrame.width
+    Logger.log("Scaling MusicMode video to desiredWidth: \(newVideoWidth)", level: .verbose)
 
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .keepInVisibleScreen)!
@@ -216,19 +216,24 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let windowHeight = min(containerFrame.height, windowFrame.height)
 
     // Constrain desired width within min and max allowed, then recalculate height from new value
-    var newVideoWidth = newVideoSize.width
     newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
     newVideoWidth = min(newVideoWidth, MiniPlayerController.maxWindowWidth)
     newVideoWidth = min(newVideoWidth, containerFrame.width)
 
-    var newVideoHeight = newVideoWidth / videoAspect
+    var newVideoHeight: CGFloat = 0
+    if isVideoVisible {
+      newVideoHeight = newVideoWidth / videoAspect
 
-    let minPlaylistHeight: CGFloat = isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
-    let minBottomBarHeight: CGFloat = Constants.Distance.MusicMode.oscHeight + minPlaylistHeight
-    let maxVideoHeight = windowHeight - minBottomBarHeight
-    if newVideoHeight > maxVideoHeight {
-      newVideoHeight = maxVideoHeight
-      newVideoWidth = newVideoHeight * videoAspect
+      if isPlaylistVisible {
+        // If playlist is visible, keep the window height fixed.
+        // The video will only be able to expand until the playlist is at its min height
+        let minBottomBarHeight: CGFloat = Constants.Distance.MusicMode.oscHeight + Constants.Distance.MusicMode.minPlaylistHeight
+        let maxVideoHeight = windowHeight - minBottomBarHeight
+        if newVideoHeight > maxVideoHeight {
+          newVideoHeight = maxVideoHeight
+          newVideoWidth = newVideoHeight * videoAspect
+        }
+      }
     }
 
     var newOriginX = windowFrame.origin.x

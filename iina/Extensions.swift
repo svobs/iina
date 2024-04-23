@@ -64,6 +64,10 @@ extension CGPoint {
 
 extension NSSize {
 
+  var area: CGFloat {
+    return width * height
+  }
+
   var aspect: CGFloat {
     get {
       if width == 0 || height == 0 {

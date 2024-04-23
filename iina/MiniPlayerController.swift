@@ -373,31 +373,51 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Window size & layout
 
-  /// `windowWillResize`, but specfically applied to window when in music mode
-  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
+  /// `windowWillResize`, but specfically applied to window while in music mode
+  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize, isLiveResizingWidth: Bool) -> NSSize {
     resetScrollingLabels()
-
-    /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
-    /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
-    /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
-    var requestedSize = requestedSize
-    if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
-      log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
-      requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
-    } else if requestedSize.width > MiniPlayerController.maxWindowWidth {
-      log.verbose("WindowWillResize: constraining to max width \(MiniPlayerController.maxWindowWidth)")
-      requestedSize = NSSize(width: MiniPlayerController.maxWindowWidth, height: requestedSize.height)
-    }
-
     let currentGeo = windowController.musicModeGeo
-    let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
-    var newGeometry = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID)
-    IINAAnimation.disableAnimation {
-      /// This will set `windowController.musicModeGeo` after applying any necessary constraints
-      newGeometry = windowController.applyMusicModeGeo(newGeometry, setFrame: false, animate: false, updateCache: false)
+    var newGeo: MusicModeGeometry
+
+    if window.inLiveResize, currentGeo.isVideoVisible && !currentGeo.isPlaylistVisible {
+      // Special case when scaling only video: need to treat similar to windowed mode
+      let nonViewportAreaSize = currentGeo.windowFrame.size.subtract(currentGeo.viewportSize!)
+      let requestedViewportSize = requestedSize.subtract(nonViewportAreaSize)
+
+      if isLiveResizingWidth {
+        // Option A: resize height based on requested width
+        let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
+                                              height: round(requestedViewportSize.width / currentGeo.videoAspect))
+        newGeo = currentGeo.scaleViewport(to: resizedWidthViewportSize)!
+      } else {
+        // Option B: resize width based on requested height
+        let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.videoAspect),
+                                               height: requestedViewportSize.height)
+        newGeo = currentGeo.scaleViewport(to: resizedHeightViewportSize)!
+      }
+
+    } else {  // general case
+      /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
+      /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
+      /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
+      var requestedSize = requestedSize
+      if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
+        log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
+        requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
+      } else if requestedSize.width > MiniPlayerController.maxWindowWidth {
+        log.verbose("WindowWillResize: constraining to max width \(MiniPlayerController.maxWindowWidth)")
+        requestedSize = NSSize(width: MiniPlayerController.maxWindowWidth, height: requestedSize.height)
+      }
+
+      let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)
+      newGeo = currentGeo.clone(windowFrame: requestedWindowFrame, screenID: windowController.bestScreen.screenID)
     }
 
-    return newGeometry.windowFrame.size
+    IINAAnimation.disableAnimation {
+      /// This call is needed to update any necessary constraints
+      newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, animate: false, updateCache: false)
+    }
+    return newGeo.windowFrame.size
   }
 
   func windowDidResize() {

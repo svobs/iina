@@ -726,6 +726,7 @@ extension PlayerWindowController {
 
     if transition.isEnteringMusicMode {
       miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: musicModeGeo.isVideoVisible)
+      miniPlayer.resetScrollingLabels()
     }
 
     // Update heights to their final values:
@@ -1055,8 +1056,10 @@ extension PlayerWindowController {
 
     let actualVideoSize = videoView.frame.size
     let expectedVideoSize = transition.outputGeometry.videoSize
-    if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
-      log.error("[\(transition.name)] ❌ VideoViewSize sanity check failed! ActualSize=\(actualVideoSize), aspect:\(actualVideoSize.mpvAspect); Expected=\(expectedVideoSize), aspect:\(expectedVideoSize.mpvAspect)")
+    if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
+      if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
+        log.error("[\(transition.name)] ❌ VideoViewSize sanity check failed! ActualSize=\(actualVideoSize), aspect:\(actualVideoSize.mpvAspect); Expected=\(expectedVideoSize), aspect:\(expectedVideoSize.mpvAspect)")
+      }
     }
     let actualWindowSize = window.frame.size
     let expectedWindowSize = transition.outputGeometry.windowFrame.size

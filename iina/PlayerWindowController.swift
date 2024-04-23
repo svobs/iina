@@ -2121,9 +2121,32 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       return window.frame.size
     }
 
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
+    if lockViewportToVideoSize && window.inLiveResize {
+      /// Notes on the trickiness of live window resize:
+      /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
+      /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
+      /// or right sides. Similarly, "B" works with left or right sides, but will not work with top or bottom.
+      /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if yes, use "B";
+      /// and if no, use "A".
+      /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either height or width will change
+      /// in small increments (depending on how fast the user moves the cursor) but this will result in a different choice between "A" or "B" schemes
+      /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
+      /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
+      if isLiveResizingWidth == nil {
+        if window.frame.height != requestedSize.height {
+          isLiveResizingWidth = false
+        } else if window.frame.width != requestedSize.width {
+          isLiveResizingWidth = true
+        }
+      }
+      log.verbose("WinWillResize: PREV:\(window.frame.size), REQ:\(requestedSize) choseWidth:\(isLiveResizingWidth?.yesno ?? "nil")")
+    }
+
+    let isLiveResizingWidth = isLiveResizingWidth ?? true
     switch currentLayout.mode {
     case .windowed, .windowedInteractive:
-      let newGeometry = resizeWindow(window, to: requestedSize)
+      let newGeometry = resizeWindow(window, to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize, isLiveResizingWidth: isLiveResizingWidth)
       IINAAnimation.disableAnimation { [self] in
         videoView.apply(newGeometry)
       }
@@ -2142,7 +2165,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
 
     case .musicMode:
-      return miniPlayer.resizeWindow(window, to: requestedSize)
+      return miniPlayer.resizeWindow(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
     }
   }
 

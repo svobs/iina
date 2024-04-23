@@ -121,32 +121,20 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     if currentLayout.isMusicMode {
       windowController.miniPlayer.loadIfNeeded()
 
-      let originalGeometry = windowController.musicModeGeo.toPWGeometry()
-
-      if windowController.miniPlayer.isPlaylistVisible {
-        guard windowController.miniPlayer.isVideoVisible else {
-          windowController.log.verbose("Window is in music mode but video is not visible; ignoring pinch gesture")
-          return nil
-        }
-        let newVideoSize = windowController.musicModeGeo.videoSize!.multiplyThenRound(scale)
-        var newMusicModeGeometry = windowController.musicModeGeo.scaleVideo(to: newVideoSize)!
-        windowController.log.verbose("Scaling pinched video in music mode, result: \(newMusicModeGeometry)")
-
-        IINAAnimation.disableAnimation{
-          /// Important: use `animate: false` so that window controller callbacks are not triggered
-          newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, animate: false, updateCache: false)
-        }
-        // Kind of clunky to convert to PWGeometry, just to fit the function signature, then convert it back. But...could be worse.
-        return newMusicModeGeometry.toPWGeometry()
-      } else {
-        // Scaling music mode without playlist (only fixed-height controller)
-        let newViewportSize = originalGeometry.viewportSize.multiplyThenRound(scale)
-
-        // TODO: modify this to keep either leading or trailing edge fixed (as above)
-        let newGeometry = originalGeometry.scaleViewport(to: newViewportSize, fitOption: .keepInVisibleScreen, mode: .musicMode)
-        windowController.applyWindowResize(usingGeometry: newGeometry)
-        return newGeometry
+      guard windowController.miniPlayer.isVideoVisible || windowController.miniPlayer.isPlaylistVisible else {
+        windowController.log.verbose("Window is in music mode but neither video nor playlist is visible. Ignoring pinch gesture")
+        return nil
       }
+      let newWidth = round(windowController.musicModeGeo.windowFrame.width * scale)
+      var newMusicModeGeometry = windowController.musicModeGeo.scaleVideo(to: newWidth)!
+      windowController.log.verbose("Scaling pinched video in music mode, result: \(newMusicModeGeometry)")
+
+      IINAAnimation.disableAnimation{
+        /// Important: use `animate: false` so that window controller callbacks are not triggered
+        newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, animate: false, updateCache: false)
+      }
+      // Kind of clunky to convert to PWGeometry, just to fit the function signature, then convert it back. But...could be worse.
+      return newMusicModeGeometry.toPWGeometry()
     }
     // Else: not music mode
 
