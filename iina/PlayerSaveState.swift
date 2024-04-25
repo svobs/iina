@@ -456,6 +456,8 @@ struct PlayerSaveState {
       return
     }
 
+    let mediaItem = MediaItem(url: url)
+
     if Logger.isEnabled(.verbose) {
       let urlPath: String
       if #available(macOS 13.0, *) {
@@ -566,6 +568,14 @@ struct PlayerSaveState {
                                         userRotation: int(for: .videoRotation),
                                         selectedCropLabel: string(for: .cropLabel),
                                         scale: double(for: .windowScale))
+
+    // IINA restore supercedes mpv watch-later.
+    // Need to delete the watch-later file before mpv loads it or else things get very buggy
+    let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mediaItem.mpvMD5).path
+    if FileManager.default.fileExists(atPath: watchLaterFileURL) {
+      player.log.debug("Found mpv watch-later file. Deleting it because we are using IINA restore...")
+      try? FileManager.default.removeItem(atPath: watchLaterFileURL)
+    }
 
     // Open the window!
     player.openURLs([url], shouldAutoLoad: false)
