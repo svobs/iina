@@ -741,7 +741,7 @@ struct PlayerSaveState {
 }  /// end `struct PlayerSaveState`
 
 struct ScreenMeta {
-  static private let expectedCSVTokenCount = 14
+  static private let expectedCSVTokenCount = 15
   static private let csvVersion: Int = 2
 
   let displayID: UInt32

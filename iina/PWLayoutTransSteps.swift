@@ -1060,13 +1060,13 @@ extension PlayerWindowController {
     let expectedVideoSize = transition.outputGeometry.videoSize
     if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
       if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
-        log.error("[\(transition.name)] ❌ VideoViewSize sanity check failed! ActualSize=\(actualVideoSize), aspect:\(actualVideoSize.mpvAspect); Expected=\(expectedVideoSize), aspect:\(expectedVideoSize.mpvAspect)")
+        log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
       }
     }
     let actualWindowSize = window.frame.size
     let expectedWindowSize = transition.outputGeometry.windowFrame.size
     if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
-      log.error("[\(transition.name)] ❌ WindowSize sanity check failed! Actual=\(actualWindowSize); Expected=\(expectedWindowSize)")
+      log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
     }
 
     player.saveState()

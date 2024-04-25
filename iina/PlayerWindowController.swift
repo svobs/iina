@@ -2102,6 +2102,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
+    guard !isAnimatingLayoutTransition else { return requestedSize }
+    
     let currentLayout = currentLayout
     log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingTx=\(isAnimatingLayoutTransition.yn) denyNext=\(denyNextWindowResize.yn)")
     videoView.videoLayer.enterAsynchronousMode()
