@@ -1139,13 +1139,15 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /// to this window. Will do nothing if it's already there.
   func addVideoViewToWindow(_ geometry: PWGeometry) {
     guard let window else { return }
-    guard !viewportView.subviews.contains(videoView) else { return }
-    player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
-    /// Make sure `defaultAlbumArtView` stays above `videoView`
-    viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
-    videoView.videoLayer.autoresizingMask = CAAutoresizingMask(rawValue: 0)
-    // Screen may have changed. Refresh contentsScale
-    videoView.refreshContentsScale()
+    videoView.$isUninited.withLock() { isUninited in
+      guard !viewportView.subviews.contains(videoView) else { return }
+      player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
+      /// Make sure `defaultAlbumArtView` stays above `videoView`
+      viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
+      videoView.videoLayer.autoresizingMask = CAAutoresizingMask(rawValue: 0)
+      // Screen may have changed. Refresh contentsScale
+      videoView.refreshContentsScale()
+    }
     // add constraints
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !player.info.isRestoring {  // this can mess up music mode restore
@@ -4104,16 +4106,18 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     pipStatus = .inPIP
     showFadeableViews()
 
-    pipVideo = NSViewController()
-    // Remove these. They screw up PIP drag
-    videoView.apply(nil)
-    pipVideo.view = videoView
-    videoView.videoLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-    pip.playing = player.info.isPlaying
-    pip.title = window.title
-
-    pip.presentAsPicture(inPicture: pipVideo)
-    pipOverlayView.isHidden = false
+    videoView.$isUninited.withLock() { isUninited in
+      pipVideo = NSViewController()
+      // Remove these. They screw up PIP drag
+      videoView.apply(nil)
+      pipVideo.view = videoView
+      videoView.videoLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+      pip.playing = player.info.isPlaying
+      pip.title = window.title
+      
+      pip.presentAsPicture(inPicture: pipVideo)
+      pipOverlayView.isHidden = false
+    }
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {
       let pipBehavior = usePipBehavior ?? Preference.enum(for: .windowBehaviorWhenPip) as Preference.WindowBehaviorWhenPip
