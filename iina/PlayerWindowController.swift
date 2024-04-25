@@ -4085,8 +4085,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 extension PlayerWindowController: PIPViewControllerDelegate {
 
   func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil) {
-    guard pipStatus != .inPIP else { return }
+    dispatchPrecondition(condition: .onQueue(.main))
+
+    // Must not try to enter PiP if already in PiP - will crash!
+    guard pipStatus == .notInPIP else { return }
+    pipStatus = .intermediate
+
     exitInteractiveMode(then: { [self] in
+      log.verbose("About to enter PIP")
       doPIPEntry(usePipBehavior: usePipBehavior)
     })
   }
