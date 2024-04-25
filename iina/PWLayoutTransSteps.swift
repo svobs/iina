@@ -1403,9 +1403,12 @@ extension PlayerWindowController {
   // "Native" == "titled"
   private func setWindowStyleToNative() {
     guard let window = window else { return }
-    log.verbose("Inserting window styleMask.titled")
-    window.styleMask.insert(.titled)
-    window.styleMask.remove(.borderless)
+
+    if !window.styleMask.contains(.titled) {
+      log.verbose("Inserting window styleMask.titled")
+      window.styleMask.insert(.titled)
+      window.styleMask.remove(.borderless)
+    }
 
     if let customTitleBar {
       customTitleBar.removeAndCleanUp()

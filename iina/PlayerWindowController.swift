@@ -2103,7 +2103,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
     guard !isAnimatingLayoutTransition else { return requestedSize }
-    
+
     let currentLayout = currentLayout
     log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingTx=\(isAnimatingLayoutTransition.yn) denyNext=\(denyNextWindowResize.yn)")
     videoView.videoLayer.enterAsynchronousMode()
@@ -4180,7 +4180,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     // Bring the window to the front and deminiaturize it
     NSApp.activate(ignoringOtherApps: true)
-    window.deminiaturize(pip)
+    if isWindowMiniturized {
+      window.deminiaturize(pip)
+    }
   }
 
   func pipWillClose(_ pip: PIPViewController) {
