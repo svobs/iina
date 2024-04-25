@@ -1213,7 +1213,10 @@ extension NSScreen {
   // Returns nil on failure (not sure if success is guaranteed)
   var nativeResolution: CGSize? {
     // if there's a native resolution found in this method, that's more accurate than above
-    let displayModes = CGDisplayCopyAllDisplayModes(displayId, nil) as! [CGDisplayMode]
+    guard let displayModes = CGDisplayCopyAllDisplayModes(displayId, nil) as? [CGDisplayMode] else {
+      Logger.log("Failed to get CGDisplayModes for displayID \(displayId)! Returning nil", level: .warning)
+      return nil
+    }
     for mode in displayModes {
       let isNative = mode.ioFlags & UInt32(kDisplayModeNativeFlag) > 0
       if isNative {
@@ -1244,8 +1247,7 @@ extension NSScreen {
     if #available(macOS 10.15, *) {
       let maxPossibleEDR = maximumPotentialExtendedDynamicRangeColorComponentValue
       let canEnableEDR = maxPossibleEDR > 1.0
-      let nativeRes = nativeResolution
-      let nativeResStr = nativeRes == nil ? "<err>" : "\(nativeRes!)"
+      let nativeResStr = nativeResolution?.description ?? "<err>"
       // Screen frame coordinates have their origin at the lower left of the primary display.
       // So any display to the left of primary will be in negative X, and any below primary will have negative Y.
       // `visibleFrame` is what we most care about.
