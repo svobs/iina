@@ -2168,8 +2168,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
   /// Not currently used!
-//  func windowDidResize(_ notification: Notification) {
-//  }
+  func windowDidResize(_ notification: Notification) {
+    // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
+    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
+    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
+
+    applyWindowResize()
+  }
 
   // MARK: - Window Delegate: window move, screen changes
 
