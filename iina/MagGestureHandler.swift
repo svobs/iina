@@ -17,16 +17,17 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   unowned var windowController: PlayerWindowController! = nil
 
   @objc func handleMagnifyGesture(recognizer: NSMagnificationGestureRecognizer) {
-    let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
-    guard pinchAction != .none else { return }
     guard !windowController.isInInteractiveMode else { return }
     guard !(windowController.isInMiniPlayer && !windowController.miniPlayer.isVideoVisible) else { return }
+    let pinchAction: Preference.PinchAction = Preference.enum(for: .pinchAction)
+    guard pinchAction != .none else { return }
 
     switch pinchAction {
     case .none:
       return
     case .fullScreen:
       // enter/exit fullscreen
+      guard !windowController.isAnimatingLayoutTransition else { return }
       if recognizer.state == .began {
         let isEnlarge = recognizer.magnification > 0
         if isEnlarge != windowController.isFullScreen {
@@ -37,6 +38,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     case .windowSize:
       changeWindowSize(recognizer: recognizer)
     case .windowSizeOrFullScreen:
+      guard !windowController.isAnimatingLayoutTransition else { return }
       guard let window = windowController.window else { return }
 
       // Check for full screen toggle conditions first
@@ -111,6 +113,10 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   @discardableResult
   private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> PWGeometry? {
+    /// For best experience for the user, do not check `isAnimatingLayoutTransition` at state `began` (i.e., allow it to start keeping track
+    /// of pinch), but do not allow this method to execute (i.e. do not respond) until after layout transitions are complete.
+    guard !windowController.isAnimatingLayoutTransition else { return nil }
+
     // avoid zero and negative numbers because they will cause problems
     let scale = max(0.0001, magnification + 1.0)
     windowController.log.verbose("Scaling pinched video, target scale: \(scale)")
