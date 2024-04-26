@@ -1134,9 +1134,11 @@ extension NSScreen {
     return nil
   }
 
+  /// Apple's documentation says to use the origin (lower-left corner) to determine which screen the rect belongs to.
+  /// But this doesn't seem intuitive because the window's title bar is traditionally the most important part of the window,
+  /// and that is at the top of the rect. Let's use the upper-left corner instead.
   static func getOwnerScreenID(forViewRect viewRect: NSRect) -> String? {
-    // Use origin of view to make the determination. May wish to try a different heuristic in the future.
-    return getOwnerScreenID(forPoint: viewRect.origin)
+    return getOwnerScreenID(forPoint: NSPoint(x: viewRect.origin.x, y: viewRect.maxY))
   }
 
   static func getOwnerOrDefaultScreenID(forViewRect viewRect: NSRect) -> String {
