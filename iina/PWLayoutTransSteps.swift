@@ -799,16 +799,17 @@ extension PlayerWindowController {
             /// No animation after this
             newGeo = transition.outputGeometry
           } else if transition.outputGeometry.hasTopPaddingForCameraHousing {
-            /// Entering legacy FS on a screen with camera housing.
+            /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
             /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
             /// (will expand window to cover `cameraHousingHeight` in next animation)
             newGeo = transition.outputGeometry.clone(windowFrame: screen.frameWithoutCameraHousing, screenID: screen.screenID, topMarginHeight: 0)
           } else {
-            /// Set window size to `visibleFrame` for now. This excludes menu bar which needs a separate animation to hide.
-            /// Later, when menu bar is hidden, a `NSApplicationDidChangeScreenParametersNotification` will be sent, which will
-            /// trigger the window to resize again and cover the whole screen.
-            newGeo = transition.outputGeometry.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID,
-                                                     topMarginHeight: transition.outputGeometry.topMarginHeight)
+            /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
+            /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
+            let cameraHeight = screen.cameraHousingHeight ?? 0
+            let geo = transition.outputGeometry
+            let margins = geo.viewportMargins.addingTo(top: -cameraHeight)
+            newGeo = geo.clone(windowFrame: geo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins)
           }
         } else {
           /// Either already in legacy FS, or entering legacy FS. Apply final geometry.

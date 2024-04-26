@@ -349,7 +349,7 @@ extension PlayerWindowController {
     })
 
     // Extra task when entering or exiting music mode: move & resize video frame
-    if transition.isTogglingMusicMode && !transition.isInitialLayout && !transition.isTogglingFullScreen {
+    if transition.isTogglingMusicMode && !transition.isInitialLayout {
       transition.animationTasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: .easeInEaseOut, { [self] in
         log.verbose("[\(transition.name)] Moving & resizing window")
 

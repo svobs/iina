@@ -235,6 +235,14 @@ extension NSRect {
     return NSRect(x: origin.x, y: origin.y, width: width * multiplier, height: height * multiplier)
   }
 
+  func addingTo( top: CGFloat = 0,  trailing: CGFloat = 0, bottom: CGFloat = 0,  leading: CGFloat = 0) -> NSRect {
+    return NSRect(x: origin.x - leading, y: origin.y - bottom, width: width + leading + trailing, height: height + top + bottom)
+  }
+
+  func subtractingFrom( top: CGFloat = 0,  trailing: CGFloat = 0, bottom: CGFloat = 0,  leading: CGFloat = 0) -> NSRect {
+    return addingTo(top: -top, trailing: -trailing, bottom: -bottom, leading: -leading)
+  }
+
   func centeredResize(to newSize: NSSize) -> NSRect {
     var newX = origin.x - (newSize.width - size.width) / 2
     var newY = origin.y - (newSize.height - size.height) / 2

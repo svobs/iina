@@ -27,6 +27,25 @@ struct MarginQuad: Equatable, CustomStringConvertible {
     return "(↑:\(top.strMin) →:\(trailing.strMin) ↓:\(bottom.strMin) ←:\(leading.strMin))"
   }
 
+  func clone(top: CGFloat? = nil, trailing: CGFloat? = nil,
+             bottom: CGFloat? = nil, leading: CGFloat? = nil) -> MarginQuad {
+    return MarginQuad(top: top ?? self.top,
+                      trailing: trailing ?? self.trailing,
+                      bottom: bottom ?? self.bottom,
+                      leading: leading ?? self.leading)
+  }
+
+  func addingTo(top: CGFloat = 0, trailing: CGFloat = 0,  bottom: CGFloat = 0,  leading: CGFloat = 0) -> MarginQuad {
+    return MarginQuad(top: self.top + top,
+                      trailing: self.trailing + trailing,
+                      bottom: self.bottom + bottom,
+                      leading: self.leading + leading)
+  }
+
+  func subtractingFrom( top: CGFloat = 0,  trailing: CGFloat = 0, bottom: CGFloat = 0,  leading: CGFloat = 0) -> MarginQuad {
+    return addingTo(top: -top, trailing: -trailing, bottom: -bottom, leading: -leading)
+  }
+
   static let zero = MarginQuad(top: 0, trailing: 0, bottom: 0, leading: 0)
 }
 
@@ -470,7 +489,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     }
   }
 
-  private static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
+   static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
                                        minViewportMargins minMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
     if viewportSize.width == 0 || viewportSize.height == 0 {
       return NSSize.zero
