@@ -108,7 +108,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
-  var isAnimatingLayoutTransition: Bool = true {
+  var isAnimatingLayoutTransition: Bool = false {
     didSet {
       log.verbose("Updated isAnimatingLayoutTransition := \(isAnimatingLayoutTransition.yesno)")
     }
@@ -1851,7 +1851,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     addVideoViewToWindow(windowedModeGeo)
 
     /// `isOpen==true` if opening a new file in an already open window
-    if isOpen {
+    if isOpen, !player.info.isRestoring {
       /// `windowFrame` may be slightly off; update it
       if currentLayout.mode == .windowed {
         windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: windowedModeGeo.videoAspect)

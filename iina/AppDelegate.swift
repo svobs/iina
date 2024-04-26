@@ -516,7 +516,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let savedStateName = window.savedStateName
     guard !savedStateName.isEmpty else { return }
 
-    Logger.log("Window did unminimize; removing from minimized windows list: \(savedStateName.quoted)")
+    Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
     AppDelegate.windowsMinimized.remove(savedStateName)
     DispatchQueue.main.async { [self] in
       guard !isTerminating else {
