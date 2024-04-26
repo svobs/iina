@@ -370,15 +370,6 @@ extension PlayerWindowController {
         chosenGeo = currentGeo.scaleViewport(to: resizedHeightViewportSize)
       }
     } else {
-      if !window.inLiveResize {  // Only applies to system requests to resize (not user resize)
-        let minWindowSize = currentGeo.minWindowSize(mode: currentLayout.mode)
-        if (requestedSize.width < minWindowSize.width) || (requestedSize.height < minWindowSize.height) {
-          // Sending the current size seems to work much better with accessibilty requests
-          // than trying to change to the min size
-          log.verbose("WinWillResize: requested smaller than min (\(minWindowSize.width) x \(minWindowSize.height)); returning existing \(currentGeo.windowFrame.size)")
-          return currentGeo
-        }
-      }
       /// If `!inLiveResize`: resize request is not coming from the user. Could be BetterTouchTool, Retangle, or some window manager, or the OS.
       /// These tools seem to expect that both dimensions of the returned size are less than the requested dimensions, so check for this.
       /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refit()` below will constrain as needed.

@@ -1157,15 +1157,15 @@ class PlayerCore: NSObject {
     return videoScale
   }
 
-  func setVideoRotate(_ degree: Int) {
+  func setVideoRotate(_ userRotation: Int) {
     mpv.queue.async { [self] in
-      guard AppData.rotations.firstIndex(of: degree)! >= 0 else {
-        Logger.log("Invalid value for videoRotate, ignoring: \(degree)", level: .error, subsystem: subsystem)
+      guard AppData.rotations.firstIndex(of: userRotation)! >= 0 else {
+        log.error("Invalid value for videoRotate, ignoring: \(userRotation)")
         return
       }
 
-      Logger.log("Setting videoRotate to: \(degree)°", level: .verbose, subsystem: subsystem)
-      mpv.setInt(MPVOption.Video.videoRotate, degree)
+      log.verbose("Setting videoRotate to: \(userRotation)°")
+      mpv.setInt(MPVOption.Video.videoRotate, userRotation)
     }
   }
 
