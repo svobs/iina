@@ -258,9 +258,9 @@ extension PlayerWindowController {
     // - Determine durations
 
     var startingAnimationDuration = IINAAnimation.DefaultDuration
-    if transition.isTogglingFullScreen {
+    if transition.isEnteringFullScreen {
       startingAnimationDuration = 0
-    } else if transition.isEnteringMusicMode {
+    } else if transition.isEnteringMusicMode && !transition.isExitingFullScreen {
       startingAnimationDuration = IINAAnimation.DefaultDuration
     } else if let totalStartingDuration = totalStartingDuration {
       startingAnimationDuration = totalStartingDuration / 3
@@ -269,7 +269,7 @@ extension PlayerWindowController {
     var showFadeableViewsDuration: CGFloat = startingAnimationDuration
     var fadeOutOldViewsDuration: CGFloat = startingAnimationDuration
     var closeOldPanelsDuration: CGFloat = startingAnimationDuration
-    if transition.isEnteringMusicMode {
+    if transition.isEnteringMusicMode && !transition.isExitingFullScreen {
       showFadeableViewsDuration = startingAnimationDuration * 0.5
       fadeOutOldViewsDuration = startingAnimationDuration * 0.5
     } else if transition.isEnteringInteractiveMode {

@@ -2511,7 +2511,7 @@ class PlayerCore: NSObject {
         if mpvFS {
           windowController.enterFullScreen()
         } else {
-          windowController.exitFullScreen(legacy: windowController.currentLayout.isLegacyFullScreen)
+          windowController.exitFullScreen()
         }
       }
     }

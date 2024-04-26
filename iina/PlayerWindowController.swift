@@ -1179,7 +1179,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
       DispatchQueue.main.async { [self] in
         log.verbose("User toggled legacy FS pref to \(outputLayoutSpec.isLegacyStyle.yesno) while in FS. Will try to exit FS")
-        exitFullScreen(legacy: oldLayout.isLegacyFullScreen)
+        exitFullScreen()
       }
     }
   }
@@ -2058,7 +2058,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     case .windowed, .windowedInteractive:
       enterFullScreen()
     case .fullScreen, .fullScreenInteractive:
-      exitFullScreen(legacy: layout.spec.isLegacyStyle)
+      exitFullScreen()
     case .musicMode:
       enterFullScreen()
     }
@@ -2080,16 +2080,17 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     })
   }
 
-  func exitFullScreen(legacy: Bool) {
+  func exitFullScreen() {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
-    let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-    log.verbose("ExitFullScreen called. Legacy: \(legacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
 
     animationPipeline.submitZeroDuration({ [self] in
+      let isLegacyFS = currentLayout.isLegacyFullScreen
+      let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
+      log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn), isNativeFullScreenNow: \(isActuallyNativeFullScreen.yn)")
       // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
-      if legacy {
+      if isLegacyFS {
         animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
-      } else if isFullScreen {
+      } else if isActuallyNativeFullScreen {
         window.toggleFullScreen(self)
         NSApp.presentationOptions.remove(.fullScreen)
       }
@@ -2166,16 +2167,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
-  func windowDidResize(_ notification: Notification) {
-    // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
-    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
-    if log.isTraceEnabled {
-      log.trace("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
-    }
-    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
-
-    applyWindowResize()
-  }
+  /// Not currently used!
+//  func windowDidResize(_ notification: Notification) {
+//  }
 
   // MARK: - Window Delegate: window move, screen changes
 
@@ -3545,15 +3539,15 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func enterMusicMode() {
-    // TODO: also exit full screen first if needed
     exitInteractiveMode(then: { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = currentLayout
-      if oldLayout.isNativeFullScreen {
+      if oldLayout.isFullScreen {
+        // Use exit FS as main animation and piggypack on that.
         // Need to do some gymnastics to parameterize exit from native full screen
         modeToSetAfterExitingFullScreen = .musicMode
-        window?.toggleFullScreen(self)
+        exitFullScreen()
       } else {
         let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
         buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, thenRun: true)

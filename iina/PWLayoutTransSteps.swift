@@ -1052,8 +1052,6 @@ extension PlayerWindowController {
       forceDraw()
     }
 
-    isAnimatingLayoutTransition = false
-
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle), Mode:\(currentLayout.mode)")
 
     let actualVideoSize = videoView.frame.size
@@ -1069,6 +1067,7 @@ extension PlayerWindowController {
       log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
     }
 
+    isAnimatingLayoutTransition = false
     player.saveState()
   }
 
@@ -1393,6 +1392,7 @@ extension PlayerWindowController {
   // Either legacy FS or windowed
   private func setWindowStyleToLegacy() {
     guard let window = window else { return }
+    guard window.styleMask.contains(.titled) else { return }
     log.verbose("Removing window styleMask.titled")
     window.styleMask.remove(.titled)
     window.styleMask.insert(.borderless)
