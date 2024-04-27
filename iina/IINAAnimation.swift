@@ -74,7 +74,7 @@ class IINAAnimation {
     }
   }
 
-  static func zeroDurationTask(_ runFunc: @escaping TaskFunc) -> Task {
+  static func suddenTask(_ runFunc: @escaping TaskFunc) -> Task {
     return Task(duration: 0, timing: nil, runFunc)
   }
 
@@ -93,8 +93,8 @@ class IINAAnimation {
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
-    func submitZeroDuration(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
-      submit(IINAAnimation.zeroDurationTask(runFunc), then: doAfter)
+    func submitSudden(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+      submit(IINAAnimation.suddenTask(runFunc), then: doAfter)
     }
 
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
@@ -107,7 +107,7 @@ class IINAAnimation {
       var needsLaunch = false
       taskQueue.appendAll(tasks)
       if let doAfter = doAfter {
-        taskQueue.append(zeroDurationTask(doAfter))
+        taskQueue.append(suddenTask(doAfter))
       }
 
       if isRunning {

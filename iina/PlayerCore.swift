@@ -2638,7 +2638,7 @@ class PlayerCore: NSObject {
     let syncUITicket = syncUITicketCounter
 
     DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submitZeroDuration { [self] in
+      windowController.animationPipeline.submitSudden { [self] in
         guard syncUITicket == syncUITicketCounter else {
           return
         }

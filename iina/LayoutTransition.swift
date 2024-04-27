@@ -28,7 +28,7 @@ extension PlayerWindowController {
     /// Should only be true when setting layout on window open. See `setInitialWindowLayout()` in `PlayerWindowController`.
     let isInitialLayout: Bool
 
-    var animationTasks: [IINAAnimation.Task] = []
+    var tasks: [IINAAnimation.Task] = []
 
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWGeometry,

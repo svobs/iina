@@ -53,7 +53,7 @@ extension PlayerWindowController {
     }
 
     DispatchQueue.main.async { [self] in
-      animationPipeline.submitZeroDuration({ [self] in
+      animationPipeline.submitSudden({ [self] in
 
         if let showDefaultArt {
           // Update default album art visibility:
@@ -545,13 +545,13 @@ extension PlayerWindowController {
   /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
   func applyMusicModeGeoInAnimationPipeline(_ geometry: MusicModeGeometry, setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true) {
     var tasks: [IINAAnimation.Task] = []
-    tasks.append(IINAAnimation.zeroDurationTask { [self] in
+    tasks.append(IINAAnimation.suddenTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
     })
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
       applyMusicModeGeo(geometry)
     }))
-    tasks.append(IINAAnimation.zeroDurationTask { [self] in
+    tasks.append(IINAAnimation.suddenTask { [self] in
       isAnimatingLayoutTransition = false
     })
 
@@ -605,7 +605,7 @@ extension PlayerWindowController {
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldEnableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
     if shouldEnableConstraint {
-      animationPipeline.submitZeroDuration({ [self] in
+      animationPipeline.submitSudden({ [self] in
         viewportBottomOffsetFromContentViewBottomConstraint.isActive = shouldEnableConstraint
       })
     }

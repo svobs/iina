@@ -268,7 +268,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   @IBAction func togglePlaylist(_ sender: Any) {
-    windowController.animationPipeline.submitZeroDuration({ [self] in
+    windowController.animationPipeline.submitSudden({ [self] in
       _togglePlaylist()
     })
   }
@@ -309,7 +309,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   @IBAction func toggleVideoView(_ sender: Any) {
-    windowController.animationPipeline.submitZeroDuration({ [self] in
+    windowController.animationPipeline.submitSudden({ [self] in
       let showVideo = !isVideoVisible
       log.verbose("Toggling videoView visibility from \((!showVideo).yn) to \(showVideo.yn)")
 
@@ -332,7 +332,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     guard let window else { return }
     log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
     var tasks: [IINAAnimation.Task] = []
-    tasks.append(IINAAnimation.zeroDurationTask{ [self] in
+    tasks.append(IINAAnimation.suddenTask{ [self] in
       windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
       // Hide OSD during animation
       windowController.hideOSD(immediately: true)
@@ -369,7 +369,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       }
     })
 
-    tasks.append(IINAAnimation.zeroDurationTask{ [self] in
+    tasks.append(IINAAnimation.suddenTask{ [self] in
       windowController.isAnimatingLayoutTransition = false
     })
 
