@@ -110,12 +110,13 @@ extension PlayerWindowController {
                                                                     keepFullScreenDimensions: false)
       }
 
+      // Always use last geometry for music mode window:
       musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
     // Send Geometries object to builder so that it doesn't default to current window frame
     let geo = Geometries(windowedMode: windowedModeGeo, musicMode: musicModeGeo, videoAspect: player.info.videoAspect)
-    log.verbose("Setting initial \(initialLayoutSpec), windowedModeGeo: \(geo.windowedMode), musicModeGeo: \(geo.musicMode)")
+    log.verbose("Setting initial \(initialLayoutSpec), windowedModeGeo=\(geo.windowedMode), musicModeGeo=\(geo.musicMode)")
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,

@@ -527,6 +527,9 @@ extension PlayerWindowController {
   func applyWindowGeo(_ newGeometry: PWGeometry) {
     log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
 
+    // This is only needed to achieve "fade-in" effect when opening window:
+    updateCustomBorderBoxAndWindowOpacity()
+
     /// Make sure this is up-to-date. Do this before `setFrame`
     videoView.apply(newGeometry)
     if !isWindowHidden {

@@ -215,10 +215,6 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     } else {
       self.viewportMargins = PWGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
     }
-
-    assert((viewportSize.width - videoSize.width >= 0) && (viewportSize.height - videoSize.height >= 0),
-           "viewportSize \(viewportSize) cannot be smaller than videoSize \(videoSize)")
-    assert(insideLeadingBarWidth >= 0, "Expected insideLeadingBarWidth >= 0, found \(insideLeadingBarWidth)")
   }
 
   static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
