@@ -3631,7 +3631,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
-    let windowOpacity: Float = windowOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
+    let windowOpacity: Float = windowOpacity ?? (layout.isFullScreen ? 1.0 : (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0))
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
