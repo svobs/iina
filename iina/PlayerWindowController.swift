@@ -1173,6 +1173,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func updateUseLegacyFullScreen() {
     let oldLayout = currentLayout
+    if !oldLayout.isFullScreen {
+      DispatchQueue.main.async { [self] in
+        resetCollectionBehavior()
+      }
+    }
     // Exit from legacy FS only. Native FS will fail if not the active space
     guard oldLayout.isLegacyFullScreen else { return }
     let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
@@ -1961,12 +1966,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     return [window]
   }
 
+  // Enters native full screen. Note that in theory, the method below this one should be used to do the animation.
+  // But in practice, it has to be started here that to animate properly. This is also true in upstream IINA. Not clear why.
   func windowWillEnterFullScreen(_ notification: Notification) {
+    animateEntryIntoFullScreen(withDuration: IINAAnimation.NativeFullScreenTransitionDuration, isLegacy: false)
   }
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
-    // Do not run into animation task in native full screen, because the OS will not stop to wait for it
-    animateEntryIntoFullScreen(withDuration: duration, isLegacy: false)
   }
 
   func windowDidFailToEnterFullScreen(_ window: NSWindow) {
@@ -2069,15 +2075,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let isLegacy: Bool = legacy ?? Preference.bool(for: .useLegacyFullScreen)
     let isFullScreen = NSApp.presentationOptions.contains(.fullScreen)
     log.verbose("EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
-    resetCollectionBehavior() // need to do this before entering FS
 
-    animationPipeline.submitSudden({ [self] in
-      if isLegacy {
+    if isLegacy {
+      animationPipeline.submitSudden({ [self] in
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
-      } else if !isFullScreen {
-        window.toggleFullScreen(self)
-      }
-    })
+      })
+    } else if !isFullScreen {
+      window.toggleFullScreen(self)
+    }
   }
 
   func exitFullScreen() {
@@ -4064,7 +4069,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
   }
 
-  /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit
+  /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
+  /// Try not to call this while animating. It can cause the window to briefly disappear
   func resetCollectionBehavior() {
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")

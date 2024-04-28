@@ -1003,8 +1003,6 @@ extension PlayerWindowController {
         player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
       }
 
-      resetCollectionBehavior()
-
       if transition.outputLayout.spec.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
         if let customTitleBar {

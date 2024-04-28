@@ -27,6 +27,7 @@ class IINAAnimation {
   static var FullScreenTransitionDuration: CGFloat {
     return CGFloat(Preference.float(for: .animationDurationFullScreen))
   }
+  static var NativeFullScreenTransitionDuration: CGFloat = 0.5
   static var OSDAnimationDuration: CGFloat {
     return CGFloat(Preference.float(for: .animationDurationOSD))
   }
