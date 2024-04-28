@@ -382,7 +382,7 @@ extension PlayerWindowController {
     }))
 
     // EndingAnimation: Fade in new views
-    if !transition.isTogglingFullScreen && transition.needsFadeInNewViews {
+    if transition.needsFadeInNewViews {
       transition.tasks.append(IINAAnimation.Task(duration: fadeInNewViewsDuration, timing: fadeInNewViewsTiming, { [self] in
         fadeInNewViews(transition)
       }))

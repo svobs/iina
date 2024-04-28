@@ -2105,6 +2105,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   // MARK: - Window delegate: Resize
 
   func windowWillStartLiveResize(_ notification: Notification) {
+    guard !isAnimatingLayoutTransition else { return }
     log.verbose("WindowWillStartLiveResize")
     isLiveResizingWidth = nil  // reset this
   }
@@ -3640,9 +3641,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
-    log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
-    customWindowBorderBox.isHidden = hide
-    customWindowBorderTopHighlightBox.isHidden = hide
+    if hide != customWindowBorderBox.isHidden {
+      log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
+      customWindowBorderBox.isHidden = hide
+      customWindowBorderTopHighlightBox.isHidden = hide
+    }
 
     // Set this *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards
     setWindowOpacity(to: windowOpacity)

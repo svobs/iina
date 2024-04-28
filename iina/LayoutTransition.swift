@@ -64,6 +64,7 @@ extension PlayerWindowController {
     }
 
     var needsFadeInNewViews: Bool {
+      if isTogglingFullScreen { return false }
       return isTogglingLegacyStyle || isTopBarPlacementChanging
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .outsideViewport && outputLayout.bottomBarPlacement == .insideViewport)
@@ -122,7 +123,11 @@ extension PlayerWindowController {
     }
 
     var isEnteringNativeFullScreen: Bool {
-      return isEnteringFullScreen && outputLayout.spec.isNativeFullScreen
+      return isEnteringFullScreen && outputLayout.isNativeFullScreen
+    }
+
+    var isExitingNativeFullScreen: Bool {
+      return isExitingFullScreen && inputLayout.isNativeFullScreen
     }
 
     var isEnteringLegacyFullScreen: Bool {
