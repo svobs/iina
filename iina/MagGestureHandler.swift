@@ -36,45 +36,55 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         }
       }
     case .windowSize:
-      changeWindowSize(recognizer: recognizer)
+      scaleWindow(recognizer: recognizer)
     case .windowSizeOrFullScreen:
       guard !windowController.isAnimatingLayoutTransition else { return }
-      guard let window = windowController.window else { return }
+      guard let window = windowController.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
-      if recognizer.state == .began, pinchAction == .windowSizeOrFullScreen {
-        let scale = recognizer.magnification + 1.0
-        if windowController.isFullScreen, scale < 1.0 {
+      let scale = recognizer.magnification + 1.0
+      if windowController.isFullScreen, scale < 1.0 {
+        /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
+        windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
+        // Set this to disable window resize listeners immediately instead of waiting for the transitionn to set it
+        // (seems to prevent hiccups in the animation):
+        windowController.isAnimatingLayoutTransition = true
+        // Exit FS:
+        windowController.toggleWindowFullScreen()
+        /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
+        // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
+        recognizer.state = .ended
+        return
+      } else if !windowController.isFullScreen, scale > 1.0 {
+        let screenFrame = screen.visibleFrame
+        let heightIsMax = window.frame.height >= screenFrame.height
+        let widthIsMax = window.frame.width >= screenFrame.width
+        // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
+        // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
+        if (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) {
+          windowController.isAnimatingLayoutTransition = true
           windowController.toggleWindowFullScreen()
+          /// See note above
+          recognizer.state = .ended
           return
-        } else if !windowController.isFullScreen, scale > 1.0,
-                  let screenFrame = window.screen?.visibleFrame {
-          let heightIsMax = window.frame.height >= screenFrame.height
-          let widthIsMax = window.frame.width >= screenFrame.width
-          // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
-          // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
-          if (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) || (heightIsMax && widthIsMax) {
-            windowController.toggleWindowFullScreen()
-            return
-          }
         }
       }
       // If full screen wasn't toggled, try window size:
-      changeWindowSize(recognizer: recognizer)
+      scaleWindow(recognizer: recognizer)
     }  // end switch
   }
 
-  private func changeWindowSize(recognizer: NSMagnificationGestureRecognizer) {
+  private func scaleWindow(recognizer: NSMagnificationGestureRecognizer) {
     guard !windowController.isFullScreen else { return }
 
     var finalGeometry: PWGeometry? = nil
     // adjust window size
     switch recognizer.state {
     case .began:
+      windowController.isMagnifying = true
+
       guard let window = windowController.window else { return }
       let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: window.frame)
-
-      windowController.isMagnifying = true
       if windowController.currentLayout.isMusicMode {
         windowController.musicModeGeo = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID)
       } else {

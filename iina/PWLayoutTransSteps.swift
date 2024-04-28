@@ -1052,7 +1052,7 @@ extension PlayerWindowController {
     addTitleBarAccessoryViews()
 
     if !transition.isInitialLayout && !transition.isTogglingMusicMode {
-      videoView.layoutSubtreeIfNeeded()
+      window.layoutIfNeeded()
       forceDraw()
     }
 

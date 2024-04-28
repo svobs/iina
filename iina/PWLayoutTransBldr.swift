@@ -502,19 +502,20 @@ extension PlayerWindowController {
       }
 
     } else if transition.isEnteringMusicMode {
-      let middleWindowFrame: NSRect
+      let baseGeo: PWGeometry
       if transition.inputLayout.isFullScreen {
         // Need middle geo so that sidebars get closed
-        middleWindowFrame = geo.windowedMode.videoFrameInScreenCoords
+        baseGeo = geo.musicMode.clone(videoAspect: geo.videoAspect, isPlaylistVisible: false).toPWGeometry()
       } else {
-        middleWindowFrame = transition.inputGeometry.videoFrameInScreenCoords
+        baseGeo = transition.inputGeometry
       }
 
-      return PWGeometry(windowFrame: middleWindowFrame, screenID: transition.inputGeometry.screenID,
-                        fitOption: transition.inputGeometry.fitOption, mode: .musicMode, topMarginHeight: 0,
+      let middleWindowFrame = baseGeo.videoFrameInScreenCoords
+      return PWGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
+                        fitOption: baseGeo.fitOption, mode: .musicMode, topMarginHeight: 0,
                         outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                         insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                        videoAspect: transition.inputGeometry.videoAspect)
+                        videoAspect: baseGeo.videoAspect)
     } else if transition.isExitingMusicMode {
       // Only bottom bar needs to be closed. No need to constrain in screen
       return transition.inputGeometry.withResizedOutsideBars(newOutsideBottomBarHeight: 0)
@@ -575,17 +576,17 @@ extension PlayerWindowController {
     if transition.outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
       return PWGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
-                                           mode: transition.outputLayout.mode,
-                                           outsideTopBarHeight: outsideTopBarHeight,
-                                           outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                           outsideBottomBarHeight: outsideBottomBarHeight,
-                                           outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                           insideTopBarHeight: insideTopBarHeight,
-                                           insideTrailingBarWidth: insideTrailingBarWidth,
-                                           insideBottomBarHeight: insideBottomBarHeight,
-                                           insideLeadingBarWidth: insideLeadingBarWidth,
-                                           videoAspect: transition.outputGeometry.videoAspect,
-                                           allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
+                                      mode: transition.outputLayout.mode,
+                                      outsideTopBarHeight: outsideTopBarHeight,
+                                      outsideTrailingBarWidth: outsideTrailingBarWidth,
+                                      outsideBottomBarHeight: outsideBottomBarHeight,
+                                      outsideLeadingBarWidth: outsideLeadingBarWidth,
+                                      insideTopBarHeight: insideTopBarHeight,
+                                      insideTrailingBarWidth: insideTrailingBarWidth,
+                                      insideBottomBarHeight: insideBottomBarHeight,
+                                      insideLeadingBarWidth: insideLeadingBarWidth,
+                                      videoAspect: transition.outputGeometry.videoAspect,
+                                      allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
     let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
