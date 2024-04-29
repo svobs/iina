@@ -922,7 +922,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     guard let cv = window.contentView else { return }
 
     window.initialFirstResponder = nil
-    window.titlebarAppearsTransparent = true
 
     viewportView.clipsToBounds = true
     topBarView.clipsToBounds = true
@@ -3633,7 +3632,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  func setWindowOpacity(to newValue: Float) {
+  private func setWindowOpacity(to newValue: Float) {
     guard let window else { return }
     let existingValue = window.contentView?.layer?.opacity ?? -1
     guard existingValue != newValue else { return }
@@ -3644,7 +3643,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
-    let windowOpacity: Float = windowOpacity ?? (layout.isFullScreen ? 1.0 : (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0))
+    /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
+    let windowOpacity: Float = windowOpacity ?? (layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0))
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
