@@ -2038,27 +2038,31 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     let oldLayout = currentLayout
 
-    let newMode: PlayerWindowMode
-
-    if let modeToSetAfterExitingFullScreen {
-      // support exiting native FS and directly into music mode
-      newMode = modeToSetAfterExitingFullScreen
-    } else if oldLayout.mode == .fullScreenInteractive {
-      newMode = .windowedInteractive
+    let nextMode: PlayerWindowMode
+    if oldLayout.mode == .fullScreenInteractive {
+      nextMode = .windowedInteractive
     } else {
-      newMode = .windowed
+      nextMode = .windowed
     }
-    modeToSetAfterExitingFullScreen = nil
-    let windowedLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: oldLayout.spec)
+    let windowedLayoutSpec = LayoutSpec.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout.spec)
 
     log.verbose("Animating \(duration)s exit from \(isLegacy ? "legacy " : "")\(oldLayout.mode) → \(windowedLayoutSpec.mode)")
     assert(!windowedLayoutSpec.isFullScreen, "Cannot exit full screen into mode \(windowedLayoutSpec.mode)! Spec: \(windowedLayoutSpec)")
     /// Split the duration between `openNewPanels` animation and `fadeInNewViews` animation
-    let transition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "")FullScreen",
-                                           from: oldLayout, to: windowedLayoutSpec,
-                                           totalStartingDuration: 0, totalEndingDuration: duration)
+    let exitFSTransition = buildLayoutTransition(named: "Exit\(isLegacy ? "Legacy" : "")FullScreen",
+                                                 from: oldLayout, to: windowedLayoutSpec,
+                                                 totalStartingDuration: 0, totalEndingDuration: duration)
 
-    animationPipeline.submit(transition.tasks)
+    if modeToSetAfterExitingFullScreen == .musicMode {
+      let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
+      let geo = geo(windowed: exitFSTransition.outputGeometry)
+      let enterMusicModeTransition = buildTransitionToEnterMusicMode(from: windowedLayout, geo)
+      animationPipeline.submit(exitFSTransition.tasks)
+      animationPipeline.submit(enterMusicModeTransition.tasks)
+      modeToSetAfterExitingFullScreen = nil
+    } else {
+      animationPipeline.submit(exitFSTransition.tasks)
+    }
   }
 
   func toggleWindowFullScreen() {
@@ -3572,10 +3576,15 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         modeToSetAfterExitingFullScreen = .musicMode
         exitFullScreen()
       } else {
-        let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
-        buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, thenRun: true)
+        let transition = buildTransitionToEnterMusicMode(from: oldLayout)
+        animationPipeline.submit(transition.tasks)
       }
     })
+  }
+
+  private func buildTransitionToEnterMusicMode(from oldLayout: LayoutState, _ geo: Geometries? = nil) -> LayoutTransition {
+    let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
+    return buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
   }
 
   func exitMusicMode() {
