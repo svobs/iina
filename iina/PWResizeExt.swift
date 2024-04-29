@@ -595,6 +595,12 @@ extension PlayerWindowController {
       log.verbose("Not updating music mode windowFrame or constraints - no changes needed")
     }
 
+    if geometry.isVideoVisible {
+      // Need to keep mpv in the loop to avoid errors here, especially if toggling video on after restoring with it off
+      log.verbose("Calling updateMPVWindowScale for musicMode window")
+      player.updateMPVWindowScale(using: geometry.toPWGeometry())
+    }
+
     if updateCache {
       musicModeGeo = geometry
       player.saveState()

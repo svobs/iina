@@ -3986,15 +3986,17 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   @IBAction func toggleOnTop(_ sender: AnyObject) {
+    let onTop = isOnTop
+    log.verbose("Toggling onTop: \(onTop.yn) → \((!onTop).yn)")
     if Preference.bool(for: .alwaysFloatOnTop) {
-      let isPlaying = isOnTop
+      let isPlaying = onTop
       if isPlaying {
         // Assume window is only on top because media is playing. Pause the media to remove on-top.
         player.pause()
         return
       }
     }
-    setWindowFloatingOnTop(!isOnTop)
+    setWindowFloatingOnTop(!onTop)
   }
 
   /** When slider changes */
