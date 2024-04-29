@@ -55,10 +55,10 @@ enum ScreenFitOption: Int {
   case noConstraints = 0
 
   /// Constrains inside `screen.visibleFrame`
-  case keepInVisibleScreen
+  case stayInside
 
   /// Constrains and centers inside `screen.visibleFrame`
-  case centerInVisibleScreen
+  case centerInside
 
   /// Constrains inside `screen.frame`
   case legacyFullScreen
@@ -79,7 +79,7 @@ enum ScreenFitOption: Int {
     switch self {
     case .legacyFullScreen, .nativeFullScreen:
       return true
-    case .keepInVisibleScreen, .centerInVisibleScreen:
+    case .stayInside, .centerInside:
       return Preference.bool(for: .moveWindowIntoVisibleScreenOnResize)
     default:
       return false
@@ -454,7 +454,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     switch fitOption {
     case .noConstraints:
       return nil
-    case .keepInVisibleScreen, .centerInVisibleScreen:
+    case .stayInside, .centerInside:
       return screen.visibleFrame
     case .legacyFullScreen:
       return screen.frame
@@ -681,7 +681,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     let mode = mode ?? self.mode
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
     // do not center in screen again unless explicitly requested
-    let newFitOption = fitOption ?? (self.fitOption == .centerInVisibleScreen ? .keepInVisibleScreen : self.fitOption)
+    let newFitOption = fitOption ?? (self.fitOption == .centerInside ? .stayInside : self.fitOption)
     let outsideBarsSize = self.outsideBarsTotalSize
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect? = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: newFitOption)
@@ -743,7 +743,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     var newWindowFrame = NSRect(origin: adjustedOrigin, size: newWindowSize)
     if let containerFrame, newFitOption.shouldMoveWindowToKeepInContainer {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
-      if newFitOption == .centerInVisibleScreen {
+      if newFitOption == .centerInside {
         newWindowFrame = newWindowFrame.size.centeredRect(in: containerFrame)
       }
       if Logger.isTraceEnabled {
@@ -770,7 +770,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
     }
 
     // do not center in screen again unless explicitly requested
-    var newFitOption = fitOption ?? (self.fitOption == .centerInVisibleScreen ? .keepInVisibleScreen : self.fitOption)
+    var newFitOption = fitOption ?? (self.fitOption == .centerInside ? .stayInside : self.fitOption)
     if newFitOption == .legacyFullScreen || newFitOption == .nativeFullScreen {
       // Programmer screwed up
       Logger.log("[geo] ScaleVideo: invalid fit option: \(newFitOption). Defaulting to 'none'", level: .error)
@@ -1082,7 +1082,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
   // MARK: Interactive mode
 
   static func buildInteractiveModeWindow(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
-    return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen, 
+    return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside, 
                       mode: .windowedInteractive, topMarginHeight: 0,
                       outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight, 
                       outsideTrailingBarWidth: 0,
@@ -1156,7 +1156,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
 
     let newVideoAspect = cropBox.size.mpvAspect
 
-    let newFitOption = self.fitOption == .centerInVisibleScreen ? .keepInVisibleScreen : self.fitOption
+    let newFitOption = self.fitOption == .centerInside ? .stayInside : self.fitOption
     Logger.log("[geo] Cropped to new videoAspect: \(newVideoAspect), screenID: \(screenID), fitOption: \(newFitOption)")
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, videoAspect: newVideoAspect)
   }

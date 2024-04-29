@@ -1056,7 +1056,7 @@ extension PlayerWindowController {
       forceDraw()
     }
 
-    log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle), Mode:\(currentLayout.mode)")
+    log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")
 
     let actualVideoSize = videoView.frame.size
     let expectedVideoSize = transition.outputGeometry.videoSize

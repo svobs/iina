@@ -181,11 +181,11 @@ extension PlayerWindowController {
       /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
       let mouseLoc = NSEvent.mouseLocation
       let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
-      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
+      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
       log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
-      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.keepInVisibleScreen)
+      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
     } else {
       // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
       log.verbose("Initial layout: using last closed window's geometry")
@@ -531,6 +531,9 @@ extension PlayerWindowController {
                         insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
                         videoAspect: baseGeo.videoAspect)
     } else if transition.isExitingMusicMode {
+      if transition.isEnteringFullScreen {
+        return nil
+      }
       // Only bottom bar needs to be closed. No need to constrain in screen
       return transition.inputGeometry.withResizedOutsideBars(newOutsideBottomBarHeight: 0)
     }

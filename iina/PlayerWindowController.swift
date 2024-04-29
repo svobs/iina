@@ -110,7 +110,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   // While true, disable window geometry listeners so they don't overwrite cache with intermediate data
   var isAnimatingLayoutTransition: Bool = false {
     didSet {
-      log.verbose("Updated isAnimatingLayoutTransition := \(isAnimatingLayoutTransition.yesno)")
+      log.verbose("Updated isAnimatingLayoutTransition ≔ \(isAnimatingLayoutTransition.yesno)")
     }
   }
 
@@ -2100,14 +2100,14 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     let isLegacyFS = currentLayout.isLegacyFullScreen
 
     if isLegacyFS {
-      log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn)")
+      log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn)")
       animationPipeline.submitSudden({ [self] in
         // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
         animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       })
     } else {
       let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
-      log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn), isNativeFullScreenNow: \(isActuallyNativeFullScreen.yn)")
+      log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn), isNativeFullScreenNow=\(isActuallyNativeFullScreen.yn)")
       guard isActuallyNativeFullScreen else { return }
       window.toggleFullScreen(self)
     }

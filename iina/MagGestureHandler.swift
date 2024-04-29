@@ -165,7 +165,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     // This is useful for various features such as resizing without "lockViewportToVideoSize", or toggling visibility of outside bars.
     windowController.player.info.intendedViewportSize = intendedGeo.viewportSize
 
-    let newGeometry = intendedGeo.refit(.keepInVisibleScreen)
+    let newGeometry = intendedGeo.refit(.stayInside)
     windowController.applyWindowResize(usingGeometry: newGeometry)
     return newGeometry
   }

@@ -203,12 +203,12 @@ extension PlayerWindowController {
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
         log.verbose("[applyVidGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
-        return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInVisibleScreen)
+        return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         let newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
         log.verbose("[applyVidGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
-        let centeredScaledGeo = windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInVisibleScreen, mode: currentLayout.mode)
+        let centeredScaledGeo = windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = centeredScaledGeo.viewportSize
         log.verbose("[applyVidGeo C-3] After scaleVideo: \(centeredScaledGeo)")
@@ -303,7 +303,7 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       }
 
-      let fitOption: ScreenFitOption = centerOnScreen ? .centerInVisibleScreen : .keepInVisibleScreen
+      let fitOption: ScreenFitOption = centerOnScreen ? .centerInside : .stayInside
       let newGeometry = newGeoUnconstrained.refit(fitOption)
       log.verbose("Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)")
       applyWindowGeoInAnimationPipeline(newGeometry)

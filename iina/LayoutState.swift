@@ -614,7 +614,7 @@ extension PlayerWindowController {
       case .windowedInteractive:
         return PWGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
       case .windowed:
-        let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .keepInVisibleScreen,
+        let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
                              mode: mode,
                              topMarginHeight: 0,  // is only nonzero when in legacy FS
                              outsideTopBarHeight: outsideTopBarHeight,
@@ -641,7 +641,7 @@ extension PlayerWindowController {
       let videoSize = AppData.defaultVideoSize
       let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
       let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, videoAspect: videoSize.mpvAspect)
-      return geo.refit(.centerInVisibleScreen)
+      return geo.refit(.centerInside)
     }
 
 
