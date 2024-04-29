@@ -1016,9 +1016,7 @@ extension PlayerWindowController {
         updateTitle()
       }
 
-      if transition.isExitingLegacyFullScreen {
-        updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: false)
-      }
+      updatePresentationOptionsForLegacyFullScreen()
 
       if Preference.bool(for: .blackOutMonitor) {
         removeBlackWindows()

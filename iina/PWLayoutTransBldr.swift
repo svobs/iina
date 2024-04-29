@@ -71,7 +71,7 @@ extension PlayerWindowController {
     IINAAnimation.disableAnimation {
 
       // Set window opacity to 0 initially to start fade-in effect
-      updateCustomBorderBoxAndWindowOpacity(windowOpacity: 0.0)
+      updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
 
       /// Although the animations in the `LayoutTransition` below will set the window layout, they
       /// mostly assume they are incrementally changing a previous layout, which can result in brief visual

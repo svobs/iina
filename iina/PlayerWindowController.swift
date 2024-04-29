@@ -1947,6 +1947,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       return
     }
 
+    log.verbose("Updating presentation options for legacyFS=\(legacyFullScreenActive.yn)")
     if legacyFullScreenActive {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
@@ -2018,8 +2019,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if AccessibilityPreferences.motionReductionEnabled {
       animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: false)
     } else {
-      // Kludge/workaround for race condition when exiting native FS to native windowed mode
       animationPipeline.submitSudden { [self] in
+        // Need to call this to get menu bar back:
+        updatePresentationOptionsForLegacyFullScreen()
+        // Kludge/workaround for race condition when exiting native FS to native windowed mode
         updateTitle()
       }
     }
@@ -2094,18 +2097,22 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func exitFullScreen() {
     guard let window = self.window else { fatalError("make sure the window exists before animating") }
 
-    animationPipeline.submitSudden({ [self] in
-      let isLegacyFS = currentLayout.isLegacyFullScreen
+    let isLegacyFS = currentLayout.isLegacyFullScreen
+
+    if isLegacyFS {
+      log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn)")
+      animationPipeline.submitSudden({ [self] in
+        // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
+        animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
+      })
+    } else {
       let isActuallyNativeFullScreen = NSApp.presentationOptions.contains(.fullScreen)
       log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn), isNativeFullScreenNow: \(isActuallyNativeFullScreen.yn)")
-      // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
-      if isLegacyFS {
-        animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
-      } else if isActuallyNativeFullScreen {
-        window.toggleFullScreen(self)
-        NSApp.presentationOptions.remove(.fullScreen)
-      }
-    })
+      guard isActuallyNativeFullScreen else { return }
+      window.toggleFullScreen(self)
+      NSApp.presentationOptions.remove(.fullScreen)
+    }
+
   }
 
   // MARK: - Window delegate: Resize
@@ -2352,7 +2359,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if currentLayout.isLegacyFullScreen {
       window?.level = .iinaFloating
     }
-    updatePresentationOptionsForLegacyFullScreen()
+//    updatePresentationOptionsForLegacyFullScreen()
 
     // If focus changed from a different window, need to recalculate the current bindings
     // so that this window's input sections are included and the other window's are not:
@@ -3644,7 +3651,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
     /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
-    let windowOpacity: Float = windowOpacity ?? (layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0))
+    let windowOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : windowOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
     let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
