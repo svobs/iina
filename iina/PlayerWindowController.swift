@@ -1902,7 +1902,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
 
     if currentLayout.isLegacyFullScreen {
-      updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: false)
+      updatePresentationOptionsForLegacyFullScreen(entering: false)
     }
 
     // Stop playing. This will save state if configured to do so:
@@ -1936,19 +1936,19 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   /// Hide menu bar & dock if current window is in legacy full screen.
   /// Show menu bar & dock if current window is not in full screen (either legacy or native).
-  func updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: Bool? = nil) {
+  func updatePresentationOptionsForLegacyFullScreen(entering: Bool? = nil) {
     dispatchPrecondition(condition: .onQueue(.main))
 
     // Use currentLayout if not explicitly specified
-    let legacyFullScreenActive = legacyFullScreenActive ?? currentLayout.isLegacyFullScreen
+    let isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
 
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
       return
     }
 
-    log.verbose("Updating presentation options for legacyFS=\(legacyFullScreenActive.yn)")
-    if legacyFullScreenActive {
+    log.verbose("Updating presentation options for legacyFS: \(isEnteringLegacyFS ? "entering" : "exiting")")
+    if isEnteringLegacyFS {
       // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
       // Fall back to checking this one
       guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
@@ -2020,8 +2020,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: false)
     } else {
       animationPipeline.submitSudden { [self] in
-        // Need to call this to get menu bar back:
-        updatePresentationOptionsForLegacyFullScreen()
         // Kludge/workaround for race condition when exiting native FS to native windowed mode
         updateTitle()
       }
@@ -2110,7 +2108,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       log.verbose("ExitFullScreen called. Legacy: \(isLegacyFS.yn), isNativeFullScreenNow: \(isActuallyNativeFullScreen.yn)")
       guard isActuallyNativeFullScreen else { return }
       window.toggleFullScreen(self)
-      NSApp.presentationOptions.remove(.fullScreen)
     }
 
   }
@@ -2359,7 +2356,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if currentLayout.isLegacyFullScreen {
       window?.level = .iinaFloating
     }
-//    updatePresentationOptionsForLegacyFullScreen()
+    if Preference.bool(for: .useLegacyFullScreen) {
+      updatePresentationOptionsForLegacyFullScreen()
+    }
 
     // If focus changed from a different window, need to recalculate the current bindings
     // so that this window's input sections are included and the other window's are not:
@@ -2375,6 +2374,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if currentLayout.isLegacyFullScreen {
       /// Change from `floating` to `normal` so that window doesn't block all others
       window?.level = .normal
+
+      updatePresentationOptionsForLegacyFullScreen(entering: false)
     }
 
     // keyWindow is nil: The whole app is inactive

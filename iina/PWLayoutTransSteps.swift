@@ -111,7 +111,7 @@ extension PlayerWindowController {
         window.styleMask.remove(.resizable)
 
         // auto hide menubar and dock (this will freeze all other animations, so must do it last)
-        updatePresentationOptionsForLegacyFullScreen(legacyFullScreenActive: true)
+        updatePresentationOptionsForLegacyFullScreen(entering: true)
 
         window.level = .iinaFloating
       }
@@ -122,7 +122,7 @@ extension PlayerWindowController {
       resetViewsForModeTransition()
 
     } else if transition.isExitingFullScreen {
-      // Exiting FullScreen
+      // Exiting Full Screen
 
       resetViewsForModeTransition()
       apply(visibility: .hidden, to: additionalInfoView)
@@ -1016,7 +1016,9 @@ extension PlayerWindowController {
         updateTitle()
       }
 
-      updatePresentationOptionsForLegacyFullScreen()
+      if transition.inputLayout.isLegacyFullScreen {
+        updatePresentationOptionsForLegacyFullScreen()
+      }
 
       if Preference.bool(for: .blackOutMonitor) {
         removeBlackWindows()
