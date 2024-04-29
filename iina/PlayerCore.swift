@@ -391,8 +391,8 @@ class PlayerCore: NSObject {
       // Reset state flags
       isStopping = false
 
-      if let sizeArray = FFmpegController.readVideoSize(forFile: path) {
-        info.videoGeo = info.videoGeo.clone(rawWidth: Int(sizeArray[0]), rawHeight: Int(sizeArray[1]))
+      if let videoSize = PlaybackInfo.getOrReadVideoSize(forURL: info.currentURL, log) {
+        info.videoGeo = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
         log.debug("OpenPlayerWindow: got videoSize from ffmpeg: \(info.videoGeo.rawWidth) x \(info.videoGeo.rawHeight)")
       }
 
@@ -1963,17 +1963,10 @@ class PlayerCore: NSObject {
   // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
   // This is optional but provides a better viewer experience
   private func preResizeVideo(forURL url: URL?) {
-    if let videoSize = PlaybackInfo.getVideoSize(forURL: url) {
-      let newParams = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
-      log.verbose("Calling applyVidGeo from preResizeVideo using cached size, \(newParams)")
-      windowController.applyVidGeo(newParams)
-    } else if let videoSize = PlaybackInfo.updateCachedVideoSize(forURL: url) {
-      let newParams = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
-      log.verbose("Calling applyVidGeo from preResizeVideo using fetched size, \(newParams)")
-      windowController.applyVidGeo(newParams)
-    } else {
-      log.error("Unable to find videoSize in applyVidGeo; skipping")
-    }
+    guard let videoSize = PlaybackInfo.getOrReadVideoSize(forURL: url, log) else { return }
+    let newVidGeo = info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+    log.verbose("Calling applyVidGeo from preResizeVideo with \(newVidGeo)")
+    windowController.applyVidGeo(newVidGeo)
   }
 
   func fileStarted(path: String, playlistPos: Int) {

@@ -78,7 +78,7 @@ class AutoFileMatcher {
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
-      if PlaybackInfo.getVideoSize(forURL: fileInfo.url) == nil {
+      if PlaybackInfo.getCachedVideoSize(forURL: fileInfo.url) == nil {
         if PlaybackInfo.updateCachedVideoSize(forURL: fileInfo.url) != nil {
           updateCount += 1
         }

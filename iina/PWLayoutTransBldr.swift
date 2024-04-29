@@ -166,6 +166,11 @@ extension PlayerWindowController {
     assert(!isOpen)
     assert(!isInitialSizeDone)
 
+    if let videoSize = PlaybackInfo.getOrReadVideoSize(forURL: player.info.currentURL, log) {
+      let newVidGeo = player.info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+      player.info.videoGeo = newVidGeo
+    }
+
     let resizeTimingPref = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
       /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,

@@ -414,7 +414,8 @@ class PlaybackInfo {
   private let infoLock = Lock()
 
   private static let staticInfoLock = Lock()
-  static func getVideoSize(forURL url: URL?) -> NSSize? {
+  
+  static func getCachedVideoSize(forURL url: URL?) -> NSSize? {
     guard let url else { return nil }
 
     var videoSize: NSSize? = nil
@@ -441,6 +442,22 @@ class PlaybackInfo {
       return videoSize
     }
     return nil
+  }
+
+  static func getOrReadVideoSize(forURL url: URL?, _ log: Logger.Subsystem) -> NSSize? {
+    var missed = false
+    var videoSize = getCachedVideoSize(forURL: url)
+    if videoSize == nil {
+      missed = true
+      videoSize = updateCachedVideoSize(forURL: url)
+    }
+
+    guard let videoSize else {
+      log.error("Unable to find videoSize from either cache or ffmpeg for URL: \(url?.description ?? "nil")")
+      return nil
+    }
+    log.debug("Found videoSize via \(missed ? "ffmpeg" : "cache"): \(videoSize), URL: \(url?.description ?? "nil")")
+    return videoSize
   }
 
   func calculateTotalDuration() -> Double? {
