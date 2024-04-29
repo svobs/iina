@@ -7,6 +7,7 @@
 !buffer.h
 !channel_layout.h
 !common.h
+!display.h
 !dict.h
 !error.h
 !frame.h

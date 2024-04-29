@@ -1220,9 +1220,7 @@ not applying FFmpeg 9599 workaround
       player.log.verbose("Calling applyVidParams from mpv video-rotate prop change")
       // Update window geometry
       let oldVidGeo = player.info.videoGeo
-      let rotationChange = userRotation - oldVidGeo.userRotation
-      let newTotalRotation = (oldVidGeo.totalRotation + rotationChange) %% 360
-      let newVidGeo = oldVidGeo.clone(totalRotation: newTotalRotation, userRotation: userRotation)
+      let newVidGeo = oldVidGeo.changingUserRotation(to: userRotation)
       player.windowController.applyVidGeo(newVidGeo)
 
       player.sendOSD(.rotation(userRotation))

@@ -166,8 +166,8 @@ extension PlayerWindowController {
     assert(!isOpen)
     assert(!isInitialSizeDone)
 
-    if let videoSize = PlaybackInfo.getOrReadVideoSize(forURL: player.info.currentURL, log) {
-      let newVidGeo = player.info.videoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+    if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: player.info.currentURL, log) {
+      let newVidGeo = player.info.videoGeo.substituting(ffMeta)
       player.info.videoGeo = newVidGeo
     }
 

@@ -8,6 +8,13 @@
 
 import Foundation
 
+struct FFVideoMeta {
+  let width: Int
+  let height: Int
+  /// Should match mpv's `video-params/rotate`
+  let streamRotation: Int
+}
+
 class MediaItem {
   enum LoadStatus: Int, CustomStringConvertible {
     case notStarted = 1       /// set before mpv is aware of it
@@ -409,55 +416,55 @@ class PlaybackInfo {
   // must be through the class methods that properly coordinate thread access.
   private var cachedVideoDurationAndProgress: [String: (duration: Double?, progress: Double?)] = [:]
   private var cachedMetadata: [String: (title: String?, album: String?, artist: String?)] = [:]
-  private static var cachedVideoSizes: [URL: NSSize] = [:]
+  private static var cachedVideoSizes: [URL: FFVideoMeta] = [:]
 
   private let infoLock = Lock()
 
   private static let staticInfoLock = Lock()
   
-  static func getCachedVideoSize(forURL url: URL?) -> NSSize? {
+  static func getCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
 
-    var videoSize: NSSize? = nil
+    var ffMeta: FFVideoMeta? = nil
     staticInfoLock.withLock {
-      if let cachedSize = cachedVideoSizes[url] {
-        videoSize = cachedSize
+      if let cachedMeta = cachedVideoSizes[url] {
+        ffMeta = cachedMeta
       }
     }
-    return videoSize
+    return ffMeta
   }
 
-  static func updateCachedVideoSize(forURL url: URL?) -> NSSize? {
+  static func updateCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
     if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
-      let videoSize = NSSize(width: Int(sizeArray[0]), height: Int(sizeArray[1]))
+      let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
       staticInfoLock.withLock {
         // Don't let this get too big
         if cachedVideoSizes.count > Constants.SizeLimit.maxCachedVideoSizes {
-          Logger.log("Too many cached video sizes (count=\(cachedVideoSizes.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached sizes...", level: .debug)
+          Logger.log("Too many cached FF meta entries (count=\(cachedVideoSizes.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...", level: .debug)
           cachedVideoSizes.removeAll()
         }
-        cachedVideoSizes[url] = videoSize
+        cachedVideoSizes[url] = ffMeta
       }
-      return videoSize
+      return ffMeta
     }
     return nil
   }
 
-  static func getOrReadVideoSize(forURL url: URL?, _ log: Logger.Subsystem) -> NSSize? {
+  static func getOrReadFFVideoMeta(forURL url: URL?, _ log: Logger.Subsystem) -> FFVideoMeta? {
     var missed = false
-    var videoSize = getCachedVideoSize(forURL: url)
-    if videoSize == nil {
+    var ffMeta = getCachedFFVideoMeta(forURL: url)
+    if ffMeta == nil {
       missed = true
-      videoSize = updateCachedVideoSize(forURL: url)
+      ffMeta = updateCachedFFVideoMeta(forURL: url)
     }
 
-    guard let videoSize else {
-      log.error("Unable to find videoSize from either cache or ffmpeg for URL: \(url?.description ?? "nil")")
+    guard let ffMeta else {
+      log.error("Unable to find ffMeta from either cache or ffmpeg for URL: \(url?.description ?? "nil")")
       return nil
     }
-    log.debug("Found videoSize via \(missed ? "ffmpeg" : "cache"): \(videoSize), URL: \(url?.description ?? "nil")")
-    return videoSize
+    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), URL: \(url?.description ?? "nil")")
+    return ffMeta
   }
 
   func calculateTotalDuration() -> Double? {

@@ -52,20 +52,6 @@ struct VideoGeometry: CustomStringConvertible {
     self.log = log
   }
 
-  // FIXME: make this the SST for scale, instead of calculating it afterwards
-  func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
-             selectedAspectLabel: String? = nil,
-             totalRotation: Int? = nil, userRotation: Int? = nil,
-             selectedCropLabel: String? = nil,
-             scale: Double? = nil) -> VideoGeometry {
-    return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
-                         selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
-                         totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
-                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
-                         scale: scale ?? self.scale, log: self.log)
-
-  }
-
   /// The native ("raw") stored dimensions of the current video, before any transformation is applied.
   /// Either `rawWidth` or `rawHeight` should be 0 if the raw video size is unknown or not loaded yet.
   /// From the mpv manual:
@@ -82,6 +68,37 @@ struct VideoGeometry: CustomStringConvertible {
   var videoSizeRaw: CGSize? {
     guard rawWidth > 0, rawHeight > 0 else { return nil}
     return CGSize(width: rawWidth, height: rawHeight)
+  }
+
+  // MARK: - Substitution convenience functions
+
+  // FIXME: make this the SST for scale, instead of calculating it afterwards
+  func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
+             selectedAspectLabel: String? = nil,
+             totalRotation: Int? = nil, userRotation: Int? = nil,
+             selectedCropLabel: String? = nil,
+             scale: Double? = nil) -> VideoGeometry {
+    return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
+                         selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
+                         totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
+                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
+                         scale: scale ?? self.scale, log: self.log)
+  }
+
+  func substituting(_ ffMeta: FFVideoMeta) -> VideoGeometry {
+    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height).changingTotalRotation(to: ffMeta.streamRotation)
+  }
+
+  func changingUserRotation(to newUserRotation: Int) -> VideoGeometry {
+    let totalRotationChange = newUserRotation - userRotation
+    let newTotalRotation = (totalRotation + totalRotationChange) %% 360
+    return clone(totalRotation: newTotalRotation, userRotation: newUserRotation)
+  }
+
+  func changingTotalRotation(to newTotalRotation: Int) -> VideoGeometry {
+    let userRotationChange = newTotalRotation - totalRotation
+    let newUserRotation = (userRotation + userRotationChange) %% 360
+    return clone(totalRotation: newTotalRotation, userRotation: newUserRotation)
   }
 
   // MARK: - TRANSFORMATION 1: Aspect
