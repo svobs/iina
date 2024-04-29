@@ -917,7 +917,7 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isExitingFullScreen && !transition.outputLayout.spec.isLegacyStyle {
+    if transition.isExitingFullScreen && !transition.outputLayout.spec.isLegacyStyle && transition.outputLayout.titleBar.isShowable {
       // MUST put this in prev task to avoid race condition!
       window.titleVisibility = .visible
     }
@@ -1011,7 +1011,12 @@ extension PlayerWindowController {
       } else {  // native windowed
         /// Same logic as in `fadeInNewViews()`
         setWindowStyleToNative()
-        showBuiltInTitleBarViews()  /// do this again after adding `titled` style
+        if transition.outputLayout.isMusicMode {
+          hideBuiltInTitleBarViews()
+        } else {
+          showBuiltInTitleBarViews()  /// do this again after adding `titled` style
+        }
+        // Need to make sure this executes after styleMask is .titled
         addTitleBarAccessoryViews()
         updateTitle()
       }
@@ -1046,10 +1051,7 @@ extension PlayerWindowController {
 
     refreshHidesOnDeactivateStatus()
 
-    // Need to make sure this executes after styleMask is .titled
-    addTitleBarAccessoryViews()
-
-    if !transition.isInitialLayout && !transition.isTogglingMusicMode {
+    if !transition.isInitialLayout {
       window.layoutIfNeeded()
       forceDraw()
     }

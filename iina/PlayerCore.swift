@@ -541,8 +541,7 @@ class PlayerCore: NSObject {
     Logger.log("Switch to normal window from mini player, automatically=\(automatically)", subsystem: subsystem)
     if !automatically {
       overrideAutoMusicMode = !overrideAutoMusicMode
-      Logger.log("Changed overrideAutoMusicMode to \(overrideAutoMusicMode)",
-                 level: .verbose, subsystem: subsystem)
+      log.verbose("Changed overrideAutoMusicMode to \(overrideAutoMusicMode)")
     }
     windowController.exitMusicMode()
     windowController.updateTitle()

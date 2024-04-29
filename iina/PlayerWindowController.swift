@@ -1973,13 +1973,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     return [window]
   }
 
-  // Enters native full screen. Note that in theory, the method below this one should be used to do the animation.
-  // But in practice, it has to be started here that to animate properly. This is also true in upstream IINA. Not clear why.
   func windowWillEnterFullScreen(_ notification: Notification) {
-    animateEntryIntoFullScreen(withDuration: IINAAnimation.NativeFullScreenTransitionDuration, isLegacy: false)
   }
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
+    animateEntryIntoFullScreen(withDuration: IINAAnimation.NativeFullScreenTransitionDuration, isLegacy: false)
   }
 
   func windowDidFailToEnterFullScreen(_ window: NSWindow) {
