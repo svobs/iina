@@ -1280,7 +1280,7 @@ not applying FFmpeg 9599 workaround
             player.windowController.pip.playing = !paused
           }
 
-          if player.windowController.loaded && Preference.bool(for: .alwaysFloatOnTop) {
+          if player.windowController.loaded, !player.isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {
             player.windowController.setWindowFloatingOnTop(!paused)
           }
         }

@@ -271,13 +271,22 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Will fall back to default geometry",
                  level: .verbose)
     } else if let savedGeo = PWGeometry.fromCSV(csv) {
-      return savedGeo
+      if !savedGeo.mode.isWindowed || savedGeo.fitOption.isFullScreen {
+        Logger.log("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Will fall back to default geometry (found: \(savedGeo))",
+                   level: .error)
+      } else {
+        return savedGeo
+      }
     }
     // Compute default geometry for main screen
     let defaultScreen = NSScreen.screens[0]
     return LayoutState.buildFrom(LayoutSpec.defaultLayout()).buildDefaultInitialGeometry(screen: defaultScreen)
   }() {
     didSet {
+      guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.fitOption.isFullScreen else {
+        Logger.log("Will not save windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)", level: .error)
+        return
+      }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
       Logger.log("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) := \(windowedModeGeoLastClosed)", level: .verbose)
     }
@@ -1913,11 +1922,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-      } else {
-        if currentLayout.mode == .windowed {
-          // Update frame since it may have moved
-          windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-        }
+      } else if currentLayout.mode.isWindowed {
+        // Update frame since it may have moved
+        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       }
     }

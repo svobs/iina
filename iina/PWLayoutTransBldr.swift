@@ -16,7 +16,7 @@ extension PlayerWindowController {
   // MARK: - Window Initial Layout
 
   func setInitialWindowLayout() {
-    let initialLayoutSpec: LayoutSpec
+    let initialLayout: LayoutState
     let isRestoringFromPrevLaunch: Bool
     var needsNativeFullScreen = false
 
@@ -26,35 +26,8 @@ extension PlayerWindowController {
     if let priorState = player.info.priorState, let priorLayoutSpec = priorState.layoutSpec {
       log.verbose("Transitioning to initial layout from prior window state")
       isRestoringFromPrevLaunch = true
-      // Don't need this because we already know how to size the window
-      isInitialSizeDone = true
 
-      // Restore saved geometries
-      if let priorWindowedModeGeometry = priorState.windowedModeGeo {
-        log.verbose("Setting windowedModeGeo from prior state: \(priorWindowedModeGeometry)")
-        windowedModeGeo = priorWindowedModeGeometry
-        if priorLayoutSpec.mode != .musicMode {
-          videoView.apply(windowedModeGeo)
-        }
-      } else {
-        log.error("Failed to get player window geometry from prefs")
-      }
-
-      if let priorMusicModeGeometry = priorState.musicModeGeo {
-        log.verbose("Setting musicModeGeo from prior state: \(priorMusicModeGeometry)")
-        musicModeGeo = priorMusicModeGeometry
-        // Restore primary videoAspect
-        if priorLayoutSpec.mode == .musicMode {
-          videoView.apply(priorMusicModeGeometry.toPWGeometry())
-        }
-      } else {
-        log.error("Failed to get player window layout and/or geometry from prefs")
-      }
-
-      if priorLayoutSpec.mode == .musicMode {
-        player.overrideAutoMusicMode = true
-      }
-
+      let initialLayoutSpec: LayoutSpec
       if priorLayoutSpec.isNativeFullScreen {
         // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
         initialLayoutSpec = priorLayoutSpec.clone(mode: .windowed)
@@ -62,6 +35,9 @@ extension PlayerWindowController {
       } else {
         initialLayoutSpec = priorLayoutSpec
       }
+      initialLayout = LayoutState.buildFrom(initialLayoutSpec)
+
+      configureFromRestore(priorState, initialLayout)
 
     } else {
       log.verbose("Transitioning to initial layout from app prefs")
@@ -76,78 +52,41 @@ extension PlayerWindowController {
       }
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-      initialLayoutSpec = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
+      let initialLayoutSpec = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
+      initialLayout = LayoutState.buildFrom(initialLayoutSpec)
 
-      // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
-      assert(!isOpen)
-      assert(!isInitialSizeDone)
-      let initialLayout = LayoutState.buildFrom(initialLayoutSpec)
-
-      let resizeTimingPref = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
-      if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
-        /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
-        /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
-        let videoAspect = player.info.videoAspect
-        let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
-                                                     minWidth: Constants.WindowedMode.minViewportSize.width,
-                                                     minHeight: Constants.WindowedMode.minViewportSize.height)
-        let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
-                                        height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
-        let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
-        /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
-        /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
-        let mouseLoc = NSEvent.mouseLocation
-        let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
-        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
-        let windowSize = initialGeo.windowFrame.size
-        let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-        log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
-        windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.keepInVisibleScreen)
-      } else {
-        // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
-        log.verbose("Initial layout: using last closed window's geometry")
-        windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                    keepFullScreenDimensions: false)
-      }
-
-      // Always use last geometry for music mode window:
-      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
+      configureFromPrefs(initialLayout)
     }
 
     // Send Geometries object to builder so that it doesn't default to current window frame
     let geo = Geometries(windowedMode: windowedModeGeo, musicMode: musicModeGeo, videoAspect: player.info.videoAspect)
-    log.verbose("Setting initial \(initialLayoutSpec), windowedModeGeo=\(geo.windowedMode), musicModeGeo=\(geo.musicMode)")
+    log.verbose("Setting initial \(initialLayout.spec), windowedModeGeo=\(geo.windowedMode), musicModeGeo=\(geo.musicMode)")
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: initialLayoutSpec, isInitialLayout: true, geo)
-
-    setWindowOpacity(to: 0.0)
-
-
-    if !isRestoringFromPrevLaunch {
-      if initialLayoutSpec.mode == .windowed {
-        player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
-      }
-    }
-
-    /// Although the animations in the `LayoutTransition` below will set the window layout, they
-    /// mostly assume they are incrementally changing a previous layout, which can result in brief visual
-    /// artifacts in the process if we start with an undefined layout.
-    /// To smooth out the process, restore window position & size before laying out its internals.
-    switch initialLayoutSpec.mode {
-    case .windowed, .windowedInteractive, .musicMode:
-      videoView.apply(initialTransition.outputGeometry)
-      player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
-    case .fullScreen, .fullScreenInteractive:
-      /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
-      /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
-      break
-    }
+                                                  from: currentLayout, to: initialLayout.spec, isInitialLayout: true, geo)
 
     // For initial layout (when window is first shown), to reduce jitteriness when drawing,
     // do all the layout in a single animation block
     IINAAnimation.disableAnimation {
+
+      // Set window opacity to 0 initially to start fade-in effect
+      updateCustomBorderBoxAndWindowOpacity(windowOpacity: 0.0)
+
+      /// Although the animations in the `LayoutTransition` below will set the window layout, they
+      /// mostly assume they are incrementally changing a previous layout, which can result in brief visual
+      /// artifacts in the process if we start with an undefined layout.
+      /// To smooth out the process, restore window position & size before laying out its internals.
+      switch initialLayout.spec.mode {
+      case .windowed, .windowedInteractive, .musicMode:
+        videoView.apply(initialTransition.outputGeometry)
+        player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
+      case .fullScreen, .fullScreenInteractive:
+        /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
+        /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
+        break
+      }
+
       for task in initialTransition.tasks {
         task.runFunc()
       }
@@ -155,9 +94,15 @@ extension PlayerWindowController {
       log.verbose("Done with transition to initial layout")
     }
 
-    if !isRestoringFromPrevLaunch && Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
-      log.verbose("Setting window OnTop=true per app pref")
-      setWindowFloatingOnTop(true)
+    if !isRestoringFromPrevLaunch {
+      if initialLayout.mode == .windowed {
+        player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
+      }
+
+      if !initialLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
+        log.verbose("Setting window OnTop=true per app pref")
+        setWindowFloatingOnTop(true)
+      }
     }
 
     if needsNativeFullScreen {
@@ -172,15 +117,84 @@ extension PlayerWindowController {
     /// Stored window state may not be consistent with global IINA prefs.
     /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
     let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: currentLayout.spec)
-    if initialLayoutSpec.hasSamePrefsValues(as: prefsSpec) {
+    if initialLayout.spec.hasSamePrefsValues(as: prefsSpec) {
       log.verbose("Saved layout is consistent with IINA global prefs")
     } else {
       // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
-      log.warn("Player's saved layout does not match IINA app prefs. Will build and apply a corrected layout")
+      log.warn("Player's saved layout does not match IINA app prefs. Will fix and apply corrected layout")
       log.debug("SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)")
       buildLayoutTransition(named: "FixInvalidInitialLayout",
                             from: initialTransition.outputLayout, to: prefsSpec, thenRun: true)
     }
+  }
+
+  private func configureFromRestore(_ priorState: PlayerSaveState, _ initialLayout: LayoutState) {
+    // Don't need this because we already know how to size the window
+    isInitialSizeDone = true
+
+    // Restore saved geometries
+    if let priorWindowedModeGeo = priorState.windowedModeGeo {
+      if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
+        log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or fitOption (\(priorWindowedModeGeo.fitOption)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
+        if !PlayerWindowController.windowedModeGeoLastClosed.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
+          
+        }
+        windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
+                                                                    keepFullScreenDimensions: false)
+      } else {
+        log.verbose("Setting windowedModeGeo from prior state: \(priorWindowedModeGeo)")
+        windowedModeGeo = priorWindowedModeGeo
+      }
+    } else {
+      log.error("Failed to get player window geometry from prefs")
+    }
+
+    if let priorMusicModeGeometry = priorState.musicModeGeo {
+      log.verbose("Setting musicModeGeo from prior state: \(priorMusicModeGeometry)")
+      musicModeGeo = priorMusicModeGeometry
+    } else {
+      log.error("Failed to get player window layout and/or geometry from prefs")
+    }
+
+    if initialLayout.mode == .musicMode {
+      player.overrideAutoMusicMode = true
+    }
+  }
+
+  private func configureFromPrefs(_ initialLayout: LayoutState) {
+    // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
+    assert(!isOpen)
+    assert(!isInitialSizeDone)
+
+    let resizeTimingPref = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
+    if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
+      /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
+      /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
+      let videoAspect = player.info.videoAspect
+      let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
+                                                   minWidth: Constants.WindowedMode.minViewportSize.width,
+                                                   minHeight: Constants.WindowedMode.minViewportSize.height)
+      let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
+                                      height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
+      let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
+      /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
+      /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
+      let mouseLoc = NSEvent.mouseLocation
+      let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
+      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.keepInVisibleScreen)
+      let windowSize = initialGeo.windowFrame.size
+      let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
+      log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
+      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.keepInVisibleScreen)
+    } else {
+      // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
+      log.verbose("Initial layout: using last closed window's geometry")
+      windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
+                                                                  keepFullScreenDimensions: false)
+    }
+
+    // Always use last geometry for music mode window:
+    musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
   }
 
   // MARK: - Building LayoutTransition
