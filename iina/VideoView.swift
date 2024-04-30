@@ -92,12 +92,13 @@ class VideoView: NSView {
   func refreshContentsScale() -> Bool {
     guard let window else { return false }
     let oldScaleFactor = videoLayer.contentsScale
-    let newScaleFactor = window.screenScaleFactor
+    let newScaleFactor = window.backingScaleFactor
     if oldScaleFactor != newScaleFactor {
-      log.verbose("ScreenScaleFactor changed from \(oldScaleFactor) to \(newScaleFactor)")
+      log.verbose("Window backingScaleFactor changed: \(oldScaleFactor) → \(newScaleFactor)")
       videoLayer.contentsScale = newScaleFactor
       return true
     }
+    log.verbose("No change to window backingScaleFactor (\(oldScaleFactor))")
     return false
   }
 

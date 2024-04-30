@@ -1115,6 +1115,10 @@ class PlayerCore: NSObject {
         log.verbose("UpdateMPVWindowScale: could not get size info; skipping")
         return
       }
+      guard desiredVideoScale > 0.0 else {
+        log.verbose("UpdateMPVWindowScale: desiredVideoScale is 0; aborting")
+        return
+      }
       let currentVideoScale = mpv.getVideoScale()
 
       if desiredVideoScale != currentVideoScale {
@@ -1136,19 +1140,19 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func deriveVideoScale(from windowGeometry: PWGeometry) -> CGFloat? {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
-    
-    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeometry.screenID).backingScaleFactor
-    let videoWidthScaled = (windowGeometry.videoSize.width * backingScaleFactor).truncatedTo6()
+  func deriveVideoScale(from geo: PWGeometry) -> CGFloat? {
+    guard !windowController.isClosing, !isStopping, !isStopped else { return nil }
+
+    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: geo.screenID).backingScaleFactor
+    let videoWidthScaled = (geo.videoSize.width * backingScaleFactor).truncatedTo6()
 
     let videoScale: CGFloat
     if let videoSizeACR = info.videoGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(windowGeometry.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else if let mpvVidGeo = mpv.queryForVideoGeometry(), let videoSizeACR = mpvVidGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(windowGeometry.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else {
       log.error("Could not derive videoScale from mpv or from cache!")
       return nil

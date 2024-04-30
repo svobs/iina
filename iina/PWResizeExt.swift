@@ -248,7 +248,8 @@ extension PlayerWindowController {
   func setVideoScale(_ desiredVideoScale: Double) {
     guard let window = window else { return }
     let currentLayout = currentLayout
-    guard currentLayout.mode == .windowed || currentLayout.mode == .musicMode else { return }
+    // Not supported in music mode at this time. Need to resolve backing scale bugs
+    guard currentLayout.mode == .windowed else { return }
 
     guard let videoSizeACR = player.info.videoGeo.videoSizeACR else {
       log.error("SetVideoScale failed: could not get videoSizeACR")
@@ -274,7 +275,7 @@ extension PlayerWindowController {
       player.info.intendedViewportSize = newGeometry.viewportSize
       log.verbose("SetVideoScale: calling applyWindowGeo")
       applyWindowGeoInAnimationPipeline(newGeometry)
-      case .musicMode:
+    case .musicMode:
       let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
       // will return nil if video is not visible
       guard let newMusicModeGeometry = musicModeGeo.scaleViewport(to: desiredVideoSize) else { return }
@@ -561,7 +562,8 @@ extension PlayerWindowController {
   /// Updates the current window and its subviews to match the given `MusicModeGeometry`.
   /// If `updateCache` is true, updates `musicModeGeo` and saves player state.
   @discardableResult
-  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true) -> MusicModeGeometry {
+  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, animate: Bool = true, 
+                         updateCache: Bool = true) -> MusicModeGeometry {
     let geometry = geometry.refit()  // enforces internal constraints, and constrains to screen
     log.verbose("Applying \(geometry), setFrame=\(setFrame.yn) updateCache=\(updateCache.yn)")
 
@@ -583,22 +585,23 @@ extension PlayerWindowController {
       hasChange = true
     }
 
-    if hasChange {
-      /// Make sure to call `apply` AFTER `updateVideoViewVisibilityConstraints`:
-      miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
-      updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
-      videoView.apply(geometry.toPWGeometry())
-      if setFrame {
-        player.window.setFrameImmediately(geometry.windowFrame, animate: animate)
-      }
-    } else {
+    guard hasChange else {
       log.verbose("Not updating music mode windowFrame or constraints - no changes needed")
+      return geometry
     }
 
-    if geometry.isVideoVisible {
-      // Need to keep mpv in the loop to avoid errors here, especially if toggling video on after restoring with it off
-      log.verbose("Calling updateMPVWindowScale for musicMode window")
-      player.updateMPVWindowScale(using: geometry.toPWGeometry())
+    /// Make sure to call `apply` AFTER `updateVideoViewVisibilityConstraints`:
+    miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
+    updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
+    let convertedGeo = geometry.toPWGeometry()
+    videoView.apply(convertedGeo)
+
+    if let derivedVideoScale = player.deriveVideoScale(from: convertedGeo) {
+      player.info.videoGeo = player.info.videoGeo.clone(scale: derivedVideoScale)
+    }
+
+    if setFrame {
+      player.window.setFrameImmediately(geometry.windowFrame, animate: animate)
     }
 
     if updateCache {

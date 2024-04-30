@@ -662,7 +662,7 @@ struct PlayerSaveState {
         mpv.setInt(MPVOption.Video.videoRotate, userRotation)
       }
 
-      if let windowScale = double(for: .windowScale) {
+      if let windowScale = double(for: .windowScale), windowScale > 0.0 {
         mpv.setDouble(MPVProperty.windowScale, windowScale)
       }
 
