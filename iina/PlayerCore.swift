@@ -1150,7 +1150,7 @@ class PlayerCore: NSObject {
     if let videoSizeACR = info.videoGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
       log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
-    } else if let mpvVidGeo = mpv.queryForVideoGeometry(), let videoSizeACR = mpvVidGeo.videoSizeACR {
+    } else if let mpvVidGeo = mpv.syncVideoGeometryFromMPV(), let videoSizeACR = mpvVidGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
       log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else {
@@ -2206,7 +2206,7 @@ class PlayerCore: NSObject {
 
     // Make sure to call this because mpv does not always trigger it.
     let newVidGeo: VideoGeometry
-    if let mpvVidGeo = mpv.queryForVideoGeometry() {
+    if let mpvVidGeo = mpv.syncVideoGeometryFromMPV() {
       newVidGeo = mpvVidGeo
     } else {
       // Sometimes when closing & reopening player windows too quickly, mpv falls behind
@@ -2831,7 +2831,7 @@ class PlayerCore: NSObject {
         var videoGeo = info.videoGeo
         if !videoGeo.hasValidSize {
           // Fall back to querying mpv:
-          guard let videoGeoNew = mpv.queryForVideoGeometry() else {
+          guard let videoGeoNew = mpv.syncVideoGeometryFromMPV() else {
             log.debug("Cannot generate thumbnails: could not get video params from mpv")
             clearExistingThumbnails(for: currentMedia)
             return

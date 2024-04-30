@@ -235,7 +235,7 @@ not applying FFmpeg 9599 workaround
       return true
     }
     let isStale = mpv != iina
-    player.log.verbose("IsStale: IINA \(iina), mpv \(mpv) → \(isStale.yesno)")
+    player.log.verbose("IINA \(iina), mpv \(mpv) → isStale=\(isStale.yesno)")
     return isStale
   }
 
@@ -906,7 +906,7 @@ not applying FFmpeg 9599 workaround
   }
 
   /// Makes calls to mpv to get the latest video params, then returns them.
-  func queryForVideoGeometry() -> VideoGeometry? {
+  func syncVideoGeometryFromMPV() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
     guard player.info.isFileLoaded else {
       player.log.verbose("Cannot get videoGeo: file not loaded")
@@ -946,7 +946,7 @@ not applying FFmpeg 9599 workaround
     return params
   }
 
-  /// See notes on `backingScaleFactor` in `queryForVideoGeometry()`
+  /// See notes on `backingScaleFactor` in `syncVideoGeometryFromMPV()`
   /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
   /// Also, mpv uses `backingScaleFactor` for calcalations. IINA Advance does not, because that has no correlation with the
   /// screen's actual scale factor and is at best an oversimplification which is less wrong on average. It is like assuming

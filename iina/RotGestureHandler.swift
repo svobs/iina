@@ -27,7 +27,7 @@ class RotationGestureHandler {
 
     switch recognizer.state {
     case .began, .changed:
-      guard let videoGeo = player.mpv.queryForVideoGeometry() else {
+      guard let videoGeo = player.mpv.syncVideoGeometryFromMPV() else {
         return
       }
       self.videoGeo = videoGeo
