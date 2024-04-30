@@ -25,10 +25,10 @@
             <point key="canvasLocation" x="-1607" y="64"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="6zR-96-iKB" userLabel="Prefs &gt; General &gt; Behavior" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="568" height="692"/>
+            <rect key="frame" x="0.0" y="0.0" width="568" height="716"/>
             <subviews>
                 <textField identifier="SectionTitleBehavior" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="38y-2I-MGs">
-                    <rect key="frame" x="-2" y="668" width="66" height="16"/>
+                    <rect key="frame" x="-2" y="692" width="66" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Behavior:" id="uQR-Fx-oEm">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -36,10 +36,10 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="251" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WFe-Uj-CJG" userLabel="AtLaunch-RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="448" height="676"/>
+                    <rect key="frame" x="120" y="8" width="448" height="700"/>
                     <subviews>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="750" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5Nu-WP-fyV" userLabel="AtLaunch-HStack View">
-                            <rect key="frame" x="0.0" y="656" width="289" height="20"/>
+                            <rect key="frame" x="0.0" y="680" width="289" height="20"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="OXi-vL-mzp">
                                     <rect key="frame" x="-2" y="0.0" width="65" height="20"/>
@@ -81,14 +81,14 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Xfd-La-Ryk" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="652" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="676" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="ZEL-lZ-2wA"/>
                                 <constraint firstAttribute="height" id="e8R-xd-kYm"/>
                             </constraints>
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="tRO-oH-MAp">
-                            <rect key="frame" x="-2" y="631" width="450" height="18"/>
+                            <rect key="frame" x="-2" y="655" width="450" height="18"/>
                             <buttonCell key="cell" type="check" title="Restore open windows &amp; playback state from previous launches" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="izA-YX-std">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -98,6 +98,57 @@
                             </constraints>
                             <connections>
                                 <binding destination="IBP-Mz-Maa" name="value" keyPath="values.enableRestoreUIState" id="JBt-jY-qiD"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="dz6-TS-Xvp" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="652" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="height" id="MqG-bp-FwP"/>
+                                <constraint firstAttribute="width" constant="1" id="oYB-VA-YjP"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="IBP-Mz-Maa" name="hidden2" keyPath="values.enableAdvancedSettings" previousBinding="bxA-O5-wyg" id="Vh2-O1-pDo">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="IBP-Mz-Maa" name="hidden" keyPath="values.enableRestoreUIState" id="bxA-O5-wyg">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button translatesAutoresizingMaskIntoConstraints="NO" id="GB7-3o-cUO">
+                            <rect key="frame" x="14" y="631" width="434" height="18"/>
+                            <buttonCell key="cell" type="check" title="Disable save/restore when launched via command line" bezelStyle="regularSquare" imagePosition="left" inset="2" id="47x-yb-eik">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="IBP-Mz-Maa" name="value" keyPath="values.enableRestoreUIStateForCmdLineLaunches" id="wV0-oP-urk">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="IBP-Mz-Maa" name="hidden2" keyPath="values.enableAdvancedSettings" previousBinding="TBs-jb-BvF" id="tXB-gu-37C">
+                                    <dictionary key="options">
+                                        <integer key="NSMultipleValuesPlaceholder" value="-1"/>
+                                        <integer key="NSNoSelectionPlaceholder" value="-1"/>
+                                        <integer key="NSNotApplicablePlaceholder" value="-1"/>
+                                        <integer key="NSNullPlaceholder" value="-1"/>
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="IBP-Mz-Maa" name="hidden" keyPath="values.enableRestoreUIState" id="TBs-jb-BvF">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="N4H-We-bZ1" userLabel="0pt Spacer">
@@ -711,6 +762,7 @@
                         <constraint firstItem="Tdv-Vn-5EA" firstAttribute="leading" secondItem="tRO-oH-MAp" secondAttribute="leading" constant="16" id="q2I-4N-PZr"/>
                         <constraint firstItem="5Nu-WP-fyV" firstAttribute="top" secondItem="WFe-Uj-CJG" secondAttribute="top" id="qNQ-1C-LY6"/>
                         <constraint firstItem="8Ql-ym-BvF" firstAttribute="height" secondItem="DUm-O0-pdI" secondAttribute="height" id="vCL-TH-fql"/>
+                        <constraint firstItem="Tdv-Vn-5EA" firstAttribute="leading" secondItem="GB7-3o-cUO" secondAttribute="leading" id="wVn-79-RlE"/>
                     </constraints>
                     <visibilityPriorities>
                         <integer value="1000"/>
@@ -736,8 +788,12 @@
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
@@ -824,7 +880,7 @@
                             </connections>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Q1d-l6-T8I">
-                            <rect key="frame" x="-2" y="-1" width="372" height="18"/>
+                            <rect key="frame" x="-2" y="-1" width="359" height="18"/>
                             <buttonCell key="cell" type="check" title="Shorten titles which begin with duplicate text using &quot;…&quot;" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="G44-l9-kVk">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>

@@ -357,13 +357,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let activePlayer = PlayerCore.active  // Load the first PlayerCore
     Logger.log("Using \(activePlayer.mpv.mpvVersion!)")
 
+    // Restore window state *before* hooking up the listener which saves state.
+    let restoredSomething = restoreWindowsFromPreviousLaunch()
+
     if commandLineStatus.isCommandLine {
       // (Option A) Launch from command line.
-      // Do not restore windows, and do not save state for this launch.
       startFromCommandLine()
     } else {
-      // Restore window state *before* hooking up the listener which saves state
-      let restoredSomething = restoreWindowsFromPreviousLaunch()
       if !restoredSomething && !openFileCalled {
         // (Option B) Launch app (standalone), but no windows to restore.
         // Fall back to default action:
@@ -376,8 +376,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func startFromCommandLine() {
-    Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
-
     var lastPlayerCore: PlayerCore? = nil
     let getNewPlayerCore = { [self] () -> PlayerCore in
       let pc = PlayerCore.newPlayerCore
@@ -542,6 +540,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     guard Preference.UIState.isRestoreEnabled else {
       Logger.log("Restore is disabled. Wll not restore windows")
+      return false
+    }
+
+    if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
+      Logger.log("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
+      Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
       return false
     }
 

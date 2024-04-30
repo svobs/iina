@@ -444,18 +444,23 @@ struct Preference {
 
     // MARK: - Keys: Internal UI State
 
-    /// When saving and restoring the UI state is enabled, we need to first check if other instances of IINA are running so that they
+    /// When saving and restoring the UI state is enabled, we need to first check if other instances of IINA Advance are running so that they
     /// don't overwrite each other's data. To do that, we can have each instance listen for changes to this counter and respond
     /// appropriately.
     static let launchCount = Key("LaunchCount")
 
-    /// If true, enables save of IINA's playback state & UI as it changes, and enables restore to the previous values when IINA is relaunched.
+    /// If true:
+    /// 1. Enables save of IINA's UI state as it changes
+    /// 2. Enables restore of previous launches when app is relaunched.
     ///
     /// NOTE: Do not use this directly. Use `Preference.UIState.isRestoreEnabled()` so that runtime overrides work.
     static let enableRestoreUIState = Key("enableRestoreUIState")
 
     static let alwaysAskBeforeRestoreAtLaunch = Key("alwaysAskBeforeRestoreAtLaunch")
     static let alwaysPauseMediaWhenRestoringAtLaunch = Key("alwaysPauseMediaWhenRestoringAtLaunch")
+    /// If `enableRestoreUIStateForCmdLineLaunch==false`, then save & restore of UI state will be disabled
+    /// for launches via the command line (as though `enableRestoreUIState==false`).
+    static let enableRestoreUIStateForCmdLineLaunches = Key("enableRestoreUIStateForCmdLineLaunches")
     static let isRestoreInProgress = Key("isRestoreInProgress")
 
     // Index of currently selected tab in Navigator table
@@ -1223,6 +1228,7 @@ struct Preference {
     .enableRestoreUIState: true,
     .alwaysAskBeforeRestoreAtLaunch: false,
     .alwaysPauseMediaWhenRestoringAtLaunch: false,
+    .enableRestoreUIStateForCmdLineLaunches: false,
     .isRestoreInProgress: false,
     .uiPrefWindowNavTableSelectionIndex: 0,
     .uiPrefDetailViewScrollOffsetY: 0.0,
