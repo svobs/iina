@@ -174,15 +174,19 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   // MARK: - UI: Media Info
 
   func updateScrollingLabels() {
-    loadIfNeeded()
-    titleLabel.stepNext()
-    artistAlbumLabel.stepNext()
+    windowController.animationPipeline.submitSudden { [self] in
+      loadIfNeeded()
+      titleLabel.stepNext()
+      artistAlbumLabel.stepNext()
+    }
   }
 
   func resetScrollingLabels() {
-    loadIfNeeded()
-    titleLabel.reset()
-    artistAlbumLabel.reset()
+    windowController.animationPipeline.submitSudden { [self] in
+      loadIfNeeded()
+      titleLabel.reset()
+      artistAlbumLabel.reset()
+    }
   }
 
   func updateTitle(mediaTitle: String, mediaAlbum: String, mediaArtist: String) {
