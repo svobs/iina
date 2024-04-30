@@ -358,26 +358,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Using \(activePlayer.mpv.mpvVersion!)")
 
     if commandLineStatus.isCommandLine {
-      // (Option A) Launch from command line
+      // (Option A) Launch from command line.
+      // Do not restore windows, and do not save state for this launch.
       startFromCommandLine()
-    } else if openFileCalled {
-      // (Option B) Launch app from UI with open file(s)
-      // do nothing special here
     } else {
-      // (Option C) Launch app (standalone)
-      startWithNoOpenedFiles()
+      // Restore window state *before* hooking up the listener which saves state
+      let restoredSomething = restoreWindowsFromPreviousLaunch()
+      if !restoredSomething && !openFileCalled {
+        // (Option B) Launch app (standalone), but no windows to restore.
+        // Fall back to default action:
+        doLaunchOrReopenAction()
+      }
+      /// Else: (Option C) Launch app from UI via file open (`openFileCalled==true`)
     }
 
     finishLaunching()
-  }
-
-  private func startWithNoOpenedFiles() {
-    // Restore window state *before* hooking up the listener which saves state
-    let restoredSomething = restoreWindowsFromPreviousLaunch()
-    if !restoredSomething {
-      // Fall back to default action
-      doLaunchOrReopenAction()
-    }
   }
 
   private func startFromCommandLine() {
