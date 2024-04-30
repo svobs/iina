@@ -220,7 +220,11 @@ class PlaybackInfo {
   }
 
   /// If `true`, then `videoView` is used to display album art, or default album art, which is always square
-  var isShowingAlbumArt: Bool = false
+  var isShowingAlbumArt: Bool = false {
+    didSet {
+      log.verbose("Updated isShowingAlbumArt to: \(isShowingAlbumArt)")
+    }
+  }
 
   /// Should be read/written on main thread only
   var videoGeo = VideoGeometry.nullGeometry {
@@ -463,7 +467,7 @@ class PlaybackInfo {
       log.error("Unable to find ffMeta from either cache or ffmpeg for URL: \(url?.description ?? "nil")")
       return nil
     }
-    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), URL: \(url?.description ?? "nil")")
+    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), URL: \(url?.description.pii ?? "nil")")
     return ffMeta
   }
 

@@ -14,9 +14,13 @@ extension PlayerWindowController {
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVidGeo(_ newVidGeo: VideoGeometry) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
+    log.verbose("[applyVidGeo] Entered, newVidGeo=\(newVidGeo)")
 
     guard newVidGeo.hasValidSize else { return }
-    guard let currentMedia = player.info.currentMedia else { return }
+    guard let currentMedia = player.info.currentMedia else {
+      log.verbose("[applyVidGeo] Aborting: currentMedia is nil")
+      return
+    }
 
     let oldVidGeo = player.info.videoGeo
     // Update cached values for use elsewhere:
@@ -36,16 +40,17 @@ extension PlayerWindowController {
     // Don't show art if currently loading
     let isCompletelyLoaded = currentMedia.loadStatus.isAtLeast(.completelyLoaded)
     if isCompletelyLoaded, !player.isStopping, !player.isStopped {
+      // Check whether to show album art
+      let showAlbumArt = player.info.currentMediaAudioStatus == .isAudio
+
       if player.info.isVideoTrackSelected {
-        log.verbose("Hiding defaultAlbumArt because vidSelected=Y")
+        log.verbose("[applyVidGeo] Hiding defaultAlbumArt because vidSelected=Y (showArt=\(showAlbumArt.yn))")
         showDefaultArt = false
       } else {
-        log.verbose("Showing defaultAlbumArt because vidSelected=N")
+        log.verbose("[applyVidGeo] Showing defaultAlbumArt because vidSelected=N (showArt=\(showAlbumArt.yn))")
         showDefaultArt = true
       }
 
-      // Check whether to show album art
-      let showAlbumArt = player.info.currentMediaAudioStatus == .isAudio
       /// If `true`, then `player.info.videoAspect` will return 1:1.
       player.info.isShowingAlbumArt = showDefaultArt! || showAlbumArt
     } else {
@@ -90,9 +95,13 @@ extension PlayerWindowController {
     let currentLayout = currentLayout
 
     if currentLayout.mode == .musicMode {
-      log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
+      guard musicModeGeo.videoAspect != newVideoAspect else {
+        log.debug("[applyVidGeo M Done] Player is in music mode but no change to videoAspect (\(musicModeGeo.videoAspect))")
+        return
+      }
+      log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       let newGeometry = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: newVideoAspect)
       applyMusicModeGeoInAnimationPipeline(newGeometry)
       return

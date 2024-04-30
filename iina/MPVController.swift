@@ -908,8 +908,12 @@ not applying FFmpeg 9599 workaround
   /// Makes calls to mpv to get the latest video params, then returns them.
   func syncVideoGeometryFromMPV() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
-    guard player.info.isFileLoaded else {
-      player.log.verbose("Cannot get videoGeo: file not loaded")
+    guard let currentMedia = player.info.currentMedia else {
+      player.log.verbose("Cannot get videoGeo from mpv: currentMedia is nil")
+      return nil
+    }
+    guard currentMedia.isFileLoaded else {
+      player.log.verbose("Cannot get videoGeo from mpv: file not loaded")
       return nil
     }
     // Will crash if querying mpv after stop command started
