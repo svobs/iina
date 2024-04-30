@@ -843,7 +843,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @objc
   func shutdownDidTimeout() {
     timedOut = true
-    if !PlayerCoreManager.allPlayersHaveShutdown {
+    if !PlayerCoreManager.allPlayersShutdown {
       Logger.log("Timed out waiting for players to stop and shut down", level: .warning)
       // For debugging list players that have not terminated.
       for player in PlayerCoreManager.playerCores {
@@ -940,8 +940,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // player and shutdown was initiated by typing "q" in the player window. That sends a quit
     // command directly to mpv causing mpv and the player to shutdown before application
     // termination is initiated.
-    let allPlayersHaveShutdown = PlayerCoreManager.allPlayersHaveShutdown
-    if allPlayersHaveShutdown {
+    let allPlayersShutdown = PlayerCoreManager.allPlayersShutdown
+    if allPlayersShutdown {
       Logger.log("All players have shut down")
     } else {
       // Shutdown of player cores involves sending the stop and quit commands to mpv. Even though
@@ -952,7 +952,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Usually will have to wait for logout request to complete if logged into an online subtitle
     // provider.
-    var canTerminateNow = allPlayersHaveShutdown
+    var canTerminateNow = allPlayersShutdown
     if OnlineSubtitle.loggedIn {
       canTerminateNow = false
       Logger.log("Waiting for logout of online subtitles provider to complete")
@@ -1017,12 +1017,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// request has completed. If there are no other termination tasks outstanding then this method will instruct AppKit to proceed with
     /// termination.
     func proceedWithTermination() {
-      let allPlayersHaveShutdown = PlayerCoreManager.allPlayersHaveShutdown
+      let allPlayersShutdown = PlayerCoreManager.allPlayersShutdown
       let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
       // All players have shut down.
-      Logger.log("AllPlayersShutdown: \(allPlayersHaveShutdown), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut)")
+      Logger.log("AllPlayersShutdown: \(allPlayersShutdown), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut)")
       // If any player has not shut down then continue waiting.
-      guard allPlayersHaveShutdown && didSubtitleSvcLogOut else { return }
+      guard allPlayersShutdown && didSubtitleSvcLogOut else { return }
       // All players have shutdown. No longer logged into an online subtitles provider.
       Logger.log("Proceeding with application termination")
       // No longer need the timer that forces termination to proceed.

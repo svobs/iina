@@ -257,7 +257,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   lazy var windowedModeGeo: PWGeometry = PlayerWindowController.windowedModeGeoLastClosed {
     didSet {
-      log.verbose("Updated windowedModeGeo := \(windowedModeGeo)")
+      log.verbose("Updated windowedModeGeo ≔ \(windowedModeGeo)")
       assert(windowedModeGeo.mode.isWindowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode)")
       assert(!windowedModeGeo.fitOption.isFullScreen, "windowedModeGeo has invalid fitOption: \(windowedModeGeo.fitOption)")
     }
@@ -288,13 +288,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
-      Logger.log("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) := \(windowedModeGeoLastClosed)", level: .verbose)
+      Logger.log("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)", level: .verbose)
     }
   }
 
   lazy var musicModeGeo: MusicModeGeometry = PlayerWindowController.musicModeGeoLastClosed {
     didSet {
-      log.verbose("Updated musicModeGeo := \(musicModeGeo)")
+      log.verbose("Updated musicModeGeo ≔ \(musicModeGeo)")
     }
   }
 

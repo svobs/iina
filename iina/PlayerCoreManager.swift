@@ -16,7 +16,7 @@ class PlayerCoreManager {
     return PlayerCore.manager.getPlayerCores()
   }
 
-  static var allPlayersHaveShutdown: Bool {
+  static var allPlayersShutdown: Bool {
     for player in playerCores {
       if !player.isShutdown {
         return false

@@ -84,6 +84,9 @@ struct PlayerSaveState {
   static fileprivate let specErrPre = "Failed to parse LayoutSpec from string:"
   static fileprivate let geoErrPre = "Failed to parse WindowGeometry from string:"
 
+  static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
+  static let saveLock = Lock()
+
   let properties: [String: Any]
 
   /// Cached values parsed from `properties`
@@ -249,6 +252,8 @@ struct PlayerSaveState {
       props[PropName.abLoopB.rawValue] = abLoopB.stringMaxFrac6
     }
 
+    // mpv calls - should cache these instead eventually
+
     let maxVolume = player.mpv.getInt(MPVOption.Audio.volumeMax)
     if maxVolume != 100 {
       props[PropName.maxVolume.rawValue] = String(maxVolume)
@@ -264,6 +269,7 @@ struct PlayerSaveState {
     return props
   }
 
+  // Saves this player's state asynchronously
   static func save(_ player: PlayerCore) {
     guard Preference.UIState.isSaveEnabled else { return }
 
@@ -273,9 +279,9 @@ struct PlayerSaveState {
       ticket = $0
     }
 
-    /// Runs asyncronously in background queue to avoid blocking UI.
+    /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
-    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.playerStateSaveDelay) {
+    saveQueue.asyncAfter(deadline: DispatchTime.now() + AppData.playerStateSaveDelay) {
       guard ticket == player.saveTicketCounter else {
         return
       }
@@ -307,12 +313,16 @@ struct PlayerSaveState {
         let wc = player.windowController!
         // Retrieve appropriate geometry values, updating to latest window frame if needed:
         let geo = wc.geo(from: wc.currentLayout)
-        PlayerCore.backgroundQueue.async {
-          let properties = generatePropDict(from: player, geo)
-          if player.log.isTraceEnabled {
-            player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
+        saveQueue.async {
+          saveLock.withLock {
+            guard !player.isShuttingDown else { return }
+
+            let properties = generatePropDict(from: player, geo)
+            if player.log.isTraceEnabled {
+              player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
+            }
+            Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
           }
-          Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
         }
       }
     }
@@ -320,14 +330,19 @@ struct PlayerSaveState {
 
   static func saveSynchronously(_ player: PlayerCore) {
     dispatchPrecondition(condition: .onQueue(.main))
-    let wc = player.windowController!
-    // Retrieve appropriate geometry values, updating to latest window frame if needed:
-    let geo = wc.geo(from: wc.currentLayout)
-    let properties = generatePropDict(from: player, geo)
-    if player.log.isTraceEnabled {
-      player.log.trace("Saving player state: \(properties)")
+    player.log.debug("Saving player state synchronously")
+    /// Using `saveLock` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
+    saveLock.withLock {
+      let wc = player.windowController!
+      // Retrieve appropriate geometry values, updating to latest window frame if needed:
+      let geo = wc.geo(from: wc.currentLayout)
+      let properties = generatePropDict(from: player, geo)
+      if player.log.isTraceEnabled {
+        player.log.trace("Saving player state: \(properties)")
+      }
+      Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
+      player.log.debug("Done saving player state synchronously")
     }
-    Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
   }
 
   // MARK: - Restore State / Deserialize from prefs
