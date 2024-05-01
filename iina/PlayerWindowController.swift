@@ -3772,11 +3772,17 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     volumeSlider.doubleValue = volume
     muteButton.isEnabled = hasAudio
     muteButton.state = isMuted ? .on : .off
-    muteButton.image = volumeIcon(volume: volume, isMuted: isMuted)
+    let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
+    muteButton.image = volumeImage
 
     if isInMiniPlayer {
       miniPlayer.loadIfNeeded()
-      miniPlayer.updateVolumeUI(volume: volume, isMuted: isMuted, hasAudio: hasAudio)
+
+      miniPlayer.volumeSlider.isEnabled = hasAudio
+      miniPlayer.volumeSlider.doubleValue = volume
+      miniPlayer.volumeLabel.intValue = Int32(volume)
+      miniPlayer.volumeButton.image = volumeImage
+      miniPlayer.muteButton.image = volumeImage
     }
   }
 

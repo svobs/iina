@@ -207,15 +207,6 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
   // MARK: - Volume UI
 
-  func updateVolumeUI(volume: Double, isMuted: Bool, hasAudio: Bool) {
-    volumeSlider.isEnabled = hasAudio
-    volumeSlider.doubleValue = volume
-    volumeLabel.intValue = Int32(volume)
-    let image = windowController.volumeIcon(volume: volume, isMuted: isMuted)
-    volumeButton.image = image
-    muteButton.image = image
-  }
-
   /// From `NSPopoverDelegate`: close volume popover
   func popoverWillClose(_ notification: Notification) {
     if NSWindow.windowNumber(at: NSEvent.mouseLocation, belowWindowWithWindowNumber: 0) != window!.windowNumber {
