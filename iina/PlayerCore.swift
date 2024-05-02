@@ -825,11 +825,15 @@ class PlayerCore: NSObject {
 
     guard let imageFolder = mpv.getString(MPVOption.Screenshot.screenshotDirectory) else { return }
     guard let lastScreenshotURL = Utility.getLatestScreenshot(from: imageFolder) else { return }
-    guard let screenshotImage = NSImage(contentsOf: lastScreenshotURL) else {
-      self.sendOSD(.screenshot)
+
+    defer {
       if !saveToFile {
         try? FileManager.default.removeItem(at: lastScreenshotURL)
       }
+    }
+
+    guard let screenshotImage = NSImage(contentsOf: lastScreenshotURL) else {
+      self.sendOSD(.screenshot)
       return
     }
     if saveToClipboard {
@@ -838,9 +842,6 @@ class PlayerCore: NSObject {
     }
     guard Preference.bool(for: .screenshotShowPreview) else {
       self.sendOSD(.screenshot)
-      if !saveToFile {
-        try? FileManager.default.removeItem(at: lastScreenshotURL)
-      }
       return
     }
 
@@ -854,9 +855,6 @@ class PlayerCore: NSObject {
                        fileURL: saveToFile ? lastScreenshotURL : nil)
 
       self.sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: osdViewController)
-      if !saveToFile {
-        try? FileManager.default.removeItem(at: lastScreenshotURL)
-      }
     }
   }
 
