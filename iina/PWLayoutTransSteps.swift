@@ -1071,7 +1071,11 @@ extension PlayerWindowController {
       log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
     }
 
+    // abort any queued screen updates
+    $screenChangedTicketCounter.withLock { $0 += 1 }
+    $screenParamsChangedTicketCounter.withLock { $0 += 1 }
     isAnimatingLayoutTransition = false
+
     player.saveState()
   }
 

@@ -2281,7 +2281,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     }
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
-    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.2) { [self] in
       guard ticket == screenParamsChangedTicketCounter else { return }
 
       let screens = PlayerWindowController.buildScreenMap()
@@ -2331,24 +2331,24 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     guard !isAnimating, !isAnimatingLayoutTransition, !isMagnifying, !player.info.isRestoring else { return }
     guard let window = window else { return }
 
-    let layout = currentLayout
-    if layout.isLegacyFullScreen {
+    // We can get here if external calls from accessibility APIs change the window location.
+    // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
       animationPipeline.submitSudden({ [self] in
-        log.verbose("WindowDidMove to frame: \(window.frame)")
-        // We can get here if external calls from accessibility APIs change the window location.
-        // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
+        let layout = currentLayout
+        if layout.isLegacyFullScreen {
+          log.verbose("WindowDidMove to frame: \(window.frame)")
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens
           // and the user is changing focus between windows or apps. This can also happen if the user is using a third-party
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           log.verbose("Updating legacy full screen window in response to unexpected windowDidMove")
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
+        } else {
+          player.saveState()
+          player.events.emit(.windowMoved, data: window.frame)
         }
       })
-    } else {
-      player.saveState()
-      player.events.emit(.windowMoved, data: window.frame)
     }
   }
 
