@@ -315,10 +315,14 @@ extension PlayerWindowController {
     // Extra animation when entering legacy full screen: cover camera housing with black bar
     let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout && endingAnimationDuration > 0.0
 
+    // Extra animation when exiting legacy full screen: remove camera housing with black bar
+    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout && endingAnimationDuration > 0.0
+
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
-    if useExtraAnimationForEnteringLegacyFullScreen {
-      openFinalPanelsDuration *= 0.8
+    if useExtraAnimationForEnteringLegacyFullScreen || useExtraAnimationForEnteringLegacyFullScreen {
+      let frameWithoutCameraRatio = windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height
+      openFinalPanelsDuration *= frameWithoutCameraRatio
     } else if transition.isEnteringInteractiveMode {
       openFinalPanelsDuration *= 0.5
       fadeInNewViewsDuration *= 0.5
@@ -389,6 +393,32 @@ extension PlayerWindowController {
 
     // - Ending animations:
 
+    // Extra animation for exiting legacy full screen (to Native Windowed Mode)
+    if useExtraAnimationForExitingLegacyFullScreen {
+      let cameraToTotalFrameatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
+      let duration = endingAnimationDuration * cameraToTotalFrameatio
+
+      transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn, { [self] in
+
+        let newGeo: PWGeometry
+        if transition.inputGeometry.hasTopPaddingForCameraHousing {
+          /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
+          /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
+          /// (will expand window to cover `cameraHousingHeight` in next animation)
+          newGeo = transition.inputGeometry.clone(windowFrame: windowedModeScreen.frameWithoutCameraHousing, screenID: windowedModeScreen.screenID, topMarginHeight: 0)
+        } else {
+          /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
+          /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
+          let cameraHeight = windowedModeScreen.cameraHousingHeight ?? 0
+          let geo = transition.inputGeometry
+          let margins = geo.viewportMargins.addingTo(top: -cameraHeight)
+          newGeo = geo.clone(windowFrame: geo.windowFrame.addingTo(top: -cameraHeight), viewportMargins: margins)
+        }
+        log.verbose("[\(transition.name)] Updating legacy FS window to show camera housing prior to entering native windowed mode with windowFrame=\(newGeo.windowFrame)")
+        applyLegacyFSGeo(newGeo)
+      }))
+    }
+
     // EndingAnimation: Open new panels and fade in new views
     transition.tasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
@@ -409,10 +439,12 @@ extension PlayerWindowController {
 
     // If entering legacy full screen, will add an extra animation to hiding camera housing / menu bar / dock
     if useExtraAnimationForEnteringLegacyFullScreen {
-      transition.tasks.append(IINAAnimation.Task(duration: endingAnimationDuration * 0.2, timing: .easeIn, { [self] in
+      let cameraToTotalFrameatio = 1 - (windowedModeScreen.frameWithoutCameraHousing.size.height / windowedModeScreen.frame.height)
+      let duration = endingAnimationDuration * cameraToTotalFrameatio
+      transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn, { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
         let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
-        log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock")
+        log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         applyLegacyFSGeo(newGeo)
       }))
     }

@@ -2239,7 +2239,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
         player.events.emit(.windowScreenChanged)
       })
 
-      guard !player.info.isRestoring else { return }
+      guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
       animationPipeline.submit(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
         let screenID = bestScreen.screenID
@@ -2294,7 +2294,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       self.videoView.updateDisplayLink()
 
-      guard !player.info.isRestoring else { return }
+      guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
       // In normal full screen mode AppKit will automatically adjust the window frame if the window
       // is moved to a new screen such as when the window is on an external display and that display
@@ -2328,7 +2328,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowDidMove(_ notification: Notification) {
-    guard !isAnimating, !isMagnifying, !player.info.isRestoring else { return }
+    guard !isAnimating, !isAnimatingLayoutTransition, !isMagnifying, !player.info.isRestoring else { return }
     guard let window = window else { return }
 
     let layout = currentLayout

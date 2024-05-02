@@ -445,9 +445,10 @@ extension PlayerWindowController {
   func applyWindowResize(usingGeometry newGeometry: PWGeometry? = nil) {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
+    let isFullScreen = isFullScreen
 
     IINAAnimation.disableAnimation {
-      log.verbose("ApplyWindowResize: newGeo=\(newGeometry?.description ?? "nil")")
+      log.verbose("ApplyWindowResize: fs=\(isFullScreen.yn) newGeo=\(newGeometry?.description ?? "nil")")
       if let newGeometry {
         /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
         videoView.apply(newGeometry)
