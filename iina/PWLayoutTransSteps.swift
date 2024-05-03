@@ -1107,12 +1107,19 @@ extension PlayerWindowController {
     var newOffsetFromTop: CGFloat = 8
     if isLegacyFullScreen {
       let screen = NSScreen.forScreenID(geometry.screenID)!
-      // Make sure OSD (& Additional Info) does not overlap camera housing
+      // OSD & Additional Info must never overlap camera housing, even if video does
       let cameraHousingHeight = screen.cameraHousingHeight ?? 0
-      let paddingForCameraHousing = screen.frame.height - geometry.windowFrame.height
-      let usedSpaceAbove = paddingForCameraHousing + geometry.outsideTopBarHeight + geometry.insideTopBarHeight
-      newOffsetFromTop += cameraHousingHeight  // Remember, OSD & AdditionalInfo must never overlap camera housing
-      newOffsetFromTop += paddingForCameraHousing - usedSpaceAbove
+      let usedSpaceAbove = geometry.outsideTopBarHeight + geometry.insideTopBarHeight
+      
+      if usedSpaceAbove < cameraHousingHeight {
+        let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
+        newOffsetFromTop -= windowGapForCameraHousing
+
+        let videoFillsEntireScreen = !geometry.hasTopPaddingForCameraHousing
+        if videoFillsEntireScreen {
+          newOffsetFromTop += cameraHousingHeight
+        }
+      }
     }
     log.verbose("Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)")
     osdTopToTopBarConstraint.animateToConstant(newOffsetFromTop)
