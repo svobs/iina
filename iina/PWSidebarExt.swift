@@ -878,6 +878,8 @@ extension PlayerWindowController {
     }
 
     return IINAAnimation.disableAnimation { [self] in
+      videoView.videoLayer.enterAsynchronousMode()
+      
       let newGeo: PWGeometry?
 
       if leadingSidebarIsResizing {

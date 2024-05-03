@@ -71,6 +71,8 @@ extension PlayerWindowController {
 
     guard let window = window else { return }
 
+    videoView.videoLayer.enterAsynchronousMode()
+
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
     let opacity = transition.isInitialLayout ? 0.0 : (window.contentView?.layer?.opacity ?? -1)
