@@ -1062,7 +1062,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       playlistView.scrollPlaylistToCurrentItem()
 
       if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !player.info.isRestoring {
-        log.debug("Changing to fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue) == true")
+        log.debug("Changing to fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
         enterFullScreen()
       }
     }
@@ -2221,7 +2221,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       let displayId = screen.displayId
       // Legacy FS work below can be very slow. Try to avoid if possible
       guard videoView.currentDisplay != displayId else {
-        log.verbose("WindowDidChangeScreen (tkt \(ticket)): no work needed; currentDisplayID \(displayId) is unchanged")
+        log.trace("WindowDidChangeScreen (tkt \(ticket)): no work needed; currentDisplayID \(displayId) is unchanged")
         return
       }
 
@@ -2321,7 +2321,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
           let newWindowFrame = newGeo.windowFrame
           log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newWindowFrame), videoSize \(newGeo.videoSize)")
           videoView.apply(newGeo)
-          player.window.setFrameImmediately(newWindowFrame)
+          player.window.setFrameImmediately(newWindowFrame, animate: false)
         }
       }))
     }
@@ -2337,11 +2337,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       animationPipeline.submitSudden({ [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
-          log.verbose("WindowDidMove to frame: \(window.frame)")
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens
           // and the user is changing focus between windows or apps. This can also happen if the user is using a third-party
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
-          log.verbose("Updating legacy full screen window in response to unexpected windowDidMove")
+          let screen = bestScreen
+          log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(screen.screenID.quoted)")
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
         } else {
@@ -2374,9 +2374,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func windowDidBecomeKey(_ notification: Notification) {
     if currentLayout.isLegacyFullScreen {
       window?.level = .iinaFloating
-    }
-    if Preference.bool(for: .useLegacyFullScreen) {
-      updatePresentationOptionsForLegacyFullScreen()
+      updatePresentationOptionsForLegacyFullScreen(entering: true)
     }
 
     // If focus changed from a different window, need to recalculate the current bindings
@@ -2391,9 +2389,9 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowDidResignKey(_ notification: Notification) {
     if currentLayout.isLegacyFullScreen {
+      log.verbose("WindowDidResignKey: relaxing legacy FS window")
       /// Change from `floating` to `normal` so that window doesn't block all others
       window?.level = .normal
-
       updatePresentationOptionsForLegacyFullScreen(entering: false)
     }
 

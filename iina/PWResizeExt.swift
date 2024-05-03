@@ -445,31 +445,27 @@ extension PlayerWindowController {
   func applyWindowResize(usingGeometry newGeometry: PWGeometry? = nil) {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
-    let isFullScreen = isFullScreen
 
     IINAAnimation.disableAnimation {
+      let layout = currentLayout
+      let isTransientResize = newGeometry != nil
+      let isFullScreen = currentLayout.isFullScreen
       log.verbose("ApplyWindowResize: fs=\(isFullScreen.yn) newGeo=\(newGeometry?.description ?? "nil")")
-      if let newGeometry {
-        /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
-        videoView.apply(newGeometry)
-        if !isFullScreen {
+      if !layout.isNativeFullScreen {
+        // Keep video margins up to date in almost every case
+        videoView.apply(newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: player.info.videoAspect))
+
+        if let newGeometry, !isFullScreen {
+          /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
           player.window.setFrameImmediately(newGeometry.windowFrame, animate: false)
         }
       }
-
-      // These may no longer be aligned correctly. Just hide them
-      hideSeekTimeAndThumbnail()
 
       if currentLayout.isMusicMode {
         // Re-evaluate space requirements for labels. May need to start scrolling.
         // Will also update saved state
         miniPlayer.windowDidResize()
-      }
-
-      // Update floating control bar position if applicable
-      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
-
-      if currentLayout.isInteractiveMode {
+      } else if currentLayout.isInteractiveMode {
         // Update interactive mode selectable box size. Origin is relative to viewport origin
         if let newGeometry {
           let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
@@ -478,15 +474,20 @@ extension PlayerWindowController {
           cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
         }
       }
-    }
 
-    // Do not cache supplied geometry. Assume caller will handle it.
-    let isTransientResize = newGeometry != nil
-    if !isFullScreen && !isTransientResize {
-      player.saveState()
-      if currentLayout.mode == .windowed {
-        log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
-        player.updateMPVWindowScale(using: windowedModeGeo)
+      // These may no longer be aligned correctly. Just hide them
+      hideSeekTimeAndThumbnail()
+
+      // Update floating control bar position if applicable
+      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
+
+      // Do not cache supplied geometry. Assume caller will handle it.
+      if !isFullScreen && !isTransientResize {
+        player.saveState()
+        if currentLayout.mode == .windowed {
+          log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
+          player.updateMPVWindowScale(using: windowedModeGeo)
+        }
       }
     }
 
