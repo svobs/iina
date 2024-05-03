@@ -306,12 +306,13 @@ extension PlayerWindowController {
     if let middleGeo = transition.middleGeometry {
       let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideTopBarHeight : middleGeo.outsideTopBarHeight
       let cameraOffset: CGFloat
-      if transition.isExitingLegacyFullScreen && transition.outputLayout.spec.isLegacyStyle {
+      if transition.isExitingLegacyFullScreen {
         // Use prev offset for a smoother animation
         cameraOffset = transition.inputGeometry.topMarginHeight
       } else {
         cameraOffset = transition.outputGeometry.topMarginHeight
       }
+      log.debug("[\(transition.name)] Applying middleGeo: topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)")
       updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
 
       if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting Music Mode
@@ -729,6 +730,11 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] OpenNewPanels. TitleBar_H: \(outputLayout.titleBarHeight), TopOSC_H: \(outputLayout.topOSCHeight)")
 
+    if transition.isExitingLegacyFullScreen {
+      /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
+      updatePresentationOptionsForLegacyFullScreen(entering: false)
+    }
+
     if transition.isEnteringMusicMode {
       miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: musicModeGeo.isVideoVisible)
       miniPlayer.resetScrollingLabels()
@@ -1094,16 +1100,20 @@ extension PlayerWindowController {
     }
   }
 
+  // Update OSD (& Additional Info) views have correct offset from top of screen
   func updateOSDTopOffset(_ geometry: PWGeometry, isLegacyFullScreen: Bool) {
+    var newOffsetFromTop: CGFloat = 8
     if isLegacyFullScreen {
+      let screen = NSScreen.forScreenID(geometry.screenID)!
       // Make sure OSD (& Additional Info) does not overlap camera housing
-      let cameraHousingHeight =  NSScreen.forScreenID(geometry.screenID)?.cameraHousingHeight ?? 0
-      let paddingForCameraHousing =  geometry.topMarginHeight
+      let cameraHousingHeight = screen.cameraHousingHeight ?? 0
+      let paddingForCameraHousing = screen.frame.height - geometry.windowFrame.height
       let usedSpaceAbove = paddingForCameraHousing + geometry.outsideTopBarHeight + geometry.insideTopBarHeight
-      osdTopToTopBarConstraint.animateToConstant(8 + max(0, cameraHousingHeight - usedSpaceAbove))
-    } else {
-      osdTopToTopBarConstraint.animateToConstant(8)
+      newOffsetFromTop += cameraHousingHeight  // Remember, OSD & AdditionalInfo must never overlap camera housing
+      newOffsetFromTop += paddingForCameraHousing - usedSpaceAbove
     }
+    log.verbose("Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)")
+    osdTopToTopBarConstraint.animateToConstant(newOffsetFromTop)
   }
 
   // - Bottom bar

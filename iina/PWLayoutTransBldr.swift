@@ -399,9 +399,6 @@ extension PlayerWindowController {
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn, { [self] in
-        /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
-        updatePresentationOptionsForLegacyFullScreen(entering: false)
-
         let newGeo: PWGeometry
         if transition.inputGeometry.hasTopPaddingForCameraHousing {
           /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
@@ -423,11 +420,6 @@ extension PlayerWindowController {
 
     // EndingAnimation: Open new panels and fade in new views
     transition.tasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
-      if transition.isExitingLegacyFullScreen && !useExtraAnimationForExitingLegacyFullScreen {
-        /// Need to run this before final `setFrame` call because it wasn't already run above
-        updatePresentationOptionsForLegacyFullScreen(entering: false)
-      }
-
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
 
