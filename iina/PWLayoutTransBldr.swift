@@ -139,7 +139,19 @@ extension PlayerWindowController {
     // Don't need this because we already know how to size the window
     isInitialSizeDone = true
 
-    // Restore saved geometries
+    // Restore music mode geometry & state
+    if let priorMusicModeGeometry = priorState.musicModeGeo {
+      log.verbose("Setting musicModeGeo from prior state: \(priorMusicModeGeometry)")
+      musicModeGeo = priorMusicModeGeometry
+    } else {
+      log.error("Failed to get player window layout and/or geometry from prefs")
+    }
+
+    if initialLayout.mode == .musicMode {
+      player.overrideAutoMusicMode = true
+    }
+
+    // Restore windowed mode geometry
     if let priorWindowedModeGeo = priorState.windowedModeGeo {
       if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
         log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or fitOption (\(priorWindowedModeGeo.fitOption)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
@@ -155,17 +167,6 @@ extension PlayerWindowController {
     } else {
       log.error("Failed to get player window geometry from prefs")
     }
-
-    if let priorMusicModeGeometry = priorState.musicModeGeo {
-      log.verbose("Setting musicModeGeo from prior state: \(priorMusicModeGeometry)")
-      musicModeGeo = priorMusicModeGeometry
-    } else {
-      log.error("Failed to get player window layout and/or geometry from prefs")
-    }
-
-    if initialLayout.mode == .musicMode {
-      player.overrideAutoMusicMode = true
-    }
   }
 
   private func configureFromPrefs(_ initialLayout: LayoutState) {
@@ -178,37 +179,29 @@ extension PlayerWindowController {
       player.info.videoGeo = newVidGeo
     }
 
-    if !initialLayout.isFullScreen {
-      let resizeTimingPref = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
-      if resizeTimingPref == .always || resizeTimingPref == .onlyWhenOpen {
-        /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
-        /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
-        let videoAspect = player.info.videoAspect
-        let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
-                                                     minWidth: Constants.WindowedMode.minViewportSize.width,
-                                                     minHeight: Constants.WindowedMode.minViewportSize.height)
-        let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
-                                        height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
-        let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
-        /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
-        /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
-        let mouseLoc = NSEvent.mouseLocation
-        let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
-        let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.stayInside)
-        let windowSize = initialGeo.windowFrame.size
-        let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-        log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize). Will resize using pref=\(resizeTimingPref)")
-        windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
-      } else {
-        // No configured resize strategy. So just apply the last closed geometry right away, with no extra animations
-        log.verbose("Initial layout: using last closed window's geometry")
-        windowedModeGeo = initialLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
-                                                                    keepFullScreenDimensions: false)
-      }
-    }
-
     // Always use last geometry for music mode window:
     musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
+
+    if !initialLayout.isFullScreen {
+      /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
+      /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
+      let videoAspect = player.info.videoAspect
+      let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
+                                                   minWidth: Constants.WindowedMode.minViewportSize.width,
+                                                   minHeight: Constants.WindowedMode.minViewportSize.height)
+      let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
+                                      height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
+      let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
+      /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
+      /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
+      let mouseLoc = NSEvent.mouseLocation
+      let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
+      let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, videoAspect: videoAspect).refit(.stayInside)
+      let windowSize = initialGeo.windowFrame.size
+      let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
+      log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoAspect), windowSize=\(windowSize)")
+      windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
+    }
   }
 
   // MARK: - Building LayoutTransition

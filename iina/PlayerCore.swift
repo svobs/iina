@@ -285,18 +285,6 @@ class PlayerCore: NSObject {
 
   // MARK: - Control
 
-  private func open(_ url: URL?, shouldAutoLoad: Bool = false) {
-    guard let url = url else {
-      Logger.log("empty file path or url", level: .error, subsystem: subsystem)
-      return
-    }
-    Logger.log("Open URL: \(url.absoluteString.pii.quoted), autoload=\(shouldAutoLoad.yn)", subsystem: subsystem)
-    if shouldAutoLoad {
-      info.shouldAutoLoadFiles = true
-    }
-    openPlayerWindow(url: url)
-  }
-
   /**
    Open a list of urls. If there are more than one urls, add the remaining ones to
    playlist and disable auto loading.
@@ -305,24 +293,29 @@ class PlayerCore: NSObject {
    count of playable files.
    */
   @discardableResult
-  func openURLs(_ urls: [URL], shouldAutoLoad autoLoad: Bool = true) -> Int? {
+  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = false) -> Int? {
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs (autoLoad=\(autoLoad.yn)): \(urls.map{$0.absoluteString.pii})")
+    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{$0.absoluteString.pii})")
+    // Reset:
+    info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
+
     let urls = Utility.resolveURLs(urls)
 
     // Handle folder URL (to support mpv shuffle, etc), BD folders and m3u / m3u8 files first.
     // For these cases, mpv will load/build the playlist and notify IINA when it can be retrieved.
     if urls.count == 1 {
-      let url = urls[0]
 
-      if isBDFolder(url)
-          || Utility.playlistFileExt.contains(url.absoluteString.lowercasedPathExtension) {
-        info.shouldAutoLoadFiles = false
-        open(url)
+      let loneURL = urls[0]
+      if isBDFolder(loneURL)
+          || Utility.playlistFileExt.contains(loneURL.absoluteString.lowercasedPathExtension) {
+
+        openPlayerWindow(url: loneURL)
         return nil
       }
     }
+    // Else open multiple URL args...
 
+    // Filter URL args for playable files (video/audio), because mpv will "play" image files, text files (anything?)
     let playableFiles = getPlayableFiles(in: urls)
     let count = playableFiles.count
 
@@ -332,23 +325,23 @@ class PlayerCore: NSObject {
       return 0
     }
 
-    if !autoLoad {
-      info.shouldAutoLoadFiles = false
-    } else {
+    if shouldAutoLoadPlaylist {
       info.shouldAutoLoadFiles = (count == 1)
     }
 
     // open the first file
-    open(playableFiles[0])
+    openPlayerWindow(url: urls[0])
 
-    log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-    addToPlaylist(urls: playableFiles[1..<count])
+    if count > 1 {
+      log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
+      addToPlaylist(urls: playableFiles[1..<count])
+    }
     return count
   }
 
-  func openURL(_ url: URL, shouldAutoLoad: Bool = true) {
+  func openURL(_ url: URL, shouldAutoLoadPlaylist: Bool = true) {
     info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
-    openURLs([url], shouldAutoLoad: shouldAutoLoad)
+    openURLs([url], shouldAutoLoadPlaylist: shouldAutoLoadPlaylist)
   }
 
   func openURLString(_ str: String) {
@@ -386,18 +379,21 @@ class PlayerCore: NSObject {
   }
 
   private func openPlayerWindow(url: URL? = nil) {
+    guard let url = url else {
+      log.error("Cannot open player window: empty file path or url!")
+      return
+    }
     mpv.queue.async { [self] in
       let mediaItem = MediaItem(url: url)
       let path = mediaItem.path
       info.currentMedia = mediaItem
-      log.debug("Opening Player window for URL: \(mediaItem.url.absoluteString.pii.quoted), path: \(path.pii.quoted)")
+      log.debug("Opening PlayerWindow for \(path.pii.quoted)")
 
       // Reset state flags
       isStopping = false
 
       if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log) {
         info.videoGeo = info.videoGeo.substituting(ffMeta)
-        log.debug("OpenPlayerWindow: got videoSize from ffmpeg: \(info.videoGeo.rawWidth) x \(info.videoGeo.rawHeight)")
       }
 
       DispatchQueue.main.async { [self] in

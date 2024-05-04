@@ -593,7 +593,7 @@ struct PlayerSaveState {
     }
 
     // Open the window!
-    player.openURLs([url], shouldAutoLoad: false)
+    player.openURLs([url], shouldAutoLoadPlaylist: false)
 
     let isOnTop = bool(for: .isOnTop) ?? false
     windowController.setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
