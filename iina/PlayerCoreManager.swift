@@ -19,6 +19,7 @@ class PlayerCoreManager {
   static var allPlayersShutdown: Bool {
     for player in playerCores {
       if !player.isShutdown {
+        player.log.verbose("Player has not yet shut down")
         return false
       }
     }
@@ -87,7 +88,15 @@ class PlayerCoreManager {
   }
 
   private func _findIdlePlayerCore() -> PlayerCore? {
-    return playerCores.first { $0.info.isIdle && !$0.info.isFileLoaded && $0.isStopped }
+    var firstIdlePlayer: PlayerCore? = nil
+    for p in playerCores {
+      let isPlayerIdle = p.info.isIdle && p.isStopped && !p.info.isFileLoaded
+      Logger.log("Player-\(p.label): idle:\(p.info.isIdle.yn) stopped:\(p.isStopped.yn) fileLoaded:\(p.info.isFileLoaded.yn) → \(isPlayerIdle ? "IDLE" : "notIdle")")
+      if firstIdlePlayer == nil && isPlayerIdle {
+        firstIdlePlayer = p
+      }
+    }
+    return firstIdlePlayer
   }
 
   func getNonIdle() -> [PlayerCore] {

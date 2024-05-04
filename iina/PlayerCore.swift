@@ -295,7 +295,7 @@ class PlayerCore: NSObject {
   @discardableResult
   func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true) -> Int? {
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{$0.absoluteString.pii})")
+    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{MediaItem.path(for: $0).pii.quoted})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
     info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
@@ -340,8 +340,9 @@ class PlayerCore: NSObject {
     return count
   }
 
-  func openURL(_ url: URL) {
-    openURLs([url])
+  @discardableResult
+  func openURL(_ url: URL) -> Int? {
+    return openURLs([url])
   }
 
   func openURLString(_ str: String) {
@@ -385,7 +386,11 @@ class PlayerCore: NSObject {
       log.error("Cannot open player window: empty file path or url!")
       return
     }
-    mpv.queue.async { [self] in
+
+    /// Need to use `sync` so that:
+    /// 1. Prev use of mpv core can finish stopping / drain queue
+    /// 2. `currentMedia` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
+    mpv.queue.sync { [self] in
       let mediaItem = MediaItem(url: url)
       let path = mediaItem.path
       info.currentMedia = mediaItem
@@ -637,6 +642,8 @@ class PlayerCore: NSObject {
         refreshSyncUITimer()
       }
       mpv.command(.stop)
+
+      isStopped = true
     }
   }
 
@@ -2785,7 +2792,6 @@ class PlayerCore: NSObject {
 
   private func _closeWindow() {
     log.verbose("Closing window")
-    isStopped = true
     info.currentMedia = nil
     windowController.close()
   }

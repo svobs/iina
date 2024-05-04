@@ -67,11 +67,7 @@ class MediaItem: CustomStringConvertible {
   }
 
   var path: String {
-    if url.absoluteString == "stdin" {
-      return "-"
-    } else {
-      return url.isFileURL ? url.path : url.absoluteString
-    }
+    return MediaItem.path(for: url)
   }
 
   var thumbnails: SingleMediaThumbnailsLoader? = nil
@@ -95,6 +91,15 @@ class MediaItem: CustomStringConvertible {
     URL(fileURLWithPath: path)
     guard let url else { return nil }
     self.init(url: url, playlistPos: playlistPos, loadStatus: loadStatus)
+  }
+
+  static func path(for url: URL?) -> String {
+    let url = url ?? URL(string: "stdin")!
+    if url.absoluteString == "stdin" {
+      return "-"
+    } else {
+      return url.isFileURL ? url.path : url.absoluteString
+    }
   }
 }
 
@@ -448,6 +453,7 @@ class PlaybackInfo {
 
   static func updateCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
+    guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
     if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
       let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
       staticInfoLock.withLock {
@@ -470,12 +476,13 @@ class PlaybackInfo {
       missed = true
       ffMeta = updateCachedFFVideoMeta(forURL: url)
     }
+    let path = MediaItem.path(for: url)
 
     guard let ffMeta else {
-      log.error("Unable to find ffMeta from either cache or ffmpeg for URL: \(url?.description ?? "nil")")
+      log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")
       return nil
     }
-    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), URL: \(url?.description.pii ?? "nil")")
+    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)")
     return ffMeta
   }
 
