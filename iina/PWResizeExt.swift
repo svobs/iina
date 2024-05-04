@@ -301,7 +301,7 @@ extension PlayerWindowController {
    The window's position will also be updated to maintain its current center if possible, but also to
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
-  func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false) {
+  func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false, duration: CGFloat = IINAAnimation.DefaultDuration) {
     guard let window else { return }
 
     switch currentLayout.mode {
@@ -316,7 +316,7 @@ extension PlayerWindowController {
       let fitOption: ScreenFitOption = centerOnScreen ? .centerInside : .stayInside
       let newGeometry = newGeoUnconstrained.refit(fitOption)
       log.verbose("Calling applyWindowGeo from resizeViewport (center=\(centerOnScreen.yn)), to: \(newGeometry.windowFrame)")
-      applyWindowGeoInAnimationPipeline(newGeometry)
+      applyWindowGeoInAnimationPipeline(newGeometry, duration: duration)
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
       guard let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
