@@ -125,7 +125,7 @@
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="GB7-3o-cUO">
                             <rect key="frame" x="14" y="631" width="434" height="18"/>
-                            <buttonCell key="cell" type="check" title="Disable save/restore when launched via command line" bezelStyle="regularSquare" imagePosition="left" inset="2" id="47x-yb-eik">
+                            <buttonCell key="cell" type="check" title="Disable save/restore when launched from command line" bezelStyle="regularSquare" imagePosition="left" inset="2" id="47x-yb-eik">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
