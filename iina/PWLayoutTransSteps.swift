@@ -411,9 +411,7 @@ extension PlayerWindowController {
 
     /// These should all be either 0 height or unchanged from `transition.inputLayout`
     apply(visibility: outputLayout.bottomBarView, to: bottomBarView)
-    if !transition.isEnteringFullScreen {
-      apply(visibility: outputLayout.topBarView, to: topBarView)
-    }
+    apply(visibility: outputLayout.topBarView, to: topBarView)
 
     if !transition.inputLayout.hasFloatingOSC {
       // Always remove subviews from OSC - is inexpensive + easier than figuring out if anything has changed
@@ -746,7 +744,7 @@ extension PlayerWindowController {
     topOSCHeightConstraint.animateToConstant(outputLayout.topOSCHeight)
     titleBarHeightConstraint.animateToConstant(outputLayout.titleBarHeight)
 
-    updateOSDTopOffset(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
+    updateOSDTopBarOffset(transition.outputGeometry, isLegacyFullScreen: transition.outputLayout.isLegacyFullScreen)
 
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
@@ -1103,14 +1101,14 @@ extension PlayerWindowController {
   }
 
   // Update OSD (& Additional Info) views have correct offset from top of screen
-  func updateOSDTopOffset(_ geometry: PWGeometry, isLegacyFullScreen: Bool) {
+  func updateOSDTopBarOffset(_ geometry: PWGeometry, isLegacyFullScreen: Bool) {
     var newOffsetFromTop: CGFloat = 8
     if isLegacyFullScreen {
       let screen = NSScreen.forScreenID(geometry.screenID)!
       // OSD & Additional Info must never overlap camera housing, even if video does
       let cameraHousingHeight = screen.cameraHousingHeight ?? 0
       let usedSpaceAbove = geometry.outsideTopBarHeight + geometry.insideTopBarHeight
-      
+
       if usedSpaceAbove < cameraHousingHeight {
         let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height
         newOffsetFromTop -= windowGapForCameraHousing

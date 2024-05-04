@@ -506,7 +506,7 @@ extension PlayerWindowController {
                                 layout: currentLayout, viewportSize: geometry.viewportSize)
     }
 
-    updateOSDTopOffset(geometry, isLegacyFullScreen: true)
+    updateOSDTopBarOffset(geometry, isLegacyFullScreen: true)
     let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideTopBarHeight : geometry.outsideTopBarHeight
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
