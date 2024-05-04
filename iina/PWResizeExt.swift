@@ -149,7 +149,7 @@ extension PlayerWindowController {
       timing = .linear
     }
     /// Finally call `setFrame()`
-    log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → videoSize:\(newWindowGeo.videoSize) newWindowFrame: \(newWindowGeo.windowFrame)")
+    log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
     /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
     windowedModeGeo = newWindowGeo
 

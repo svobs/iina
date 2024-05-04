@@ -645,11 +645,9 @@ class PlayerCore: NSObject {
   func playbackStopped() {
     log.debug("Playback has stopped")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    windowController.clearOSDQueue()  // do this in mpv queue
+    /// Do not set `isStopped` here. This method seems to get called when it shouldn't (e.g., when changing current pos in playlist)
 
     DispatchQueue.main.async { [self] in
-      isStopped = true
-
       // In case of window reuse, do not display the last OSD of the previous player (e.g. this one at this point in the code)
       windowController.hideOSD(immediately: true)
 

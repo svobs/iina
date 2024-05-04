@@ -4280,7 +4280,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWGeometry() : windowedModeGeo
       addVideoViewToWindow(geo)
-      videoView.apply(geo)
 
       // If using legacy windowed mode, need to manually add title to Window menu & Dock
       updateTitle()
