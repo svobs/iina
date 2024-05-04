@@ -1868,8 +1868,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       /// `windowFrame` may be slightly off; update it
       if currentLayout.mode == .windowed {
         windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: windowedModeGeo.videoAspect)
+        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
+        /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
+        PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       } else if currentLayout.mode == .musicMode {
+        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
         musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
       }
     } else {
       // Restore layout from last launch or configure from prefs. Do not animate.
