@@ -14,7 +14,11 @@ extension PlayerWindowController {
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVidGeo(_ newVidGeo: VideoGeometry) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
-    log.verbose("[applyVidGeo] Entered, newVidGeo=\(newVidGeo)")
+    // Get this in the mpv thread to avoid race condition
+    let justOpenedFile = player.info.justOpenedFile
+    let isRestoring = player.info.isRestoring
+
+    log.verbose("[applyVidGeo] Entered, justOpenedFile=\(justOpenedFile.yn) isRestoring=\(isRestoring.yn) newVidGeo=\(newVidGeo)")
 
     guard newVidGeo.hasValidSize else { return }
     guard let currentMedia = player.info.currentMedia else {
@@ -25,10 +29,6 @@ extension PlayerWindowController {
     let oldVidGeo = player.info.videoGeo
     // Update cached values for use elsewhere:
     player.info.videoGeo = newVidGeo
-
-    // Get this in the mpv thread to avoid race condition
-    let justOpenedFile = player.info.justOpenedFile
-    let isRestoring = player.info.isRestoring
 
     if newVidGeo.totalRotation != currentMedia.thumbnails?.rotationDegrees {
       player.reloadThumbnails(forMedia: player.info.currentMedia)

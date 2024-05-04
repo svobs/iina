@@ -1361,7 +1361,7 @@ class PlayerCore: NSObject {
 
     var addedCurrentItem = false
 
-    log.debug("Adding \(itemPathList.count) files to playlist")
+    log.debug("Restoring \(itemPathList.count) files to playlist")
     for path in itemPathList {
       if path == info.currentURL?.path {
         addedCurrentItem = true
@@ -1373,7 +1373,7 @@ class PlayerCore: NSObject {
         _addToPlaylist(path)
         let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
         if err != 0 {
-          log.error("Error \(err) when adding files to playlist")
+          log.error("Error \(err) when restoring files to playlist")
           if err == MPV_ERROR_COMMAND.rawValue {
             return
           }
@@ -2124,7 +2124,7 @@ class PlayerCore: NSObject {
     } else {
       pause = Preference.bool(for: .pauseWhenOpen)
     }
-    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") url=\(info.currentURL?.absoluteString.pii.quoted ?? "nil")")
+    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") path=\(info.currentMedia?.path.pii.quoted ?? "nil")")
     mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
 
     let duration = mpv.getDouble(MPVProperty.duration)
@@ -2141,7 +2141,7 @@ class PlayerCore: NSObject {
     isStopping = false
 
     guard let currentMedia = info.currentMedia else {
-      log.verbose("FileLoaded: currentMedia was nil")
+      log.debug("FileLoaded: aborting cuz currentMedia was nil")
       return
     }
 

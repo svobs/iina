@@ -15,7 +15,11 @@ struct FFVideoMeta {
   let streamRotation: Int
 }
 
-class MediaItem {
+class MediaItem: CustomStringConvertible {
+  var description: String {
+    return "MediaItem(plPos:\(playlistPos) status:\(loadStatus) path:\(path.pii.quoted))"
+  }
+
   enum LoadStatus: Int, CustomStringConvertible {
     case notStarted = 1       /// set before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
@@ -160,7 +164,11 @@ class PlaybackInfo {
   }
   var pauseStateWasChangedLocally = false
 
-  var currentMedia: MediaItem? = nil
+  var currentMedia: MediaItem? = nil {
+    didSet {
+      log.verbose("Updated currentMedia to \(currentMedia?.description ?? "nil")")
+    }
+  }
 
   var currentURL: URL? {
     return currentMedia?.url

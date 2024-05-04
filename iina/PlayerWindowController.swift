@@ -1044,8 +1044,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       }
     }
 
-    addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [unowned self] _ in
-      self.updateTitle()
+    addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
+      updateTitle()
     }
 
     /// The `iinaFileLoaded` event is useful here because it is posted after `fileLoaded`.
@@ -1935,6 +1935,12 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     lastWindowedLayoutSpec = LayoutSpec.defaultLayout()
 
     player.info.currentMedia = nil
+    if player.info.isRestoring {
+      log.verbose("Discarding unfinished restore cuz window closing")
+      // May not have finishing restoring when user closes. Make sure to clean up here
+      player.info.priorState = nil
+      player.info.isRestoring = false
+    }
 
     player.events.emit(.windowWillClose)
   }
@@ -2708,7 +2714,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func updateTitle() {
     guard let window else { return }
     guard let currentMedia = player.info.currentMedia else {
-      log.debug("Cannot update window title: no current media")
+      log.verbose("Cannot update window title: currentMedia is nil")
       return
     }
 
