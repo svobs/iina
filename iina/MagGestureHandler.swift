@@ -43,7 +43,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       guard let window = windowController.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
-      if !windowController.isInMiniPlayer {  // Disallow full screen toggle from pinch while in music mode
+      if !windowController.isInMiniPlayer, recognizer.state != .ended {  // Disallow full screen toggle from pinch while in music mode
         let scale = recognizer.magnification + 1.0
         if windowController.isFullScreen, scale < 1.0 {
           /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
@@ -56,6 +56,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
           // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
           recognizer.state = .ended
+          windowController.isMagnifying = false  // really need to work hard to stop future events
           // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
           // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
           DispatchQueue.main.async { [self] in
@@ -75,6 +76,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
             windowController.toggleWindowFullScreen()
             /// See note above
             recognizer.state = .ended
+            windowController.isMagnifying = false
             return
           }
         }

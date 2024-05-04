@@ -119,6 +119,7 @@ extension PlayerWindowController {
       }
       if !isClosing {
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)
+        player.didEnterFullScreenViaUserToggle = true
       }
 
       resetViewsForModeTransition()
@@ -136,6 +137,7 @@ extension PlayerWindowController {
 
       if !isClosing {
         player.mpv.setFlag(MPVOption.Window.fullscreen, false)
+        player.didEnterFullScreenViaUserToggle = false
       }
     }
 

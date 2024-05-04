@@ -2307,13 +2307,13 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
       animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.FullScreenTransitionDuration * 0.2, { [self] in
-        if currentLayout.isLegacyFullScreen {
-          let layout = currentLayout
+        let layout = currentLayout
+        if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to ScreenParametersNotification")
           let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
-        } else if currentLayout.mode == .windowed {
+        } else if layout.mode == .windowed {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
           /// By calling `refit()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.

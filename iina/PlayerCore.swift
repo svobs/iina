@@ -160,6 +160,10 @@ class PlayerCore: NSObject {
   /// "music mode" status again, change this to `false` so that the preference is honored again.
   var overrideAutoMusicMode = false
 
+  /// Need this when reusing the window, so that we know that if in full screen, it was set by a previous window session,
+  /// and not by a user cmd (although that would be a better way to detect it - should investigate tracking mpv args)
+  var didEnterFullScreenViaUserToggle = false
+
   var isSearchingOnlineSubtitle = false
 
   /// For supporting mpv `--shuffle` arg, to shuffle playlist when launching from command line
@@ -2505,11 +2509,16 @@ class PlayerCore: NSObject {
     let iinaFS = windowController.isFullScreen
     log.verbose("IINA FullScreen state: \(iinaFS.yn), mpv: \(mpvFS.yn)")
     if mpvFS != iinaFS {
-      DispatchQueue.main.async { [self] in
-        if mpvFS {
-          windowController.enterFullScreen()
-        } else {
-          windowController.exitFullScreen()
+      if mpvFS && didEnterFullScreenViaUserToggle {
+        didEnterFullScreenViaUserToggle = false
+        mpv.setFlag(MPVOption.Window.fullscreen, false)
+      } else {
+        DispatchQueue.main.async { [self] in
+          if mpvFS {
+            windowController.enterFullScreen()
+          } else {
+            windowController.exitFullScreen()
+          }
         }
       }
     }

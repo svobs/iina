@@ -1493,7 +1493,14 @@ not applying FFmpeg 9599 workaround
       player.log.verbose("Δ mpv prop: 'fullscreen' = \(fs.yesno)")
       guard player.windowController.loaded else { break }
       if fs != player.windowController.isFullScreen {
-        DispatchQueue.main.async(execute: self.player.windowController.toggleWindowFullScreen)
+        if fs && player.didEnterFullScreenViaUserToggle {
+          player.didEnterFullScreenViaUserToggle = false
+          setFlag(MPVOption.Window.fullscreen, false)
+        } else {
+          DispatchQueue.main.async { [self] in
+            player.windowController.toggleWindowFullScreen()
+          }
+        }
       }
 
     case MPVOption.Window.ontop:

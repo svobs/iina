@@ -45,6 +45,7 @@ extension PlayerWindowController {
 
       let mode: PlayerWindowMode
       if Preference.bool(for: .fullScreenWhenOpen) {
+        player.didEnterFullScreenViaUserToggle = false
         let isLegacyFS = Preference.bool(for: .useLegacyFullScreen)
         log.debug("Changing to \(isLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
         if isLegacyFS {
@@ -58,7 +59,7 @@ extension PlayerWindowController {
       }
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
-      var layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
+      let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
       initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
 
       configureFromPrefs(initialLayout)
