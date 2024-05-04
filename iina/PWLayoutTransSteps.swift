@@ -409,9 +409,14 @@ extension PlayerWindowController {
       }
     }
 
-    /// These should all be either 0 height or unchanged from `transition.inputLayout`
+    /// These should all be either 0 height or unchanged from `transition.inputLayout`.
+    /// But may need to add or remove from fadeableViews
     apply(visibility: outputLayout.bottomBarView, to: bottomBarView)
-    apply(visibility: outputLayout.topBarView, to: topBarView)
+    // Note: hiding top bar here when entering FS with "top outside" OSC will cause it to go black too soon.
+    // But we do need it when tranitioning from music mode → FS, or top bar may never be shown
+    if !transition.isEnteringFullScreen || transition.isExitingMusicMode {
+      apply(visibility: outputLayout.topBarView, to: topBarView)
+    }
 
     if !transition.inputLayout.hasFloatingOSC {
       // Always remove subviews from OSC - is inexpensive + easier than figuring out if anything has changed
