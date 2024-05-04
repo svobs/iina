@@ -4264,7 +4264,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     var tasks: [IINAAnimation.Task] = []
 
     if isWindowHidden {
-      tasks.append(buildApplyWindowGeoTask(windowedModeGeo)) // may have skipped updates while hidden
+      tasks.append(contentsOf: buildApplyWindowGeoTasks(windowedModeGeo)) // may have skipped updates while hidden
       tasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
         if let window {

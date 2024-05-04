@@ -524,16 +524,29 @@ extension PlayerWindowController {
   /// Also updates cached `windowedModeGeo` and saves updated state. Windowed mode only!
   func applyWindowGeoInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
                                          timing: CAMediaTimingFunctionName = .easeInEaseOut) {
-    let task = buildApplyWindowGeoTask(newGeometry, duration: duration, timing: timing)
-    animationPipeline.submit(task)
+    let tasks = buildApplyWindowGeoTasks(newGeometry, duration: duration, timing: timing)
+    animationPipeline.submit(tasks)
   }
 
-  func buildApplyWindowGeoTask(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
-                               timing: CAMediaTimingFunctionName = .easeInEaseOut) -> IINAAnimation.Task {
+  func buildApplyWindowGeoTasks(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
+                               timing: CAMediaTimingFunctionName = .easeInEaseOut) -> [IINAAnimation.Task] {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
-    return IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-      applyWindowGeo(newGeometry)
+
+    var tasks: [IINAAnimation.Task] = []
+    tasks.append(IINAAnimation.suddenTask{ [self] in
+      isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
+      hideSeekTimeAndThumbnail()
     })
+
+    tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
+      applyWindowGeo(newGeometry)
+    }))
+
+    tasks.append(IINAAnimation.suddenTask{ [self] in
+      isAnimatingLayoutTransition = false
+    })
+
+    return tasks
   }
 
   func applyWindowGeo(_ newGeometry: PWGeometry) {
@@ -542,11 +555,6 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
     // This is only needed to achieve "fade-in" effect when opening window:
     updateCustomBorderBoxAndWindowOpacity()
-
-    guard !isAnimatingLayoutTransition else {
-      log.verbose("ApplyWindowGeo: aborting cuz isAnimatingLayoutTransition")
-      return
-    }
 
     /// Make sure this is up-to-date. Do this before `setFrame`
     videoView.apply(newGeometry)
