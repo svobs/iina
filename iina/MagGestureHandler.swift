@@ -27,7 +27,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       return
     case .fullScreen:
       // enter/exit fullscreen
-      guard !windowController.isInMiniPlayer else { return }  // Disallow full screen toggle while in music mode
+      guard !windowController.isInMiniPlayer else { return }  // Disallow full screen toggle from pinch while in music mode
       guard !windowController.isAnimatingLayoutTransition else { return }
       if recognizer.state == .began {
         let isEnlarge = recognizer.magnification > 0
@@ -43,7 +43,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       guard let window = windowController.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
-      if !windowController.isInMiniPlayer {  // Disallow full screen toggle while in music mode
+      if !windowController.isInMiniPlayer {  // Disallow full screen toggle from pinch while in music mode
         let scale = recognizer.magnification + 1.0
         if windowController.isFullScreen, scale < 1.0 {
           /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
