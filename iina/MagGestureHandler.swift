@@ -27,6 +27,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       return
     case .fullScreen:
       // enter/exit fullscreen
+      guard !windowController.isInMiniPlayer else { return }  // Disallow full screen toggle while in music mode
       guard !windowController.isAnimatingLayoutTransition else { return }
       if recognizer.state == .began {
         let isEnlarge = recognizer.magnification > 0
@@ -42,40 +43,43 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
       guard let window = windowController.window, let screen = window.screen else { return }
 
       // Check for full screen toggle conditions first
-      let scale = recognizer.magnification + 1.0
-      if windowController.isFullScreen, scale < 1.0 {
-        /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
-        windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
-        // Set this to disable window resize listeners immediately instead of waiting for the transitionn to set it
-        // (seems to prevent hiccups in the animation):
-        windowController.isAnimatingLayoutTransition = true
-        // Exit FS:
-        windowController.toggleWindowFullScreen()
-        /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
-        // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
-        recognizer.state = .ended
-        // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
-        // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
-        DispatchQueue.main.async { [self] in
-          windowController.animationPipeline.submitSudden({ [self] in
-            windowController.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
-          })
-        }
-        return
-      } else if !windowController.isFullScreen, scale > 1.0 {
-        let screenFrame = screen.visibleFrame
-        let heightIsMax = window.frame.height >= screenFrame.height
-        let widthIsMax = window.frame.width >= screenFrame.width
-        // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
-        // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
-        if (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) {
+      if !windowController.isInMiniPlayer {  // Disallow full screen toggle while in music mode
+        let scale = recognizer.magnification + 1.0
+        if windowController.isFullScreen, scale < 1.0 {
+          /// Change `windowedModeGeo` so that the window still fills the screen after leaving full screen, rather than whatever size it was
+          windowController.windowedModeGeo = windowController.windowedModeGeo.clone(windowFrame: screen.visibleFrame, screenID: screen.screenID)
+          // Set this to disable window resize listeners immediately instead of waiting for the transitionn to set it
+          // (seems to prevent hiccups in the animation):
           windowController.isAnimatingLayoutTransition = true
+          // Exit FS:
           windowController.toggleWindowFullScreen()
-          /// See note above
+          /// Force the gesture to end after toggling FS. Window scaling via `scaleWindow` looks terrible when overlapping FS animation
+          // TODO: put effort into truly seamless window scaling which also can toggle legacy FS
           recognizer.state = .ended
+          // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
+          // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
+          DispatchQueue.main.async { [self] in
+            windowController.animationPipeline.submitSudden({ [self] in
+              windowController.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
+            })
+          }
           return
+        } else if !windowController.isFullScreen, scale > 1.0 {
+          let screenFrame = screen.visibleFrame
+          let heightIsMax = window.frame.height >= screenFrame.height
+          let widthIsMax = window.frame.width >= screenFrame.width
+          // If viewport is not locked, the window must be the size of the screen in both directions before triggering full screen.
+          // If viewport is locked, window is considered at maximum if either of its sides is filling all the available space in its dimension.
+          if (heightIsMax && widthIsMax) || (Preference.bool(for: .lockViewportToVideoSize) && (heightIsMax || widthIsMax)) {
+            windowController.isAnimatingLayoutTransition = true
+            windowController.toggleWindowFullScreen()
+            /// See note above
+            recognizer.state = .ended
+            return
+          }
         }
       }
+
       // If full screen wasn't toggled, try window size:
       scaleWindow(recognizer: recognizer)
     }  // end switch
