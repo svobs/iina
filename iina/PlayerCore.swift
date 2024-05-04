@@ -293,11 +293,12 @@ class PlayerCore: NSObject {
    count of playable files.
    */
   @discardableResult
-  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = false) -> Int? {
+  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true) -> Int? {
     guard !urls.isEmpty else { return 0 }
     log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{$0.absoluteString.pii})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
+    info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
     let urls = Utility.resolveURLs(urls)
 
@@ -339,13 +340,14 @@ class PlayerCore: NSObject {
     return count
   }
 
-  func openURL(_ url: URL, shouldAutoLoadPlaylist: Bool = true) {
-    info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
-    openURLs([url], shouldAutoLoadPlaylist: shouldAutoLoadPlaylist)
+  func openURL(_ url: URL) {
+    openURLs([url])
   }
 
   func openURLString(_ str: String) {
     if str == "-" {
+      info.shouldAutoLoadFiles = false  // reset
+      info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
       openPlayerWindow()
       return
     }

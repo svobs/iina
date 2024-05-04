@@ -1134,10 +1134,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Opening \(urls.count) files")
       // open pending files
       var playableFileCount = 0
-      for url in urls {
-        if let openedFileCount = PlayerCore.activeOrNew.openURLs([url]) {
-          playableFileCount += openedFileCount
-        }
+      if let openedFileCount = PlayerCore.activeOrNew.openURLs(urls) {
+        playableFileCount += openedFileCount
       }
       if playableFileCount == 0 {
         Logger.log("Notifying user nothing was opened", level: .verbose)
