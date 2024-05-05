@@ -19,8 +19,8 @@
 /* Class = "NSMenuItem"; title = "Search in"; ObjectID = "Gx5-gP-rzr"; */
 "Gx5-gP-rzr.title" = "Search in";
 
-/* Class = "NSTableColumn"; headerCell.title = "Play Date"; ObjectID = "M7K-6H-OPw"; */
-"M7K-6H-OPw.headerCell.title" = "Play Date";
+/* Class = "NSTableColumn"; headerCell.title = "Last Played"; ObjectID = "M7K-6H-OPw"; */
+"M7K-6H-OPw.headerCell.title" = "Last Played";
 
 /* Class = "NSTableColumn"; headerCell.title = "Progress"; ObjectID = "MJU-JY-7fx"; */
 "MJU-JY-7fx.headerCell.title" = "Progress";

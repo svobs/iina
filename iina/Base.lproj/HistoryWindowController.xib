@@ -217,8 +217,8 @@
                                                 </tableCellView>
                                             </prototypeCellViews>
                                         </tableColumn>
-                                        <tableColumn identifier="Time" editable="NO" width="60" minWidth="60" maxWidth="300" id="M7K-6H-OPw" userLabel="Playback Date Column">
-                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Play Date">
+                                        <tableColumn identifier="Time" editable="NO" width="60" minWidth="60" maxWidth="300" id="M7K-6H-OPw" userLabel="Last Played Date Column">
+                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Last Played">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                             </tableHeaderCell>
