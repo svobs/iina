@@ -673,9 +673,29 @@ extension PlayerWindowController {
   func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, 
            videoAspect: CGFloat? = nil, from inputLayout: LayoutState? = nil) -> Geometries {
     let latestFrame = window?.frame
-    return Geometries(windowedMode: windowed ?? ((inputLayout?.mode.isWindowed ?? false) ? windowedModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID) : windowedModeGeo),
-                      musicMode: musicMode ?? ((inputLayout?.mode == .musicMode) ? musicModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID) : musicModeGeo),
-                      videoAspect: videoAspect ?? self.player.info.videoAspect)
+
+    let windowedNew: PWGeometry
+    if let windowed {
+      windowedNew = windowed
+    } else if inputLayout?.mode.isWindowed ?? false {
+      windowedNew = windowedModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID)
+    } else if inputLayout?.mode.isFullScreen ?? false {
+      // may have changed screen while in FS
+      windowedNew = windowedModeGeo.clone(screenID: bestScreen.screenID)
+    } else {
+      windowedNew = windowedModeGeo
+    }
+
+    let musicModeNew: MusicModeGeometry
+    if let musicMode {
+     musicModeNew = musicMode
+    } else if inputLayout?.mode == .musicMode {
+      musicModeNew = musicModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID)
+    } else {
+      musicModeNew = musicModeGeo
+    }
+    
+    return Geometries(windowedMode: windowedNew, musicMode: musicModeNew, videoAspect: videoAspect ?? self.player.info.videoAspect)
   }
 
 }

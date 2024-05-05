@@ -1146,7 +1146,11 @@ extension NSScreen {
   /// But this doesn't seem intuitive because the window's title bar is traditionally the most important part of the window,
   /// and that is at the top of the rect. Let's use the upper-left corner instead.
   static func getOwnerScreenID(forViewRect viewRect: NSRect) -> String? {
-    return getOwnerScreenID(forPoint: NSPoint(x: viewRect.origin.x, y: viewRect.maxY))
+    /// Subtract 1 from `maxY`. Seems that `contains(point)` will return `nil` for points at the very top (i.e., it excludes the topmost row).
+    /// However, this only seems to happen if the screen being tested is directly above another one.
+    let ownerScreenID = getOwnerScreenID(forPoint: NSPoint(x: viewRect.origin.x, y: viewRect.maxY - 1))
+    Logger.log("Owner screen for viewRect \(viewRect) (maxY: \(viewRect.maxY)) == \(ownerScreenID?.debugDescription.quoted ?? "nil")", level: .verbose)
+    return ownerScreenID
   }
 
   static func getOwnerOrDefaultScreenID(forViewRect viewRect: NSRect) -> String {
