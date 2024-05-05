@@ -1929,7 +1929,6 @@ class PlayerCore: NSObject {
       HistoryController.shared.queue.async { [self] in
         /// this will reload the `mpvProgress` field from the `watch-later` config files
         HistoryController.shared.reloadAll()
-        postNotification(.iinaHistoryUpdated)
       }
     }
   }

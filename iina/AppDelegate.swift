@@ -1436,7 +1436,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     HistoryController.shared.queue.async { [self] in
-      HistoryController.shared.reloadAll()
+      HistoryController.shared.reloadAll(silent: true)
       let recentDocumentsURLs = HistoryController.shared.cachedRecentDocumentURLs
 
       guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
@@ -1445,6 +1445,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             !recentDocuments.isEmpty else { return }
 
       Logger.log("Restoring list of recent documents (\(recentDocuments.count))")
+      var newRecentDocuments: [URL] = []
       var foundStale = false
       for document in recentDocuments {
         var isStale = false
@@ -1453,16 +1454,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           guard let asString = document as? String, let url = URL(string: asString) else { continue }
           // Saving as a bookmark must have failed and instead the URL was saved as a string.
           NSDocumentController.shared.noteNewRecentDocumentURL(url)
+          newRecentDocuments.append(url)
           continue
         }
         foundStale = foundStale || isStale
         NSDocumentController.shared.noteNewRecentDocumentURL(bookmark)
+        newRecentDocuments.append(bookmark)
       }
       Logger.log("Done restoring list of recent documents")
-      guard foundStale else { return }
-      Logger.log("Found stale bookmarks in saved recent documents")
-      // Save the recent documents in order to refresh stale bookmarks.
-      saveRecentDocuments()
+      HistoryController.shared.cachedRecentDocumentURLs = newRecentDocuments
+
+      if foundStale {
+        Logger.log("Found stale bookmarks in saved recent documents")
+        // Save the recent documents in order to refresh stale bookmarks.
+        saveRecentDocuments()
+      }
+
+      Logger.log("Posting iinaHistoryUpdated after restoring recentDocuments", level: .verbose)
+      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }
   }
 

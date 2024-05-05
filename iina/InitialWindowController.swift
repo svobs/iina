@@ -199,9 +199,15 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     }
 
     NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [self] _ in
+      Logger.log("WelcomeWindow received iinaHistoryUpdated; will reload data")
       reloadData()
     }
-    reloadData()
+    /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship:
+    HistoryController.shared.queue.async { [self] in
+      DispatchQueue.main.async { [self] in
+        reloadData()
+      }
+    }
   }
 
   private func setMaterial() {
@@ -277,17 +283,19 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
 
     let sw = Utility.Stopwatch()
     let recentsUnfiltered = HistoryController.shared.cachedRecentDocumentURLs
-    lastPlaybackURL = getLastPlaybackIfValid()
+    /// Make sure to resolve symlinks in `lastPlaybackURL`
+    lastPlaybackURL = getLastPlaybackIfValid()?.resolvingSymlinksInPath() ?? nil
     if let lastURL = lastPlaybackURL {
+
       // Need to call resolvingSymlinksInPath() on both sides, because it changes "/private/var" to "/var" as a special case,
       // even though "/var" points to "/private/var" (i.e. it changes it the opposite direction from what is expected).
       // This is probably a kludge on Apple's part to avoid breaking legacy FreeBSD code.
-      recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastURL.resolvingSymlinksInPath() }
+      recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastPlaybackURL }
     } else {
       recentDocuments = recentsUnfiltered
     }
 
-    Logger.log("Organized recentDocuments list in \(sw) ms")
+    Logger.log("Reloading data for WelcomeWindow: finished resolving \(recentDocuments.count) recentDocuments in \(sw) ms")
 
     // Refresh UI:
 
@@ -300,12 +308,12 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
 
     // Debug logging:
     if Logger.isEnabled(.verbose) {
-      let last = lastPlaybackURL.flatMap { $0.resolvingSymlinksInPath().path.pii.quoted } ?? "nil"
+      let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
       let didFilter = recentsUnfiltered.count > recentDocuments.count
-      Logger.log("Reloaded WelcomeWindow. LastPlaybackURL: \(last), UnfilteredRecents: \(recentsUnfiltered.count), DidFilter: \(didFilter)", level: .verbose)
+      Logger.log("Reloaded WelcomeWindow, displayedRecents=[\(recentDocuments.count) of \(recentsUnfiltered.count)], lastPlaybackURL=\(last)", level: .verbose)
 
       for (index, url) in recentDocuments.enumerated() {
-        Logger.log("Recents[\(index)]: \(url.resolvingSymlinksInPath().path.pii.quoted)", level: .verbose)
+        Logger.log("Recents[\(index)]: \(url.path.pii.quoted)", level: .verbose)
       }
     }
   }

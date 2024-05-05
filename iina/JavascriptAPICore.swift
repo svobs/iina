@@ -116,7 +116,8 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   }
 
   func getRecentDocuments() -> Any {
-    return NSDocumentController.shared.recentDocumentURLs.map {
+    let recentDocumentURLs = HistoryController.shared.cachedRecentDocumentURLs
+    return recentDocumentURLs.map {
       [
         "name": $0.lastPathComponent,
         "url": $0.absoluteString

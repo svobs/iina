@@ -107,6 +107,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     super.windowDidLoad()
 
     NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [unowned self] _ in
+      Logger.log("History window received iinaHistoryUpdated; will reload data")
       self.reloadData()
     }
 
