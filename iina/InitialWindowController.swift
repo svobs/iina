@@ -110,6 +110,8 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     return NSNib.Name("InitialWindowController")
   }
 
+  var isFirstLoad = true
+
   var expectingAnotherWindowToOpen = false
 
   @IBOutlet weak var recentFilesTableView: NSTableView!
@@ -152,6 +154,31 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  override func showWindow(_ sender: Any?) {
+    guard let window else { return }
+
+    /// If welcome window is shown at startup, recentDocuments may not be finished loading.
+    /// We want to wait until recentDocuments are done loading before displaying the window.
+    window.orderOut(self)  // should load window as a side effect, if not loaded already
+    assert(isWindowLoaded, "Expected WelcomeWindow to be loaded!")
+
+    if isFirstLoad {
+      /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with recentDocuments load:
+      HistoryController.shared.queue.async {
+        DispatchQueue.main.async {
+          let sw = Utility.Stopwatch()
+          self.reloadData()
+          Logger.log("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window", level: .verbose)
+          super.showWindow(nil)
+          self.isFirstLoad = false
+        }
+      }
+    } else {
+      Logger.log("Showing WelcomeWindow", level: .verbose)
+      super.showWindow(nil)
+    }
   }
 
   override func windowDidLoad() {
@@ -287,7 +314,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
       // Need to call resolvingSymlinksInPath() on both sides, because it changes "/private/var" to "/var" as a special case,
       // even though "/var" points to "/private/var" (i.e. it changes it the opposite direction from what is expected).
       // This is probably a kludge on Apple's part to avoid breaking legacy FreeBSD code.
-      recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastPlaybackURL }
+      recentDocuments = recentsUnfiltered.filter { $0.resolvingSymlinksInPath() != lastURL }
     } else {
       recentDocuments = recentsUnfiltered
     }
@@ -306,7 +333,6 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     // Debug logging:
     if Logger.isEnabled(.verbose) {
       let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
-      let didFilter = recentsUnfiltered.count > recentDocuments.count
       Logger.log("Reloaded WelcomeWindow, displayedRecents=[\(recentDocuments.count) of \(recentsUnfiltered.count)], lastPlaybackURL=\(last)", level: .verbose)
 
       for (index, url) in recentDocuments.enumerated() {

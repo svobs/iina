@@ -681,22 +681,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func showWelcomeWindow() {
     Logger.log("Showing WelcomeWindow", level: .verbose)
-    guard let window = initialWindow.window else { return }
-
-    /// If welcome window is shown at startup, recentDocuments may not be finished loading.
-    /// We want to wait until recentDocuments are done loading before displaying the window.
-    window.orderOut(self)  // should load window as a side effect, if not loaded already
-    assert(initialWindow.isWindowLoaded, "Expected WelcomeWindow to be loaded!")
-
-    /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with recentDocuments load:
-    HistoryController.shared.queue.async { [self] in
-      DispatchQueue.main.async { [self] in
-        let sw = Utility.Stopwatch()
-        initialWindow.reloadData()
-        Logger.log("Total WelcomeWindow reload time: \(sw) ms. Showing window")
-        initialWindow.showWindow(nil)
-      }
-    }
+    initialWindow.showWindow(self)
   }
 
   func showOpenFileWindow(isAlternativeAction: Bool) {

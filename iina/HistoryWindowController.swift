@@ -126,14 +126,22 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     window.orderOut(self)  // Hide window. Should load window as a side effect, if not loaded already
     assert(isWindowLoaded, "Expected HistoryWindow to be loaded!")
 
-    /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load:
-    HistoryController.shared.queue.async {
-      DispatchQueue.main.async {
-        let sw = Utility.Stopwatch()
-        self.reloadData()
-        Logger.log("Total HistoryWindow data reload time: \(sw) ms. Showing HistoryWindow")
-        super.showWindow(sender)
+    let isInitialLoad = reloadTicketCounter == 0
+    if isInitialLoad {
+      /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load.
+      ///
+      HistoryController.shared.queue.async {
+        DispatchQueue.main.async {
+          let sw = Utility.Stopwatch()
+          self.reloadData()
+          Logger.log("Total HistoryWindow data reload time: \(sw) ms. Showing HistoryWindow", level: .verbose)
+          super.showWindow(sender)
+        }
       }
+    } else {
+      // No need to reload data (it's an expensive operation)
+      Logger.log("Showing HistoryWindow", level: .verbose)
+      super.showWindow(sender)
     }
   }
 
