@@ -59,6 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     .enableLogging,
     .enableAdvancedSettings,
     .enableCmdN,
+    .resumeLastPosition,
 //    .hideWindowsWhenInactive, // TODO: #1, see below
   ]
 
@@ -135,13 +136,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     switch keyPath {
-    case Preference.Key.enableAdvancedSettings.rawValue, Preference.Key.enableLogging.rawValue:
+    case PK.enableAdvancedSettings.rawValue, Preference.Key.enableLogging.rawValue:
       Logger.updateEnablement()
       // depends on advanced being enabled:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
 
-    case Preference.Key.logLevel.rawValue:
+    case PK.logLevel.rawValue:
       if let newValue = change[.newKey] as? Int {
         Logger.Level.preferred = Logger.Level(rawValue: newValue.clamped(to: 0...3))!
       }
@@ -150,6 +151,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
       break
+
+    case PK.resumeLastPosition.rawValue:
+      HistoryController.shared.queue.async {
+        HistoryController.shared.reloadAll()
+      }
 
       // TODO: #1, see above
 //    case PK.hideWindowsWhenInactive.rawValue:

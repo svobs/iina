@@ -471,6 +471,9 @@ class Utility {
   }
 
   static func playbackProgressFromWatchLater(_ mpvMd5: String) -> VideoTime? {
+    // No point in loading/showing this if it's not used
+    guard Preference.bool(for: .resumeLastPosition) else { return nil }
+
     let fileURL = Utility.watchLaterURL.appendingPathComponent(mpvMd5)
     if let reader = StreamReader(path: fileURL.path),
       let firstLine = reader.nextLine(),
