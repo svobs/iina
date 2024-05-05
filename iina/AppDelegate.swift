@@ -330,10 +330,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationDidFinishLaunching(_ aNotification: Notification) {
     Logger.log("App launched")
 
-    HistoryController.shared.queue.async {
-      HistoryController.shared.reloadAll(silent: true)
-    }
-
     menuController.bindMenuItems()
     // FIXME: this actually causes a window to open in the background. Should wait until intending to show it
     // show alpha in color panels
@@ -1440,7 +1436,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Launch this as a background task! Resolution can take a long time if waiting for remote servers to time out
     // and we don't want to tie up the main thread.
     HistoryController.shared.queue.async { [self] in
-      let recentDocumentsURLs = NSDocumentController.shared.recentDocumentURLs
+      HistoryController.shared.reloadAll()
+      let recentDocumentsURLs = HistoryController.shared.cachedRecentDocumentURLs
 
       guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
             recentDocumentsURLs.isEmpty,
