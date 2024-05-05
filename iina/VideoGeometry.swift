@@ -297,7 +297,7 @@ struct VideoGeometry: CustomStringConvertible {
   // MARK: - Etc
 
   var description: String {
-    return "VideoGeometry:{sizeRaw=(\(rawWidth) x \(rawHeight)) sizeAC=(\(videoWidthAC?.description ?? "nil") x \(videoHeightAC?.description ?? "nil")) selAspectLabel=\(selectedAspectLabel.quoted) aspectOverride=\(aspectRatioOverride?.description.quoted ?? "nil") rotation=[user:\(userRotation) total:\(totalRotation)] selCropLabel=\(selectedCropLabel.description.quoted) cropRect=\(cropRect?.description ?? "nil") sizeACR=\(videoSizeACR?.description ?? "nil") scale=\(scale) sizeFinal=\(videoSizeACRS?.description ?? "nil") aspectFinal=\(videoAspectACR?.description ?? "nil")}"
+    return "VideoGeometry(aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), rotation:\(userRotation)|total:\(totalRotation)), scale:\(scale), Sizes: {Raw:(\(rawWidth) x \(rawHeight)), AC:\(videoSizeAC?.description ?? "nil"), ACR:\(videoSizeACR?.description ?? "nil"), final:\(videoSizeACRS?.description ?? "nil"), finalAspect:\(videoAspectACR?.description ?? "nil")})"
   }
 
   // MARK: Static util functions

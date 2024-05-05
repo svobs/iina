@@ -18,7 +18,7 @@ extension PlayerWindowController {
     let justOpenedFile = player.info.justOpenedFile
     let isRestoring = player.info.isRestoring
 
-    log.verbose("[applyVidGeo] Entered, justOpenedFile=\(justOpenedFile.yn) isRestoring=\(isRestoring.yn) newVidGeo=\(newVidGeo)")
+    log.verbose("[applyVidGeo] Entered, justOpenedFile=\(justOpenedFile.yn) restoring=\(isRestoring.yn) \(newVidGeo)")
 
     guard newVidGeo.hasValidSize else { return }
     guard let currentMedia = player.info.currentMedia else {

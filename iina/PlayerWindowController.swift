@@ -2385,7 +2385,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitSudden { [self] in
       if currentLayout.isLegacyFullScreen {
-        log.verbose("WindowDidResignKey: resuming legacy FS window")
+        log.verbose("WindowDidBecomeKey: resuming legacy FS window")
         window?.level = .iinaFloating
         updatePresentationOptionsForLegacyFullScreen(entering: true)
       }
@@ -2395,6 +2395,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       AppInputConfig.rebuildCurrent()
 
       if Preference.bool(for: .pauseWhenInactive) && isPausedDueToInactive {
+        log.verbose("WindowDidBecomeKey: resuming cuz isPausedDueToInactive")
         player.resume()
         isPausedDueToInactive = false
       }
@@ -2412,8 +2413,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
       
       // keyWindow is nil: The whole app is inactive
       // keyWindow is another PlayerWindow: Switched to another video window
-      if NSApp.keyWindow == nil || (NSApp.keyWindow?.windowController is PlayerWindowController) {
+      let wholeAppIsInactive = NSApp.keyWindow == nil
+      let anotherPlayerWindowIsActive = NSApp.keyWindow?.windowController is PlayerWindowController
+      if wholeAppIsInactive || anotherPlayerWindowIsActive {
         if Preference.bool(for: .pauseWhenInactive), player.info.isPlaying {
+          log.verbose("WindowDidResignKey: pausing cuz either wholeAppIsInactive (\(wholeAppIsInactive.yn)) or anotherPlayerWindowIsActive (\(anotherPlayerWindowIsActive.yn))")
           player.pause()
           isPausedDueToInactive = true
         }
