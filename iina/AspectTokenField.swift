@@ -11,18 +11,14 @@ import Foundation
 fileprivate let enableLookupLogging = false
 fileprivate let maxAspectCount: Int = 5
 
-// Data structure: AspectSet
-// A collection of unique aspects (usually the field's entire contents)
-fileprivate struct AspectSet {
+// Data structure: AspectList
+// An ordered set of non-identical text tokens (usually the field's entire contents)
+fileprivate struct AspectList {
   let tokens: [String]
 
   /// Enforces  `maxAspectCount`
   init(tokens: [String]) {
-    var tokens = tokens
-    while tokens.count > maxAspectCount {
-      tokens.removeLast()
-    }
-    tokens = tokens.filter{Aspect.isValid($0)}
+    var tokens = tokens.filter{Aspect.isValid($0)}
     self.tokens = tokens
   }
 
@@ -52,23 +48,23 @@ class AspectTokenField: NSTokenField {
 
   // Should match the value from the prefs.
   // Is only changed when `commaSeparatedValues` is set, and by `submitChanges()`.
-  private var savedSet = AspectSet(tokens: [])
+  private var savedAspects = AspectList(tokens: [])
 
   // may include unsaved tokens from the edit session
-  fileprivate var objectValueAspectSet: AspectSet {
-    AspectSet(fromObjectValue: self.objectValue)
+  fileprivate var objectValueAspects: AspectList {
+    AspectList(fromObjectValue: self.objectValue)
   }
 
   var commaSeparatedValues: String {
     get {
-      let csv = savedSet.toCommaSeparatedValues()
-      Logger.log("ATF Generated CSV from savedSet: \(csv.quoted)", level: .verbose)
+      let csv = savedAspects.toCommaSeparatedValues()
+      Logger.log("ATF Generated CSV from savedAspects: \(csv.quoted)", level: .verbose)
       return csv
     } set {
-      Logger.log("ATF Setting savedSet from CSV: \(newValue.quoted)", level: .verbose)
-      self.savedSet = AspectSet(fromCSV: newValue)
+      Logger.log("ATF Setting savedAspects from CSV: \(newValue.quoted)", level: .verbose)
+      self.savedAspects = AspectList(fromCSV: newValue)
       // Need to convert from CSV to newline-SV
-      self.stringValue = self.savedSet.toNewlineSeparatedValues()
+      self.stringValue = self.savedAspects.toNewlineSeparatedValues()
     }
   }
 
@@ -102,14 +98,15 @@ class AspectTokenField: NSTokenField {
   }
 
   private func submitChanges() {
-    let newSet = filterDuplicates(from: self.objectValueAspectSet, basedOn: self.savedSet)
-    makeUndoableUpdate(to: newSet)
+    let newAspects = filterTokens(from: self.objectValueAspects, basedOn: self.savedAspects)
+    makeUndoableUpdate(to: newAspects)
   }
 
-  // Filter out duplicates. Use the prev set to try to figure out which copy is newer, and favor that one.
-  private func filterDuplicates(from newSet: AspectSet, basedOn oldSet: AspectSet) -> AspectSet {
-    let dictOld: [String: [Int]] = countTokenIndexes(oldSet)
-    let dictNew: [String: [Int]] = countTokenIndexes(newSet)
+  // Filter out duplicates, and enforce max token count.
+  // Uses the prev list to try to figure out which copy is newer, and favor that one.
+  private func filterTokens(from newAspects: AspectList, basedOn oldAspects: AspectList) -> AspectList {
+    let dictOld: [String: [Int]] = countTokenIndexes(oldAspects)
+    let dictNew: [String: [Int]] = countTokenIndexes(newAspects)
 
     var indexesToRemove = Set<Int>()
     // Iterate over only the duplicates:
@@ -130,11 +127,15 @@ class AspectTokenField: NSTokenField {
         }
       }
     }
-    let filteredTokens = newSet.tokens.enumerated().filter({ !indexesToRemove.contains($0.offset) }).map({ $0.element })
-    return AspectSet(tokens: filteredTokens)
+    var tokens = newAspects.tokens.enumerated().filter({ !indexesToRemove.contains($0.offset) }).map({ $0.element })
+    while tokens.count > maxAspectCount {
+      let removedToken = tokens.removeLast()
+      Logger.log("Removed token \(removedToken.quoted) because list had more than \(maxAspectCount) tokens")
+    }
+    return AspectList(tokens: tokens)
   }
 
-  private func countTokenIndexes(_ aspectSet: AspectSet) -> [String: [Int]] {
+  private func countTokenIndexes(_ aspectSet: AspectList) -> [String: [Int]] {
     var dict: [String: [Int]] = [:]
     for (index, token) in aspectSet.tokens.enumerated() {
       if var list = dict[token] {
@@ -147,16 +148,16 @@ class AspectTokenField: NSTokenField {
     return dict
   }
 
-  private func makeUndoableUpdate(to newSet: AspectSet) {
-    let oldSet = self.savedSet
-    let csvOld = oldSet.toCommaSeparatedValues()
-    let csvNew = newSet.toCommaSeparatedValues()
+  private func makeUndoableUpdate(to newAspects: AspectList) {
+    let oldAspects = self.savedAspects
+    let csvOld = oldAspects.toCommaSeparatedValues()
+    let csvNew = newAspects.toCommaSeparatedValues()
 
     Logger.log("ATF Updating \(csvOld.quoted) -> \(csvNew.quoted)}", level: .verbose)
     if csvOld == csvNew {
       Logger.log("ATF No changes to aspect set", level: .verbose)
     } else {
-      self.savedSet = newSet
+      self.savedAspects = newAspects
       if let target = target, let action = action {
         target.performSelector(onMainThread: action, with: self, waitUntilDone: false)
       }
@@ -164,13 +165,13 @@ class AspectTokenField: NSTokenField {
       // Register for undo or redo. Needed because the change to stringValue below doesn't include it
       if let undoManager = self.undoManager {
         undoManager.registerUndo(withTarget: self, handler: { AspectTokenField in
-          self.makeUndoableUpdate(to: oldSet)
+          self.makeUndoableUpdate(to: oldAspects)
         })
       }
     }
 
     // Update tokenField value
-    self.stringValue = newSet.toNewlineSeparatedValues()
+    self.stringValue = newAspects.toNewlineSeparatedValues()
   }
 }
 
@@ -184,9 +185,12 @@ extension AspectTokenField: NSTokenFieldDelegate {
   // Returns array of auto-completion results for user's typed string (`substring`)
   func tokenField(_ tokenField: NSTokenField, completionsForSubstring substring: String,
                   indexOfToken tokenIndex: Int, indexOfSelectedItem selectedIndex: UnsafeMutablePointer<Int>?) -> [Any]? {
-    let currentTokens = Set(savedSet.tokens)
+    let currentTokens = Set(savedAspects.tokens)
+    guard currentTokens.count < maxAspectCount else { return [] }
+
+    // TODO: use a much larger list instead of aspectsInMenu
     let matches = AppData.aspectsInMenu.filter { aspect in
-      return !currentTokens.contains(aspect) && aspect.contains { $0.lowercased().hasPrefix(substring) }
+      return !currentTokens.contains(aspect) && aspect.hasPrefix(substring)
     }
     if enableLookupLogging {
       Logger.log("ATF Given substring: \(substring.quoted) -> returning completions: \(matches)", level: .verbose)
@@ -230,7 +234,7 @@ extension AspectTokenField: NSTokenFieldDelegate {
     guard let tokens = objects as? [String] else {
       return false
     }
-    let aspectSet = AspectSet(tokens: tokens)
+    let aspectSet = AspectList(tokens: tokens)
 
     pboard.clearContents()
     pboard.setString(aspectSet.toCommaSeparatedValues(), forType: NSPasteboard.PasteboardType.string)
@@ -241,7 +245,7 @@ extension AspectTokenField: NSTokenFieldDelegate {
   // See note for `tokenField(writeRepresentedObjects....)` above.
   func tokenField(_ tokenField: NSTokenField, readFrom pboard: NSPasteboard) -> [Any]? {
     if let pbString = pboard.string(forType: NSPasteboard.PasteboardType.string) {
-      return AspectSet(fromCSV: pbString).tokens
+      return AspectList(fromCSV: pbString).tokens
     }
     return []
   }
