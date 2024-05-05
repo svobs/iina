@@ -217,8 +217,8 @@
                                                 </tableCellView>
                                             </prototypeCellViews>
                                         </tableColumn>
-                                        <tableColumn identifier="Time" editable="NO" width="60" minWidth="60" maxWidth="300" id="M7K-6H-OPw" userLabel="Played at Column">
-                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Played at">
+                                        <tableColumn identifier="Time" editable="NO" width="60" minWidth="60" maxWidth="300" id="M7K-6H-OPw" userLabel="Playback Date Column">
+                                            <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Play Date">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                             </tableHeaderCell>
@@ -235,7 +235,7 @@
                                                     <subviews>
                                                         <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Esj-ym-AE9">
                                                             <rect key="frame" x="2" y="1" width="62" height="15"/>
-                                                            <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="left" title="00:00 AM" id="z9u-td-fQW">
+                                                            <textFieldCell key="cell" controlSize="large" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" alignment="right" title="00:00 AM" id="z9u-td-fQW">
                                                                 <font key="font" size="13" name="Menlo-Regular"/>
                                                                 <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
