@@ -122,9 +122,19 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
   }
 
   override func showWindow(_ sender: Any?) {
-    Logger.log("Showing History window", level: .verbose)
-    super.showWindow(sender)
-    reloadData()
+    guard let window else { return }
+    window.orderOut(self)  // Hide window. Should load window as a side effect, if not loaded already
+    assert(isWindowLoaded, "Expected HistoryWindow to be loaded!")
+
+    /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load:
+    HistoryController.shared.queue.async {
+      DispatchQueue.main.async {
+        let sw = Utility.Stopwatch()
+        self.reloadData()
+        Logger.log("Total HistoryWindow data reload time: \(sw) ms. Showing HistoryWindow")
+        super.showWindow(sender)
+      }
+    }
   }
 
   private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
