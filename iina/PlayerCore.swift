@@ -298,7 +298,6 @@ class PlayerCore: NSObject {
     log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{MediaItem.path(for: $0).pii.quoted})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
-    info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
     let urls = Utility.resolveURLs(urls)
 
@@ -310,7 +309,8 @@ class PlayerCore: NSObject {
       if isBDFolder(loneURL)
           || Utility.playlistFileExt.contains(loneURL.absoluteString.lowercasedPathExtension) {
 
-        openPlayerWindow(url: loneURL)
+        info.shouldAutoLoadFiles = false
+        openPlayerWindow(urls)
         return nil
       }
     }
@@ -322,7 +322,7 @@ class PlayerCore: NSObject {
 
     log.verbose("Found \(count) playable files for \(urls.count) requested URLs")
     // check playable files count
-    if count == 0 {
+    guard count > 0 else {
       return 0
     }
 
@@ -331,12 +331,7 @@ class PlayerCore: NSObject {
     }
 
     // open the first file
-    openPlayerWindow(url: urls[0])
-
-    if count > 1 {
-      log.verbose("Adding \(count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
-      addToPlaylist(urls: playableFiles[1..<count])
-    }
+    openPlayerWindow(playableFiles)
     return count
   }
 
@@ -348,8 +343,7 @@ class PlayerCore: NSObject {
   func openURLString(_ str: String) {
     if str == "-" {
       info.shouldAutoLoadFiles = false  // reset
-      info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
-      openPlayerWindow()
+      openPlayerWindow([URL(string: "stdin")!])
       return
     }
     if str.first == "/" {
@@ -381,9 +375,10 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func openPlayerWindow(url: URL? = nil) {
-    guard let url = url else {
-      log.error("Cannot open player window: empty file path or url!")
+  /// Loads the first URL into the player, and adds any remaining URLs to playlist.
+  private func openPlayerWindow(_ urls: [URL]) {
+    guard urls.count > 0 else {
+      log.error("Cannot open player window: empty url list!")
       return
     }
 
@@ -391,10 +386,12 @@ class PlayerCore: NSObject {
     /// 1. Prev use of mpv core can finish stopping / drain queue
     /// 2. `currentMedia` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
     mpv.queue.sync { [self] in
-      let mediaItem = MediaItem(url: url)
+      let mediaItem = MediaItem(url: urls[0])
       let path = mediaItem.path
       info.currentMedia = mediaItem
       log.debug("Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn)")
+
+      info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       // Reset state flags
       isStopping = false
@@ -413,13 +410,22 @@ class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
-          if !info.isRestoring {  // restore state has higher precedence
-            if Preference.bool(for: .enablePlaylistLoop) {
-              mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
-            }
-            if Preference.bool(for: .enableFileLoop) {
-              mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
-            }
+          guard !info.isRestoring else { return }  // restore has higher precedence
+
+          if urls.count > 1 {
+            log.verbose("Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
+            _addToPlaylist(urls: urls[1..<urls.count], silent: true)
+            postNotification(.iinaPlaylistChanged)
+          } else {
+            // Only one entry in playlist, but still need to pull it from mpv
+            _reloadPlaylist()
+          }
+
+          if Preference.bool(for: .enablePlaylistLoop) {
+            mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
+          }
+          if Preference.bool(for: .enableFileLoop) {
+            mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
           }
         }
       }
@@ -1357,6 +1363,54 @@ class PlayerCore: NSObject {
     }
   }
 
+  func playlistMove(_ from: Int, to: Int) {
+    mpv.queue.async { [self] in
+      _playlistMove(from, to: to)
+    }
+    _reloadPlaylist()
+  }
+
+  func playlistMove(_ srcRows: IndexSet, to dstRow: Int) {
+    mpv.queue.async { [self] in
+      log.debug("Playlist Drag & Drop: \(srcRows) → \(dstRow)")
+      // Drag & drop within playlistTableView
+      var oldIndexOffset = 0, newIndexOffset = 0
+      for oldIndex in srcRows {
+        if oldIndex < dstRow {
+          _playlistMove(oldIndex + oldIndexOffset, to: dstRow)
+          oldIndexOffset -= 1
+        } else {
+          _playlistMove(oldIndex, to: dstRow + newIndexOffset)
+          newIndexOffset += 1
+        }
+      }
+      _reloadPlaylist()
+    }
+  }
+
+  private func _playlistMove(_ from: Int, to: Int) {
+    mpv.command(.playlistMove, args: ["\(from)", "\(to)"])
+  }
+
+  func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
+    mpv.queue.async { [self] in
+      let current = mpv.getInt(MPVProperty.playlistPos)
+      var ob = 0  // index offset before current playing item
+      var mc = 1  // moved item count, +1 because move to next item of current played one
+      for item in playlistItemIndexes {
+        if item == current { continue }
+        if item < current {
+          _playlistMove(item + ob, to: current + mc + ob)
+          ob -= 1
+        } else {
+          _playlistMove(item, to: current + mc + ob)
+        }
+        mc += 1
+      }
+      _reloadPlaylist(silent: false)
+    }
+  }
+
   /// Adds all the media in `pathList` to the current playlist.
   /// This checks whether the currently playing item is in the list, so that it may end up in the middle of the playlist.
   /// Also note that each item in `pathList` may be either a file path or a
@@ -1390,11 +1444,6 @@ class PlayerCore: NSObject {
     _reloadPlaylist()
   }
 
-  func _addToPlaylist(_ path: String) {
-    log.debug("Appending to mpv playlist: \(path.pii.quoted)")
-    mpv.command(.loadfile, args: [path, "append"])
-  }
-
   func addToPlaylist(_ path: String, silent: Bool = false) {
     mpv.queue.async { [self] in
       _addToPlaylist(path)
@@ -1402,64 +1451,22 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func _playlistMove(_ from: Int, to: Int) {
-    mpv.command(.playlistMove, args: ["\(from)", "\(to)"])
-  }
-
-  func playlistMove(_ from: Int, to: Int) {
-    mpv.queue.async { [self] in
-      _playlistMove(from, to: to)
-    }
-    _reloadPlaylist()
-  }
-
-  func playlistMove(_ srcRows: IndexSet, to dstRow: Int) {
-    mpv.queue.async { [self] in
-      log.debug("Playlist Drag & Drop: \(srcRows) → \(dstRow)")
-      // Drag & drop within playlistTableView
-      var oldIndexOffset = 0, newIndexOffset = 0
-      for oldIndex in srcRows {
-        if oldIndex < dstRow {
-          _playlistMove(oldIndex + oldIndexOffset, to: dstRow)
-          oldIndexOffset -= 1
-        } else {
-          _playlistMove(oldIndex, to: dstRow + newIndexOffset)
-          newIndexOffset += 1
-        }
-      }
-      _reloadPlaylist()
-    }
-  }
-
-  func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
-    mpv.queue.async { [self] in
-      let current = mpv.getInt(MPVProperty.playlistPos)
-      var ob = 0  // index offset before current playing item
-      var mc = 1  // moved item count, +1 because move to next item of current played one
-      for item in playlistItemIndexes {
-        if item == current { continue }
-        if item < current {
-          _playlistMove(item + ob, to: current + mc + ob)
-          ob -= 1
-        } else {
-          _playlistMove(item, to: current + mc + ob)
-        }
-        mc += 1
-      }
-      _reloadPlaylist(silent: false)
-    }
-  }
-
-  func addToPlaylist(urls: any Collection<URL>) {
+  func addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
     guard !urls.isEmpty else { return }
     mpv.queue.async { [self] in
-      for url in urls {
-        let path = url.isFileURL ? url.path : url.absoluteString
-        _addToPlaylist(path)
-      }
+      _addToPlaylist(urls: urls, silent: silent)
+    }
+  }
 
-      // refresh playlist UI
-      _reloadPlaylist()
+  func _addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
+    _reloadPlaylist(silent: true)  // get up-to-date list first
+    for url in urls {
+      let path = url.isFileURL ? url.path : url.absoluteString
+      _addToPlaylist(path)
+    }
+
+    _reloadPlaylist(silent: silent)
+    if !silent {
       sendOSD(.addToPlaylist(urls.count))
     }
   }
@@ -1481,9 +1488,9 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func _playlistRemove(_ index: Int) {
-    subsystem.verbose("Removing row \(index) from playlist")
-    mpv.command(.playlistRemove, args: [index.description])
+  func _addToPlaylist(_ path: String) {
+    log.debug("Appending to mpv playlist: \(path.pii.quoted)")
+    mpv.command(.loadfile, args: [path, "append"])
   }
 
   func playlistRemove(_ index: Int) {
@@ -1504,6 +1511,11 @@ class PlayerCore: NSObject {
       }
       _reloadPlaylist()
     }
+  }
+
+  private func _playlistRemove(_ index: Int) {
+    subsystem.verbose("Removing row \(index) from playlist")
+    mpv.command(.playlistRemove, args: [index.description])
   }
 
   func clearPlaylist() {
@@ -2174,7 +2186,6 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
     trackListChanged()
-    _reloadPlaylist(silent: true)
     _reloadChapters()
     syncAbLoop()
     saveState()
