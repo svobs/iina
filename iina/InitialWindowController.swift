@@ -155,6 +155,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
   }
 
   override func windowDidLoad() {
+    Logger.log("WelcomeWindow windowDidLoad starting", level: .verbose)
     super.windowDidLoad()
 
     window?.titlebarAppearsTransparent = true
@@ -202,12 +203,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
       Logger.log("WelcomeWindow received iinaHistoryUpdated; will reload data")
       reloadData()
     }
-    /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship:
-    HistoryController.shared.queue.async { [self] in
-      DispatchQueue.main.async { [self] in
-        reloadData()
-      }
-    }
+    Logger.log("WelcomeWindow windowDidLoad done", level: .verbose)
   }
 
   private func setMaterial() {
@@ -277,6 +273,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func reloadData() {
+    dispatchPrecondition(condition: .onQueue(.main))
     guard isWindowLoaded else { return }
 
     // Reload data:

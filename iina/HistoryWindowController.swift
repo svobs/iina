@@ -118,6 +118,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
     outlineView.menu?.delegate = self
     outlineView.target = self
     outlineView.doubleAction = #selector(doubleAction)
+    Logger.log("History windowDidLoad done", level: .verbose)
   }
 
   override func showWindow(_ sender: Any?) {
