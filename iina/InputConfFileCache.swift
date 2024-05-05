@@ -46,7 +46,7 @@ class InputConfFileCache {
       storage[confName] = confFile
     }
 
-    Logger.log("Updating memory cache entry for \(confName.pii.quoted) (loadedOK: \(!confFile.failedToLoad))", level: .verbose)
+    Logger.log("Updating memory cache entry for \(confName.pii.quoted) (loadedOK: \((!confFile.failedToLoad).yn))", level: .verbose)
     return confFile
   }
 

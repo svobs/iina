@@ -197,6 +197,10 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     observedPrefKeys.forEach { key in
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
+
+    NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [self] _ in
+      reloadData()
+    }
     reloadData()
   }
 
@@ -272,7 +276,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     // Reload data:
 
     let sw = Utility.Stopwatch()
-    let recentsUnfiltered = NSDocumentController.shared.recentDocumentURLs
+    let recentsUnfiltered = HistoryController.shared.cachedRecentDocumentURLs
     lastPlaybackURL = getLastPlaybackIfValid()
     if let lastURL = lastPlaybackURL {
       // Need to call resolvingSymlinksInPath() on both sides, because it changes "/private/var" to "/var" as a special case,
@@ -380,7 +384,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
           openRecentItemFromTable(recentFilesTableView.selectedRow)
         } else if let lastURL = lastPlaybackURL {
           // If no row selected in table, most recent file button is selected. Use that if it exists
-          Logger.log("Opening lastPlaybackURL new player window", level: .verbose)
+          Logger.log("Opening lastPlaybackURL in new player window", level: .verbose)
           openInNewPlayer(lastURL)
         } else if recentFilesTableView.numberOfRows > 0 {
           // Most recent file no longer exists? Try to load next one

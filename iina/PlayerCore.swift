@@ -394,7 +394,7 @@ class PlayerCore: NSObject {
       let mediaItem = MediaItem(url: url)
       let path = mediaItem.path
       info.currentMedia = mediaItem
-      log.debug("Opening PlayerWindow for \(path.pii.quoted)")
+      log.debug("Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn)")
 
       // Reset state flags
       isStopping = false
@@ -1888,6 +1888,26 @@ class PlayerCore: NSObject {
     }
   }
 
+  private func saveToLastPlayedFile(_ url: URL?, duration: VideoTime?, position: VideoTime?) {
+    guard Preference.bool(for: .resumeLastPosition) else { return }
+    guard let url else {
+      log.error("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
+      return
+    }
+    // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
+    Preference.set(url, for: .iinaLastPlayedFilePath)
+    // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
+    // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
+    info.setCachedVideoDurationAndProgress(url.path, (duration: duration?.second, progress: position?.second))
+    if let position = info.videoPosition?.second {
+      Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
+      Preference.set(position, for: .iinaLastPlayedFilePosition)
+    } else {
+      log.warn("Writing 0 to iinaLastPlayedFilePosition cuz no position found")
+      Preference.set(0.0, for: .iinaLastPlayedFilePosition)
+    }
+  }
+
   func savePlaybackPosition() {
     guard Preference.bool(for: .resumeLastPosition) else { return }
 
@@ -1899,18 +1919,7 @@ class PlayerCore: NSObject {
       Logger.log("Write watch later config", subsystem: subsystem)
       mpv.command(.writeWatchLaterConfig)
     }
-    if let url = info.currentURL {
-      Preference.set(url, for: .iinaLastPlayedFilePath)
-      // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
-      // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-      info.setCachedVideoDurationAndProgress(url.path, (duration: info.videoDuration?.second, progress: info.videoPosition?.second))
-    }
-    if let position = info.videoPosition?.second {
-      Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
-      Preference.set(position, for: .iinaLastPlayedFilePosition)
-    } else {
-      log.debug("Cannot save iinaLastPlayedFilePosition; no position found")
-    }
+    saveToLastPlayedFile(info.currentURL, duration: info.videoDuration, position: info.videoPosition)
 
     // Ensure playlist is updated in real time
     postFileHistoryUpdateNotification()
@@ -2166,6 +2175,7 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
     trackListChanged()
+    _reloadPlaylist(silent: true)
     _reloadChapters()
     syncAbLoop()
     saveState()
@@ -2180,16 +2190,24 @@ class PlayerCore: NSObject {
       }
 
       let appDelegate = AppDelegate.shared  // must dereference this only from main thread
-      // add to history
+      // Add to history & other state tracking
       if let url = info.currentURL {
         let duration = info.videoDuration ?? .zero
         HistoryController.shared.queue.async { [self] in
+          // 1. Update main history list
           HistoryController.shared.add(url, duration: duration.second)
 
-          if Preference.bool(for: .recordRecentFiles) && Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-            appDelegate.noteNewRecentDocumentURL(url)
-          }
+          if Preference.bool(for: .recordRecentFiles) {
 
+            // 2. IINA's [ancient] "resume last playback" feature
+            // Add this now, or else welcome window will fall out of sync with history list
+            saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
+
+            // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
+            if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+              appDelegate.noteNewRecentDocumentURL(url)
+            }
+          }
           postFileHistoryUpdateNotification()
         }
       }

@@ -191,11 +191,12 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
 
   private func _reloadData() {
     // reconstruct data
+    let unfilteredHistory = HistoryController.shared.history
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
-      historyList = HistoryController.shared.history
+      historyList = unfilteredHistory
     } else {
-      historyList = HistoryController.shared.history.filter { entry in
+      historyList = unfilteredHistory.filter { entry in
         let string = searchType == .filename ? entry.name : entry.url.path
         // Do a locale-aware, case and diacritic insensitive search:
         return string.localizedStandardContains(searchString)

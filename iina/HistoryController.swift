@@ -16,16 +16,23 @@ class HistoryController {
   var history: [PlaybackHistory]
   var queue = DispatchQueue(label: "IINAHistoryController", qos: .background)
 
+  var cachedRecentDocumentURLs: [URL]
+
   init(plistFileURL: URL) {
     self.plistURL = plistFileURL
     self.history = []
+    cachedRecentDocumentURLs = []
   }
 
   func reloadAll(silent: Bool = false) {
+    dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
     Logger.log("Reloading playback history from \(plistURL.path.pii.quoted)")
-    let sw = Utility.Stopwatch()
+    var sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
     Logger.log("Finished reloading playback history in \(sw) ms")
+    sw = Utility.Stopwatch()
+    cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
+    Logger.log("Finished reloading recentDocuments in \(sw) ms")
     if !silent {
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }

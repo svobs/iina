@@ -168,7 +168,7 @@ extension PlayerCore {
     if types.contains(.nsFilenames) {
       guard var paths = pb.propertyList(forType: .nsFilenames) as? [String] else { return false }
       paths = Utility.resolvePaths(paths)
-      Logger.log("Received drop of file paths: \(paths)", level: .verbose)
+      Logger.log("Received drop of file paths: \(paths.map{$0.pii})", level: .verbose)
       // check 3d lut files
       if paths.count == 1 && Utility.lut3dExt.contains(paths[0].lowercasedPathExtension) {
         let result = addVideoFilter(MPVFilter(lavfiName: "lut3d", label: "iina_quickl3d", paramDict: [
