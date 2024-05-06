@@ -2255,7 +2255,7 @@ class PlayerCore: NSObject {
       newVidGeo = info.videoGeo
     }
 
-    log.verbose("File is completely done loading; setting justOpenedFile=N")
+    log.verbose("File is completely loaded")
     /// Make sure to set this *after* calling `applyVidGeo`
     guard currentMedia.loadStatus.isNotYet(.completelyLoaded) else {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")

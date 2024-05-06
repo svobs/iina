@@ -2384,6 +2384,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitSudden { [self] in
+      log.verbose("WindowDidBecomeKey")
       if currentLayout.isLegacyFullScreen {
         log.verbose("WindowDidBecomeKey: resuming legacy FS window")
         window?.level = .iinaFloating
@@ -2404,22 +2405,35 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   func windowDidResignKey(_ notification: Notification) {
     animationPipeline.submitSudden { [self] in
-      if currentLayout.isLegacyFullScreen {
-        log.verbose("WindowDidResignKey: relaxing legacy FS window")
-        /// Change from `floating` to `normal` so that window doesn't block all others
-        window?.level = .normal
-        updatePresentationOptionsForLegacyFullScreen(entering: false)
-      }
-      
       // keyWindow is nil: The whole app is inactive
       // keyWindow is another PlayerWindow: Switched to another video window
-      let wholeAppIsInactive = NSApp.keyWindow == nil
-      let anotherPlayerWindowIsActive = NSApp.keyWindow?.windowController is PlayerWindowController
+      let otherAppWindow = NSApp.keyWindow
+      let wholeAppIsInactive = otherAppWindow == nil
+      let otherPlayerWindow = otherAppWindow?.windowController as? PlayerWindowController
+      let anotherAppWindowIsActive = !wholeAppIsInactive
+      let anotherPlayerWindowIsActive = otherPlayerWindow != nil
       if wholeAppIsInactive || anotherPlayerWindowIsActive {
         if Preference.bool(for: .pauseWhenInactive), player.info.isPlaying {
           log.verbose("WindowDidResignKey: pausing cuz either wholeAppIsInactive (\(wholeAppIsInactive.yn)) or anotherPlayerWindowIsActive (\(anotherPlayerWindowIsActive.yn))")
           player.pause()
           isPausedDueToInactive = true
+        }
+      }
+      if currentLayout.isLegacyFullScreen {
+        /// Always restore window level from `floating` to `normal`, so that other windows aren't blocked and lead to confusion
+        log.verbose("WindowDidResignKey: restoring legacy FS window level to normal")
+        window?.level = .normal
+
+        // Restore presentation options only for other windows in the same app which are not in FS!
+        // For the case of other apps, MacOS will figure out what to do
+        var shouldRestoreMenuBarAndDock = anotherAppWindowIsActive
+        if let otherPlayerWindow, !otherPlayerWindow.currentLayout.isFullScreen {
+          shouldRestoreMenuBarAndDock = true
+        }
+        if shouldRestoreMenuBarAndDock {
+          log.verbose("WindowDidResignKey: relaxing legacy FS window because another non-FS app window is now active")
+          /// Restore menu bar visibility
+          updatePresentationOptionsForLegacyFullScreen(entering: false)
         }
       }
     }
