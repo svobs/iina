@@ -291,6 +291,7 @@ class VideoView: NSView {
   /// This should be called at start or if the window has changed displays
   func updateDisplayLink() {
     guard let window = window, let link = link, let screen = window.screen else { return }
+    guard !player.windowController.isClosing, !player.isShuttingDown else { return }
     let displayId = screen.displayId
 
     // Do nothing if on the same display
@@ -501,11 +502,7 @@ extension VideoView {
     guard player.windowController.loaded else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
-    if let screen = self.window?.screen {
-      screen.log("Refreshing HDR for \(player.subsystem.rawValue) @ screen\(displayId): ")
-    } else {
-      log.verbose("Refreshing HDR for \(player.subsystem.rawValue)")
-    }
+    log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen\(displayId): ")
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {

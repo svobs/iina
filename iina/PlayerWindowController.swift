@@ -2228,6 +2228,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) { [self] in
       guard ticket == screenChangedTicketCounter else { return }
       guard let window = window, let screen = window.screen else { return }
+      guard !isClosing, !player.isShuttingDown else { return }
 
       let displayId = screen.displayId
       // Legacy FS work below can be very slow. Try to avoid if possible
