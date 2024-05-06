@@ -332,8 +332,8 @@ For smoothest results, also enable custom full screen.</string>
                                             <stackView distribution="equalCentering" orientation="vertical" alignment="leading" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vnG-7B-ZyZ" userLabel="CustomFullScreenBox Vertical Stack View">
                                                 <rect key="frame" x="0.0" y="0.0" width="451" height="68"/>
                                                 <subviews>
-                                                    <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EVN-KQ-c0l" userLabel="ToggleAnimationSpeed HStack View">
-                                                        <rect key="frame" x="16" y="36" width="396" height="20"/>
+                                                    <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="4" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EVN-KQ-c0l" userLabel="ToggleAnimationSpeed HStack View">
+                                                        <rect key="frame" x="16" y="36" width="397" height="20"/>
                                                         <subviews>
                                                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="NbK-vD-Iek">
                                                                 <rect key="frame" x="-2" y="4" width="152" height="16"/>
@@ -343,16 +343,49 @@ For smoothest results, also enable custom full screen.</string>
                                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                 </textFieldCell>
                                                             </textField>
-                                                            <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1oZ-lo-QsR" userLabel="ToggleAnimationSpeed Horizontal Slider">
-                                                                <rect key="frame" x="154" y="2" width="244" height="17"/>
+                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="yqb-27-NXx" userLabel="0pt Spacer">
+                                                                <rect key="frame" x="152" y="6" width="0.0" height="1"/>
                                                                 <constraints>
-                                                                    <constraint firstAttribute="width" constant="240" id="8g7-LI-2hr"/>
+                                                                    <constraint firstAttribute="height" constant="1" id="S34-6w-8hF"/>
+                                                                    <constraint firstAttribute="width" id="W7z-aY-e5Q"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" controlSize="mini" state="on" userInterfaceLayoutDirection="rightToLeft" alignment="left" minValue="0.0625" maxValue="0.75" doubleValue="0.5" tickMarkPosition="below" numberOfTickMarks="12" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
+                                                            </customView>
+                                                            <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1oZ-lo-QsR" userLabel="ToggleAnimationSpeed Horizontal Slider">
+                                                                <rect key="frame" x="154" y="2" width="199" height="17"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" constant="195" id="8g7-LI-2hr"/>
+                                                                </constraints>
+                                                                <sliderCell key="cell" controlSize="mini" state="on" userInterfaceLayoutDirection="rightToLeft" alignment="left" maxValue="0.75" doubleValue="0.25" tickMarkPosition="below" numberOfTickMarks="13" allowsTickMarkValuesOnly="YES" sliderType="linear" id="fc5-xy-pnP"/>
                                                                 <connections>
                                                                     <binding destination="lH7-Vv-0M1" name="value" keyPath="values.animationDurationFullScreen" id="uPJ-wT-miW"/>
                                                                 </connections>
                                                             </slider>
+                                                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="ZCB-3h-9M5" userLabel="0pt Spacer">
+                                                                <rect key="frame" x="355" y="6" width="0.0" height="1"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="height" constant="1" id="ASa-Uv-Yi8"/>
+                                                                    <constraint firstAttribute="width" id="F7K-ym-GMd"/>
+                                                                </constraints>
+                                                            </customView>
+                                                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KaH-Sp-Nhu">
+                                                                <rect key="frame" x="357" y="4" width="31" height="16"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="0.25" id="C4Z-4J-3PP">
+                                                                    <font key="font" usesAppearanceFont="YES"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                                <connections>
+                                                                    <binding destination="lH7-Vv-0M1" name="value" keyPath="values.animationDurationFullScreen" id="X5L-5m-e67"/>
+                                                                </connections>
+                                                            </textField>
+                                                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1KU-EM-wr2">
+                                                                <rect key="frame" x="388" y="4" width="11" height="16"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="s" id="jVe-Ns-Txp">
+                                                                    <font key="font" usesAppearanceFont="YES"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
                                                         </subviews>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="20" id="NmS-dF-Tkz"/>
@@ -360,8 +393,16 @@ For smoothest results, also enable custom full screen.</string>
                                                         <visibilityPriorities>
                                                             <integer value="1000"/>
                                                             <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
                                                         </visibilityPriorities>
                                                         <customSpacing>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
                                                             <real value="3.4028234663852886e+38"/>
                                                             <real value="3.4028234663852886e+38"/>
                                                         </customSpacing>
@@ -466,11 +507,11 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="d9m-Hf-6wE" secondAttribute="trailing" id="ofv-rX-MTT"/>
                 <constraint firstAttribute="bottom" secondItem="d9m-Hf-6wE" secondAttribute="bottom" constant="8" id="zrl-6c-0VQ"/>
             </constraints>
-            <point key="canvasLocation" x="-5" y="-407"/>
+            <point key="canvasLocation" x="17" y="-411"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="664" height="423"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="640" height="423"/>
             <subviews>
                 <textField identifier="SectionTitleWindow" horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RFk-nU-SGL">
                     <rect key="frame" x="-2" y="383" width="124" height="32"/>
@@ -481,7 +522,7 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3GV-dH-tZQ" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="544" height="407"/>
+                    <rect key="frame" x="120" y="8" width="520" height="407"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Xgb-im-tqO">
                             <rect key="frame" x="-2" y="390" width="358" height="18"/>
@@ -715,10 +756,10 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </customView>
                         <stackView identifier="MpvWinSizeCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fnx-bb-tli" userLabel="MpvWindowSize Collapse View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
-                            <rect key="frame" x="40" y="205" width="504" height="64"/>
+                            <rect key="frame" x="40" y="205" width="480" height="64"/>
                             <subviews>
                                 <button identifier="TriggerMpvWinSize" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dvv-kN-b5O">
-                                    <rect key="frame" x="-2" y="47" width="506" height="18"/>
+                                    <rect key="frame" x="-2" y="47" width="482" height="18"/>
                                     <buttonCell key="cell" type="check" title="Change window size" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="zOq-Em-wUe">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -728,13 +769,13 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </button>
                                 <box identifier="ContentMpvWinSize" title="WindowSize Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="L5c-uf-ged" userLabel="WindowSize Box">
-                                    <rect key="frame" x="-3" y="-4" width="510" height="50"/>
+                                    <rect key="frame" x="-3" y="-4" width="486" height="50"/>
                                     <view key="contentView" id="dCZ-8R-c9z" userLabel="WindowSizeBox View">
-                                        <rect key="frame" x="4" y="5" width="502" height="42"/>
+                                        <rect key="frame" x="4" y="5" width="478" height="42"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Dla-SH-yH8" userLabel="WindowSize HStack View">
-                                                <rect key="frame" x="16" y="8" width="470" height="26"/>
+                                                <rect key="frame" x="16" y="8" width="446" height="26"/>
                                                 <subviews>
                                                     <popUpButton horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sCc-NR-e8c">
                                                         <rect key="frame" x="-3" y="-4" width="83" height="31"/>
@@ -790,7 +831,7 @@ For smoothest results, also enable custom full screen.</string>
                                                         </connections>
                                                     </popUpButton>
                                                     <textField identifier="DummySpacer" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5mn-sJ-B5l" userLabel="Spacer">
-                                                        <rect key="frame" x="260" y="0.0" width="212" height="26"/>
+                                                        <rect key="frame" x="260" y="0.0" width="188" height="26"/>
                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" id="RI8-23-3fV">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -854,10 +895,10 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </customView>
                         <stackView identifier="MpvWinPosCollapseView" clipsToBounds="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5zT-kW-YFh" userLabel="MpvWindowPosition Collapse View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
-                            <rect key="frame" x="40" y="52" width="504" height="145"/>
+                            <rect key="frame" x="40" y="52" width="480" height="145"/>
                             <subviews>
                                 <button identifier="TriggerMpvWinPos" horizontalHuggingPriority="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="tLm-Qr-UNX">
-                                    <rect key="frame" x="-2" y="128" width="506" height="18"/>
+                                    <rect key="frame" x="-2" y="128" width="482" height="18"/>
                                     <buttonCell key="cell" type="check" title="Change window position" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Ofm-qE-RgQ">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -867,13 +908,13 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </button>
                                 <box identifier="ContentMpvWinPos" horizontalHuggingPriority="249" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="501" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="Mye-uz-WUr" userLabel="WindowPos Box">
-                                    <rect key="frame" x="-3" y="-4" width="510" height="131"/>
+                                    <rect key="frame" x="-3" y="-4" width="486" height="131"/>
                                     <view key="contentView" id="Z8T-H5-nff" userLabel="WindowPosBox View">
-                                        <rect key="frame" x="4" y="5" width="502" height="123"/>
+                                        <rect key="frame" x="4" y="5" width="478" height="123"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <gridView horizontalHuggingPriority="750" verticalHuggingPriority="749" horizontalCompressionResistancePriority="500" verticalCompressionResistancePriority="749" xPlacement="leading" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="5" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="577-7K-UVn">
-                                                <rect key="frame" x="12" y="8" width="478" height="107"/>
+                                                <rect key="frame" x="12" y="8" width="454" height="107"/>
                                                 <constraints>
                                                     <constraint firstItem="HjX-1c-epS" firstAttribute="height" secondItem="KzF-13-Qfa" secondAttribute="height" id="zRk-lu-dxD"/>
                                                 </constraints>
@@ -967,7 +1008,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </gridCell>
                                                     <gridCell row="1lD-Yb-A1Y" column="RyJ-bm-Oln" id="pj5-b2-qYt">
                                                         <textField key="contentView" identifier="AccessoryLabelXR" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="251" verticalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Or6-45-6yM">
-                                                            <rect key="frame" x="307" y="56" width="173" height="19"/>
+                                                            <rect key="frame" x="307" y="56" width="149" height="19"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="side of the screen" id="GXO-iT-BIr">
                                                                 <font key="font" metaFont="system"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1049,7 +1090,7 @@ For smoothest results, also enable custom full screen.</string>
                                                     </gridCell>
                                                     <gridCell row="G6z-Cr-ME5" column="RyJ-bm-Oln" id="7jz-qy-b7z">
                                                         <textField key="contentView" identifier="AccessoryLabelYR" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="wWi-dP-Ekg">
-                                                            <rect key="frame" x="307" y="0.0" width="173" height="19"/>
+                                                            <rect key="frame" x="307" y="0.0" width="149" height="19"/>
                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="of the screen" id="iRn-3s-oQH">
                                                                 <font key="font" metaFont="system"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1187,7 +1228,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="3GV-dH-tZQ" secondAttribute="trailing" id="xI9-7V-Oef"/>
                 <constraint firstItem="RFk-nU-SGL" firstAttribute="leading" secondItem="D77-Iw-nrY" secondAttribute="leading" id="ypV-gE-Ld4"/>
             </constraints>
-            <point key="canvasLocation" x="7.5" y="-737"/>
+            <point key="canvasLocation" x="5" y="-727"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar and Controller" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="487" height="662"/>
