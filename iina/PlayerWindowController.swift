@@ -3263,8 +3263,10 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
             }
             log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)")
 
+            // TODO: integrate this task into LayoutTransition build
             let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
             tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
+              isAnimatingLayoutTransition = true  // tell window resize listeners to do nothing
               videoView.apply(uncroppedClosedBarsGeo)
               player.window.setFrameImmediately(uncroppedClosedBarsGeo.windowFrame)
             })
@@ -3311,8 +3313,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
       if currentLayout.isInteractiveMode {
         // This alters state in addtion to (maybe) generating a task
-        let animations = exitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
-        tasks.append(contentsOf: animations)
+        tasks = exitInteractiveMode(immediately: immediately, newVidGeo: newVidGeo)
       }
 
       if let doAfter {

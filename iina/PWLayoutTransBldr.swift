@@ -542,14 +542,24 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
-        return transition.outputGeometry
+        return transition.outputGeometry.withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
+                                                         outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                                                         insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                                         insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                                         keepFullScreenDimensions: !(Preference.bool(for: .lockViewportToVideoSize)))
 
       } else if transition.isExitingInteractiveMode {
         let videoFrame = transition.outputGeometry.videoFrameInScreenCoords
         let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
         let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                     size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
-        let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0, outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0, insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0, videoAspect: transition.outputGeometry.videoAspect)
+        let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, 
+                                    fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0,
+                                    outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
+                                    outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
+                                    insideTopBarHeight: 0, insideTrailingBarWidth: 0,
+                                    insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                    videoAspect: transition.outputGeometry.videoAspect)
         return resizedGeo
       }
 
@@ -694,7 +704,7 @@ extension PlayerWindowController {
     } else {
       musicModeNew = musicModeGeo
     }
-    
+
     return Geometries(windowedMode: windowedNew, musicMode: musicModeNew, videoAspect: videoAspect ?? self.player.info.videoAspect)
   }
 
