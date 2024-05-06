@@ -1646,7 +1646,7 @@ For smoothest results, also enable custom full screen.</string>
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
                                 <rect key="frame" x="14" y="9" width="244" height="18"/>
-                                <buttonCell key="cell" type="check" title="Show only if cursor is inside window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
+                                <buttonCell key="cell" type="check" title="Also hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                     <connections>
