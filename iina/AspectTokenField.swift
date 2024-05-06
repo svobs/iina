@@ -11,15 +11,14 @@ import Foundation
 fileprivate let enableLookupLogging = false
 fileprivate let maxAspectCount: Int = 5
 
-// Data structure: AspectList
+// Data structure: AspectOrderedSet
 // An ordered set of non-identical text tokens (usually the field's entire contents)
-fileprivate struct AspectList {
+fileprivate struct AspectOrderedSet {
   let tokens: [String]
 
   /// Enforces  `maxAspectCount`
   init(tokens: [String]) {
-    var tokens = tokens.filter{Aspect.isValid($0)}
-    self.tokens = tokens
+    self.tokens = tokens.filter{Aspect.isValid($0)}
   }
 
   init(fromCSV csv: String) {
@@ -48,11 +47,11 @@ class AspectTokenField: NSTokenField {
 
   // Should match the value from the prefs.
   // Is only changed when `commaSeparatedValues` is set, and by `submitChanges()`.
-  private var savedAspects = AspectList(tokens: [])
+  private var savedAspects = AspectOrderedSet(tokens: [])
 
   // may include unsaved tokens from the edit session
-  fileprivate var objectValueAspects: AspectList {
-    AspectList(fromObjectValue: self.objectValue)
+  fileprivate var objectValueAspects: AspectOrderedSet {
+    AspectOrderedSet(fromObjectValue: self.objectValue)
   }
 
   var commaSeparatedValues: String {
@@ -62,7 +61,7 @@ class AspectTokenField: NSTokenField {
       return csv
     } set {
       Logger.log("ATF Setting savedAspects from CSV: \(newValue.quoted)", level: .verbose)
-      self.savedAspects = AspectList(fromCSV: newValue)
+      self.savedAspects = AspectOrderedSet(fromCSV: newValue)
       // Need to convert from CSV to newline-SV
       self.stringValue = self.savedAspects.toNewlineSeparatedValues()
     }
@@ -104,7 +103,7 @@ class AspectTokenField: NSTokenField {
 
   // Filter out duplicates, and enforce max token count.
   // Uses the prev list to try to figure out which copy is newer, and favor that one.
-  private func filterTokens(from newAspects: AspectList, basedOn oldAspects: AspectList) -> AspectList {
+  private func filterTokens(from newAspects: AspectOrderedSet, basedOn oldAspects: AspectOrderedSet) -> AspectOrderedSet {
     let dictOld: [String: [Int]] = countTokenIndexes(oldAspects)
     let dictNew: [String: [Int]] = countTokenIndexes(newAspects)
 
@@ -132,10 +131,10 @@ class AspectTokenField: NSTokenField {
       let removedToken = tokens.removeLast()
       Logger.log("Removed token \(removedToken.quoted) because list had more than \(maxAspectCount) tokens")
     }
-    return AspectList(tokens: tokens)
+    return AspectOrderedSet(tokens: tokens)
   }
 
-  private func countTokenIndexes(_ aspectSet: AspectList) -> [String: [Int]] {
+  private func countTokenIndexes(_ aspectSet: AspectOrderedSet) -> [String: [Int]] {
     var dict: [String: [Int]] = [:]
     for (index, token) in aspectSet.tokens.enumerated() {
       if var list = dict[token] {
@@ -148,7 +147,7 @@ class AspectTokenField: NSTokenField {
     return dict
   }
 
-  private func makeUndoableUpdate(to newAspects: AspectList) {
+  private func makeUndoableUpdate(to newAspects: AspectOrderedSet) {
     let oldAspects = self.savedAspects
     let csvOld = oldAspects.toCommaSeparatedValues()
     let csvNew = newAspects.toCommaSeparatedValues()
@@ -234,7 +233,7 @@ extension AspectTokenField: NSTokenFieldDelegate {
     guard let tokens = objects as? [String] else {
       return false
     }
-    let aspectSet = AspectList(tokens: tokens)
+    let aspectSet = AspectOrderedSet(tokens: tokens)
 
     pboard.clearContents()
     pboard.setString(aspectSet.toCommaSeparatedValues(), forType: NSPasteboard.PasteboardType.string)
@@ -245,7 +244,7 @@ extension AspectTokenField: NSTokenFieldDelegate {
   // See note for `tokenField(writeRepresentedObjects....)` above.
   func tokenField(_ tokenField: NSTokenField, readFrom pboard: NSPasteboard) -> [Any]? {
     if let pbString = pboard.string(forType: NSPasteboard.PasteboardType.string) {
-      return AspectList(fromCSV: pbString).tokens
+      return AspectOrderedSet(fromCSV: pbString).tokens
     }
     return []
   }

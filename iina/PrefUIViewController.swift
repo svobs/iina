@@ -45,11 +45,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
 
-  @IBOutlet weak var aspectsTokenField: AspectTokenField!
-  @IBOutlet weak var cropTokenField: AspectTokenField!
+  @IBOutlet weak var aspectPresetsTokenField: AspectTokenField!
+  @IBOutlet weak var cropPresetsTokenField: AspectTokenField!
 
-  @IBOutlet weak var resetAspectsButton: NSButton!
-  @IBOutlet weak var resetCropsButton: NSButton!
+  @IBOutlet weak var resetAspectPresetsButton: NSButton!
+  @IBOutlet weak var resetCropPresetsButton: NSButton!
 
   @IBOutlet var sectionAppearanceView: NSView!
   @IBOutlet var sectionFullScreenView: NSView!
@@ -170,16 +170,16 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private func updateAspectControlsFromPrefs() {
     let newAspects = Preference.string(for: .aspectRatioPanelPresets) ?? ""
-    aspectsTokenField.commaSeparatedValues = newAspects
+    aspectPresetsTokenField.commaSeparatedValues = newAspects
     let defaultAspects = Preference.defaultPreference[.aspectRatioPanelPresets] as? String
-    resetAspectsButton.isHidden = (defaultAspects == newAspects)
+    resetAspectPresetsButton.isHidden = (defaultAspects == newAspects)
   }
 
   private func updateCropControlsFromPrefs() {
-    let newCropAspects = Preference.string(for: .cropPanelPresets) ?? ""
-    cropTokenField.commaSeparatedValues = newCropAspects
-    let defaultCrops = Preference.defaultPreference[.cropPanelPresets] as? String
-    resetCropsButton.isHidden = defaultCrops == newCropAspects
+    let newCropPresets = Preference.string(for: .cropPanelPresets) ?? ""
+    cropPresetsTokenField.commaSeparatedValues = newCropPresets
+    let defaultCropPresets = Preference.defaultPreference[.cropPanelPresets] as? String
+    resetCropPresetsButton.isHidden = defaultCropPresets == newCropPresets
   }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
@@ -294,7 +294,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     })
   }
 
-  @IBAction func aspectsAction(_ sender: AspectTokenField) {
+  @IBAction func saveAspectPresets(_ sender: AspectTokenField) {
     let csv = sender.commaSeparatedValues
     if Preference.string(for: .aspectRatioPanelPresets) != csv {
       Logger.log("Saving \(Preference.Key.aspectRatioPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
@@ -302,7 +302,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
-  @IBAction func cropsAction(_ sender: AspectTokenField) {
+  @IBAction func saveCropPresets(_ sender: AspectTokenField) {
     let csv = sender.commaSeparatedValues
     if Preference.string(for: .cropPanelPresets) != csv {
       Logger.log("Saving \(Preference.Key.cropPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
@@ -310,12 +310,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
-  @IBAction func resetAspects(_ sender: NSButton) {
+  @IBAction func resetAspectPresets(_ sender: NSButton) {
     let defaultValue = Preference.defaultPreference[.aspectRatioPanelPresets]
     Preference.set(defaultValue, for: .aspectRatioPanelPresets)
   }
 
-  @IBAction func resetCrops(_ sender: NSButton) {
+  @IBAction func resetCropPresets(_ sender: NSButton) {
     let defaultValue = Preference.defaultPreference[.cropPanelPresets]
     Preference.set(defaultValue, for: .cropPanelPresets)
   }

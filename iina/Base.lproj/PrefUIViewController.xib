@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22689"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PrefUIViewController" customModule="IINA" customModuleProvider="target">
             <connections>
-                <outlet property="aspectsTokenField" destination="ujy-m2-hkj" id="6na-Cg-CtC"/>
-                <outlet property="cropTokenField" destination="hg9-M3-Cff" id="6pU-e7-Aco"/>
+                <outlet property="aspectPresetsTokenField" destination="ujy-m2-hkj" id="6na-Cg-CtC"/>
+                <outlet property="cropPresetsTokenField" destination="hg9-M3-Cff" id="6pU-e7-Aco"/>
                 <outlet property="hideFadeableViewsOutsideWindowCheckBox" destination="kw0-f3-qrz" id="gFU-Zd-LEb"/>
                 <outlet property="leadingSidebarBox" destination="jiM-84-6ud" id="GAC-XV-De5"/>
                 <outlet property="mpvGeometryRadioButton" destination="VqS-1r-k2A" id="V6d-3D-LCy"/>
@@ -22,8 +21,8 @@
                 <outlet property="pipDoNothing" destination="o7N-Tm-Aly" id="xg5-HZ-Usj"/>
                 <outlet property="pipHideWindow" destination="BMA-ed-2gf" id="UJv-H3-HDi"/>
                 <outlet property="pipMinimizeWindow" destination="YWw-1J-3Gr" id="5eN-rl-utd"/>
-                <outlet property="resetAspectsButton" destination="sUa-JE-D3L" id="4Zk-lk-klu"/>
-                <outlet property="resetCropsButton" destination="U4e-Vm-2gO" id="Zup-nM-5C4"/>
+                <outlet property="resetAspectPresetsButton" destination="sUa-JE-D3L" id="4Zk-lk-klu"/>
+                <outlet property="resetCropPresetsButton" destination="U4e-Vm-2gO" id="Zup-nM-5C4"/>
                 <outlet property="resizeWindowTimingPopUpButton" destination="HBJ-ip-LD2" id="l4w-Bz-faM"/>
                 <outlet property="resizeWindowWhenOpeningFileCheckbox" destination="MY4-AB-Orx" id="qVn-d6-4yM"/>
                 <outlet property="sectionAppearanceView" destination="M9c-Ak-HmK" id="96r-w6-H5K"/>
@@ -177,17 +176,17 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" constant="4" id="J1R-zk-WH5"/>
                             </constraints>
                             <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="vdi-Ma-Kap">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.useLegacyWindowedMode" previousBinding="vdi-Ma-Kap" id="ms7-Fx-SoJ">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
                                         <integer key="NSNoSelectionPlaceholder" value="-1"/>
                                         <integer key="NSNotApplicablePlaceholder" value="-1"/>
                                         <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="vdi-Ma-Kap">
-                                    <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
                                 </binding>
@@ -246,17 +245,17 @@ For smoothest results, also enable custom full screen.</string>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                             <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="GgU-jJ-Gze">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="hidden2" keyPath="values.useLegacyWindowedMode" previousBinding="GgU-jJ-Gze" id="Xpg-lq-ZPX">
                                     <dictionary key="options">
                                         <integer key="NSMultipleValuesPlaceholder" value="-1"/>
                                         <integer key="NSNoSelectionPlaceholder" value="-1"/>
                                         <integer key="NSNotApplicablePlaceholder" value="-1"/>
                                         <integer key="NSNullPlaceholder" value="-1"/>
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="GgU-jJ-Gze">
-                                    <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
                                 </binding>
@@ -2189,7 +2188,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                     <font key="font" metaFont="system"/>
                                                                 </buttonCell>
                                                                 <connections>
-                                                                    <action selector="resetAspects:" target="-2" id="OSQ-Dp-DeO"/>
+                                                                    <action selector="resetAspectPresets:" target="-2" id="OSQ-Dp-DeO"/>
                                                                 </connections>
                                                             </button>
                                                         </subviews>
@@ -2213,7 +2212,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                         </tokenFieldCell>
                                                         <connections>
-                                                            <action selector="aspectsAction:" target="-2" id="C6M-xs-LlA"/>
+                                                            <action selector="saveAspectPresets:" target="-2" id="C6M-xs-LlA"/>
                                                         </connections>
                                                     </tokenField>
                                                     <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="319-Ws-NfM" userLabel="4pt Spacer">
@@ -2240,7 +2239,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                     <font key="font" metaFont="system"/>
                                                                 </buttonCell>
                                                                 <connections>
-                                                                    <action selector="resetCrops:" target="-2" id="YbK-Xg-JCR"/>
+                                                                    <action selector="resetCropPresets:" target="-2" id="YbK-Xg-JCR"/>
                                                                 </connections>
                                                             </button>
                                                         </subviews>
@@ -2264,7 +2263,7 @@ For smoothest results, also enable custom full screen.</string>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                         </tokenFieldCell>
                                                         <connections>
-                                                            <action selector="cropsAction:" target="-2" id="Fvo-86-vc3"/>
+                                                            <action selector="saveCropPresets:" target="-2" id="Fvo-86-vc3"/>
                                                         </connections>
                                                     </tokenField>
                                                 </subviews>
