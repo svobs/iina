@@ -99,6 +99,21 @@ class PlayerWindow: NSWindow {
       }
     }
     playerWinController?.updateUI()  // Call explicitly to make sure it gets attention
+
+    /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
+    /// MacOS quirk? Obscure feature? Note that this workaround does not consult `PluginInputManager` because its callback
+    /// mechanism doesn't support returning a status. Must revisit if IINA plugins ever get traction.
+    if let playerWinController, let keyBinding = playerWinController.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+
+      guard !keyBinding.isIgnored else {
+        // if "ignore", just swallow the event. Do not forward; do not beep
+        self.log.verbose("Binding is ignored for key: \(keyBinding.rawKey.quoted)")
+        return true
+      }
+
+      // beep if cmd failed
+      return playerWinController.handleKeyBinding(keyBinding)
+    }
     return super.performKeyEquivalent(with: event)
   }
 
