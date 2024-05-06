@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
+        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22689"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -501,6 +502,13 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" id="P0c-9x-u0E"/>
                                 <constraint firstAttribute="width" constant="1" id="Qn3-vt-I1N"/>
                             </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="ZZJ-9K-byv">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="xMC-EY-bOr">
                             <rect key="frame" x="-2" y="366" width="381" height="18"/>
@@ -509,6 +517,11 @@ For smoothest results, also enable custom full screen.</string>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableAdvancedSettings" id="Mzg-0n-1PF">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.moveWindowIntoVisibleScreenOnResize" id="MMQ-gG-q6f"/>
                             </connections>
                         </button>
