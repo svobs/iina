@@ -264,8 +264,8 @@ extension PlayerWindowController {
     let openFinalPanelsTiming: CAMediaTimingFunctionName
     let fadeInNewViewsTiming: CAMediaTimingFunctionName = .linear
     if transition.isTogglingFullScreen {
-      closeOldPanelsTiming = .easeInEaseOut
-      openFinalPanelsTiming = .easeInEaseOut
+      closeOldPanelsTiming = .easeOut
+      openFinalPanelsTiming = .easeOut
     } else if transition.isTogglingVisibilityOfAnySidebar {
       closeOldPanelsTiming = .easeIn
       openFinalPanelsTiming = .easeIn
@@ -379,7 +379,8 @@ extension PlayerWindowController {
       transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: .easeInEaseOut, { [self] in
         log.verbose("[\(transition.name)] Moving & resizing window")
 
-        let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords, topMarginHeight: 0,
+        let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords,
+                                                              topMarginHeight: 0,
                                                               outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
                                                               outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                                                               insideTopBarHeight: 0, insideTrailingBarWidth: 0,
@@ -406,7 +407,8 @@ extension PlayerWindowController {
           /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
           /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
           /// (will expand window to cover `cameraHousingHeight` in next animation)
-          newGeo = transition.inputGeometry.clone(windowFrame: windowedModeScreen.frameWithoutCameraHousing, screenID: windowedModeScreen.screenID, topMarginHeight: 0)
+          newGeo = transition.inputGeometry.clone(windowFrame: windowedModeScreen.frameWithoutCameraHousing,
+                                                  screenID: windowedModeScreen.screenID, topMarginHeight: 0)
         } else {
           /// `Use entire Macbook screen` is checked in Settings. As of MacOS before Sonoma 14.4, Apple has been making improvements
           /// but we still need to use  a separate animation to give the OS time to hide the menu bar - otherwise there will be a flicker.
@@ -444,7 +446,8 @@ extension PlayerWindowController {
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
       transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn, { [self] in
         let topBlackBarHeight = Preference.bool(for: .allowVideoToOverlapCameraHousing) ? 0 : windowedModeScreen.cameraHousingHeight ?? 0
-        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
+        let newGeo = transition.outputGeometry.clone(windowFrame: windowedModeScreen.frame, 
+                                                     screenID: windowedModeScreen.screenID, topMarginHeight: topBlackBarHeight)
         log.verbose("[\(transition.name)] Updating legacy FS window to cover camera housing / menu bar / dock with windowFrame=\(newGeo.windowFrame)")
         applyLegacyFSGeo(newGeo)
       }))
@@ -464,7 +467,8 @@ extension PlayerWindowController {
   // MARK: - Geometry
 
   /// Builds `inputGeometry`.
-  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ geo: Geometries, windowedModeScreen: NSScreen) -> PWGeometry {
+  private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ geo: Geometries, 
+                                  windowedModeScreen: NSScreen) -> PWGeometry {
     // Restore window size & position
     switch inputLayout.mode {
     case .windowed:
