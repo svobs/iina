@@ -104,7 +104,7 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
   }
 }
 
-class InitialWindowController: NSWindowController, NSWindowDelegate {
+class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("InitialWindowController")
@@ -156,7 +156,7 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
     fatalError("init(coder:) has not been implemented")
   }
 
-  override func showWindow(_ sender: Any?) {
+  override func openWindow(_ sender: Any?) {
     guard let window else { return }
 
     /// If welcome window is shown at startup, recentDocuments may not be finished loading.
@@ -170,14 +170,14 @@ class InitialWindowController: NSWindowController, NSWindowDelegate {
         DispatchQueue.main.async {
           let sw = Utility.Stopwatch()
           self.reloadData()
-          Logger.log("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window", level: .verbose)
-          super.showWindow(nil)
           self.isFirstLoad = false
+          Logger.log("Total time for WelcomeWindow initial reload: \(sw) ms. Showing window", level: .verbose)
+          super.openWindow(sender)
         }
       }
     } else {
       Logger.log("Showing WelcomeWindow", level: .verbose)
-      super.showWindow(nil)
+      super.openWindow(sender)
     }
   }
 

@@ -41,7 +41,7 @@ struct SavedWindow {
   }
 }
 
-enum WindowAutosaveName: Equatable {
+enum WindowAutosaveName: Equatable, Hashable {
   static let playerWindowPrefix = "PWin-"
   static let playerWindowFmt = "\(playerWindowPrefix)%@"
 
@@ -49,7 +49,7 @@ enum WindowAutosaveName: Equatable {
     String(format: WindowAutosaveName.playerWindowFmt, id)
   }
 
-  case preference
+  case preferences
   case welcome
   case openFile
   case openURL
@@ -64,7 +64,7 @@ enum WindowAutosaveName: Equatable {
 
   var string: String {
     switch self {
-    case .preference:
+    case .preferences:
       return "Preferences"
     case .welcome:
       return "Welcome"
@@ -91,8 +91,8 @@ enum WindowAutosaveName: Equatable {
 
   init?(_ string: String) {
     switch string {
-    case WindowAutosaveName.preference.string:
-      self = .preference
+    case WindowAutosaveName.preferences.string:
+      self = .preferences
     case WindowAutosaveName.welcome.string:
       self = .welcome
     case WindowAutosaveName.openFile.string:
@@ -149,5 +149,11 @@ enum WindowAutosaveName: Equatable {
       }
     }
     return nil
+  }
+
+  var hashValue: Int { return string.hashValue }
+
+  func hash(into hasher: inout Hasher) {
+    return string.hash(into: &hasher)
   }
 }

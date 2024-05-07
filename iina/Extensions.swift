@@ -1337,6 +1337,29 @@ extension NSWindow {
     }
     return false
   }
+
+  func postWindowIsReadyToShow() {
+    NotificationCenter.default.post(Notification(name: .windowIsReadyToShow, object: self))
+  }
+}
+
+
+class IINAWindowController: NSWindowController {
+
+  func openWindow(_ sender: Any?) {
+    if Preference.bool(for: .isRestoreInProgress) {
+      guard let window else {
+        Logger.log("Cannot open window: no window object!", level: .error)
+        return
+      }
+      window.orderOut(self)
+      window.postWindowIsReadyToShow()
+      return
+    } else {
+      showWindow(sender)
+    }
+  }
+
 }
 
 extension NSTableCellView {

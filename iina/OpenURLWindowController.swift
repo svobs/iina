@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class OpenURLWindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate, NSControlTextEditingDelegate {
+class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFieldDelegate, NSControlTextEditingDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("OpenURLWindowController")
@@ -50,7 +50,13 @@ class OpenURLWindowController: NSWindowController, NSWindowDelegate, NSTextField
     window?.close()
   }
 
+  override func showWindow(_ sender: Any?) {
+    resetFields()
+    super.showWindow(sender)
+  }
+
   func resetFields() {
+    _ = window // load window if not loaded
     urlField.stringValue = ""
     usernameField.stringValue = ""
     passwordField.stringValue = ""

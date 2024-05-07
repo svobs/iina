@@ -11,7 +11,7 @@ import WebKit
 
 fileprivate let highlightsLink = "https://iina.io/highlights"
 
-class GuideWindowController: NSWindowController {
+class GuideWindowController: IINAWindowController {
   override var windowNibName: NSNib.Name {
     return NSNib.Name("GuideWindowController")
   }

@@ -411,10 +411,8 @@ not applying FFmpeg 9599 workaround
 
     setUserOption(PK.ytdlEnabled, type: .bool, forName: MPVOption.ProgramBehavior.ytdl)
     setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions)
-    /// Reset window-scale when changing tracks to prevent green screen errors
-    chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.resetOnNextFile,
-                                 [MPVOption.PlaybackControl.abLoopA,
-                                  MPVOption.PlaybackControl.abLoopB].joined(separator: ",")))
+    let propertiesToReset = [MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB]
+    chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.resetOnNextFile, propertiesToReset.joined(separator: ",")))
 
     // Set user defined conf dir.
     if Preference.bool(for: .enableAdvancedSettings),

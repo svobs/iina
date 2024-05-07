@@ -303,4 +303,5 @@ extension Notification.Name {
   static let iinaPlayerShutdown = Notification.Name("iinaPlayerShutdown")
   static let iinaPlaySliderLoopKnobChanged = Notification.Name("iinaPlaySliderLoopKnobChanged")
   static let iinaLogoutCompleted = Notification.Name("iinaLoggedOutOfSubtitleProvider")
+  static let windowIsReadyToShow = Notification.Name("windowIsReadyToShow")
 }

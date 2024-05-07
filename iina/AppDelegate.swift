@@ -376,7 +376,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       /// Else: (Option C) Launch app from UI via file open (`openFileCalled==true`)
     }
 
-    finishLaunching()
+    if !restoredSomething {
+      finishLaunching()
+    }
   }
 
   private func startFromCommandLine() {
@@ -615,10 +617,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Starting restore of \(savedWindowsBackToFront.count) windows", level: .verbose)
     Preference.set(true, for: .isRestoreInProgress)
 
-    var playerWinCons: [PlayerWindowController] = []
+    // Try to wait until all windows are ready so that we can show all of them at once.
+    var wcsToRestore = Set<NSWindowController>()
+    var wcsReady = Set<NSWindowController>()
+    var isFinishedAddingWindows = false
+
+    func finishRestoreIfReady() {
+      guard isFinishedAddingWindows else { return }
+
+      guard wcsReady.count == wcsToRestore.count else { return }
+
+      Logger.log("All windows ready; showing all \(wcsToRestore.count)", level: .verbose)
+      for wc in wcsToRestore {
+        wc.showWindow(self)
+      }
+
+      Logger.log("Done restoring windows", level: .verbose)
+      Preference.set(false, for: .isRestoreInProgress)
+
+      finishLaunching()
+    }
+
+    var observers: [NSObjectProtocol] = []
+    observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main) { note in
+      guard let window = note.object as? NSWindow else { return }
+      guard let wc = window.windowController else {
+        Logger.log("Window ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
+        return
+      }
+      wcsReady.insert(wc)
+      Logger.log("Window ready: \(window.savedStateName.quoted)", level: .verbose)
+
+      finishRestoreIfReady()
+    })
+
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
-      var wc: NSWindowController? = nil
+      let wc: NSWindowController
       switch savedWindow.saveName {
       case .playbackHistory:
         showHistoryWindow(self)
@@ -626,8 +661,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .welcome:
         showWelcomeWindow()
         wc = initialWindow
-      case .preference:
-        showPreferences(self)
+      case .preferences:
+        showPreferencesWindow(self)
         wc = preferenceWindowController
       case .about:
         showAboutWindow(self)
@@ -635,13 +670,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .openFile:
         // TODO: persist isAlternativeAction too
         showOpenFileWindow(isAlternativeAction: true)
+        // No windowController for Open File window; will have to show it immediately
+        // TODO: show with others
+        continue
       case .openURL:
         // TODO: persist isAlternativeAction too
         showOpenURLWindow(isAlternativeAction: true)
         wc = openURLWindow
       case .inspector:
-        showInspectorWindow()
+        // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
+        // So just mark it as 'ready' and show with the rest when they are ready.
         wc = inspector
+        wcsReady.insert(wc)
       case .videoFilter:
         showVideoFilterWindow(self)
         wc = vfWindow
@@ -651,37 +691,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .playerWindow(let id):
         let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id)
         wc = player.windowController
-        playerWinCons.append(player.windowController)
       default:
         Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
-        break
+        continue
       }
-      if savedWindow.isMinimized, let wc {
+      if savedWindow.isMinimized {
+        // Don't need to wait for wc
         wc.window?.miniaturize(self)
+      } else {
+        // Add to list of windows to wait for
+        wcsToRestore.insert(wc)
       }
     }
 
-    Logger.log("Done restoring windows", level: .verbose)
-    Preference.set(false, for: .isRestoreInProgress)
+    isFinishedAddingWindows = true
+    finishRestoreIfReady()
 
-    // Count only "important windows" (IINA startup can open other windows which are hidden, such as color picker)
-    let openWindowCount = NSApp.windows.reduce(0, {count, win in (win.isImportant && win.isOpen) ? count + 1 : count})
-    if openWindowCount == 0 {
-      for pwin in playerWinCons {
-        if pwin.player.info.currentMedia != nil {
-          Logger.log("Restored player window(s) are still loading - will assume success for now", level: .verbose)
-          return true
-        }
-      }
-      Logger.log("Looks like none of the windows was restored successfully. Falling back to user launch preference")
-      return false
-    }
-    return true
+    return !wcsToRestore.isEmpty
   }
 
   func showWelcomeWindow() {
     Logger.log("Showing WelcomeWindow", level: .verbose)
-    initialWindow.showWindow(self)
+    initialWindow.openWindow(self)
   }
 
   func showOpenFileWindow(isAlternativeAction: Bool) {
@@ -725,12 +756,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func showOpenURLWindow(isAlternativeAction: Bool) {
     Logger.log("Showing OpenURLWindow (isAlternativeAction: \(isAlternativeAction))", level: .verbose)
     openURLWindow.isAlternativeAction = isAlternativeAction
-    openURLWindow.showWindow(nil)
-    openURLWindow.resetFields()
+    openURLWindow.openWindow(self)
   }
 
   func showInspectorWindow() {
-    inspector.showWindow(self)
+    Logger.log("Showing Inspector window", level: .verbose)
+    inspector.openWindow(self)
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -1126,7 +1157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     
     // if installing a plugin package
     if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
-      showPreferences(self)
+      showPreferencesWindow(self)
       preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
       return
     }
@@ -1296,32 +1327,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  @IBAction func showPreferences(_ sender: AnyObject) {
-    preferenceWindowController.showWindow(self)
+  @IBAction func showPreferencesWindow(_ sender: AnyObject) {
+    Logger.log("Showing Preferences window", level: .verbose)
+    preferenceWindowController.openWindow(self)
   }
 
   @IBAction func showVideoFilterWindow(_ sender: AnyObject) {
     Logger.log("Showing Video Filter window", level: .verbose)
-    vfWindow.showWindow(self)
+    vfWindow.openWindow(self)
   }
 
   @IBAction func showAudioFilterWindow(_ sender: AnyObject) {
     Logger.log("Showing Audio Filter window", level: .verbose)
-    afWindow.showWindow(self)
+    afWindow.openWindow(self)
   }
 
   @IBAction func showAboutWindow(_ sender: AnyObject) {
     Logger.log("Showing About window", level: .verbose)
-    aboutWindow.showWindow(self)
+    aboutWindow.openWindow(self)
   }
 
   @IBAction func showHistoryWindow(_ sender: AnyObject) {
-    historyWindow.showWindow(self)
+    Logger.log("Showing History window", level: .verbose)
+    historyWindow.openWindow(self)
   }
 
   @IBAction func showLogWindow(_ sender: AnyObject) {
     Logger.log("Showing Log window", level: .verbose)
-    logWindow.showWindow(self)
+    logWindow.openWindow(self)
   }
 
   @IBAction func showHighlights(_ sender: AnyObject) {

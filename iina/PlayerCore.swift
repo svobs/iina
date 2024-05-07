@@ -404,7 +404,7 @@ class PlayerCore: NSObject {
         if !info.isRestoring {
           AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
         }
-        windowController.openWindow()
+        windowController.openWindow(nil)
 
         mpv.queue.async { [self] in
           // Send load file command
@@ -433,18 +433,14 @@ class PlayerCore: NSObject {
   }
 
   // Does nothing if already started
-  func start(restore: Bool = false) {
+  func start() {
     guard !didStart else { return }
     didStart = true
 
-    log.verbose("Player start, restoring=\(restore.yn)")
+    log.verbose("Player start")
 
     startMPV()
     loadPlugins()
-
-    if restore, let savedState = Preference.UIState.getPlayerSaveState(forPlayerID: label) {
-      savedState.restoreTo(self)
-    }
   }
 
   private func startMPV() {

@@ -28,7 +28,7 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
-class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate, NSMenuItemValidation {
+class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate, NSMenuItemValidation {
 
   private let getKey: [Preference.HistoryGroupBy: (PlaybackHistory) -> String] = [
     .lastPlayedDay: { DateFormatter.localizedString(from: $0.addedDate, dateStyle: .medium, timeStyle: .none) },
@@ -124,23 +124,21 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
   override func showWindow(_ sender: Any?) {
     guard let window else { return }
     window.orderOut(self)  // Hide window. Should load window as a side effect, if not loaded already
-    assert(isWindowLoaded, "Expected HistoryWindow to be loaded!")
+    assert(isWindowLoaded, "Expected History window to be loaded!")
 
     let isInitialLoad = reloadTicketCounter == 0
     if isInitialLoad {
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load.
-      ///
       HistoryController.shared.queue.async {
         DispatchQueue.main.async {
           let sw = Utility.Stopwatch()
           self.reloadData()
-          Logger.log("Total HistoryWindow data reload time: \(sw) ms. Showing HistoryWindow", level: .verbose)
+          Logger.log("Initial History window data reload time: \(sw) ms.", level: .verbose)
           super.showWindow(sender)
         }
       }
     } else {
       // No need to reload data (it's an expensive operation)
-      Logger.log("Showing HistoryWindow", level: .verbose)
       super.showWindow(sender)
     }
   }
@@ -271,6 +269,7 @@ class HistoryWindowController: NSWindowController, NSOutlineViewDelegate, NSOutl
         // Reload table again to refresh statuses
         outlineView.reloadData()
         outlineView.expandItem(nil, expandChildren: true)
+        Logger.log("Reloaded History table in \(sw) ms", level: .verbose)
       }
     }
   }

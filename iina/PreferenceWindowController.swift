@@ -54,7 +54,7 @@ class CustomCellView: NSTableCellView {
 }
 
 
-class PreferenceWindowController: NSWindowController {
+class PreferenceWindowController: IINAWindowController {
   static unowned var undoManager: UndoManager? = nil
 
   class Trie {
@@ -168,7 +168,8 @@ class PreferenceWindowController: NSWindowController {
   init(viewControllers: [NSViewController & PreferenceWindowEmbeddable]) {
     self.viewControllers = viewControllers
     super.init(window: nil)
-    self.windowFrameAutosaveName = WindowAutosaveName.preference.string
+    self.windowFrameAutosaveName = WindowAutosaveName.preferences.string
+    Logger.log("PreferenceWindowController init", level: .verbose)
   }
 
   required init?(coder: NSCoder) {
@@ -249,6 +250,7 @@ class PreferenceWindowController: NSWindowController {
       prefDetailScrollView.scroll(NSPoint())
     })
     self.observers.append(observer)
+    Logger.log("PreferenceWindowController windowDidLoad done", level: .verbose)
   }
 
   override func mouseDown(with event: NSEvent) {

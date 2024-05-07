@@ -17,7 +17,7 @@ fileprivate let thumbnailExtraOffsetY: CGFloat = 15
 
 // MARK: - Constants
 
-class PlayerWindowController: NSWindowController, NSWindowDelegate {
+class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   enum TrackingArea: Int {
     static let key: String = "area"
 
@@ -1807,7 +1807,7 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
   // MARK: - Window delegate: Open / Close
 
-  func openWindow() {
+  override func openWindow(_ sender: Any?) {
     guard let window = self.window, let cv = window.contentView else { return }
     isClosing = false
     isInitialSizeDone = false  // reset for reopen
@@ -1867,7 +1867,8 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     if isOpen, !player.info.isRestoring {
       /// `windowFrame` may be slightly off; update it
       if currentLayout.mode == .windowed {
-        windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, videoAspect: windowedModeGeo.videoAspect)
+        windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, 
+                                                      videoAspect: windowedModeGeo.videoAspect)
         /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
@@ -1879,6 +1880,11 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     } else {
       // Restore layout from last launch or configure from prefs. Do not animate.
       setInitialWindowLayout()
+    }
+
+    // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
+    if player.info.isRestoring {
+      window.postWindowIsReadyToShow()
     }
 
     if !window.isMiniaturized {
@@ -3698,15 +3704,6 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  private func setWindowOpacity(to newValue: Float) {
-    guard let window else { return }
-    let existingValue = window.contentView?.layer?.opacity ?? -1
-    guard existingValue != newValue else { return }
-    log.debug("Changing window opacity, \(existingValue) → \(newValue)")
-    window.backgroundColor = newValue < 1.0 ? .clear : .black
-    window.contentView?.layer?.opacity = newValue
-  }
-
   func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
     /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
@@ -3722,6 +3719,16 @@ class PlayerWindowController: NSWindowController, NSWindowDelegate {
 
     // Set this *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards
     setWindowOpacity(to: windowOpacity)
+  }
+
+  /// Do not call this. Call `updateCustomBorderBoxAndWindowOpacity` instead.
+  private func setWindowOpacity(to newValue: Float) {
+    guard let window else { return }
+    let existingValue = window.contentView?.layer?.opacity ?? -1
+    guard existingValue != newValue else { return }
+    log.debug("Changing window opacity, \(existingValue) → \(newValue)")
+    window.backgroundColor = newValue < 1.0 ? .clear : .black
+    window.contentView?.layer?.opacity = newValue
   }
 
   // MARK: - Sync UI with playback

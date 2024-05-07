@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class FilterWindowController: NSWindowController, NSWindowDelegate {
+class FilterWindowController: IINAWindowController, NSWindowDelegate {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("FilterWindowController")

@@ -11,7 +11,7 @@ import Cocoa
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
 
-class InspectorWindowController: NSWindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
+class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("InspectorWindowController")
@@ -140,10 +140,6 @@ class InspectorWindowController: NSWindowController, NSWindowDelegate, NSTableVi
   }
 
   override func showWindow(_ sender: Any?) {
-    Logger.log("Showing Inspector window", level: .verbose)
-
-    guard let _ = self.window else { return }
-
     updateInfo()
 
     removeTimerAndListeners()
@@ -161,6 +157,7 @@ class InspectorWindowController: NSWindowController, NSWindowDelegate, NSTableVi
     removeTimerAndListeners()
   }
 
+  // This is safe to run even if not needed
   private func removeTimerAndListeners() {
     updateTimer?.invalidate()
     updateTimer = nil
