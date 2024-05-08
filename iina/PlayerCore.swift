@@ -1929,6 +1929,8 @@ class PlayerCore: NSObject {
     }
     saveToLastPlayedFile(info.currentURL, duration: info.videoDuration, position: info.videoPosition)
 
+    guard !isShuttingDown else { return }
+
     // Ensure playlist is updated in real time
     postFileHistoryUpdateNotification()
 
@@ -1936,7 +1938,8 @@ class PlayerCore: NSObject {
     if Preference.bool(for: .recordPlaybackHistory) {
       HistoryController.shared.queue.async { [self] in
         /// this will reload the `mpvProgress` field from the `watch-later` config files
-        HistoryController.shared.reloadAll()
+        guard let historyItem = HistoryController.shared.history.first(where: {$0.url == info.currentURL}) else { return }
+        historyItem.loadProgressFromWatchLater()
       }
     }
   }

@@ -17,14 +17,14 @@ fileprivate let KeyDuration = "IINAPHDuration"
 
 class PlaybackHistory: NSObject, NSCoding {
 
-  var url: URL
-  var name: String
-  var mpvMd5: String
+  let url: URL
+  let name: String
+  let mpvMd5: String
 
-  var played: Bool
-  var addedDate: Date
+  let played: Bool
+  let addedDate: Date
 
-  var duration: VideoTime
+  let duration: VideoTime
   var mpvProgress: VideoTime?
 
   required init?(coder aDecoder: NSCoder) {
@@ -47,8 +47,7 @@ class PlaybackHistory: NSObject, NSCoding {
     self.addedDate = date
     self.duration = VideoTime(duration)
 
-    // FIXME: this is a long-running operation. Load this asynchronously
-    self.mpvProgress = Utility.playbackProgressFromWatchLater(mpvMd5)
+    self.mpvProgress = nil
   }
 
   init(url: URL, duration: Double, name: String? = nil) {
@@ -58,6 +57,11 @@ class PlaybackHistory: NSObject, NSCoding {
     self.played = true
     self.addedDate = Date()
     self.duration = VideoTime(duration)
+  }
+
+  // This is a long-running operation. Load this asynchronously
+  func loadProgressFromWatchLater() {
+    self.mpvProgress = Utility.playbackProgressFromWatchLater(mpvMd5)
   }
 
   func encode(with aCoder: NSCoder) {

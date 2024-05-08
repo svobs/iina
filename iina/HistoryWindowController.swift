@@ -265,6 +265,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       // Fill in fileExists
       if fileExistsMap[entry.url] == nil {
         fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+        entry.loadProgressFromWatchLater()
         count += 1
       }
     }

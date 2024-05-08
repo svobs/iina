@@ -168,6 +168,7 @@ struct Constants {
   }
   struct TimeInterval {
     static let historyTableCompleteFileStatusReload = 600.0
+    static let pastLaunchResponseTimeout = 1.0
   }
   struct FilterLabel {
     static let crop = "iina_crop"

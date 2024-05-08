@@ -530,8 +530,16 @@ class Utility {
       startTime = CFAbsoluteTimeGetCurrent()
     }
 
+    var secElapsed: Double {
+      return CFAbsoluteTimeGetCurrent() - startTime
+    }
+
     var msElapsed: Double {
-      return (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+      return secElapsed * 1000
+    }
+
+    var secElapsedString: String {
+      return "\(secElapsed.stringMaxFrac2)s"
     }
 
     var description: String {

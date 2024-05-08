@@ -154,6 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     case PK.resumeLastPosition.rawValue:
       HistoryController.shared.queue.async {
+        Logger.log("Reloading playback history in response to change for 'resumeLastPosition'.")
         HistoryController.shared.reloadAll()
       }
 
@@ -586,7 +587,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // If too much time has passed (in particular if user took a long time to respond to confirmation dialog), consider the data stale.
     // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
     // Users who are quick with their user interface device probably know what they are doing and will be impatient.
-    let pastLaunchesCache = stopwatch.msElapsed > 1000 ? nil : pastLaunches
+    let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
     let savedWindowsBackToFront = Preference.UIState.consolidateOpenWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
