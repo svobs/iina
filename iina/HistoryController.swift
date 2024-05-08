@@ -15,6 +15,7 @@ class HistoryController {
   var plistURL: URL
   var history: [PlaybackHistory]
   var queue = DispatchQueue(label: "IINAHistoryController", qos: .background)
+  var log = Logger.Subsystem(rawValue: "history")
 
   var cachedRecentDocumentURLs: [URL]
 
@@ -26,15 +27,13 @@ class HistoryController {
 
   func reloadAll(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
-    Logger.log("Reloading playback history from \(plistURL.path.pii.quoted)")
+    log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
     var sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
-    Logger.log("Finished reloading playback history (\(history.count) entries) in \(sw.secElapsedString)")
-    sw = Utility.Stopwatch()
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
-    Logger.log("Finished reloading \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
+    log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
-      Logger.log("Posting iinaHistoryUpdated after History reloadAll", level: .verbose)
+      log.verbose("ReloadAll: posting iinaHistoryUpdated")
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }
   }
@@ -42,9 +41,9 @@ class HistoryController {
   private func save() {
     let result = NSKeyedArchiver.archiveRootObject(history, toFile: plistURL.path)
     if !result {
-      Logger.log("Cannot save playback history!", level: .error)
+      log.error("Failed to save playback history!")
     }
-    Logger.log("Posting iinaHistoryUpdated after History save", level: .verbose)
+    log.verbose("Saved history; posting iinaHistoryUpdated")
     NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
   }
 

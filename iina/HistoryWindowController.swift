@@ -29,6 +29,7 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
 ]
 
 class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate, NSMenuItemValidation {
+  var log = HistoryController.shared.log
 
   private let getKey: [Preference.HistoryGroupBy: (PlaybackHistory) -> String] = [
     .lastPlayedDay: { DateFormatter.localizedString(from: $0.addedDate, dateStyle: .medium, timeStyle: .none) },
@@ -109,7 +110,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     super.windowDidLoad()
 
     NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [unowned self] _ in
-      Logger.log("History window received iinaHistoryUpdated; will reload data")
+      log.verbose("History window received iinaHistoryUpdated; will reload data")
       self.reloadData()
     }
 
@@ -120,7 +121,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     outlineView.menu?.delegate = self
     outlineView.target = self
     outlineView.doubleAction = #selector(doubleAction)
-    Logger.log("History windowDidLoad done", level: .verbose)
+    log.verbose("History windowDidLoad done")
   }
 
   override func openWindow(_ sender: Any?) {
@@ -171,7 +172,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     // but will not actually resize it:
     timeColumn.minWidth = newMinWidth
     outlineView.layoutSubtreeIfNeeded()
-    Logger.log("Updated \(timeColumn.identifier.rawValue.quoted) col width: \(timeColumn.width), minWidth: \(timeColumn.minWidth)", level: .verbose)
+    log.verbose("Updated \(timeColumn.identifier.rawValue.quoted) col width: \(timeColumn.width), minWidth: \(timeColumn.minWidth)")
   }
 
   private func donateColWidth(to targetColumn: NSTableColumn, targetWidth: CGFloat, from donorColumn: NSTableColumn) {
@@ -179,7 +180,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     // Don't take more than needed, or more than possible:
     let widthToDonate = min(extraWidthNeeded, max(donorColumn.width - donorColumn.minWidth, 0))
     if widthToDonate > 0 {
-      Logger.log("Donating \(widthToDonate) pts width to col \(targetColumn.identifier.rawValue.quoted) from \(donorColumn.identifier.rawValue.quoted) width (\(donorColumn.width))")
+      log.verbose("Donating \(widthToDonate) pts width to col \(targetColumn.identifier.rawValue.quoted) from \(donorColumn.identifier.rawValue.quoted) width (\(donorColumn.width))")
       donorColumn.width -= widthToDonate
       targetColumn.width += widthToDonate
     }
@@ -240,7 +241,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       self.outlineView.reloadData()
       self.outlineView.expandItem(nil, expandChildren: true)
 
-      Logger.log("Reloaded history table in \(sw.secElapsedString), with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))", level: .verbose)
+      self.log.verbose("Reloaded history table in \(sw.secElapsedString), with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))")
 
       if isInitialLoad {
         super.openWindow(self)
@@ -270,7 +271,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       }
     }
     self.fileExistsMap = fileExistsMap
-    Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString)", level: .verbose)
+    log.debug("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString)")
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }
@@ -280,7 +281,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
         // Reload table again to refresh statuses
         outlineView.reloadData()
         outlineView.expandItem(nil, expandChildren: true)
-        Logger.log("Reloaded History table with updated fileExists data", level: .verbose)
+        log.verbose("Reloaded History table with updated fileExists data")
       }
     }
   }

@@ -154,7 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     case PK.resumeLastPosition.rawValue:
       HistoryController.shared.queue.async {
-        Logger.log("Reloading playback history in response to change for 'resumeLastPosition'.")
+        HistoryController.shared.log.verbose("Reloading playback history in response to change for 'resumeLastPosition'.")
         HistoryController.shared.reloadAll()
       }
 
@@ -1480,11 +1480,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             recentDocumentsURLs.isEmpty,
             let recentDocuments = Preference.array(for: .recentDocuments),
             !recentDocuments.isEmpty else {
-        Logger.log("Will not restore list of recent documents", level: .verbose)
+        HistoryController.shared.log.verbose("Will not restore list of recent documents from prefs")
         return
       }
 
-      Logger.log("Restoring list of recent documents...")
+      HistoryController.shared.log.debug("Restoring list of recent documents from prefs...")
 
       var newRecentDocuments: [URL] = []
       var foundStale = false
@@ -1505,12 +1505,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       HistoryController.shared.cachedRecentDocumentURLs = newRecentDocuments
 
       if foundStale {
-        Logger.log("Found stale bookmarks in saved recent documents")
+        HistoryController.shared.log.debug("Found stale bookmarks in saved recent documents")
         // Save the recent documents in order to refresh stale bookmarks.
         saveRecentDocuments()
       }
 
-      Logger.log("Done restoring list of recent documents (\(newRecentDocuments.count))")
+      HistoryController.shared.log.debug("Done restoring list of recent documents (\(newRecentDocuments.count))")
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }
   }
@@ -1538,9 +1538,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
     Preference.set(recentDocuments, for: .recentDocuments)
     if recentDocuments.isEmpty {
-      Logger.log("Cleared list of recent documents")
+      HistoryController.shared.log.debug("Cleared list of recent documents")
     } else {
-      Logger.log("Saved list of recent documents")
+      HistoryController.shared.log.debug("Saved list of recent documents")
     }
   }
 }
