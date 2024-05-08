@@ -433,18 +433,19 @@ class PlaybackInfo {
   // must be through the class methods that properly coordinate thread access.
   private var cachedVideoDurationAndProgress: [String: (duration: Double?, progress: Double?)] = [:]
   private var cachedMetadata: [String: (title: String?, album: String?, artist: String?)] = [:]
-  private static var cachedVideoSizes: [URL: FFVideoMeta] = [:]
 
   private let infoLock = Lock()
 
-  private static let staticInfoLock = Lock()
-  
+  // TODO: move into its own class
+  private static let ffMetaLock = Lock()
+  private static var cachedFFMeta: [URL: FFVideoMeta] = [:]
+
   static func getCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
 
     var ffMeta: FFVideoMeta? = nil
-    staticInfoLock.withLock {
-      if let cachedMeta = cachedVideoSizes[url] {
+    ffMetaLock.withLock {
+      if let cachedMeta = cachedFFMeta[url] {
         ffMeta = cachedMeta
       }
     }
@@ -456,13 +457,13 @@ class PlaybackInfo {
     guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
     if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
       let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
-      staticInfoLock.withLock {
+      ffMetaLock.withLock {
         // Don't let this get too big
-        if cachedVideoSizes.count > Constants.SizeLimit.maxCachedVideoSizes {
-          Logger.log("Too many cached FF meta entries (count=\(cachedVideoSizes.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...", level: .debug)
-          cachedVideoSizes.removeAll()
+        if cachedFFMeta.count > Constants.SizeLimit.maxCachedVideoSizes {
+          Logger.log("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...", level: .debug)
+          cachedFFMeta.removeAll()
         }
-        cachedVideoSizes[url] = ffMeta
+        cachedFFMeta[url] = ffMeta
       }
       return ffMeta
     }
@@ -485,6 +486,8 @@ class PlaybackInfo {
     log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)")
     return ffMeta
   }
+
+  // end TODO
 
   func calculateTotalDuration() -> Double? {
     infoLock.withLock {

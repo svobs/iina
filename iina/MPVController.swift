@@ -1200,35 +1200,12 @@ not applying FFmpeg 9599 workaround
       guard player.windowController.loaded else { break }
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let userRotation = Int(data)
-      
-      guard userRotation != player.info.videoGeo.userRotation else { break }
 
       // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoGeo.
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
       needReloadQuickSettingsView = true
 
-      // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
-
-      if player.windowController.pipStatus == .notInPIP {
-        DispatchQueue.main.async { [self] in
-          IINAAnimation.disableAnimation {
-            // FIXME: this isn't perfect - a bad frame briefly appears during transition
-            player.log.verbose("Resetting videoView rotation")
-            player.windowController.rotationHandler.rotateVideoView(toDegrees: 0)
-          }
-        }
-      }
-
-      player.log.verbose("Calling applyVidParams from mpv video-rotate prop change")
-      // Update window geometry
-      let oldVidGeo = player.info.videoGeo
-      let newVidGeo = oldVidGeo.changingUserRotation(to: userRotation)
-      player.windowController.applyVidGeo(newVidGeo)
-
-      player.sendOSD(.rotation(userRotation))
-      // Thumb rotation needs updating:
-      player.reloadThumbnails(forMedia: player.info.currentMedia)
-      player.saveState()
+      player.setUserRotation(to: userRotation)
 
     case MPVProperty.videoParamsPrimaries:
       fallthrough
@@ -1255,36 +1232,9 @@ not applying FFmpeg 9599 workaround
         player.log.error("Failed to parse mpv pause data!")
         break
       }
-
       player.log.verbose("Δ mpv prop: 'pause' = \(paused)")
-      if player.info.isPaused != paused || player.info.pauseStateWasChangedLocally {
-        player.info.isPaused = paused
-        player.info.pauseStateWasChangedLocally = false
 
-        DispatchQueue.main.async { [self] in
-          if !paused {
-            player.isStopped = false
-          }
-          player.windowController.updatePlayButtonAndSpeedUI()
-          player.refreshSyncUITimer() // needed to get latest playback position
-          let osdMsg: OSDMessage = paused ? .pause(videoPosition: player.info.videoPosition, videoDuration: player.info.videoDuration) :
-            .resume(videoPosition: player.info.videoPosition, videoDuration: player.info.videoDuration)
-          player.sendOSD(osdMsg)
-          player.saveState()  // record the pause state
-          if paused {
-            player.videoView.displayIdle()
-          } else {  // resume
-            player.videoView.displayActive()
-          }
-          if #available(macOS 10.12, *), player.windowController.pipStatus == .inPIP {
-            player.windowController.pip.playing = !paused
-          }
-
-          if player.windowController.loaded, !player.isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {
-            player.windowController.setWindowFloatingOnTop(!paused)
-          }
-        }
-      }
+      player.changePausedState(to: paused)
 
     case MPVProperty.chapter:
       player.info.chapter = Int(getInt(MPVProperty.chapter))

@@ -1042,6 +1042,63 @@ class PlayerCore: NSObject {
     }
   }
 
+  func changePausedState(to paused: Bool) {
+    guard info.isPaused != paused || info.pauseStateWasChangedLocally else { return }
+    
+    info.isPaused = paused
+    info.pauseStateWasChangedLocally = false
+
+    DispatchQueue.main.async { [self] in
+      if !paused {
+        isStopped = false
+      }
+      windowController.updatePlayButtonAndSpeedUI()
+      refreshSyncUITimer() // needed to get latest playback position
+      let osdMsg: OSDMessage = paused ? .pause(videoPosition: info.videoPosition, videoDuration: info.videoDuration) :
+        .resume(videoPosition: info.videoPosition, videoDuration: info.videoDuration)
+      sendOSD(osdMsg)
+      saveState()  // record the pause state
+      if paused {
+        videoView.displayIdle()
+      } else {  // resume
+        videoView.displayActive()
+      }
+      if #available(macOS 10.12, *), windowController.pipStatus == .inPIP {
+        windowController.pip.playing = !paused
+      }
+
+      if windowController.loaded, !isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {
+        windowController.setWindowFloatingOnTop(!paused)
+      }
+    }
+  }
+
+  func setUserRotation(to userRotation: Int) {
+    guard userRotation != info.videoGeo.userRotation else { return }
+
+    // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
+    if windowController.pipStatus == .notInPIP {
+      DispatchQueue.main.async { [self] in
+        IINAAnimation.disableAnimation {
+          // FIXME: this isn't perfect - a bad frame briefly appears during transition
+          log.verbose("Resetting videoView rotation")
+          windowController.rotationHandler.rotateVideoView(toDegrees: 0)
+        }
+      }
+    }
+
+    log.verbose("Calling applyVidParams for new userRotation: \(userRotation)")
+    // Update window geometry
+    let oldVidGeo = info.videoGeo
+    let newVidGeo = oldVidGeo.changingUserRotation(to: userRotation)
+    windowController.applyVidGeo(newVidGeo)
+
+    sendOSD(.rotation(userRotation))
+    // Thumb rotation needs updating:
+    reloadThumbnails(forMedia: info.currentMedia)
+    saveState()
+  }
+
   /// Set video's aspect ratio. The param may be one of:
   /// 1. Target aspect ratio. This came from user input, either from a button, menu, or text entry.
   /// This can be either in colon notation (e.g., "16:10") or decimal ("2.333333").
@@ -2036,6 +2093,8 @@ class PlayerCore: NSObject {
     }
     log.debug("isWatchLaterEnabled: \(isWatchLaterEnabled), hasWatchLaterFile: \(hasWatchLaterFile)")
 
+    preResizeVideo(forURL: info.currentMedia?.url)
+
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue
       if isPlaylistVisible {
@@ -2043,8 +2102,6 @@ class PlayerCore: NSObject {
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
     }
-
-    preResizeVideo(forURL: info.currentMedia?.url)
 
     // set "date last opened" attribute
     if let url = info.currentURL, url.isFileURL, !info.isMediaOnRemoteDrive {

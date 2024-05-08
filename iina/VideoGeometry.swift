@@ -25,7 +25,7 @@ struct VideoGeometry: CustomStringConvertible {
                                           selectedAspectLabel: "",
                                           totalRotation: 0, userRotation: 0,
                                           selectedCropLabel: AppData.noneCropIdentifier,
-                                          scale: 0, log: Logger.Subsystem(rawValue: "null"))
+                                          scale: 1.0, log: Logger.Subsystem(rawValue: "null"))
 
   private let log: Logger.Subsystem
 

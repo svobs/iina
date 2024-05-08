@@ -149,22 +149,24 @@ extension PlayerWindowController {
       timing = .linear
     }
     /// Finally call `setFrame()`
-    log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
-    /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
-    windowedModeGeo = newWindowGeo
 
     if currentLayout.mode == .windowed {
       applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing)
 
-    } else if currentLayout.mode == .fullScreen {
-      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, videoAspect: newWindowGeo.videoAspect)
+    } else {
+      log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
+      /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
+      windowedModeGeo = newWindowGeo
+      
+      if currentLayout.mode == .fullScreen {
+        let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, videoAspect: newWindowGeo.videoAspect)
 
-      animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-        // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose("[applyVidGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
-        videoView.apply(fsGeo)
-      }))
-
+        animationPipeline.submit(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
+          // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
+          log.verbose("[applyVidGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
+          videoView.apply(fsGeo)
+        }))
+      }
     }
 
     // UI and slider
