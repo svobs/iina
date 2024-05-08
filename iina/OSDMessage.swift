@@ -29,10 +29,11 @@ enum OSDType {
 
 enum OSDMessage {
 
-  case fileStart(String)
+  case fileStart(String, String)
 
   case pause(videoPosition: VideoTime?, videoDuration: VideoTime?)
   case resume(videoPosition: VideoTime?, videoDuration: VideoTime?)
+  case resumeFromWatchLater
   case seekRelative(step: String)
   case seek(videoPosition: VideoTime?, videoDuration: VideoTime?)
   case frameStep
@@ -104,8 +105,8 @@ enum OSDMessage {
 
   func details() -> (String, OSDType) {
     switch self {
-    case .fileStart(let filename):
-      return (filename, .normal)
+    case .fileStart(let filename, let detailMsg):
+      return (filename, .withText(detailMsg))
 
     case .pause(let videoPosition, let videoDuration),
         .resume(let videoPosition, let videoDuration),
@@ -115,6 +116,9 @@ enum OSDMessage {
       let text = "\(posStr)/\(durStr)"
       let percentage = (videoPosition / videoDuration) ?? 1
       return (text, .withProgress(percentage))
+
+    case .resumeFromWatchLater:
+      return ("Restored playback from watch-later", .normal)
 
     case .frameStep:
       return (NSLocalizedString("osd.frame_step", comment: "Next Frame"), .normal)

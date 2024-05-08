@@ -628,7 +628,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       guard wcsReady.count == wcsToRestore.count else { return }
 
-      Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch) ms; showing all", level: .verbose)
+      Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch.secElapsedString); showing all", level: .verbose)
       for wc in wcsToRestore {
         wc.showWindow(self)
       }

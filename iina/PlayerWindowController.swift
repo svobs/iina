@@ -2947,7 +2947,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let disableOSDForFileLoading: Bool = player.info.justOpenedFile || player.info.timeSinceLastFileOpenFinished < 0.2
     if disableOSDForFileLoading && !isExternal {
-      guard case .fileStart = msg else {
+      switch msg {
+      case .fileStart,
+          .resumeFromWatchLater:
+        break
+      default:
         return
       }
     }
@@ -2977,6 +2981,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     guard !isShowingPersistentOSD || accessoryViewController != nil else { return }
 
+    var msg = msg
     switch msg {
     case .seek(_, _):
       // Many redundant messages are sent from mpv. Try to filter them out here
@@ -3003,6 +3008,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("Ignoring request to show OSD crop 'None': looks like user starting to edit an existing crop")
         return
+      }
+    case .resumeFromWatchLater:
+      // Append details msg indicating restore state to existing msg
+      if case .fileStart(let filename, _) = osdLastDisplayedMsg {
+        let detailsMsg = msg.details().0
+        msg = .fileStart(filename, detailsMsg)
       }
 
     default:

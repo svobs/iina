@@ -240,7 +240,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       self.outlineView.reloadData()
       self.outlineView.expandItem(nil, expandChildren: true)
 
-      Logger.log("Reloaded history table in \(sw) ms, with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))", level: .verbose)
+      Logger.log("Reloaded history table in \(sw.secElapsedString), with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))", level: .verbose)
 
       if isInitialLoad {
         super.openWindow(self)
@@ -270,7 +270,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       }
     }
     self.fileExistsMap = fileExistsMap
-    Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2) ms", level: .verbose)
+    Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString)", level: .verbose)
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }

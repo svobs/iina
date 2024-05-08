@@ -29,10 +29,10 @@ class HistoryController {
     Logger.log("Reloading playback history from \(plistURL.path.pii.quoted)")
     var sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
-    Logger.log("Finished reloading playback history (\(history.count) entries) in \(sw) ms")
+    Logger.log("Finished reloading playback history (\(history.count) entries) in \(sw.secElapsedString)")
     sw = Utility.Stopwatch()
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
-    Logger.log("Finished reloading \(cachedRecentDocumentURLs.count) recentDocuments in \(sw) ms")
+    Logger.log("Finished reloading \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
       Logger.log("Posting iinaHistoryUpdated after History reloadAll", level: .verbose)
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))

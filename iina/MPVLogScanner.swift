@@ -90,7 +90,22 @@ class MPVLogScanner {
       return
     }
 
-    guard prefix == "cplayer", level.starts(with: "d") else { return }
+    guard prefix == "cplayer" else { return }
+
+    if level.starts(with: "d")  {
+      processDebugLevelLine(msg)
+    } else if level.starts(with: "i") {
+      processInfoLevelLine(msg)
+    }
+  }
+
+  func processInfoLevelLine(_ msg: String) {
+    if msg.starts(with: "Resuming playback.") {
+      player.sendOSD(.resumeFromWatchLater)
+    }
+  }
+
+  func processDebugLevelLine(_ msg: String) {
     guard msg.starts(with: "Run command:") else { return }
     guard let cmdName = parseCommandName(from: msg) else { return }
 
