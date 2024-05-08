@@ -627,7 +627,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       guard wcsReady.count == wcsToRestore.count else { return }
 
-      Logger.log("All windows ready; showing all \(wcsToRestore.count)", level: .verbose)
+      Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch) ms; showing all", level: .verbose)
       for wc in wcsToRestore {
         wc.showWindow(self)
       }
@@ -646,7 +646,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       wcsReady.insert(wc)
-      Logger.log("Window ready: \(window.savedStateName.quoted)", level: .verbose)
+
+      Logger.log("Window ready: \(window.savedStateName.quoted), progress: \(wcsReady.count)/\(isFinishedAddingWindows ? "\(wcsToRestore.count)" : "?")", level: .verbose)
 
       finishRestoreIfReady()
     })
@@ -1328,32 +1329,32 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   @IBAction func showPreferencesWindow(_ sender: AnyObject) {
-    Logger.log("Showing Preferences window", level: .verbose)
+    Logger.log("Opening Preferences window", level: .verbose)
     preferenceWindowController.openWindow(self)
   }
 
   @IBAction func showVideoFilterWindow(_ sender: AnyObject) {
-    Logger.log("Showing Video Filter window", level: .verbose)
+    Logger.log("Opening Video Filter window", level: .verbose)
     vfWindow.openWindow(self)
   }
 
   @IBAction func showAudioFilterWindow(_ sender: AnyObject) {
-    Logger.log("Showing Audio Filter window", level: .verbose)
+    Logger.log("Opening Audio Filter window", level: .verbose)
     afWindow.openWindow(self)
   }
 
   @IBAction func showAboutWindow(_ sender: AnyObject) {
-    Logger.log("Showing About window", level: .verbose)
+    Logger.log("Opening About window", level: .verbose)
     aboutWindow.openWindow(self)
   }
 
   @IBAction func showHistoryWindow(_ sender: AnyObject) {
-    Logger.log("Showing History window", level: .verbose)
+    Logger.log("Opening History window", level: .verbose)
     historyWindow.openWindow(self)
   }
 
   @IBAction func showLogWindow(_ sender: AnyObject) {
-    Logger.log("Showing Log window", level: .verbose)
+    Logger.log("Opening Log window", level: .verbose)
     logWindow.openWindow(self)
   }
 
@@ -1474,13 +1475,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     HistoryController.shared.queue.async { [self] in
       HistoryController.shared.reloadAll(silent: true)
       let recentDocumentsURLs = HistoryController.shared.cachedRecentDocumentURLs
-
       guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
             recentDocumentsURLs.isEmpty,
             let recentDocuments = Preference.array(for: .recentDocuments),
-            !recentDocuments.isEmpty else { return }
+            !recentDocuments.isEmpty else {
+        Logger.log("Will not restore list of recent documents", level: .verbose)
+        return
+      }
 
-      Logger.log("Restoring list of recent documents (\(recentDocuments.count))")
+      Logger.log("Restoring list of recent documents...")
+
       var newRecentDocuments: [URL] = []
       var foundStale = false
       for document in recentDocuments {
@@ -1497,7 +1501,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         NSDocumentController.shared.noteNewRecentDocumentURL(bookmark)
         newRecentDocuments.append(bookmark)
       }
-      Logger.log("Done restoring list of recent documents")
       HistoryController.shared.cachedRecentDocumentURLs = newRecentDocuments
 
       if foundStale {
@@ -1506,7 +1509,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         saveRecentDocuments()
       }
 
-      Logger.log("Posting iinaHistoryUpdated after restoring recentDocuments", level: .verbose)
+      Logger.log("Done restoring list of recent documents (\(newRecentDocuments.count))")
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }
   }

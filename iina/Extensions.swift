@@ -1347,15 +1347,16 @@ extension NSWindow {
 class IINAWindowController: NSWindowController {
 
   func openWindow(_ sender: Any?) {
+    guard let window else {
+      Logger.log("Cannot open window: no window object!", level: .error)
+      return
+    }
     if Preference.bool(for: .isRestoreInProgress) {
-      guard let window else {
-        Logger.log("Cannot open window: no window object!", level: .error)
-        return
-      }
       window.orderOut(self)
       window.postWindowIsReadyToShow()
       return
     } else {
+      Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
       showWindow(sender)
     }
   }

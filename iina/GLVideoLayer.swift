@@ -252,30 +252,34 @@ class GLVideoLayer: CAOpenGLLayer {
         return
       }
 
-      guard needsMPVRender else { return }
-      needsMPVRender = false
+      _doSkipRender()
+    }
+  }
 
-      /// If `needsMPVRender` was still true after `display()` was called, then `draw()` was not called,
-      /// and thus `mpv_render_param` was not called.
-      /// This can happen if `canDraw()` returned false, so repeat that check here:
-      guard videoView.player.mpv.shouldRenderUpdateFrame() else { return }
+  private func _doSkipRender() {
+    guard needsMPVRender else { return }
+    needsMPVRender = false
 
-      /// But if MacOS decided the window was not worth drawing (most likely because it , `canDraw()` would not even be called.
-      /// Need to make sure `mpv_render_context_render` gets called to ensure proper timing is synced with mpv.
-      /// So do a skip render instead:
-      if let renderContext = videoView.player.mpv.mpvRenderContext,
-         let openGLContext = videoView.player.mpv.openGLContext {
-        CGLLockContext(openGLContext)
-        defer { CGLUnlockContext(openGLContext) }
-        var skip: CInt = 1
-        withUnsafeMutablePointer(to: &skip) { skip in
-          var params: [mpv_render_param] = [
-            mpv_render_param(type: MPV_RENDER_PARAM_SKIP_RENDERING, data: .init(skip)),
-            mpv_render_param()
-          ]
-          mpv_render_context_render(renderContext, &params);
-        }
-      }
+    /// If `needsMPVRender` was still true after `display()` was called, then `draw()` was not called,
+    /// and thus `mpv_render_param` was not called.
+    /// This can happen if `canDraw()` returned false, so repeat that check here:
+    guard videoView.player.mpv.shouldRenderUpdateFrame() else { return }
+
+    /// But if MacOS decided the window was not worth drawing (most likely because the window is occluded or off screen,
+    /// `canDraw()` might not even be called. Need to make sure `mpv_render_context_render` gets called to ensure proper timing
+    /// is synced with mpv. So do a skip render instead:
+    guard let renderContext = videoView.player.mpv.mpvRenderContext,
+          let openGLContext = videoView.player.mpv.openGLContext else { return }
+    CGLLockContext(openGLContext)
+    defer { CGLUnlockContext(openGLContext) }
+
+    var skip: CInt = 1
+    withUnsafeMutablePointer(to: &skip) { skip in
+      var params: [mpv_render_param] = [
+        mpv_render_param(type: MPV_RENDER_PARAM_SKIP_RENDERING, data: .init(skip)),
+        mpv_render_param()
+      ]
+      mpv_render_context_render(renderContext, &params);
     }
   }
 

@@ -41,6 +41,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   @Atomic var reloadTicketCounter: Int = 0
 
+  private var backgroundQueue = DispatchQueue(label: "HistoryWindowBackground", qos: .background)
+
   @IBOutlet weak var outlineView: NSOutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
 
@@ -121,7 +123,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     Logger.log("History windowDidLoad done", level: .verbose)
   }
 
-  override func showWindow(_ sender: Any?) {
+  override func openWindow(_ sender: Any?) {
     guard let window else { return }
     window.orderOut(self)  // Hide window. Should load window as a side effect, if not loaded already
     assert(isWindowLoaded, "Expected History window to be loaded!")
@@ -129,17 +131,12 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     let isInitialLoad = reloadTicketCounter == 0
     if isInitialLoad {
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load.
-      HistoryController.shared.queue.async {
-        DispatchQueue.main.async {
-          let sw = Utility.Stopwatch()
-          self.reloadData()
-          Logger.log("Initial History window data reload time: \(sw) ms.", level: .verbose)
-          super.showWindow(sender)
-        }
+      HistoryController.shared.queue.async { [self] in
+        self.reloadData()
       }
     } else {
       // No need to reload data (it's an expensive operation)
-      super.showWindow(sender)
+      showWindow(sender)
     }
   }
 
@@ -189,8 +186,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   }
 
   private func reloadData() {
-    dispatchPrecondition(condition: .onQueue(.main))
-
     // Reloads are expensive and many things can trigger them.
     // Use a counter + a delay to reduce duplicated work (except for initial load)
     let isInitialLoad = reloadTicketCounter == 0
@@ -198,17 +193,20 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     let ticket = reloadTicketCounter
 
     if isInitialLoad {
-      _reloadData()
+      backgroundQueue.async { [self] in
+        _reloadData(isInitialLoad: true)
+      }
     } else {
-      DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+      backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
         guard ticket == reloadTicketCounter else { return }
         _reloadData()
       }
     }
   }
 
-  private func _reloadData() {
+  private func _reloadData(isInitialLoad: Bool = false) {
     // reconstruct data
+    let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history
     let historyList: [PlaybackHistory]
     if searchString.isEmpty {
@@ -220,7 +218,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
         return string.localizedStandardContains(searchString)
       }
     }
-    Logger.log("Reloading history table with \(historyList.count) entries, filtered=\((!searchString.isEmpty).yn) (tkt \(reloadTicketCounter))", level: .verbose)
     var historyDataUpdated: [String: [PlaybackHistory]] = [:]
     var historyDataKeysUpdated: [String] = []
 
@@ -237,39 +234,52 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     // Update data and reload UI
     historyData = historyDataUpdated
     historyDataKeys = historyDataKeysUpdated
-    adjustTimeColumnMinWidth()
 
-    outlineView.reloadData()
-    outlineView.expandItem(nil, expandChildren: true)
+    DispatchQueue.main.async {
+      self.adjustTimeColumnMinWidth()
+      self.outlineView.reloadData()
+      self.outlineView.expandItem(nil, expandChildren: true)
+
+      Logger.log("Reloaded history table in \(sw) ms, with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))", level: .verbose)
+
+      if isInitialLoad {
+        super.openWindow(self)
+      }
+    }
+
+    guard !Preference.bool(for: .isRestoreInProgress) else {
+      // optimization
+      return
+    }
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
-    HistoryController.shared.queue.async { [self] in
-      // Network or file system can change over time and cause our info to become out of date.
-      // Do a full reload if too much time has gone by since the last full reload
-      let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
-      let sw = Utility.Stopwatch()
+    // Network or file system can change over time and cause our info to become out of date.
+    // Do a full reload if too much time has gone by since the last full reload
+    let forceFullStatusReload = Date().timeIntervalSince(lastCompleteStatusReloadTime) > Constants.TimeInterval.historyTableCompleteFileStatusReload
+    let sw2 = Utility.Stopwatch()
 
-      var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
+    var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
 
-      var count: Int = 0
-      for entry in historyList {
-        // Fill in fileExists
-        if fileExistsMap[entry.url] == nil {
-          fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
-          count += 1
-        }
+    var count: Int = 0
+    for entry in historyList {
+      // Fill in fileExists
+      if fileExistsMap[entry.url] == nil {
+        fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
+        count += 1
       }
-      self.fileExistsMap = fileExistsMap
-      Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw) ms", level: .verbose)
-      if forceFullStatusReload {
-        lastCompleteStatusReloadTime = Date()
-      }
+    }
+    self.fileExistsMap = fileExistsMap
+    Logger.log("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2) ms", level: .verbose)
+    if forceFullStatusReload {
+      lastCompleteStatusReloadTime = Date()
+    }
 
+    if count > 0 {
       DispatchQueue.main.async { [self] in
         // Reload table again to refresh statuses
         outlineView.reloadData()
         outlineView.expandItem(nil, expandChildren: true)
-        Logger.log("Reloaded History table in \(sw) ms", level: .verbose)
+        Logger.log("Reloaded History table with updated fileExists data", level: .verbose)
       }
     }
   }
@@ -393,7 +403,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard searchString != sender.stringValue else { return }
     self.searchString = sender.stringValue
     Preference.UIState.set(sender.stringValue, for: .uiHistoryTableSearchString)
-    reloadData()
+    backgroundQueue.async { [self] in
+      reloadData()
+    }
   }
 
   // MARK: - Menu
@@ -469,7 +481,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard searchType != newValue else { return }
     searchType = newValue
     Preference.UIState.set(newValue.rawValue, for: .uiHistoryTableSearchType)
-    reloadData()
+    backgroundQueue.async { [self] in
+      reloadData()
+    }
   }
 }
 
