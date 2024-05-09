@@ -3010,8 +3010,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         return
       }
     case .resumeFromWatchLater:
-      // Append details msg indicating restore state to existing msg
       if case .fileStart(let filename, _) = osdLastDisplayedMsg {
+        // Append details msg indicating restore state to existing msg
         let detailsMsg = msg.details().0
         msg = .fileStart(filename, detailsMsg)
       }

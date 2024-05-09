@@ -1205,7 +1205,7 @@ not applying FFmpeg 9599 workaround
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
       needReloadQuickSettingsView = true
 
-      player.setUserRotation(to: userRotation)
+      player.userRotationDidChange(to: userRotation)
 
     case MPVProperty.videoParamsPrimaries:
       fallthrough
@@ -1234,7 +1234,7 @@ not applying FFmpeg 9599 workaround
       }
       player.log.verbose("Δ mpv prop: 'pause' = \(paused)")
 
-      player.changePausedState(to: paused)
+      player.pausedStateDidChange(to: paused)
 
     case MPVProperty.chapter:
       player.info.chapter = Int(getInt(MPVProperty.chapter))
@@ -1244,29 +1244,22 @@ not applying FFmpeg 9599 workaround
 
     case MPVOption.PlaybackControl.speed:
       needReloadQuickSettingsView = true
-      if let speed = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee {
+      guard let speed = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else { break }
+      player.log.verbose("Δ mpv prop: `speed` = \(speed)")
 
-        player.log.verbose("Δ mpv prop: `speed` = \(speed)")
-        player.info.playSpeed = speed
-        player.sendOSD(.speed(speed))
-        player.saveState()  // record the new speed
-        DispatchQueue.main.async { [self] in
-          player.windowController.updatePlayButtonAndSpeedUI()
-        }
-      }
+      player.speedDidChange(to: speed)
 
     case MPVOption.PlaybackControl.loopPlaylist, MPVOption.PlaybackControl.loopFile:
       player.syncUI(.loop)
 
     case MPVOption.Video.deinterlace:
       needReloadQuickSettingsView = true
-      if let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
-        // this property will fire a change event at file start
-        if player.info.deinterlace != data {
-          player.log.verbose("Δ mpv prop: `deinterlace` = \(data)")
-          player.info.deinterlace = data
-          player.sendOSD(.deinterlace(data))
-        }
+      guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }
+      // this property will fire a change event at file start
+      if player.info.deinterlace != data {
+        player.log.verbose("Δ mpv prop: `deinterlace` = \(data)")
+        player.info.deinterlace = data
+        player.sendOSD(.deinterlace(data))
       }
 
     case MPVOption.Video.hwdec:

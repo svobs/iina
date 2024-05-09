@@ -1018,7 +1018,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  /// Set playbackk speed.
+  /// Set playback speed.
   /// If `forceResume` is `true`, then always resume if paused; if `false`, never resume if paused;
   /// if `nil`, then resume if paused based on pref setting.
   func setSpeed(_ speed: Double, forceResume: Bool? = nil) {
@@ -1042,7 +1042,8 @@ class PlayerCore: NSObject {
     }
   }
 
-  func changePausedState(to paused: Bool) {
+  /// Called with `MPVOption.PlaybackControl.pause` changed
+  func pausedStateDidChange(to paused: Bool) {
     guard info.isPaused != paused || info.pauseStateWasChangedLocally else { return }
     
     info.isPaused = paused
@@ -1073,7 +1074,17 @@ class PlayerCore: NSObject {
     }
   }
 
-  func setUserRotation(to userRotation: Int) {
+  func speedDidChange(to speed: CGFloat) {
+    info.playSpeed = speed
+    sendOSD(.speed(speed))
+    saveState()  // record the new speed
+    DispatchQueue.main.async { [self] in
+      windowController.updatePlayButtonAndSpeedUI()
+    }
+  }
+
+  /// Called when `MPVOption.Video.videoRotate` changed
+  func userRotationDidChange(to userRotation: Int) {
     guard userRotation != info.videoGeo.userRotation else { return }
 
     // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
@@ -1213,16 +1224,17 @@ class PlayerCore: NSObject {
   func deriveVideoScale(from geo: PWGeometry) -> CGFloat? {
     guard !windowController.isClosing, !isStopping, !isStopped else { return nil }
 
-    let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: geo.screenID).backingScaleFactor
+    let screen = NSScreen.getScreenOrDefault(screenID: geo.screenID)
+    let backingScaleFactor = screen.backingScaleFactor
     let videoWidthScaled = (geo.videoSize.width * backingScaleFactor).truncatedTo6()
 
     let videoScale: CGFloat
     if let videoSizeACR = info.videoGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else if let mpvVidGeo = mpv.syncVideoGeometryFromMPV(), let videoSizeACR = mpvVidGeo.videoSizeACR {
       videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
     } else {
       log.error("Could not derive videoScale from mpv or from cache!")
       return nil
