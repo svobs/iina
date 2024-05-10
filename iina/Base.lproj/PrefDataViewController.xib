@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22689"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="PrefDataViewController" customModule="IINA" customModuleProvider="target">
+            <connections>
+                <outlet property="historyView" destination="Oic-pc-Cvg" id="lVz-Ra-if4"/>
+                <outlet property="pastLaunchesView" destination="M9c-Ak-HmK" id="TTc-g9-5kW"/>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+                <outlet property="watchLaterView" destination="jUz-iq-ZTl" id="fkX-vn-Dpm"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hz6-mo-xeY" userLabel="Prefs &gt; Data View">
+            <rect key="frame" x="0.0" y="0.0" width="480" height="500"/>
+            <point key="canvasLocation" x="606" y="-693"/>
+        </customView>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; Saved Data &gt; Restore At Launch" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="562" height="104"/>
+            <subviews>
+                <textField identifier="SectionTitleAppearance" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
+                    <rect key="frame" x="-2" y="80" width="105" height="16"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Open Windows:" id="mM7-1Q-FyL">
+                        <font key="font" metaFont="systemBold"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
+                    <rect key="frame" x="120" y="8" width="442" height="88"/>
+                    <subviews>
+                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uoo-aD-AGe">
+                            <rect key="frame" x="-2" y="71" width="399" height="18"/>
+                            <buttonCell key="cell" type="check" title="Save open windows &amp; playback and restore when relaunching" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="6a1-KK-71r">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="16" id="LhM-kp-B10"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableRestoreUIState" id="THz-g2-dcG"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="7lB-cp-VGF" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="68" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="height" id="h6o-7X-Gw5"/>
+                                <constraint firstAttribute="width" constant="1" id="jVv-fj-Ab7"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="OJN-I4-kgd">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uvD-Yb-sTj">
+                            <rect key="frame" x="18" y="47" width="375" height="18"/>
+                            <buttonCell key="cell" type="check" title="Do not save or restore when launched from command line" bezelStyle="regularSquare" imagePosition="left" inset="2" id="5UU-FV-Cgm">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="1By-0e-gYB">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableRestoreUIStateForCmdLineLaunches" id="cuc-uX-T4T">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="n3V-lN-Sta" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="44" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="height" id="A5j-Nv-1L3"/>
+                                <constraint firstAttribute="width" constant="1" id="OrK-fS-Eu0"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="GiA-cc-pUp">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="p4K-NC-yZB">
+                            <rect key="frame" x="18" y="23" width="260" height="18"/>
+                            <buttonCell key="cell" type="check" title="Always pause all media when restoring" bezelStyle="regularSquare" imagePosition="left" inset="2" id="BGb-Bp-m3h">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="twz-sO-6pr">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.alwaysPauseMediaWhenRestoringAtLaunch" id="9xT-Ir-VBa"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="Hx0-CU-d8d" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="20" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="1" id="AAb-Pg-cVC"/>
+                                <constraint firstAttribute="height" id="Xb5-DA-aAd"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="x9f-0u-yX8">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DN6-fa-2cc">
+                            <rect key="frame" x="18" y="-1" width="194" height="18"/>
+                            <buttonCell key="cell" type="check" title="Always ask before restoring" bezelStyle="regularSquare" imagePosition="left" inset="2" id="IYc-ki-ceb">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="fuK-dA-KwA">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.alwaysAskBeforeRestoreAtLaunch" id="J2V-0w-9LB"/>
+                            </connections>
+                        </button>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="uvD-Yb-sTj" firstAttribute="height" secondItem="Uoo-aD-AGe" secondAttribute="height" id="CGg-lS-CRd"/>
+                        <constraint firstItem="DN6-fa-2cc" firstAttribute="leading" secondItem="uvD-Yb-sTj" secondAttribute="leading" id="FUS-6W-GuP"/>
+                        <constraint firstItem="p4K-NC-yZB" firstAttribute="height" secondItem="Uoo-aD-AGe" secondAttribute="height" id="JzP-fw-GM4"/>
+                        <constraint firstItem="DN6-fa-2cc" firstAttribute="height" secondItem="Uoo-aD-AGe" secondAttribute="height" id="OPG-jC-rli"/>
+                        <constraint firstItem="p4K-NC-yZB" firstAttribute="leading" secondItem="uvD-Yb-sTj" secondAttribute="leading" id="tt0-yA-Nch"/>
+                        <constraint firstItem="uvD-Yb-sTj" firstAttribute="leading" secondItem="Uoo-aD-AGe" secondAttribute="leading" constant="20" id="yet-EG-QbR"/>
+                    </constraints>
+                    <visibilityPriorities>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                    </visibilityPriorities>
+                    <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                    </customSpacing>
+                </stackView>
+            </subviews>
+            <constraints>
+                <constraint firstItem="APB-Nm-aTA" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="5zd-Vc-WIq"/>
+                <constraint firstItem="APB-Nm-aTA" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="9dZ-2B-yS8"/>
+                <constraint firstItem="VWZ-zT-vZx" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="IKL-bX-2GS"/>
+                <constraint firstItem="APB-Nm-aTA" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" id="Q4K-PC-JeY"/>
+                <constraint firstItem="VWZ-zT-vZx" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="et5-qR-7xc"/>
+                <constraint firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
+                <constraint firstAttribute="bottom" secondItem="VWZ-zT-vZx" secondAttribute="bottom" constant="8" id="sFy-x0-8Yn"/>
+                <constraint firstItem="Uoo-aD-AGe" firstAttribute="firstBaseline" secondItem="APB-Nm-aTA" secondAttribute="firstBaseline" id="t96-21-r66"/>
+            </constraints>
+            <point key="canvasLocation" x="-60" y="-1230"/>
+        </customView>
+        <customView id="Oic-pc-Cvg" userLabel="Prefs &gt; Saved Data &gt; History" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="480" height="112"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField identifier="SectionTitleHistory" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sqR-ex-tn6">
+                    <rect key="frame" x="-2" y="88" width="57" height="16"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="History:" id="VXd-v8-ypz">
+                        <font key="font" metaFont="systemBold"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JOH-xx-V8Z" userLabel="RightColumn Stack View">
+                    <rect key="frame" x="120" y="8" width="360" height="96"/>
+                    <subviews>
+                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Iet-3p-cfj">
+                            <rect key="frame" x="-2" y="79" width="362" height="18"/>
+                            <buttonCell key="cell" type="check" title="Enable playback history" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="WMt-z1-YYz">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="16" id="9xR-X4-OIz"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordPlaybackHistory" id="Oof-Z5-Afd"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="oGh-8n-hHn" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="76" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="height" id="G5K-mx-zYo"/>
+                                <constraint firstAttribute="width" constant="1" id="k5g-5j-pef"/>
+                            </constraints>
+                        </customView>
+                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
+                            <rect key="frame" x="-2" y="55" width="362" height="18"/>
+                            <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordRecentFiles" id="zE1-Rp-Eij"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="o79-eG-jRM" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="52" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="1" id="NCX-5f-hSw"/>
+                                <constraint firstAttribute="height" id="pTE-tI-i0e"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="nRH-Le-VTh">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7mI-lM-Xa3">
+                            <rect key="frame" x="18" y="31" width="342" height="18"/>
+                            <buttonCell key="cell" type="check" title="Track all played files in &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lid-TB-LgP">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="fBq-TH-44F">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.trackAllFilesInRecentOpenMenu" id="pnx-Ee-1ls"/>
+                            </connections>
+                        </button>
+                        <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="8br-IJ-ynv">
+                            <rect key="frame" x="38" y="0.0" width="324" height="28"/>
+                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Otherwise only files that opened manually will show up in this menu." id="YTU-LI-zlm">
+                                <font key="font" metaFont="message" size="11"/>
+                                <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="yaM-Pi-Cjg">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </textField>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="7mI-lM-Xa3" firstAttribute="leading" secondItem="R2V-zU-Jpv" secondAttribute="leading" constant="20" id="UNT-M8-3z2"/>
+                        <constraint firstItem="8br-IJ-ynv" firstAttribute="leading" secondItem="7mI-lM-Xa3" secondAttribute="leading" constant="20" id="o4C-0g-E1d"/>
+                    </constraints>
+                    <visibilityPriorities>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                    </visibilityPriorities>
+                    <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                    </customSpacing>
+                </stackView>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="bottom" secondItem="JOH-xx-V8Z" secondAttribute="bottom" constant="8" id="Dxk-Tv-ubU"/>
+                <constraint firstItem="sqR-ex-tn6" firstAttribute="leading" secondItem="Oic-pc-Cvg" secondAttribute="leading" id="NGf-Tw-Uya"/>
+                <constraint firstItem="sqR-ex-tn6" firstAttribute="top" secondItem="Oic-pc-Cvg" secondAttribute="top" constant="8" id="OTC-aB-Azg"/>
+                <constraint firstItem="sqR-ex-tn6" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="Oic-pc-Cvg" secondAttribute="leading" constant="120" id="hA3-8o-0vC"/>
+                <constraint firstItem="JOH-xx-V8Z" firstAttribute="leading" secondItem="Oic-pc-Cvg" secondAttribute="leading" constant="120" id="kV7-t7-Zjn"/>
+                <constraint firstItem="JOH-xx-V8Z" firstAttribute="top" secondItem="Oic-pc-Cvg" secondAttribute="top" constant="8" id="oH3-Ed-DtQ"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="JOH-xx-V8Z" secondAttribute="trailing" id="zPD-c6-0L7"/>
+            </constraints>
+            <point key="canvasLocation" x="-101" y="-803"/>
+        </customView>
+        <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
+        <customView id="jUz-iq-ZTl" userLabel="Prefs &gt; Saved Data &gt; Watch Later" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="562" height="86"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField identifier="SectionTitleAppearance" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="63k-Uq-7mO">
+                    <rect key="frame" x="-2" y="62" width="87" height="16"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Watch Later:" id="IN1-C4-M6I">
+                        <font key="font" metaFont="systemBold"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Nw7-8o-DuP" userLabel="RightColumn Stack View">
+                    <rect key="frame" x="120" y="8" width="442" height="70"/>
+                    <subviews>
+                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Yjd-qe-uAR">
+                            <rect key="frame" x="-2" y="53" width="418" height="18"/>
+                            <buttonCell key="cell" type="check" title="Save &amp; restore media playback using mpv's &quot;watch later&quot; feature" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9Km-CX-nig">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="16" id="R5s-9K-ueG"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.resumeLastPosition" id="8d7-SM-k9K"/>
+                            </connections>
+                        </button>
+                        <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="YK3-5n-O3u">
+                            <rect key="frame" x="18" y="8" width="426" height="42"/>
+                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" id="Hb4-FS-V34">
+                                <font key="font" metaFont="message" size="11"/>
+                                <string key="title">Saves playback &amp; other settings for the current media when a window is closed. The next time the media is opened, re-applies &amp; immediately deletes the saved settings.</string>
+                                <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="RKT-6b-am9" userLabel="4pt Spacer">
+                            <rect key="frame" x="0.0" y="0.0" width="1" height="4"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="4" id="DnT-D4-vlE"/>
+                                <constraint firstAttribute="width" constant="1" id="wQu-Qa-3Yo"/>
+                            </constraints>
+                        </customView>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="YK3-5n-O3u" firstAttribute="leading" secondItem="Yjd-qe-uAR" secondAttribute="leading" constant="20" id="R1w-3F-KzT"/>
+                    </constraints>
+                    <visibilityPriorities>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                    </visibilityPriorities>
+                    <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                    </customSpacing>
+                </stackView>
+            </subviews>
+            <constraints>
+                <constraint firstItem="63k-Uq-7mO" firstAttribute="top" secondItem="jUz-iq-ZTl" secondAttribute="top" constant="8" id="1hk-eH-vw6"/>
+                <constraint firstItem="Nw7-8o-DuP" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="BK0-cl-KCY"/>
+                <constraint firstItem="Nw7-8o-DuP" firstAttribute="top" secondItem="jUz-iq-ZTl" secondAttribute="top" constant="8" id="Kzo-8u-ydO"/>
+                <constraint firstAttribute="bottom" secondItem="Nw7-8o-DuP" secondAttribute="bottom" constant="8" id="j4S-RW-7KS"/>
+                <constraint firstAttribute="trailing" secondItem="Nw7-8o-DuP" secondAttribute="trailing" id="nvS-B4-Xsw"/>
+                <constraint firstItem="63k-Uq-7mO" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" id="rX2-gM-zB2"/>
+                <constraint firstItem="Yjd-qe-uAR" firstAttribute="firstBaseline" secondItem="63k-Uq-7mO" secondAttribute="firstBaseline" id="tJE-59-UOx"/>
+                <constraint firstItem="63k-Uq-7mO" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="wAv-bF-08M"/>
+            </constraints>
+            <point key="canvasLocation" x="-60" y="-991"/>
+        </customView>
+    </objects>
+</document>

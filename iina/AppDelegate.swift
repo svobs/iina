@@ -91,6 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     var list: [NSViewController & PreferenceWindowEmbeddable] = [
       PrefGeneralViewController(),
       PrefUIViewController(),
+      PrefDataViewController(),
       PrefCodecViewController(),
       PrefSubViewController(),
       PrefNetworkViewController(),

@@ -108,6 +108,7 @@
 "preference.title" = "Settings";
 "preference.general" = "General";
 "preference.ui" = "UI";
+"preference.data" = "Saved Data";
 "preference.video_audio" = "Video/Audio";
 "preference.subtitle" = "Subtitle";
 "preference.network" = "Network";

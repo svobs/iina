@@ -214,6 +214,7 @@ class PreferenceWindowController: IINAWindowController {
     var viewMap = [
       ["general", "PrefGeneralViewController"],
       ["ui", "PrefUIViewController"],
+      ["data", "PrefDataViewController"],
       ["subtitle", "PrefSubViewController"],
       ["network", "PrefNetworkViewController"],
       ["control", "PrefControlViewController"],

@@ -1602,9 +1602,9 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
-                    <rect key="frame" x="117" y="4" width="282" height="68"/>
+                    <rect key="frame" x="117" y="4" width="290" height="68"/>
                     <view key="contentView" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="4" y="5" width="274" height="60"/>
+                        <rect key="frame" x="4" y="5" width="282" height="60"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NpR-4X-AUC" userLabel="Auto-hide after:">
@@ -1645,7 +1645,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="14" y="9" width="244" height="18"/>
+                                <rect key="frame" x="14" y="9" width="252" height="18"/>
                                 <buttonCell key="cell" type="check" title="Also hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
