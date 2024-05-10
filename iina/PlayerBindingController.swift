@@ -137,12 +137,13 @@ class PlayerBindingController {
    - (a non-null) KeyMapping whose action is not "ignore" if the keystroke matched an active (non-ignored) key binding or the final keystroke
      in a key sequence.
    */
-  func matchActiveKeyBinding(endingWith keyDownEvent: NSEvent) -> KeyMapping? {
-    assert (keyDownEvent.type == NSEvent.EventType.keyDown, "Expected a KeyDown event but got: \(keyDownEvent)")
+  func matchActiveKeyBinding(endingWith keyEvent: NSEvent) -> KeyMapping? {
+    assert (keyEvent.type == NSEvent.EventType.keyDown || keyEvent.type == NSEvent.EventType.keyUp, 
+            "Expected a KeyDown or KeyUp event but got: \(keyEvent)")
 
-    let keySequence: String = KeyCodeHelper.mpvKeyCode(from: keyDownEvent)
+    let keySequence: String = KeyCodeHelper.mpvKeyCode(from: keyEvent)
     if keySequence == "" {
-      log.debug("Event could not be translated; ignoring: \(keyDownEvent)")
+      log.debug("Event could not be translated; ignoring: \(keyEvent)")
       return nil
     }
     let normalizedKeySequence = KeyCodeHelper.normalizeMpv(keySequence)

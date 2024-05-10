@@ -1283,11 +1283,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   override func keyUp(with event: NSEvent) {
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    log.verbose("KEYUP: \(normalizedKeyCode.quoted)")
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: player,
-      arguments: keyEventArgs(event)
-    )
+      arguments: keyEventArgs(event), handler: { [self] in
+        if let keyBinding = player.bindingController.matchActiveKeyBinding(endingWith: event) {
+
+          guard !keyBinding.isIgnored else {
+            // if "ignore", just swallow the event. Do not forward; do not beep
+            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
+            return true
+          }
+
+          // beep if cmd failed
+          return handleKeyBinding(keyBinding)
+        }
+        return false
+      }, defaultHandler: {
+        // invalid key
+        super.keyUp(with: event)
+      })
   }
 
   // MARK: - Mouse / Trackpad events

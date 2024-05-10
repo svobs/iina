@@ -150,6 +150,19 @@ class KeyCodeHelper {
     0x7F: ("POWER", nil) // This should be KeyCode::PC_POWER.
   ]
 
+  static let numericKeyPadKeyMap: [UInt16 : (String, String)] = [
+    0x52: ("0", "KP0"),
+    0x53: ("1", "KP1"),
+    0x54: ("2", "KP2"),
+    0x55: ("3", "KP3"),
+    0x56: ("4", "KP4"),
+    0x57: ("5", "KP5"),
+    0x58: ("6", "KP6"),
+    0x59: ("7", "KP7"),
+    0x5B: ("8", "KP8"),
+    0x5C: ("9", "KP9"),
+  ]
+
   static let mpvSymbolToKeyChar: [String: String] = {
 
     return [
@@ -298,14 +311,16 @@ class KeyCodeHelper {
     var modifiers = event.modifierFlags
 
     if let char = event.charactersIgnoringModifiers, isPrintable(char) {
-      // Is a classic ASCII printable char.
-      keyChar = char
-      /// The char in `charactersIgnoringModifiers` will be either uppercase or lowercase,
-      /// so remove the redundant modifier flag so we don't print an extra "SHIFT+"
-      modifiers.remove(.shift)
-      /// The char in `charactersIgnoringModifiers` will be either uppercase or lowercase,
-      /// so remove the redundant modifier flag so we don't print an extra "SHIFT+"
-      modifiers.remove(.shift)
+      if let (numericChar, mpvKeyChar) = numericKeyPadKeyMap[keyCode], char == numericChar {
+        // Numeric key from the keypad (extended keyboard).
+        keyChar = mpvKeyChar
+      } else {
+        // Is a classic ASCII printable char.
+        keyChar = char
+        /// The char in `charactersIgnoringModifiers` will be either uppercase or lowercase,
+        /// so remove the redundant modifier flag so we don't print an extra "SHIFT+"
+        modifiers.remove(.shift)
+      }
     } else {
       // Is probably an unprintable char such as KP_ENTER.
       // Is probably an unprintable char such as KP_ENTER.
