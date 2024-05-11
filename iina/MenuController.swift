@@ -1035,8 +1035,9 @@ class MenuController: NSObject, NSMenuDelegate {
       for binding in userBindings {
         let kb = binding.keyMapping
         guard kb.isIINACommand == isIINACmd else { continue }
-        let (sameAction, value, extraData) = sameKeyAction(kb.action, actionForMenuItem, normalizeLastNum, numRange)
-        if sameAction, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
+        let (isMatch, value, extraData) = sameKeyAction(kb.action, actionForMenuItem, normalizeLastNum, numRange)
+        if isMatch, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
+          guard !kMdf.contains(.numericPad) else { continue }
           /// If we got here, `KeyMapping`'s action qualifies for being bound to `menuItem`.
           let kbMenuItem: NSMenuItem
 

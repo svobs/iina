@@ -773,16 +773,16 @@ class PlayerCore: NSObject {
     let saveToFile = Preference.bool(for: .screenshotSaveToFile)
     let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
     guard saveToFile || saveToClipboard else {
-      Logger.log("Ignoring screenshot request: all forms of screenshots are disabled in prefs")
+      log.debug("Ignoring screenshot request: all forms of screenshots are disabled in prefs")
       return false
     }
 
     guard let vid = info.vid, vid > 0 else {
-      Logger.log("Ignoring screenshot request: no video stream is being played")
+      log.debug("Ignoring screenshot request: no video stream is being played")
       return false
     }
 
-    Logger.log("Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction))")")
+    log.debug("Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction))")")
 
     var commandFlags: [String] = []
 
@@ -790,7 +790,7 @@ class PlayerCore: NSObject {
       var canUseIINAScreenshot = true
 
       guard let commandName = keyBinding.action.first, commandName == MPVCommand.screenshot.rawValue else {
-        Logger.log("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction)", level: .error)
+        log.error("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction)")
         return false
       }
       if keyBinding.action.count > 1 {
@@ -806,7 +806,7 @@ class PlayerCore: NSObject {
             canUseIINAScreenshot = false
           default:
             // Unexpected flag. Let mpv decide how to handle
-            Logger.log("Unrecognized flag for mpv 'screenshot' command: '\(flag)'", level: .warning)
+            log.warn("Unrecognized flag for mpv 'screenshot' command: '\(flag)'")
             canUseIINAScreenshot = false
           }
         }

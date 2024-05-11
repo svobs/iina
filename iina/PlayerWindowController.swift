@@ -1280,6 +1280,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       })
   }
 
+  // Note: If a KeyUp appears without a KeyDown, this indicates the keypress triggered a menu item!
   override func keyUp(with event: NSEvent) {
     let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
@@ -1287,20 +1288,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: player,
-      arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = player.bindingController.matchActiveKeyBinding(endingWith: event) {
-
-          guard !keyBinding.isIgnored else {
-            // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
-            return true
-          }
-
-          // beep if cmd failed
-          return handleKeyBinding(keyBinding)
-        }
-        return false
-      }, defaultHandler: {
+      arguments: keyEventArgs(event), defaultHandler: {
         // invalid key
         super.keyUp(with: event)
       })

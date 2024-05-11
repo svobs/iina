@@ -150,21 +150,24 @@ class KeyCodeHelper {
     0x7F: ("POWER", nil) // This should be KeyCode::PC_POWER.
   ]
 
-  static let numericKeyPadKeyMap: [UInt16 : (String, String)] = [
-    0x52: ("0", "KP0"),
-    0x53: ("1", "KP1"),
-    0x54: ("2", "KP2"),
-    0x55: ("3", "KP3"),
-    0x56: ("4", "KP4"),
-    0x57: ("5", "KP5"),
-    0x58: ("6", "KP6"),
-    0x59: ("7", "KP7"),
-    0x5B: ("8", "KP8"),
-    0x5C: ("9", "KP9"),
-  ]
+  struct NumberPad {
+    // Here, a "char" is the unique name/identifier of a single key
+    static let mpvSymbolToKeyChar: [String: String] = [
+      "KP0": "0",
+      "KP1": "1",
+      "KP2": "2",
+      "KP3": "3",
+      "KP4": "4",
+      "KP5": "5",
+      "KP6": "6",
+      "KP7": "7",
+      "KP8": "8",
+      "KP9": "9",
+    ]
+  }
+
 
   static let mpvSymbolToKeyChar: [String: String] = {
-
     return [
       "LEFT": NSLeftArrowFunctionKey,
       "RIGHT": NSRightArrowFunctionKey,
@@ -194,6 +197,8 @@ class KeyCodeHelper {
       "F12": NSF12FunctionKey
     ]
     .mapValues { String(Character(UnicodeScalar($0)!)) }
+    /// Merge with `NumberPad.mpvSymbolToKeyChar`. Favor existing entries in case of collision (shouldn't happen):
+    .merging(NumberPad.mpvSymbolToKeyChar, uniquingKeysWith: { (current, _) in current })
     .merging([
       "SPACE": " ",
       "IDEOGRAPHIC_SPACE": "\u{3000}",
@@ -202,19 +207,8 @@ class KeyCodeHelper {
       "ESC": "\u{1b}",
       "KP_DEC": ".",
       "KP_ENTER": "\r",
-      "KP0": "0",
-      "KP1": "1",
-      "KP2": "2",
-      "KP3": "3",
-      "KP4": "4",
-      "KP5": "5",
-      "KP6": "6",
-      "KP7": "7",
-      "KP8": "8",
-      "KP9": "9",
       "PLUS": "+"
     ]) { (v0, v1) in return v1 }
-
   }()
 
   private static let mpvSymbolToPrettyMacKey: [String: String] = [
@@ -304,19 +298,17 @@ class KeyCodeHelper {
     return keystrokesSplit.joined(separator: "-")
   }
 
+  // TODO: to simplify logic: add call to normalizeMpv at end of this, since it's always called
   static func mpvKeyCode(from event: NSEvent) -> String {
     var keyString = ""
     let keyChar: String
     let keyCode = event.keyCode
     var modifiers = event.modifierFlags
 
-    if let char = event.charactersIgnoringModifiers, isPrintable(char) {
-      if let (numericChar, mpvKeyChar) = numericKeyPadKeyMap[keyCode], char == numericChar {
-        // Numeric key from the keypad (extended keyboard).
-        keyChar = mpvKeyChar
-      } else {
-        // Is a classic ASCII printable char.
-        keyChar = char
+    if let asciiChar = event.charactersIgnoringModifiers, isPrintable(asciiChar) {
+      // Is a classic ASCII printable char.
+      keyChar = asciiChar
+      if !modifiers.contains(.numericPad) {
         /// The char in `charactersIgnoringModifiers` will be either uppercase or lowercase,
         /// so remove the redundant modifier flag so we don't print an extra "SHIFT+"
         modifiers.remove(.shift)
@@ -343,6 +335,11 @@ class KeyCodeHelper {
     }
     if modifiers.contains(.command) {
       keyString += "\(META_KEY)+"
+    }
+
+    if modifiers.contains(.numericPad), let numericChar = Int(keyChar), 0 <= numericChar, numericChar <= 9 {
+      keyString += "KP\(numericChar)"
+      return keyString
     }
     // char
     keyString += keyChar
@@ -536,6 +533,10 @@ class KeyCodeHelper {
       case SHIFT_KEY: modifiers.insert(.shift)
       default: break
       }
+    }
+    if let asciiKey = NumberPad.mpvSymbolToKeyChar[key] {
+      key = asciiKey
+      modifiers.insert(.numericPad)
     }
     if let realKey = (usePrintableKeyName ? mpvSymbolToPrettyMacKey : mpvSymbolToKeyChar)[key] {
       key = realKey

@@ -465,7 +465,7 @@ extension PlayerWindowController {
   @objc func menuChangeWindowSize(_ sender: NSMenuItem) {
     let size = sender.tag
 
-    log.verbose("ChangeWindowSize requested from menu, option: \(size)")
+    log.verbose("Video menu > Change video size, option=\(size)")
     switch size {
     case 0:  //  0: half
       setVideoScale(0.5)
