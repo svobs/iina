@@ -1036,27 +1036,26 @@ class MenuController: NSObject, NSMenuDelegate {
         let kb = binding.keyMapping
         guard kb.isIINACommand == isIINACmd else { continue }
         let (isMatch, value, extraData) = sameKeyAction(kb.action, actionForMenuItem, normalizeLastNum, numRange)
-        if isMatch, let (kEqv, kMdf) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) {
-          guard !kMdf.contains(.numericPad) else { continue }
-          /// If we got here, `KeyMapping`'s action qualifies for being bound to `menuItem`.
-          let kbMenuItem: NSMenuItem
+        guard isMatch, let (keyEquivalent, keyModifierMask) = KeyCodeHelper.macOSKeyEquivalent(from: kb.normalizedMpvKey) else { continue }
+        guard !keyModifierMask.contains(.numericPad) else { continue }
+        /// If we got here, `KeyMapping`'s action qualifies for being bound to `menuItem`.
+        let kbMenuItem: NSMenuItem
 
-          if didBindMenuItem {
-            /// This `KeyMapping` matches a menu item whose key equivalent was set from a different `KeyMapping`.
-            /// There can only be one key equivalent per menu item, so we will create a duplicate menu item and put it in a hidden menu.
-            kbMenuItem = NSMenuItem(title: menuItem.title, action: menuItem.action, keyEquivalent: "")
-            kbMenuItem.tag = menuItem.tag
-            otherActionsMenuItems.append(kbMenuItem)
-          } else {
-            /// This `KeyMapping` was the first match found for this menu item.
-            kbMenuItem = menuItem
-            didBindMenuItem = true
-          }
-          kb.menuItem = kbMenuItem
-          /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
-          binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
-          updateMenuItem(kbMenuItem, kEqv: kEqv, kMdf: kMdf, l10nKey: l10nKey, value: value, extraData: extraData)
+        if didBindMenuItem {
+          /// This `KeyMapping` matches a menu item whose key equivalent was set from a different `KeyMapping`.
+          /// There can only be one key equivalent per menu item, so we will create a duplicate menu item and put it in a hidden menu.
+          kbMenuItem = NSMenuItem(title: menuItem.title, action: menuItem.action, keyEquivalent: "")
+          kbMenuItem.tag = menuItem.tag
+          otherActionsMenuItems.append(kbMenuItem)
+        } else {
+          /// This `KeyMapping` was the first match found for this menu item.
+          kbMenuItem = menuItem
+          didBindMenuItem = true
         }
+        kb.menuItem = kbMenuItem
+        /// Make sure this is executed after `updateMenuItem()` to ensure it contains the accurate menu item title:
+        binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
+        updateMenuItem(kbMenuItem, keyEquiv: keyEquivalent, keyModifierMask, l10nKey: l10nKey, value: value, extraData: extraData)
       }
 
       if !didBindMenuItem {
@@ -1064,7 +1063,7 @@ class MenuController: NSObject, NSMenuDelegate {
         // This is needed for the case where the menu item previously matched to a key binding, but now there is no match.
         // Obviously this is a little kludgey, but it avoids having to do a big refactor and/or writing a bunch of new code.
         let (_, value, extraData) = sameKeyAction(actionForMenuItem, actionForMenuItem, normalizeLastNum, numRange)
-        updateMenuItem(menuItem, kEqv: "", kMdf: [], l10nKey: l10nKey, value: value, extraData: extraData)
+        updateMenuItem(menuItem, keyEquiv: "", [], l10nKey: l10nKey, value: value, extraData: extraData)
       }
     }
 
@@ -1073,9 +1072,9 @@ class MenuController: NSObject, NSMenuDelegate {
 
   /// Updates the key equivalent of the given menu item.
   /// May also update its title and representedObject, for items which can change based on some param value(s).
-  private func updateMenuItem(_ menuItem: NSMenuItem, kEqv: String, kMdf: NSEvent.ModifierFlags, l10nKey: String?, value: Double?, extraData: Any?) {
-    menuItem.keyEquivalent = kEqv
-    menuItem.keyEquivalentModifierMask = kMdf
+  private func updateMenuItem(_ menuItem: NSMenuItem, keyEquiv: String, _ keyModifierMask: NSEvent.ModifierFlags, l10nKey: String?, value: Double?, extraData: Any?) {
+    menuItem.keyEquivalent = keyEquiv
+    menuItem.keyEquivalentModifierMask = keyModifierMask
 
     if let value = value, let l10nKey = l10nKey {
       menuItem.title = String(format: NSLocalizedString("menu." + l10nKey, comment: ""), abs(value))
