@@ -39,7 +39,13 @@ extension Preference {
       if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
         let splitted = key.split(separator: "-", maxSplits: 1)
         if splitted.count == 2 {
-          return Int(splitted[1])
+          let playerLabel = splitted[1]
+          // v1.0 used "m" to separate launch ID and mpv core ID; newer versions use "c".
+          // Split by any non-digit to account for both:
+          let playerLabelSplit = playerLabel.components(separatedBy: CharacterSet.decimalDigits.inverted)
+          if playerLabelSplit.count > 1 {
+            return Int(playerLabelSplit[0])
+          }
         }
       }
       return nil

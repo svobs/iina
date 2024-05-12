@@ -10,6 +10,7 @@ import Foundation
 
 /// `VideoGeometry`: collection of metadata for the current video.Fetched from mpv.
 ///
+// FIXME: Crop comes BEFORE aspect, not after! Rename fields
 /// Processing pipeline:
 /// `videoSizeRaw` (`rawWidth`, `rawHeight`)
 ///   ➤ Parse `selectedAspectLabel` into `aspectRatioOverride`, then apply it
