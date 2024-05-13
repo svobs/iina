@@ -257,31 +257,42 @@ extension Preference {
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
     }
 
-    class LaunchState {
-      // data will be nil if the pref entry is missing
+    class LaunchState: CustomStringConvertible {
+      /// launch ID
+      let id: Int
+      /// `none` == pref entry missing
       var status: Int = LaunchStatus.none
-      var openWindowList: [SavedWindow]? = nil
+      /// Will be `nil` if the pref entry is missing
+      var savedWindows: [SavedWindow]? = nil
       // each entry in the set is a pref key
       var playerKeys = Set<String>()
+
+      init(_ launchID: Int) {
+        self.id = launchID
+      }
+
+      var description: String {
+        return "Launch(id:\(id) st:\(status) windows:\(savedWindows?.map{ $0.saveName.string }.description ?? "nil") players:\(playerKeys))"
+      }
     }
 
-    private static func buildLaunchDataDict() -> [Int: LaunchState] {
+    private static func buildPastLaunchDict() -> [Int: LaunchState] {
       var countOfLaunchesToWaitOn = 0
-      var launchDataDict: [Int: LaunchState] = [:]
+      var launchDict: [Int: LaunchState] = [:]
 
       // It is easier & less bug-prone to just to iterate over all entries in the plist than to try to guess key names
       for (key, value) in UserDefaults.standard.dictionaryRepresentation() {
         if let launchID = launchID(fromLaunchName: key) {
           // Entry is type: Launch Status
           guard launchID != AppDelegate.launchID else { continue }
+          let launch = launchDict[launchID] ?? LaunchState(launchID)
+
           guard let statusInt = value as? Int else {
             Logger.log("Failed to parse status int from pref entry! (entry: \(key.quoted), value: \(value))", level: .error)
             continue
           }
-
-          let launch = launchDataDict[launchID] ?? LaunchState()
           launch.status = statusInt
-          launchDataDict[launchID] = launch
+          launchDict[launchID] = launch
 
           if launch.status != LaunchStatus.done {
             /// Launch was not marked `done`?
@@ -296,24 +307,24 @@ extension Preference {
         } else if let launchID = launchID(fromPlayerWindowKey: key) {
           // Entry is type: PlayerWindow
           guard launchID != AppDelegate.launchID else { continue }
+          let launch = launchDict[launchID] ?? LaunchState(launchID)
 
-          let launch = launchDataDict[launchID] ?? LaunchState()
           launch.playerKeys.insert(key)
-          launchDataDict[launchID] = launch
+          launchDict[launchID] = launch
         } else if let launchID = launchID(fromOpenWindowListKey: key) {
           // Entry is type: Open Windows List
           guard launchID != AppDelegate.launchID else { continue }
+          let launch = launchDict[launchID] ?? LaunchState(launchID)
 
-          let launch = launchDataDict[launchID] ?? LaunchState()
           if let csv = value as? String {
-            launch.openWindowList = parseSavedOpenWindowsBackToFront(fromPrefValue: csv)
+            launch.savedWindows = parseSavedOpenWindowsBackToFront(fromPrefValue: csv)
           }
-          launchDataDict[launchID] = launch
+          launchDict[launchID] = launch
         }
       }
 
       if countOfLaunchesToWaitOn > 0 {
-        let iffyKeys = launchDataDict.filter{
+        let iffyKeys = launchDict.filter{
           $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
         Logger.log("Looks like these launches may not be done: \(iffyKeys)", level: .verbose)
         Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past instances are still running...", level: .verbose)
@@ -321,36 +332,53 @@ extension Preference {
         Thread.sleep(forTimeInterval: 1)
       }
 
-      return launchDataDict
+      return launchDict
     }
 
     /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
     /// This omits launches which are detected as still running.
     static func collectPastLaunches() -> [String] {
-      let launchDataDict = buildLaunchDataDict()
+      let launchDict = buildPastLaunchDict()
 
       var countEntriesDeleted: Int = 0
       var pastLaunchesToRestore: [String] = []
 
       // Iterate backwards through past launches, from most recent to least recent.
-      let launchIDsSortedNewestToOldest = launchDataDict.keys.sorted().reversed()
-      for launchID in launchIDsSortedNewestToOldest {
-        guard let launch = launchDataDict[launchID] else {
-          Logger.fatal("Internal error in dictionary! Could not find launchID \(launchID)")
+      let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
+      if Logger.isDebugEnabled {
+        Logger.log("PastLaunches: \(launchesNewestToOldest)", level: .debug)
+      }
+
+      for launch in launchesNewestToOldest {
+        guard launch.status != LaunchStatus.none else {
+          // Anything found here is orphaned. Clean it up.
+          // Remember that we are iterating backwards, so all data should be accounted for.
+/* FIXME: WIP
+          if launch.savedWindows != nil {
+            let key = makeOpenWindowListKey(forLaunchID: launch.id)
+            Logger.log("Deleting orphaned pref entry: \(key.quoted)", level: .warning)
+            UserDefaults.standard.removeObject(forKey: key)
+            countEntriesDeleted += 1
+          }
+
+          for playerKey in launch.playerKeys {
+            Logger.log("Deleting orphaned pref entry: \(playerKey.quoted)", level: .warning)
+            UserDefaults.standard.removeObject(forKey: playerKey)
+            countEntriesDeleted += 1
+          }
+*/
+          continue
         }
 
-        guard launch.status != LaunchStatus.none else { continue }
-
         // Old player windows may have been associated with newer launches. Update our data structure to match
-        if let openWindowList = launch.openWindowList {
-          for savedWindow in openWindowList {
-            if let playerLaunchID = savedWindow.saveName.playerWindowLaunchID,
-               playerLaunchID != launchID {
-              if playerLaunchID > launchID {
+        if let savedWindows = launch.savedWindows {
+          for savedWindow in savedWindows {
+            if let playerLaunchID = savedWindow.saveName.playerWindowLaunchID, playerLaunchID != launch.id {
+              if playerLaunchID > launch.id {
                 // Should only happen if someone messed up the .plist file
-                Logger.log("Suspicious data found! Saved launch (\(launchID)) contains a player window from a newer launch (\(playerLaunchID))!", level: .error)
+                Logger.log("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!", level: .error)
               }
-              if let prevLaunch = launchDataDict[playerLaunchID],
+              if let prevLaunch = launchDict[playerLaunchID],
                  let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
                 launch.playerKeys.insert(playerKeyFromPrev)
               }
@@ -358,14 +386,14 @@ extension Preference {
           }
         }
 
-        let pastLaunchName = launchName(forID: launchID)
+        let pastLaunchName = launchName(forID: launch.id)
         let launchStatus: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
         launch.status = launchStatus
         if launchStatus == Preference.UIState.LaunchStatus.stillRunning {
           Logger.log("Instance is still running: \(pastLaunchName.quoted)", level: .verbose)
         } else {
           if launchStatus != Preference.UIState.LaunchStatus.done {
-            Logger.log("Instance \(pastLaunchName.quoted) has launchStatus \(launchStatus). Assuming it is defunct. Will roll its windows into current launch", level: .verbose)
+            Logger.log("Instance \(pastLaunchName.quoted) has status \(launchStatus). Assuming it is defunct. Will roll its windows into current launch", level: .verbose)
           }
           pastLaunchesToRestore.append(pastLaunchName)
         }

@@ -20,7 +20,12 @@ import Foundation
 ///     that method will attempt to report it using the logger. If the logger is still being initialized this will result in a crash. For that reason
 ///     the logger uses its own similar method.
 class Logger: NSObject {
-  static let isTraceEnabled = false
+  static var isTraceEnabled: Bool {
+    return Logger.isEnabled(.trace)
+  }
+  static var isDebugEnabled: Bool {
+    return Logger.isEnabled(.debug)
+  }
 
   fileprivate static let sessionDirName: String = {
     let formatter = DateFormatter()
@@ -134,8 +139,9 @@ class Logger: NSObject {
       return lhs.rawValue < rhs.rawValue
     }
 
-    static var preferred: Level = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: 0...3))!
+    static var preferred: Level = .error
 
+    case trace = -1
     case verbose
     case debug
     case warning
@@ -143,10 +149,11 @@ class Logger: NSObject {
 
     var description: String {
       switch self {
-      case .verbose: return "v"
-      case .debug: return "d"
-      case .warning: return "w"
-      case .error: return "e"
+      case .trace: return "T"
+      case .verbose: return "V"
+      case .debug: return "D"
+      case .warning: return "W"
+      case .error: return "E"
       }
     }
   }
@@ -195,7 +202,7 @@ class Logger: NSObject {
     return String(format: piiFormat, paddedInt)
   }
 
-  static private(set) var enabled: Bool = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
+  static private(set) var enabled: Bool = false
 
   static func updateEnablement() {
     let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
@@ -206,6 +213,8 @@ class Logger: NSObject {
       enabled = newValue
       Logger.log("Logging is now enabled due to settings change")
     }
+
+    Level.preferred = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
   }
 
   static func isEnabled(_ level: Logger.Level) -> Bool {
@@ -213,7 +222,7 @@ class Logger: NSObject {
     guard enabled else { return false }
     #endif
     
-    return Logger.Level.preferred >= level
+    return Logger.Level.preferred <= level
   }
 
   static let libraryDirectory: URL = {
@@ -356,6 +365,8 @@ class Logger: NSObject {
   }
 
   static func initLogging() {
+    updateEnablement()
+
     // Mask library URL in subsequent logging
     _ = getOrCreatePII(for: libraryDirectory.path)
   }
@@ -365,7 +376,7 @@ class Logger: NSObject {
     guard enabled else { return }
     #endif
 
-    guard level.rawValue >= Preference.integer(for: .logLevel) else { return }
+    guard isEnabled(level) else { return }
 
     let message = maskAnyPII(rawMessage)
 
