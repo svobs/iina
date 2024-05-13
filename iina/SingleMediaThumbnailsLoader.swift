@@ -54,7 +54,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     case .scaleWithViewport:
       let rawSizePercentage = CGFloat(min(max(0, Preference.integer(for: .thumbnailRawSizePercentage)), 100))
       let thumbWidth = Int(round(videoSizeRaw.width * rawSizePercentage / 100))
-      log.verbose("Thumbnail native width based on settings: \(thumbWidth)px (\(Int(rawSizePercentage))% of video's \(Int(videoSizeRaw.width))px)")
+      log.verbose("Thumbnail native width will be \(Int(rawSizePercentage))% of video's native \(Int(videoSizeRaw.width))px → \(thumbWidth)px")
       return thumbWidth
     case .fixedSize:
       let requestedLength = CGFloat(Preference.integer(for: .thumbnailFixedLength))
@@ -64,7 +64,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
         if requestedLength > videoSizeRaw.height {
           // Do not go bigger than video's native width
           thumbWidth = videoSizeRaw.width
-          log.debug("Video's height is longer than its width, and thumbLength (\(requestedLength)) is larger than video's native height (\(videoSizeRaw.height)); clamping thumbWidth to \(videoSizeRaw.width)")
+          log.debug("Video's height is longer than its width, & thumbLength (\(requestedLength)) is larger than video's native height (\(videoSizeRaw.height)); clamping thumbWidth to \(videoSizeRaw.width)")
         } else {
           thumbWidth = round(requestedLength * videoSizeRaw.aspect)
           log.debug("Video's height (\(videoSizeRaw.height)) is longer than its width (\(videoSizeRaw.width)); scaling down thumbWidth to \(thumbWidth)")

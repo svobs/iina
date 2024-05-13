@@ -39,13 +39,8 @@ extension Preference {
       if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
         let splitted = key.split(separator: "-", maxSplits: 1)
         if splitted.count == 2 {
-          let playerLabel = splitted[1]
-          // v1.0 used "m" to separate launch ID and mpv core ID; newer versions use "c".
-          // Split by any non-digit to account for both:
-          let playerLabelSplit = playerLabel.components(separatedBy: CharacterSet.decimalDigits.inverted)
-          if playerLabelSplit.count > 1 {
-            return Int(playerLabelSplit[0])
-          }
+          let playerWindowID = String(splitted[1])
+          return WindowAutosaveName.playerWindowLaunchID(from: playerWindowID)
         }
       }
       return nil
@@ -272,7 +267,11 @@ extension Preference {
       }
 
       var description: String {
-        return "Launch(id:\(id) st:\(status) windows:\(savedWindows?.map{ $0.saveName.string }.description ?? "nil") players:\(playerKeys))"
+        return "Launch(id:\(id) st:\(status) windows:\(savedWindowsDescription) players:\(playerKeys))"
+      }
+
+      var savedWindowsDescription: String {
+        return savedWindows?.map{ $0.saveName.string }.description ?? "nil"
       }
     }
 
@@ -345,15 +344,15 @@ extension Preference {
 
       // Iterate backwards through past launches, from most recent to least recent.
       let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
-      if Logger.isDebugEnabled {
-        Logger.log("PastLaunches: \(launchesNewestToOldest)", level: .debug)
+      if Logger.isVerboseEnabled {
+        Logger.log("Past launch data: \(launchesNewestToOldest)", level: .verbose)
       }
 
       for launch in launchesNewestToOldest {
         guard launch.status != LaunchStatus.none else {
           // Anything found here is orphaned. Clean it up.
           // Remember that we are iterating backwards, so all data should be accounted for.
-/* FIXME: WIP
+
           if launch.savedWindows != nil {
             let key = makeOpenWindowListKey(forLaunchID: launch.id)
             Logger.log("Deleting orphaned pref entry: \(key.quoted)", level: .warning)
@@ -366,20 +365,25 @@ extension Preference {
             UserDefaults.standard.removeObject(forKey: playerKey)
             countEntriesDeleted += 1
           }
-*/
+
           continue
         }
 
         // Old player windows may have been associated with newer launches. Update our data structure to match
         if let savedWindows = launch.savedWindows {
+          Logger.log("LaunchID \(launch.id) has saved windows: \(launch.savedWindowsDescription)", level: .verbose)
           for savedWindow in savedWindows {
-            if let playerLaunchID = savedWindow.saveName.playerWindowLaunchID, playerLaunchID != launch.id {
+            let playerLaunchID = savedWindow.saveName.playerWindowLaunchID
+            if let playerLaunchID, playerLaunchID != launch.id {
               if playerLaunchID > launch.id {
                 // Should only happen if someone messed up the .plist file
                 Logger.log("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!", level: .error)
               }
+
+              // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
               if let prevLaunch = launchDict[playerLaunchID],
                  let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
+                Logger.log("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID)", level: .verbose)
                 launch.playerKeys.insert(playerKeyFromPrev)
               }
             }
@@ -390,10 +394,10 @@ extension Preference {
         let launchStatus: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
         launch.status = launchStatus
         if launchStatus == Preference.UIState.LaunchStatus.stillRunning {
-          Logger.log("Instance is still running: \(pastLaunchName.quoted)", level: .verbose)
+          Logger.log("Still running, will ignore: \(pastLaunchName.quoted)", level: .verbose)
         } else {
           if launchStatus != Preference.UIState.LaunchStatus.done {
-            Logger.log("Instance \(pastLaunchName.quoted) has status \(launchStatus). Assuming it is defunct. Will roll its windows into current launch", level: .verbose)
+            Logger.log("Looks defunct, will merge into current (\(AppDelegate.launchName)): \(launch)", level: .verbose)
           }
           pastLaunchesToRestore.append(pastLaunchName)
         }

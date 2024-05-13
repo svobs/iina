@@ -132,13 +132,7 @@ enum WindowAutosaveName: Equatable, Hashable {
   }
 
   var playerWindowLaunchID: Int? {
-    if let playerWindowID {
-      let splitted = playerWindowID.split(separator: "-")
-      if !splitted.isEmpty {
-        return Int(splitted[0])
-      }
-    }
-    return nil
+    return WindowAutosaveName.playerWindowLaunchID(from: playerWindowID)
   }
 
   private static func parseID(from string: String, mustStartWith prefix: String) -> String? {
@@ -156,4 +150,17 @@ enum WindowAutosaveName: Equatable, Hashable {
   func hash(into hasher: inout Hasher) {
     return string.hash(into: &hasher)
   }
+
+  static func playerWindowLaunchID(from playerWindowID: String?) -> Int? {
+    if let playerWindowID {
+      // v1.0 used "m" to separate launch ID and mpv core ID; newer versions use "c".
+      // Split by any non-digit to account for both:
+      let playerLabelSplit = playerWindowID.components(separatedBy: CharacterSet.decimalDigits.inverted)
+      if playerLabelSplit.count > 1 {
+        return Int(playerLabelSplit[0])
+      }
+    }
+    return nil
+  }
+
 }

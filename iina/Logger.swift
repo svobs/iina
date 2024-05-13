@@ -23,6 +23,9 @@ class Logger: NSObject {
   static var isTraceEnabled: Bool {
     return Logger.isEnabled(.trace)
   }
+  static var isVerboseEnabled: Bool {
+    return Logger.isEnabled(.verbose)
+  }
   static var isDebugEnabled: Bool {
     return Logger.isEnabled(.debug)
   }

@@ -1946,7 +1946,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.info.currentMedia = nil
     if player.info.isRestoring {
-      log.verbose("Discarding unfinished restore cuz window closing")
+      log.debug("Discarding unfinished restore of window")
       // May not have finishing restoring when user closes. Make sure to clean up here
       player.info.priorState = nil
       player.info.isRestoring = false
