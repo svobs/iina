@@ -63,6 +63,8 @@ extension mpv_event_end_file {
 // Global functions
 
 class MPVController: NSObject {
+  static var watchLaterOptions: String = ""
+
   struct UserData {
     static let screenshot: UInt64 = 1000000
   }
@@ -493,6 +495,8 @@ not applying FFmpeg 9599 workaround
     }
     if let watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
       player.log.debug("Options mpv is configured to save in watch later files: \(watchLaterOptions)")
+      MPVController.watchLaterOptions = watchLaterOptions
+      NotificationCenter.default.post(name: .watchLaterOptionsDidChange, object: player)
     }
 
     // get version

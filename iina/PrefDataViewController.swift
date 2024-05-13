@@ -31,4 +31,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet var historyView: NSView!
   @IBOutlet var watchLaterView: NSView!
 
+//  @IBOutlet var watchLaterOptionsView: NSTextField!
+
+  override func viewDidLoad() {
+//    watchLaterOptionsView.stringValue = MPVController.watchLaterOptions
+  }
 }

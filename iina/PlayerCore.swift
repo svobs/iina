@@ -3146,11 +3146,11 @@ class PlayerCore: NSObject {
     NotificationCenter.default.post(Notification(name: name, object: self))
   }
 
-    func postFileHistoryUpdateNotification() {
-      guard let url = info.currentURL else { return }
-      let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
-      NotificationCenter.default.post(note)
-    }
+  func postFileHistoryUpdateNotification() {
+    guard let url = info.currentURL else { return }
+    let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
+    NotificationCenter.default.post(note)
+  }
 
   // MARK: - Utils
 
