@@ -259,46 +259,49 @@ extension Preference {
 
     class LaunchState {
       // data will be nil if the pref entry is missing
-      var status: Int? = nil
+      var status: Int = LaunchStatus.none
       var openWindowList: [SavedWindow]? = nil
       // each entry in the set is a pref key
       var playerKeys = Set<String>()
     }
 
-    /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
-    /// This omits launches which are detected as still running.
-    static func collectPastLaunches() -> [String] {
-      var launchDataDict: [Int: LaunchState] = [:]
+    private static func buildLaunchDataDict() -> [Int: LaunchState] {
       var countOfLaunchesToWaitOn = 0
+      var launchDataDict: [Int: LaunchState] = [:]
 
-      // Easier & less bug-prone to just to get all entries in the dict
+      // It is easier & less bug-prone to just to iterate over all entries in the plist than to try to guess key names
       for (key, value) in UserDefaults.standard.dictionaryRepresentation() {
         if let launchID = launchID(fromLaunchName: key) {
-          // Launch Status
+          // Entry is type: Launch Status
           guard launchID != AppDelegate.launchID else { continue }
+          guard let statusInt = value as? Int else {
+            Logger.log("Failed to parse status int from pref entry! (entry: \(key.quoted), value: \(value))", level: .error)
+            continue
+          }
 
           let launch = launchDataDict[launchID] ?? LaunchState()
-          launch.status = value as? Int ?? Preference.UIState.LaunchStatus.none
+          launch.status = statusInt
           launchDataDict[launchID] = launch
 
-          if launch.status != Preference.UIState.LaunchStatus.done {
-            // Not done? Send ping to confirm
-            var newValue = Preference.UIState.LaunchStatus.indeterminate1
-            if launch.status == Preference.UIState.LaunchStatus.indeterminate1 {
-              newValue = Preference.UIState.LaunchStatus.indeterminate2
+          if launch.status != LaunchStatus.done {
+            /// Launch was not marked `done`?
+            /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
+            var newValue = LaunchStatus.indeterminate1
+            if launch.status == LaunchStatus.indeterminate1 {
+              newValue = LaunchStatus.indeterminate2
             }
             UserDefaults.standard.setValue(newValue, forKey: key)
             countOfLaunchesToWaitOn += 1
           }
         } else if let launchID = launchID(fromPlayerWindowKey: key) {
-          // PlayerWindow
+          // Entry is type: PlayerWindow
           guard launchID != AppDelegate.launchID else { continue }
 
           let launch = launchDataDict[launchID] ?? LaunchState()
           launch.playerKeys.insert(key)
           launchDataDict[launchID] = launch
         } else if let launchID = launchID(fromOpenWindowListKey: key) {
-          // Open Windows List
+          // Entry is type: Open Windows List
           guard launchID != AppDelegate.launchID else { continue }
 
           let launch = launchDataDict[launchID] ?? LaunchState()
@@ -311,41 +314,32 @@ extension Preference {
 
       if countOfLaunchesToWaitOn > 0 {
         let iffyKeys = launchDataDict.filter{
-          $0.value.status != nil && $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
+          $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
         Logger.log("Looks like these launches may not be done: \(iffyKeys)", level: .verbose)
         Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past instances are still running...", level: .verbose)
 
         Thread.sleep(forTimeInterval: 1)
       }
 
+      return launchDataDict
+    }
+
+    /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
+    /// This omits launches which are detected as still running.
+    static func collectPastLaunches() -> [String] {
+      let launchDataDict = buildLaunchDataDict()
+
       var countEntriesDeleted: Int = 0
       var pastLaunchesToRestore: [String] = []
 
+      // Iterate backwards through past launches, from most recent to least recent.
       let launchIDsSortedNewestToOldest = launchDataDict.keys.sorted().reversed()
       for launchID in launchIDsSortedNewestToOldest {
         guard let launch = launchDataDict[launchID] else {
           Logger.fatal("Internal error in dictionary! Could not find launchID \(launchID)")
         }
 
-        if launch.status == nil {
-          // Anything found here is orphaned. Clean it up.
-          // Remember that we are iterating backwards, so all data should be accounted for.
-
-          if launch.openWindowList != nil {
-            let key = makeOpenWindowListKey(forLaunchID: launchID)
-            Logger.log("Deleting orphaned pref entry: \(key.quoted)", level: .warning)
-            UserDefaults.standard.removeObject(forKey: key)
-            countEntriesDeleted += 1
-          }
-
-          for playerKey in launch.playerKeys {
-            Logger.log("Deleting orphaned pref entry: \(playerKey.quoted)", level: .warning)
-            UserDefaults.standard.removeObject(forKey: playerKey)
-            countEntriesDeleted += 1
-          }
-
-          continue
-        }
+        guard launch.status != LaunchStatus.none else { continue }
 
         // Old player windows may have been associated with newer launches. Update our data structure to match
         if let openWindowList = launch.openWindowList {

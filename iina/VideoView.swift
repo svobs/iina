@@ -143,6 +143,11 @@ class VideoView: NSView {
   private func rebuildConstraints(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0,
                                   eqIsActive: Bool = true, eqPriority: NSLayoutConstraint.Priority,
                                   centerIsActive: Bool = true, centerPriority: NSLayoutConstraint.Priority) {
+    guard let superview else {
+      // Should not get here
+      log.error("Cannot rebuild constraints for videoView: it has no superview!")
+      return
+    }
     var existing = self.videoViewConstraints
     self.videoViewConstraints = nil
 
@@ -152,8 +157,8 @@ class VideoView: NSView {
       eqOffsetBottom: addOrUpdate(existing?.eqOffsetBottom, .bottom, .equal, bottom, eqPriority),
       eqOffsetLeading: addOrUpdate(existing?.eqOffsetLeading, .leading, .equal, leading, eqPriority),
 
-      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
-      centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview!.centerYAnchor)
+      centerX: existing?.centerX ?? centerXAnchor.constraint(equalTo: superview.centerXAnchor),
+      centerY: existing?.centerY ?? centerYAnchor.constraint(equalTo: superview.centerYAnchor)
     )
     newConstraints.centerX.priority = centerPriority
     newConstraints.centerY.priority = centerPriority
@@ -164,8 +169,8 @@ class VideoView: NSView {
   }
 
   private func setFixedOffsetConstraints(margins: MarginQuad) {
-
     log.verbose("Constraining videoView for fixed offsets: \(margins)")
+
     // Use only EQ. Remove all other constraints
     rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
                        eqIsActive: true, eqPriority: .required,
@@ -175,6 +180,8 @@ class VideoView: NSView {
   }
 
   func apply(_ geometry: PWGeometry?) {
+    dispatchPrecondition(condition: .onQueue(.main))
+
     guard player.windowController.pipStatus == .notInPIP else {
       log.verbose("VideoView: currently in PiP; ignoring request to set viewportMargin constraints")
       return

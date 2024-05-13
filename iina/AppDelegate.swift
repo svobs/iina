@@ -644,12 +644,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main) { note in
       guard let window = note.object as? NSWindow else { return }
       guard let wc = window.windowController else {
-        Logger.log("Window ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
+        Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
         return
       }
       wcsReady.insert(wc)
 
-      Logger.log("Window ready: \(window.savedStateName.quoted), progress: \(wcsReady.count)/\(isFinishedAddingWindows ? "\(wcsToRestore.count)" : "?")", level: .verbose)
+      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(wcsReady.count)/\(isFinishedAddingWindows ? "\(wcsToRestore.count)" : "?")", level: .verbose)
 
       finishRestoreIfReady()
     })
@@ -692,7 +692,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         showAudioFilterWindow(self)
         wc = afWindow
       case .playerWindow(let id):
-        let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id)
+        guard let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
       default:
         Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
