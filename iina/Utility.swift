@@ -382,6 +382,7 @@ class Utility {
   static let watchLaterURL: URL = {
     let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.watchLaterFolder, isDirectory: true)
     createDirIfNotExist(url: url)
+    Logger.log("Watch Later directory: \(url.path.quoted)")
     return url
   }()
 

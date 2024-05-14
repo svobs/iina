@@ -31,10 +31,26 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet var historyView: NSView!
   @IBOutlet var watchLaterView: NSView!
 
+  @IBOutlet var watchLaterCountView: NSTextField!
   @IBOutlet var watchLaterOptionsView: NSTextField!
 
   override func viewWillAppear() {
     super.viewWillAppear()
     watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
+
+    let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+
+    var watchLaterCount = 0
+    if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
+      watchLaterCount = files.count
+    }
+    watchLaterCountView.stringValue = "Found Watch Later data for \(watchLaterCount) media files."
   }
+
+  // MARK: - IBAction
+
+  @IBAction func showWatchLaterDirAction(_ sender: AnyObject) {
+    NSWorkspace.shared.open(Utility.watchLaterURL)
+  }
+
 }

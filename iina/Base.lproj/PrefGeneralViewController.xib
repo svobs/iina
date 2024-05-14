@@ -710,7 +710,7 @@
                             </connections>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Q1d-l6-T8I">
-                            <rect key="frame" x="-2" y="-1" width="359" height="18"/>
+                            <rect key="frame" x="-2" y="-1" width="364" height="18"/>
                             <buttonCell key="cell" type="check" title="Use &quot;…&quot; to shorten titles which begin with duplicate text" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="G44-l9-kVk">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>

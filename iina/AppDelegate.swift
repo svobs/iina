@@ -703,6 +703,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     isFinishedAddingWindows = true
+    // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     finishRestoreIfReady()
 
     return !wcsToRestore.isEmpty
