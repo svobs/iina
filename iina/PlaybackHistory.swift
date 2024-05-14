@@ -60,8 +60,11 @@ class PlaybackHistory: NSObject, NSCoding {
   }
 
   // This is a long-running operation. Load this asynchronously
-  func loadProgressFromWatchLater() {
-    self.mpvProgress = Utility.playbackProgressFromWatchLater(mpvMd5)
+  @discardableResult
+  func loadProgressFromWatchLater() -> Bool {
+    let progress = Utility.playbackProgressFromWatchLater(mpvMd5)
+    self.mpvProgress = progress
+    return progress != nil
   }
 
   func encode(with aCoder: NSCoder) {

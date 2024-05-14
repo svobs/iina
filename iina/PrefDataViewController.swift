@@ -34,17 +34,28 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet var watchLaterCountView: NSTextField!
   @IBOutlet var watchLaterOptionsView: NSTextField!
 
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterOptions(_:)),
+                                           name: .watchLaterOptionsDidChange, object: nil)
+  }
+
   override func viewWillAppear() {
     super.viewWillAppear()
-    watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
 
-    let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+    reloadWatchLaterOptions(nil)
 
     var watchLaterCount = 0
+    let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
     if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
       watchLaterCount = files.count
     }
     watchLaterCountView.stringValue = "Found Watch Later data for \(watchLaterCount) media files."
+  }
+
+  @objc func reloadWatchLaterOptions(_ sender: AnyObject?) {
+    watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
   }
 
   // MARK: - IBAction

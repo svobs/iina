@@ -55,7 +55,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   private var historyDataKeys: [String] = []
   private var fileExistsMap: [URL: Bool] = [:]
 
-  private var lastCompleteStatusReloadTime = Date()
+  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
   private var observedPrefKeys: [Preference.Key] = [
     .uiHistoryTableGroupBy,
@@ -98,6 +98,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       guard let searchStringNew = HistoryWindowController.getSearchStringFromPrefs(), searchStringNew != searchString else { return }
       searchString = searchStringNew
       historySearchField.stringValue = searchString
+      
     default:
       break
     }
@@ -111,6 +112,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
     NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [unowned self] _ in
       log.verbose("History window received iinaHistoryUpdated; will reload data")
+      // Force full status reload:
+      lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
       self.reloadData()
     }
 
@@ -189,23 +192,24 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   private func reloadData() {
     // Reloads are expensive and many things can trigger them.
     // Use a counter + a delay to reduce duplicated work (except for initial load)
-    let isInitialLoad = reloadTicketCounter == 0
     reloadTicketCounter += 1
     let ticket = reloadTicketCounter
+    let isInitialLoad = reloadTicketCounter == 1
 
     if isInitialLoad {
       backgroundQueue.async { [self] in
-        _reloadData(isInitialLoad: true)
+        _reloadData(ticket: ticket)
       }
     } else {
       backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
         guard ticket == reloadTicketCounter else { return }
-        _reloadData()
+        _reloadData(ticket: ticket)
       }
     }
   }
 
-  private func _reloadData(isInitialLoad: Bool = false) {
+  private func _reloadData(ticket: Int) {
+    let isInitialLoad = ticket == 1
     // reconstruct data
     let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history
@@ -241,17 +245,17 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       self.outlineView.reloadData()
       self.outlineView.expandItem(nil, expandChildren: true)
 
-      self.log.verbose("Reloaded history table in \(sw.secElapsedString), with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) (tkt \(self.reloadTicketCounter))")
+      self.log.verbose("Reloaded history table with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) in \(sw.secElapsedString) (tkt \(self.reloadTicketCounter))")
 
       if isInitialLoad {
         super.openWindow(self)
       }
     }
 
-    guard !Preference.bool(for: .isRestoreInProgress) else {
-      // optimization
-      return
-    }
+    // optimization
+//    guard !Preference.bool(for: .isRestoreInProgress) else { return }
+
+    guard isInitialLoad || ticket == reloadTicketCounter else { return }  // check ticket
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.
     // Network or file system can change over time and cause our info to become out of date.
@@ -262,16 +266,25 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     var fileExistsMap: [URL: Bool] = forceFullStatusReload ? [:] : self.fileExistsMap
 
     var count: Int = 0
+    var watchLaterCount: Int = 0
     for entry in historyList {
       // Fill in fileExists
       if fileExistsMap[entry.url] == nil {
         fileExistsMap[entry.url] = !entry.url.isFileURL || FileManager.default.fileExists(atPath: entry.url.path)
-        entry.loadProgressFromWatchLater()
+        let wasWatchLaterFound = entry.loadProgressFromWatchLater()
         count += 1
+        if wasWatchLaterFound {
+          watchLaterCount += 1
+        }
+        if (count %% 100) == 0 {
+          guard isInitialLoad || ticket == reloadTicketCounter else { return }  // check ticket
+        }
       }
     }
+    guard isInitialLoad || ticket == reloadTicketCounter else {return }  // check ticket
+
     self.fileExistsMap = fileExistsMap
-    log.debug("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString)")
+    log.debug("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString) (wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount)). FileExistsMap size is now \(fileExistsMap.count)")
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }
