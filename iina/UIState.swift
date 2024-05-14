@@ -278,6 +278,13 @@ extension Preference {
 
     static func savePlayerState(forPlayerID playerID: String, properties: [String: Any]) {
       guard isSaveEnabled else { return }
+      guard properties[PlayerSaveState.PropName.url.rawValue] != nil else {
+        // This can happen if trying to save while changing tracks, or at certain brief periods during shutdown.
+        // Do not save without a URL! The window cannot be restored.
+        // Just assume there was already a good save made not too far back.
+        Logger.log("Skipping save for player \(playerID): it has no URL", level: .debug)
+        return
+      }
       let key = WindowAutosaveName.playerWindow(id: playerID).string
       UserDefaults.standard.setValue(properties, forKey: key)
     }

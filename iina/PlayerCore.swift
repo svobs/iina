@@ -2902,7 +2902,6 @@ class PlayerCore: NSObject {
 
   private func _closeWindow() {
     log.verbose("Closing window")
-    info.currentMedia = nil
     windowController.close()
   }
 

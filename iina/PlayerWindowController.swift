@@ -1944,12 +1944,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     lastWindowedLayoutSpec = LayoutSpec.defaultLayout()
 
-    player.info.currentMedia = nil
     if player.info.isRestoring {
       log.debug("Discarding unfinished restore of window")
       // May not have finishing restoring when user closes. Make sure to clean up here
       player.info.priorState = nil
       player.info.isRestoring = false
+    }
+
+    player.mpv.queue.async { [self] in
+      player.info.currentMedia = nil
     }
 
     player.events.emit(.windowWillClose)

@@ -84,7 +84,7 @@ class SharedInputSection: MPVInputSection {
   }
 
   func setKeyMappingList(_ keyMappingList: [KeyMapping]) {
-    Logger.log("Replacing entire section \"\(name)\" with \(keyMappingList.count) mappings", level: .verbose)
+    AppInputConfig.log.verbose("Replacing entire section \"\(name)\" with \(keyMappingList.count) mappings")
     self.keyMappingList = keyMappingList
   }
 }
