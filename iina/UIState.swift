@@ -23,6 +23,42 @@ extension Preference {
       static let done: Int = 10
     }
 
+    class LaunchState: CustomStringConvertible {
+      /// launch ID
+      let id: Int
+      /// `none` == pref entry missing
+      var status: Int = LaunchStatus.none
+      /// Will be `nil` if the pref entry is missing
+      var savedWindows: [SavedWindow]? = nil
+      // each entry in the set is a pref key
+      var playerKeys = Set<String>()
+
+      init(_ launchID: Int) {
+        self.id = launchID
+      }
+
+      var description: String {
+        return "Launch(\(id) \(statusDescription) w:\(savedWindowsDescription) p:\(playerKeys))"
+      }
+
+      var savedWindowsDescription: String {
+        return savedWindows?.map{ $0.saveName.string }.description ?? "nil"
+      }
+
+      var statusDescription: String {
+        switch status {
+        case 0:
+          return "noStatus"
+        case 10:
+          return "done"
+        case 1...9:
+          return "notDone(\(status))"
+        default:
+          return "INVALID(\(status))"
+        }
+      }
+    }
+
     static private let iinaLaunchPrefix = "Launch-"
     // Comma-separated list of open windows, back to front
     static private let openWindowListPrefix = "OpenWindows-"
@@ -252,29 +288,6 @@ extension Preference {
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
     }
 
-    class LaunchState: CustomStringConvertible {
-      /// launch ID
-      let id: Int
-      /// `none` == pref entry missing
-      var status: Int = LaunchStatus.none
-      /// Will be `nil` if the pref entry is missing
-      var savedWindows: [SavedWindow]? = nil
-      // each entry in the set is a pref key
-      var playerKeys = Set<String>()
-
-      init(_ launchID: Int) {
-        self.id = launchID
-      }
-
-      var description: String {
-        return "Launch(id:\(id) st:\(status) windows:\(savedWindowsDescription) players:\(playerKeys))"
-      }
-
-      var savedWindowsDescription: String {
-        return savedWindows?.map{ $0.saveName.string }.description ?? "nil"
-      }
-    }
-
     private static func buildPastLaunchDict() -> [Int: LaunchState] {
       var countOfLaunchesToWaitOn = 0
       var launchDict: [Int: LaunchState] = [:]
@@ -345,7 +358,7 @@ extension Preference {
       // Iterate backwards through past launches, from most recent to least recent.
       let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
       if Logger.isVerboseEnabled {
-        Logger.log("Past launch data: \(launchesNewestToOldest)", level: .verbose)
+        Logger.log("PastLaunchData: \(launchesNewestToOldest)", level: .verbose)
       }
 
       for launch in launchesNewestToOldest {

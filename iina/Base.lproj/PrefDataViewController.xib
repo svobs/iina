@@ -11,6 +11,7 @@
                 <outlet property="historyView" destination="Oic-pc-Cvg" id="lVz-Ra-if4"/>
                 <outlet property="pastLaunchesView" destination="M9c-Ak-HmK" id="TTc-g9-5kW"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+                <outlet property="watchLaterOptionsView" destination="HZ5-Pf-feQ" id="07w-lg-Nzk"/>
                 <outlet property="watchLaterView" destination="jUz-iq-ZTl" id="fkX-vn-Dpm"/>
             </connections>
         </customObject>
@@ -32,7 +33,7 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="442" height="88"/>
+                    <rect key="frame" x="120" y="8" width="393" height="88"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uoo-aD-AGe">
                             <rect key="frame" x="-2" y="71" width="308" height="18"/>
@@ -173,7 +174,7 @@
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="IKL-bX-2GS"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" id="Q4K-PC-JeY"/>
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="et5-qR-7xc"/>
-                <constraint firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
                 <constraint firstAttribute="bottom" secondItem="VWZ-zT-vZx" secondAttribute="bottom" constant="8" id="sFy-x0-8Yn"/>
                 <constraint firstItem="Uoo-aD-AGe" firstAttribute="firstBaseline" secondItem="APB-Nm-aTA" secondAttribute="firstBaseline" id="t96-21-r66"/>
             </constraints>
