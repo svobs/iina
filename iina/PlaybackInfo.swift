@@ -217,14 +217,14 @@ class PlaybackInfo {
     }
   }
 
-  /// If displaying album art, will be `1` (square). Otherwise should match `videoGeo.videoAspectACR`, which should match the aspect of
+  /// If displaying album art, will be `1` (square). Otherwise should match `videoGeo.videoAspectCAR`, which should match the aspect of
   /// the currently displayed `videoView`.
   var videoAspect: CGFloat {
     if isShowingAlbumArt {
       return 1.0  // album art is always square
     }
-    if let videoAspectACR = videoGeo.videoAspectACR {
-      return videoAspectACR
+    if let videoAspectCAR = videoGeo.videoAspectCAR {
+      return videoAspectCAR
     }
     // Ideally this should never happen
     // TODO: preload video information using ffmpeg before opening window

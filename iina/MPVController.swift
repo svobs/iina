@@ -931,25 +931,25 @@ not applying FFmpeg 9599 workaround
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
     let videoScale = getVideoScale()
 
-    let videoWidthAC = getInt(MPVProperty.dwidth)
-    let videoHeightAC = getInt(MPVProperty.dheight)
+    let dwidth = getInt(MPVProperty.dwidth)
+    let dheight = getInt(MPVProperty.dheight)
     // filter the last video-reconfig event before quit
-    if videoWidthAC == 0 && videoHeightAC == 0 && getFlag(MPVProperty.coreIdle) {
+    if dwidth == 0 && dheight == 0 && getFlag(MPVProperty.coreIdle) {
       player.log.verbose("Cannot get videoGeo: core idle & dheight or dwidth is 0")
       return nil
     }
 
-    let params = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
+    let vidGeo = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                                selectedAspectLabel: player.info.videoGeo.selectedAspectLabel,
                                totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.info.videoGeo.selectedCropLabel,
                                scale: videoScale, log: player.log)
 
-    player.log.verbose("Latest videoGeo after syncing from mpv: \(params)")
-    if let videoSizeAC = params.videoSizeAC, Int(videoSizeAC.width) != videoWidthAC || Int(videoSizeAC.height) != videoHeightAC {
-      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(videoWidthAC) x \(videoHeightAC)) != cached videoSizeAC \(videoSizeAC)")
+    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo)")
+    if let videoSizeC = vidGeo.videoSizeC, Int(videoSizeC.width) != dwidth || Int(videoSizeC.height) != dheight {
+      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != cached videoSizeC \(videoSizeC)")
     }
-    return params
+    return vidGeo
   }
 
   /// See notes on `backingScaleFactor` in `syncVideoGeometryFromMPV()`

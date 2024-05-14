@@ -1232,12 +1232,12 @@ class PlayerCore: NSObject {
     let videoWidthScaled = (geo.videoSize.width * backingScaleFactor).truncatedTo6()
 
     let videoScale: CGFloat
-    if let videoSizeACR = info.videoGeo.videoSizeACR {
-      videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
-    } else if let mpvVidGeo = mpv.syncVideoGeometryFromMPV(), let videoSizeACR = mpvVidGeo.videoSizeACR {
-      videoScale = (videoWidthScaled / videoSizeACR.width).truncatedTo6()
-      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeACR) → \(videoScale)")
+    if let videoSizeCAR = info.videoGeo.videoSizeCAR {
+      videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
+      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
+    } else if let mpvVidGeo = mpv.syncVideoGeometryFromMPV(), let videoSizeCAR = mpvVidGeo.videoSizeCAR {
+      videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
+      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
     } else {
       log.error("Could not derive videoScale from mpv or from cache!")
       return nil

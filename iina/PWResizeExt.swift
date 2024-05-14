@@ -81,16 +81,16 @@ extension PlayerWindowController {
       return
     }
 
-    guard let newVideoSizeACR = newVidGeo.videoSizeACR, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
-      log.error("[applyVidGeo] Could not get videoSizeACR from mpv! Cancelling adjustment")
+    guard let newvideoSizeCAR = newVidGeo.videoSizeCAR, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
+      log.error("[applyVidGeo] Could not get videoSizeCAR from mpv! Cancelling adjustment")
       return
     }
 
-    let newVideoAspect = newVideoSizeACR.mpvAspect
+    let newVideoAspect = newvideoSizeCAR.mpvAspect
     log.verbose("[applyVidGeo Start] restoring=\(isRestoring.yn) justOpenedFile=\(justOpenedFile.yn) NewVidGeo=\(newVidGeo)")
 
     if #available(macOS 10.12, *) {
-      pip.aspectRatio = newVideoSizeACR
+      pip.aspectRatio = newvideoSizeCAR
     }
     let currentLayout = currentLayout
 
@@ -111,7 +111,7 @@ extension PlayerWindowController {
     // FIXME: incorporate scale
     if isInitialSizeDone,
        let oldVideoSizeRaw = oldVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
-       let oldVideoSizeACR = oldVidGeo.videoSizeACR, oldVideoSizeACR.equalTo(newVideoSizeACR),
+       let oldvideoSizeCAR = oldVidGeo.videoSizeCAR, oldvideoSizeCAR.equalTo(newvideoSizeCAR),
        // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
        videoView.frame.size.mpvAspect == newVideoAspect {
       log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
@@ -126,7 +126,7 @@ extension PlayerWindowController {
 
     let newWindowGeo: PWGeometry
     if justOpenedFile, let resizedGeo = resizeAfterFileOpen(justOpenedFileManually: justOpenedFileManually,
-                                                            windowGeo: windowGeo, videoSizeACR: newVideoSizeACR) {
+                                                            windowGeo: windowGeo, videoSizeCAR: newvideoSizeCAR) {
       newWindowGeo = resizedGeo
     } else {
       if justOpenedFileManually {
@@ -174,8 +174,8 @@ extension PlayerWindowController {
     player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
   }
 
-  private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWGeometry, videoSizeACR: NSSize) -> PWGeometry? {
-    assert(windowGeo.videoAspect == videoSizeACR.mpvAspect, "Expected videoSizeACR aspect: \(videoSizeACR.mpvAspect), found: \(windowGeo.videoAspect)")
+  private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWGeometry, videoSizeCAR: NSSize) -> PWGeometry? {
+    assert(windowGeo.videoAspect == videoSizeCAR.mpvAspect, "Expected videoSizeCAR aspect: \(videoSizeCAR.mpvAspect), found: \(windowGeo.videoAspect)")
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
@@ -217,7 +217,7 @@ extension PlayerWindowController {
         return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
-        let newVideoSize = videoSizeACR.multiply(CGFloat(resizeRatio))
+        let newVideoSize = videoSizeCAR.multiply(CGFloat(resizeRatio))
         log.verbose("[applyVidGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(newVideoSize)")
         let centeredScaledGeo = windowGeo.scaleVideo(to: newVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
@@ -262,15 +262,15 @@ extension PlayerWindowController {
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowed else { return }
 
-    guard let videoSizeACR = player.info.videoGeo.videoSizeACR else {
-      log.error("SetVideoScale failed: could not get videoSizeACR")
+    guard let videoSizeCAR = player.info.videoGeo.videoSizeCAR else {
+      log.error("SetVideoScale failed: could not get videoSizeCAR")
       return
     }
 
-    var desiredVideoSize = NSSize(width: round(videoSizeACR.width * desiredVideoScale),
-                                  height: round(videoSizeACR.height * desiredVideoScale))
+    var desiredVideoSize = NSSize(width: round(videoSizeCAR.width * desiredVideoScale),
+                                  height: round(videoSizeCAR.height * desiredVideoScale))
 
-    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, videoSizeACR=\(videoSizeACR) → desiredVideoSize=\(desiredVideoSize)")
+    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, videoSizeCAR=\(videoSizeCAR) → desiredVideoSize=\(desiredVideoSize)")
 
     // TODO
     if false && Preference.bool(for: .usePhysicalResolution) {

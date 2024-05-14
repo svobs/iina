@@ -3221,8 +3221,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.mpv.queue.async { [self] in
       let videoGeo = player.info.videoGeo
-      guard let videoSizeRaw = videoGeo.videoSizeRaw, videoGeo.videoSizeACR != nil else {
-        log.debug("Cannot enter interactive mode: missing videoSizeACR from \(videoGeo)")
+      guard let videoSizeRaw = videoGeo.videoSizeRaw, videoGeo.videoSizeCAR != nil else {
+        log.debug("Cannot enter interactive mode: missing videoSizeCAR from \(videoGeo)")
         DispatchQueue.main.async {
           Utility.showAlert("no_video_track")
         }
@@ -3459,7 +3459,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     guard let thumbnails = player.info.currentMedia?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second),
-          let videoAspectACR = videoGeo.videoAspectACR, let currentControlBar else {
+          let videoAspectCAR = videoGeo.videoAspectCAR, let currentControlBar else {
       thumbnailPeekView.isHidden = true
       return
     }
@@ -3481,8 +3481,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // The aspect ratio of some videos is different at display time. May need to resize these videos
     // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
     // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
-    if thumbAspect != videoAspectACR {
-      thumbHeight = (thumbWidth / videoAspectACR).rounded()
+    if thumbAspect != videoAspectCAR {
+      thumbHeight = (thumbWidth / videoAspectCAR).rounded()
       /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
       thumbAspect = thumbWidth / thumbHeight
     }
