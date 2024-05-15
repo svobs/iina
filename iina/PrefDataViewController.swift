@@ -76,6 +76,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
       let infoMsg = "History exists for \(historyCount) media."
       Logger.log(infoMsg, level: .verbose)
       historyCountView.stringValue = infoMsg
+      clearHistoryBtn.isEnabled = historyCount > 0
     }
   }
 
@@ -97,13 +98,16 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     let infoMsg = "Watch Later exists for \(watchLaterCount) media files."
     watchLaterCountView.stringValue = infoMsg
     Logger.log(infoMsg, level: .verbose)
+    clearWatchLaterBtn.isEnabled = watchLaterCount > 0
   }
 
   private func updateThumbnailCacheStat() {
     AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
-      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+      let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSize, countStyle: .binary))B"
       DispatchQueue.main.async { [self] in
         thumbCacheSizeLabel.stringValue = newString
+        clearThumbnailCacheBtn.isEnabled = cacheSize > 0
       }
     }
   }
@@ -138,6 +142,12 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   @IBAction func showWatchLaterDirAction(_ sender: AnyObject) {
     NSWorkspace.shared.open(Utility.watchLaterURL)
+  }
+
+  @IBAction func rememberRecentChanged(_ sender: NSButton) {
+    if sender.state == .off {
+      AppDelegate.shared.clearRecentDocuments(self)
+    }
   }
 
   @IBAction func showPlaybackHistoryAction(_ sender: AnyObject) {
