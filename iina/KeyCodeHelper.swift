@@ -317,7 +317,7 @@ class KeyCodeHelper {
       // Is probably an unprintable char such as KP_ENTER.
       // Is probably an unprintable char such as KP_ENTER.
       guard let keyName = KeyCodeHelper.keyMap[keyCode] else {
-        Logger.log("Undefined key code: \"\(keyCode)\"", level: .warning)
+        AppInputConfig.log.warn("Undefined key code: \"\(keyCode)\"")
         return ""
       }
       keyChar = keyName.0
@@ -371,20 +371,20 @@ class KeyCodeHelper {
     // They will cause matching logic to fail, so it's necessary to check for this for the forseeable future.
     let ksClean = keystrokes.replacingOccurrences(of: "\0", with: "")
     if ksClean.count != keystrokes.count {
-      Logger.log("Found \(keystrokes.count - ksClean.count) null characters in \"\(keystrokes)\"; will try to fix & continue", level: .warning)
+      AppInputConfig.log.warn("Found \(keystrokes.count - ksClean.count) null characters in \"\(keystrokes)\"; will try to fix & continue")
     }
     var unparsedRemainder = Substring(ksClean)
     var splitKeystrokeList: [String] = []
 
     while !unparsedRemainder.isEmpty && splitKeystrokeList.count < MP_MAX_KEY_DOWN {
       guard let endIndex = getNextEndIndex(unparsedRemainder) else {
-        Logger.log("Could not split keystrokes; not a valid sequence: \"\(keystrokes)\"", level: .warning)
+        AppInputConfig.log.warn("Could not split keystrokes; not a valid sequence: \"\(keystrokes)\"")
         return [keystrokes]
       }
 
       let ks = String(unparsedRemainder[unparsedRemainder.startIndex..<endIndex])
       guard !ks.isEmpty else {
-          Logger.log("While splitting keystrokes: Last keystroke is empty! Returning list: \(splitKeystrokeList)", level: .error)
+        AppInputConfig.log.error("While splitting keystrokes: Last keystroke is empty! Returning list: \(splitKeystrokeList)")
           return splitKeystrokeList
       }
       splitKeystrokeList.append(ks)
@@ -505,7 +505,7 @@ class KeyCodeHelper {
     let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
     let normnalizedString = normalizedList.joined(separator: "-")
     if AppInputConfig.logBindingsRebuild {
-      Logger.log("Normalized mpv: \(mpvKeystrokes.quoted) → \(normnalizedString.quoted)", level: .verbose)
+      AppInputConfig.log.verbose("Normalized mpv: \(mpvKeystrokes.quoted) → \(normnalizedString.quoted)")
     }
     return normnalizedString
   }
@@ -518,7 +518,7 @@ class KeyCodeHelper {
     }
     let keystrokeList = splitKeystrokes(normalizedMpvKey)
     if keystrokeList.count > 1 {
-      Logger.log("macOSKeyEquivalent(): found more than one keystroke in input string: \"\(normalizedMpvKey)\"", level: .error)
+      AppInputConfig.log.error("macOSKeyEquivalent(): found more than one keystroke in input string: \"\(normalizedMpvKey)\"")
     }
     let splitted = keystrokeList[0].components(separatedBy: "+")
     var key: String

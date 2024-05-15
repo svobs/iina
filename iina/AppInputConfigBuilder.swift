@@ -165,7 +165,7 @@ class AppInputConfigBuilder {
 
     if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
       if AppInputConfig.logBindingsRebuild {
-        Logger.log("Skipping line: \"default-bindings start\"", level: .verbose)
+        log.verbose("Skipping line: \"default-bindings start\"")
       }
       displayMessage = "IINA does not support default-level (\"builtin\") bindings" // TODO: localize
       isEnabled = false
@@ -175,9 +175,9 @@ class AppInputConfigBuilder {
         /// Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
         let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
         finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, comment: keyMapping.comment)
-        Logger.log("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
+        log.verbose("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)")
       } else {
-        Logger.log("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)", level: .verbose)
+        log.verbose("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)")
         displayMessage = "Adding bindings to other input sections is not supported"  // TODO: localize
         isEnabled = false
       }
@@ -189,7 +189,7 @@ class AppInputConfigBuilder {
     }
 
     if AppInputConfig.logBindingsRebuild {
-      Logger.log("Adding binding for key: \(keyMapping.rawKey.quoted)", level: .verbose)
+      log.verbose("Adding binding for key: \(keyMapping.rawKey.quoted)")
     }
     return InputBinding(finalMapping, origin: section.origin, srcSectionName: section.name, isEnabled: isEnabled, displayMessage: displayMessage)
   }
@@ -218,7 +218,7 @@ class AppInputConfigBuilder {
       }
     }
     if AppInputConfig.logBindingsRebuild {
-      Logger.log("Added \(addedCount) `ignored` bindings for partial key sequences", level: .verbose)
+      log.verbose("Added \(addedCount) `ignored` bindings for partial key sequences")
     }
   }
 }
