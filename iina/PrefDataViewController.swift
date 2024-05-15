@@ -58,8 +58,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   override func viewWillAppear() {
     super.viewWillAppear()
 
-    reloadWatchLaterViews(nil)
     reloadHistoryCount(nil)
+    reloadWatchLaterViews(nil)
     updateThumbnailCacheStat()
   }
 
@@ -73,8 +73,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @objc func reloadHistoryCount(_ sender: AnyObject?) {
     let historyCount = HistoryController.shared.history.count
     DispatchQueue.main.async { [self] in
-      Logger.log("Refreshing History count: \(historyCount)", level: .verbose)
-      historyCountView.stringValue = "Playback history exists for \(historyCount) media."
+      let infoMsg = "History exists for \(historyCount) media."
+      Logger.log(infoMsg, level: .verbose)
+      historyCountView.stringValue = infoMsg
     }
   }
 
@@ -93,8 +94,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
       watchLaterCount = files.count
     }
-    Logger.log("Watch Later data exists for \(watchLaterCount) media files", level: .verbose)
-    watchLaterCountView.stringValue = "Watch Later data exists for \(watchLaterCount) media files."
+    let infoMsg = "Watch Later exists for \(watchLaterCount) media files."
+    watchLaterCountView.stringValue = infoMsg
+    Logger.log(infoMsg, level: .verbose)
   }
 
   private func updateThumbnailCacheStat() {
@@ -136,12 +138,6 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   @IBAction func showWatchLaterDirAction(_ sender: AnyObject) {
     NSWorkspace.shared.open(Utility.watchLaterURL)
-  }
-
-  @IBAction func rememberRecentChanged(_ sender: NSButton) {
-    if sender.state == .off {
-      AppDelegate.shared.clearRecentDocuments(self)
-    }
   }
 
   @IBAction func showPlaybackHistoryAction(_ sender: AnyObject) {

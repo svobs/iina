@@ -273,13 +273,13 @@
 "alert.crop_too_extreme" = "Crop is too extreme. Please choose a height and width which are closer in value.";
 
 "alert.clear_cache.title" = "Clear Thumbnail Cache";
-"alert.clear_cache.message" = "Are you sure to clear all thumbnail Cache?";
+"alert.clear_cache.message" = "Are you sure to delete all generated thumbnails?";
 
 "alert.clear_history.title" = "Clear Playback History";
-"alert.clear_history.message" = "Are you sure to delete all playback history?";
+"alert.clear_history.message" = "Are you sure to delete all playback history? This will delete all playback histories and entries in \"Open Recent\".";
 
 "alert.clear_watch_later.title" = "Clear Saved Playback Progress";
-"alert.clear_watch_later.message" = "Are you sure to delete all saved playback progress (\"watch later\" data)?";
+"alert.clear_watch_later.message" = "Are you sure to delete all files in the \"watch later\" folder? These files contain all saved playback progress and settings applied during playback.";
 
 "alert.restore_alerts.title" = "Restore Suppressed Alerts";
 "alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
