@@ -731,11 +731,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         if Preference.bool(for: .recordRecentFiles) {
           HistoryController.shared.queue.async { [self] in
             for url in panel.urls {
-              noteNewRecentDocumentURL(url)
+              NSDocumentController.shared.noteNewRecentDocumentURL(url)
             }
-#if DEBUG
             saveRecentDocuments()
-#endif
           }
         }
         let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternativeAction)
