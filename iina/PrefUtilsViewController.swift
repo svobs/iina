@@ -38,6 +38,25 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   @IBOutlet weak var savedPlaybackProgressClearedLabel: NSTextField!
   @IBOutlet weak var playHistoryClearedLabel: NSTextField!
   @IBOutlet weak var restoreAlertsRestoredLabel: NSTextField!
+  @IBOutlet weak var clearWatchLaterBtn: NSButton!
+  @IBOutlet weak var clearHistoryBtn: NSButton!
+  @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    // TODO: this doesn't look quite right
+//    setTextColorToRed(clearWatchLaterBtn)
+//    setTextColorToRed(clearHistoryBtn)
+//    setTextColorToRed(clearThumbnailCacheBtn)
+  }
+
+  private func setTextColorToRed(_ button: NSButton) {
+    if let mutableAttributedTitle = button.attributedTitle.mutableCopy() as? NSMutableAttributedString {
+      mutableAttributedTitle.addAttribute(.foregroundColor, value: NSColor.systemRed, range: NSRange(location: 0, length: mutableAttributedTitle.length))
+      button.attributedTitle = mutableAttributedTitle
+    }
+  }
 
   override func viewDidAppear() {
     super.viewDidAppear()

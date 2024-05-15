@@ -8,6 +8,9 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PrefUtilsViewController" customModule="IINA" customModuleProvider="target">
             <connections>
+                <outlet property="clearHistoryBtn" destination="SSk-Rd-BxH" id="nRg-In-B1g"/>
+                <outlet property="clearThumbnailCacheBtn" destination="aCe-0n-uch" id="jK4-e9-WPW"/>
+                <outlet property="clearWatchLaterBtn" destination="bHj-vX-uFl" id="2mc-fD-SLq"/>
                 <outlet property="playHistoryClearedLabel" destination="sI2-xW-v1S" id="7uc-8E-r0r"/>
                 <outlet property="restoreAlertsRestoredLabel" destination="KAc-Jd-4LW" id="pj1-lx-MEz"/>
                 <outlet property="savedPlaybackProgressClearedLabel" destination="btv-7s-L8M" id="mFv-fy-6Go"/>
@@ -136,7 +139,7 @@
                             <subviews>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2nt-Ax-K1T">
                                     <rect key="frame" x="-2" y="0.0" width="137" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Current thumbnail cache:" id="uV3-aF-UB7">
+                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Current cache size:" id="uV3-aF-UB7">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

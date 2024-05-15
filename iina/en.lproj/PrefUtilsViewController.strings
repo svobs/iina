@@ -67,8 +67,8 @@
 /* Class = "NSTextFieldCell"; title = "Calculating…"; ObjectID = "tRq-eU-AV3"; */
 "tRq-eU-AV3.title" = "Calculating…";
 
-/* Class = "NSTextFieldCell"; title = "Current thumbnail cache:"; ObjectID = "uV3-aF-UB7"; */
-"uV3-aF-UB7.title" = "Current thumbnail cache:";
+/* Class = "NSTextFieldCell"; title = "Current cache size:"; ObjectID = "uV3-aF-UB7"; */
+"uV3-aF-UB7.title" = "Current cache size:";
 
 /* Class = "NSTextFieldCell"; title = "Please select the media types that you want to make IINA as the default Application for."; ObjectID = "uvK-Y1-dZr"; */
 "uvK-Y1-dZr.title" = "Please select the media types that you want to make IINA as the default Application for.";
