@@ -2405,7 +2405,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-10" y="776"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="500" height="274"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">

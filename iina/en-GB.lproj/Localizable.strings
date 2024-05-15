@@ -263,7 +263,7 @@
 "alert.add_url.message" = "Please enter the URL:";
 
 "alert.delete_history.title" = "Delete Playback History";
-"alert.delete_history.message" = "Are you sure to delete selected entries?";
+"alert.delete_history.message" = "Are you sure you want to delete the selected entries?";
 
 "alert.filter_hwdec.message" = "You are about to apply a video filter. However, your current hardware decoder may not support video filters well. You can either disable hardware decoding or switch to Auto(Copy), which will consume twice the memory.\nYou may need to repeat previous operation (like setting the crop) to make it work.";
 "alert.filter_hwdec.abort" = "Abort";
@@ -273,13 +273,13 @@
 "alert.crop_too_extreme" = "Crop is too extreme. Please choose a height and width which are closer in value.";
 
 "alert.clear_cache.title" = "Clear Thumbnail Cache";
-"alert.clear_cache.message" = "Are you sure to delete all generated thumbnails?";
+"alert.clear_cache.message" = "Are you sure you want to delete all generated thumbnails?";
 
 "alert.clear_history.title" = "Clear Playback History";
-"alert.clear_history.message" = "Are you sure to delete all playback history? This will delete all playback histories and entries in \"Open Recent\".";
+"alert.clear_history.message" = "Are you sure you want to delete all playback history? This will delete all playback histories and entries in \"Open Recent\".";
 
 "alert.clear_watch_later.title" = "Clear Saved Playback Progress";
-"alert.clear_watch_later.message" = "Are you sure to delete all files in the \"watch later\" folder? These files contain all saved playback progress and settings applied during playback.";
+"alert.clear_watch_later.message" = "Are you sure you want to delete all files in the \"watch later\" folder? These files contain all saved playback progress and settings applied during playback.";
 
 "alert.restore_alerts.title" = "Restore Suppressed Alerts";
 "alert.restore_alerts.message" = "Are you sure you want to restore suppressed alerts?";
