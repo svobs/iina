@@ -79,8 +79,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
       watchLaterCount = files.count
     }
-    Logger.log("Found Watch Later data for \(watchLaterCount) media files", level: .verbose)
-    watchLaterCountView.stringValue = "Found Watch Later data for \(watchLaterCount) media files."
+    Logger.log("Watch Later data exists for \(watchLaterCount) media files", level: .verbose)
+    watchLaterCountView.stringValue = "Watch Later data exists for \(watchLaterCount) media files."
   }
 
   @IBAction func showWatchLaterDirAction(_ sender: AnyObject) {

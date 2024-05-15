@@ -20,9 +20,20 @@ class ThumbnailCacheManager {
   private func cacheFolderContents() -> [URL]? {
     if needsRefresh {
       Logger.log("Refreshing cached thumbnails index", level: .verbose, subsystem: ThumbnailCache.subsystem)
-      cachedContents = try? FileManager.default.contentsOfDirectory(at: Utility.thumbnailCacheURL,
-                                                                    includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
-                                                                    options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants])
+      var updatedCache: [URL] = []
+      if let thumbWidthDirs = try? FileManager.default.contentsOfDirectory(at: Utility.thumbnailCacheURL,
+                                                                    includingPropertiesForKeys: [.contentAccessDateKey],
+                                                                           options:
+                                                                            [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) {
+        for thumbWidthDir in thumbWidthDirs {
+          if let dirThumbFiles = try? FileManager.default.contentsOfDirectory(at: thumbWidthDir,
+                                                                               includingPropertiesForKeys: [.fileSizeKey, .contentAccessDateKey],
+                                                                              options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) {
+            updatedCache.append(contentsOf: dirThumbFiles)
+          }
+        }
+      }
+      cachedContents = updatedCache
       needsRefresh = false
     }
     return cachedContents
@@ -42,6 +53,8 @@ class ThumbnailCacheManager {
     let maxCacheSize = Preference.integer(for: .maxThumbnailPreviewCacheSize)
     // if full, delete 50% of max cache
     let cacheToDelete = maxCacheSize * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue / 2
+
+    ThumbnailCache.subsystem.verbose("Looking for \(cacheToDelete) byte to delete from thumbnail cache")
 
     // sort by access date
     guard let contents = cacheFolderContents()?.sorted(by: { url1, url2 in

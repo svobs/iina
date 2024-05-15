@@ -28,7 +28,7 @@ class HistoryController {
   func reloadAll(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
-    var sw = Utility.Stopwatch()
+    let sw = Utility.Stopwatch()
     history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")

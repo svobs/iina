@@ -338,6 +338,7 @@ class Utility {
     // check exist
     if !FileManager.default.fileExists(atPath: path) {
       do {
+        Logger.log("Creating directory: \(url.path.pii.quoted)")
       try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
       } catch {
         Logger.fatal("Cannot create directory: \(url)")
@@ -382,7 +383,7 @@ class Utility {
   static let watchLaterURL: URL = {
     let url = Utility.appSupportDirUrl.appendingPathComponent(AppData.watchLaterFolder, isDirectory: true)
     createDirIfNotExist(url: url)
-    Logger.log("Watch Later directory: \(url.path.quoted)")
+    Logger.log("Watch Later directory: \(url.path.pii.quoted)")
     return url
   }()
 
@@ -409,6 +410,7 @@ class Utility {
   static let thumbnailCacheURL: URL = {
     let appThumbnailCacheUrl = cacheURL.appendingPathComponent(AppData.thumbnailCacheFolder, isDirectory: true)
     createDirIfNotExist(url: appThumbnailCacheUrl)
+    Logger.log("Thumbnail cache directory: \(appThumbnailCacheUrl.path.pii.quoted)")
     return appThumbnailCacheUrl
   }()
 

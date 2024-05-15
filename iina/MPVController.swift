@@ -305,7 +305,7 @@ not applying FFmpeg 9599 workaround
 
     updateKeepOpenOptionFromPrefs()
 
-    chkErr(mpv_set_option_string(mpv, "watch-later-directory", Utility.watchLaterURL.path))
+    chkErr(mpv_set_option_string(mpv, MPVOption.WatchLater.watchLaterDirectory, Utility.watchLaterURL.path))
     setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit)
     setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback")
 

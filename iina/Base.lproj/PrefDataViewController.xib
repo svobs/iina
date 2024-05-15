@@ -400,18 +400,18 @@
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HgT-L8-Tb3" userLabel="WatchLaterFiles HStack View">
-                            <rect key="frame" x="0.0" y="22" width="242" height="16"/>
+                            <rect key="frame" x="0.0" y="22" width="239" height="16"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RuB-bf-lqy">
-                                    <rect key="frame" x="-2" y="1" width="224" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Found Watch Later data for M media files." id="yyK-HL-0eD">
+                                    <rect key="frame" x="-2" y="1" width="221" height="14"/>
+                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Watch Later data exists for M media files." id="yyK-HL-0eD">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
                                 <button translatesAutoresizingMaskIntoConstraints="NO" id="sIv-DY-eFx" userLabel="ShowWatchLaterDir Button">
-                                    <rect key="frame" x="226" y="-3" width="16" height="22"/>
+                                    <rect key="frame" x="223" y="-3" width="16" height="22"/>
                                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSRevealFreestandingTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="dAy-tQ-EcA">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>

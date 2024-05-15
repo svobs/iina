@@ -39,16 +39,19 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   @IBOutlet weak var playHistoryClearedLabel: NSTextField!
   @IBOutlet weak var restoreAlertsRestoredLabel: NSTextField!
 
-  override func viewDidLoad() {
-    super.viewDidLoad()
+  override func viewDidAppear() {
+    super.viewDidAppear()
 
-    DispatchQueue.main.async {
-      self.updateThumbnailCacheStat()
-    }
+    updateThumbnailCacheStat()
   }
 
   private func updateThumbnailCacheStat() {
-    thumbCacheSizeLabel.stringValue = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+      DispatchQueue.main.async { [self] in
+        thumbCacheSizeLabel.stringValue = newString
+      }
+    }
   }
 
   @IBAction func setIINAAsDefaultAction(_ sender: Any) {

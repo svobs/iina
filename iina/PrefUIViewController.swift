@@ -94,7 +94,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var windowPosYUnitPopUpButton: NSPopUpButton!
   @IBOutlet weak var windowPosYAnchorPopUpButton: NSPopUpButton!
   @IBOutlet weak var windowPosBox: NSBox!
-  
+
+  @IBOutlet weak var currentThumbCacheSizeTextField: NSTextField!
+
   @IBOutlet weak var pipDoNothing: NSButton!
   @IBOutlet weak var pipHideWindow: NSButton!
   @IBOutlet weak var pipMinimizeWindow: NSButton!
@@ -165,6 +167,21 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
     } else {
       removeThemeMenuItemWithTag(Preference.Theme.system.rawValue)
+    }
+  }
+
+  override func viewDidAppear() {
+    super.viewDidAppear()
+
+    updateThumbnailCacheStat()
+  }
+
+  private func updateThumbnailCacheStat() {
+    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+      DispatchQueue.main.async { [self] in
+        currentThumbCacheSizeTextField.stringValue = newString
+      }
     }
   }
 

@@ -87,7 +87,7 @@ class ThumbnailCache {
       subsystem.verbose("Aborting write to thumbnail cache: maxCacheSize is 0")
       return
     }
-    subsystem.debug("Writing \(thumbnails.count) thumbnails with width=\(width) to cache file \(name.pii) (videoFile=\(videoFilePath.pii))")
+    subsystem.debug("Writing \(thumbnails.count) thumbnails width=\(width) to cache file \(name.pii) (videoFile=\(videoFilePath.pii))")
 
     let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
     if cacheSize > maxCacheSize {

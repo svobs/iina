@@ -139,7 +139,7 @@ class PreferenceWindowController: IINAWindowController {
   private var lastString: String = ""
   private var currentCompletionResults: [Trie.ReturnValue] = []
 
-  private let indexingQueue = DispatchQueue(label: "IINAPreferenceIndexingTask", qos: .userInitiated)
+  let indexingQueue = DispatchQueue(label: "IINAPreferenceIndexingTask", qos: .userInitiated)
   private var isIndexing: Bool = true
   
   enum Action {
