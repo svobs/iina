@@ -2097,17 +2097,6 @@ class PlayerCore: NSObject {
       info.currentMedia = mediaFromPath
     }
 
-    let isWatchLaterEnabled = mpv.getFlag("resume-playback")
-    var hasWatchLaterFile = false
-    let progress = Utility.playbackProgressFromWatchLater(mediaFromPath.mpvMD5)
-    let fileURL = Utility.watchLaterURL.appendingPathComponent(mediaFromPath.mpvMD5)
-    if let reader = StreamReader(path: fileURL.path),
-       let firstLine = reader.nextLine(),
-       firstLine.hasPrefix("start=") {
-      hasWatchLaterFile = true
-    }
-    log.debug("isWatchLaterEnabled: \(isWatchLaterEnabled), hasWatchLaterFile: \(hasWatchLaterFile)")
-
     preResizeVideo(forURL: info.currentMedia?.url)
 
     DispatchQueue.main.async { [self] in
