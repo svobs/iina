@@ -23,55 +23,17 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
   }
 
   override var sectionViews: [NSView] {
-    return [sectionDefaultAppView, sectionRestoreAlertsView, sectionClearCacheView, sectionBrowserExtView]
+    return [sectionDefaultAppView, sectionRestoreAlertsView, sectionBrowserExtView]
   }
 
   @IBOutlet var sectionDefaultAppView: NSView!
   @IBOutlet var sectionRestoreAlertsView: NSView!
-  @IBOutlet var sectionClearCacheView: NSView!
   @IBOutlet var sectionBrowserExtView: NSView!
   @IBOutlet var setAsDefaultSheet: NSWindow!
   @IBOutlet weak var setAsDefaultVideoCheckBox: NSButton!
   @IBOutlet weak var setAsDefaultAudioCheckBox: NSButton!
   @IBOutlet weak var setAsDefaultPlaylistCheckBox: NSButton!
-  @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
-  @IBOutlet weak var savedPlaybackProgressClearedLabel: NSTextField!
-  @IBOutlet weak var playHistoryClearedLabel: NSTextField!
   @IBOutlet weak var restoreAlertsRestoredLabel: NSTextField!
-  @IBOutlet weak var clearWatchLaterBtn: NSButton!
-  @IBOutlet weak var clearHistoryBtn: NSButton!
-  @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
-
-    // TODO: this doesn't look quite right
-//    setTextColorToRed(clearWatchLaterBtn)
-//    setTextColorToRed(clearHistoryBtn)
-//    setTextColorToRed(clearThumbnailCacheBtn)
-  }
-
-  private func setTextColorToRed(_ button: NSButton) {
-    if let mutableAttributedTitle = button.attributedTitle.mutableCopy() as? NSMutableAttributedString {
-      mutableAttributedTitle.addAttribute(.foregroundColor, value: NSColor.systemRed, range: NSRange(location: 0, length: mutableAttributedTitle.length))
-      button.attributedTitle = mutableAttributedTitle
-    }
-  }
-
-  override func viewDidAppear() {
-    super.viewDidAppear()
-
-    updateThumbnailCacheStat()
-  }
-
-  private func updateThumbnailCacheStat() {
-    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
-      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
-      DispatchQueue.main.async { [self] in
-        thumbCacheSizeLabel.stringValue = newString
-      }
-    }
-  }
 
   @IBAction func setIINAAsDefaultAction(_ sender: Any) {
     view.window!.beginSheet(setAsDefaultSheet)
@@ -135,34 +97,6 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
       guard respond == .alertFirstButtonReturn else { return }
       Preference.set(false, for: .suppressCannotPreventDisplaySleep)
       self.restoreAlertsRestoredLabel.isHidden = false
-    }
-  }
-
-  @IBAction func clearWatchLaterBtnAction(_ sender: Any) {
-    Utility.quickAskPanel("clear_watch_later", sheetWindow: view.window) { respond in
-      guard respond == .alertFirstButtonReturn else { return }
-      try? FileManager.default.removeItem(atPath: Utility.watchLaterURL.path)
-      Utility.createDirIfNotExist(url: Utility.watchLaterURL)
-      self.savedPlaybackProgressClearedLabel.isHidden = false
-    }
-  }
-
-  @IBAction func clearHistoryBtnAction(_ sender: Any) {
-    Utility.quickAskPanel("clear_history", sheetWindow: view.window) { respond in
-      guard respond == .alertFirstButtonReturn else { return }
-      try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
-      AppDelegate.shared.clearRecentDocuments(self)
-      Preference.set(nil, for: .iinaLastPlayedFilePath)
-      self.playHistoryClearedLabel.isHidden = false
-    }
-  }
-
-  @IBAction func clearCacheBtnAction(_ sender: Any) {
-    Utility.quickAskPanel("clear_cache", sheetWindow: view.window) { respond in
-      guard respond == .alertFirstButtonReturn else { return }
-      try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
-      Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
-      self.updateThumbnailCacheStat()
     }
   }
 

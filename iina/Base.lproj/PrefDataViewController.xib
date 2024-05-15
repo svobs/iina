@@ -8,9 +8,14 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PrefDataViewController" customModule="IINA" customModuleProvider="target">
             <connections>
+                <outlet property="clearHistoryBtn" destination="SSk-Rd-BxH" id="nRg-In-B1g"/>
+                <outlet property="clearThumbnailCacheBtn" destination="aCe-0n-uch" id="jK4-e9-WPW"/>
+                <outlet property="clearWatchLaterBtn" destination="bHj-vX-uFl" id="2mc-fD-SLq"/>
                 <outlet property="historyCountView" destination="cRf-v0-eXQ" id="ZGa-h4-VDG"/>
                 <outlet property="historyView" destination="Oic-pc-Cvg" id="lVz-Ra-if4"/>
                 <outlet property="pastLaunchesView" destination="M9c-Ak-HmK" id="TTc-g9-5kW"/>
+                <outlet property="sectionClearCacheView" destination="ve7-5i-dg4" id="5Q8-sQ-fAg"/>
+                <outlet property="thumbCacheSizeLabel" destination="H1t-lX-s9l" id="bo0-4Y-cdS"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
                 <outlet property="watchLaterCountView" destination="RuB-bf-lqy" id="Hlg-oO-JXG"/>
                 <outlet property="watchLaterOptionsView" destination="HZ5-Pf-feQ" id="07w-lg-Nzk"/>
@@ -34,7 +39,7 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VWZ-zT-vZx" userLabel="RightColumn Stack View">
                     <rect key="frame" x="120" y="8" width="393" height="88"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uoo-aD-AGe">
@@ -210,15 +215,76 @@
                                 <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordPlaybackHistory" id="Oof-Z5-Afd"/>
                             </connections>
                         </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="oGh-8n-hHn" userLabel="4pt Spacer">
+                            <rect key="frame" x="0.0" y="100" width="1" height="4"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="4" id="G5K-mx-zYo"/>
+                                <constraint firstAttribute="width" constant="1" id="k5g-5j-pef"/>
+                            </constraints>
+                        </customView>
+                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
+                            <rect key="frame" x="-2" y="79" width="362" height="18"/>
+                            <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordRecentFiles" id="zE1-Rp-Eij"/>
+                            </connections>
+                        </button>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="o79-eG-jRM" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="76" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="1" id="NCX-5f-hSw"/>
+                                <constraint firstAttribute="height" id="pTE-tI-i0e"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="nRH-Le-VTh">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7mI-lM-Xa3">
+                            <rect key="frame" x="18" y="55" width="342" height="18"/>
+                            <buttonCell key="cell" type="check" title="Track all played files in &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lid-TB-LgP">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="fBq-TH-44F">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.trackAllFilesInRecentOpenMenu" id="pnx-Ee-1ls"/>
+                            </connections>
+                        </button>
+                        <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="8br-IJ-ynv">
+                            <rect key="frame" x="38" y="24" width="324" height="28"/>
+                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Otherwise only files that opened manually will show up in this menu." id="YTU-LI-zlm">
+                                <font key="font" metaFont="message" size="11"/>
+                                <color key="textColor" name="tertiaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="yaM-Pi-Cjg">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </textField>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="xiz-Oz-v8z" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="104" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="20" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="LeS-BF-ur2"/>
                                 <constraint firstAttribute="height" id="qYh-hb-dSZ"/>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="B6j-P2-fkd" userLabel="PlaybackHistoryCount HStack View">
-                            <rect key="frame" x="0.0" y="84" width="210" height="16"/>
+                            <rect key="frame" x="0.0" y="0.0" width="210" height="16"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cRf-v0-eXQ">
                                     <rect key="frame" x="-2" y="1" width="192" height="14"/>
@@ -255,67 +321,6 @@
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="oGh-8n-hHn" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="76" width="1" height="4"/>
-                            <constraints>
-                                <constraint firstAttribute="height" constant="4" id="G5K-mx-zYo"/>
-                                <constraint firstAttribute="width" constant="1" id="k5g-5j-pef"/>
-                            </constraints>
-                        </customView>
-                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
-                            <rect key="frame" x="-2" y="55" width="362" height="18"/>
-                            <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
-                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                <font key="font" metaFont="system"/>
-                            </buttonCell>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordRecentFiles" id="zE1-Rp-Eij"/>
-                            </connections>
-                        </button>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="o79-eG-jRM" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="52" width="1" height="0.0"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="1" id="NCX-5f-hSw"/>
-                                <constraint firstAttribute="height" id="pTE-tI-i0e"/>
-                            </constraints>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="nRH-Le-VTh">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </customView>
-                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="7mI-lM-Xa3">
-                            <rect key="frame" x="18" y="31" width="342" height="18"/>
-                            <buttonCell key="cell" type="check" title="Track all played files in &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="lid-TB-LgP">
-                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                <font key="font" metaFont="system"/>
-                            </buttonCell>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="fBq-TH-44F">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.trackAllFilesInRecentOpenMenu" id="pnx-Ee-1ls"/>
-                            </connections>
-                        </button>
-                        <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="8br-IJ-ynv">
-                            <rect key="frame" x="38" y="0.0" width="324" height="28"/>
-                            <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Otherwise only files that opened manually will show up in this menu." id="YTU-LI-zlm">
-                                <font key="font" metaFont="message" size="11"/>
-                                <color key="textColor" name="tertiaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                            </textFieldCell>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="yaM-Pi-Cjg">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </textField>
                     </subviews>
                     <constraints>
                         <constraint firstItem="7mI-lM-Xa3" firstAttribute="leading" secondItem="R2V-zU-Jpv" secondAttribute="leading" constant="20" id="UNT-M8-3z2"/>
@@ -392,15 +397,65 @@
                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                             </textFieldCell>
                         </textField>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="RKT-6b-am9" userLabel="0pt Spacer">
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="lo1-Ka-8Vw" userLabel="0pt Spacer">
                             <rect key="frame" x="0.0" y="42" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="1" id="c5f-G8-i5Z"/>
+                                <constraint firstAttribute="height" id="h7v-2a-Z6a"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.resumeLastPosition" id="ma6-YQ-oll">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Dl5-oM-qdP" userLabel="WatchLaterOptions HStack View">
+                            <rect key="frame" x="0.0" y="24" width="416" height="14"/>
+                            <subviews>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1VF-nN-dKr">
+                                    <rect key="frame" x="-2" y="0.0" width="82" height="14"/>
+                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Saved options:" id="q8x-um-Ube">
+                                        <font key="font" metaFont="smallSystem"/>
+                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HZ5-Pf-feQ">
+                                    <rect key="frame" x="84" y="0.0" width="334" height="14"/>
+                                    <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="watch-later-options" id="50y-43-b8O">
+                                        <font key="font" metaFont="message" size="11"/>
+                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.resumeLastPosition" id="xo1-oj-n7R">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </stackView>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="RKT-6b-am9" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="20" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="height" id="DnT-D4-vlE"/>
                                 <constraint firstAttribute="width" constant="1" id="wQu-Qa-3Yo"/>
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HgT-L8-Tb3" userLabel="WatchLaterFiles HStack View">
-                            <rect key="frame" x="0.0" y="22" width="239" height="16"/>
+                            <rect key="frame" x="0.0" y="0.0" width="239" height="16"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RuB-bf-lqy">
                                     <rect key="frame" x="-2" y="1" width="221" height="14"/>
@@ -437,56 +492,6 @@
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="lo1-Ka-8Vw" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="18" width="1" height="0.0"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="1" id="c5f-G8-i5Z"/>
-                                <constraint firstAttribute="height" id="h7v-2a-Z6a"/>
-                            </constraints>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.resumeLastPosition" id="ma6-YQ-oll">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="749" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Dl5-oM-qdP" userLabel="WatchLaterOptions HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="416" height="14"/>
-                            <subviews>
-                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1VF-nN-dKr">
-                                    <rect key="frame" x="-2" y="0.0" width="82" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Saved options:" id="q8x-um-Ube">
-                                        <font key="font" metaFont="smallSystem"/>
-                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                                <textField autoresizesSubviews="NO" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HZ5-Pf-feQ">
-                                    <rect key="frame" x="84" y="0.0" width="334" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="watch-later-options" id="50y-43-b8O">
-                                        <font key="font" metaFont="message" size="11"/>
-                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                            </subviews>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                            <connections>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.resumeLastPosition" id="xo1-oj-n7R">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </stackView>
                     </subviews>
                     <visibilityPriorities>
                         <integer value="1000"/>
@@ -511,12 +516,168 @@
                 <constraint firstItem="Nw7-8o-DuP" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="BK0-cl-KCY"/>
                 <constraint firstItem="Nw7-8o-DuP" firstAttribute="top" secondItem="jUz-iq-ZTl" secondAttribute="top" constant="8" id="Kzo-8u-ydO"/>
                 <constraint firstAttribute="bottom" secondItem="Nw7-8o-DuP" secondAttribute="bottom" constant="8" id="j4S-RW-7KS"/>
-                <constraint firstAttribute="trailing" secondItem="Nw7-8o-DuP" secondAttribute="trailing" id="nvS-B4-Xsw"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Nw7-8o-DuP" secondAttribute="trailing" id="nvS-B4-Xsw"/>
                 <constraint firstItem="63k-Uq-7mO" firstAttribute="leading" secondItem="jUz-iq-ZTl" secondAttribute="leading" id="rX2-gM-zB2"/>
                 <constraint firstItem="Yjd-qe-uAR" firstAttribute="firstBaseline" secondItem="63k-Uq-7mO" secondAttribute="firstBaseline" id="tJE-59-UOx"/>
                 <constraint firstItem="63k-Uq-7mO" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="jUz-iq-ZTl" secondAttribute="leading" constant="120" id="wAv-bF-08M"/>
             </constraints>
             <point key="canvasLocation" x="-60" y="-991"/>
+        </customView>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="ve7-5i-dg4" userLabel="Prefs &gt; Utils &gt; Cache">
+            <rect key="frame" x="0.0" y="0.0" width="419" height="222"/>
+            <subviews>
+                <textField identifier="SectionTitleClearCache" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ggb-jX-7Sf">
+                    <rect key="frame" x="-2" y="198" width="83" height="16"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Clear Cache" id="QHA-tO-oSn">
+                        <font key="font" metaFont="systemBold"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button identifier="FunctionalButtonClearProg" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bHj-vX-uFl">
+                    <rect key="frame" x="-6" y="119" width="247" height="32"/>
+                    <buttonCell key="cell" type="push" title="Clear Saved Playback Progress…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4nM-C4-9oM">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="systemBold"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="clearWatchLaterBtnAction:" target="-2" id="oL3-bX-caO"/>
+                    </connections>
+                </button>
+                <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="2Kf-ce-zj1">
+                    <rect key="frame" x="-2" y="154" width="423" height="28"/>
+                    <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" id="pPC-q2-9Gh">
+                        <font key="font" metaFont="smallSystem"/>
+                        <string key="title">The button below will delete all files in the "watch later" folder. These files contain all saved playback progress and settings applied during playback.</string>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Eby-fI-erw">
+                    <rect key="frame" x="-2" y="96" width="423" height="14"/>
+                    <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="The button below will delete all playback histories and entries in &quot;Open Recent&quot;." id="9uP-I0-tdX">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button identifier="FunctionalButtonClearHistory" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SSk-Rd-BxH">
+                    <rect key="frame" x="-6" y="61" width="193" height="32"/>
+                    <buttonCell key="cell" type="push" title="Clear Playback History…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MP6-Em-Lp4">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="systemBold"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="clearHistoryBtnAction:" target="-2" id="IpD-Hy-YLH"/>
+                    </connections>
+                </button>
+                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="oBG-5o-wZ1">
+                    <rect key="frame" x="-2" y="36" width="273" height="14"/>
+                    <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="The button below will delete all cached thumbnails." id="Bag-TV-Stp">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jEC-eF-ApF" userLabel="ThumbCache HStack View">
+                    <rect key="frame" x="0.0" y="8" width="354" height="20"/>
+                    <subviews>
+                        <button identifier="FunctionalButtonClearThumb" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aCe-0n-uch">
+                            <rect key="frame" x="-7" y="-7" width="186" height="32"/>
+                            <buttonCell key="cell" type="push" title="Clear Thumbnail Cache…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hsG-JB-TT9">
+                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <action selector="clearCacheBtnAction:" target="-2" id="iaH-Og-4Os"/>
+                            </connections>
+                        </button>
+                        <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AjT-o2-tvj" userLabel="CurrentCacheSize HStack View">
+                            <rect key="frame" x="180" y="3" width="174" height="14"/>
+                            <subviews>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2nt-Ax-K1T">
+                                    <rect key="frame" x="-2" y="0.0" width="106" height="14"/>
+                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Current cache size:" id="uV3-aF-UB7">
+                                        <font key="font" metaFont="smallSystem"/>
+                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H1t-lX-s9l">
+                                    <rect key="frame" x="104" y="0.0" width="72" height="14"/>
+                                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Calculating…" id="tRq-eU-AV3">
+                                        <font key="font" metaFont="smallSystem"/>
+                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                </textField>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
+                    </subviews>
+                    <visibilityPriorities>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
+                    </visibilityPriorities>
+                    <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
+                    </customSpacing>
+                </stackView>
+                <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sI2-xW-v1S">
+                    <rect key="frame" x="186" y="71" width="48" height="14"/>
+                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Cleared." id="Fb4-dy-CXX">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="btv-7s-L8M">
+                    <rect key="frame" x="240" y="129" width="48" height="14"/>
+                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Cleared." id="Efe-8C-4eV">
+                        <font key="font" metaFont="smallSystem"/>
+                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+            </subviews>
+            <constraints>
+                <constraint firstItem="btv-7s-L8M" firstAttribute="firstBaseline" secondItem="bHj-vX-uFl" secondAttribute="firstBaseline" id="0S9-c6-mAK"/>
+                <constraint firstItem="bHj-vX-uFl" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" constant="1" id="0gW-1v-lvU"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="2Kf-ce-zj1" secondAttribute="trailing" id="2OO-2C-XuI"/>
+                <constraint firstItem="2Kf-ce-zj1" firstAttribute="top" secondItem="ggb-jX-7Sf" secondAttribute="bottom" constant="16" id="4wd-3x-V1k"/>
+                <constraint firstItem="Eby-fI-erw" firstAttribute="top" secondItem="bHj-vX-uFl" secondAttribute="bottom" constant="16" id="5ss-60-YfH"/>
+                <constraint firstItem="jEC-eF-ApF" firstAttribute="top" secondItem="oBG-5o-wZ1" secondAttribute="bottom" constant="8" id="7Kw-gM-1Ea"/>
+                <constraint firstItem="ggb-jX-7Sf" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" id="8Wx-mc-D3G"/>
+                <constraint firstItem="oBG-5o-wZ1" firstAttribute="top" secondItem="SSk-Rd-BxH" secondAttribute="bottom" constant="18" id="A8x-pV-f6r"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="btv-7s-L8M" secondAttribute="trailing" id="CqF-Wr-Fe9"/>
+                <constraint firstItem="oBG-5o-wZ1" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" id="Fz6-WA-DvZ"/>
+                <constraint firstItem="bHj-vX-uFl" firstAttribute="top" secondItem="2Kf-ce-zj1" secondAttribute="bottom" constant="8" id="IGR-xM-GzV"/>
+                <constraint firstItem="oBG-5o-wZ1" firstAttribute="leading" secondItem="jEC-eF-ApF" secondAttribute="leading" id="NhU-7l-QpF"/>
+                <constraint firstItem="Eby-fI-erw" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" id="ONf-sb-lXx"/>
+                <constraint firstItem="sI2-xW-v1S" firstAttribute="firstBaseline" secondItem="SSk-Rd-BxH" secondAttribute="firstBaseline" id="Pjn-Os-dCj"/>
+                <constraint firstItem="SSk-Rd-BxH" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" constant="1" id="QO1-85-aWx"/>
+                <constraint firstItem="SSk-Rd-BxH" firstAttribute="top" secondItem="Eby-fI-erw" secondAttribute="bottom" constant="8" id="R0O-Rh-rSa"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jEC-eF-ApF" secondAttribute="trailing" id="SyH-5H-00t"/>
+                <constraint firstItem="btv-7s-L8M" firstAttribute="leading" secondItem="bHj-vX-uFl" secondAttribute="trailing" constant="8" id="WJg-zh-JMa"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="bHj-vX-uFl" secondAttribute="trailing" id="WuM-dI-sLS"/>
+                <constraint firstItem="sI2-xW-v1S" firstAttribute="leading" secondItem="SSk-Rd-BxH" secondAttribute="trailing" constant="8" id="Y4R-V1-TZS"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Eby-fI-erw" secondAttribute="trailing" id="Yd3-8f-tuC"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="oBG-5o-wZ1" secondAttribute="trailing" id="b2I-RE-KhA"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="ggb-jX-7Sf" secondAttribute="trailing" id="bmh-Ky-JTi"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="sI2-xW-v1S" secondAttribute="trailing" id="cXZ-6r-orn"/>
+                <constraint firstItem="2Kf-ce-zj1" firstAttribute="leading" secondItem="ve7-5i-dg4" secondAttribute="leading" id="iZX-Wh-11C"/>
+                <constraint firstItem="ggb-jX-7Sf" firstAttribute="top" secondItem="ve7-5i-dg4" secondAttribute="top" constant="8" id="t2W-Wg-LbY"/>
+                <constraint firstAttribute="bottom" secondItem="jEC-eF-ApF" secondAttribute="bottom" constant="8" id="yvy-CS-CYQ"/>
+            </constraints>
+            <point key="canvasLocation" x="139" y="828"/>
         </customView>
     </objects>
     <resources>

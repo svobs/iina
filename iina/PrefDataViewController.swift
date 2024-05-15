@@ -24,17 +24,23 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   override var sectionViews: [NSView] {
-    return [pastLaunchesView, historyView, watchLaterView]
+    return [pastLaunchesView, historyView, watchLaterView, sectionClearCacheView]
   }
 
   @IBOutlet var pastLaunchesView: NSView!
   @IBOutlet var historyView: NSView!
   @IBOutlet var watchLaterView: NSView!
+  @IBOutlet var sectionClearCacheView: NSView!
 
-  @IBOutlet var historyCountView: NSTextField!
+  @IBOutlet weak var historyCountView: NSTextField!
 
-  @IBOutlet var watchLaterCountView: NSTextField!
-  @IBOutlet var watchLaterOptionsView: NSTextField!
+  @IBOutlet weak var watchLaterCountView: NSTextField!
+  @IBOutlet weak var watchLaterOptionsView: NSTextField!
+
+  @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
+  @IBOutlet weak var clearWatchLaterBtn: NSButton!
+  @IBOutlet weak var clearHistoryBtn: NSButton!
+  @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -45,6 +51,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
                                            name: .iinaHistoryUpdated, object: nil)
 
+    setTextColorToRed(clearWatchLaterBtn)
+    setTextColorToRed(clearHistoryBtn)
   }
 
   override func viewWillAppear() {
@@ -52,9 +60,15 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
     reloadWatchLaterViews(nil)
     reloadHistoryCount(nil)
+    updateThumbnailCacheStat()
   }
 
-  // MARK: - IBActions
+  private func setTextColorToRed(_ button: NSButton) {
+    if let mutableAttributedTitle = button.attributedTitle.mutableCopy() as? NSMutableAttributedString {
+      mutableAttributedTitle.addAttribute(.foregroundColor, value: NSColor.systemRed, range: NSRange(location: 0, length: mutableAttributedTitle.length))
+      button.attributedTitle = mutableAttributedTitle
+    }
+  }
 
   @objc func reloadHistoryCount(_ sender: AnyObject?) {
     let historyCount = HistoryController.shared.history.count
@@ -81,6 +95,43 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     }
     Logger.log("Watch Later data exists for \(watchLaterCount) media files", level: .verbose)
     watchLaterCountView.stringValue = "Watch Later data exists for \(watchLaterCount) media files."
+  }
+
+  private func updateThumbnailCacheStat() {
+    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+      DispatchQueue.main.async { [self] in
+        thumbCacheSizeLabel.stringValue = newString
+      }
+    }
+  }
+
+  // MARK: - IBActions
+
+  @IBAction func clearWatchLaterBtnAction(_ sender: Any) {
+    Utility.quickAskPanel("clear_watch_later", sheetWindow: view.window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      try? FileManager.default.removeItem(atPath: Utility.watchLaterURL.path)
+      Utility.createDirIfNotExist(url: Utility.watchLaterURL)
+    }
+  }
+
+  @IBAction func clearHistoryBtnAction(_ sender: Any) {
+    Utility.quickAskPanel("clear_history", sheetWindow: view.window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
+      AppDelegate.shared.clearRecentDocuments(self)
+      Preference.set(nil, for: .iinaLastPlayedFilePath)
+    }
+  }
+
+  @IBAction func clearCacheBtnAction(_ sender: Any) {
+    Utility.quickAskPanel("clear_cache", sheetWindow: view.window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
+      Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
+      self.updateThumbnailCacheStat()
+    }
   }
 
   @IBAction func showWatchLaterDirAction(_ sender: AnyObject) {
