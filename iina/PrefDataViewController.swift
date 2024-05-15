@@ -92,4 +92,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
       AppDelegate.shared.clearRecentDocuments(self)
     }
   }
+
+  @IBAction func showPlaybackHistoryAction(_ sender: AnyObject) {
+    AppDelegate.shared.showHistoryWindow(sender)
+  }
+
 }
