@@ -36,6 +36,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   @IBOutlet weak var watchLaterCountView: NSTextField!
   @IBOutlet weak var watchLaterOptionsView: NSTextField!
+  @IBOutlet weak var recentDocumentsCountView: NSTextField!
 
   @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
   @IBOutlet weak var clearWatchLaterBtn: NSButton!
@@ -51,6 +52,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
                                            name: .iinaHistoryUpdated, object: nil)
 
+    NotificationCenter.default.addObserver(self, selector: #selector(self.refreshRecentDocumentsCount(_:)),
+                                           name: .recentDocumentsDidChange, object: nil)
+
     setTextColorToRed(clearWatchLaterBtn)
     setTextColorToRed(clearHistoryBtn)
   }
@@ -60,7 +64,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
     reloadHistoryCount(nil)
     reloadWatchLaterViews(nil)
-    updateThumbnailCacheStat()
+    reloadThumbnailCacheStat()
+    refreshRecentDocumentsCount(nil)
   }
 
   private func setTextColorToRed(_ button: NSButton) {
@@ -89,6 +94,13 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     refreshWatchLaterCount()
   }
 
+  @objc func refreshRecentDocumentsCount(_ sender: AnyObject?) {
+    let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
+    DispatchQueue.main.async { [self] in
+      recentDocumentsCountView.stringValue = "Current item count: \(recentDocCount)"
+    }
+  }
+
   private func refreshWatchLaterCount() {
     var watchLaterCount = 0
     let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
@@ -101,7 +113,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     clearWatchLaterBtn.isEnabled = watchLaterCount > 0
   }
 
-  private func updateThumbnailCacheStat() {
+  private func reloadThumbnailCacheStat() {
     AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
       let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
       let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSize, countStyle: .binary))B"
@@ -132,11 +144,11 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   @IBAction func clearCacheBtnAction(_ sender: Any) {
-    Utility.quickAskPanel("clear_cache", sheetWindow: view.window) { respond in
+    Utility.quickAskPanel("clear_cache", sheetWindow: view.window) { [self] respond in
       guard respond == .alertFirstButtonReturn else { return }
       try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
       Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
-      self.updateThumbnailCacheStat()
+      reloadThumbnailCacheStat()
     }
   }
 

@@ -1521,6 +1521,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func saveRecentDocuments() {
     dispatchPrecondition(condition: .onQueue(HistoryController.shared.queue))
 
+    defer {
+      // Notify even for older MacOS
+      NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+    }
+
     guard #available(macOS 14, *) else { return }
     var recentDocuments: [Any] = []
     for document in NSDocumentController.shared.recentDocumentURLs {

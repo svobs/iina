@@ -14,6 +14,7 @@
                 <outlet property="historyCountView" destination="cRf-v0-eXQ" id="ZGa-h4-VDG"/>
                 <outlet property="historyView" destination="Oic-pc-Cvg" id="lVz-Ra-if4"/>
                 <outlet property="pastLaunchesView" destination="M9c-Ak-HmK" id="TTc-g9-5kW"/>
+                <outlet property="recentDocumentsCountView" destination="ur4-37-RFU" id="STE-Nw-CGA"/>
                 <outlet property="sectionClearCacheView" destination="ve7-5i-dg4" id="5Q8-sQ-fAg"/>
                 <outlet property="thumbCacheSizeLabel" destination="H1t-lX-s9l" id="bo0-4Y-cdS"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
@@ -188,11 +189,11 @@
             <point key="canvasLocation" x="-87" y="-1231"/>
         </customView>
         <customView id="Oic-pc-Cvg" userLabel="Prefs &gt; Saved Data &gt; History" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="534" height="134"/>
+            <rect key="frame" x="0.0" y="0.0" width="534" height="152"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleHistory" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sqR-ex-tn6">
-                    <rect key="frame" x="-2" y="110" width="57" height="16"/>
+                    <rect key="frame" x="-2" y="128" width="57" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="History:" id="VXd-v8-ypz">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -200,10 +201,10 @@
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="200" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JOH-xx-V8Z" userLabel="RightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="414" height="118"/>
+                    <rect key="frame" x="120" y="8" width="414" height="136"/>
                     <subviews>
                         <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Iet-3p-cfj">
-                            <rect key="frame" x="-2" y="101" width="170" height="18"/>
+                            <rect key="frame" x="-2" y="119" width="170" height="18"/>
                             <buttonCell key="cell" type="check" title="Enable playback history" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="WMt-z1-YYz">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -216,23 +217,42 @@
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="oGh-8n-hHn" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="94" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="112" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="G5K-mx-zYo"/>
                                 <constraint firstAttribute="width" constant="1" id="k5g-5j-pef"/>
                             </constraints>
                         </customView>
-                        <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
-                            <rect key="frame" x="-2" y="73" width="199" height="18"/>
-                            <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
-                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                <font key="font" metaFont="system"/>
-                            </buttonCell>
-                            <connections>
-                                <action selector="rememberRecentChanged:" target="-2" id="3vC-oT-jde"/>
-                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordRecentFiles" id="zE1-Rp-Eij"/>
-                            </connections>
-                        </button>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="16" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="h56-Kv-2Gu" userLabel="OpenRecent HStack View">
+                            <rect key="frame" x="0.0" y="92" width="197" height="16"/>
+                            <subviews>
+                                <button horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R2V-zU-Jpv">
+                                    <rect key="frame" x="-2" y="-1" width="199" height="18"/>
+                                    <buttonCell key="cell" type="check" title="Enable &quot;Open Recent&quot; menu" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="8Kn-4Y-nDN">
+                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                        <font key="font" metaFont="system"/>
+                                    </buttonCell>
+                                    <connections>
+                                        <action selector="rememberRecentChanged:" target="-2" id="3vC-oT-jde"/>
+                                        <binding destination="lH7-Vv-0M1" name="value" keyPath="values.recordRecentFiles" id="zE1-Rp-Eij"/>
+                                    </connections>
+                                </button>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
+                        <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ur4-37-RFU">
+                            <rect key="frame" x="18" y="74" width="117" height="14"/>
+                            <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Current item count: X" id="E3s-CR-cqr">
+                                <font key="font" metaFont="smallSystem"/>
+                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="o79-eG-jRM" userLabel="0pt Spacer">
                             <rect key="frame" x="0.0" y="70" width="1" height="0.0"/>
                             <constraints>
@@ -351,7 +371,8 @@
                         </stackView>
                     </subviews>
                     <constraints>
-                        <constraint firstItem="7mI-lM-Xa3" firstAttribute="leading" secondItem="R2V-zU-Jpv" secondAttribute="leading" constant="20" id="UNT-M8-3z2"/>
+                        <constraint firstItem="7mI-lM-Xa3" firstAttribute="leading" secondItem="h56-Kv-2Gu" secondAttribute="leading" constant="20" id="R1r-hN-nJg"/>
+                        <constraint firstItem="ur4-37-RFU" firstAttribute="leading" secondItem="h56-Kv-2Gu" secondAttribute="leading" constant="20" id="gsV-uZ-eFq"/>
                         <constraint firstItem="8br-IJ-ynv" firstAttribute="leading" secondItem="7mI-lM-Xa3" secondAttribute="leading" constant="20" id="o4C-0g-E1d"/>
                     </constraints>
                     <visibilityPriorities>
@@ -363,8 +384,10 @@
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
