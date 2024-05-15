@@ -32,7 +32,7 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; Saved Data &gt; Restore At Launch" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="540" height="104"/>
             <subviews>
-                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
+                <textField identifier="SectionTitleOpenWindows" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
                     <rect key="frame" x="-2" y="80" width="105" height="16"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Open Windows:" id="mM7-1Q-FyL">
                         <font key="font" metaFont="systemBold"/>
@@ -246,8 +246,8 @@
                             </customSpacing>
                         </stackView>
                         <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ur4-37-RFU">
-                            <rect key="frame" x="18" y="74" width="117" height="14"/>
-                            <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Current item count: X" id="E3s-CR-cqr">
+                            <rect key="frame" x="18" y="74" width="184" height="14"/>
+                            <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Current number of recent items: X" id="E3s-CR-cqr">
                                 <font key="font" metaFont="smallSystem"/>
                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

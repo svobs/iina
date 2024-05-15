@@ -97,7 +97,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @objc func refreshRecentDocumentsCount(_ sender: AnyObject?) {
     let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
     DispatchQueue.main.async { [self] in
-      recentDocumentsCountView.stringValue = "Current item count: \(recentDocCount)"
+      recentDocumentsCountView.stringValue = "Current number of recent items: \(recentDocCount)"
     }
   }
 

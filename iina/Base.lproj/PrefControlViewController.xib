@@ -381,7 +381,7 @@
             <point key="canvasLocation" x="-334" y="527"/>
         </customView>
         <customView id="VSf-E0-Btw" userLabel="Prefs &gt; Control &gt; Trackpad">
-            <rect key="frame" x="0.0" y="0.0" width="480" height="80"/>
+            <rect key="frame" x="0.0" y="0.0" width="491" height="80"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="csk-yk-vkf" userLabel="Trackpad Image Container View">
@@ -423,8 +423,8 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nio-Fb-YPK">
-                    <rect key="frame" x="231" y="49" width="237" height="25"/>
-                    <popUpButtonCell key="cell" type="push" title="Adjust window size" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="Ols-Lr-fiH" id="FbW-ce-yAK">
+                    <rect key="frame" x="231" y="49" width="264" height="25"/>
+                    <popUpButtonCell key="cell" type="push" title="Scale window" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="Ols-Lr-fiH" id="FbW-ce-yAK">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>
                         <menu key="menu" id="B7Y-mP-CKn">
@@ -452,7 +452,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zpv-2e-hFc">
-                    <rect key="frame" x="231" y="25" width="237" height="25"/>
+                    <rect key="frame" x="231" y="25" width="264" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Rotate video by multiples of 90°" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="sAO-pq-4PJ" id="3Fx-rR-QP1">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>
@@ -478,7 +478,7 @@
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="V5B-tS-TPW">
-                    <rect key="frame" x="231" y="1" width="237" height="25"/>
+                    <rect key="frame" x="231" y="1" width="264" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Hide Controller" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="3" imageScaling="proportionallyDown" inset="2" selectedItem="M6K-ME-cve" id="Q6M-Qd-bxY">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>

@@ -220,7 +220,6 @@ class PreferenceWindowController: IINAWindowController {
       ["control", "PrefControlViewController"],
       ["keybindings", "PrefKeyBindingViewController"],
       ["video_audio", "PrefCodecViewController"],
-      // ["plugin", "PrefPluginViewController"],
       ["advanced", "PrefAdvancedViewController"],
       ["utilities", "PrefUtilsViewController"],
     ]
@@ -486,7 +485,7 @@ extension PreferenceWindowController: NSTableViewDelegate, NSTableViewDataSource
   func tableViewSelectionDidChange(_ notification: Notification) {
     if (notification.object as! NSTableView) == self.tableView {
       loadTab(at: tableView.selectedRow)
-    } else {
+    } else {  // clicked on search result from Search box
       dismissCompletionList()
       guard
         let result = currentCompletionResults[at: completionTableView.selectedRow],
