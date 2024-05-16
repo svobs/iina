@@ -61,10 +61,10 @@ extension Preference {
 
     static private let iinaLaunchPrefix = "Launch-"
     // Comma-separated list of open windows, back to front
-    static private let openWindowListPrefix = "OpenWindows-"
+    static private let openWindowListPrefix = "Launch-%d-Windows"
 
     static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
-      return "\(Preference.UIState.openWindowListPrefix)\(launchID)"
+      return String(format: Preference.UIState.openWindowListPrefix, launchID)
     }
 
     static func launchName(forID launchID: Int) -> String {
@@ -73,7 +73,7 @@ extension Preference {
 
     static func launchID(fromPlayerWindowKey key: String) -> Int? {
       if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
-        let splitted = key.split(separator: "-", maxSplits: 1)
+        let splitted = key.split(separator: "-")
         if splitted.count == 2 {
           let playerWindowID = String(splitted[1])
           return WindowAutosaveName.playerWindowLaunchID(from: playerWindowID)
@@ -83,7 +83,17 @@ extension Preference {
     }
 
     static func launchID(fromOpenWindowListKey key: String) -> Int? {
-      if key.starts(with: openWindowListPrefix) {
+      if key.starts(with: iinaLaunchPrefix) && key.hasSuffix("Windows") {
+        let splitted = key.split(separator: "-")
+        if splitted.count == 3 {
+          return Int(splitted[1])
+        }
+      }
+      return nil
+    }
+
+    static func launchID(fromLegacyOpenWindowListKey key: String) -> Int? {
+      if key.starts(with: "OpenWindows-") {
         let splitted = key.split(separator: "-", maxSplits: 1)
         if splitted.count == 2 {
           return Int(splitted[1])
@@ -94,7 +104,7 @@ extension Preference {
 
     static func launchID(fromLaunchName launchName: String) -> Int? {
       if launchName.starts(with: iinaLaunchPrefix) {
-        let splitted = launchName.split(separator: "-", maxSplits: 1)
+        let splitted = launchName.split(separator: "-")
         if splitted.count == 2 {
           return Int(splitted[1])
         }
@@ -330,6 +340,24 @@ extension Preference {
 
           launch.playerKeys.insert(key)
           launchDict[launchID] = launch
+        } else if let launchID = launchID(fromLegacyOpenWindowListKey: key) {
+          // Entry is type: Open Windows List (legacy)
+          guard launchID != AppDelegate.launchID else { continue }
+          let launch = launchDict[launchID] ?? LaunchState(launchID)
+
+          // Do same logic as for modern entry:
+          if let csv = value as? String {
+            launch.savedWindows = parseSavedOpenWindowsBackToFront(fromPrefValue: csv)
+          }
+          launchDict[launchID] = launch
+
+          // Now migrate legacy key
+          let newKey = makeOpenWindowListKey(forLaunchID: launch.id)
+          UserDefaults.standard.setValue(value, forKey: newKey)
+          Logger.log("Copied legacy pref entry: \(key.quoted) → \(newKey)", level: .warning)
+          UserDefaults.standard.removeObject(forKey: key)
+          Logger.log("Deleted legacy pref entry: \(key.quoted)", level: .warning)
+
         } else if let launchID = launchID(fromOpenWindowListKey: key) {
           // Entry is type: Open Windows List
           guard launchID != AppDelegate.launchID else { continue }
