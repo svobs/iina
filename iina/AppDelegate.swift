@@ -552,7 +552,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    let pastLaunches: [String] = Preference.UIState.collectPastLaunches()
+    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectPastLaunchesForRestore()
     Logger.log("Found \(pastLaunches.count) past launches to restore", level: .verbose)
     if pastLaunches.isEmpty {
       return false

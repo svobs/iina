@@ -66,6 +66,9 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     reloadWatchLaterViews(nil)
     reloadThumbnailCacheStat()
     refreshRecentDocumentsCount(nil)
+
+    let msg = Preference.UIState.findAllWindowsFromPastLaunches()
+    Logger.log("Found \(msg)")
   }
 
   private func setTextColorToRed(_ button: NSButton) {

@@ -35,6 +35,13 @@ struct SavedWindow {
     }
   }
 
+  var isPlayerWindow: Bool {
+    if case .playerWindow(_) = saveName {
+      return true
+    }
+    return false
+  }
+
   // Includes minimized state
   var saveString: String {
     return isMinimized ? "\(SavedWindow.minimizedPrefix)\(saveName.string)" : saveName.string

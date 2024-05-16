@@ -29,7 +29,7 @@
             <point key="canvasLocation" x="606" y="-693"/>
         </customView>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; Saved Data &gt; Restore At Launch" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="M9c-Ak-HmK" userLabel="Prefs &gt; Saved Data &gt; Open Windows" propertyAccessControl="none">
             <rect key="frame" x="0.0" y="0.0" width="540" height="104"/>
             <subviews>
                 <textField identifier="SectionTitleOpenWindows" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
