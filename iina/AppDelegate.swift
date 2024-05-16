@@ -552,7 +552,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return false
     }
 
-    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectPastLaunchesForRestore()
+    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectLaunchStateForRestore()
     Logger.log("Found \(pastLaunches.count) past launches to restore", level: .verbose)
     if pastLaunches.isEmpty {
       return false
@@ -584,7 +584,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
     // Users who are quick with their user interface device probably know what they are doing and will be impatient.
     let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
-    let savedWindowsBackToFront = Preference.UIState.consolidateOpenWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
+    let savedWindowsBackToFront = Preference.UIState.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
       Logger.log("Will not restore windows: stored window list empty")

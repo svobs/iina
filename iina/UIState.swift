@@ -270,8 +270,8 @@ extension Preference {
         // ExtraClean: May take a while, but should clean up any ophans
         launchIDs = [Int](0..<launchCount)
       } else {
-        /// `collectPastLaunches()` will give lingering launches a chance to deny being removed
-        launchIDs = Preference.UIState.collectPastLaunches().compactMap{$0.id}
+        /// `collectLaunchState()` will give lingering launches a chance to deny being removed
+        launchIDs = Preference.UIState.collectLaunchState().compactMap{$0.id}
       }
 
       for launchID in launchIDs {
@@ -323,7 +323,7 @@ extension Preference {
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
     }
 
-    private static func buildPastLaunchDict(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [Int: LaunchState] {
+    private static func buildLaunchDict(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [Int: LaunchState] {
       var countOfLaunchesToWaitOn = 0
       var launchDict: [Int: LaunchState] = [:]
 
@@ -402,8 +402,8 @@ extension Preference {
 
     /// Returns list of "launch name" identifiers for past launches of IINA which have saved state to restore.
     /// This omits launches which are detected as still running.
-    static func collectPastLaunches(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [LaunchState] {
-      let launchDict = buildPastLaunchDict(cleanUpAlongTheWay: isCleanUpEnabled)
+    static func collectLaunchState(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [LaunchState] {
+      let launchDict = buildLaunchDict(cleanUpAlongTheWay: isCleanUpEnabled)
 
       var countEntriesDeleted: Int = 0
 
@@ -474,16 +474,16 @@ extension Preference {
       return culledLaunches
     }
 
-    static func collectPastLaunchesForRestore() -> [LaunchState] {
-      return collectPastLaunches(cleanUpAlongTheWay: true).filter{ $0.status != Preference.UIState.LaunchStatus.stillRunning }
+    static func collectLaunchStateForRestore() -> [LaunchState] {
+      return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.status != Preference.UIState.LaunchStatus.stillRunning }
     }
 
     /// Consolidates all player windows (& others) from any past launches which are no longer running into the windows for this instance.
     /// Updates prefs to reflect new conslidated state.
     /// Returns all window names for this launch instance, back to front.
-    static func consolidateOpenWindowsFromPastLaunches(pastLaunches cachedLaunches: [LaunchState]? = nil) -> [SavedWindow] {
+    static func consolidateSavedWindowsFromPastLaunches(pastLaunches cachedLaunches: [LaunchState]? = nil) -> [SavedWindow] {
       // Could have been a long time since data was last collected. Get a fresh set of data:
-      let launchesNewestToOldest = cachedLaunches ?? collectPastLaunchesForRestore()
+      let launchesNewestToOldest = cachedLaunches ?? collectLaunchStateForRestore()
 
       // Remove duplicates, favoring front-most copies
       var deduplicatedReverseWindowList: [SavedWindow] = []
@@ -525,17 +525,6 @@ extension Preference {
       }
 
       return finalWindowList
-    }
-
-    static func findAllWindowsFromPastLaunches() -> String {
-      let launches = collectPastLaunches()
-      if launches.isEmpty {
-        return "no data"
-      }
-
-      let playerWindowCount = launches.reduce(0, {count, launch in count + launch.playerWindowCount})
-      let nonPlayerWindowCount = launches.reduce(0, {count, launch in count + launch.nonPlayerWindowCount})
-      return "\(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows from \(launches.count) launches"
     }
 
   }

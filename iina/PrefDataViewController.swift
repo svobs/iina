@@ -67,8 +67,19 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     reloadThumbnailCacheStat()
     refreshRecentDocumentsCount(nil)
 
-    let msg = Preference.UIState.findAllWindowsFromPastLaunches()
-    Logger.log("Found \(msg)")
+    let msg = summarizeSavedLaunchState()
+    Logger.log(msg)
+  }
+
+  func summarizeSavedLaunchState() -> String {
+    let launches = Preference.UIState.collectLaunchState()
+    if launches.isEmpty {
+      return "Found no data"
+    }
+
+    let playerWindowCount = launches.reduce(0, {count, launch in count + launch.playerWindowCount})
+    let nonPlayerWindowCount = launches.reduce(0, {count, launch in count + launch.nonPlayerWindowCount})
+    return "Found \(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows from \(launches.count) launches"
   }
 
   private func setTextColorToRed(_ button: NSButton) {
