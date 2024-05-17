@@ -284,7 +284,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard isInitialLoad || ticket == reloadTicketCounter else {return }  // check ticket
 
     self.fileExistsMap = fileExistsMap
-    log.debug("Filled in fileExists for \(count) of \(historyList.count) history entries in \(sw2.secElapsedString) (wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount)). FileExistsMap size is now \(fileExistsMap.count)")
+    log.debug("Filled in fileExists for \(count) of \(historyList.count) histories in \(sw2.secElapsedString), wasFullReload=\(forceFullStatusReload.yn) watchLaterFilesLoaded=\(watchLaterCount) fileExistsMapSize=\(fileExistsMap.count)")
     if forceFullStatusReload {
       lastCompleteStatusReloadTime = Date()
     }

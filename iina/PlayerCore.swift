@@ -2286,7 +2286,7 @@ class PlayerCore: NSObject {
 
             // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
             if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-              appDelegate.noteNewRecentDocumentURL(url)
+              HistoryController.shared.noteNewRecentDocumentURL(url)
             }
           }
           postFileHistoryUpdateNotification()

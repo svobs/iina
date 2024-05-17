@@ -305,6 +305,7 @@ extension Notification.Name {
   static let iinaPlaySliderLoopKnobChanged = Notification.Name("iinaPlaySliderLoopKnobChanged")
   static let iinaLogoutCompleted = Notification.Name("iinaLoggedOutOfSubtitleProvider")
   static let windowIsReadyToShow = Notification.Name("windowIsReadyToShow")
+  static let watchLaterDirDidChange = Notification.Name("watchLaterDirDidChange")
   static let watchLaterOptionsDidChange = Notification.Name("watchLaterOptionsDidChange")
   static let recentDocumentsDidChange = Notification.Name("recentDocumentsDidChange")
 }

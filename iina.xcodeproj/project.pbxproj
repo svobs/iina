@@ -176,6 +176,7 @@
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
+		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
 		D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */; };
 		D17504A82918F13E005C3DD0 /* OSCToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
@@ -1570,6 +1571,7 @@
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
+		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
 		D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CascadingMenuItemBuilder.swift; sourceTree = "<group>"; };
 		D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSCToolbarButton.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
@@ -2323,6 +2325,7 @@
 				51C1BA39291CA76700C1208A /* InfoDictionary.swift */,
 				51DE55C82A6646710050AD06 /* Sysctl.swift */,
 				D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */,
+				D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -3095,6 +3098,7 @@
 				845040401E0ACADD0079C194 /* MPVNode.swift in Sources */,
 				84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */,
 				E38BA1C4254110BE000B551D /* JavascriptMessageHub.swift in Sources */,
+				D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */,
 				845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */,
 				D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */,
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,

@@ -32,22 +32,30 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet var watchLaterView: NSView!
   @IBOutlet var sectionClearCacheView: NSView!
 
+  @IBOutlet weak var savedLaunchSummaryView: NSTextField!
+  @IBOutlet weak var recentDocumentsCountView: NSTextField!
   @IBOutlet weak var historyCountView: NSTextField!
-
   @IBOutlet weak var watchLaterCountView: NSTextField!
   @IBOutlet weak var watchLaterOptionsView: NSTextField!
-  @IBOutlet weak var recentDocumentsCountView: NSTextField!
-
   @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
+
+  @IBOutlet weak var clearSavedLaunchDataBtn: NSButton!
   @IBOutlet weak var clearWatchLaterBtn: NSButton!
   @IBOutlet weak var clearHistoryBtn: NSButton!
   @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
 
+  var isWindowVisible: Bool {
+    return view.window?.isVisible ?? false
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterViews(_:)),
+    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterOptions(_:)),
                                            name: .watchLaterOptionsDidChange, object: nil)
+
+    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterCount(_:)),
+                                           name: .watchLaterDirDidChange, object: nil)
 
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
                                            name: .iinaHistoryUpdated, object: nil)
@@ -55,6 +63,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     NotificationCenter.default.addObserver(self, selector: #selector(self.refreshRecentDocumentsCount(_:)),
                                            name: .recentDocumentsDidChange, object: nil)
 
+    setTextColorToRed(clearSavedLaunchDataBtn)
     setTextColorToRed(clearWatchLaterBtn)
     setTextColorToRed(clearHistoryBtn)
   }
@@ -63,23 +72,25 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     super.viewWillAppear()
 
     reloadHistoryCount(nil)
-    reloadWatchLaterViews(nil)
+    reloadWatchLaterOptions(nil)
+    reloadWatchLaterCount(nil)
     reloadThumbnailCacheStat()
     refreshRecentDocumentsCount(nil)
 
-    let msg = summarizeSavedLaunchState()
-    Logger.log(msg)
+    let launchDataSummary = buildSavedLaunchSummary()
+    Logger.log(launchDataSummary)
+    savedLaunchSummaryView.stringValue = launchDataSummary
   }
 
-  func summarizeSavedLaunchState() -> String {
+  func buildSavedLaunchSummary() -> String {
     let launches = Preference.UIState.collectLaunchState()
     if launches.isEmpty {
-      return "Found no data"
+      return "No saved state found."
     }
 
     let playerWindowCount = launches.reduce(0, {count, launch in count + launch.playerWindowCount})
     let nonPlayerWindowCount = launches.reduce(0, {count, launch in count + launch.nonPlayerWindowCount})
-    return "Found \(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows from \(launches.count) launches"
+    return "\(playerWindowCount) players + \(nonPlayerWindowCount) other windows are currently saved."
   }
 
   private func setTextColorToRed(_ button: NSButton) {
@@ -92,39 +103,47 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @objc func reloadHistoryCount(_ sender: AnyObject?) {
     let historyCount = HistoryController.shared.history.count
     DispatchQueue.main.async { [self] in
+      guard isWindowVisible else { return }
       let infoMsg = "History exists for \(historyCount) media."
-      Logger.log(infoMsg, level: .verbose)
+      Logger.log("Updating msg for PrefData tab: \(infoMsg.quoted)", level: .verbose)
       historyCountView.stringValue = infoMsg
       clearHistoryBtn.isEnabled = historyCount > 0
     }
   }
 
-  @objc func reloadWatchLaterViews(_ sender: AnyObject?) {
-    guard !view.isHidden else { return }
-    Logger.log("Refreshing Watch Later views", level: .verbose)
+  @objc func reloadWatchLaterOptions(_ sender: AnyObject?) {
+    DispatchQueue.main.async { [self] in
+      guard isWindowVisible else { return }
+      Logger.log("Refreshing Watch Later options", level: .verbose)
+      watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
+    }
+  }
 
-    watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
-
-    refreshWatchLaterCount()
+  @objc func reloadWatchLaterCount(_ sender: AnyObject?) {
+    DispatchQueue.main.async { [self] in
+      guard isWindowVisible else { return }
+      HistoryController.shared.queue.async {
+        var watchLaterCount = 0
+        let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+        if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
+          watchLaterCount = files.count
+        }
+        DispatchQueue.main.async { [self] in
+          let infoMsg = "Watch Later exists for \(watchLaterCount) media files."
+          watchLaterCountView.stringValue = infoMsg
+          Logger.log("Refreshed Watch Later count: \(infoMsg)", level: .verbose)
+          clearWatchLaterBtn.isEnabled = watchLaterCount > 0
+        }
+      }
+    }
   }
 
   @objc func refreshRecentDocumentsCount(_ sender: AnyObject?) {
-    let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
     DispatchQueue.main.async { [self] in
+      guard isWindowVisible else { return }
+      let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
       recentDocumentsCountView.stringValue = "Current number of recent items: \(recentDocCount)"
     }
-  }
-
-  private func refreshWatchLaterCount() {
-    var watchLaterCount = 0
-    let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
-    if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
-      watchLaterCount = files.count
-    }
-    let infoMsg = "Watch Later exists for \(watchLaterCount) media files."
-    watchLaterCountView.stringValue = infoMsg
-    Logger.log(infoMsg, level: .verbose)
-    clearWatchLaterBtn.isEnabled = watchLaterCount > 0
   }
 
   private func reloadThumbnailCacheStat() {
@@ -139,6 +158,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   // MARK: - IBActions
+  @IBAction func clearSavedLaunchDataBtnAction(_ sender: Any) {
+  }
 
   @IBAction func clearWatchLaterBtnAction(_ sender: Any) {
     Utility.quickAskPanel("clear_watch_later", sheetWindow: view.window) { respond in
@@ -151,9 +172,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBAction func clearHistoryBtnAction(_ sender: Any) {
     Utility.quickAskPanel("clear_history", sheetWindow: view.window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
-      try? FileManager.default.removeItem(atPath: Utility.playbackHistoryURL.path)
-      AppDelegate.shared.clearRecentDocuments(self)
-      Preference.set(nil, for: .iinaLastPlayedFilePath)
+      HistoryController.shared.removeAll()
     }
   }
 
@@ -172,7 +191,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   @IBAction func rememberRecentChanged(_ sender: NSButton) {
     if sender.state == .off {
-      AppDelegate.shared.clearRecentDocuments(self)
+      HistoryController.shared.clearRecentDocuments(self)
     }
   }
 

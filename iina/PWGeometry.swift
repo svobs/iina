@@ -266,9 +266,15 @@ struct PWGeometry: Equatable, CustomStringConvertible {
              viewportMargins: MarginQuad? = nil,
              videoAspect: CGFloat? = nil) -> PWGeometry {
 
-    return PWGeometry(windowFrame: windowFrame ?? self.windowFrame,
+    var windowFrame = windowFrame ?? self.windowFrame
+    var fitOption = fitOption ?? self.fitOption
+    if let screenID, screenID != self.screenID, fitOption.shouldMoveWindowToKeepInContainer {
+      windowFrame = keepWindowInside(screenID: screenID, fitOption: fitOption, windowFrame: windowFrame)
+    }
+
+    return PWGeometry(windowFrame: windowFrame,
                       screenID: screenID ?? self.screenID,
-                      fitOption: fitOption ?? self.fitOption,
+                      fitOption: fitOption,
                       mode: mode ?? self.mode,
                       topMarginHeight: topMarginHeight ?? self.topMarginHeight,
                       outsideTopBarHeight: outsideTopBarHeight ?? self.outsideTopBarHeight,
@@ -281,6 +287,26 @@ struct PWGeometry: Equatable, CustomStringConvertible {
                       insideLeadingBarWidth: insideLeadingBarWidth ?? self.insideLeadingBarWidth,
                       viewportMargins: viewportMargins,
                       videoAspect: videoAspect ?? self.videoAspect)
+  }
+
+  private func keepWindowInside(screenID: String, fitOption: ScreenFitOption, windowFrame: NSRect) -> NSRect {
+    guard let currentScreenID = NSScreen.getOwnerScreenID(forViewRect: windowFrame) else {
+      return windowFrame
+    }
+    if screenID == currentScreenID {
+      return windowFrame
+    }
+    guard let newScreenFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption) else {
+      return windowFrame
+    }
+    guard let currentScreenFrame = PWGeometry.getContainerFrame(forScreenID: currentScreenID, fitOption: fitOption) else {
+      return windowFrame
+    }
+
+    // TODO:
+
+    Logger.log("Ajdusting windowFrame to keep it inside screenID \(screenID.quoted), from \(currentScreenID.quoted) (fitOption: \(fitOption))", level: .verbose)
+    return windowFrame
   }
 
   // MARK: - Computed properties

@@ -55,6 +55,10 @@ extension Preference {
         return windowCount - playerWindowCount
       }
 
+      var name: String {
+        return Preference.UIState.launchName(forID: id)
+      }
+
       var description: String {
         return "Launch(\(id) \(statusDescription) w:\(savedWindowsDescription) p:\(playerKeys))"
       }
@@ -295,8 +299,12 @@ extension Preference {
     }
 
     static func getPlayerSaveState(forPlayerID playerID: String) -> PlayerSaveState? {
-      guard isRestoreEnabled else { return nil }
       let key = WindowAutosaveName.playerWindow(id: playerID).string
+      return getPlayerSaveState(forPlayerKey: key)
+    }
+
+    static func getPlayerSaveState(forPlayerKey key: String) -> PlayerSaveState? {
+      guard isRestoreEnabled else { return nil }
       guard let propDict = UserDefaults.standard.dictionary(forKey: key) else {
         Logger.log("Could not find stored UI state for \(key.quoted)", level: .error)
         return nil
@@ -391,8 +399,8 @@ extension Preference {
       if countOfLaunchesToWaitOn > 0 {
         let iffyKeys = launchDict.filter{
           $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
-        Logger.log("Looks like these launches may not be done: \(iffyKeys)", level: .verbose)
-        Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past instances are still running...", level: .verbose)
+        Logger.log("Looks like these launches may still be running: \(iffyKeys)", level: .verbose)
+        Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past instances are still running...", level: .debug)
 
         Thread.sleep(forTimeInterval: 1)
       }
@@ -418,13 +426,15 @@ extension Preference {
 
             if launch.savedWindows != nil {
               let key = makeOpenWindowListKey(forLaunchID: launch.id)
-              Logger.log("Deleting orphaned pref entry: \(key.quoted)", level: .warning)
+              Logger.log("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))", level: .warning)
               UserDefaults.standard.removeObject(forKey: key)
               countEntriesDeleted += 1
             }
 
             for playerKey in launch.playerKeys {
-              Logger.log("Deleting orphaned pref entry: \(playerKey.quoted)", level: .warning)
+              let savedState = Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)
+              Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with URL \(savedState?.string(for: .url)?.pii.quoted ?? "nil")",
+                         level: .warning)
               UserDefaults.standard.removeObject(forKey: playerKey)
               countEntriesDeleted += 1
             }
@@ -435,7 +445,7 @@ extension Preference {
 
         // Old player windows may have been associated with newer launches. Update our data structure to match
         if let savedWindows = launch.savedWindows {
-          Logger.log("LaunchID \(launch.id) has saved windows: \(launch.savedWindowsDescription)", level: .verbose)
+          Logger.log("\(launch.name) has saved windows: \(launch.savedWindowsDescription)", level: .verbose)
           for savedWindow in savedWindows {
             let playerLaunchID = savedWindow.saveName.playerWindowLaunchID
             if let playerLaunchID, playerLaunchID != launch.id {
