@@ -267,7 +267,7 @@ struct PWGeometry: Equatable, CustomStringConvertible {
              videoAspect: CGFloat? = nil) -> PWGeometry {
 
     var windowFrame = windowFrame ?? self.windowFrame
-    var fitOption = fitOption ?? self.fitOption
+    let fitOption = fitOption ?? self.fitOption
     if let screenID, screenID != self.screenID, fitOption.shouldMoveWindowToKeepInContainer {
       windowFrame = keepWindowInside(screenID: screenID, fitOption: fitOption, windowFrame: windowFrame)
     }

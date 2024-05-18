@@ -121,7 +121,7 @@ struct PlayerSaveState {
     let wc = player.windowController!
     let layout = wc.currentLayout
 
-    props[PropName.launchID.rawValue] = AppDelegate.launchID
+    props[PropName.launchID.rawValue] = Preference.UIState.launchID
 
     // - Window Layout & Geometry
 

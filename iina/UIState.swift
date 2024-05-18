@@ -89,6 +89,20 @@ extension Preference {
     // Comma-separated list of open windows, back to front
     static private let openWindowListFmt = "Launch-%d-Windows"
 
+    /// Each instance of IINA, when it starts, grabs the previous launch count from the prefs and increments it by 1, which becomes its launchID.
+    static let launchID: Int = {
+      let nextID = Preference.integer(for: .launchCount) + 1
+      Preference.set(nextID, for: .launchCount)
+      return nextID
+    }()
+
+    /// The unique name for this launch, used as a pref key
+    static let launchName: String = Preference.UIState.launchName(forID: launchID)
+
+    static var windowsOpen = Set<String>()
+    static var windowsHidden = Set<String>()
+    static var windowsMinimized = Set<String>()
+
     static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
       return String(format: Preference.UIState.openWindowListFmt, launchID)
     }
@@ -215,11 +229,11 @@ extension Preference {
 
     static func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
       guard !AppDelegate.shared.isTerminating else { return }
-      let openWindowsSet = AppDelegate.windowsOpen
+      let openWindowsSet = windowsOpen
       let openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
       // Don't care about ordering of these:
-      let minimizedWindowNames = Array(AppDelegate.windowsMinimized)
-      let hiddenWindowNames = Array(AppDelegate.windowsHidden)
+      let minimizedWindowNames = Array(windowsMinimized)
+      let hiddenWindowNames = Array(windowsHidden)
       if openWindowsSet.count != openWindowNames.count {
         Logger.log("While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames); Other: Hidden=\(hiddenWindowNames), Minimized=\(minimizedWindowNames)", level: .error)
         #if DEBUG
@@ -227,10 +241,12 @@ extension Preference {
         #endif
       }
       if Logger.isTraceEnabled {
-        Logger.log("Saving window list: open=\(openWindowNames), hidden=\(hiddenWindowNames), minimized=\(minimizedWindowNames)", level: .verbose)
+        Logger.log("Saving window list: open=\(openWindowNames), hidden=\(hiddenWindowNames), minimized=\(minimizedWindowNames)", 
+                   level: .verbose)
       }
       let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
-      saveOpenWindowList(windowNamesBackToFront: minimizedStrings + hiddenWindowNames + openWindowNames, forLaunchID: AppDelegate.launchID)
+      saveOpenWindowList(windowNamesBackToFront: minimizedStrings + hiddenWindowNames + openWindowNames,
+                         forLaunchID: launchID)
     }
 
     static private func saveOpenWindowList(windowNamesBackToFront: [String], forLaunchID launchID: Int) {
@@ -243,7 +259,7 @@ extension Preference {
     }
 
     static func clearSavedStateForThisLaunch() {
-      clearSavedState(forLaunchID: AppDelegate.launchID)
+      clearSavedState(forLaunchID: launchID)
     }
 
     static func clearSavedState(forLaunchName launchName: String) {
@@ -278,7 +294,7 @@ extension Preference {
         Logger.log("Will not clear saved UI state; UI save is disabled")
         return
       }
-      let launchCount = AppDelegate.launchID - 1
+      let launchCount = launchID - 1
       Logger.log("Clearing all saved window states from prefs (launchCount: \(launchCount), extraClean: \(extraClean.yn))", level: .debug)
 
       let launchIDs: [Int]
@@ -369,7 +385,7 @@ extension Preference {
           launch.status = launchStatus(fromAny: value, launchName: key)
           launchDict[launchID] = launch
 
-          if isCleanUpEnabled, launch.status != LaunchStatus.done, launchID != AppDelegate.launchID {
+          if isCleanUpEnabled, launch.status != LaunchStatus.done, launchID != Preference.UIState.launchID {
             /// Launch was not marked `done`?
             /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
             var newValue = LaunchStatus.indeterminate1
@@ -418,10 +434,10 @@ extension Preference {
       }
 
       if countOfLaunchesToWaitOn > 0 {
-        let iffyKeys = launchDict.filter{
+        let iffyKeys = launchDict.filter{ $0.value.id != UIState.launchID &&
           $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
         Logger.log("Looks like these launches may still be running: \(iffyKeys)", level: .verbose)
-        Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past instances are still running...", level: .debug)
+        Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...", level: .debug)
 
         Thread.sleep(forTimeInterval: 1)
       }
@@ -478,7 +494,9 @@ extension Preference {
               // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
               if let prevLaunch = launchDict[playerLaunchID],
                  let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
-                Logger.log("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID)", level: .verbose)
+                if Logger.isTraceEnabled {
+                  Logger.log("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)", level: .trace)
+                }
                 launch.playerKeys.insert(playerKeyFromPrev)
               }
             }
@@ -500,7 +518,7 @@ extension Preference {
 
       let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
       if Logger.isVerboseEnabled {
-        Logger.log("Saved launch data: \(culledLaunches)", level: .verbose)
+        Logger.log("Saved launch data (current=\(launchID)): \(culledLaunches)", level: .verbose)
       }
       return culledLaunches
     }
@@ -535,8 +553,8 @@ extension Preference {
       // First save under new window list:
       let finalWindowList = Array(deduplicatedReverseWindowList.reversed())
       let finalWindowStringList = finalWindowList.map({$0.saveString})
-      Logger.log("Consolidated windows from past launches; saving to current launch (\(AppDelegate.launchID)): \(finalWindowList.map({$0.saveName.string}))", level: .verbose)
-      saveOpenWindowList(windowNamesBackToFront: finalWindowStringList, forLaunchID: AppDelegate.launchID)
+      Logger.log("Saving consolidated windows from past launches to current launch (\(launchID)): \(finalWindowList.map({$0.saveName.string}))", level: .verbose)
+      saveOpenWindowList(windowNamesBackToFront: finalWindowStringList, forLaunchID: launchID)
 
       // Now remove entries for old launches (keeping player state entries)
       for launch in launchesNewestToOldest {

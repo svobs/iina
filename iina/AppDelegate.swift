@@ -24,21 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// The `AppDelegate` singleton object.
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
-  /// Each instance of IINA, when it starts, grabs the previous launch count from the prefs and increments it by 1, which becomes its launchID.
-  static let launchID: Int = {
-    let nextID = Preference.integer(for: .launchCount) + 1
-    Preference.set(nextID, for: .launchCount)
-    return nextID
-  }()
-
-  /// The unique name for this launch, used as a pref key
-  static var launchName: String = Preference.UIState.launchName(forID: launchID)
-  static var launchTime = Date().timeIntervalSince1970
-
-  static var windowsOpen = Set<String>()
-  static var windowsHidden = Set<String>()
-  static var windowsMinimized = Set<String>()
-
   /**
    Becomes true once `application(_:openFile:)` or `droppedText()` is called.
    Mainly used to distinguish normal launches from others triggered by drag-and-dropping files.
@@ -126,7 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let change = change else { return }
 
-    if keyPath == AppDelegate.launchName {
+    if keyPath == Preference.UIState.launchName {
       if let newLaunchStatus = change[.newKey] as? Int {
         guard !isTerminating else { return }
         guard newLaunchStatus != 0 else { return }
@@ -246,7 +231,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     logBuildDetails()
     logPlatformDetails()
 
-    Logger.log("App will launch. LaunchID: \(AppDelegate.launchID)")
+    Logger.log("App will launch. LaunchID: \(Preference.UIState.launchID)")
 
     for key in self.observedPrefKeys {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
@@ -351,8 +336,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     menuController.refreshBuiltInMenuItemBindings()
 
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
-    UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: AppDelegate.launchName)
-    UserDefaults.standard.addObserver(self, forKeyPath: AppDelegate.launchName, options: .new, context: nil)
+    UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: Preference.UIState.launchName)
+    UserDefaults.standard.addObserver(self, forKeyPath: Preference.UIState.launchName, options: .new, context: nil)
 
     let activePlayer = PlayerCore.active  // Load the first PlayerCore
     Logger.log("Using \(activePlayer.mpv.mpvVersion!)")
@@ -479,7 +464,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // Saves an ordered list of current open windows (if configured) each time *any* window becomes the key window.
   private func windowDidBecomeKey(_ notification: Notification) {
-    Logger.log("Window became key!!!")
     guard let window = notification.object as? NSWindow else { return }
     // Assume new key window is the active window. AppKit does not provide an API to notify when a window is opened,
     // so this notification will serve as a proxy, since a window which becomes active is by definition an open window.
@@ -495,11 +479,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log("Window became key; adding to open windows list: \(activeWindowName.quoted)")
-      if AppDelegate.windowsMinimized.remove(activeWindowName) != nil {
+      if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
         Logger.log("Window was not properly removed from minimized windows list! Name: \(activeWindowName.quoted)", level: .warning)
       }
-      AppDelegate.windowsOpen.insert(activeWindowName)
-      AppDelegate.windowsHidden.remove(activeWindowName)
+      Preference.UIState.windowsOpen.insert(activeWindowName)
+      Preference.UIState.windowsHidden.remove(activeWindowName)
 
       Preference.UIState.saveCurrentOpenWindowList()
     }
@@ -515,9 +499,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
-      AppDelegate.windowsOpen.remove(savedStateName)
-      AppDelegate.windowsMinimized.insert(savedStateName)
-      AppDelegate.windowsHidden.remove(savedStateName)
+      Preference.UIState.windowsOpen.remove(savedStateName)
+      Preference.UIState.windowsMinimized.insert(savedStateName)
+      Preference.UIState.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -532,9 +516,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
-      AppDelegate.windowsOpen.insert(savedStateName)
-      AppDelegate.windowsMinimized.remove(savedStateName)
-      AppDelegate.windowsHidden.remove(savedStateName)
+      Preference.UIState.windowsOpen.insert(savedStateName)
+      Preference.UIState.windowsMinimized.remove(savedStateName)
+      Preference.UIState.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -670,9 +654,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     for savedWindow in savedWindowsBackToFront {
       // Rebuild window maps as we go:
       if savedWindow.isMinimized {
-        AppDelegate.windowsMinimized.insert(savedWindow.saveName.string)
+        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
       } else {
-        AppDelegate.windowsOpen.insert(savedWindow.saveName.string)
+        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
       }
 
       let wc: NSWindowController
@@ -817,9 +801,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !windowName.isEmpty else { return }
 
     lastClosedWindowName = windowName
-    AppDelegate.windowsOpen.remove(windowName)
-    AppDelegate.windowsHidden.remove(windowName)
-    AppDelegate.windowsMinimized.remove(windowName)
+    Preference.UIState.windowsOpen.remove(windowName)
+    Preference.UIState.windowsHidden.remove(windowName)
+    Preference.UIState.windowsMinimized.remove(windowName)
 
     /// Query for the list of open windows and save it (excluding the window which is about to close).
     /// Most cases are covered by saving when `windowDidBecomeKey` is called, but this covers the case where
@@ -973,8 +957,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if Preference.UIState.isSaveEnabled {
       // unlock for new launch
-      Logger.log("Updating status of \(AppDelegate.launchName.quoted) to 'done' in prefs", level: .verbose)
-      UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.done.rawValue, forKey: AppDelegate.launchName)
+      Logger.log("Updating status of \(Preference.UIState.launchName.quoted) to 'done' in prefs", level: .verbose)
+      UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.done.rawValue, forKey: Preference.UIState.launchName)
     }
 
     // The first priority was to shutdown any new input from the user. The second priority is to

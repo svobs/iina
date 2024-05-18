@@ -39,7 +39,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet weak var watchLaterOptionsView: NSTextField!
   @IBOutlet weak var thumbCacheSizeLabel: NSTextField!
 
-  @IBOutlet weak var clearSavedLaunchDataBtn: NSButton!
+  @IBOutlet weak var clearSavedWindowDataBtn: NSButton!
   @IBOutlet weak var clearWatchLaterBtn: NSButton!
   @IBOutlet weak var clearHistoryBtn: NSButton!
   @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
@@ -51,19 +51,19 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
+                                           name: .iinaHistoryUpdated, object: nil)
+
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterOptions(_:)),
                                            name: .watchLaterOptionsDidChange, object: nil)
 
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterCount(_:)),
                                            name: .watchLaterDirDidChange, object: nil)
 
-    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
-                                           name: .iinaHistoryUpdated, object: nil)
-
     NotificationCenter.default.addObserver(self, selector: #selector(self.refreshRecentDocumentsCount(_:)),
                                            name: .recentDocumentsDidChange, object: nil)
 
-    setTextColorToRed(clearSavedLaunchDataBtn)
+    setTextColorToRed(clearSavedWindowDataBtn)
     setTextColorToRed(clearWatchLaterBtn)
     setTextColorToRed(clearHistoryBtn)
   }
@@ -74,8 +74,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     reloadHistoryCount(nil)
     reloadWatchLaterOptions(nil)
     reloadWatchLaterCount(nil)
-    reloadThumbnailCacheStat()
     refreshRecentDocumentsCount(nil)
+    reloadThumbnailCacheStat()
 
     let launchDataSummary = buildSavedLaunchSummary()
     Logger.log(launchDataSummary)
@@ -160,7 +160,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   // MARK: - IBActions
-  @IBAction func clearSavedLaunchDataBtnAction(_ sender: Any) {
+  @IBAction func clearSavedWindowDataBtnAction(_ sender: Any) {
   }
 
   @IBAction func clearWatchLaterBtnAction(_ sender: Any) {

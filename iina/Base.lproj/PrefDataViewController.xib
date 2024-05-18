@@ -9,7 +9,7 @@
         <customObject id="-2" userLabel="File's Owner" customClass="PrefDataViewController" customModule="IINA" customModuleProvider="target">
             <connections>
                 <outlet property="clearHistoryBtn" destination="SSk-Rd-BxH" id="nRg-In-B1g"/>
-                <outlet property="clearSavedLaunchDataBtn" destination="DRV-Dv-gti" id="Gfd-NK-vSv"/>
+                <outlet property="clearSavedWindowDataBtn" destination="DRV-Dv-gti" id="Gfd-NK-vSv"/>
                 <outlet property="clearThumbnailCacheBtn" destination="aCe-0n-uch" id="jK4-e9-WPW"/>
                 <outlet property="clearWatchLaterBtn" destination="bHj-vX-uFl" id="2mc-fD-SLq"/>
                 <outlet property="historyCountView" destination="cRf-v0-eXQ" id="ZGa-h4-VDG"/>
@@ -35,8 +35,8 @@
             <rect key="frame" x="0.0" y="0.0" width="552" height="136"/>
             <subviews>
                 <textField identifier="SectionTitleOpenWindows" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="APB-Nm-aTA">
-                    <rect key="frame" x="-2" y="112" width="105" height="16"/>
-                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Open Windows:" id="mM7-1Q-FyL">
+                    <rect key="frame" x="-2" y="112" width="68" height="16"/>
+                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Windows:" id="mM7-1Q-FyL">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -46,8 +46,8 @@
                     <rect key="frame" x="120" y="8" width="432" height="120"/>
                     <subviews>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Uoo-aD-AGe">
-                            <rect key="frame" x="-2" y="103" width="308" height="18"/>
-                            <buttonCell key="cell" type="check" title="Restore open windows from previous launches" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="6a1-KK-71r">
+                            <rect key="frame" x="-2" y="103" width="318" height="18"/>
+                            <buttonCell key="cell" type="check" title="Save &amp; restore open windows between launches" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="6a1-KK-71r">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
@@ -168,7 +168,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="ETt-6h-iFb" userLabel="Flexible Spacer">
-                                    <rect key="frame" x="84" y="5" width="187" height="1"/>
+                                    <rect key="frame" x="84" y="5" width="144" height="1"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="1" id="nPX-M7-ht9"/>
                                     </constraints>
@@ -181,13 +181,13 @@
                                     </connections>
                                 </customView>
                                 <button identifier="FunctionalButtonClearSavedLaunchData" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DRV-Dv-gti">
-                                    <rect key="frame" x="270" y="-7" width="169" height="32"/>
-                                    <buttonCell key="cell" type="push" title="Clear Launch State…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="L2H-PQ-HJF">
+                                    <rect key="frame" x="227" y="-7" width="212" height="32"/>
+                                    <buttonCell key="cell" type="push" title="Clear Saved Window Data…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="L2H-PQ-HJF">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="systemBold"/>
                                     </buttonCell>
                                     <connections>
-                                        <action selector="clearSavedLaunchDataBtnAction:" target="-2" id="irE-re-7aP"/>
+                                        <action selector="clearSavedWindowDataBtnAction:" target="-2" id="irE-re-7aP"/>
                                     </connections>
                                 </button>
                             </subviews>

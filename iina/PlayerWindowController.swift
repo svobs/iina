@@ -1821,7 +1821,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
     let windowName = window.savedStateName
     if !windowName.isEmpty {
-      AppDelegate.windowsOpen.insert(windowName)
+      Preference.UIState.windowsOpen.insert(windowName)
     }
 
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
@@ -4250,7 +4250,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         isWindowHidden = true
         window.orderOut(self)
         log.verbose("PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)")
-        AppDelegate.windowsHidden.insert(window.savedStateName)
+        Preference.UIState.windowsHidden.insert(window.savedStateName)
         break
       case .minimize:
         isWindowMiniaturizedDueToPip = true
@@ -4331,7 +4331,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         showWindow(self)
         if let window {
           log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
-          AppDelegate.windowsHidden.remove(window.savedStateName)
+          Preference.UIState.windowsHidden.remove(window.savedStateName)
         }
       }))
     }

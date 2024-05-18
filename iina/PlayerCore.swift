@@ -2270,7 +2270,6 @@ class PlayerCore: NSObject {
         touchBarSupport.setupTouchBarUI()
       }
 
-      let appDelegate = AppDelegate.shared  // must dereference this only from main thread
       // Add to history & other state tracking
       if let url = info.currentURL {
         let duration = info.videoDuration ?? .zero
