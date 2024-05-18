@@ -570,14 +570,14 @@ extension PlayerWindowController {
       return outputLayout
     }
 
-    func buildFullScreenGeometry(inScreenID screenID: String, videoAspect: CGFloat) -> PWGeometry {
+    func buildFullScreenGeometry(inScreenID screenID: String, videoAspect: CGFloat) -> PWinGeometry {
       let screen = NSScreen.getScreenOrDefault(screenID: screenID)
       return buildFullScreenGeometry(inside: screen, videoAspect: videoAspect)
     }
 
-    func buildFullScreenGeometry(inside screen: NSScreen, videoAspect: CGFloat) -> PWGeometry {
+    func buildFullScreenGeometry(inside screen: NSScreen, videoAspect: CGFloat) -> PWinGeometry {
       assert(isFullScreen)
-      return PWGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
+      return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
                                       outsideTopBarHeight: outsideTopBarHeight,
                                       outsideTrailingBarWidth: outsideTrailingBarWidth,
                                       outsideBottomBarHeight: outsideBottomBarHeight,
@@ -591,8 +591,8 @@ extension PlayerWindowController {
     }
 
     // Converts & updates existing geometry to this layout
-    func convertWindowedModeGeometry(from existingGeometry: PWGeometry, videoAspect: CGFloat? = nil,
-                                     keepFullScreenDimensions: Bool) -> PWGeometry {
+    func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, videoAspect: CGFloat? = nil,
+                                     keepFullScreenDimensions: Bool) -> PWinGeometry {
       assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
       let resizedBarsGeo = existingGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
                                                             outsideTrailingBarWidth: outsideTrailingBarWidth,
@@ -607,14 +607,14 @@ extension PlayerWindowController {
       return resizedBarsGeo.refit()
     }
     
-    func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWGeometry {
+    func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWinGeometry {
       switch mode {
       case .fullScreen, .fullScreenInteractive:
         return buildFullScreenGeometry(inScreenID: screenID, videoAspect: videoAspect)
       case .windowedInteractive:
-        return PWGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
+        return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
       case .windowed:
-        let geo = PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
+        let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
                              mode: mode,
                              topMarginHeight: 0,  // is only nonzero when in legacy FS
                              outsideTopBarHeight: outsideTopBarHeight,
@@ -631,13 +631,13 @@ extension PlayerWindowController {
         let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect,
                                              isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
                                              isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
-        return musicModeGeo.toPWGeometry()
+        return musicModeGeo.toPWinGeometry()
       }
 
     }
 
     /// Only for windowed modes!
-    func buildDefaultInitialGeometry(screen: NSScreen) -> PWGeometry {
+    func buildDefaultInitialGeometry(screen: NSScreen) -> PWinGeometry {
       let videoSize = AppData.defaultVideoSize
       let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
       let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, videoAspect: videoSize.mpvAspect)

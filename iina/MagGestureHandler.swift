@@ -90,7 +90,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   private func scaleWindow(recognizer: NSMagnificationGestureRecognizer) {
     guard !windowController.isFullScreen else { return }
 
-    var finalGeometry: PWGeometry? = nil
+    var finalGeometry: PWinGeometry? = nil
     // adjust window size
     switch recognizer.state {
     case .began:
@@ -135,7 +135,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
   }
 
   @discardableResult
-  private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> PWGeometry? {
+  private func scaleVideoFromPinchGesture(to magnification: CGFloat) -> PWinGeometry? {
     /// For best experience for the user, do not check `isAnimatingLayoutTransition` at state `began` (i.e., allow it to start keeping track
     /// of pinch), but do not allow this method to execute (i.e. do not respond) until after layout transitions are complete.
     guard !windowController.isAnimatingLayoutTransition else { return nil }
@@ -162,8 +162,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
         /// Important: use `animate: false` so that window controller callbacks are not triggered
         newMusicModeGeometry = windowController.applyMusicModeGeo(newMusicModeGeometry, animate: false, updateCache: false)
       }
-      // Kind of clunky to convert to PWGeometry, just to fit the function signature, then convert it back. But...could be worse.
-      return newMusicModeGeometry.toPWGeometry()
+      // Kind of clunky to convert to PWinGeometry, just to fit the function signature, then convert it back. But...could be worse.
+      return newMusicModeGeometry.toPWinGeometry()
     }
     // Else: not music mode
 

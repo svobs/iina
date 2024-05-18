@@ -1190,7 +1190,7 @@ class PlayerCore: NSObject {
     return nil
   }
 
-  func updateMPVWindowScale(using windowGeo: PWGeometry) {
+  func updateMPVWindowScale(using windowGeo: PWinGeometry) {
     guard windowGeo.mode == .windowed || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
       return
     }
@@ -1224,7 +1224,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func deriveVideoScale(from geo: PWGeometry) -> CGFloat? {
+  func deriveVideoScale(from geo: PWinGeometry) -> CGFloat? {
     guard !windowController.isClosing, !isStopping, !isStopped else { return nil }
 
     let screen = NSScreen.getScreenOrDefault(screenID: geo.screenID)

@@ -124,7 +124,7 @@ extension PlayerWindowController {
     let windowGeo = windowedModeGeo.clone(windowFrame: currentWindowFrame, screenID: currentScreenID, videoAspect: newVideoAspect)
     let justOpenedFileManually = justOpenedFile && !isInitialSizeDone
 
-    let newWindowGeo: PWGeometry
+    let newWindowGeo: PWinGeometry
     if justOpenedFile, let resizedGeo = resizeAfterFileOpen(justOpenedFileManually: justOpenedFileManually,
                                                             windowGeo: windowGeo, videoSizeCAR: newvideoSizeCAR) {
       newWindowGeo = resizedGeo
@@ -174,7 +174,7 @@ extension PlayerWindowController {
     player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
   }
 
-  private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWGeometry, videoSizeCAR: NSSize) -> PWGeometry? {
+  private func resizeAfterFileOpen(justOpenedFileManually: Bool, windowGeo: PWinGeometry, videoSizeCAR: NSSize) -> PWinGeometry? {
     assert(windowGeo.videoAspect == videoSizeCAR.mpvAspect, "Expected videoSizeCAR aspect: \(videoSizeCAR.mpvAspect), found: \(windowGeo.videoAspect)")
     // resize option applies
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
@@ -228,8 +228,8 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeMinimallyForNewVideoAspect(from windowGeo: PWGeometry,
-                                                newVideoAspect: CGFloat) -> PWGeometry {
+  private func resizeMinimallyForNewVideoAspect(from windowGeo: PWinGeometry,
+                                                newVideoAspect: CGFloat) -> PWinGeometry {
     // User is navigating in playlist. Try to retain same window width.
     // This often isn't possible for vertical videos, which will end up shrinking the width.
     // So try to remember the preferred width so it can be restored when possible
@@ -349,7 +349,7 @@ extension PlayerWindowController {
   }
 
   /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes.
-  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize, lockViewportToVideoSize: Bool, isLiveResizingWidth: Bool) -> PWGeometry {
+  func resizeWindow(_ window: NSWindow, to requestedSize: NSSize, lockViewportToVideoSize: Bool, isLiveResizingWidth: Bool) -> PWinGeometry {
     let currentLayout = currentLayout
     guard currentLayout.isWindowed else {
       log.error("WinWillResize: requested mode is invalid: \(currentLayout.spec.mode). Will fall back to windowedModeGeo")
@@ -364,7 +364,7 @@ extension PlayerWindowController {
       return currentGeo
     }
 
-    let chosenGeo: PWGeometry
+    let chosenGeo: PWinGeometry
     // Need to resize window to match video aspect ratio, while taking into account any outside panels.
     if lockViewportToVideoSize && window.inLiveResize {
       let nonViewportAreaSize = currentGeo.windowFrame.size.subtract(currentGeo.viewportSize)
@@ -398,7 +398,7 @@ extension PlayerWindowController {
     return chosenGeo
   }
 
-  func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWGeometry? = nil) {
+  func updateFloatingOSCAfterWindowDidResize(usingGeometry newGeometry: PWinGeometry? = nil) {
     guard let window = window, currentLayout.hasFloatingOSC else { return }
 
     let newViewportSize = newGeometry?.viewportSize ?? viewportView.frame.size
@@ -444,7 +444,7 @@ extension PlayerWindowController {
 
   /// Use for resizing window. Not animated. Can be used in windowed or full screen modes. Can be used in music mode only if playlist is hidden.
   /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved
-  func applyWindowResize(usingGeometry newGeometry: PWGeometry? = nil) {
+  func applyWindowResize(usingGeometry newGeometry: PWinGeometry? = nil) {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
 
@@ -498,7 +498,7 @@ extension PlayerWindowController {
 
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
-  func applyLegacyFSGeo(_ geometry: PWGeometry) {
+  func applyLegacyFSGeo(_ geometry: PWinGeometry) {
     guard let window = window else { return }
     let currentLayout = currentLayout
     videoView.apply(geometry)
@@ -524,13 +524,13 @@ extension PlayerWindowController {
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.
   ///
   /// Also updates cached `windowedModeGeo` and saves updated state. Windowed mode only!
-  func applyWindowGeoInAnimationPipeline(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
+  func applyWindowGeoInAnimationPipeline(_ newGeometry: PWinGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
                                          timing: CAMediaTimingFunctionName = .easeInEaseOut) {
     let tasks = buildApplyWindowGeoTasks(newGeometry, duration: duration, timing: timing)
     animationPipeline.submit(tasks)
   }
 
-  func buildApplyWindowGeoTasks(_ newGeometry: PWGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
+  func buildApplyWindowGeoTasks(_ newGeometry: PWinGeometry, duration: CGFloat = IINAAnimation.DefaultDuration,
                                timing: CAMediaTimingFunctionName = .easeInEaseOut) -> [IINAAnimation.Task] {
     assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
@@ -551,7 +551,7 @@ extension PlayerWindowController {
     return tasks
   }
 
-  func applyWindowGeo(_ newGeometry: PWGeometry) {
+  func applyWindowGeo(_ newGeometry: PWinGeometry) {
     log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
 
     videoView.videoLayer.enterAsynchronousMode()
@@ -620,7 +620,7 @@ extension PlayerWindowController {
     /// Make sure to call `apply` AFTER `updateVideoViewVisibilityConstraints`:
     miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
     updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
-    let convertedGeo = geometry.toPWGeometry()
+    let convertedGeo = geometry.toPWinGeometry()
     videoView.apply(convertedGeo)
 
     if let derivedVideoScale = player.deriveVideoScale(from: convertedGeo) {

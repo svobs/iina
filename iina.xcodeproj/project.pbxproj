@@ -189,7 +189,7 @@
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
 		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
-		D1A44D8A2A5E18D00089B283 /* PWGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWGeometry.swift */; };
+		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */; };
@@ -1584,7 +1584,7 @@
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
 		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
-		D1A44D892A5E18D00089B283 /* PWGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWGeometry.swift; sourceTree = "<group>"; };
+		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebarExt.swift; sourceTree = "<group>"; };
@@ -2605,7 +2605,7 @@
 				D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
-				D1A44D892A5E18D00089B283 /* PWGeometry.swift */,
+				D1A44D892A5E18D00089B283 /* PWinGeometry.swift */,
 				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
 				D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */,
 				D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */,
@@ -3158,7 +3158,7 @@
 				E32712B024EAA14500359DAB /* ScreenshootOSDView.swift in Sources */,
 				D11AB83628EEE72A00673A90 /* EditableTableViewDelegate.swift in Sources */,
 				E3BA79EE2131443A00529D99 /* OpenURLWindowController.swift in Sources */,
-				D1A44D8A2A5E18D00089B283 /* PWGeometry.swift in Sources */,
+				D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */,
 				E3FF5AC02938582F0019CE45 /* JavascriptDevTool.swift in Sources */,
 				84FBCB381EEACDDD0076C77C /* FFmpegController.m in Sources */,
 				84879A981E0FFC7E0004F894 /* PrefUIViewController.swift in Sources */,

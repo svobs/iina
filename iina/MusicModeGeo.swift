@@ -9,7 +9,7 @@
 import Foundation
 
 /**
- `MusicModeGeometry`: like `PWGeometry`, but for music mode.
+ `MusicModeGeometry`: like `PWinGeometry`, but for music mode.
 
  Because the music mode window reuses the existing player window, it:
  * Uses the viewport to display video or album art, but can be turned off, in which case it is given a height of zero. The viewport has 0 margins on all sides when in music mode.
@@ -18,7 +18,7 @@ import Foundation
  * 2. Playlist if shown. Playlist has 0 height if hidden, otherwise is bounded by `minPlaylistHeight` and remaining height on screen.
  *  Never has any inside bars, outside sidebars or top bar (the views exist but are reduced to zero area).
 
- A `MusicModeGeometry` object can be converted to a `PWGeometry` via its `toPWGeometry()` function.
+ A `MusicModeGeometry` object can be converted to a `PWinGeometry` via its `toPWinGeometry()` function.
  */
 struct MusicModeGeometry: Equatable, CustomStringConvertible {
   let windowFrame: NSRect
@@ -106,9 +106,9 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                              isPlaylistVisible: isPlaylistVisible ?? self.isPlaylistVisible)
   }
 
-  /// Converts this `MusicModeGeometry` to an equivalent `PWGeometry` object.
-  func toPWGeometry() -> PWGeometry {
-    return PWGeometry(windowFrame: windowFrame,
+  /// Converts this `MusicModeGeometry` to an equivalent `PWinGeometry` object.
+  func toPWinGeometry() -> PWinGeometry {
+    return PWinGeometry(windowFrame: windowFrame,
                       screenID: screenID,
                       fitOption: .stayInside,
                       mode: .musicMode,
@@ -125,7 +125,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return PWGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+    return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
   func withVideoViewVisible(_ visible: Bool) -> MusicModeGeometry {
@@ -148,7 +148,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Must also ensure that window stays within the bounds of the screen it is in. Almost all of the time the window  will be
   /// height-bounded instead of width-bounded.
   func refit() -> MusicModeGeometry {
-    let containerFrame = PWGeometry.getContainerFrame(forScreenID: screenID, fitOption: .stayInside)!
+    let containerFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: .stayInside)!
 
     /// When the window's width changes, the video scales to match while keeping its aspect ratio,
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
@@ -210,7 +210,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     Logger.log("Scaling MusicMode video to desiredWidth: \(newVideoWidth)", level: .verbose)
 
     let newScreenID = screenID ?? self.screenID
-    let containerFrame: NSRect = PWGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!
+    let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!
 
     // Window height should not change. Only video size should be scaled
     let windowHeight = min(containerFrame.height, windowFrame.height)

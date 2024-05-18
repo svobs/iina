@@ -95,7 +95,7 @@ struct PlayerSaveState {
   /// See `setInitialWindowLayout()` in `PlayerWindowLayout.swift`.
   let layoutSpec: PlayerWindowController.LayoutSpec?
   /// If in fullscreen, this is actually the `priorWindowedGeometry`
-  let windowedModeGeo: PWGeometry?
+  let windowedModeGeo: PWinGeometry?
   let musicModeGeo: MusicModeGeometry?
   let screens: [ScreenMeta]
 
@@ -105,7 +105,7 @@ struct PlayerSaveState {
     let layoutSpecCSV = PlayerSaveState.string(for: .layoutSpec, properties)
     self.layoutSpec = PlayerWindowController.LayoutSpec.fromCSV(layoutSpecCSV)
     let windowdModeCSV = PlayerSaveState.string(for: .windowedModeGeo, properties)
-    self.windowedModeGeo = PWGeometry.fromCSV(windowdModeCSV)
+    self.windowedModeGeo = PWinGeometry.fromCSV(windowdModeCSV)
     let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, properties)
     self.musicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV)
     self.screens = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
@@ -900,9 +900,9 @@ extension MusicModeGeometry {
   }
 }
 
-extension PWGeometry {
+extension PWinGeometry {
 
-  /// `PWGeometry` -> String
+  /// `PWinGeometry` -> String
   func toCSV() -> String {
     return [PlayerSaveState.windowGeometryPrefStringVersion,
             self.topMarginHeight.stringMaxFrac2,
@@ -929,8 +929,8 @@ extension PWGeometry {
     ].joined(separator: ",")
   }
 
-  /// String -> `PWGeometry`
-  static func fromCSV(_ csv: String?) -> PWGeometry? {
+  /// String -> `PWinGeometry`
+  static func fromCSV(_ csv: String?) -> PWinGeometry? {
     guard !(csv?.isEmpty ?? true) else {
       Logger.log("CSV is empty; returning nil for geometry", level: .debug)
       return nil
@@ -976,7 +976,7 @@ extension PWGeometry {
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
                                     bottom: viewportMarginBottom, leading: viewportMarginLeading)
-      return PWGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
+      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
                              outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
                              outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
                              insideTopBarHeight: insideTopBarHeight, insideTrailingBarWidth: insideTrailingBarWidth,

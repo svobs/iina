@@ -231,7 +231,7 @@ struct Constants {
       static let playSliderKnobHeight: CGFloat = 12
     }
 
-    struct PWGeometry {
+    struct PWinGeometry {
       static let minViewportHeight = PlayerWindowController.standardTitleBarHeight + 80
     }
 

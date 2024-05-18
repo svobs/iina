@@ -255,7 +255,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Window geometry vars
 
-  lazy var windowedModeGeo: PWGeometry = PlayerWindowController.windowedModeGeoLastClosed {
+  lazy var windowedModeGeo: PWinGeometry = PlayerWindowController.windowedModeGeoLastClosed {
     didSet {
       log.verbose("Updated windowedModeGeo ≔ \(windowedModeGeo)")
       assert(windowedModeGeo.mode.isWindowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode)")
@@ -265,12 +265,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Remembers the geometry of the "last closed" window in windowed, so future windows will default to its layout.
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
-  static var windowedModeGeoLastClosed: PWGeometry = {
+  static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Will fall back to default geometry",
                  level: .verbose)
-    } else if let savedGeo = PWGeometry.fromCSV(csv) {
+    } else if let savedGeo = PWinGeometry.fromCSV(csv) {
       if !savedGeo.mode.isWindowed || savedGeo.fitOption.isFullScreen {
         Logger.log("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Will fall back to default geometry (found: \(savedGeo))",
                    level: .error)
@@ -1145,7 +1145,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow(_ geometry: PWGeometry) {
+  func addVideoViewToWindow(_ geometry: PWinGeometry) {
     guard let window else { return }
     videoView.$isUninited.withLock() { isUninited in
       guard !viewportView.subviews.contains(videoView) else { return }
@@ -3293,10 +3293,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
-              let minViewportSizeWindowed = PWGeometry.computeMinSize(withAspect: newVideoAspect,
+              let minViewportSizeWindowed = PWinGeometry.computeMinSize(withAspect: newVideoAspect,
                                                                       minWidth: minViewportSizeIM.width,
                                                                       minHeight: minViewportSizeIM.height)
-              let minViewportMarginsIM = PWGeometry.minViewportMargins(forMode: .windowedInteractive)
+              let minViewportMarginsIM = PWinGeometry.minViewportMargins(forMode: .windowedInteractive)
               newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width),
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))
 
@@ -4299,7 +4299,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     }
 
     // Set frame to animate back to
-    let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWGeometry() : windowedModeGeo
+    let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
     pip.replacementRect = geo.videoFrameInWindowCoords
     pip.replacementWindow = window
 
@@ -4340,7 +4340,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       /// Must set this before calling `addVideoViewToWindow()`
       pipStatus = .notInPIP
 
-      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWGeometry() : windowedModeGeo
+      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
       addVideoViewToWindow(geo)
 
       // If using legacy windowed mode, need to manually add title to Window menu & Dock

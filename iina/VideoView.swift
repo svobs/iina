@@ -179,7 +179,7 @@ class VideoView: NSView {
     window?.layoutIfNeeded()
   }
 
-  func apply(_ geometry: PWGeometry?) {
+  func apply(_ geometry: PWinGeometry?) {
     dispatchPrecondition(condition: .onQueue(.main))
 
     guard player.windowController.pipStatus == .notInPIP else {

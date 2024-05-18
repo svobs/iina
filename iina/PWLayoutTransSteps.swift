@@ -63,7 +63,7 @@ extension PlayerWindowController {
     case .fullScreen, .fullScreenInteractive:
       break  // Not applicable
     case .musicMode:
-      // TODO: extend musicModeGeo from PWGeometry and then use outputGeo instead of musicModeGeo reference
+      // TODO: extend musicModeGeo from PWinGeometry and then use outputGeo instead of musicModeGeo reference
       let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame)
       musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, screenID: screenID,
                                         videoAspect: transition.outputGeometry.videoAspect)
@@ -808,7 +808,7 @@ extension PlayerWindowController {
         player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
-        let newGeo: PWGeometry
+        let newGeo: PWinGeometry
         if transition.isEnteringLegacyFullScreen {
           // Deal with possible top margin needed to hide camera housing
           if transition.isInitialLayout {
@@ -1108,7 +1108,7 @@ extension PlayerWindowController {
   }
 
   // Update OSD (& Additional Info) views have correct offset from top of screen
-  func updateOSDTopBarOffset(_ geometry: PWGeometry, isLegacyFullScreen: Bool) {
+  func updateOSDTopBarOffset(_ geometry: PWinGeometry, isLegacyFullScreen: Bool) {
     var newOffsetFromTop: CGFloat = 8
     if isLegacyFullScreen {
       let screen = NSScreen.forScreenID(geometry.screenID)!

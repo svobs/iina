@@ -863,11 +863,11 @@ extension PlayerWindowController {
     return false
   }
 
-  /// Returns new or existing `PWGeometry` if handled; `nil` if not
+  /// Returns new or existing `PWinGeometry` if handled; `nil` if not
   func resizeSidebar(with dragEvent: NSEvent) -> Bool {
     guard leadingSidebarIsResizing || trailingSidebarIsResizing else { return false }
 
-    let oldGeo: PWGeometry
+    let oldGeo: PWinGeometry
     switch currentLayout.mode {
     case .windowed:
       oldGeo = windowedModeGeo
@@ -880,7 +880,7 @@ extension PlayerWindowController {
     return IINAAnimation.disableAnimation { [self] in
       videoView.videoLayer.enterAsynchronousMode()
       
-      let newGeo: PWGeometry?
+      let newGeo: PWinGeometry?
 
       if leadingSidebarIsResizing {
         newGeo = resizeLeadingSidebar(from: oldGeo, dragLocationX: dragEvent.locationInWindow.x)
@@ -907,9 +907,9 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeLeadingSidebar(from oldGeo: PWGeometry, dragLocationX: CGFloat) -> PWGeometry? {
+  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, dragLocationX: CGFloat) -> PWinGeometry? {
     let newPlaylistWidth: CGFloat
-    let newGeo: PWGeometry
+    let newGeo: PWinGeometry
     let currentLayout = currentLayout
     let desiredPlaylistWidth = clampPlaylistWidth(dragLocationX + 2)
 
@@ -955,9 +955,9 @@ extension PlayerWindowController {
     return newGeo
   }
 
-  private func resizeTrailingSidebar(from oldGeo: PWGeometry, dragLocationX: CGFloat) -> PWGeometry? {
+  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, dragLocationX: CGFloat) -> PWinGeometry? {
     let newPlaylistWidth: CGFloat
-    let newGeo: PWGeometry
+    let newGeo: PWinGeometry
     let currentLayout = currentLayout
     let viewportSize = oldGeo.viewportSize
     let desiredPlaylistWidth = clampPlaylistWidth(oldGeo.windowFrame.width - dragLocationX - 2)

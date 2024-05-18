@@ -186,7 +186,7 @@ extension PlayerWindowController {
       /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
       let videoAspect = player.info.videoAspect
-      let viewportSize = PWGeometry.computeMinSize(withAspect: videoAspect,
+      let viewportSize = PWinGeometry.computeMinSize(withAspect: videoAspect,
                                                    minWidth: Constants.WindowedMode.minViewportSize.width,
                                                    minHeight: Constants.WindowedMode.minViewportSize.height)
       let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
@@ -238,11 +238,11 @@ extension PlayerWindowController {
     // - Build geometries
 
     // InputGeometry
-    let inputGeometry: PWGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, geo, windowedModeScreen: windowedModeScreen)
+    let inputGeometry: PWinGeometry = buildInputGeometry(from: inputLayout, transitionName: transitionName, geo, windowedModeScreen: windowedModeScreen)
     log.verbose("[\(transitionName)] InputGeometry: \(inputGeometry)")
 
     // OutputGeometry
-    let outputGeometry: PWGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
+    let outputGeometry: PWinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
                                                          outputLayout: outputLayout, geo, isInitialLayout: isInitialLayout)
 
     let transition = LayoutTransition(name: transitionName,
@@ -402,7 +402,7 @@ extension PlayerWindowController {
       let duration = endingAnimationDuration * cameraToTotalFrameRatio
 
       transition.tasks.append(IINAAnimation.Task(duration: duration, timing: .easeIn, { [self] in
-        let newGeo: PWGeometry
+        let newGeo: PWinGeometry
         if transition.inputGeometry.hasTopPaddingForCameraHousing {
           /// Entering legacy FS on a screen with camera housing, but `Use entire Macbook screen` is unchecked in Settings.
           /// Prevent an unwanted bouncing near the top by using this animation to expand to visibleFrame.
@@ -468,7 +468,7 @@ extension PlayerWindowController {
 
   /// Builds `inputGeometry`.
   private func buildInputGeometry(from inputLayout: LayoutState, transitionName: String, _ geo: Geometries, 
-                                  windowedModeScreen: NSScreen) -> PWGeometry {
+                                  windowedModeScreen: NSScreen) -> PWinGeometry {
     // Restore window size & position
     switch inputLayout.mode {
     case .windowed:
@@ -478,23 +478,23 @@ extension PlayerWindowController {
     case .windowedInteractive:
       /// `geo.windowedMode` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
-      return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+      return PWinGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
                                                    videoAspect: geo.windowedMode.videoAspect)
     case .musicMode:
       /// `musicModeGeo` should have already been deserialized and set.
       /// But make sure we correct any size problems
-      return geo.musicMode.refit().toPWGeometry()
+      return geo.musicMode.refit().toPWinGeometry()
     }
   }
 
   /// Builds `outputGeometry`.
   /// Note that the result should not necessarily overrite `windowedModeGeo`. It is used by the transition animations.
-  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWGeometry, 
-                                   outputLayout: LayoutState, _ geo: Geometries, isInitialLayout: Bool) -> PWGeometry {
+  private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWinGeometry, 
+                                   outputLayout: LayoutState, _ geo: Geometries, isInitialLayout: Bool) -> PWinGeometry {
 
     switch outputLayout.mode {
     case .windowed:
-      let prevWindowedGeo: PWGeometry
+      let prevWindowedGeo: PWinGeometry
       if inputGeometry.mode == .windowedInteractive {
         /// `windowedInteractive` -> `windowed`
         log.verbose("Exiting interactive mode: converting windowedInteractive geo to windowed for outputGeo")
@@ -510,11 +510,11 @@ extension PlayerWindowController {
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
         log.verbose("Already in interactive mode: converting windowed geo to interactiveWindowed for outputGeo")
-        return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+        return PWinGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
                                                      videoAspect: geo.windowedMode.videoAspect)
       } else if inputGeometry.mode == .fullScreenInteractive {
         if geo.windowedMode.mode == .windowedInteractive {
-          return PWGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
+          return PWinGeometry.buildInteractiveModeWindow(windowFrame: geo.windowedMode.windowFrame, screenID: geo.windowedMode.screenID,
                                                        videoAspect: inputGeometry.videoAspect)
         }
         return geo.windowedMode.clone(videoAspect: inputGeometry.videoAspect).toInteractiveMode()
@@ -529,14 +529,14 @@ extension PlayerWindowController {
     case .musicMode:
       /// `videoAspect` may have gone stale while not in music mode. Update it (playlist height will be recalculated if needed):
       let musicModeGeoCorrected = geo.musicMode.clone(videoAspect: geo.videoAspect).refit()
-      return musicModeGeoCorrected.toPWGeometry()
+      return musicModeGeoCorrected.toPWinGeometry()
 
     }
   }
 
   /// Builds `middleGeometry`.
   // Currently there are 4 bars. Each can be either inside or outside, exclusively.
-  func buildMiddleGeometry(forTransition transition: LayoutTransition, _ geo: Geometries) -> PWGeometry? {
+  func buildMiddleGeometry(forTransition transition: LayoutTransition, _ geo: Geometries) -> PWinGeometry? {
     if transition.isTogglingInteractiveMode {
       if transition.inputLayout.isFullScreen {
         // Need to hide sidebars when entering interactive mode in full screen
@@ -557,7 +557,7 @@ extension PlayerWindowController {
         let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
         let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                     size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
-        let resizedGeo = PWGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, 
+        let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, 
                                     fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0,
                                     outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
                                     outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
@@ -568,16 +568,16 @@ extension PlayerWindowController {
       }
 
     } else if transition.isEnteringMusicMode {
-      let baseGeo: PWGeometry
+      let baseGeo: PWinGeometry
       if transition.inputLayout.isFullScreen {
         // Need middle geo so that sidebars get closed
-        baseGeo = geo.musicMode.clone(videoAspect: geo.videoAspect, isPlaylistVisible: false).toPWGeometry()
+        baseGeo = geo.musicMode.clone(videoAspect: geo.videoAspect, isPlaylistVisible: false).toPWinGeometry()
       } else {
         baseGeo = transition.inputGeometry
       }
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
-      return PWGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
+      return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
                         fitOption: baseGeo.fitOption, mode: .musicMode, topMarginHeight: 0,
                         outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
                         insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
@@ -644,7 +644,7 @@ extension PlayerWindowController {
 
     if transition.outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
-      return PWGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
+      return PWinGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
                                       mode: transition.outputLayout.mode,
                                       outsideTopBarHeight: outsideTopBarHeight,
                                       outsideTrailingBarWidth: outsideTrailingBarWidth,
@@ -673,22 +673,22 @@ extension PlayerWindowController {
   // MARK: - Geometries
 
   struct Geometries {
-    let windowedMode: PWGeometry
+    let windowedMode: PWinGeometry
     let musicMode: MusicModeGeometry
     let videoAspect: CGFloat
 
-    init(windowedMode: PWGeometry, musicMode: MusicModeGeometry, videoAspect: CGFloat) {
+    init(windowedMode: PWinGeometry, musicMode: MusicModeGeometry, videoAspect: CGFloat) {
       self.windowedMode = windowedMode
       self.musicMode = musicMode
       self.videoAspect = videoAspect
     }
   }
 
-  func geo(windowed: PWGeometry? = nil, musicMode: MusicModeGeometry? = nil, 
+  func geo(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil, 
            videoAspect: CGFloat? = nil, from inputLayout: LayoutState? = nil) -> Geometries {
     let latestFrame = window?.frame
 
-    let windowedNew: PWGeometry
+    let windowedNew: PWinGeometry
     if let windowed {
       windowedNew = windowed
     } else if inputLayout?.mode.isWindowed ?? false {

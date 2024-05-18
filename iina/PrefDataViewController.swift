@@ -46,10 +46,6 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   private var observers: [NSObjectProtocol] = []
 
-  var isWindowVisible: Bool {
-    return view.window?.isVisible ?? false
-  }
-
   override func viewDidLoad() {
     super.viewDidLoad()
 
@@ -126,7 +122,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   private func reloadHistoryCount(_ notification: Notification) {
     let historyCount = HistoryController.shared.history.count
-    let infoMsg = "History exists for \(historyCount) media."
+    let infoMsg = historyCount == 0 ? "No history data exists." : "History exists for \(historyCount) media."
     Logger.log("Updating msg for PrefData tab: \(infoMsg.quoted)", level: .verbose)
     historyCountView.stringValue = infoMsg
     clearHistoryBtn.isEnabled = historyCount > 0
@@ -146,7 +142,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
         watchLaterCount = files.count
       }
       DispatchQueue.main.async { [self] in
-        let infoMsg = "Watch Later data exists for \(watchLaterCount) media files."
+        let infoMsg = watchLaterCount == 0 ? "No Watch Later data found." : "Watch Later data exists for \(watchLaterCount) media files."
         watchLaterCountView.stringValue = infoMsg
         Logger.log("Refreshed Watch Later count: \(infoMsg)", level: .verbose)
         clearWatchLaterBtn.isEnabled = watchLaterCount > 0

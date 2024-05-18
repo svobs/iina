@@ -22,7 +22,7 @@ import Foundation
 ///           ➤ apply `totalRotation` (== `userRotation` + container-specified rotation)
 ///             ➤ `videoSizeCAR`
 ///               ➤ apply `scale`
-///                 ➤ `videoSizeCARS` (AKA `videoSize` in `PWGeometry`)
+///                 ➤ `videoSizeCARS` (AKA `videoSize` in `PWinGeometry`)
 struct VideoGeometry: CustomStringConvertible {
   static let nullGeometry = VideoGeometry(rawWidth: 0, rawHeight: 0,
                                           selectedAspectLabel: "",
