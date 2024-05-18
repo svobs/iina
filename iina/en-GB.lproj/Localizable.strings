@@ -275,6 +275,9 @@
 "alert.clear_cache.title" = "Clear Thumbnail Cache";
 "alert.clear_cache.message" = "Are you sure you want to delete all generated thumbnails?";
 
+"alert.clear_saved_windows.title" = "Clear Saved Windows";
+"alert.clear_saved_windows.message" = "Are you sure you want to delete all saved windows from previous launches?";
+
 "alert.clear_history.title" = "Clear Playback History";
 "alert.clear_history.message" = "Are you sure you want to delete all playback history? This will delete all playback histories and entries in \"Open Recent\".";
 

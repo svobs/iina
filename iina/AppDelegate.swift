@@ -576,6 +576,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if !isRestoreApproved {
       // Clear out old state. It may have been causing errors, or user wants to start new
+      Logger.log("User denied restore. Clearing all saved launch state.")
       Preference.UIState.clearAllSavedLaunchState()
       Preference.set(false, for: .isRestoreInProgress)
       return false
@@ -875,6 +876,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if shouldTerminate {
+      Logger.log("Clearing all state for this launch because all windows have closed!")
       Preference.UIState.clearSavedStateForThisLaunch()
       NSApp.terminate(nil)
     }

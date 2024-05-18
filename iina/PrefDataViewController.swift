@@ -51,6 +51,10 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    // TODO: add and remove listeners for viewWillDisappear and appear
+    NotificationCenter.default.addObserver(self, selector: #selector(self.refreshSavedLaunchSummary(_:)),
+                                           name: .savedWindowStateDidChange, object: nil)
+
     NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
                                            name: .iinaHistoryUpdated, object: nil)
 
@@ -71,26 +75,33 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   override func viewWillAppear() {
     super.viewWillAppear()
 
-    reloadHistoryCount(nil)
-    reloadWatchLaterOptions(nil)
-    reloadWatchLaterCount(nil)
-    refreshRecentDocumentsCount(nil)
+    refreshSavedLaunchSummary(self)
+    reloadHistoryCount(self)
+    reloadWatchLaterOptions(self)
+    reloadWatchLaterCount(self)
+    refreshRecentDocumentsCount(self)
     reloadThumbnailCacheStat()
-
-    let launchDataSummary = buildSavedLaunchSummary()
-    Logger.log(launchDataSummary)
-    savedLaunchSummaryView.stringValue = launchDataSummary
   }
 
-  func buildSavedLaunchSummary() -> String {
+  // TODO: this can get called often. Add throttling
+  @objc func refreshSavedLaunchSummary(_ sender: AnyObject?) {
+    let (hasData, launchDataSummary) = buildSavedLaunchSummary()
+    Logger.log(launchDataSummary)
+    savedLaunchSummaryView.stringValue = launchDataSummary
+
+    clearSavedWindowDataBtn.isEnabled = hasData
+  }
+
+  func buildSavedLaunchSummary() -> (Bool, String) {
     let launches = Preference.UIState.collectLaunchState()
     if launches.isEmpty {
-      return "No saved state found."
+      return (false, "No saved window data found.")
     }
 
     let playerWindowCount = launches.reduce(0, {count, launch in count + launch.playerWindowCount})
     let nonPlayerWindowCount = launches.reduce(0, {count, launch in count + launch.nonPlayerWindowCount})
-    return "\(playerWindowCount) players + \(nonPlayerWindowCount) other windows are currently saved."
+    let hasData = playerWindowCount > 0 || nonPlayerWindowCount > 0
+    return (hasData, "\(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows are currently saved.")
   }
 
   private func setTextColorToRed(_ button: NSButton) {
@@ -160,7 +171,17 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   // MARK: - IBActions
+
   @IBAction func clearSavedWindowDataBtnAction(_ sender: Any) {
+    Utility.quickAskPanel("clear_saved_windows", sheetWindow: view.window) { respond in
+      guard respond == .alertFirstButtonReturn else { return }
+      guard !Preference.UIState.isSaveEnabled else {
+        Logger.log("User chose to clear all saved window data, but save is still enabled!", level: .error)
+        return
+      }
+      Logger.log("User chose to clear all saved window data")
+      Preference.UIState.clearAllSavedLaunchState(force: true)
+    }
   }
 
   @IBAction func clearWatchLaterBtnAction(_ sender: Any) {

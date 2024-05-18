@@ -308,4 +308,5 @@ extension Notification.Name {
   static let watchLaterDirDidChange = Notification.Name("watchLaterDirDidChange")
   static let watchLaterOptionsDidChange = Notification.Name("watchLaterOptionsDidChange")
   static let recentDocumentsDidChange = Notification.Name("recentDocumentsDidChange")
+  static let savedWindowStateDidChange = Notification.Name("savedWindowStateDidChange")
 }

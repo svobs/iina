@@ -191,11 +191,6 @@ extension Preference {
 
     // Returns the autosave names of windows which have been saved in the set of open windows
     static private func getSavedOpenWindowsBackToFront(forLaunchID launchID: Int) -> [SavedWindow] {
-      guard isRestoreEnabled else {
-        Logger.log("UI restore disabled. Returning empty open window list")
-        return []
-      }
-
       let key = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
       let windowList = parseSavedOpenWindowsBackToFront(fromPrefValue: UserDefaults.standard.string(forKey: key))
       Logger.log("Loaded list of open windows for launchID \(launchID): \(windowList.map{$0.saveName.string})", level: .verbose)
@@ -255,28 +250,34 @@ extension Preference {
       let csv = windowNamesBackToFront.map{ $0 }.joined(separator: ",")
       let key = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
 
+      let csvOld = UserDefaults.standard.string(forKey: key)
+      guard csvOld != csv else { return }
+
       UserDefaults.standard.setValue(csv, forKey: key)
+
+      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
 
-    static func clearSavedStateForThisLaunch() {
-      clearSavedState(forLaunchID: launchID)
+    static func clearSavedStateForThisLaunch(silent: Bool = false) {
+      clearSavedState(forLaunchID: launchID, silent: silent)
     }
 
-    static func clearSavedState(forLaunchName launchName: String) {
+    static func clearSavedState(forLaunchName launchName: String, silent: Bool = false) {
       guard let launchID = Preference.UIState.launchID(fromLaunchName: launchName) else {
         Logger.log("Failed to parse launchID from launchName: \(launchName.quoted)", level: .error)
         return
       }
-      clearSavedState(forLaunchID: launchID)
+      clearSavedState(forLaunchID: launchID, silent: silent)
     }
 
-    static func clearSavedState(forLaunchID launchID: Int) {
+    static func clearSavedState(forLaunchID launchID: Int, force: Bool = false, silent: Bool = false) {
+      guard isSaveEnabled || force else { return }
       let launchName = Preference.UIState.launchName(forID: launchID)
 
       // Clear state for saved players:
       for savedWindow in getSavedOpenWindowsBackToFront(forLaunchID: launchID) {
         if let playerID = savedWindow.saveName.playerWindowID {
-          Preference.UIState.clearPlayerSaveState(forPlayerID: playerID)
+          Preference.UIState.clearPlayerSaveState(forPlayerID: playerID, force: force)
         }
       }
 
@@ -286,31 +287,29 @@ extension Preference {
 
       Logger.log("Clearing saved launch (pref key: \(launchName.quoted))")
       UserDefaults.standard.removeObject(forKey: launchName)
+
+      if !silent {
+        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      }
     }
 
-    static func clearAllSavedLaunchState(extraClean: Bool = false) {
+    static func clearAllSavedLaunchState(force: Bool = false) {
       guard !AppDelegate.shared.isTerminating else { return }
-      guard isSaveEnabled else {
+      guard isSaveEnabled || force else {
         Logger.log("Will not clear saved UI state; UI save is disabled")
         return
       }
       let launchCount = launchID - 1
-      Logger.log("Clearing all saved window states from prefs (launchCount: \(launchCount), extraClean: \(extraClean.yn))", level: .debug)
+      Logger.log("Clearing all saved window states from prefs (launchCount: \(launchCount), isSavedEnabled=\(isSaveEnabled.yn) force=\(force))", level: .debug)
 
-      let launchIDs: [Int]
-      if extraClean {
-        // ExtraClean: May take a while, but should clean up any ophans
-        launchIDs = [Int](0..<launchCount)
-      } else {
-        /// `collectLaunchState()` will give lingering launches a chance to deny being removed
-        launchIDs = Preference.UIState.collectLaunchState().compactMap{$0.id}
-      }
+      /// `collectLaunchState()` will give lingering launches a chance to deny being removed
+      let launchIDs: [Int] = Preference.UIState.collectLaunchState(cleanUpAlongTheWay: true).compactMap{$0.id}
 
       for launchID in launchIDs {
-        clearSavedState(forLaunchID: launchID)
+        clearSavedState(forLaunchID: launchID, force: force, silent: true)
       }
 
-      clearSavedStateForThisLaunch()
+      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
 
     static private func getPlayerIDs(from windowAutosaveNames: [WindowAutosaveName]) -> [String] {
@@ -353,7 +352,8 @@ extension Preference {
       UserDefaults.standard.setValue(properties, forKey: key)
     }
 
-    static func clearPlayerSaveState(forPlayerID playerID: String) {
+    static func clearPlayerSaveState(forPlayerID playerID: String, force: Bool = false) {
+      guard isSaveEnabled || force else { return }
       let key = WindowAutosaveName.playerWindow(id: playerID).string
       UserDefaults.standard.removeObject(forKey: key)
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
@@ -514,6 +514,7 @@ extension Preference {
 
       if countEntriesDeleted > 0 {
         Logger.log("Deleted \(countEntriesDeleted) pref entries")
+        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
       }
 
       let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
@@ -553,13 +554,12 @@ extension Preference {
       // First save under new window list:
       let finalWindowList = Array(deduplicatedReverseWindowList.reversed())
       let finalWindowStringList = finalWindowList.map({$0.saveString})
-      Logger.log("Saving consolidated windows from past launches to current launch (\(launchID)): \(finalWindowList.map({$0.saveName.string}))", level: .verbose)
+      Logger.log("Consolidating windows from \(launchesNewestToOldest.count) past launches to current launch (\(launchID)): \(finalWindowList.map({$0.saveName.string}))", level: .verbose)
       saveOpenWindowList(windowNamesBackToFront: finalWindowStringList, forLaunchID: launchID)
 
       // Now remove entries for old launches (keeping player state entries)
       for launch in launchesNewestToOldest {
         let launchName = Preference.UIState.launchName(forID: launch.id)
-        Logger.log("Removing past launch from prefs: \(launchName.quoted)", level: .verbose)
 
         if launch.savedWindows != nil {
           let windowListKey = Preference.UIState.makeOpenWindowListKey(forLaunchID: launch.id)
@@ -568,11 +568,12 @@ extension Preference {
         }
 
         if launch.status != .none {
-          Logger.log("Clearing saved launch (pref key: \(launchName.quoted))")
+          Logger.log("Clearing saved launch status (pref key: \(launchName.quoted))")
           UserDefaults.standard.removeObject(forKey: launchName)
         }
       }
 
+      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
       return finalWindowList
     }
 
