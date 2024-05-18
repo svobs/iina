@@ -35,6 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   static var launchName: String = Preference.UIState.launchName(forID: launchID)
   static var launchTime = Date().timeIntervalSince1970
 
+  static var windowsOpen = Set<String>()
   static var windowsHidden = Set<String>()
   static var windowsMinimized = Set<String>()
 
@@ -433,7 +434,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if Preference.UIState.isSaveEnabled {
       // Save ordered list of open windows each time the order of windows changed.
       observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil,
-                                                              queue: .main, using: self.keyWindowDidChange))
+                                                              queue: .main, using: self.windowDidBecomeKey))
 
       observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didMiniaturizeNotification, object: nil,
                                                               queue: .main, using: self.windowDidMiniaturize))
@@ -477,8 +478,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - Opening/restoring windows
 
   // Saves an ordered list of current open windows (if configured) each time *any* window becomes the key window.
-  private func keyWindowDidChange(_ notification: Notification) {
+  private func windowDidBecomeKey(_ notification: Notification) {
+    Logger.log("Window became key!!!")
     guard let window = notification.object as? NSWindow else { return }
+    // Assume new key window is the active window. AppKit does not provide an API to notify when a window is opened,
+    // so this notification will serve as a proxy, since a window which becomes active is by definition an open window.
+    let activeWindowName = window.savedStateName
+    guard !activeWindowName.isEmpty else { return }
+
     // Query for the list of open windows and save it.
     // Don't do this too soon, or their orderIndexes may not yet be up to date.
     DispatchQueue.main.async { [self] in
@@ -487,6 +494,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
+      Logger.log("Window became key; adding to open windows list: \(activeWindowName.quoted)")
+      if AppDelegate.windowsMinimized.remove(activeWindowName) != nil {
+        Logger.log("Window was not properly removed from minimized windows list! Name: \(activeWindowName.quoted)", level: .warning)
+      }
+      AppDelegate.windowsOpen.insert(activeWindowName)
+      AppDelegate.windowsHidden.remove(activeWindowName)
+
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -496,12 +510,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let savedStateName = window.savedStateName
     guard !savedStateName.isEmpty else { return }
 
-    Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
-    AppDelegate.windowsMinimized.insert(savedStateName)
     DispatchQueue.main.async { [self] in
       guard !isTerminating else {
         return
       }
+      Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
+      AppDelegate.windowsOpen.remove(savedStateName)
+      AppDelegate.windowsMinimized.insert(savedStateName)
+      AppDelegate.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -511,12 +527,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let savedStateName = window.savedStateName
     guard !savedStateName.isEmpty else { return }
 
-    Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
-    AppDelegate.windowsMinimized.remove(savedStateName)
     DispatchQueue.main.async { [self] in
       guard !isTerminating else {
         return
       }
+      Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
+      AppDelegate.windowsOpen.insert(savedStateName)
+      AppDelegate.windowsMinimized.remove(savedStateName)
+      AppDelegate.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -650,6 +668,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
+      // Rebuild window maps as we go:
+      if savedWindow.isMinimized {
+        AppDelegate.windowsMinimized.insert(savedWindow.saveName.string)
+      } else {
+        AppDelegate.windowsOpen.insert(savedWindow.saveName.string)
+      }
+
       let wc: NSWindowController
       switch savedWindow.saveName {
       case .playbackHistory:
@@ -792,11 +817,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !windowName.isEmpty else { return }
 
     lastClosedWindowName = windowName
+    AppDelegate.windowsOpen.remove(windowName)
     AppDelegate.windowsHidden.remove(windowName)
     AppDelegate.windowsMinimized.remove(windowName)
 
     /// Query for the list of open windows and save it (excluding the window which is about to close).
-    /// Most cases are covered by saving when `keyWindowDidChange` is called, but this covers the case where
+    /// Most cases are covered by saving when `windowDidBecomeKey` is called, but this covers the case where
     /// the user closes a window which is not in the foreground.
     Preference.UIState.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
 

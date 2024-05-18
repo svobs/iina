@@ -42,7 +42,7 @@ struct SavedWindow {
     return false
   }
 
-  // Includes minimized state
+  /// Includes minimized state
   var saveString: String {
     return isMinimized ? "\(SavedWindow.minimizedPrefix)\(saveName.string)" : saveName.string
   }

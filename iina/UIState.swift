@@ -215,9 +215,17 @@ extension Preference {
 
     static func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
       guard !AppDelegate.shared.isTerminating else { return }
+      let openWindowsSet = AppDelegate.windowsOpen
       let openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
+      // Don't care about ordering of these:
       let minimizedWindowNames = Array(AppDelegate.windowsMinimized)
       let hiddenWindowNames = Array(AppDelegate.windowsHidden)
+      if openWindowsSet.count != openWindowNames.count {
+        Logger.log("While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames); Other: Hidden=\(hiddenWindowNames), Minimized=\(minimizedWindowNames)", level: .error)
+        #if DEBUG
+        Logger.fatal("See previous error for open window names")
+        #endif
+      }
       if Logger.isTraceEnabled {
         Logger.log("Saving window list: open=\(openWindowNames), hidden=\(hiddenWindowNames), minimized=\(minimizedWindowNames)", level: .verbose)
       }
@@ -365,10 +373,10 @@ extension Preference {
             /// Launch was not marked `done`?
             /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
             var newValue = LaunchStatus.indeterminate1
-            if launch.status == LaunchStatus.indeterminate1 {
-              newValue = LaunchStatus.indeterminate2
+            if launch.status.rawValue < LaunchStatus.done.rawValue - 1 {
+              newValue = LaunchStatus(rawValue: launch.status.rawValue + 1) ?? LaunchStatus.indeterminate2
             }
-            UserDefaults.standard.setValue(newValue, forKey: key)
+            UserDefaults.standard.setValue(newValue.rawValue, forKey: key)
             countOfLaunchesToWaitOn += 1
           }
 
