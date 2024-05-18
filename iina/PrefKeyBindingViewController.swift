@@ -66,6 +66,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
   override func viewWillAppear() {
     Logger.log("Key Bindings pref pane will appear", level: .verbose)
+    super.viewWillAppear()
     BindingTableState.manager.applyStateUpdate(AppInputConfig.current)  // bring up to date
     BindingTableState.manager.enableObservers()
   }
@@ -73,6 +74,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   override func viewWillDisappear() {
     // Disable observers when not in use to save CPU
     Logger.log("Key Bindings pref pane will disappear", level: .verbose)
+    super.viewWillDisappear()
     BindingTableState.manager.disableObservers()
   }
 

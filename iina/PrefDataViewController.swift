@@ -44,6 +44,8 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   @IBOutlet weak var clearHistoryBtn: NSButton!
   @IBOutlet weak var clearThumbnailCacheBtn: NSButton!
 
+  private var observers: [NSObjectProtocol] = []
+
   var isWindowVisible: Bool {
     return view.window?.isVisible ?? false
   }
@@ -51,40 +53,51 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    // TODO: add and remove listeners for viewWillDisappear and appear
-    NotificationCenter.default.addObserver(self, selector: #selector(self.refreshSavedLaunchSummary(_:)),
-                                           name: .savedWindowStateDidChange, object: nil)
-
-    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadHistoryCount(_:)),
-                                           name: .iinaHistoryUpdated, object: nil)
-
-    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterOptions(_:)),
-                                           name: .watchLaterOptionsDidChange, object: nil)
-
-    NotificationCenter.default.addObserver(self, selector: #selector(self.reloadWatchLaterCount(_:)),
-                                           name: .watchLaterDirDidChange, object: nil)
-
-    NotificationCenter.default.addObserver(self, selector: #selector(self.refreshRecentDocumentsCount(_:)),
-                                           name: .recentDocumentsDidChange, object: nil)
-
     setTextColorToRed(clearSavedWindowDataBtn)
     setTextColorToRed(clearWatchLaterBtn)
     setTextColorToRed(clearHistoryBtn)
   }
 
   override func viewWillAppear() {
+    Logger.log("Saved Data pref pane will appear", level: .verbose)
     super.viewWillAppear()
 
-    refreshSavedLaunchSummary(self)
-    reloadHistoryCount(self)
-    reloadWatchLaterOptions(self)
-    reloadWatchLaterCount(self)
-    refreshRecentDocumentsCount(self)
+    observers.append(NotificationCenter.default.addObserver(forName: .savedWindowStateDidChange, object: nil,
+                                                            queue: .main, using: self.refreshSavedLaunchSummary(_:)))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil,
+                                                            queue: .main, using: self.reloadHistoryCount(_:)))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .watchLaterOptionsDidChange, object: nil,
+                                                            queue: .main, using: self.reloadWatchLaterOptions(_:)))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .watchLaterDirDidChange, object: nil,
+                                                            queue: .main, using: self.reloadWatchLaterCount(_:)))
+
+    observers.append(NotificationCenter.default.addObserver(forName: .recentDocumentsDidChange, object: nil,
+                                                            queue: .main, using: self.refreshRecentDocumentsCount(_:)))
+
+    let dummy = Notification(name: .recentDocumentsDidChange)
+    refreshSavedLaunchSummary(dummy)
+    reloadHistoryCount(dummy)
+    reloadWatchLaterOptions(dummy)
+    reloadWatchLaterCount(dummy)
+    refreshRecentDocumentsCount(dummy)
     reloadThumbnailCacheStat()
   }
 
+  override func viewWillDisappear() {
+    Logger.log("Saved Data pref pane will disappear", level: .verbose)
+    super.viewWillDisappear()
+    // Disable observers when not in use to save CPU
+    for observer in observers {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    observers = []
+  }
+
   // TODO: this can get called often. Add throttling
-  @objc func refreshSavedLaunchSummary(_ sender: AnyObject?) {
+  private func refreshSavedLaunchSummary(_ notification: Notification) {
     let (hasData, launchDataSummary) = buildSavedLaunchSummary()
     Logger.log(launchDataSummary)
     savedLaunchSummaryView.stringValue = launchDataSummary
@@ -92,7 +105,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     clearSavedWindowDataBtn.isEnabled = hasData
   }
 
-  func buildSavedLaunchSummary() -> (Bool, String) {
+  private func buildSavedLaunchSummary() -> (Bool, String) {
     let launches = Preference.UIState.collectLaunchState()
     if launches.isEmpty {
       return (false, "No saved window data found.")
@@ -111,51 +124,39 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     }
   }
 
-  @objc func reloadHistoryCount(_ sender: AnyObject?) {
+  private func reloadHistoryCount(_ notification: Notification) {
     let historyCount = HistoryController.shared.history.count
-    DispatchQueue.main.async { [self] in
-      guard isWindowVisible else { return }
-      let infoMsg = "History exists for \(historyCount) media."
-      Logger.log("Updating msg for PrefData tab: \(infoMsg.quoted)", level: .verbose)
-      historyCountView.stringValue = infoMsg
-      clearHistoryBtn.isEnabled = historyCount > 0
-    }
+    let infoMsg = "History exists for \(historyCount) media."
+    Logger.log("Updating msg for PrefData tab: \(infoMsg.quoted)", level: .verbose)
+    historyCountView.stringValue = infoMsg
+    clearHistoryBtn.isEnabled = historyCount > 0
   }
 
-  @objc func reloadWatchLaterOptions(_ sender: AnyObject?) {
-    DispatchQueue.main.async { [self] in
-      guard isWindowVisible else { return }
-      Logger.log("Refreshing Watch Later options", level: .verbose)
-      watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
-    }
+  private func reloadWatchLaterOptions(_ notification: Notification) {
+    Logger.log("Refreshing Watch Later options", level: .verbose)
+    watchLaterOptionsView.stringValue = MPVController.watchLaterOptions.replacingOccurrences(of: ",", with: ", ")
   }
 
   // TODO: this is expensive. Add throttling
-  @objc func reloadWatchLaterCount(_ sender: AnyObject?) {
-    DispatchQueue.main.async { [self] in
-      guard isWindowVisible else { return }
-      HistoryController.shared.queue.async {
-        var watchLaterCount = 0
-        let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
-        if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
-          watchLaterCount = files.count
-        }
-        DispatchQueue.main.async { [self] in
-          let infoMsg = "Watch Later data exists for \(watchLaterCount) media files."
-          watchLaterCountView.stringValue = infoMsg
-          Logger.log("Refreshed Watch Later count: \(infoMsg)", level: .verbose)
-          clearWatchLaterBtn.isEnabled = watchLaterCount > 0
-        }
+  private func reloadWatchLaterCount(_ notification: Notification) {
+    HistoryController.shared.queue.async {
+      var watchLaterCount = 0
+      let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+      if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {
+        watchLaterCount = files.count
+      }
+      DispatchQueue.main.async { [self] in
+        let infoMsg = "Watch Later data exists for \(watchLaterCount) media files."
+        watchLaterCountView.stringValue = infoMsg
+        Logger.log("Refreshed Watch Later count: \(infoMsg)", level: .verbose)
+        clearWatchLaterBtn.isEnabled = watchLaterCount > 0
       }
     }
   }
 
-  @objc func refreshRecentDocumentsCount(_ sender: AnyObject?) {
-    DispatchQueue.main.async { [self] in
-      guard isWindowVisible else { return }
-      let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
-      recentDocumentsCountView.stringValue = "Current number of recent items: \(recentDocCount)"
-    }
+  private func refreshRecentDocumentsCount(_ notification: Notification) {
+    let recentDocCount = NSDocumentController.shared.recentDocumentURLs.count
+    recentDocumentsCountView.stringValue = "Current number of recent items: \(recentDocCount)"
   }
 
   // TODO: this is expensive. Add throttling
