@@ -760,7 +760,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func showOpenURLWindow(isAlternativeAction: Bool) {
-    Logger.log("Showing OpenURLWindow (isAlternativeAction: \(isAlternativeAction))", level: .verbose)
+    Logger.log("Showing OpenURLWindow, isAltAction=\(isAlternativeAction.yn)", level: .verbose)
     openURLWindow.isAlternativeAction = isAlternativeAction
     openURLWindow.openWindow(self)
   }
@@ -773,12 +773,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     guard !isTerminating else { return false }
 
-    Logger.log("applicationShouldTerminateAfterLastWindowClosed entered", level: .verbose)
     // Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     guard !PlayerCore.active.windowController.isOpen else { return false }
 
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !isShowingOpenFileWindow else { return false }
+
+    Logger.log("Last window was closed", level: .verbose)
 
     if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
       Preference.UIState.clearSavedStateForThisLaunch()

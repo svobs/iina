@@ -269,7 +269,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     var windowFrame = windowFrame ?? self.windowFrame
     let fitOption = fitOption ?? self.fitOption
     if let screenID, screenID != self.screenID, fitOption.shouldMoveWindowToKeepInContainer {
-      windowFrame = keepWindowInside(screenID: screenID, fitOption: fitOption, windowFrame: windowFrame)
+      windowFrame = moveOriginToMatchScreen(screenID: screenID, fitOption: fitOption, windowFrame: windowFrame)
     }
 
     return PWinGeometry(windowFrame: windowFrame,
@@ -289,7 +289,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                       videoAspect: videoAspect ?? self.videoAspect)
   }
 
-  private func keepWindowInside(screenID: String, fitOption: ScreenFitOption, windowFrame: NSRect) -> NSRect {
+  private func moveOriginToMatchScreen(screenID: String, fitOption: ScreenFitOption, windowFrame: NSRect) -> NSRect {
     guard let currentScreenID = NSScreen.getOwnerScreenID(forViewRect: windowFrame) else {
       return windowFrame
     }
@@ -303,10 +303,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       return windowFrame
     }
 
-    // TODO:
+    let originOffset = NSPoint(x: newScreenFrame.origin.x - currentScreenFrame.origin.x, y: newScreenFrame.origin.y - currentScreenFrame.origin.y)
+    let newOrigin = NSPoint(x: windowFrame.origin.x + originOffset.x, y: windowFrame.origin.y + originOffset.y)
+    let newWindowFrame = NSRect(origin: newOrigin, size: windowFrame.size)
 
-    Logger.log("Ajdusting windowFrame to keep it inside screenID \(screenID.quoted), from \(currentScreenID.quoted) (fitOption: \(fitOption))", level: .verbose)
-    return windowFrame
+    Logger.log("[geo] Adjusting window origin to put inside screenID \(screenID.quoted) (was: \(currentScreenID.quoted), fitOption: \(fitOption)) → \(newWindowFrame)", level: .verbose)
+    return newWindowFrame
   }
 
   // MARK: - Computed properties
@@ -626,7 +628,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     if Logger.isTraceEnabled {
       let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
-      Logger.log("Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
+      Logger.log("[geo] Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
     }
     let unusedHeight = viewportSize.height - videoSize.height
     let computedMargins = MarginQuad(top: (unusedHeight * 0.5).rounded(.down), trailing: trailingMargin,
@@ -701,7 +703,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                      lockViewportToVideoSize: Bool? = nil,
                      mode: PlayerWindowMode? = nil) -> PWinGeometry {
     guard videoAspect >= 0 else {
-      Logger.log("PWinGeometry cannot scale viewport: videoAspect (\(videoAspect)) is invalid!", level: .error)
+      Logger.log("[geo] PWinGeometry cannot scale viewport: videoAspect (\(videoAspect)) is invalid!", level: .error)
       return self
     }
 
