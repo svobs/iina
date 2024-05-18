@@ -117,29 +117,29 @@ enum ScreenFitOption: Int {
  • The frame of `wc.videoView` is the innermost dotted-lined rectangle.
  • The frame of `wc.viewportView` contains `wc.videoView` and additional space for black bars.
  •
- ~
- ~                            `geo.viewportSize.width`
- ~                             (of `wc.viewportView`)
- ~                             ◄---------------►
- ┌─────────────────────────────────────────────────────────────────────────────┐`geo.windowFrame`
- │                                 ▲`geo.topMarginHeight`                      │
- │                                 ▼ (only used to cover Macbook notch)        │
- ├─────────────────────────────────────────────────────────────────────────────┤
- │                               ▲                                             │
- │                               ┊`geo.outsideTopBarHeight`                    │
- │                               ▼   (`wc.topBarView`)                         │
- ├────────────────────────────┬─────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideTopBarHeight == 0`
- │                            │black bar (empty)│                              │ ▲
- │                            ├─────────────────┤                              │ ┊ `geo.viewportSize.height`
- │◄--------------------------►│ `geo.videoSize` │◄----------------------------►│ ┊  (of `wc.viewportView`)
- │                            │(`wc.videoView`) │ `geo.outsideTrailingBarWidth`│ ┊
- │`geo.outsideLeadingBarWidth`├─────────────────┤ (of `wc.trailingSidebarView`)│ ┊
- │(of `wc.leadingSidebarView`)│black bar (empty)│                              │ ▼
- ├────────────────────────────┴─────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBottomBarHeight == 0`
- │                                ▲                                            │
- │                                ┊`geo.outsideBottomBarHeight`                │
- │                                ▼   (of `wc.bottomBarView`)                  │
- └─────────────────────────────────────────────────────────────────────────────┘
+ ~                               `geo.viewportSize.width`
+ ~                                (of `wc.viewportView`)
+ ~                             ◄--------------------------►
+ ┌────────────────────────────────────────────────────────────────────────────────────────┐`geo.windowFrame`
+ │                                            ▲                                           │
+ │                                            │`geo.topMarginHeight`                      │
+ │                                            ▼ (only nonzero when covering Macbook notch)│
+ ├────────────────────────────────────────────────────────────────────────────────────────┤
+ │                                          ▲                                             │
+ │                                          │`geo.outsideTopBarHeight`                    │
+ │                                          ▼   (`wc.topBarView`)                         │
+ ├────────────────────────────┬────────────────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideTopBarHeight == 0`
+ │                            │   `viewportMargins.top`    │                              │ ▲
+ │                            ├─────┬────────────────┬─────┤                              │ │ `geo.viewportSize.height`
+ │◄--------------------------►│ [€] │ `geo.videoSize`│ [¥] │◄----------------------------►│ │  (of `wc.viewportView`)
+ │                            │     │(`wc.videoView`)│     │ `geo.outsideTrailingBarWidth`│ │
+ │`geo.outsideLeadingBarWidth`├─────┴────────────────┴─────┤ (of `wc.trailingSidebarView`)│ │
+ │(of `wc.leadingSidebarView`)│  `viewportMargins.bottom`  │                              │ ▼
+ ├────────────────────────────┴────────────────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBottomBarHeight == 0`
+ │                                      ▲                                                 │
+ │                                      │`geo.outsideBottomBarHeight`                     │  [€] = `viewportMargins.leading`
+ │                                      ▼   (of `wc.bottomBarView`)                       │  [¥] = `viewportMargins.trailing`
+ └────────────────────────────────────────────────────────────────────────────────────────┘
  */
 struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Stored properties
