@@ -17,19 +17,25 @@ import Foundation
 /// data-intensive, writes to the .plist should be trivial by comparison.
 extension Preference {
   class UIState {
-    class LaunchStatus {
-      static let none: Int = 0
-      static let stillRunning: Int = 1
-      static let indeterminate1: Int = 2
-      static let indeterminate2: Int = 3
-      static let done: Int = 10
+    enum LaunchStatus: Int {
+      case none = 0
+      case stillRunning = 1
+      case indeterminate1 = 2
+      case indeterminate2 = 3
+      case indeterminate3 = 4
+      case indeterminate4 = 5
+      case indeterminate5 = 6
+      case indeterminate6 = 7
+      case indeterminate7 = 8
+      case indeterminate8 = 9
+      case done = 10
     }
 
     class LaunchState: CustomStringConvertible {
       /// launch ID
       let id: Int
       /// `none` == pref entry missing
-      var status: Int = LaunchStatus.none
+      var status: LaunchStatus = .none
       /// Will be `nil` if the pref entry is missing
       var savedWindows: [SavedWindow]? = nil
       // each entry in the set is a pref key
@@ -40,7 +46,7 @@ extension Preference {
       }
 
       var hasAnyData: Bool {
-        return status != LaunchStatus.none || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
+        return status != .none || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
       }
 
       var windowCount: Int {
@@ -69,14 +75,12 @@ extension Preference {
 
       var statusDescription: String {
         switch status {
-        case 0:
+        case .none:
           return "noStatus"
-        case 10:
+        case .done:
           return "done"
-        case 1...9:
-          return "running(\(status))"
         default:
-          return "INVALID(\(status))"
+          return "running(\(status.rawValue))"
         }
       }
     }
@@ -331,6 +335,19 @@ extension Preference {
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
     }
 
+    private static func launchStatus(fromAny value: Any, launchName: String) -> LaunchStatus {
+      guard let statusInt = value as? Int else {
+        Logger.log("Failed to parse status int from pref entry! (entry: \(launchName.quoted), value: \(value))", level: .error)
+        return .none
+      }
+      let status = LaunchStatus(rawValue: statusInt)
+      guard let status else {
+        Logger.log("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))", level: .error)
+        return .none
+      }
+      return status
+    }
+
     private static func buildLaunchDict(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [Int: LaunchState] {
       var countOfLaunchesToWaitOn = 0
       var launchDict: [Int: LaunchState] = [:]
@@ -340,12 +357,8 @@ extension Preference {
         if let launchID = launchID(fromLaunchName: key) {
           // Entry is type: Launch Status
           let launch = launchDict[launchID] ?? LaunchState(launchID)
-
-          guard let statusInt = value as? Int else {
-            Logger.log("Failed to parse status int from pref entry! (entry: \(key.quoted), value: \(value))", level: .error)
-            continue
-          }
-          launch.status = statusInt
+          
+          launch.status = launchStatus(fromAny: value, launchName: key)
           launchDict[launchID] = launch
 
           if isCleanUpEnabled, launch.status != LaunchStatus.done, launchID != AppDelegate.launchID {
@@ -468,8 +481,8 @@ extension Preference {
           // May have been waiting for past launches to report back their status so that we
           // can clean up improperly terminated launches. Refresh status now.
           let pastLaunchName = launchName(forID: launch.id)
-          let launchStatus: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
-          launch.status = launchStatus
+          let statusInt: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
+          launch.status = launchStatus(fromAny: statusInt, launchName: pastLaunchName)
         }
       }
 
@@ -485,7 +498,7 @@ extension Preference {
     }
 
     static func collectLaunchStateForRestore() -> [LaunchState] {
-      return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.status != Preference.UIState.LaunchStatus.stillRunning }
+      return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.status != .stillRunning }
     }
 
     /// Consolidates all player windows (& others) from any past launches which are no longer running into the windows for this instance.
@@ -528,7 +541,7 @@ extension Preference {
           UserDefaults.standard.removeObject(forKey: windowListKey)
         }
 
-        if launch.status != LaunchStatus.none {
+        if launch.status != .none {
           Logger.log("Clearing saved launch (pref key: \(launchName.quoted))")
           UserDefaults.standard.removeObject(forKey: launchName)
         }

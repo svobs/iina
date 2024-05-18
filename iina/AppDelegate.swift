@@ -131,7 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         guard newLaunchStatus != 0 else { return }
         Logger.log("Detected change to this instance's status pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
         Logger.log("Changing launch status back to 'stillRunning' so the other launch will skip this instance.")
-        UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning, forKey: keyPath)
+        UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: keyPath)
       }
       return
     }
@@ -350,7 +350,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     menuController.refreshBuiltInMenuItemBindings()
 
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
-    UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning, forKey: AppDelegate.launchName)
+    UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: AppDelegate.launchName)
     UserDefaults.standard.addObserver(self, forKeyPath: AppDelegate.launchName, options: .new, context: nil)
 
     let activePlayer = PlayerCore.active  // Load the first PlayerCore
@@ -478,6 +478,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // Saves an ordered list of current open windows (if configured) each time *any* window becomes the key window.
   private func keyWindowDidChange(_ notification: Notification) {
+    guard let window = notification.object as? NSWindow else { return }
     // Query for the list of open windows and save it.
     // Don't do this too soon, or their orderIndexes may not yet be up to date.
     DispatchQueue.main.async { [self] in
@@ -727,7 +728,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if result == .OK {  /// OK
         Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
         if Preference.bool(for: .recordRecentFiles) {
-          HistoryController.shared.queue.async { [self] in
+          HistoryController.shared.queue.async {
             for url in panel.urls {
               NSDocumentController.shared.noteNewRecentDocumentURL(url)
             }
@@ -947,7 +948,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if Preference.UIState.isSaveEnabled {
       // unlock for new launch
       Logger.log("Updating status of \(AppDelegate.launchName.quoted) to 'done' in prefs", level: .verbose)
-      UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.done, forKey: AppDelegate.launchName)
+      UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.done.rawValue, forKey: AppDelegate.launchName)
     }
 
     // The first priority was to shutdown any new input from the user. The second priority is to

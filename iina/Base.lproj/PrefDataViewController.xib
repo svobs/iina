@@ -307,7 +307,7 @@
                         </stackView>
                         <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ur4-37-RFU">
                             <rect key="frame" x="18" y="74" width="184" height="14"/>
-                            <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Current number of recent items: X" id="E3s-CR-cqr">
+                            <textFieldCell key="cell" controlSize="small" title="Current number of recent items: X" id="E3s-CR-cqr">
                                 <font key="font" metaFont="smallSystem"/>
                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -369,7 +369,7 @@
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="cRf-v0-eXQ">
                                     <rect key="frame" x="-2" y="3" width="143" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="History exists for N media." id="kAH-0h-Fc1">
+                                    <textFieldCell key="cell" controlSize="small" title="History exists for N media." id="kAH-0h-Fc1">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -414,7 +414,7 @@
                                 </button>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="s69-xc-GKJ" firstAttribute="centerY" secondItem="B6j-P2-fkd" secondAttribute="centerY" id="RjV-1h-PBs"/>
+                                <constraint firstItem="s69-xc-GKJ" firstAttribute="centerY" secondItem="SSk-Rd-BxH" secondAttribute="centerY" id="RjV-1h-PBs"/>
                             </constraints>
                             <visibilityPriorities>
                                 <integer value="1000"/>
@@ -571,7 +571,7 @@
                             <subviews>
                                 <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="RuB-bf-lqy">
                                     <rect key="frame" x="-2" y="3" width="195" height="14"/>
-                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Watch Later exists for M media files." id="yyK-HL-0eD">
+                                    <textFieldCell key="cell" controlSize="small" title="Watch Later exists for M media files." id="yyK-HL-0eD">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -616,7 +616,7 @@
                                 </button>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="sIv-DY-eFx" firstAttribute="centerY" secondItem="HgT-L8-Tb3" secondAttribute="centerY" id="Xx4-us-ecB"/>
+                                <constraint firstItem="sIv-DY-eFx" firstAttribute="centerY" secondItem="bHj-vX-uFl" secondAttribute="centerY" id="Xx4-us-ecB"/>
                             </constraints>
                             <visibilityPriorities>
                                 <integer value="1000"/>

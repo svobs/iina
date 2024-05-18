@@ -119,6 +119,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     }
   }
 
+  // TODO: this is expensive. Add throttling
   @objc func reloadWatchLaterCount(_ sender: AnyObject?) {
     DispatchQueue.main.async { [self] in
       guard isWindowVisible else { return }
@@ -129,7 +130,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
           watchLaterCount = files.count
         }
         DispatchQueue.main.async { [self] in
-          let infoMsg = "Watch Later exists for \(watchLaterCount) media files."
+          let infoMsg = "Watch Later data exists for \(watchLaterCount) media files."
           watchLaterCountView.stringValue = infoMsg
           Logger.log("Refreshed Watch Later count: \(infoMsg)", level: .verbose)
           clearWatchLaterBtn.isEnabled = watchLaterCount > 0
@@ -146,6 +147,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     }
   }
 
+  // TODO: this is expensive. Add throttling
   private func reloadThumbnailCacheStat() {
     AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
       let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
