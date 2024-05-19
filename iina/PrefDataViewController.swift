@@ -170,6 +170,11 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   // MARK: - IBActions
 
   @IBAction func clearSavedWindowDataBtnAction(_ sender: Any) {
+    guard !Preference.UIState.isSaveEnabled else {
+      Utility.showAlert("clear_saved_windows_while_enabled", sheetWindow: view.window)
+      return
+    }
+
     Utility.quickAskPanel("clear_saved_windows", sheetWindow: view.window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
       guard !Preference.UIState.isSaveEnabled else {

@@ -193,7 +193,6 @@
 "alert.unsupported_url" = "Unsupported URL.";
 "alert.wrong_url_format" = "Wrong URL format.";
 
-"alert.restore_cancelled" = "Another copy of IINA is still running. Restoring or saving windows will be disabled for this instance.";
 "alert.restore_prev_error.title" = "Retry Restore";
 "alert.restore_prev_error.message" = "Looks like there was a problem restoring windows from the last launch. Do you want to try again?";
 "alert.restore_prev_error.ok" = "Yes, Restore";
@@ -202,6 +201,8 @@
 "alert.restore_confirm.message" = "Do you want to restore windows from the previous launch?";
 "alert.restore_confirm.ok" = "Yes, Restore";
 "alert.restore_confirm.cancel" = "No, Discard";
+
+"alert.clear_saved_windows_while_enabled" = "Cannot clear while save is enabled.\nPlease first uncheck \"Save & restore open windows between launches\".";
 
 "alert.error_open" = "Cannot open file or stream!";
 "alert.error_open_name" = "Cannot open file or stream:\n%@";

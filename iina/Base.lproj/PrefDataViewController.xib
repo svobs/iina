@@ -215,7 +215,6 @@
                     </buttonCell>
                     <connections>
                         <action selector="clearSavedWindowDataBtnAction:" target="-2" id="irE-re-7aP"/>
-                        <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableRestoreUIState" id="cPa-io-pJw"/>
                     </connections>
                 </button>
             </subviews>
