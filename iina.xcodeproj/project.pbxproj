@@ -190,6 +190,7 @@
 		D19CF7162AB846D300511F80 /* MusicModeGeo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CF7152AB846D300511F80 /* MusicModeGeo.swift */; };
 		D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19F9DA928645C860054CC45 /* EditableTableView.swift */; };
 		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
+		D1A4C2DC2BF97BB200CE32A9 /* FileMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */; };
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */; };
@@ -1585,6 +1586,7 @@
 		D19CF7152AB846D300511F80 /* MusicModeGeo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicModeGeo.swift; sourceTree = "<group>"; };
 		D19F9DA928645C860054CC45 /* EditableTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTableView.swift; sourceTree = "<group>"; };
 		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
+		D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMonitor.swift; sourceTree = "<group>"; };
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebarExt.swift; sourceTree = "<group>"; };
@@ -2326,6 +2328,7 @@
 				51DE55C82A6646710050AD06 /* Sysctl.swift */,
 				D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */,
 				D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */,
+				D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */,
 			);
 			name = Utils;
 			sourceTree = "<group>";
@@ -3178,6 +3181,7 @@
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
 				D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
+				D1A4C2DC2BF97BB200CE32A9 /* FileMonitor.swift in Sources */,
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,
 				E33BA5C4204315740069A0F6 /* AssrtSubtitle.swift in Sources */,

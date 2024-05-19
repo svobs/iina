@@ -23,6 +23,10 @@ struct MarginQuad: Equatable, CustomStringConvertible {
     return top + bottom
   }
 
+  var totalSize: CGSize {
+    return CGSize(width: totalWidth, height: totalHeight)
+  }
+
   var description: String {
     return "(↑:\(top.strMin) →:\(trailing.strMin) ↓:\(bottom.strMin) ←:\(leading.strMin))"
   }
@@ -144,11 +148,14 @@ enum ScreenFitOption: Int {
 struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Stored properties
 
+  // - Screen:
   // The ID of the screen on which this window is displayed
   let screenID: String
   let fitOption: ScreenFitOption
   // The mode affects lockViewportToVideo behavior and minimum sizes
   let mode: PlayerWindowMode
+
+  // - Window dimensions, outermost → innermost
 
   /// The size & position (`window.frame`) of an IINA player `NSWindow`.
   let windowFrame: NSRect
@@ -156,23 +163,28 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // Extra black space (if any) above outsideTopBar, used for covering MacBook's magic camera housing while in legacy fullscreen
   let topMarginHeight: CGFloat
 
-  // Outside panels
-  let outsideTopBarHeight: CGFloat
-  let outsideTrailingBarWidth: CGFloat
-  let outsideBottomBarHeight: CGFloat
-  let outsideLeadingBarWidth: CGFloat
+  /// Outside panels
+  let outsideBars: MarginQuad
+  // TODO: remove all uses of these. Use only `outsideBars`
+  var outsideTopBarHeight: CGFloat { outsideBars.top }
+  var outsideTrailingBarWidth: CGFloat { outsideBars.trailing }
+  var outsideBottomBarHeight: CGFloat { outsideBars.bottom }
+  var outsideLeadingBarWidth: CGFloat { outsideBars.leading }
 
-  // Inside panels
-  let insideTopBarHeight: CGFloat
-  let insideTrailingBarWidth: CGFloat
-  let insideBottomBarHeight: CGFloat
-  let insideLeadingBarWidth: CGFloat
+  /// Inside panels
+  var insideBars: MarginQuad
+  // TODO: remove all uses of these. Use only `insideBars`
+  var insideTopBarHeight: CGFloat { insideBars.top }
+  var insideTrailingBarWidth: CGFloat { insideBars.trailing }
+  var insideBottomBarHeight: CGFloat { insideBars.bottom }
+  var insideLeadingBarWidth: CGFloat { insideBars.leading }
 
   let viewportMargins: MarginQuad
+
   let videoAspect: CGFloat
   let videoSize: NSSize
 
-  // MARK: - Initializers
+  // MARK: - Initializers / Factory Methods
 
   /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`
   init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption, mode: PlayerWindowMode, topMarginHeight: CGFloat,
@@ -192,21 +204,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(outsideTrailingBarWidth >= 0, "Expected outsideTrailingBarWidth >= 0, found \(outsideTrailingBarWidth)")
     assert(outsideBottomBarHeight >= 0, "Expected outsideBottomBarHeight >= 0, found \(outsideBottomBarHeight)")
     assert(outsideLeadingBarWidth >= 0, "Expected outsideLeadingBarWidth >= 0, found \(outsideLeadingBarWidth)")
-    self.outsideTopBarHeight = outsideTopBarHeight
-    self.outsideTrailingBarWidth = outsideTrailingBarWidth
-    self.outsideBottomBarHeight = outsideBottomBarHeight
-    self.outsideLeadingBarWidth = outsideLeadingBarWidth
-    let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+    self.outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
 
     assert(insideTopBarHeight >= 0, "Expected insideTopBarHeight >= 0, found \(insideTopBarHeight)")
     assert(insideTrailingBarWidth >= 0, "Expected insideTrailingBarWidth >= 0, found \(insideTrailingBarWidth)")
     assert(insideBottomBarHeight >= 0, "Expected insideBottomBarHeight >= 0, found \(insideBottomBarHeight)")
     assert(insideLeadingBarWidth >= 0, "Expected insideLeadingBarWidth >= 0, found \(insideLeadingBarWidth)")
-    let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
-    self.insideTopBarHeight = insideTopBarHeight
-    self.insideTrailingBarWidth = insideTrailingBarWidth
-    self.insideBottomBarHeight = insideBottomBarHeight
-    self.insideLeadingBarWidth = insideLeadingBarWidth
+    self.insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
 
     self.videoAspect = videoAspect
 
@@ -289,37 +293,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                       videoAspect: videoAspect ?? self.videoAspect)
   }
 
-  private func moveOriginToMatchScreen(screenID: String, fitOption: ScreenFitOption, windowFrame: NSRect) -> NSRect {
-    guard let currentScreenID = NSScreen.getOwnerScreenID(forViewRect: windowFrame) else {
-      return windowFrame
-    }
-    if screenID == currentScreenID {
-      return windowFrame
-    }
-    guard let newScreenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption) else {
-      return windowFrame
-    }
-    guard let currentScreenFrame = PWinGeometry.getContainerFrame(forScreenID: currentScreenID, fitOption: fitOption) else {
-      return windowFrame
-    }
-
-    let originOffset = NSPoint(x: newScreenFrame.origin.x - currentScreenFrame.origin.x, y: newScreenFrame.origin.y - currentScreenFrame.origin.y)
-    let newOrigin = NSPoint(x: windowFrame.origin.x + originOffset.x, y: windowFrame.origin.y + originOffset.y)
-    let newWindowFrame = NSRect(origin: newOrigin, size: windowFrame.size)
-
-    Logger.log("[geo] Adjusting window origin to put inside screenID \(screenID.quoted) (was: \(currentScreenID.quoted), fitOption: \(fitOption)) → \(newWindowFrame)", level: .verbose)
-    return newWindowFrame
-  }
-
   // MARK: - Computed properties
-
-  var outsideBars: MarginQuad {
-    MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
-  }
-
-  var insideBars: MarginQuad {
-    MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
-  }
 
   var description: String {
     return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.strMin) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) videoSize=\(videoSize) aspect=\(videoAspect) windowFrame=\(windowFrame))"
@@ -358,22 +332,22 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var outsideBarsTotalWidth: CGFloat {
-    return outsideTrailingBarWidth + outsideLeadingBarWidth
+    return outsideBars.totalWidth
   }
 
   var outsideBarsTotalHeight: CGFloat {
-    return outsideTopBarHeight + outsideBottomBarHeight
+    return outsideBars.totalHeight
   }
 
   var outsideBarsTotalSize: NSSize {
-    return NSSize(width: outsideBarsTotalWidth, height: outsideBarsTotalHeight)
+    return outsideBars.totalSize
   }
 
   var hasTopPaddingForCameraHousing: Bool {
     return topMarginHeight > 0
   }
 
-  // MARK: - Min & Max calculations
+  // MARK: - "Minimum" calculations
 
   static func minViewportMargins(forMode mode: PlayerWindowMode) -> MarginQuad {
     switch mode {
@@ -461,6 +435,22 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return NSSize(width: minWinWidth, height: minWinHeight)
   }
 
+  // MARK: - "Maximum" calculations
+
+  fileprivate func computeMaxViewportSize(in containerSize: NSSize) -> NSSize {
+    // Resize only the video. Panels outside the video do not change size.
+    // To do this, subtract the "outside" panels from the container frame
+    return NSSize(width: containerSize.width - outsideBarsTotalWidth,
+                  height: containerSize.height - outsideBarsTotalHeight - topMarginHeight)
+  }
+
+  // Computes & returns the max video size with proper aspect ratio which can fit in the given container,
+  // after subtracting outside bars
+  fileprivate func computeMaxVideoSize(in containerSize: NSSize) -> NSSize {
+    let maxViewportSize = computeMaxViewportSize(in: containerSize)
+    return PWinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: maxViewportSize, mode: mode)
+  }
+
   // MARK: - Static Functions
 
   static func areEqual(windowFrame1: NSRect? = nil, windowFrame2: NSRect? = nil, videoSize1: NSSize? = nil, videoSize2: NSSize? = nil) -> Bool {
@@ -516,8 +506,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
   }
 
-   static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
-                                       minViewportMargins minMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
+  static func computeVideoSize(withAspectRatio videoAspect: CGFloat, toFillIn viewportSize: NSSize,
+                               minViewportMargins minMargins: MarginQuad? = nil, mode: PlayerWindowMode) -> NSSize {
     if viewportSize.width == 0 || viewportSize.height == 0 {
       return NSSize.zero
     }
@@ -638,24 +628,38 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // MARK: - Instance Functions
 
+  func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
+    return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
+  }
+
   private func getContainerFrame(fitOption: ScreenFitOption? = nil) -> NSRect? {
     return PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption ?? self.fitOption)
   }
 
-  fileprivate func computeMaxViewportSize(in containerSize: NSSize) -> NSSize {
-    // Resize only the video. Panels outside the video do not change size.
-    // To do this, subtract the "outside" panels from the container frame
-    return NSSize(width: containerSize.width - outsideBarsTotalWidth,
-                  height: containerSize.height - outsideBarsTotalHeight - topMarginHeight)
+  /// Checks if origin of `windowFrame` does not belong to `screenID`. If it does not, adjusts its origin to move it inside that screen
+  private func moveOriginToMatchScreen(screenID: String, fitOption: ScreenFitOption, windowFrame: NSRect) -> NSRect {
+    guard let currentScreenID = NSScreen.getOwnerScreenID(forViewRect: windowFrame) else {
+      return windowFrame
+    }
+    if screenID == currentScreenID {
+      return windowFrame
+    }
+    guard let newScreenFrame = PWinGeometry.getContainerFrame(forScreenID: screenID, fitOption: fitOption) else {
+      return windowFrame
+    }
+    guard let currentScreenFrame = PWinGeometry.getContainerFrame(forScreenID: currentScreenID, fitOption: fitOption) else {
+      return windowFrame
+    }
+
+    let originOffset = NSPoint(x: newScreenFrame.origin.x - currentScreenFrame.origin.x, y: newScreenFrame.origin.y - currentScreenFrame.origin.y)
+    let newOrigin = NSPoint(x: windowFrame.origin.x + originOffset.x, y: windowFrame.origin.y + originOffset.y)
+    let newWindowFrame = NSRect(origin: newOrigin, size: windowFrame.size)
+
+    Logger.log("[geo] Adjusting window origin to put inside screenID \(screenID.quoted) (was: \(currentScreenID.quoted), fitOption: \(fitOption)) → \(newWindowFrame)", level: .verbose)
+    return newWindowFrame
   }
 
-  // Computes & returns the max video size with proper aspect ratio which can fit in the given container, 
-  // after subtracting outside bars
-  fileprivate func computeMaxVideoSize(in containerSize: NSSize) -> NSSize {
-    let maxViewportSize = computeMaxViewportSize(in: containerSize)
-    return PWinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: maxViewportSize, mode: mode)
-  }
-
+  /// Adjusts the window origin for given `newWindowSize` such that the window's center does not move.
   private func adjustWindowOrigin(forNewWindowSize newWindowSize: NSSize) -> NSPoint {
     // Round the results to prevent excessive window drift due to small imprecisions in calculation
     let deltaX = ((newWindowSize.width - windowFrame.size.width) / 2).rounded(.down)
@@ -667,10 +671,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
     return scaleViewport(fitOption: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
-  }
-
-  func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {
-    return PWinGeometry.areEqual(windowFrame1: windowFrame, windowFrame2: windowFrame2, videoSize1: videoSize, videoSize2: videoSize2)
   }
 
   /// Computes a new `PWinGeometry`, attempting to attain the given window size.
@@ -977,7 +977,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return resizedGeo
   }
 
-  /** Calculate the window frame from a parsed struct of mpv's `geometry` option. */
+  /// Calculate the window frame from a parsed struct of mpv's `geometry` option.
   func apply(mpvGeometry: MPVGeometryDef, desiredWindowSize: NSSize) -> PWinGeometry {
     guard let screenFrame: NSRect = getContainerFrame() else {
       Logger.log("Cannot apply mpv geometry: no container frame found (fitOption: \(fitOption))", level: .error)
@@ -1155,6 +1155,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                      keepFullScreenDimensions: true)
     return resizedGeo
   }
+
+  // Mark: Crop
 
   /// Here, `videoSizeUnscaled` and `cropBox` must be the same scale, which may be different than `self.videoSize`.
   /// The cropBox is the section of the video rect which remains after the crop. Its origin is the lower left of the video.
