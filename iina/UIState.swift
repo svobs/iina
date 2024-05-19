@@ -242,6 +242,13 @@ extension Preference {
       let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
       saveOpenWindowList(windowNamesBackToFront: minimizedStrings + hiddenWindowNames + openWindowNames,
                          forLaunchID: launchID)
+      
+      if UserDefaults.standard.integer(forKey: launchName) != LaunchStatus.stillRunning.rawValue {
+        // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
+        // We can easily add the missing status again.
+        Logger.log("Pref entry for \(launchName.quoted) was missing or incorrect. Setting it to \(LaunchStatus.stillRunning.rawValue)")
+        UserDefaults.standard.setValue(LaunchStatus.stillRunning.rawValue, forKey: launchName)
+      }
     }
 
     static private func saveOpenWindowList(windowNamesBackToFront: [String], forLaunchID launchID: Int) {

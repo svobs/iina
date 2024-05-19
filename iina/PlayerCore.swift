@@ -1974,7 +1974,7 @@ class PlayerCore: NSObject {
   private func saveToLastPlayedFile(_ url: URL?, duration: VideoTime?, position: VideoTime?) {
     guard Preference.bool(for: .resumeLastPosition) else { return }
     guard let url else {
-      log.error("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
+      log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
       return
     }
     // FIXME: remove `iinaLastPlayedFilePath` and `iinaLastPlayedFilePosition` - they are not compatible with welcome window list
