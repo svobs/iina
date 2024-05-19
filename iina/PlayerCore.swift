@@ -76,6 +76,9 @@ class PlayerCore: NSObject {
   }
   private var _touchBarSupport: Any?
 
+  private var subFileMonitor: FileMonitor? = nil
+  private var secondSubFileMonitor: FileMonitor? = nil
+
   /// `true` if this Mac is known to have a touch bar.
   ///
   /// - Note: This is set based on whether `AppKit` has called `MakeTouchBar`, therefore it can, for example, be `false` for
@@ -624,6 +627,7 @@ class PlayerCore: NSObject {
       log.verbose("Stop called")
 
       stopWatchingSubFile()
+      stopWatchingSecondSubFile()
 
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
@@ -2099,6 +2103,10 @@ class PlayerCore: NSObject {
       info.currentMedia = mediaFromPath
     }
 
+    // Stop watchers from prev media (if any)
+    stopWatchingSubFile()
+    stopWatchingSecondSubFile()
+
     preResizeVideo(forURL: info.currentMedia?.url)
 
     DispatchQueue.main.async { [self] in
@@ -2132,12 +2140,8 @@ class PlayerCore: NSObject {
       }
     }
 
-    // Cache this for use by background task
-    let isRestoring = info.isRestoring
-    let priorState = info.priorState
-
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
-    if isRestoring, let priorState,
+    if info.isRestoring, let priorState = info.priorState,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
       restorePlaylist(itemPathList: playlistPathList)
 
@@ -2145,45 +2149,6 @@ class PlayerCore: NSObject {
       PlayerCore.backgroundQueue.async { [self] in
         AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
       }
-    }
-
-    // Auto load
-    $backgroundQueueTicket.withLock { $0 += 1 }
-    let shouldAutoLoadFiles = info.shouldAutoLoadFiles
-    let currentTicket = backgroundQueueTicket
-    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.autoLoadDelay) { [self] in
-      // add files in same folder
-      if shouldAutoLoadFiles {
-        log.debug("Started auto load of files in current folder")
-        self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
-      }
-      // auto load matched subtitles
-      if let matchedSubs = self.info.getMatchedSubs(path) {
-        log.debug("Found \(matchedSubs.count) external subs for current file")
-        for sub in matchedSubs {
-          guard currentTicket == self.backgroundQueueTicket else { return }
-          self.loadExternalSubFile(sub)
-        }
-        if !isRestoring {
-          // set sub to the first one
-          // TODO: why?
-          guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
-          self.setTrack(1, forType: .sub)
-        }
-      }
-
-      self.autoSearchOnlineSub()
-
-      // Set SID & S2ID now that all subs are available
-      if isRestoring, let priorState {
-        if let priorSID = priorState.int(for: .sid) {
-          setTrack(priorSID, forType: .sub)
-        }
-        if let priorS2ID = priorState.int(for: .s2id) {
-          setTrack(priorS2ID, forType: .secondSub)
-        }
-      }
-      log.debug("Done with auto load")
     }
 
     let url = info.currentURL
@@ -2262,6 +2227,50 @@ class PlayerCore: NSObject {
     _reloadChapters()
     syncAbLoop()
     saveState()
+
+    // Cache this for use by background task
+    let isRestoring = info.isRestoring
+    let priorState = info.priorState
+
+    // Auto load
+    $backgroundQueueTicket.withLock { $0 += 1 }
+    let shouldAutoLoadFiles = info.shouldAutoLoadFiles
+    let currentTicket = backgroundQueueTicket
+    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.autoLoadDelay) { [self] in
+      // add files in same folder
+      if shouldAutoLoadFiles {
+        log.debug("Started auto load of files in current folder, isRestoring=\(isRestoring.yn)")
+        self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
+      }
+      // auto load matched subtitles
+      if let matchedSubs = self.info.getMatchedSubs(currentMedia.path) {
+        log.debug("Found \(matchedSubs.count) external subs for current file")
+        for sub in matchedSubs {
+          guard currentTicket == self.backgroundQueueTicket else { return }
+          self.loadExternalSubFile(sub)
+        }
+        if !isRestoring {
+          // set sub to the first one
+          // TODO: why?
+          guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
+          self.setTrack(1, forType: .sub)
+        }
+      }
+
+      self.autoSearchOnlineSub()
+
+      // Set SID & S2ID now that all subs are available
+      if isRestoring, let priorState {
+        if let priorSID = priorState.int(for: .sid) {
+          setTrack(priorSID, forType: .sub)
+        }
+        if let priorS2ID = priorState.int(for: .s2id) {
+          setTrack(priorS2ID, forType: .secondSub)
+        }
+      }
+      log.debug("Done with auto load")
+    }
+
 
     // main thread stuff
     DispatchQueue.main.async { [self] in
@@ -2472,45 +2481,12 @@ class PlayerCore: NSObject {
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
     info.sid = sid
-    startWatchingSubFile()
 
     sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     log.verbose("SID changed to \(sid)")
+    startWatchingSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
-  }
-
-  var subFileMonitor: FileMonitor? = nil
-
-  func startWatchingSubFile() {
-    guard let currentSubTrack = info.currentTrack(.sub) else { return }
-    guard let externalFilename = currentSubTrack.externalFilename else {
-      log.verbose("Sub \(currentSubTrack.id) is not an external file")
-      return
-    }
-
-    // Stop previous watch (if any)
-    stopWatchingSubFile()
-
-    let subURL = URL(fileURLWithPath: externalFilename)
-    let fileMonitor = FileMonitor(url: subURL)
-    fileMonitor.fileDidChange = { [self] in
-      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
-      if code < 0 {
-        Logger.log("Failed reloading subtitles: error code \(code)", level: .error, subsystem: self.subsystem)
-      }
-    }
-    subFileMonitor = fileMonitor
-    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
-    fileMonitor.startMonitoring()
-  }
-
-  func stopWatchingSubFile() {
-    guard let subFileMonitor else { return }
-
-    log.verbose("Stopping FS watch of sub file \(subFileMonitor.url.path.pii.quoted)")
-    subFileMonitor.stopMonitoring()
-    self.subFileMonitor = nil
   }
 
   func reloadSecondSID() {
@@ -2521,6 +2497,7 @@ class PlayerCore: NSObject {
     info.secondSid = ssid
 
     log.verbose("SSID changed to \(ssid)")
+    startWatchingSecondSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
   }
@@ -2638,6 +2615,68 @@ class PlayerCore: NSObject {
    */
   private func autoLoadFilesInCurrentFolder(ticket: Int) {
     AutoFileMatcher(player: self, ticket: ticket).startMatching()
+  }
+
+  private func startWatchingSubFile() {
+    guard let currentSubTrack = info.currentTrack(.sub) else { return }
+    guard let externalFilename = currentSubTrack.externalFilename else {
+      log.verbose("Sub \(currentSubTrack.id) is not an external file")
+      return
+    }
+
+    // Stop previous watch (if any)
+    stopWatchingSubFile()
+
+    let subURL = URL(fileURLWithPath: externalFilename)
+    let fileMonitor = FileMonitor(url: subURL)
+    fileMonitor.fileDidChange = { [self] in
+      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
+      if code < 0 {
+        log.error("Failed reloading sub track \(currentSubTrack.id): error code \(code)")
+      }
+    }
+    subFileMonitor = fileMonitor
+    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
+    fileMonitor.startMonitoring()
+  }
+
+  private func stopWatchingSubFile() {
+    guard let subFileMonitor else { return }
+
+    log.verbose("Stopping FS watch of sub file \(subFileMonitor.url.path.pii.quoted)")
+    subFileMonitor.stopMonitoring()
+    self.subFileMonitor = nil
+  }
+
+  private func startWatchingSecondSubFile() {
+    guard let currentSubTrack = info.currentTrack(.secondSub) else { return }
+    guard let externalFilename = currentSubTrack.externalFilename else {
+      log.verbose("SecondSub \(currentSubTrack.id) is not an external file")
+      return
+    }
+
+    // Stop previous watch (if any)
+    stopWatchingSecondSubFile()
+
+    let subURL = URL(fileURLWithPath: externalFilename)
+    let fileMonitor = FileMonitor(url: subURL)
+    fileMonitor.fileDidChange = { [self] in
+      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
+      if code < 0 {
+        log.error("Failed reloading sub track \(currentSubTrack.id): error code \(code)")
+      }
+    }
+    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
+    fileMonitor.startMonitoring()
+    secondSubFileMonitor = fileMonitor
+  }
+
+  private func stopWatchingSecondSubFile() {
+    guard let monitor = secondSubFileMonitor else { return }
+
+    log.verbose("Stopping FS watch of second sub file \(monitor.url.path.pii.quoted)")
+    monitor.stopMonitoring()
+    self.secondSubFileMonitor = nil
   }
 
   /**
