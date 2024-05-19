@@ -621,12 +621,13 @@ class PlayerCore: NSObject {
     videoView.stopDisplayLink()
 
     mpv.queue.async { [self] in
-      // Reset playback state
       log.verbose("Stop called")
 
-      saveState()            // Save state to IINA prefs (if enabled)
+      stopWatchingSubFile()
+
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
+      // Reset playback state
       info.videoPosition = nil
       info.videoDuration = nil
       info.playlist = []
@@ -1988,6 +1989,7 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// mpv `watch-later` + `saveToLastPlayedFile()` (above)
   func savePlaybackPosition() {
     guard Preference.bool(for: .resumeLastPosition) else { return }
 
@@ -2277,17 +2279,21 @@ class PlayerCore: NSObject {
           // 1. Update main history list
           HistoryController.shared.add(url, duration: duration.second)
 
+          // 2. IINA's [ancient] "resume last playback" feature
+          // Add this now, or else welcome window will fall out of sync with history list
+          saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
+
           if Preference.bool(for: .recordRecentFiles) {
-
-            // 2. IINA's [ancient] "resume last playback" feature
-            // Add this now, or else welcome window will fall out of sync with history list
-            saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
-
             // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
             if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
               HistoryController.shared.noteNewRecentDocumentURL(url)
+            } else {
+              /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
+              /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
+              NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
             }
           }
+          NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
           postFileHistoryUpdateNotification()
         }
       }
@@ -2466,11 +2472,45 @@ class PlayerCore: NSObject {
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
     info.sid = sid
+    startWatchingSubFile()
 
     sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     log.verbose("SID changed to \(sid)")
     postNotification(.iinaSIDChanged)
     saveState()
+  }
+
+  var subFileMonitor: FileMonitor? = nil
+
+  func startWatchingSubFile() {
+    guard let currentSubTrack = info.currentTrack(.sub) else { return }
+    guard let externalFilename = currentSubTrack.externalFilename else {
+      log.verbose("Sub \(currentSubTrack.id) is not an external file")
+      return
+    }
+
+    // Stop previous watch (if any)
+    stopWatchingSubFile()
+
+    let subURL = URL(fileURLWithPath: externalFilename)
+    let fileMonitor = FileMonitor(url: subURL)
+    fileMonitor.fileDidChange = { [self] in
+      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
+      if code < 0 {
+        Logger.log("Failed reloading subtitles: error code \(code)", level: .error, subsystem: self.subsystem)
+      }
+    }
+    subFileMonitor = fileMonitor
+    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
+    fileMonitor.startMonitoring()
+  }
+
+  func stopWatchingSubFile() {
+    guard let subFileMonitor else { return }
+
+    log.verbose("Stopping FS watch of sub file \(subFileMonitor.url.path.pii.quoted)")
+    subFileMonitor.stopMonitoring()
+    self.subFileMonitor = nil
   }
 
   func reloadSecondSID() {

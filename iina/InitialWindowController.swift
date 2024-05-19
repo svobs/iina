@@ -226,10 +226,11 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
-    NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [self] _ in
-      Logger.log("WelcomeWindow received iinaHistoryUpdated; will reload data")
+    NotificationCenter.default.addObserver(forName: .recentDocumentsDidChange, object: nil, queue: .main) { [self] _ in
+      Logger.log("WelcomeWindow received recentDocumentsDidChange; will reload data")
       reloadData()
     }
+
     Logger.log("WelcomeWindow windowDidLoad done", level: .verbose)
   }
 

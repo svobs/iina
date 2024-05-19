@@ -64,6 +64,9 @@ class HistoryController {
     if !silent {
       log.verbose("ReloadAll: posting iinaHistoryUpdated")
       NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+
+      log.verbose("ReloadAll: posting recentDocumentsDidChange")
+      NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
     }
   }
 
@@ -185,8 +188,8 @@ class HistoryController {
       saveRecentDocuments()
     }
 
-    log.debug("Done restoring list of recent documents (\(newRecentDocuments.count)). Posting iinaHistoryUpdated")
-    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+    log.debug("Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange")
+    NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
   }
 
   /// Save the list of recently opened files.

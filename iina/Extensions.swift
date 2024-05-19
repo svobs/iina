@@ -1357,6 +1357,13 @@ class IINAWindowController: NSWindowController {
       return
     } else {
       Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
+
+      /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
+      let windowName = window.savedStateName
+      if !windowName.isEmpty {
+        Preference.UIState.windowsOpen.insert(windowName)
+      }
+
       showWindow(sender)
     }
   }

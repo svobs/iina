@@ -303,6 +303,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     Utility.quickAskPanel("delete_history", sheetWindow: window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
       HistoryController.shared.remove(entries)
+      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
     }
   }
 
