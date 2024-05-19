@@ -802,6 +802,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let windowName = window.savedStateName
     guard !windowName.isEmpty else { return }
 
+    Logger.log("Window will close: \(windowName)", level: .verbose)
     lastClosedWindowName = windowName
     Preference.UIState.windowsOpen.remove(windowName)
     Preference.UIState.windowsHidden.remove(windowName)
