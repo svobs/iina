@@ -77,7 +77,6 @@ class PlayerCore: NSObject {
   private var _touchBarSupport: Any?
 
   private var subFileMonitor: FileMonitor? = nil
-  private var secondSubFileMonitor: FileMonitor? = nil
 
   /// `true` if this Mac is known to have a touch bar.
   ///
@@ -627,7 +626,6 @@ class PlayerCore: NSObject {
       log.verbose("Stop called")
 
       stopWatchingSubFile()
-      stopWatchingSecondSubFile()
 
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
@@ -2105,7 +2103,6 @@ class PlayerCore: NSObject {
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
-    stopWatchingSecondSubFile()
 
     preResizeVideo(forURL: info.currentMedia?.url)
 
@@ -2497,7 +2494,6 @@ class PlayerCore: NSObject {
     info.secondSid = ssid
 
     log.verbose("SSID changed to \(ssid)")
-    startWatchingSecondSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
   }
@@ -2646,37 +2642,6 @@ class PlayerCore: NSObject {
     log.verbose("Stopping FS watch of sub file \(subFileMonitor.url.path.pii.quoted)")
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
-  }
-
-  private func startWatchingSecondSubFile() {
-    guard let currentSubTrack = info.currentTrack(.secondSub) else { return }
-    guard let externalFilename = currentSubTrack.externalFilename else {
-      log.verbose("SecondSub \(currentSubTrack.id) is not an external file")
-      return
-    }
-
-    // Stop previous watch (if any)
-    stopWatchingSecondSubFile()
-
-    let subURL = URL(fileURLWithPath: externalFilename)
-    let fileMonitor = FileMonitor(url: subURL)
-    fileMonitor.fileDidChange = { [self] in
-      let code = mpv.command(.subReload, args: ["\(currentSubTrack.id)"], checkError: false)
-      if code < 0 {
-        log.error("Failed reloading sub track \(currentSubTrack.id): error code \(code)")
-      }
-    }
-    log.verbose("Starting FS watch of sub file \(subURL.path.pii.quoted)")
-    fileMonitor.startMonitoring()
-    secondSubFileMonitor = fileMonitor
-  }
-
-  private func stopWatchingSecondSubFile() {
-    guard let monitor = secondSubFileMonitor else { return }
-
-    log.verbose("Stopping FS watch of second sub file \(monitor.url.path.pii.quoted)")
-    monitor.stopMonitoring()
-    self.secondSubFileMonitor = nil
   }
 
   /**
