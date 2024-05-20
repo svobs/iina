@@ -1064,7 +1064,6 @@ extension NSBox {
 extension NSPasteboard.PasteboardType {
   static let nsURL = NSPasteboard.PasteboardType("NSURL")
   static let nsFilenames = NSPasteboard.PasteboardType("NSFilenamesPboardType")
-  static let iinaPlaylistItem = NSPasteboard.PasteboardType("IINAPlaylistItem")
 }
 
 

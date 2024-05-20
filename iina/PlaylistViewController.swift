@@ -38,6 +38,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
   }
 
+  private var draggedRowInfo: (Int, IndexSet)? = nil
+
   weak var player: PlayerCore!
 
   /** Similar to the one in `QuickSettingViewController`.
@@ -216,7 +218,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     chapterTableView.target = self
 
     // register for drag and drop
-    playlistTableView.registerForDraggedTypes([.iinaPlaylistItem, .nsFilenames, .nsURL, .string])
+    playlistTableView.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
 
     (subPopover.contentViewController as! SubPopoverViewController).player = player
     if let popoverView = subPopover.contentViewController?.view,
@@ -378,12 +380,18 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // MARK: - Drag and Drop
 
+  /*
+   Drag start: set session variables.
+   */
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    self.draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
+  }
+
   func copyToPasteboard(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    let indexesData = NSKeyedArchiver.archivedData(withRootObject: rowIndexes)
     let playlistItems = player.info.playlist
     let filePaths = rowIndexes.compactMap { playlistItems[$0].filename }
-    pboard.declareTypes([.iinaPlaylistItem, .nsFilenames], owner: tableView)
-    pboard.setData(indexesData, forType: .iinaPlaylistItem)
+    pboard.declareTypes([.nsFilenames], owner: tableView)
     pboard.setPropertyList(filePaths, forType: .nsFilenames)
   }
 
@@ -425,11 +433,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
-    if info.draggingSource as? NSTableView === tableView,
-      let rowData = info.draggingPasteboard.data(forType: .iinaPlaylistItem),
-      let indexSet = NSKeyedUnarchiver.unarchiveObject(with: rowData) as? IndexSet {
+    if let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
+          sequenceNumber == info.draggingSequenceNumber {
 
-      player.playlistMove(indexSet, to: row)
+      DispatchQueue.main.async { [self] in
+        player.playlistMove(draggedRowIndexes, to: row)
+      }
       return true
     }
     // Otherwise, could be copy/cut & paste within playlistTableView
