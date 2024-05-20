@@ -999,7 +999,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType) {
+  func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
     log.verbose("Setting \(trackType) track to \(index)")
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
@@ -1015,12 +1015,12 @@ class PlayerCore: NSObject {
       name = MPVOption.Subtitles.secondarySid
     }
     mpv.setInt(name, index)
-    reloadSelectedTracks()
+    reloadSelectedTracks(silent: silent)
   }
 
-  func setTrack(_ index: Int, forType: MPVTrack.TrackType) {
+  func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {
     mpv.queue.async { [self] in
-      _setTrack(index, forType: forType)
+      _setTrack(index, forType: forType, silent: silent)
     }
   }
 
@@ -2203,7 +2203,7 @@ class PlayerCore: NSObject {
     isStopping = false
 
     guard let currentMedia = info.currentMedia else {
-      log.debug("FileLoaded: aborting cuz currentMedia was nil")
+      log.debug("FileLoaded: aborting - currentMedia was nil")
       return
     }
 
@@ -2249,6 +2249,7 @@ class PlayerCore: NSObject {
         if !isRestoring {
           // set sub to the first one
           // TODO: why?
+          log.debug("Setting subtitle track to because an external sub was found")
           guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
           self.setTrack(1, forType: .sub)
         }
@@ -2259,10 +2260,10 @@ class PlayerCore: NSObject {
       // Set SID & S2ID now that all subs are available
       if isRestoring, let priorState {
         if let priorSID = priorState.int(for: .sid) {
-          setTrack(priorSID, forType: .sub)
+          setTrack(priorSID, forType: .sub, silent: true)
         }
         if let priorS2ID = priorState.int(for: .s2id) {
-          setTrack(priorS2ID, forType: .secondSub)
+          setTrack(priorS2ID, forType: .secondSub, silent: true)
         }
       }
       log.debug("Done with auto load")
@@ -2395,7 +2396,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadAID() {
+  func reloadAID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
@@ -2405,7 +2406,9 @@ class PlayerCore: NSObject {
     log.verbose("Audio track changed to: \(aid)")
     syncUI(.volume)
     postNotification(.iinaAIDChanged)
-    sendOSD(.track(info.currentTrack(.audio) ?? .noneAudioTrack))
+    if !silent {
+      sendOSD(.track(info.currentTrack(.audio) ?? .noneAudioTrack))
+    }
   }
 
   func mediaTitleChanged() {
@@ -2472,21 +2475,23 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadSID() {
+  func reloadSID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
     info.sid = sid
 
-    sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
     log.verbose("SID changed to \(sid)")
+    if !silent {
+      sendOSD(.track(info.currentTrack(.sub) ?? .noneSubTrack))
+    }
     startWatchingSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
   }
 
-  func reloadSecondSID() {
+  func reloadSecondSID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
@@ -2530,7 +2535,7 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  func reloadVID() {
+  func reloadVID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
@@ -2557,7 +2562,9 @@ class PlayerCore: NSObject {
     if isInMiniPlayer && (isMiniPlayerWaitingToShowVideo || !windowController.miniPlayer.isVideoVisible) {
       return
     }
-    sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+    if !silent {
+      sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
+    }
   }
 
   ///  `showMiniPlayerVideo` is only used if `enable` is true
@@ -2584,7 +2591,7 @@ class PlayerCore: NSObject {
     } else {
       // Change video track to None
       log.verbose("Sending request to mpv: set video track to 0")
-      setTrack(0, forType: .video)
+      setTrack(0, forType: .video, silent: true)
     }
   }
 
@@ -3101,13 +3108,13 @@ class PlayerCore: NSObject {
     log.debug("Reloaded tracklist from mpv (\(trackCount) tracks)")
   }
 
-  private func reloadSelectedTracks() {
+  private func reloadSelectedTracks(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     log.verbose("Reloading selected tracks")
-    reloadAID()
-    reloadVID()
-    reloadSID()
-    reloadSecondSID()
+    reloadAID(silent: silent)
+    reloadVID(silent: silent)
+    reloadSID(silent: silent)
+    reloadSecondSID(silent: silent)
 
     saveState()
   }
