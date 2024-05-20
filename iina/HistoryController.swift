@@ -53,12 +53,41 @@ class HistoryController {
     folderMonitor.stopMonitoring()
   }
 
+  private func saveHistoryToFile() -> Bool {
+    do {
+      log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
+      let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: false)
+      try data.write(to: plistURL)
+      return true
+    } catch {
+      log.error("Failed to save playback history to file \(plistURL.path.pii.quoted): \(error)")
+    }
+    return false
+  }
+
+  private func readHistoryFromFile() {
+    do {
+      log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
+      let data = try Data(contentsOf: plistURL)
+      let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+      unarchiver.requiresSecureCoding = false
+      let deserData = try unarchiver.decodeTopLevelObject(of: [PlaybackHistory.self], forKey: NSKeyedArchiveRootObjectKey)
+      guard let historyItemList = deserData as? [PlaybackHistory] else {
+        log.error("Failed deserialize PlaybackHistory array from file \(plistURL.path.pii.quoted)!")
+        return
+      }
+      history = historyItemList
+    } catch {
+      log.error("Failed to load playback history file \(plistURL.path.pii.quoted): \(error)")
+    }
+  }
+
   func reloadAll(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(queue))
 
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
     let sw = Utility.Stopwatch()
-    history = (NSKeyedUnarchiver.unarchiveObject(withFile: plistURL.path) as? [PlaybackHistory]) ?? []
+    readHistoryFromFile()
     cachedRecentDocumentURLs = NSDocumentController.shared.recentDocumentURLs
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
@@ -71,10 +100,7 @@ class HistoryController {
   }
 
   private func save() {
-    let result = NSKeyedArchiver.archiveRootObject(history, toFile: plistURL.path)
-    if !result {
-      log.error("Failed to save playback history!")
-    }
+    guard saveHistoryToFile() else { return }
     log.verbose("Saved history; posting iinaHistoryUpdated")
     NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
   }

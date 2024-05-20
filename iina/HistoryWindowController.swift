@@ -252,9 +252,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       }
     }
 
-    // optimization
-//    guard !Preference.bool(for: .isRestoreInProgress) else { return }
-
     guard isInitialLoad || ticket == reloadTicketCounter else { return }  // check ticket
 
     // Put all FileManager stuff in background queue. It can hang for a long time if there are network problems.

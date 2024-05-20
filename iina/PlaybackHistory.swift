@@ -15,7 +15,8 @@ fileprivate let KeyPlayed = "IINAPHPlayed"
 fileprivate let KeyAddedDate = "IINAPHDate"
 fileprivate let KeyDuration = "IINAPHDuration"
 
-class PlaybackHistory: NSObject, NSCoding {
+class PlaybackHistory: NSObject, NSCoding, NSSecureCoding {
+  static var supportsSecureCoding: Bool { false }
 
   let url: URL
   let name: String
