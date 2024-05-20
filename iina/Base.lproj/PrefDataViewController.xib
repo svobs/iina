@@ -157,10 +157,10 @@
                             </constraints>
                         </customView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" spacing="6" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gYO-Tq-byJ" userLabel="SavedLaunchData HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="234" height="14"/>
+                            <rect key="frame" x="0.0" y="0.0" width="228" height="14"/>
                             <subviews>
                                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="HfC-oH-fCc">
-                                    <rect key="frame" x="-2" y="0.0" width="238" height="14"/>
+                                    <rect key="frame" x="-2" y="0.0" width="232" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" title="No data found." id="ywA-fG-GuO">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -224,7 +224,7 @@
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" constant="120" id="IKL-bX-2GS"/>
                 <constraint firstItem="APB-Nm-aTA" firstAttribute="leading" secondItem="M9c-Ak-HmK" secondAttribute="leading" id="Q4K-PC-JeY"/>
                 <constraint firstItem="DRV-Dv-gti" firstAttribute="firstBaseline" secondItem="HfC-oH-fCc" secondAttribute="firstBaseline" id="Zed-2v-iMO"/>
-                <constraint firstItem="DRV-Dv-gti" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HfC-oH-fCc" secondAttribute="trailing" id="eT1-Tb-yNs"/>
+                <constraint firstItem="DRV-Dv-gti" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HfC-oH-fCc" secondAttribute="trailing" constant="6" id="eT1-Tb-yNs"/>
                 <constraint firstItem="VWZ-zT-vZx" firstAttribute="top" secondItem="M9c-Ak-HmK" secondAttribute="top" constant="8" id="et5-qR-7xc"/>
                 <constraint firstAttribute="trailing" secondItem="VWZ-zT-vZx" secondAttribute="trailing" id="ffA-BM-6pC"/>
                 <constraint firstAttribute="bottom" secondItem="VWZ-zT-vZx" secondAttribute="bottom" constant="8" id="sFy-x0-8Yn"/>
@@ -700,28 +700,14 @@
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H1t-lX-s9l">
-                                    <rect key="frame" x="161" y="3" width="170" height="14"/>
+                                <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H1t-lX-s9l">
+                                    <rect key="frame" x="161" y="3" width="176" height="14"/>
                                     <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Calculating…" id="tRq-eU-AV3">
                                         <font key="font" metaFont="smallSystem"/>
                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
-                                <customView translatesAutoresizingMaskIntoConstraints="NO" id="PSZ-4S-YBm" userLabel="Flexible Spacer">
-                                    <rect key="frame" x="335" y="5" width="0.0" height="1"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" id="6qU-gZ-wcM"/>
-                                        <constraint firstAttribute="height" constant="1" id="H1P-Be-ENT"/>
-                                    </constraints>
-                                    <connections>
-                                        <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.recordRecentFiles" id="rFh-2e-xER">
-                                            <dictionary key="options">
-                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                            </dictionary>
-                                        </binding>
-                                    </connections>
-                                </customView>
                                 <button identifier="FunctionalButtonClearThumb" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aCe-0n-uch">
                                     <rect key="frame" x="334" y="-7" width="186" height="32"/>
                                     <buttonCell key="cell" type="push" title="Clear Thumbnail Cache…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hsG-JB-TT9">
@@ -737,10 +723,8 @@
                                 <integer value="1000"/>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
-                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>

@@ -103,14 +103,19 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   private func buildSavedLaunchSummary() -> (Bool, String) {
     let launches = Preference.UIState.collectLaunchState()
-    if launches.isEmpty {
-      return (false, "No saved window state found.")
-    }
+    if !launches.isEmpty {
 
-    let playerWindowCount = launches.reduce(0, {count, launch in count + launch.playerWindowCount})
-    let nonPlayerWindowCount = launches.reduce(0, {count, launch in count + launch.nonPlayerWindowCount})
-    let hasData = playerWindowCount > 0 || nonPlayerWindowCount > 0
-    return (hasData, "Saved state exists for \(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows.")
+      // Aggregate all windows into set of unique windows
+      let allSavedWindows = launches.reduce(Set<SavedWindow>(), {windowSet, launch in windowSet.union(launch.savedWindows ?? [])})
+      let playerWindowCount = allSavedWindows.reduce(0, {count, wind in count + (wind.isPlayerWindow ? 1 : 0)})
+      let nonPlayerWindowCount = allSavedWindows.count - playerWindowCount
+      let hasData = playerWindowCount > 0 || nonPlayerWindowCount > 0
+      if hasData {
+        let launchesString = launches.count > 1 ? " across \(launches.count) launches" : ""
+        return (true, "Saved state exists for \(playerWindowCount) player windows & \(nonPlayerWindowCount) other windows\(launchesString).")
+      }
+    }
+    return (false, "No saved window state found.")
   }
 
   private func setTextColorToRed(_ button: NSButton) {

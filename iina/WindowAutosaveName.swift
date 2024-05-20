@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct SavedWindow {
+struct SavedWindow: Equatable, Hashable {
   static let minimizedPrefix = "M:"
   let saveName: WindowAutosaveName
   let isMinimized: Bool
@@ -27,7 +27,7 @@ struct SavedWindow {
     } else {
       saveNameString = string
     }
-    
+
     if let saveName = WindowAutosaveName(saveNameString) {
       self = SavedWindow(saveName: saveName, isMinimized: isMinimized)
     } else {
@@ -45,6 +45,19 @@ struct SavedWindow {
   /// Includes minimized state
   var saveString: String {
     return isMinimized ? "\(SavedWindow.minimizedPrefix)\(saveName.string)" : saveName.string
+  }
+
+  static func == (lhs: Self, rhs: Self) -> Bool {
+    // ignore isMinimized for now
+    return lhs.saveName == rhs.saveName
+  }
+
+  static func != (lhs: Self, rhs: Self) -> Bool {
+    return lhs.saveName != rhs.saveName
+  }
+  
+  func hash(into hasher: inout Hasher) {
+    return saveName.hash(into: &hasher)
   }
 }
 
