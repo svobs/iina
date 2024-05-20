@@ -212,7 +212,7 @@ extension Preference {
         let name = window.savedStateName
         /// `isVisible` here includes windows which are obscured or off-screen, but excludes ordered out or minimized
         if !name.isEmpty && window.isVisible {
-          if let nameToExclude = nameToExclude, nameToExclude == name {
+          guard name != nameToExclude else {
             continue
           }
           orderNamePairs.append((window.orderedIndex, name))
@@ -230,7 +230,7 @@ extension Preference {
       let minimizedWindowNames = Array(windowsMinimized)
       let hiddenWindowNames = Array(windowsHidden)
       if openWindowsSet.count != openWindowNames.count {
-        Logger.log("While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames); Other: Hidden=\(hiddenWindowNames), Minimized=\(minimizedWindowNames)", level: .error)
+        Logger.log("While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames) (excluded: \(nameToExclude?.quoted ?? "nil")); Other: Hidden=\(hiddenWindowNames), Minimized=\(minimizedWindowNames)", level: .error)
         #if DEBUG
         Logger.fatal("See previous error for open window names")
         #endif

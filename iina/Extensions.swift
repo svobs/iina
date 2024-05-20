@@ -1366,6 +1366,7 @@ class IINAWindowController: NSWindowController {
     }
   }
 
+
 }
 
 extension NSTableCellView {
