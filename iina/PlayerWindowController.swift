@@ -2383,23 +2383,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {
-    guard !isMuted else { return NSImage(named: "mute") }
-    switch Int(volume) {
-    case 0:
-      return NSImage(named: "volume-0")
-    case 1...33:
-      return NSImage(named: "volume-1")
-    case 34...66:
-      return NSImage(named: "volume-2")
-    case 67...1000:
-      return NSImage(named: "volume")
-    default:
-      Logger.log("Volume level \(volume) is invalid", level: .error)
-      return nil
-    }
-  }
-
   // MARK: - Window delegate: Active status
 
   func windowDidBecomeKey(_ notification: Notification) {
@@ -3848,6 +3831,23 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       miniPlayer.volumeLabel.intValue = Int32(volume)
       miniPlayer.volumeButton.image = volumeImage
       miniPlayer.muteButton.image = volumeImage
+    }
+  }
+
+  func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {
+    guard !isMuted else { return NSImage(named: "mute") }
+    switch Int(volume) {
+    case 0:
+      return NSImage(named: "volume-0")
+    case 1...33:
+      return NSImage(named: "volume-1")
+    case 34...66:
+      return NSImage(named: "volume-2")
+    case 67...1000:
+      return NSImage(named: "volume")
+    default:
+      Logger.log("Volume level \(volume) is invalid", level: .error)
+      return nil
     }
   }
 

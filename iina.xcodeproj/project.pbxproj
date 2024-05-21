@@ -192,6 +192,7 @@
 		D1A44D8A2A5E18D00089B283 /* PWinGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A44D892A5E18D00089B283 /* PWinGeometry.swift */; };
 		D1A4C2DC2BF97BB200CE32A9 /* FileMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */; };
 		D1A4C2DE2BFB087C00CE32A9 /* MD5.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4C2DD2BFB087C00CE32A9 /* MD5.swift */; };
+		D1A4C2E02BFC68DB00CE32A9 /* MarginQuad.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */; };
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
 		D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */; };
@@ -1589,6 +1590,7 @@
 		D1A44D892A5E18D00089B283 /* PWinGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeometry.swift; sourceTree = "<group>"; };
 		D1A4C2DB2BF97BB200CE32A9 /* FileMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileMonitor.swift; sourceTree = "<group>"; };
 		D1A4C2DD2BFB087C00CE32A9 /* MD5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MD5.swift; sourceTree = "<group>"; };
+		D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarginQuad.swift; sourceTree = "<group>"; };
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
 		D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebarExt.swift; sourceTree = "<group>"; };
@@ -2132,6 +2134,7 @@
 				84D377661D737F58007F7396 /* MPVChapter.swift */,
 				D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */,
 				84C8D58E1D794CE600D98A0E /* MPVFilter.swift */,
+				D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */,
 				84EC12821F4F939000137C1E /* FilterPresets.swift */,
 				84EC12881F504D2500137C1E /* FilterPresets.strings */,
 				E3CB75BC1FDACB82004DB10A /* SavedFilter.swift */,
@@ -3134,6 +3137,7 @@
 				51E63DFD29CFB04C008AFC20 /* PlaySliderLoopKnob.swift in Sources */,
 				847644081D48B413004F6DF5 /* MPVOption.swift in Sources */,
 				D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */,
+				D1A4C2E02BFC68DB00CE32A9 /* MarginQuad.swift in Sources */,
 				84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */,
 				D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */,
 				84A886F31E26CA24008755BB /* Regex.swift in Sources */,
