@@ -288,10 +288,12 @@ extension PlayerWindowController {
       self.spec = spec
     }
 
+    // MARK: Stored properties
+
     // All other variables in this class are derived from this spec, or from stored prefs:
     let spec: LayoutSpec
 
-    // Visibility of views/categories
+    // - Visibility of views/categories
 
     var titleBar: Visibility = .hidden
     var titleIconAndText: Visibility = .hidden
@@ -308,7 +310,7 @@ extension PlayerWindowController {
     // Only applies for legacy full screen:
     var hasTopPaddingForCameraHousing = false
 
-    // Sizes / offsets
+    // - Sizes / offsets
 
     var sidebarDownshift: CGFloat = Constants.Sidebar.defaultDownshift
     var sidebarTabHeight: CGFloat = Constants.Sidebar.defaultTabHeight
@@ -316,42 +318,11 @@ extension PlayerWindowController {
     var titleBarHeight: CGFloat = 0
     var topOSCHeight: CGFloat = 0
 
+    // MARK: Derived / computed properties
+
     var topBarHeight: CGFloat {
       self.titleBarHeight + self.topOSCHeight
     }
-
-    var insideTopBarHeight: CGFloat {
-      return topBarPlacement == .insideViewport ? topBarHeight : 0
-    }
-
-    /// Bar widths/heights IF `outsideViewport`
-
-    var outsideTopBarHeight: CGFloat {
-      return topBarPlacement == .outsideViewport ? topBarHeight : 0
-    }
-
-    /// NOTE: Is mutable!
-    var outsideTrailingBarWidth: CGFloat {
-      return spec.trailingSidebar.outsideWidth
-    }
-
-    /// NOTE: Is mutable!
-    var outsideLeadingBarWidth: CGFloat {
-      return spec.leadingSidebar.outsideWidth
-    }
-
-    /// Bar widths/heights IF `insideViewport`
-
-    /// NOTE: Is mutable!
-    var insideLeadingBarWidth: CGFloat {
-      return spec.leadingSidebar.insideWidth
-    }
-
-    /// NOTE: Is mutable!
-    var insideTrailingBarWidth: CGFloat {
-      return spec.trailingSidebar.insideWidth
-    }
-    
 
     var bottomBarHeight: CGFloat {
       if isInteractiveMode {
@@ -363,15 +334,57 @@ extension PlayerWindowController {
       return 0
     }
 
-    var insideBottomBarHeight: CGFloat {
-      return bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
+    /// - Bar widths/heights IF `.outsideViewport`
+
+    var outsideTopBarHeight: CGFloat {
+      return topBarPlacement == .outsideViewport ? topBarHeight : 0
+    }
+
+    /// NOTE: Is mutable!
+    var outsideTrailingBarWidth: CGFloat {
+      return spec.trailingSidebar.outsideWidth
     }
 
     var outsideBottomBarHeight: CGFloat {
       return bottomBarPlacement == .outsideViewport ? bottomBarHeight : 0
     }
 
-    // Derived properties & convenience accessors
+    /// NOTE: Is mutable!
+    var outsideLeadingBarWidth: CGFloat {
+      return spec.leadingSidebar.outsideWidth
+    }
+
+    var outsideBars: MarginQuad {
+      return MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                        bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+    }
+
+    /// - Bar widths/heights IF `.insideViewport`
+
+    /// NOTE: Is mutable!
+    var insideLeadingBarWidth: CGFloat {
+      return spec.leadingSidebar.insideWidth
+    }
+
+    /// NOTE: Is mutable!
+    var insideTrailingBarWidth: CGFloat {
+      return spec.trailingSidebar.insideWidth
+    }
+
+    var insideTopBarHeight: CGFloat {
+      return topBarPlacement == .insideViewport ? topBarHeight : 0
+    }
+
+    var insideBottomBarHeight: CGFloat {
+      return bottomBarPlacement == .insideViewport ? bottomBarHeight : 0
+    }
+
+    var insideBars: MarginQuad {
+      return MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                        bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+    }
+
+    // - Other derived properties
 
     var isInteractiveMode: Bool {
       return spec.isInteractiveMode
@@ -570,26 +583,6 @@ extension PlayerWindowController {
       return outputLayout
     }
 
-    func buildFullScreenGeometry(inScreenID screenID: String, videoAspect: CGFloat) -> PWinGeometry {
-      let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-      return buildFullScreenGeometry(inside: screen, videoAspect: videoAspect)
-    }
-
-    func buildFullScreenGeometry(inside screen: NSScreen, videoAspect: CGFloat) -> PWinGeometry {
-      assert(isFullScreen)
-      return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
-                                      outsideTopBarHeight: outsideTopBarHeight,
-                                      outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                      outsideBottomBarHeight: outsideBottomBarHeight,
-                                      outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                      insideTopBarHeight: insideTopBarHeight,
-                                      insideTrailingBarWidth: insideTrailingBarWidth,
-                                      insideBottomBarHeight: insideBottomBarHeight,
-                                      insideLeadingBarWidth: insideLeadingBarWidth,
-                                      videoAspect: videoAspect,
-                                      allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
-    }
-
     // Converts & updates existing geometry to this layout
     func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, videoAspect: CGFloat? = nil,
                                      keepFullScreenDimensions: Bool) -> PWinGeometry {
@@ -607,7 +600,23 @@ extension PlayerWindowController {
       return resizedBarsGeo.refit()
     }
     
-    func buildGeometry(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWinGeometry {
+    func buildFullScreenGeometry(inScreenID screenID: String, videoAspect: CGFloat) -> PWinGeometry {
+      let screen = NSScreen.getScreenOrDefault(screenID: screenID)
+      return buildFullScreenGeometry(in: screen, videoAspect: videoAspect)
+    }
+
+    func buildFullScreenGeometry(in screen: NSScreen, videoAspect: CGFloat) -> PWinGeometry {
+      assert(isFullScreen)
+      return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
+                                        outsideBars: outsideBars,
+                                        insideBars: insideBars,
+                                        videoAspect: videoAspect,
+                                        allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
+    }
+
+    func buildGeometry(usingMode modeOverride: PlayerWindowMode? = nil,
+                       windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWinGeometry {
+      let mode = modeOverride ?? mode
       switch mode {
       case .fullScreen, .fullScreenInteractive:
         return buildFullScreenGeometry(inScreenID: screenID, videoAspect: videoAspect)
@@ -615,17 +624,11 @@ extension PlayerWindowController {
         return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
       case .windowed:
         let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
-                             mode: mode,
-                             topMarginHeight: 0,  // is only nonzero when in legacy FS
-                             outsideTopBarHeight: outsideTopBarHeight,
-                             outsideTrailingBarWidth: outsideTrailingBarWidth,
-                             outsideBottomBarHeight: outsideBottomBarHeight,
-                             outsideLeadingBarWidth: outsideLeadingBarWidth,
-                             insideTopBarHeight: insideTopBarHeight,
-                             insideTrailingBarWidth: insideTrailingBarWidth,
-                             insideBottomBarHeight: insideBottomBarHeight,
-                             insideLeadingBarWidth: insideLeadingBarWidth,
-                             videoAspect: videoAspect)
+                               mode: mode,
+                               topMarginHeight: 0,  // is only nonzero when in legacy FS
+                               outsideBars: outsideBars,
+                               insideBars: insideBars,
+                               videoAspect: videoAspect)
         return geo.scaleViewport()
       case .musicMode:
         let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect,

@@ -31,6 +31,13 @@ struct MarginQuad: Equatable, CustomStringConvertible {
     return "(↑:\(top.strMin) →:\(trailing.strMin) ↓:\(bottom.strMin) ←:\(leading.strMin))"
   }
 
+  init(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0) {
+    self.top = top
+    self.trailing = trailing
+    self.bottom = bottom
+    self.leading = leading
+  }
+
   func clone(top: CGFloat? = nil, trailing: CGFloat? = nil,
              bottom: CGFloat? = nil, leading: CGFloat? = nil) -> MarginQuad {
     return MarginQuad(top: top ?? self.top,
@@ -188,9 +195,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`
   init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption, mode: PlayerWindowMode, topMarginHeight: CGFloat,
-       outsideTopBarHeight: CGFloat, outsideTrailingBarWidth: CGFloat, outsideBottomBarHeight: CGFloat, outsideLeadingBarWidth: CGFloat,
-       insideTopBarHeight: CGFloat, insideTrailingBarWidth: CGFloat, insideBottomBarHeight: CGFloat, insideLeadingBarWidth: CGFloat,
-       viewportMargins: MarginQuad? = nil, videoAspect: CGFloat) {
+       outsideBars: MarginQuad, insideBars: MarginQuad, viewportMargins: MarginQuad? = nil, videoAspect: CGFloat) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
@@ -200,28 +205,26 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(topMarginHeight >= 0, "Expected topMarginHeight >= 0, found \(topMarginHeight)")
     self.topMarginHeight = topMarginHeight
 
-    assert(outsideTopBarHeight >= 0, "Expected outsideTopBarHeight >= 0, found \(outsideTopBarHeight)")
-    assert(outsideTrailingBarWidth >= 0, "Expected outsideTrailingBarWidth >= 0, found \(outsideTrailingBarWidth)")
-    assert(outsideBottomBarHeight >= 0, "Expected outsideBottomBarHeight >= 0, found \(outsideBottomBarHeight)")
-    assert(outsideLeadingBarWidth >= 0, "Expected outsideLeadingBarWidth >= 0, found \(outsideLeadingBarWidth)")
-    self.outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth, bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+    assert(outsideBars.top >= 0, "Expected outsideBars.top >= 0, found \(outsideBars.top)")
+    assert(outsideBars.trailing >= 0, "Expected outsideBars.trailing >= 0, found \(outsideBars.trailing)")
+    assert(outsideBars.bottom >= 0, "Expected outsideBars.bottom >= 0, found \(outsideBars.bottom)")
+    assert(outsideBars.leading >= 0, "Expected outsideBars.leading >= 0, found \(outsideBars.leading)")
+    self.outsideBars = outsideBars
 
-    assert(insideTopBarHeight >= 0, "Expected insideTopBarHeight >= 0, found \(insideTopBarHeight)")
-    assert(insideTrailingBarWidth >= 0, "Expected insideTrailingBarWidth >= 0, found \(insideTrailingBarWidth)")
-    assert(insideBottomBarHeight >= 0, "Expected insideBottomBarHeight >= 0, found \(insideBottomBarHeight)")
-    assert(insideLeadingBarWidth >= 0, "Expected insideLeadingBarWidth >= 0, found \(insideLeadingBarWidth)")
-    self.insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth, bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
-
-    self.videoAspect = videoAspect
+    assert(insideBars.top >= 0, "Expected insideBars.top >= 0, found \(insideBars.top)")
+    assert(insideBars.trailing >= 0, "Expected insideBars.trailing >= 0, found \(insideBars.trailing)")
+    assert(insideBars.bottom >= 0, "Expected insideBars.bottom >= 0, found \(insideBars.bottom)")
+    assert(insideBars.leading >= 0, "Expected insideBars.leading >= 0, found \(insideBars.leading)")
+    self.insideBars = insideBars
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
-    let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, minViewportMargins: viewportMargins, mode: mode)
+    let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: videoAspect, toFillIn: viewportSize, 
+                                                  minViewportMargins: viewportMargins, mode: mode)
     self.videoSize = videoSize
-    if let viewportMargins {
-      self.viewportMargins = viewportMargins
-    } else {
-      self.viewportMargins = PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize, insideBars: insideBars, mode: mode)
-    }
+    self.viewportMargins = viewportMargins ?? PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
+                                                                                      insideBars: insideBars, mode: mode)
+
+    self.videoAspect = videoAspect
   }
 
   static func fullScreenWindowFrame(in screen: NSScreen, legacy: Bool) -> NSRect {
@@ -234,10 +237,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// See also `LayoutState.buildFullScreenGeometry()`.
   static func forFullScreen(in screen: NSScreen, legacy: Bool, mode: PlayerWindowMode,
-                            outsideTopBarHeight: CGFloat, outsideTrailingBarWidth: CGFloat,
-                            outsideBottomBarHeight: CGFloat, outsideLeadingBarWidth: CGFloat,
-                            insideTopBarHeight: CGFloat, insideTrailingBarWidth: CGFloat,
-                            insideBottomBarHeight: CGFloat, insideLeadingBarWidth: CGFloat,
+                            outsideBars: MarginQuad, insideBars: MarginQuad,
                             videoAspect: CGFloat,
                             allowVideoToOverlapCameraHousing: Bool) -> PWinGeometry {
 
@@ -253,20 +253,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     return PWinGeometry(windowFrame: windowFrame, screenID: screen.screenID, fitOption: fitOption,
-                      mode: mode, topMarginHeight: topMarginHeight,
-                      outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
-                      outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
-                      insideTopBarHeight: insideTopBarHeight, insideTrailingBarWidth: insideTrailingBarWidth,
-                      insideBottomBarHeight: insideBottomBarHeight, insideLeadingBarWidth: insideLeadingBarWidth,
-                      videoAspect: videoAspect)
+                        mode: mode, topMarginHeight: topMarginHeight, outsideBars: outsideBars, insideBars: insideBars,
+                        videoAspect: videoAspect)
   }
 
   func clone(windowFrame: NSRect? = nil, screenID: String? = nil, fitOption: ScreenFitOption? = nil,
              mode: PlayerWindowMode? = nil, topMarginHeight: CGFloat? = nil,
-             outsideTopBarHeight: CGFloat? = nil, outsideTrailingBarWidth: CGFloat? = nil,
-             outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
-             insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
-             insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
+             outsideBars: MarginQuad? = nil, insideBars: MarginQuad? = nil,
              viewportMargins: MarginQuad? = nil,
              videoAspect: CGFloat? = nil) -> PWinGeometry {
 
@@ -277,20 +270,14 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     return PWinGeometry(windowFrame: windowFrame,
-                      screenID: screenID ?? self.screenID,
-                      fitOption: fitOption,
-                      mode: mode ?? self.mode,
-                      topMarginHeight: topMarginHeight ?? self.topMarginHeight,
-                      outsideTopBarHeight: outsideTopBarHeight ?? self.outsideTopBarHeight,
-                      outsideTrailingBarWidth: outsideTrailingBarWidth ?? self.outsideTrailingBarWidth,
-                      outsideBottomBarHeight: outsideBottomBarHeight ?? self.outsideBottomBarHeight,
-                      outsideLeadingBarWidth: outsideLeadingBarWidth ?? self.outsideLeadingBarWidth,
-                      insideTopBarHeight: insideTopBarHeight ?? self.insideTopBarHeight,
-                      insideTrailingBarWidth: insideTrailingBarWidth ?? self.insideTrailingBarWidth,
-                      insideBottomBarHeight: insideBottomBarHeight ?? self.insideBottomBarHeight,
-                      insideLeadingBarWidth: insideLeadingBarWidth ?? self.insideLeadingBarWidth,
-                      viewportMargins: viewportMargins,
-                      videoAspect: videoAspect ?? self.videoAspect)
+                        screenID: screenID ?? self.screenID,
+                        fitOption: fitOption,
+                        mode: mode ?? self.mode,
+                        topMarginHeight: topMarginHeight ?? self.topMarginHeight,
+                        outsideBars: outsideBars ?? self.outsideBars,
+                        insideBars: insideBars ?? self.insideBars,
+                        viewportMargins: viewportMargins,
+                        videoAspect: videoAspect ?? self.videoAspect)
   }
 
   // MARK: - Computed properties
@@ -899,9 +886,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let newWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame)
-    return self.clone(windowFrame: newWindowFrame, screenID: newScreenID,
-                      outsideTopBarHeight: newOutsideTopBarHeight, outsideTrailingBarWidth: newOutsideTrailingBarWidth,
-                      outsideBottomBarHeight: newOutsideBottomBarHeight, outsideLeadingBarWidth: newOutsideLeadingBarWidth)
+    let newOutsideBars = MarginQuad(top: newOutsideTopBarHeight ?? outsideBars.top,
+                                    trailing: newOutsideTrailingBarWidth ?? outsideBars.trailing,
+                                    bottom: newOutsideBottomBarHeight ?? outsideBars.bottom,
+                                    leading: newOutsideLeadingBarWidth ?? outsideBars.leading)
+    return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
   }
 
   /// Like `withResizedOutsideBars`, but can resize the inside bars at the same time.
@@ -917,13 +906,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        videoAspect: CGFloat? = nil,
                        keepFullScreenDimensions: Bool = false) -> PWinGeometry {
 
+    let newInsideBars = MarginQuad(top: insideTopBarHeight ?? insideBars.top,
+                                    trailing: insideTrailingBarWidth ?? insideBars.trailing,
+                                    bottom: insideBottomBarHeight ?? insideBars.bottom,
+                                    leading: insideLeadingBarWidth ?? insideBars.leading)
     // Inside bars
-    let resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode,
-                                     insideTopBarHeight: insideTopBarHeight,
-                                     insideTrailingBarWidth: insideTrailingBarWidth,
-                                     insideBottomBarHeight: insideBottomBarHeight,
-                                     insideLeadingBarWidth: insideLeadingBarWidth,
-                                     videoAspect: videoAspect)
+    let resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode, insideBars: newInsideBars, videoAspect: videoAspect)
 
     var resizedBarsGeo = resizedInsideBarsGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
                                                                      newOutsideTrailingBarWidth: outsideTrailingBarWidth,
@@ -1113,14 +1101,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: Interactive mode
 
   static func buildInteractiveModeWindow(windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWinGeometry {
-    return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside, 
-                      mode: .windowedInteractive, topMarginHeight: 0,
-                      outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight, 
-                      outsideTrailingBarWidth: 0,
-                      outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight, 
-                      outsideLeadingBarWidth: 0,
-                      insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                      videoAspect: videoAspect)
+    let outsideBars = MarginQuad(top: Constants.InteractiveMode.outsideTopBarHeight, trailing: 0,
+                                 bottom: Constants.InteractiveMode.outsideBottomBarHeight, leading: 0)
+    return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
+                        mode: .windowedInteractive, topMarginHeight: 0,
+                        outsideBars: outsideBars,
+                        insideBars: MarginQuad.zero,
+                        videoAspect: videoAspect)
   }
 
   // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes

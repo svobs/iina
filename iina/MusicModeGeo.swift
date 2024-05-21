@@ -109,19 +109,13 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Converts this `MusicModeGeometry` to an equivalent `PWinGeometry` object.
   func toPWinGeometry() -> PWinGeometry {
     return PWinGeometry(windowFrame: windowFrame,
-                      screenID: screenID,
-                      fitOption: .stayInside,
-                      mode: .musicMode,
-                      topMarginHeight: 0,
-                      outsideTopBarHeight: 0,
-                      outsideTrailingBarWidth: 0,
-                      outsideBottomBarHeight: Constants.Distance.MusicMode.oscHeight + playlistHeight,
-                      outsideLeadingBarWidth: 0,
-                      insideTopBarHeight: 0,
-                      insideTrailingBarWidth: 0,
-                      insideBottomBarHeight: 0,
-                      insideLeadingBarWidth: 0,
-                      videoAspect: videoAspect)
+                        screenID: screenID,
+                        fitOption: .stayInside,
+                        mode: .musicMode,
+                        topMarginHeight: 0,
+                        outsideBars: MarginQuad(bottom: Constants.Distance.MusicMode.oscHeight + playlistHeight),
+                        insideBars: MarginQuad.zero,
+                        videoAspect: videoAspect)
   }
 
   func hasEqual(windowFrame windowFrame2: NSRect? = nil, videoSize videoSize2: NSSize? = nil) -> Bool {

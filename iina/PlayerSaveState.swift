@@ -975,14 +975,13 @@ extension PWinGeometry {
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
-                                    bottom: viewportMarginBottom, leading: viewportMarginLeading)
+                                       bottom: viewportMarginBottom, leading: viewportMarginLeading)
+      let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                                   bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+      let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                                  bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
       return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
-                             outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: outsideTrailingBarWidth,
-                             outsideBottomBarHeight: outsideBottomBarHeight, outsideLeadingBarWidth: outsideLeadingBarWidth,
-                             insideTopBarHeight: insideTopBarHeight, insideTrailingBarWidth: insideTrailingBarWidth,
-                             insideBottomBarHeight: insideBottomBarHeight, insideLeadingBarWidth: insideLeadingBarWidth,
-                             viewportMargins: viewportMargins,
-                             videoAspect: videoAspect)
+                          outsideBars: outsideBars, insideBars: insideBars, viewportMargins: viewportMargins, videoAspect: videoAspect)
     })
   }
 

@@ -2337,7 +2337,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to ScreenParametersNotification")
-          let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
         } else if layout.mode == .windowed {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
@@ -2373,7 +2373,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           let screen = bestScreen
           log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(screen.screenID.quoted)")
-          let fsGeo = layout.buildFullScreenGeometry(inside: bestScreen, videoAspect: player.info.videoAspect)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, videoAspect: player.info.videoAspect)
           applyLegacyFSGeo(fsGeo)
         } else {
           player.saveState()

@@ -381,10 +381,7 @@ extension PlayerWindowController {
 
         let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords,
                                                               topMarginHeight: 0,
-                                                              outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                                                              outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                                              insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                              insideBottomBarHeight: 0, insideLeadingBarWidth: 0)
+                                                              outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
         videoView.apply(intermediateGeo)
         player.window.setFrameImmediately(intermediateGeo.windowFrame)
         if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
@@ -474,7 +471,7 @@ extension PlayerWindowController {
     case .windowed:
       return geo.windowedMode
     case .fullScreen, .fullScreenInteractive:
-      return inputLayout.buildFullScreenGeometry(inside: windowedModeScreen, videoAspect: geo.videoAspect)
+      return inputLayout.buildFullScreenGeometry(in: windowedModeScreen, videoAspect: geo.videoAspect)
     case .windowedInteractive:
       /// `geo.windowedMode` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
@@ -557,13 +554,11 @@ extension PlayerWindowController {
         let extraWidthNeeded = max(0, Constants.InteractiveMode.minWindowWidth - videoFrame.width)
         let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                     size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
-        let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID, 
-                                    fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0,
-                                    outsideTopBarHeight: outsideTopBarHeight, outsideTrailingBarWidth: 0,
-                                    outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                    insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                    insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                                    videoAspect: transition.outputGeometry.videoAspect)
+        let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
+                                      fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0,
+                                      outsideBars: MarginQuad(top: outsideTopBarHeight),
+                                      insideBars: MarginQuad.zero,
+                                      videoAspect: transition.outputGeometry.videoAspect)
         return resizedGeo
       }
 
@@ -578,10 +573,9 @@ extension PlayerWindowController {
 
       let middleWindowFrame = baseGeo.videoFrameInScreenCoords
       return PWinGeometry(windowFrame: middleWindowFrame, screenID: baseGeo.screenID,
-                        fitOption: baseGeo.fitOption, mode: .musicMode, topMarginHeight: 0,
-                        outsideTopBarHeight: 0, outsideTrailingBarWidth: 0, outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                        insideTopBarHeight: 0, insideTrailingBarWidth: 0, insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
-                        videoAspect: baseGeo.videoAspect)
+                          fitOption: baseGeo.fitOption, mode: .musicMode, topMarginHeight: 0,
+                          outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero,
+                          videoAspect: baseGeo.videoAspect)
     } else if transition.isExitingMusicMode {
       if transition.isEnteringFullScreen {
         return nil
@@ -645,17 +639,13 @@ extension PlayerWindowController {
     if transition.outputLayout.isFullScreen {
       let screen = NSScreen.getScreenOrDefault(screenID: transition.inputGeometry.screenID)
       return PWinGeometry.forFullScreen(in: screen, legacy: transition.outputLayout.isLegacyFullScreen,
-                                      mode: transition.outputLayout.mode,
-                                      outsideTopBarHeight: outsideTopBarHeight,
-                                      outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                      outsideBottomBarHeight: outsideBottomBarHeight,
-                                      outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                      insideTopBarHeight: insideTopBarHeight,
-                                      insideTrailingBarWidth: insideTrailingBarWidth,
-                                      insideBottomBarHeight: insideBottomBarHeight,
-                                      insideLeadingBarWidth: insideLeadingBarWidth,
-                                      videoAspect: transition.outputGeometry.videoAspect,
-                                      allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
+                                        mode: transition.outputLayout.mode,
+                                        outsideBars: MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                                                                bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth),
+                                        insideBars: MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                                                                bottom: insideBottomBarHeight, leading: insideLeadingBarWidth),
+                                        videoAspect: transition.outputGeometry.videoAspect,
+                                        allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
     let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
