@@ -946,7 +946,10 @@ not applying FFmpeg 9599 workaround
                                scale: videoScale, log: player.log)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo)")
-    if let videoSizeC = vidGeo.videoSizeC, Int(videoSizeC.width) != dwidth || Int(videoSizeC.height) != dheight {
+    // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
+    if let videoSizeC = vidGeo.videoSizeC,
+        (abs(Int(videoSizeC.width) - dwidth) > 1) ||
+        (abs(Int(videoSizeC.height) - dheight) > 1) {
       player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != cached videoSizeC \(videoSizeC)")
     }
     return vidGeo
