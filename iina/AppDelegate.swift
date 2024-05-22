@@ -1131,8 +1131,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Instruct any players that are already stopped to start shutting down.
     for player in PlayerCoreManager.playerCores {
-      if player.isStopped && !player.isShutdown {
-        player.log.verbose("Requesting shutdown of stopped player")
+      if !player.isShutdown {
+        player.log.verbose("Requesting shutdown of player")
         player.shutdown()
       }
     }

@@ -471,6 +471,8 @@ struct PlayerSaveState {
 
   /// Restore player state from prior launch
   func restoreTo(_ player: PlayerCore) {
+    dispatchPrecondition(condition: .onQueue(.main))
+
     let log = player.log
 
     guard let urlString = string(for: .url), let url = URL(string: urlString) else {
@@ -599,62 +601,13 @@ struct PlayerSaveState {
       try? FileManager.default.removeItem(atPath: watchLaterFileURL)
     }
 
-    // Open the window!
-    player.openURLs([url], shouldAutoLoadPlaylist: false)
-
-    let isOnTop = bool(for: .isOnTop) ?? false
-    windowController.setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
-
-    if let stateString = string(for: .miscWindowBools) {
-      let splitted: [String] = stateString.split(separator: ",").map{String($0)}
-      if splitted.count >= 5,
-         let isMiniaturized = Bool.yn(splitted[0]),
-         let isHidden = Bool.yn(splitted[1]),
-         let isInPip = Bool.yn(splitted[2]),
-         let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
-         let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) {
-
-        // Process PIP options first, to make sure it's not miniturized due to PIP
-        if isInPip {
-          let pipOption: Preference.WindowBehaviorWhenPip
-          if isHidden {  // currently this will only be true due to PIP
-            pipOption = .hide
-          } else if isWindowMiniaturizedDueToPip {
-            pipOption = .minimize
-          } else {
-            pipOption = .doNothing
-          }
-          // Run in queue to avert race condition with window load
-          windowController.animationPipeline.submitSudden({
-            windowController.enterPIP(usePipBehavior: pipOption)
-          })
-        } else if isMiniaturized {
-          // Not in PIP, but miniturized
-          // Run in queue to avert race condition with window load
-          windowController.animationPipeline.submitSudden({
-            windowController.window?.miniaturize(nil)
-          })
-        }
-        if isPausedPriorToInteractiveMode {
-          windowController.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
-        }
-      } else {
-        log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)")
-      }
-    }
-
-    if let overrideAutoMusicMode = bool(for: .overrideAutoMusicMode) {
-      player.overrideAutoMusicMode = overrideAutoMusicMode
-    }
-
-    // mpv properties
-
+    /// Restore mpv properties.
     /// Must wait until after mpv init, so that the lifetime of these options is limited to the current file.
     /// Otherwise the mpv core will keep the options for the lifetime of the player, which is often undesirable (for example,
     /// `MPVOption.PlaybackControl.start` will skip any files in the playlist which have durations shorter than its start time).
-    let mpv: MPVController = player.mpv
+    func mpvRestoreWorkItem() {
+      let mpv: MPVController = player.mpv
 
-    mpv.queue.async { [self] in
       if let videoPosition = string(for: .playPosition) {
         log.verbose("Restoring playback position: \(videoPosition)")
         mpv.setString(MPVOption.PlaybackControl.start, videoPosition)
@@ -662,15 +615,6 @@ struct PlayerSaveState {
 
       // Better to always pause when starting, because there may be a slight delay before it can be enforced later
       mpv.setFlag(MPVOption.PlaybackControl.pause, true)
-
-      /// already read these into `info` up above. Now set in mpv
-      if let vid = info.vid {
-        mpv.setInt(MPVOption.TrackSelection.vid, vid)
-      }
-      if let aid = info.aid {
-        mpv.setInt(MPVOption.TrackSelection.aid, aid)
-      }
-      /// Don't set sub tracks until `fileStarted`, after external subtitles are loaded.
 
       if let hwdec = string(for: .hwdec) {
         mpv.setString(MPVOption.Video.hwdec, hwdec)
@@ -767,6 +711,54 @@ struct PlayerSaveState {
       }
       if let videoFilters = string(for: .videoFilters) {
         mpv.setString(MPVProperty.vf, videoFilters)
+      }
+    }
+
+    if let overrideAutoMusicMode = bool(for: .overrideAutoMusicMode) {
+      player.overrideAutoMusicMode = overrideAutoMusicMode
+    }
+
+    // Open the window!
+    player.openURLs([url], shouldAutoLoadPlaylist: false, mpvRestoreWorkItem: mpvRestoreWorkItem)
+
+    let isOnTop = bool(for: .isOnTop) ?? false
+    windowController.setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
+
+    if let stateString = string(for: .miscWindowBools) {
+      let splitted: [String] = stateString.split(separator: ",").map{String($0)}
+      if splitted.count >= 5,
+         let isMiniaturized = Bool.yn(splitted[0]),
+         let isHidden = Bool.yn(splitted[1]),
+         let isInPip = Bool.yn(splitted[2]),
+         let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
+         let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) {
+
+        // Process PIP options first, to make sure it's not miniturized due to PIP
+        if isInPip {
+          let pipOption: Preference.WindowBehaviorWhenPip
+          if isHidden {  // currently this will only be true due to PIP
+            pipOption = .hide
+          } else if isWindowMiniaturizedDueToPip {
+            pipOption = .minimize
+          } else {
+            pipOption = .doNothing
+          }
+          // Run in queue to avert race condition with window load
+          windowController.animationPipeline.submitSudden({
+            windowController.enterPIP(usePipBehavior: pipOption)
+          })
+        } else if isMiniaturized {
+          // Not in PIP, but miniturized
+          // Run in queue to avert race condition with window load
+          windowController.animationPipeline.submitSudden({
+            windowController.window?.miniaturize(nil)
+          })
+        }
+        if isPausedPriorToInteractiveMode {
+          windowController.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
+        }
+      } else {
+        log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)")
       }
     }
   }

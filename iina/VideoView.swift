@@ -287,6 +287,7 @@ class VideoView: NSView {
     checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
                 "CVDisplayLinkSetOutputCallback")
     checkResult(CVDisplayLinkStart(link), "CVDisplayLinkStart")
+    log.verbose("Started DisplayLink")
   }
 
   func stopDisplayLink() {
@@ -336,6 +337,7 @@ class VideoView: NSView {
     } else {
       setICCProfile(displayId)
     }
+    log.verbose("Done updating DisplayLink")
   }
 
   // MARK: - Reducing Energy Use

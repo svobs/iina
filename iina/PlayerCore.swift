@@ -151,10 +151,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  private var didInitVideo: Bool {
-    status.rawValue >= PlayerStatus.startedPostVideoInit.rawValue
-  }
-
   var isShuttingDown: Bool {
     status.rawValue >= PlayerStatus.shuttingDown.rawValue
   }
@@ -321,7 +317,9 @@ class PlayerCore: NSObject {
    count of playable files.
    */
   @discardableResult
-  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true) -> Int? {
+  func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true, mpvRestoreWorkItem: (() -> Void)? = nil) -> Int? {
+    dispatchPrecondition(condition: .onQueue(.main))
+
     guard !urls.isEmpty else { return 0 }
     log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{MediaItem.path(for: $0).pii.quoted})")
     // Reset:
@@ -338,7 +336,7 @@ class PlayerCore: NSObject {
           || Utility.playlistFileExt.contains(loneURL.absoluteString.lowercasedPathExtension) {
 
         info.shouldAutoLoadFiles = false
-        openPlayerWindow(urls)
+        openPlayerWindow(urls, mpvRestoreWorkItem: mpvRestoreWorkItem)
         return nil
       }
     }
@@ -359,7 +357,7 @@ class PlayerCore: NSObject {
     }
 
     // open the first file
-    openPlayerWindow(playableFiles)
+    openPlayerWindow(playableFiles, mpvRestoreWorkItem: mpvRestoreWorkItem)
     return count
   }
 
@@ -404,7 +402,9 @@ class PlayerCore: NSObject {
   }
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
-  private func openPlayerWindow(_ urls: [URL]) {
+  private func openPlayerWindow(_ urls: [URL], mpvRestoreWorkItem: (() -> Void)? = nil) {
+    dispatchPrecondition(condition: .onQueue(.main))
+
     guard urls.count > 0 else {
       log.error("Cannot open player window: empty url list!")
       return
@@ -440,7 +440,12 @@ class PlayerCore: NSObject {
           // Send load file command
           mpv.command(.loadfile, args: [path])
 
-          guard !info.isRestoring else { return }  // restore has higher precedence
+          if info.isRestoring, let mpvRestoreWorkItem {
+            mpvRestoreWorkItem()
+            return
+          }
+
+          // Not restoring
 
           if urls.count > 1 {
             log.verbose("Adding \(urls.count - 1) files to playlist. Autoload=\(info.shouldAutoLoadFiles.yn)")
@@ -540,6 +545,7 @@ class PlayerCore: NSObject {
     }
     log.debug("Shutting down player")
     savePlaybackPosition() // Save state to mpv watch-later (if enabled)
+    stop()
     refreshSyncUITimer()   // Shut down timer
     uninitVideo()          // Shut down DisplayLink
 
@@ -2047,6 +2053,7 @@ class PlayerCore: NSObject {
     // Ensure Playback History window is updated in real time
     if Preference.bool(for: .recordPlaybackHistory) {
       HistoryController.shared.queue.async { [self] in
+        guard !isShuttingDown else { return }
         /// this will reload the `mpvProgress` field from the `watch-later` config files
         guard let historyItem = HistoryController.shared.history.first(where: {$0.url == info.currentURL}) else { return }
         historyItem.loadProgressFromWatchLater()
@@ -2256,6 +2263,16 @@ class PlayerCore: NSObject {
 
     checkUnsyncedWindowOptions()
     reloadTrackInfo()
+    if info.isRestoring, let priorState = info.priorState {
+      /// Cannot set tracks until after `fileLoaded`, or else mpv will error out
+      log.debug("FileLoaded: restoring vid & aid tracks")
+      if let vid = priorState.int(for: .vid) {
+        mpv.setInt(MPVOption.TrackSelection.vid, vid)
+      }
+      if let aid = priorState.int(for: .aid) {
+        mpv.setInt(MPVOption.TrackSelection.aid, aid)
+      }
+    }
     reloadSelectedTracks()
     _reloadChapters()
     syncAbLoop()
@@ -2853,7 +2870,7 @@ class PlayerCore: NSObject {
   private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
-    guard didInitVideo, !isStopping, !isShuttingDown else {
+    guard status == .startedPostVideoInit else {
       log.verbose("syncUITime: not syncing")
       return
     }
