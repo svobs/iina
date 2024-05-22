@@ -51,16 +51,16 @@ class MPVLogScanner {
    */
   let mpvLogSubsystem: Logger.Subsystem
 
-  let fileLogLevel: Int
+  let fileLogLevel: MPVLogLevel
 
   init(player: PlayerCore) {
     self.player = player
     mpvLogSubsystem = Logger.Subsystem(rawValue: "mpv-\(player.label)")
     if let logLevelString = Preference.string(for: .iinaMpvLogLevel), let mpvLogLevel = MPVLogLevel.fromString(logLevelString) {
-      fileLogLevel = mpvLogLevel.rawValue
+      fileLogLevel = mpvLogLevel
     } else {
       mpvLogSubsystem.error("Invalid value for pref: \(Preference.Key.iinaMpvLogLevel.rawValue). Will disable mpv log printing in the IINA log file")
-      fileLogLevel = MPVLogLevel.no.rawValue
+      fileLogLevel = MPVLogLevel.no
     }
     mpvLogSubsystem.debug("Log level for mpv events: \(fileLogLevel)")
   }
@@ -78,7 +78,7 @@ class MPVLogScanner {
     let mpvLevel = MPVLogLevel.fromString(level) ?? MPVLogLevel.no
 
     // Log mpv msg to IINA log if configured
-    if fileLogLevel >= mpvLevel.rawValue {
+    if fileLogLevel.shouldLog(severity: mpvLevel.rawValue) {
       let iinaLevel = mpvIINALogLevelMap[mpvLevel]!
       Logger.log("[\(prefix)|\(level.first ?? "?")] \(removeNewline(from: msg))", level: iinaLevel, subsystem: mpvLogSubsystem)
     }

@@ -245,7 +245,7 @@ not applying FFmpeg 9599 workaround
    Init the mpv context, set options
    */
   func mpvInit() {
-    player.log.verbose("mpv init")
+    player.log.verbose("Init mpv")
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
 

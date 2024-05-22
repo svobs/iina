@@ -2254,11 +2254,9 @@ class PlayerCore: NSObject {
     // Kick off thumbnails load/gen - it can happen in background
     reloadThumbnails(forMedia: currentMedia)
 
-    fileIsCompletelyDoneLoading()
-
     checkUnsyncedWindowOptions()
-    // Call `trackListChanged` to load tracks
-    trackListChanged()
+    reloadTrackInfo()
+    reloadSelectedTracks()
     _reloadChapters()
     syncAbLoop()
     saveState()
@@ -2342,6 +2340,8 @@ class PlayerCore: NSObject {
         }
       }
     }
+
+    fileIsCompletelyDoneLoading()
 
     postNotification(.iinaFileLoaded)
     events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")

@@ -104,11 +104,7 @@ enum MPVLogLevel: Int, CustomStringConvertible {
    2. MPVLogLevel.debug.shouldLog("verbose") -> false
    */
   public func shouldLog(severity: String) -> Bool {
-    if let severityParsed = MPVLogLevel.fromString(severity) {
-      return shouldLog(severity: severityParsed.rawValue)
-    } else {
-      Logger.log("Failed to parse logging level: \(severity.quoted)", level: .error)
-      return false
-    }
+    let severityParsed = MPVLogLevel.fromString(severity) ?? MPVLogLevel.no
+    return shouldLog(severity: severityParsed.rawValue)
   }
 }
