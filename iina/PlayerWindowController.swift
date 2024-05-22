@@ -1208,6 +1208,49 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  func restoreFromMiscWindowBools(_ priorState: PlayerSaveState) {
+    let isOnTop = priorState.bool(for: .isOnTop) ?? false
+    setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
+
+    if let stateString = priorState.string(for: .miscWindowBools) {
+      let splitted: [String] = stateString.split(separator: ",").map{String($0)}
+      if splitted.count >= 5,
+         let isMiniaturized = Bool.yn(splitted[0]),
+         let isHidden = Bool.yn(splitted[1]),
+         let isInPip = Bool.yn(splitted[2]),
+         let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
+         let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) {
+
+        // Process PIP options first, to make sure it's not miniturized due to PIP
+        if isInPip {
+          let pipOption: Preference.WindowBehaviorWhenPip
+          if isHidden {  // currently this will only be true due to PIP
+            pipOption = .hide
+          } else if isWindowMiniaturizedDueToPip {
+            pipOption = .minimize
+          } else {
+            pipOption = .doNothing
+          }
+          // Run in queue to avert race condition with window load
+          animationPipeline.submitSudden({ [self] in
+            enterPIP(usePipBehavior: pipOption)
+          })
+        } else if isMiniaturized {
+          // Not in PIP, but miniturized
+          // Run in queue to avert race condition with window load
+          animationPipeline.submitSudden({ [self] in
+            window?.miniaturize(nil)
+          })
+        }
+        if isPausedPriorToInteractiveMode {
+          self.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
+        }
+      } else {
+        log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)")
+      }
+    }
+  }
+
   // MARK: - Key events
 
   // Returns true if handled
@@ -1893,16 +1936,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       window.postWindowIsReadyToShow()
     }
 
+    if let priorState = player.info.priorState {
+      restoreFromMiscWindowBools(priorState)
+    }
+
+    /// Do this *after* `restoreFromMiscWindowBools` call
     if !window.isMiniaturized {
       log.verbose("Showing Player Window")
+
+      let windowName = window.savedStateName
+      Preference.UIState.windowsOpen.insert(windowName)
+
       window.setIsVisible(true)
 
       /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
-      let windowName = window.savedStateName
-      if !windowName.isEmpty {
-        Preference.UIState.windowsOpen.insert(windowName)
-        Preference.UIState.saveCurrentOpenWindowList()
-      }
+      Preference.UIState.saveCurrentOpenWindowList()
     }
 
     log.verbose("Hiding defaultAlbumArt for window open")

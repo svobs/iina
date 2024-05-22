@@ -1067,17 +1067,19 @@ extension PlayerWindowController {
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")
 
-    let actualVideoSize = videoView.frame.size
-    let expectedVideoSize = transition.outputGeometry.videoSize
-    if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
-      if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
-        log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
+    if Logger.isEnabled(.error) {
+      let actualVideoSize = videoView.frame.size
+      let expectedVideoSize = transition.outputGeometry.videoSize
+      if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
+        if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
+          log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
+        }
       }
-    }
-    let actualWindowSize = window.frame.size
-    let expectedWindowSize = transition.outputGeometry.windowFrame.size
-    if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
-      log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
+      let actualWindowSize = window.frame.size
+      let expectedWindowSize = transition.outputGeometry.windowFrame.size
+      if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
+        log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
+      }
     }
 
     // abort any queued screen updates

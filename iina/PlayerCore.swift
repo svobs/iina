@@ -2263,7 +2263,12 @@ class PlayerCore: NSObject {
 
     checkUnsyncedWindowOptions()
     reloadTrackInfo()
-    if info.isRestoring, let priorState = info.priorState {
+
+    // Cache this for use by background task
+    let isRestoring = info.isRestoring
+    let priorState = info.priorState
+
+    if isRestoring, let priorState {
       /// Cannot set tracks until after `fileLoaded`, or else mpv will error out
       log.debug("FileLoaded: restoring vid & aid tracks")
       if let vid = priorState.int(for: .vid) {
@@ -2277,10 +2282,6 @@ class PlayerCore: NSObject {
     _reloadChapters()
     syncAbLoop()
     saveState()
-
-    // Cache this for use by background task
-    let isRestoring = info.isRestoring
-    let priorState = info.priorState
 
     // Auto load
     $backgroundQueueTicket.withLock { $0 += 1 }

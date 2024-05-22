@@ -487,8 +487,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       } else if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
         Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)")
         Preference.UIState.windowsOpen.insert(activeWindowName)
-      } else if !Preference.UIState.windowsOpen.contains(activeWindowName) {
-        // We still want to save if window is open, because window order could have changed.
+      } else {
+        // Do not process. Another listener will handle it
         Logger.log("Unrecognized window became main, ignoring: \(activeWindowName.quoted)")
         return
       }
