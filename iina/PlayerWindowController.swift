@@ -126,7 +126,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
   private(set) var isWindowHidden: Bool = false
 
-  var isClosing = false
+  var isClosing: Bool {
+    return player.status.rawValue >= PlayerStatus.stopping.rawValue
+  }
+
   var isInitialSizeDone = false
   var isWindowMiniturized = false
   var isWindowMiniaturizedDueToPip = false
@@ -1813,7 +1816,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   override func openWindow(_ sender: Any?) {
     guard let window = self.window, let cv = window.contentView else { return }
-    isClosing = false
     isInitialSizeDone = false  // reset for reopen
 
     log.verbose("PlayerWindow openWindow starting")
@@ -1912,8 +1914,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowWillClose(_ notification: Notification) {
     log.verbose("Window will close")
-
-    isClosing = true
 
     // Close PIP
     if pipStatus == .inPIP {
@@ -2387,6 +2387,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitSudden { [self] in
+      guard !isClosing else { return }
       log.verbose("WindowDidBecomeKey")
       if currentLayout.isLegacyFullScreen {
         log.verbose("WindowDidBecomeKey: resuming legacy FS window")

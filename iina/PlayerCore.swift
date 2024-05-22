@@ -9,6 +9,27 @@
 import Cocoa
 import MediaPlayer
 
+/// Should always be updated in mpv DQ
+enum PlayerStatus: Int {
+  case notStarted = 1
+
+  case startePreVideoInit
+
+  case startedPostVideoInit
+
+  /// Whether stopping of this player has been initiated.
+  case stopping
+
+  /// Whether mpv playback has stopped and the media has been unloaded.
+  case stopped
+
+  /// Whether shutdown of this player has been initiated.
+  case shuttingDown
+
+  /// Whether shutdown of this player has completed (mpv has shutdown).
+  case shutDown
+}
+
 class PlayerCore: NSObject {
   // MARK: - Multiple instances
   static var manager = PlayerCoreManager()
@@ -63,10 +84,6 @@ class PlayerCore: NSObject {
   var userLabel: String?
   var disableUI = false
   var disableWindowAnimation = false
-
-  // Internal vars used to make sure init functions don't happen more than once
-  private var didStart = false
-  private var didInitVideo = false
 
   @available(macOS 10.12.2, *)
   var touchBarSupport: TouchBarSupport {
@@ -127,22 +144,31 @@ class PlayerCore: NSObject {
   var syncUITimer: Timer?
 
   var isUsingMpvOSD = false
-  /// Whether shutdown of this player has been initiated.
-  var isShuttingDown = false
 
-  /// Whether shutdown of this player has completed (mpv has shutdown).
-  var isShutdown = false
-
-  /// Whether stopping of this player has been initiated.
-  /// Should always be updated in mpv DQ
-  var isStopping = false
-
-  /// Whether mpv playback has stopped and the media has been unloaded.
-  /// Should always be updated in main DQ
-  var isStopped = true {
+  var status: PlayerStatus = .notStarted {
     didSet {
-      log.verbose("Updated isStopped to \(isStopped.yesno)")
+      log.verbose("Updated status to \(status)")
     }
+  }
+
+  private var didInitVideo: Bool {
+    status.rawValue >= PlayerStatus.startedPostVideoInit.rawValue
+  }
+
+  var isShuttingDown: Bool {
+    status.rawValue >= PlayerStatus.shuttingDown.rawValue
+  }
+
+  var isShutdown: Bool {
+    status.rawValue >= PlayerStatus.shutDown.rawValue
+  }
+
+  var isStopping: Bool {
+    status.rawValue >= PlayerStatus.stopping.rawValue
+  }
+
+  var isStopped: Bool {
+    status.rawValue >= PlayerStatus.stopped.rawValue
   }
 
   var isInMiniPlayer: Bool {
@@ -396,7 +422,7 @@ class PlayerCore: NSObject {
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       // Reset state flags
-      isStopping = false
+      status = .startedPostVideoInit
 
       if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log) {
         info.videoGeo = info.videoGeo.substituting(ffMeta)
@@ -436,13 +462,13 @@ class PlayerCore: NSObject {
 
   // Does nothing if already started
   func start() {
-    guard !didStart else { return }
-    didStart = true
+    guard status == .notStarted else { return }
 
     log.verbose("Player start")
 
     startMPV()
     loadPlugins()
+    status = .startePreVideoInit
   }
 
   private func startMPV() {
@@ -471,8 +497,8 @@ class PlayerCore: NSObject {
   }
 
   func initVideo() {
-    guard !didInitVideo else { return }
-    didInitVideo = true
+    guard status == .startePreVideoInit else { return }
+    status = .startedPostVideoInit
 
     // init mpv render context.
     // The video layer must be displayed once to get the OpenGL context initialized.
@@ -489,11 +515,11 @@ class PlayerCore: NSObject {
   // unload main window video view
   private func uninitVideo() {
     dispatchPrecondition(condition: .onQueue(.main))
-    guard didInitVideo else { return }
+    guard status.rawValue < PlayerStatus.shuttingDown.rawValue else { return }
+    status = .shuttingDown
     log.debug("Uninit video")
     videoView.stopDisplayLink()
     videoView.uninit()
-    didInitVideo = false
   }
 
   /// Initiate shutdown of this player.
@@ -510,7 +536,6 @@ class PlayerCore: NSObject {
       return
     }
     log.debug("Shutting down player")
-    isShuttingDown = true
     savePlaybackPosition() // Save state to mpv watch-later (if enabled)
     refreshSyncUITimer()   // Shut down timer
     uninitVideo()          // Shut down DisplayLink
@@ -522,11 +547,8 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(.main))
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
-    isStopped = true
-    isShutdown = true
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
-      isShuttingDown = true
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
       refreshSyncUITimer()   // Shut down timer
       uninitVideo()          // Shut down DisplayLink
@@ -615,6 +637,10 @@ class PlayerCore: NSObject {
   func stop() {
     dispatchPrecondition(condition: .onQueue(.main))
 
+    if status.rawValue < PlayerStatus.stopping.rawValue {
+      status = .stopping
+    }
+
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -642,13 +668,14 @@ class PlayerCore: NSObject {
       log.debug("Stopping playback")
 
       sendOSD(.stop)
-      isStopping = true
       DispatchQueue.main.async { [self] in
         refreshSyncUITimer()
       }
       mpv.command(.stop)
 
-      isStopped = true
+      if status.rawValue < PlayerStatus.stopped.rawValue {
+        status = .stopped
+      }
     }
   }
 
@@ -1057,7 +1084,9 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       if !paused {
-        isStopped = false
+        if status == .stopping || status == .stopped {
+          status = .startedPostVideoInit
+        }
       }
       windowController.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
@@ -2200,7 +2229,9 @@ class PlayerCore: NSObject {
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
-    isStopping = false
+    if status == .stopping || status == .stopped {
+      status = .startedPostVideoInit
+    }
 
     guard let currentMedia = info.currentMedia else {
       log.debug("FileLoaded: aborting - currentMedia was nil")
@@ -2217,6 +2248,8 @@ class PlayerCore: NSObject {
 
     // Kick off thumbnails load/gen - it can happen in background
     reloadThumbnails(forMedia: currentMedia)
+
+    fileIsCompletelyDoneLoading()
 
     checkUnsyncedWindowOptions()
     // Call `trackListChanged` to load tracks
@@ -2272,7 +2305,6 @@ class PlayerCore: NSObject {
 
     // main thread stuff
     DispatchQueue.main.async { [self] in
-      isStopped = false
       refreshSyncUITimer()
 
       if #available(macOS 10.12.2, *) {
@@ -2338,12 +2370,19 @@ class PlayerCore: NSObject {
       newVidGeo = info.videoGeo
     }
 
-    log.verbose("File is completely loaded")
+    guard currentMedia.loadStatus.isAtLeast(.started) else {
+      log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentMedia.loadStatus.description.quoted))")
+      return
+    }
+
     /// Make sure to set this *after* calling `applyVidGeo`
     guard currentMedia.loadStatus.isNotYet(.completelyLoaded) else {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")
       return
     }
+
+    log.verbose("File is completely loaded")
+
     /// Need to distinguish between `completelyLoaded` and `videoGeometryApplied`:
     /// - `completelyLoaded` means that `fileIsCompletelyDoneLoading` will not get called again, but `applyVidGeo` has to finish up
     /// - `videoGeometryApplied` means that file is completely done loading for `applyVidGeo` too
@@ -2529,9 +2568,6 @@ class PlayerCore: NSObject {
     _ = getVideoFilters()
     postNotification(.iinaVFChanged)
 
-    /// The first filter msg after starting a file means that the file is officially done loading.
-    /// (Put this here instead of at `playback-restart` because it occurs later & will avoid triggering display of OSDs)
-    fileIsCompletelyDoneLoading()
     saveState()
   }
 
@@ -2542,15 +2578,16 @@ class PlayerCore: NSObject {
     guard vid != info.vid else { return }
     info.vid = vid
 
+    guard info.isFileLoaded else {
+      log.verbose("After video track changed to: \(vid): file is not loaded!")
+      return
+    }
+
     /// This will refresh album art display.
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
     windowController.applyVidGeo(info.videoGeo)
 
     DispatchQueue.main.async{ [self] in
-      guard info.isFileLoaded else {
-        log.verbose("After video track changed to: \(vid): file is not loaded!")
-        return
-      }
       windowController.forceDraw()
 
       if isMiniPlayerWaitingToShowVideo {

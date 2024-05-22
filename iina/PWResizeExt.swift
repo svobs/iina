@@ -44,10 +44,10 @@ extension PlayerWindowController {
       let showAlbumArt = player.info.currentMediaAudioStatus == .isAudio
 
       if player.info.isVideoTrackSelected {
-        log.verbose("[applyVidGeo] Hiding defaultAlbumArt because vidSelected=Y (showArt=\(showAlbumArt.yn))")
+        log.verbose("[applyVidGeo] Hiding defaultAlbumArt: vidSelected=Y loadStatus=\(currentMedia.loadStatus) (showArt=\(showAlbumArt.yn))")
         showDefaultArt = false
       } else {
-        log.verbose("[applyVidGeo] Showing defaultAlbumArt because vidSelected=N (showArt=\(showAlbumArt.yn))")
+        log.verbose("[applyVidGeo] Showing defaultAlbumArt: vidSelected=N loadStatus=\(currentMedia.loadStatus) (showArt=\(showAlbumArt.yn))")
         showDefaultArt = true
       }
 
@@ -73,8 +73,14 @@ extension PlayerWindowController {
   // FIXME: refactor to use the videoScale provided (or change the flow). Currently it is ignored and then recalculated afterwards
   /// Only `applyVidGeo` should call this.
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
-    guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else { return }
-    guard let window else { return }
+    guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else {
+      log.verbose("[applyVidGeo] Aborting due to state: closing=\(isClosing.yn) stopping=\(player.isStopping.yn) stopped=\(player.isStopped.yn) shuttingDown=\(player.isShuttingDown.yn)")
+      return
+    }
+    guard let window else {
+      log.error("[applyVidGeo] Aborting; no window!")
+      return
+    }
 
     guard !isRestoring else {
       log.verbose("[applyVidGeo] Restore is in progress; no op")

@@ -229,10 +229,12 @@ extension Preference {
       // Don't care about ordering of these:
       let minimizedWindowNames = Array(windowsMinimized)
       let hiddenWindowNames = Array(windowsHidden)
-      if openWindowsSet.count != openWindowNames.count {
-        Logger.log("While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames) (excluded: \(nameToExclude?.quoted ?? "nil")); Other: Hidden=\(hiddenWindowNames), Minimized=\(minimizedWindowNames)", level: .error)
+      if openWindowsSet.count != openWindowNames.count + minimizedWindowNames.count + hiddenWindowNames.count {
+        let errorMsg = "While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames) + Hidden=\(hiddenWindowNames) + Minimized=\(minimizedWindowNames); excluded=\(nameToExclude?.quoted ?? "nil")"
         #if DEBUG
-        Logger.fatal("See previous error for open window names")
+        Logger.fatal(errorMsg)
+        #else
+        Logger.log(errorMsg, level: .error)
         #endif
       }
       if Logger.isTraceEnabled {
