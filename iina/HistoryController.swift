@@ -53,16 +53,18 @@ class HistoryController {
     folderMonitor.stopMonitoring()
   }
 
-  private func saveHistoryToFile() -> Bool {
+  private func saveHistoryToFile() {
     do {
       log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
       let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: false)
       try data.write(to: plistURL)
-      return true
     } catch {
       log.error("Failed to save playback history to file \(plistURL.path.pii.quoted): \(error)")
+      return
     }
-    return false
+
+    log.verbose("Saved history; posting iinaHistoryUpdated")
+    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
   }
 
   private func readHistoryFromFile() {
@@ -99,26 +101,22 @@ class HistoryController {
     }
   }
 
-  private func save() {
-    guard saveHistoryToFile() else { return }
-    log.verbose("Saved history; posting iinaHistoryUpdated")
-    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
-  }
-
   func add(_ url: URL, duration: Double) {
     dispatchPrecondition(condition: .onQueue(queue))
     guard Preference.bool(for: .recordPlaybackHistory) else { return }
+    
     if let existingItem = history.first(where: { $0.mpvMd5 == url.path.md5 }), let index = history.firstIndex(of: existingItem) {
       history.remove(at: index)
     }
     history.insert(PlaybackHistory(url: url, duration: duration), at: 0)
-    save()
+    saveHistoryToFile()
   }
 
   func remove(_ entries: [PlaybackHistory]) {
     dispatchPrecondition(condition: .onQueue(queue))
+
     history = history.filter { !entries.contains($0) }
-    save()
+    saveHistoryToFile()
   }
 
   func removeAll() {
@@ -153,6 +151,15 @@ class HistoryController {
     dispatchPrecondition(condition: .onQueue(queue))
 
     NSDocumentController.shared.noteNewRecentDocumentURL(url)
+    saveRecentDocuments()
+  }
+
+  func noteNewRecentDocumentURLs(_ urls: [URL]) {
+    dispatchPrecondition(condition: .onQueue(queue))
+
+    for url in urls {
+      NSDocumentController.shared.noteNewRecentDocumentURL(url)
+    }
     saveRecentDocuments()
   }
 

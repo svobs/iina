@@ -2322,7 +2322,6 @@ class PlayerCore: NSObject {
       log.debug("Done with auto load")
     }
 
-
     // main thread stuff
     DispatchQueue.main.async { [self] in
       refreshSyncUITimer()
@@ -2330,31 +2329,31 @@ class PlayerCore: NSObject {
       if #available(macOS 10.12.2, *) {
         touchBarSupport.setupTouchBarUI()
       }
+    }
 
-      // Add to history & other state tracking
-      if let url = info.currentURL {
-        let duration = info.videoDuration ?? .zero
-        HistoryController.shared.queue.async { [self] in
-          // 1. Update main history list
-          HistoryController.shared.add(url, duration: duration.second)
+    // Add to history & other state tracking
+    if let url = info.currentURL {
+      let duration = info.videoDuration ?? .zero
+      HistoryController.shared.queue.async { [self] in
+        // 1. Update main history list
+        HistoryController.shared.add(url, duration: duration.second)
 
-          // 2. IINA's [ancient] "resume last playback" feature
-          // Add this now, or else welcome window will fall out of sync with history list
-          saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
+        // 2. IINA's [ancient] "resume last playback" feature
+        // Add this now, or else welcome window will fall out of sync with history list
+        saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
 
-          if Preference.bool(for: .recordRecentFiles) {
-            // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
-            if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-              HistoryController.shared.noteNewRecentDocumentURL(url)
-            } else {
-              /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
-              /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
-              NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
-            }
+        if Preference.bool(for: .recordRecentFiles) {
+          // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
+          if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+            HistoryController.shared.noteNewRecentDocumentURL(url)
+          } else {
+            /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
+            /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
+            NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
           }
-          NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
-          postFileHistoryUpdateNotification()
         }
+        NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+        postFileHistoryUpdateNotification()
       }
     }
 

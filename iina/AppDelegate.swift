@@ -745,10 +745,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
         if Preference.bool(for: .recordRecentFiles) {
           HistoryController.shared.queue.async {
-            for url in panel.urls {
-              NSDocumentController.shared.noteNewRecentDocumentURL(url)
-            }
-            HistoryController.shared.saveRecentDocuments()
+            HistoryController.shared.noteNewRecentDocumentURLs(panel.urls)
           }
         }
         let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternativeAction)

@@ -1820,12 +1820,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     log.verbose("PlayerWindow openWindow starting")
 
-    /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
-    let windowName = window.savedStateName
-    if !windowName.isEmpty {
-      Preference.UIState.windowsOpen.insert(windowName)
-    }
-
     // Must workaround an AppKit defect in some versions of macOS. This defect is known to exist in
     // Catalina and Big Sur. The problem was not reproducible in early versions of Monterey. It
     // reappeared in Ventura. The status of other versions of macOS is unknown, however the
@@ -1902,7 +1896,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if !window.isMiniaturized {
       log.verbose("Showing Player Window")
       window.setIsVisible(true)
+
+      /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
+      let windowName = window.savedStateName
+      if !windowName.isEmpty {
+        Preference.UIState.windowsOpen.insert(windowName)
+        Preference.UIState.saveCurrentOpenWindowList()
+      }
     }
+
     log.verbose("Hiding defaultAlbumArt for window open")
     defaultAlbumArtView.isHidden = true
 
