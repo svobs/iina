@@ -377,6 +377,13 @@ struct PlayerSaveState {
     return nil
   }
 
+  func url(for name: PropName) -> URL? {
+    if let string = string(for: name) {
+      return URL(string: string)
+    }
+    return nil
+  }
+
   static private func string(for name: PropName, _ properties: [String: Any]) -> String? {
     return properties[name.rawValue] as? String
   }

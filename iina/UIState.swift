@@ -478,9 +478,11 @@ extension Preference {
             }
 
             for playerKey in launch.playerKeys {
-              let savedState = Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)
-              Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with URL \(savedState?.string(for: .url)?.pii.quoted ?? "nil")",
-                         level: .warning)
+              if Logger.isEnabled(.warning) {
+                let path = MediaItem.path(for: Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)?.url(for: .url))
+                Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)",
+                           level: .warning)
+              }
               UserDefaults.standard.removeObject(forKey: playerKey)
               countEntriesDeleted += 1
             }

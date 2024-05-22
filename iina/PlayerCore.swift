@@ -147,7 +147,7 @@ class PlayerCore: NSObject {
 
   var status: PlayerStatus = .notStarted {
     didSet {
-      log.verbose("Updated status to \(status)")
+      log.verbose("Updated playerStatus to \(status)")
     }
   }
 
@@ -422,7 +422,9 @@ class PlayerCore: NSObject {
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       // Reset state flags
-      status = .startedPostVideoInit
+      if status == .stopping || status == .stopped {
+        status = .startedPostVideoInit
+      }
 
       if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log) {
         info.videoGeo = info.videoGeo.substituting(ffMeta)
@@ -498,6 +500,7 @@ class PlayerCore: NSObject {
 
   func initVideo() {
     guard status == .startePreVideoInit else { return }
+    log.verbose("Init video")
     status = .startedPostVideoInit
 
     // init mpv render context.
@@ -637,9 +640,11 @@ class PlayerCore: NSObject {
   func stop() {
     dispatchPrecondition(condition: .onQueue(.main))
 
-    if status.rawValue < PlayerStatus.stopping.rawValue {
-      status = .stopping
+    guard status.rawValue < PlayerStatus.stopping.rawValue else {
+      log.debug("Stop called, but status is already \(status); aborting")
+      return
     }
+    status = .stopping
 
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
@@ -2960,6 +2965,8 @@ class PlayerCore: NSObject {
 
   func errorOpeningFileAndClosePlayerWindow(url: URL? = nil) {
     DispatchQueue.main.async { [self] in
+      stop()
+
       if let path = url?.path {
         Utility.showAlert("error_open_name", arguments: [path.quoted])
       } else {

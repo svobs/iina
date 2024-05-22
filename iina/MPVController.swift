@@ -1125,7 +1125,7 @@ not applying FFmpeg 9599 workaround
       guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { return }
       let reason = dataPtr.pointee.reason
       let reasonString = dataPtr.pointee.reasonString
-      player.log.verbose("FileEnded reason=\(reasonString)")
+      player.log.verbose("FileEnded, reason: \(reasonString)")
       if !player.info.isFileLoaded {
         if reason != MPV_END_FILE_REASON_STOP {
           receivedEndFileWhileLoading = true
