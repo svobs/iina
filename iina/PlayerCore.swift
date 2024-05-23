@@ -2208,7 +2208,8 @@ class PlayerCore: NSObject {
     mpv.command(.playlistPlayIndex, args: ["0"])
   }
 
-  /** This function is called right after file loaded. Should load all meta info here. */
+  /// This function is called right after file loaded, triggered by mpv `fileLoaded` notification.
+  /// We should now be able to get track info from mpv and can start rendering the video in the final size.
   func fileLoaded() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
@@ -2264,7 +2265,7 @@ class PlayerCore: NSObject {
     checkUnsyncedWindowOptions()
     reloadTrackInfo()
 
-    // Cache this for use by background task
+    // Cache these vars to keep them constant for background tasks
     let isRestoring = info.isRestoring
     let priorState = info.priorState
 
@@ -2332,7 +2333,7 @@ class PlayerCore: NSObject {
       }
     }
 
-    // Add to history & other state tracking
+    // Add to global history & Recent Documents list
     if let url = info.currentURL {
       let duration = info.videoDuration ?? .zero
       HistoryController.shared.queue.async { [self] in
@@ -2377,9 +2378,6 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !mpv.isStale(), let currentMedia = info.currentMedia else { return }
 
-    reloadTrackInfo()
-    reloadSelectedTracks()
-
     // Make sure to call this because mpv does not always trigger it.
     let newVidGeo: VideoGeometry
     if let mpvVidGeo = mpv.syncVideoGeometryFromMPV() {
@@ -2415,7 +2413,8 @@ class PlayerCore: NSObject {
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
     windowController.applyVidGeo(newVidGeo)
 
-    // Window opacity was until now set to 0%, to conceal partial drawing. Now that it is complete, we can show it:
+    // If window was just opened, its opacity was until now set to 0%, to conceal partial drawing.
+    // Now that it is complete, we can show it:
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.InitialVideoReconfigDuration) { [self] in
         windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
