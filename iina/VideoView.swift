@@ -299,7 +299,7 @@ class VideoView: NSView {
   /// This should be called at start or if the window has changed displays
   func updateDisplayLink() {
     guard let window = window, let link = link, let screen = window.screen else { return }
-    guard !player.windowController.isClosing, !player.isShuttingDown else { return }
+    guard !player.isStopping else { return }
     let displayId = screen.displayId
 
     // Do nothing if on the same display

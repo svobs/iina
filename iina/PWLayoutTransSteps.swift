@@ -117,7 +117,7 @@ extension PlayerWindowController {
 
         window.level = .iinaFloating
       }
-      if !isClosing {
+      if !player.isStopping {
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)
         player.didEnterFullScreenViaUserToggle = true
       }
@@ -135,7 +135,7 @@ extension PlayerWindowController {
         hideBuiltInTitleBarViews(setAlpha: true)
       }
 
-      if !isClosing {
+      if !player.isStopping {
         player.mpv.setFlag(MPVOption.Window.fullscreen, false)
         player.didEnterFullScreenViaUserToggle = false
       }

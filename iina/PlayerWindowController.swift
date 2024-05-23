@@ -2297,7 +2297,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) { [self] in
       guard ticket == screenChangedTicketCounter else { return }
       guard let window = window, let screen = window.screen else { return }
-      guard !isClosing, !player.isShuttingDown else { return }
+      guard !isClosing else { return }
 
       let displayId = screen.displayId
       // Legacy FS work below can be very slow. Try to avoid if possible
@@ -3859,7 +3859,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func updateVolumeUI() {
     dispatchPrecondition(condition: .onQueue(.main))
-    guard loaded, !isClosing, !player.isShuttingDown else { return }
+    guard loaded, !isClosing else { return }
     guard player.info.isFileLoaded || player.info.isRestoring else { return }
 
     let volume = player.info.volume

@@ -570,7 +570,7 @@ not applying FFmpeg 9599 workaround
 
   func shouldRenderUpdateFrame() -> Bool {
     guard let mpvRenderContext = mpvRenderContext else { return false }
-    guard !player.isStopping && !player.isShuttingDown else { return false }
+    guard !player.isStopping else { return false }
     let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
     return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
   }
@@ -867,7 +867,7 @@ not applying FFmpeg 9599 workaround
   /** Set filter. only "af" or "vf" is supported for name */
   func setFilters(_ name: String, filters: [MPVFilter]) {
     queue.async { [self] in
-      guard !player.isShuttingDown, !player.isShutdown, !player.isStopping, !player.isStopped else { return }
+      guard !player.isStopping else { return }
       Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "setFilters() do not support \(name)!")
       let cmd = name == MPVProperty.vf ? MPVCommand.vf : MPVCommand.af
 
@@ -919,8 +919,8 @@ not applying FFmpeg 9599 workaround
       return nil
     }
     // Will crash if querying mpv after stop command started
-    guard !player.isStopping, !player.isStopped, !player.isShuttingDown, !player.isShutdown else {
-      player.log.verbose("Cannot get videoGeo: stopping=\(player.isStopping.yn) stopped=\(player.isStopped.yn) shuttingDown=\(player.isShuttingDown.yn)")
+    guard !player.isStopping else {
+      player.log.verbose("Cannot get videoGeo: status=\(player.status)")
       return nil
     }
 

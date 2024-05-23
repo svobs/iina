@@ -171,7 +171,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   func updateInfo(dynamic: Bool = false) {
     let player = PlayerCore.lastActive
-    guard !player.isStopping, !player.isStopped, !player.isShuttingDown, !player.isShutdown else { return }
+    guard !player.isStopping else { return }
     let controller = player.mpv!
     let info = player.info
 
@@ -362,8 +362,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       let player = PlayerCore.lastActive
 
       if let textField = cell.textField {
-        if !player.isStopping, !player.isStopped, !player.isShuttingDown, !player.isShutdown,
-            let value = PlayerCore.lastActive.mpv.getString(property) {
+        if !player.isStopping, let value = PlayerCore.lastActive.mpv.getString(property) {
           textField.stringValue = value
           textField.textColor = .controlTextColor
         } else {

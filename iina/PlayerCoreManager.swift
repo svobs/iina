@@ -18,7 +18,7 @@ class PlayerCoreManager {
 
   static var allPlayersShutdown: Bool {
     for player in playerCores {
-      if !player.isShutdown {
+      if !player.isShutDown {
         player.log.verbose("Player has not yet shut down")
         return false
       }

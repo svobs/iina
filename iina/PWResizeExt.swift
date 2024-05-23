@@ -39,7 +39,7 @@ extension PlayerWindowController {
     // if received video size before switching to music mode, hide default album art
     // Don't show art if currently loading
     let isCompletelyLoaded = currentMedia.loadStatus.isAtLeast(.completelyLoaded)
-    if isCompletelyLoaded, !player.isStopping, !player.isStopped {
+    if isCompletelyLoaded, !player.isStopping {
       // Check whether to show album art
       let showAlbumArt = player.info.currentMediaAudioStatus == .isAudio
 
@@ -73,8 +73,8 @@ extension PlayerWindowController {
   // FIXME: refactor to use the videoScale provided (or change the flow). Currently it is ignored and then recalculated afterwards
   /// Only `applyVidGeo` should call this.
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
-    guard !isClosing, !player.isStopping, !player.isStopped, !player.isShuttingDown else {
-      log.verbose("[applyVidGeo] Aborting due to state: closing=\(isClosing.yn) stopping=\(player.isStopping.yn) stopped=\(player.isStopped.yn) shuttingDown=\(player.isShuttingDown.yn)")
+    guard !player.isStopping else {
+      log.verbose("[applyVidGeo] Aborting due to status=\(player.status)")
       return
     }
     guard let window else {

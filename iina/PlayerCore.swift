@@ -155,7 +155,7 @@ class PlayerCore: NSObject {
     status.rawValue >= PlayerStatus.shuttingDown.rawValue
   }
 
-  var isShutdown: Bool {
+  var isShutDown: Bool {
     status.rawValue >= PlayerStatus.shutDown.rawValue
   }
 
@@ -612,7 +612,7 @@ class PlayerCore: NSObject {
     let isNormalSpeed = info.playSpeed == 1
     info.isPaused = true  // set preemptively to prevent inconsistencies in UI
     mpv.queue.async { [self] in
-      guard !info.isIdle, !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+      guard !info.isIdle, !isStopping else { return }
       /// Set this so that callbacks will fire even though `info.isPaused` was already set
       info.pauseStateWasChangedLocally = true
       mpv.setFlag(MPVOption.PlaybackControl.pause, true)
@@ -1268,7 +1268,7 @@ class PlayerCore: NSObject {
   }
 
   func deriveVideoScale(from geo: PWinGeometry) -> CGFloat? {
-    guard !windowController.isClosing, !isStopping, !isStopped else { return nil }
+    guard !isStopping else { return nil }
 
     let screen = NSScreen.getScreenOrDefault(screenID: geo.screenID)
     let backingScaleFactor = screen.backingScaleFactor
@@ -2122,7 +2122,7 @@ class PlayerCore: NSObject {
 
   func fileStarted(path: String, playlistPos: Int) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !isStopping, !isShuttingDown else { return }
+    guard !isStopping else { return }
 
     guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
@@ -2214,7 +2214,7 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
     // note: player may be "stopped" here
-    guard !isStopping, !isShuttingDown else { return }
+    guard !isStopping else { return }
 
     let pause: Bool
     if let priorState = info.priorState {
@@ -2366,7 +2366,7 @@ class PlayerCore: NSObject {
   }
 
   func afChanged() {
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     _ = getAudioFilters()
     saveState()
     postNotification(.iinaAFChanged)
@@ -2458,7 +2458,7 @@ class PlayerCore: NSObject {
 
   func reloadAID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     info.aid = aid
@@ -2472,13 +2472,13 @@ class PlayerCore: NSObject {
   }
 
   func mediaTitleChanged() {
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     postNotification(.iinaMediaTitleChanged)
   }
 
   func reloadQuickSettingsView() {
     DispatchQueue.main.async { [self] in
-      guard !isShuttingDown, !isShutdown else { return }
+      guard !isShuttingDown else { return }
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive(temporary: info.isPaused)
@@ -2530,14 +2530,14 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
       // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
-      guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+      guard !isStopping else { return }
       videoView.refreshEdrMode()
     }
   }
 
   func reloadSID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
     info.sid = sid
@@ -2553,7 +2553,7 @@ class PlayerCore: NSObject {
 
   func reloadSecondSID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
@@ -2568,7 +2568,7 @@ class PlayerCore: NSObject {
     // No need to process track list changes if playback is being stopped. Must not process track
     // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
     // trigger a crash.
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     log.debug("Track list changed")
     reloadTrackInfo()
     reloadSelectedTracks()
@@ -2585,7 +2585,7 @@ class PlayerCore: NSObject {
   }
 
   func vfChanged() {
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     _ = getVideoFilters()
     postNotification(.iinaVFChanged)
 
@@ -2594,7 +2594,7 @@ class PlayerCore: NSObject {
 
   func reloadVID(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard !isStopping, !isStopped, !isShuttingDown, !isShutdown else { return }
+    guard !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid != info.vid else { return }
     info.vid = vid
@@ -2755,7 +2755,7 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(.main))
 
     let useTimer: Bool
-    if isStopping || isStopped || isShuttingDown || isShutdown {
+    if isStopping {
       useTimer = false
     } else if info.isPaused {
       // Follow energy efficiency best practices and ensure IINA is absolutely idle when the
@@ -2824,7 +2824,7 @@ class PlayerCore: NSObject {
           summary += ", every \(timerConfig.interval)s"
         }
         let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
-        log.verbose("\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) stop:\(isStopping.yn)\(isStopped.yn) quit:\(isShuttingDown.yn)\(isShutdown.yn)")
+        log.verbose("\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) status:\(status)")
       }
     }
 
@@ -3040,7 +3040,7 @@ class PlayerCore: NSObject {
       // Run the following in the background at lower priority, so the UI is not slowed down
       PlayerCore.thumbnailQueue.asyncAfter(deadline: .now() + 0.5) { [self] in
         guard reloadTicket == thumbnailReloadTicketCounter else { return }
-        guard !isStopping, !isStopped, !isShuttingDown else { return }
+        guard !isStopping else { return }
         log.debug("Reloading thumbnails (tkt \(reloadTicket))")
 
         var queueTicket: Int = 0
@@ -3414,7 +3414,7 @@ class NowPlayingInfoManager {
     var info = center.nowPlayingInfo ?? [String: Any]()
 
     let activePlayer = PlayerCore.lastActive
-    guard !activePlayer.isStopping, !activePlayer.isStopped, !activePlayer.isShuttingDown, !activePlayer.isShutdown else { return }
+    guard !activePlayer.isStopping else { return }
 
     if withTitle {
       if activePlayer.info.currentMediaAudioStatus == .isAudio {

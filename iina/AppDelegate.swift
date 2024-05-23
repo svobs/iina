@@ -452,7 +452,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:
     for player in PlayerCoreManager.playerCores {
-      if player.windowController.loaded && !player.isShutdown {
+      if player.windowController.loaded && !player.isShutDown {
         player.windowController.updateTitle()
       }
     }
@@ -900,9 +900,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // For debugging list players that have not terminated.
       for player in PlayerCoreManager.playerCores {
         let label = player.label
-        if !player.isStopped {
-          Logger.log("Player \(label) failed to stop", level: .warning)
-        } else if !player.isShutdown {
+        if !player.isShutDown {
           Logger.log("Player \(label) failed to shut down", level: .warning)
         }
       }
@@ -1131,7 +1129,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Instruct any players that are already stopped to start shutting down.
     for player in PlayerCoreManager.playerCores {
-      if !player.isShutdown {
+      if !player.isShutDown {
         player.log.verbose("Requesting shutdown of player")
         player.shutdown()
       }
