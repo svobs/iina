@@ -223,7 +223,9 @@ extension Preference {
     }
 
     static func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
+      dispatchPrecondition(condition: .onQueue(.main))
       guard !AppDelegate.shared.isTerminating else { return }
+      guard !Preference.bool(for: .isRestoreInProgress) else { return }
       let openWindowsSet = windowsOpen
       let openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
       // Don't care about ordering of these:
