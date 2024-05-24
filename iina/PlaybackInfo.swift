@@ -223,13 +223,7 @@ class PlaybackInfo {
     if isShowingAlbumArt {
       return 1.0  // album art is always square
     }
-    if let videoAspectCAR = videoGeo.videoAspectCAR {
-      return videoAspectCAR
-    }
-    // Ideally this should never happen
-    // TODO: preload video information using ffmpeg before opening window
-    log.warn("No videoAspect found in videoGeo! Falling back to default 16:9 aspect")
-    return CGSize(width: 16.0, height: 9.0).mpvAspect
+    return videoGeo.videoViewAspect
   }
 
   /// If `true`, then `videoView` is used to display album art, or default album art, which is always square

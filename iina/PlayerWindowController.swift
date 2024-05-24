@@ -3264,13 +3264,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.mpv.queue.async { [self] in
       let videoGeo = player.info.videoGeo
-      guard let videoSizeRaw = videoGeo.videoSizeRaw, videoGeo.videoSizeCAR != nil else {
-        log.debug("Cannot enter interactive mode: missing videoSizeCAR from \(videoGeo)")
-        DispatchQueue.main.async {
-          Utility.showAlert("no_video_track")
-        }
-        return
-      }
+      let videoSizeRaw = videoGeo.videoSizeRaw
 
       log.verbose("Entering interactive mode: \(mode)")
 
@@ -3499,10 +3493,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // - 2. Thumbnail Preview
 
     let videoGeo = player.info.videoGeo
+    let videoAspectCAR = videoGeo.videoAspectCAR
 
     guard let thumbnails = player.info.currentMedia?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second),
-          let videoAspectCAR = videoGeo.videoAspectCAR, let currentControlBar else {
+          let currentControlBar else {
       thumbnailPeekView.isHidden = true
       return
     }
@@ -4289,10 +4284,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       
       pip.presentAsPicture(inPicture: pipVideo)
       pipOverlayView.isHidden = false
-      if let videoSize = player.info.videoGeo.videoSizeCARS {
-        log.verbose("Setting PiP aspect to \(videoSize.mpvAspect)")
-        pip.aspectRatio = videoSize
-      }
+      let videoSize = player.info.videoGeo.videoSizeCARS
+      log.verbose("Setting PiP aspect to \(videoSize.mpvAspect)")
+      pip.aspectRatio = videoSize
     }
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {

@@ -20,7 +20,6 @@ extension PlayerWindowController {
 
     log.verbose("[applyVidGeo] Entered, justOpenedFile=\(justOpenedFile.yn) restoring=\(isRestoring.yn) \(newVidGeo)")
 
-    guard newVidGeo.hasValidSize else { return }
     guard let currentMedia = player.info.currentMedia else {
       log.verbose("[applyVidGeo] Aborting: currentMedia is nil")
       return
@@ -86,10 +85,10 @@ extension PlayerWindowController {
       return
     }
 
-    guard let newVideoSizeCARS = newVidGeo.videoSizeCARS, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
-      log.error("[applyVidGeo] Could not get videoSizeCARS from mpv! Cancelling adjustment")
-      return
-    }
+    let oldVideoSizeRaw = oldVidGeo.videoSizeRaw
+    let oldvideoSizeCARS = oldVidGeo.videoSizeCARS
+    let newVideoSizeRaw = newVidGeo.videoSizeRaw
+    let newVideoSizeCARS = newVidGeo.videoSizeCARS
 
     let newVideoAspect = newVideoSizeCARS.mpvAspect
     log.verbose("[applyVidGeo Start] restoring=\(isRestoring.yn) justOpenedFile=\(justOpenedFile.yn) NewVidGeo=\(newVidGeo)")
@@ -113,9 +112,7 @@ extension PlayerWindowController {
     }
 
     // Windowed or full screen
-    if isInitialSizeDone,
-       let oldVideoSizeRaw = oldVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
-       let oldvideoSizeCARS = oldVidGeo.videoSizeCARS, oldvideoSizeCARS.equalTo(newVideoSizeCARS),
+    if isInitialSizeDone, oldVideoSizeRaw.equalTo(newVideoSizeRaw), oldvideoSizeCARS.equalTo(newVideoSizeCARS),
        // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
        videoView.frame.size.mpvAspect == newVideoAspect {
       log.debug("[applyVidGeo F Done] No change; taking no action")
@@ -263,18 +260,17 @@ extension PlayerWindowController {
     dispatchPrecondition(condition: .onQueue(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowed else { return }
+    guard desiredVideoScale > 0.0 else {
+      log.verbose("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
+      return
+    }
 
     let oldVidGeo = player.info.videoGeo
     let newVidGeo = oldVidGeo.clone(scale: desiredVideoScale)
 
-    guard oldVidGeo.hasValidSize else {
-      log.error("SetVideoScale failed: video geometry has no size!")
-      return
-    }
-
     // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR?.description ?? "nil") → desiredVideoSize=\(newVidGeo.videoSizeCAR?.description ?? "nil")")
+    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR) → desiredVideoSize=\(newVidGeo.videoSizeCAR)")
     applyVidGeo(newVidGeo)
   }
 
@@ -606,9 +602,9 @@ extension PlayerWindowController {
     let convertedGeo = geometry.toPWinGeometry()
     videoView.apply(convertedGeo)
 
-    if let derivedVideoScale = player.deriveVideoScale(from: convertedGeo) {
-      player.info.videoGeo = player.info.videoGeo.clone(scale: derivedVideoScale)
-    }
+    // FIXME: integrate this with `applyVidGeo()`
+    let derivedVideoScale = player.deriveVideoScale(from: convertedGeo)
+    player.info.videoGeo = player.info.videoGeo.clone(scale: derivedVideoScale)
 
     if setFrame {
       player.window.setFrameImmediately(geometry.windowFrame, animate: animate)

@@ -1209,11 +1209,9 @@ class PlayerCore: NSObject {
       // FIXME: Default aspect needs i18n
       sendOSD(.aspect(aspectLabel))
 
-      if newVideoGeo.hasValidSize {
-        // Change video size:
-        log.verbose("Calling applyVidGeo from video-aspect-override")
-        windowController.applyVidGeo(newVideoGeo)
-      }
+      // Change video size:
+      log.verbose("Calling applyVidGeo from video-aspect-override")
+      windowController.applyVidGeo(newVideoGeo)
     }
 
     // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
@@ -1238,10 +1236,7 @@ class PlayerCore: NSObject {
       return
     }
     mpv.queue.async { [self] in
-      guard let desiredVideoScale = deriveVideoScale(from: windowGeo) else {
-        log.verbose("UpdateMPVWindowScale: could not get size info; skipping")
-        return
-      }
+      let desiredVideoScale = deriveVideoScale(from: windowGeo)
       guard desiredVideoScale > 0.0 else {
         log.verbose("UpdateMPVWindowScale: desiredVideoScale is 0; aborting")
         return
@@ -1267,24 +1262,13 @@ class PlayerCore: NSObject {
     }
   }
 
-  func deriveVideoScale(from geo: PWinGeometry) -> CGFloat? {
-    guard !isStopping else { return nil }
-
+  func deriveVideoScale(from geo: PWinGeometry) -> CGFloat {
     let screen = NSScreen.getScreenOrDefault(screenID: geo.screenID)
     let backingScaleFactor = screen.backingScaleFactor
     let videoWidthScaled = (geo.videoSize.width * backingScaleFactor).truncatedTo6()
-
-    let videoScale: CGFloat
-    if let videoSizeCAR = info.videoGeo.videoSizeCAR {
-      videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
-      log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
-    } else if let mpvVidGeo = mpv.syncVideoGeometryFromMPV(), let videoSizeCAR = mpvVidGeo.videoSizeCAR {
-      videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
-      log.verbose("Derived videoScale from mpv. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
-    } else {
-      log.error("Could not derive videoScale from mpv or from cache!")
-      return nil
-    }
+    let videoSizeCAR = info.videoGeo.videoSizeCAR
+    let videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
+    log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
     return videoScale
   }
 
@@ -3051,22 +3035,8 @@ class PlayerCore: NSObject {
 
         // Generate thumbnails using video's original dimensions, before aspect ratio correction.
         // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-        var videoGeo = info.videoGeo
-        if !videoGeo.hasValidSize {
-          // Fall back to querying mpv:
-          guard let videoGeoNew = mpv.syncVideoGeometryFromMPV() else {
-            log.debug("Cannot generate thumbnails: could not get video params from mpv")
-            clearExistingThumbnails(for: currentMedia)
-            return
-          }
-          videoGeo = videoGeoNew
-        }
-
-        guard let videoSizeRaw = videoGeo.videoSizeRaw else {
-          log.debug("Cannot generate thumbnails: video height and/or width is zero")
-          clearExistingThumbnails(for: currentMedia)
-          return
-        }
+        let videoGeo = info.videoGeo
+        let videoSizeRaw = videoGeo.videoSizeRaw
 
         let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
 

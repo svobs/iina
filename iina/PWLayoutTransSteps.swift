@@ -622,7 +622,8 @@ extension PlayerWindowController {
         bottomBarView.addSubview(cropController.view)
         cropController.view.addConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
-        if let videoSizeRaw = player.info.videoGeo.videoSizeRaw, let cropController = cropSettingsView {
+        let videoSizeRaw = player.info.videoGeo.videoSizeRaw
+        if let cropController = cropSettingsView {
           addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
 
           /// `selectedRect` should be subrect of`actualSize`
@@ -845,15 +846,15 @@ extension PlayerWindowController {
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
-      if let videoSizeRaw = player.info.videoGeo.videoSizeRaw {
-        if let cropController = cropSettingsView {
-          addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
-          // Hide for now, to prepare for a nice fade-in animation
-          cropController.cropBoxView.isHidden = true
-          cropController.cropBoxView.alphaValue = 0
-          cropController.cropBoxView.layoutSubtreeIfNeeded()
-        }
-      } else if !player.info.isRestoring {  // if restoring, there will be a brief delay before getting player info, which is ok
+      let videoSizeRaw = player.info.videoGeo.videoSizeRaw
+      if let cropController = cropSettingsView {
+        addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
+        // Hide for now, to prepare for a nice fade-in animation
+        cropController.cropBoxView.isHidden = true
+        cropController.cropBoxView.alphaValue = 0
+        cropController.cropBoxView.layoutSubtreeIfNeeded()
+      } else if !player.info.isRestoring, player.info.isFileLoaded, !player.info.isVideoTrackSelected {
+        // if restoring, there will be a brief delay before getting player info, which is ok
         Utility.showAlert("no_video_track")
       }
     } else if transition.isExitingInteractiveMode && transition.outputLayout.isFullScreen {

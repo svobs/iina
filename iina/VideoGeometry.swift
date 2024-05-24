@@ -24,7 +24,8 @@ import Foundation
 ///               ➤ apply `scale`
 ///                 ➤ `videoSizeCARS` (AKA `videoSize` in `PWinGeometry`)
 struct VideoGeometry: CustomStringConvertible {
-  static let nullGeometry = VideoGeometry(rawWidth: 0, rawHeight: 0,
+  static let nullGeometry = VideoGeometry(rawWidth: Int(AppData.defaultVideoSize.width),
+                                          rawHeight: Int(AppData.defaultVideoSize.height),
                                           selectedAspectLabel: "",
                                           totalRotation: 0, userRotation: 0,
                                           selectedCropLabel: AppData.noneCropIdentifier,
@@ -51,7 +52,7 @@ struct VideoGeometry: CustomStringConvertible {
     self.userRotation = userRotation
     self.selectedCropLabel = selectedCropLabel
     self.cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
-    self.scale = scale
+    self.scale = scale < 0.0 ? 1.0 : scale
     self.log = log
   }
 
@@ -68,14 +69,12 @@ struct VideoGeometry: CustomStringConvertible {
 
   /// The native size of the current video, before any filters, rotations, or other transformations applied.
   /// Returns `nil` if its width or height is considered missing or invalid (i.e., not positive).
-  var videoSizeRaw: CGSize? {
-    guard rawWidth > 0, rawHeight > 0 else { return nil}
+  var videoSizeRaw: CGSize {
     return CGSize(width: rawWidth, height: rawHeight)
   }
 
   // MARK: - Substitution convenience functions
 
-  // FIXME: make this the SST for scale, instead of calculating it afterwards
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              selectedAspectLabel: String? = nil,
              totalRotation: Int? = nil, userRotation: Int? = nil,
@@ -120,7 +119,7 @@ struct VideoGeometry: CustomStringConvertible {
   let cropRect: CGRect?
 
   lazy var cropRectNormalized: CGRect? = {
-    guard let videoSizeRaw, let cropRect else { return nil }
+    guard let cropRect else { return nil }
     let xNorm = cropRect.origin.x / videoSizeRaw.width
     let yNorm = cropRect.origin.y / videoSizeRaw.height
     let widthNorm = cropRect.width / videoSizeRaw.width
@@ -147,10 +146,7 @@ struct VideoGeometry: CustomStringConvertible {
   /// video window size can still be different from this, e.g. if the user resized the video window manually.
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
-  var videoSizeC: CGSize? {
-    guard let videoSizeRaw else {
-      return nil
-    }
+  var videoSizeC: CGSize {
     if let cropRect {
       return cropRect.size
     }
@@ -163,11 +159,6 @@ struct VideoGeometry: CustomStringConvertible {
 
   func buildCropFilter(from cropLabel: String) -> MPVFilter? {
     if cropLabel.isEmpty || cropLabel == AppData.noneCropIdentifier {
-      return nil
-    }
-
-    guard let videoSizeRaw else {
-      log.error("Cannot build crop filter from \(cropLabel.quoted): videoSizeRaw is invalid")
       return nil
     }
 
@@ -207,9 +198,7 @@ struct VideoGeometry: CustomStringConvertible {
   let aspectRatioOverride: Double?
 
   /// The video size, after crop + aspect override applied, but before rotation or final scaling.
-  var videoSizeCA: CGSize? {
-    guard let videoSizeC else { return nil }
-
+  var videoSizeCA: CGSize {
     return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSizeC)
   }
 
@@ -234,16 +223,14 @@ struct VideoGeometry: CustomStringConvertible {
   }
 
   /// Like `videoSizeCA`, but after applying `totalRotation`.
-  var videoSizeCAR: CGSize? {
-    guard let videoSizeCA else { return nil }
+  var videoSizeCAR: CGSize {
     if isWidthSwappedWithHeightByRotation {
       return CGSize(width: videoSizeCA.height, height: videoSizeCA.width)
     }
     return videoSizeCA
   }
 
-  var videoAspectCAR: Double? {
-    guard let videoSizeCAR else { return nil }
+  var videoAspectCAR: Double {
     return videoSizeCAR.mpvAspect
   }
 
@@ -254,26 +241,20 @@ struct VideoGeometry: CustomStringConvertible {
   var scale: Double
 
   /// Like `videoSizeCAR`, but after applying `scale`.
-  var videoSizeCARS: CGSize? {
-    guard let videoSizeCAR else { return nil }
-    guard scale > 0.0 else { return nil }
+  var videoSizeCARS: CGSize {
     return CGSize(width: round(videoSizeCAR.width * scale),
                   height: round(videoSizeCAR.height * scale))
   }
 
   /// Final aspect ratio of `videoView`, equal to `videoAspectCAR`. Takes into account aspect override, crop, and rotation (scale-invariant).
-  var videoViewAspect: Double? {
+  var videoViewAspect: Double {
     return videoAspectCAR
-  }
-
-  var hasValidSize: Bool {
-    return videoSizeCARS != nil
   }
 
   // MARK: - Etc
 
   var description: String {
-    return "VideoGeometry(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), rotation:\(userRotation)|total:\(totalRotation)), scale:\(scale), Sizes: {Raw:(\(rawWidth) x \(rawHeight)), CA:\(videoSizeCA?.description ?? "nil"), CAR:\(videoSizeCAR?.description ?? "nil"), CARS:\(videoSizeCARS?.description ?? "nil"), finalAspect:\(videoAspectCAR?.description ?? "nil")})"
+    return "VideoGeometry(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), rotation:\(userRotation)|total:\(totalRotation)), scale:\(scale), Sizes: {Raw:(\(rawWidth) x \(rawHeight)), CA:\(videoSizeCA), CAR:\(videoSizeCAR), CARS:\(videoSizeCARS), finalAspect:\(videoAspectCAR)})"
   }
 
   // MARK: Static util functions
