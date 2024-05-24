@@ -70,7 +70,6 @@ extension PlayerWindowController {
     }
   }
 
-  // FIXME: refactor to use the videoScale provided (or change the flow). Currently it is ignored and then recalculated afterwards
   /// Only `applyVidGeo` should call this.
   private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool, justOpenedFile: Bool) {
     guard !player.isStopping else {
@@ -87,16 +86,16 @@ extension PlayerWindowController {
       return
     }
 
-    guard let newvideoSizeCAR = newVidGeo.videoSizeCAR, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
-      log.error("[applyVidGeo] Could not get videoSizeCAR from mpv! Cancelling adjustment")
+    guard let newVideoSizeCARS = newVidGeo.videoSizeCARS, let newVideoSizeRaw = newVidGeo.videoSizeRaw else {
+      log.error("[applyVidGeo] Could not get videoSizeCARS from mpv! Cancelling adjustment")
       return
     }
 
-    let newVideoAspect = newvideoSizeCAR.mpvAspect
+    let newVideoAspect = newVideoSizeCARS.mpvAspect
     log.verbose("[applyVidGeo Start] restoring=\(isRestoring.yn) justOpenedFile=\(justOpenedFile.yn) NewVidGeo=\(newVidGeo)")
 
     if #available(macOS 10.12, *) {
-      pip.aspectRatio = newvideoSizeCAR
+      pip.aspectRatio = newVideoSizeCARS
     }
     let currentLayout = currentLayout
 
@@ -114,13 +113,12 @@ extension PlayerWindowController {
     }
 
     // Windowed or full screen
-    // FIXME: incorporate scale
     if isInitialSizeDone,
        let oldVideoSizeRaw = oldVidGeo.videoSizeRaw, oldVideoSizeRaw.equalTo(newVideoSizeRaw),
-       let oldvideoSizeCAR = oldVidGeo.videoSizeCAR, oldvideoSizeCAR.equalTo(newvideoSizeCAR),
+       let oldvideoSizeCARS = oldVidGeo.videoSizeCARS, oldvideoSizeCARS.equalTo(newVideoSizeCARS),
        // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
        videoView.frame.size.mpvAspect == newVideoAspect {
-      log.debug("[applyVidGeo F Done] No change to prev video params. Taking no action")
+      log.debug("[applyVidGeo F Done] No change; taking no action")
       return
     }
 
@@ -132,7 +130,7 @@ extension PlayerWindowController {
 
     let newWindowGeo: PWinGeometry
     if justOpenedFile, let resizedGeo = resizeAfterFileOpen(justOpenedFileManually: justOpenedFileManually,
-                                                            windowGeo: windowGeo, videoSizeCAR: newvideoSizeCAR) {
+                                                            windowGeo: windowGeo, videoSizeCAR: newVideoSizeCARS) {
       newWindowGeo = resizedGeo
     } else {
       if justOpenedFileManually {
@@ -261,46 +259,23 @@ extension PlayerWindowController {
 
   // MARK: - Window geometry functions
 
-  // FIXME: merge this into applyVidGeo()
   func setVideoScale(_ desiredVideoScale: Double) {
-    guard let window = window else { return }
-    let currentLayout = currentLayout
+    dispatchPrecondition(condition: .onQueue(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowed else { return }
 
-    guard let videoSizeCAR = player.info.videoGeo.videoSizeCAR else {
-      log.error("SetVideoScale failed: could not get videoSizeCAR")
+    let oldVidGeo = player.info.videoGeo
+    let newVidGeo = oldVidGeo.clone(scale: desiredVideoScale)
+
+    guard oldVidGeo.hasValidSize else {
+      log.error("SetVideoScale failed: video geometry has no size!")
       return
     }
 
-    var desiredVideoSize = NSSize(width: round(videoSizeCAR.width * desiredVideoScale),
-                                  height: round(videoSizeCAR.height * desiredVideoScale))
+    // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
-    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, videoSizeCAR=\(videoSizeCAR) → desiredVideoSize=\(desiredVideoSize)")
-
-    // TODO
-    if false && Preference.bool(for: .usePhysicalResolution) {
-      desiredVideoSize = window.convertFromBacking(NSRect(origin: window.frame.origin, size: desiredVideoSize)).size
-      log.verbose("SetVideoScale: converted desiredVideoSize to physical resolution: \(desiredVideoSize)")
-    }
-
-    switch currentLayout.mode {
-    case .windowed:
-      let windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-      let newGeometry = windowedModeGeo.scaleVideo(to: desiredVideoSize, mode: currentLayout.mode)
-      // User has actively resized the video. Assume this is the new preferred resolution
-      player.info.intendedViewportSize = newGeometry.viewportSize
-      log.verbose("SetVideoScale: calling applyWindowGeo")
-      applyWindowGeoInAnimationPipeline(newGeometry)
-    case .musicMode:
-      let musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-      // will return nil if video is not visible
-      guard let newMusicModeGeometry = musicModeGeo.scaleViewport(to: desiredVideoSize) else { return }
-      log.verbose("SetVideoScale: calling applyMusicModeGeo")
-      applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
-    default:
-      return
-    }
+    log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR?.description ?? "nil") → desiredVideoSize=\(newVidGeo.videoSizeCAR?.description ?? "nil")")
+    applyVidGeo(newVidGeo)
   }
 
   /**
@@ -310,6 +285,7 @@ extension PlayerWindowController {
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
   func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false, duration: CGFloat = IINAAnimation.DefaultDuration) {
+    dispatchPrecondition(condition: .onQueue(.main))
     guard let window else { return }
 
     switch currentLayout.mode {
@@ -337,6 +313,7 @@ extension PlayerWindowController {
   }
 
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
+    dispatchPrecondition(condition: .onQueue(.main))
     guard let window else { return }
     let currentViewportSize: NSSize
     switch currentLayout.mode {
@@ -515,7 +492,7 @@ extension PlayerWindowController {
     }
 
     updateOSDTopBarOffset(geometry, isLegacyFullScreen: true)
-    let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideTopBarHeight : geometry.outsideTopBarHeight
+    let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
     guard !geometry.windowFrame.equalTo(window.frame) else {

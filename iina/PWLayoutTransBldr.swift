@@ -543,10 +543,10 @@ extension PlayerWindowController {
       let outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight >= transition.outputLayout.topBarHeight ? transition.outputLayout.outsideTopBarHeight : 0
 
       if transition.isEnteringInteractiveMode {
-        return transition.outputGeometry.withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                                                         outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                                         insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                                         insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+        return transition.outputGeometry.withResizedBars(outsideTop: 0, outsideTrailing: 0,
+                                                         outsideBottom: 0, outsideLeading: 0,
+                                                         insideTop: 0, insideTrailing: 0,
+                                                         insideBottom: 0, insideLeading: 0,
                                                          keepFullScreenDimensions: !(Preference.bool(for: .lockViewportToVideoSize)))
 
       } else if transition.isExitingInteractiveMode {
@@ -581,20 +581,22 @@ extension PlayerWindowController {
         return nil
       }
       // Only bottom bar needs to be closed. No need to constrain in screen
-      return transition.inputGeometry.withResizedOutsideBars(newOutsideBottomBarHeight: 0)
+      return transition.inputGeometry.withResizedOutsideBars(bottom: 0)
     }
 
     // TOP
-    let topBarHeight: CGFloat
+    let insideTopBarHeight: CGFloat
+    let outsideTopBarHeight: CGFloat
     if !transition.isInitialLayout && transition.isTopBarPlacementChanging {
-      topBarHeight = 0  // close completely. will animate reopening if needed later
+      insideTopBarHeight = 0  // close completely. will animate reopening if needed later
+      outsideTopBarHeight = 0
     } else if transition.outputLayout.topBarHeight < transition.inputLayout.topBarHeight {
-      topBarHeight = transition.outputLayout.topBarHeight
+      insideTopBarHeight = 0
+      outsideTopBarHeight = transition.outputLayout.topBarHeight
     } else {
-      topBarHeight = transition.inputLayout.topBarHeight  // leave the same
+      insideTopBarHeight = transition.inputLayout.topBarHeight  // leave the same
+      outsideTopBarHeight = 0
     }
-    let insideTopBarHeight = transition.outputLayout.topBarPlacement == .insideViewport ? topBarHeight : 0
-    let outsideTopBarHeight = transition.outputLayout.topBarPlacement == .outsideViewport ? topBarHeight : 0
 
     // BOTTOM
     let insideBottomBarHeight: CGFloat
@@ -648,14 +650,14 @@ extension PlayerWindowController {
                                         allowVideoToOverlapCameraHousing: transition.outputLayout.hasTopPaddingForCameraHousing)
     }
 
-    let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
-                                                                   outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                                                   outsideBottomBarHeight: outsideBottomBarHeight,
-                                                                   outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                                                   insideTopBarHeight: insideTopBarHeight,
-                                                                   insideTrailingBarWidth: insideTrailingBarWidth,
-                                                                   insideBottomBarHeight: insideBottomBarHeight,
-                                                                   insideLeadingBarWidth: insideLeadingBarWidth,
+    let resizedBarsGeo = transition.outputGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
+                                                                   outsideTrailing: outsideTrailingBarWidth,
+                                                                   outsideBottom: outsideBottomBarHeight,
+                                                                   outsideLeading: outsideLeadingBarWidth,
+                                                                   insideTop: insideTopBarHeight,
+                                                                   insideTrailing: insideTrailingBarWidth,
+                                                                   insideBottom: insideBottomBarHeight,
+                                                                   insideLeading: insideLeadingBarWidth,
                                                                    keepFullScreenDimensions: true)
     return resizedBarsGeo.refit()
   }

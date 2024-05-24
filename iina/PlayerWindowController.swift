@@ -3310,10 +3310,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             assert(windowedModeGeo.mode == .windowed)
             let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
             var uncroppedClosedBarsGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-              .withResizedBars(outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                               outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                               insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                               insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+              .withResizedBars(outsideTop: 0, outsideTrailing: 0,
+                               outsideBottom: 0, outsideLeading: 0,
+                               insideTop: 0, insideTrailing: 0,
+                               insideBottom: 0, insideLeading: 0,
                                videoAspect: newVideoAspect,
                                keepFullScreenDimensions: !lockViewportToVideoSize)
 

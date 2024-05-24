@@ -1472,10 +1472,9 @@ not applying FFmpeg 9599 workaround
       let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
-        player.log.verbose("Δ mpv prop: 'window-scale'; changing videoScale: \(cachedVideoScale) → \(newVideoScale)")
-        player.info.videoGeo = player.info.videoGeo.clone(scale: newVideoScale)
+        player.log.verbose("Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)")
         DispatchQueue.main.async { [self] in
-          player.log.verbose("Calling SetVideoScale \(newVideoScale)x")
+          player.log.verbose("Calling setVideoScale → \(newVideoScale)x")
           player.windowController.setVideoScale(newVideoScale)
         }
       } else {

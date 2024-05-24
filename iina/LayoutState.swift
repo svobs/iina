@@ -587,14 +587,14 @@ extension PlayerWindowController {
     func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, videoAspect: CGFloat? = nil,
                                      keepFullScreenDimensions: Bool) -> PWinGeometry {
       assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
-      let resizedBarsGeo = existingGeometry.withResizedBars(outsideTopBarHeight: outsideTopBarHeight,
-                                                            outsideTrailingBarWidth: outsideTrailingBarWidth,
-                                                            outsideBottomBarHeight: outsideBottomBarHeight,
-                                                            outsideLeadingBarWidth: outsideLeadingBarWidth,
-                                                            insideTopBarHeight: insideTopBarHeight,
-                                                            insideTrailingBarWidth: insideTrailingBarWidth,
-                                                            insideBottomBarHeight: insideBottomBarHeight,
-                                                            insideLeadingBarWidth: insideLeadingBarWidth,
+      let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
+                                                            outsideTrailing: outsideTrailingBarWidth,
+                                                            outsideBottom: outsideBottomBarHeight,
+                                                            outsideLeading: outsideLeadingBarWidth,
+                                                            insideTop: insideTopBarHeight,
+                                                            insideTrailing: insideTrailingBarWidth,
+                                                            insideBottom: insideBottomBarHeight,
+                                                            insideLeading: insideLeadingBarWidth,
                                                             videoAspect: videoAspect,
                                                             keepFullScreenDimensions: keepFullScreenDimensions)
       return resizedBarsGeo.refit()

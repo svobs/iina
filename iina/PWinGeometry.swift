@@ -85,23 +85,23 @@ enum ScreenFitOption: Int {
  │                                            ▼ (only nonzero when covering Macbook notch)│
  ├────────────────────────────────────────────────────────────────────────────────────────┤
  │                                          ▲                                             │
- │                                          │`geo.outsideTopBarHeight`                    │
- │                                          ▼   (`wc.topBarView`)                         │
- ├────────────────────────────┬────────────────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideTopBarHeight == 0`
+ │                                          │`geo.outsideBars.top`                        │
+ │                                          ▼  (`wc.topBarView`)                          │
+ ├────────────────────────────┬────────────────────────────┬──────────────────────────────┤ ─ ◄--- `geo.insideBars.top == 0`
  │                            │   `viewportMargins.top`    │                              │ ▲
  │                            ├─────┬────────────────┬─────┤                              │ │ `geo.viewportSize.height`
  │◄--------------------------►│ [€] │ `geo.videoSize`│ [¥] │◄----------------------------►│ │  (of `wc.viewportView`)
- │                            │     │(`wc.videoView`)│     │ `geo.outsideTrailingBarWidth`│ │
- │`geo.outsideLeadingBarWidth`├─────┴────────────────┴─────┤ (of `wc.trailingSidebarView`)│ │
+ │                            │     │(`wc.videoView`)│     │  `geo.outsideBars.trailing`  │ │
+ │  `geo.outsideBars.leading` ├─────┴────────────────┴─────┤ (of `wc.trailingSidebarView`)│ │
  │(of `wc.leadingSidebarView`)│  `viewportMargins.bottom`  │                              │ ▼
- ├────────────────────────────┴────────────────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBottomBarHeight == 0`
+ ├────────────────────────────┴────────────────────────────┴──────────────────────────────┤ ─ ◄--- `geo.insideBars.bottom == 0`
  │                                      ▲                                                 │
- │                                      │`geo.outsideBottomBarHeight`                     │  [€] = `viewportMargins.leading`
- │                                      ▼   (of `wc.bottomBarView`)                       │  [¥] = `viewportMargins.trailing`
+ │                                      │`geo.outsideBars.bottom`                         │  [€] = `viewportMargins.leading`
+ │                                      ▼ (of `wc.bottomBarView`)                         │  [¥] = `viewportMargins.trailing`
  └────────────────────────────────────────────────────────────────────────────────────────┘
  */
 struct PWinGeometry: Equatable, CustomStringConvertible {
-  // MARK: - Stored properties
+  // MARK: Stored properties
 
   // - Screen:
   // The ID of the screen on which this window is displayed
@@ -139,7 +139,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   let videoAspect: CGFloat
   let videoSize: NSSize
 
-  // MARK: - Initializers / Factory Methods
+  // MARK: Initializers / Factory Methods
 
   /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`
   init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption, mode: PlayerWindowMode, topMarginHeight: CGFloat,
@@ -783,32 +783,32 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving
   // (but clamps each dimension's size to the container/screen, if any).
-  func withResizedOutsideBars(newOutsideTopBarHeight: CGFloat? = nil, newOutsideTrailingBarWidth: CGFloat? = nil,
-                              newOutsideBottomBarHeight: CGFloat? = nil, newOutsideLeadingBarWidth: CGFloat? = nil) -> PWinGeometry {
-    assert((newOutsideTopBarHeight ?? 0) >= 0)
-    assert((newOutsideTrailingBarWidth ?? 0) >= 0)
-    assert((newOutsideBottomBarHeight ?? 0) >= 0)
-    assert((newOutsideLeadingBarWidth ?? 0) >= 0)
+  func withResizedOutsideBars(top: CGFloat? = nil, trailing: CGFloat? = nil,
+                              bottom: CGFloat? = nil, leading: CGFloat? = nil) -> PWinGeometry {
+    assert((top ?? 0) >= 0)
+    assert((trailing ?? 0) >= 0)
+    assert((bottom ?? 0) >= 0)
+    assert((trailing ?? 0) >= 0)
 
     var ΔW: CGFloat = 0
     var ΔH: CGFloat = 0
     var ΔX: CGFloat = 0
     var ΔY: CGFloat = 0
-    if let newOutsideTopBarHeight {
-      let ΔTop = newOutsideTopBarHeight - self.outsideTopBarHeight
+    if let top {
+      let ΔTop = top - self.outsideBars.top
       ΔH += ΔTop
     }
-    if let newOutsideTrailingBarWidth {
-      let ΔRight = newOutsideTrailingBarWidth - self.outsideTrailingBarWidth
+    if let trailing {
+      let ΔRight = trailing - self.outsideBars.trailing
       ΔW += ΔRight
     }
-    if let newOutsideBottomBarHeight {
-      let ΔBottom = newOutsideBottomBarHeight - self.outsideBottomBarHeight
+    if let bottom {
+      let ΔBottom = bottom - self.outsideBars.bottom
       ΔH += ΔBottom
       ΔY -= ΔBottom
     }
-    if let newOutsideLeadingBarWidth {
-      let ΔLeft = newOutsideLeadingBarWidth - self.outsideLeadingBarWidth
+    if let leading {
+      let ΔLeft = leading - self.outsideBars.leading
       ΔW += ΔLeft
       ΔX -= ΔLeft
     }
@@ -834,10 +834,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let newWindowFrame = CGRect(x: newX, y: newY, width: newWindowWidth, height: newWindowHeight)
     let newScreenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: newWindowFrame)
-    let newOutsideBars = MarginQuad(top: newOutsideTopBarHeight ?? outsideBars.top,
-                                    trailing: newOutsideTrailingBarWidth ?? outsideBars.trailing,
-                                    bottom: newOutsideBottomBarHeight ?? outsideBars.bottom,
-                                    leading: newOutsideLeadingBarWidth ?? outsideBars.leading)
+    let newOutsideBars = MarginQuad(top: top ?? outsideBars.top,
+                                    trailing: trailing ?? outsideBars.trailing,
+                                    bottom: bottom ?? outsideBars.bottom,
+                                    leading: leading ?? outsideBars.leading)
     return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, outsideBars: newOutsideBars)
   }
 
@@ -847,24 +847,24 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   /// But if the window is already smaller, the window will be allowed to shrink or grow normally.
   /// This should be more intuitive to the user which is expecting "near" full screen behavior when maximized.
   func withResizedBars(fitOption: ScreenFitOption? = nil, mode: PlayerWindowMode? = nil,
-                       outsideTopBarHeight: CGFloat? = nil, outsideTrailingBarWidth: CGFloat? = nil,
-                       outsideBottomBarHeight: CGFloat? = nil, outsideLeadingBarWidth: CGFloat? = nil,
-                       insideTopBarHeight: CGFloat? = nil, insideTrailingBarWidth: CGFloat? = nil,
-                       insideBottomBarHeight: CGFloat? = nil, insideLeadingBarWidth: CGFloat? = nil,
+                       outsideTop: CGFloat? = nil, outsideTrailing: CGFloat? = nil,
+                       outsideBottom: CGFloat? = nil, outsideLeading: CGFloat? = nil,
+                       insideTop: CGFloat? = nil, insideTrailing: CGFloat? = nil,
+                       insideBottom: CGFloat? = nil, insideLeading: CGFloat? = nil,
                        videoAspect: CGFloat? = nil,
                        keepFullScreenDimensions: Bool = false) -> PWinGeometry {
 
-    let newInsideBars = MarginQuad(top: insideTopBarHeight ?? insideBars.top,
-                                    trailing: insideTrailingBarWidth ?? insideBars.trailing,
-                                    bottom: insideBottomBarHeight ?? insideBars.bottom,
-                                    leading: insideLeadingBarWidth ?? insideBars.leading)
+    let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
+                                    trailing: insideTrailing ?? insideBars.trailing,
+                                    bottom: insideBottom ?? insideBars.bottom,
+                                    leading: insideLeading ?? insideBars.leading)
     // Inside bars
     let resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode, insideBars: newInsideBars, videoAspect: videoAspect)
 
-    var resizedBarsGeo = resizedInsideBarsGeo.withResizedOutsideBars(newOutsideTopBarHeight: outsideTopBarHeight,
-                                                                     newOutsideTrailingBarWidth: outsideTrailingBarWidth,
-                                                                     newOutsideBottomBarHeight: outsideBottomBarHeight,
-                                                                     newOutsideLeadingBarWidth: outsideLeadingBarWidth)
+    var resizedBarsGeo = resizedInsideBarsGeo.withResizedOutsideBars(top: outsideTop,
+                                                                     trailing: outsideTrailing,
+                                                                     bottom: outsideBottom,
+                                                                     leading: outsideLeading)
 
     if keepFullScreenDimensions {
       resizedBarsGeo = preserveFullScreenDimensions(of: resizedBarsGeo)
@@ -1066,12 +1066,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
     let resizedGeo = withResizedBars(mode: .windowedInteractive,
-                                     outsideTopBarHeight: Constants.InteractiveMode.outsideTopBarHeight,
-                                     outsideTrailingBarWidth: 0,
-                                     outsideBottomBarHeight: Constants.InteractiveMode.outsideBottomBarHeight,
-                                     outsideLeadingBarWidth: 0,
-                                     insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                     insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                     outsideTop: Constants.InteractiveMode.outsideTopBarHeight,
+                                     outsideTrailing: 0,
+                                     outsideBottom: Constants.InteractiveMode.outsideBottomBarHeight,
+                                     outsideLeading: 0,
+                                     insideTop: 0, insideTrailing: 0,
+                                     insideBottom: 0, insideLeading: 0,
                                      keepFullScreenDimensions: !lockViewportToVideoSize)
     return resizedGeo.refit()
   }
@@ -1083,10 +1083,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(mode == .windowedInteractive)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
     let resizedGeo = withResizedBars(mode: .windowed,
-                                     outsideTopBarHeight: 0, outsideTrailingBarWidth: 0,
-                                     outsideBottomBarHeight: 0, outsideLeadingBarWidth: 0,
-                                     insideTopBarHeight: 0, insideTrailingBarWidth: 0,
-                                     insideBottomBarHeight: 0, insideLeadingBarWidth: 0,
+                                     outsideTop: 0, outsideTrailing: 0,
+                                     outsideBottom: 0, outsideLeading: 0,
+                                     insideTop: 0, insideTrailing: 0,
+                                     insideBottom: 0, insideLeading: 0,
                                      keepFullScreenDimensions: true)
     return resizedGeo
   }
