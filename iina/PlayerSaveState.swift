@@ -62,10 +62,11 @@ struct PlayerSaveState {
     case abLoopA = "abLoopA"          /// `MPVOption.PlaybackControl.abLoopA`
     case abLoopB = "abLoopB"          /// `MPVOption.PlaybackControl.abLoopB`
 
+    // Video geometry
     case videoRawWidth = "vidRawW"    /// `MPVProperty.width`
     case videoRawHeight = "vidRawH"   /// `MPVProperty.height`
     case videoAspectLabel = "aspect"  /// Converted into `MPVOption.Video.videoAspectOverride`
-    case cropLabel = "cropLabel"      /// Converted into `MPVOption.Video.videoAspectOverride`
+    case cropLabel = "cropLabel"      /// Converted into crop filter
     case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
     case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
 
@@ -87,34 +88,35 @@ struct PlayerSaveState {
   static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
   static let saveLock = Lock()
 
+  /// The player's log
+  let log: Logger.Subsystem
+
   let properties: [String: Any]
 
   /// Cached values parsed from `properties`
 
   /// Describes the current layout configuration of the player window.
-  /// See `setInitialWindowLayout()` in `PlayerWindowLayout.swift`.
+  /// See `setLayoutForOpen()` in `PlayerWindowLayout.swift`.
   let layoutSpec: PlayerWindowController.LayoutSpec?
-  /// If in fullscreen, this is actually the `priorWindowedGeometry`
-  let windowedModeGeo: PWinGeometry?
-  let musicModeGeo: MusicModeGeometry?
+
+  let geoSet: GeometrySet
   let screens: [ScreenMeta]
 
-  init(_ props: [String: Any]) {
+  init(_ props: [String: Any], playerID: String) {
     self.properties = props
+    self.log = Logger.subsystem(forPlayerID: playerID)
 
-    let layoutSpecCSV = PlayerSaveState.string(for: .layoutSpec, properties)
+    let layoutSpecCSV = PlayerSaveState.string(for: .layoutSpec, props)
     self.layoutSpec = PlayerWindowController.LayoutSpec.fromCSV(layoutSpecCSV)
-    let windowdModeCSV = PlayerSaveState.string(for: .windowedModeGeo, properties)
-    self.windowedModeGeo = PWinGeometry.fromCSV(windowdModeCSV)
-    let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, properties)
-    self.musicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV)
+    self.geoSet = PlayerSaveState.geoSet(from: props, log)
+
     self.screens = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
   }
 
   // MARK: - Save State / Serialize to prefs strings
 
   /// Generates a Dictionary of properties for storage into a Preference entry
-  static private func generatePropDict(from player: PlayerCore, _ geo: PlayerWindowController.Geometries) -> [String: Any] {
+  static private func generatePropDict(from player: PlayerCore, _ geo: GeometrySet) -> [String: Any] {
     var props: [String: Any] = [:]
     let info = player.info
     /// Must *not* access `window`: this is not the main thread
@@ -128,11 +130,11 @@ struct PlayerSaveState {
     /// `layoutSpec`
     props[PropName.layoutSpec.rawValue] = layout.spec.toCSV()
 
-    /// `windowedModeGeo`: use supplied Geometries for most up-to-date window frame
-    let windowedModeGeo = geo.windowedMode
-    props[PropName.windowedModeGeo.rawValue] = windowedModeGeo.toCSV()
+    /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
+    let windowedGeo = geo.windowed
+    props[PropName.windowedModeGeo.rawValue] = windowedGeo.toCSV()
 
-    /// `musicModeGeo`: use supplied Geometries for most up-to-date window frame
+    /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
     props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
 
     let screenMetaCSVList: [String] = wc.cachedScreens.values.map{$0.toCSV()}
@@ -149,13 +151,12 @@ struct PlayerSaveState {
 
     // - Video geometry
 
-    props[PropName.videoRawWidth.rawValue] = String(info.videoGeo.rawWidth)
-    props[PropName.videoRawHeight.rawValue] = String(info.videoGeo.rawHeight)
-    props[PropName.videoAspectLabel.rawValue] = info.videoGeo.selectedAspectLabel
-    props[PropName.cropLabel.rawValue] = info.videoGeo.selectedCropLabel
-    props[PropName.totalRotation.rawValue] = String(info.videoGeo.totalRotation)
-    props[PropName.videoRotation.rawValue] = String(info.videoGeo.userRotation)
-    props[PropName.windowScale.rawValue] = info.videoGeo.scale.stringMaxFrac6
+    props[PropName.videoRawWidth.rawValue] = String(geo.video.rawWidth)
+    props[PropName.videoRawHeight.rawValue] = String(geo.video.rawHeight)
+    props[PropName.videoAspectLabel.rawValue] = geo.video.selectedAspectLabel
+    props[PropName.cropLabel.rawValue] = geo.video.selectedCropLabel
+    props[PropName.totalRotation.rawValue] = String(geo.video.totalRotation)
+    props[PropName.videoRotation.rawValue] = String(geo.video.userRotation)
 
     // - Misc window state
 
@@ -312,7 +313,7 @@ struct PlayerSaveState {
       DispatchQueue.main.async {
         let wc = player.windowController!
         // Retrieve appropriate geometry values, updating to latest window frame if needed:
-        let geo = wc.geo(from: wc.currentLayout)
+        let geo = wc.buildGeoSet(from: wc.currentLayout)
         saveQueue.async {
           saveLock.withLock {
             guard !player.isShuttingDown else { return }
@@ -335,7 +336,7 @@ struct PlayerSaveState {
     saveLock.withLock {
       let wc = player.windowController!
       // Retrieve appropriate geometry values, updating to latest window frame if needed:
-      let geo = wc.geo(from: wc.currentLayout)
+      let geo = wc.buildGeoSet(from: wc.currentLayout)
       let properties = generatePropDict(from: player, geo)
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")
@@ -405,6 +406,38 @@ struct PlayerSaveState {
       return Double(doubleString)
     }
     return nil
+  }
+
+  static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
+    // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
+    let defaultGeo = VideoGeometry.defaultGeometry(log)
+    let videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
+                                    rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
+                                    selectedAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
+                                    totalRotation: PlayerSaveState.int(for: .totalRotation, props),
+                                    userRotation: PlayerSaveState.int(for: .videoRotation, props),
+                                    selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
+
+    let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)
+    let savedWindowedGeo = PWinGeometry.fromCSV(windowedCSV, videoGeo: videoGeo)
+    let windowedGeo: PWinGeometry
+    if let savedWindowedGeo {
+      windowedGeo = savedWindowedGeo
+    } else {
+      log.error("Failed to restore PWinGeometry from CSV! Will fall back to last closed geometry")
+      windowedGeo = PlayerWindowController.windowedModeGeoLastClosed
+    }
+
+    let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, props)
+    let savedMusicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV, videoGeo)
+    let musicModeGeo: MusicModeGeometry
+    if let savedMusicModeGeo {
+      musicModeGeo = savedMusicModeGeo
+    } else {
+      log.error("Failed to restore MusicModeGeometry from CSV! Will fall back to last closed geometry")
+      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
+    }
+    return GeometrySet(windowed: windowedGeo, musicMode: musicModeGeo, video: videoGeo)
   }
 
   // Utility function for parsing complex object from CSV
@@ -584,15 +617,6 @@ struct PlayerSaveState {
     windowController.osdLastPlaybackPosition = info.videoPosition?.second
     windowController.osdLastPlaybackDuration = info.videoDuration?.second
 
-    // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
-    info.videoGeo = info.videoGeo.clone(rawWidth: int(for: .videoRawWidth),
-                                        rawHeight: int(for: .videoRawHeight),
-                                        selectedAspectLabel: string(for: .videoAspectLabel),
-                                        totalRotation: int(for: .totalRotation),
-                                        userRotation: int(for: .videoRotation),
-                                        selectedCropLabel: string(for: .cropLabel),
-                                        scale: double(for: .windowScale))
-
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy
     let watchLaterFileURL = Utility.watchLaterURL.appendingPathComponent(mediaItem.mpvMD5).path
@@ -643,7 +667,7 @@ struct PlayerSaveState {
 
     if let videoAspectLabel = string(for: .videoAspectLabel) {
       // Update videoGeo above first so that UI doesn't alert the user
-      if player.info.videoGeo.aspectRatioOverride != nil {
+      if player.windowController.geo.video.aspectRatioOverride != nil {
         let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
         mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
       }
@@ -812,7 +836,7 @@ extension MusicModeGeometry {
   /// String -> `MusicModeGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type MusicModeGeometry",
   /// check the arguments to the `MusicModeGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromCSV(_ csv: String?) -> MusicModeGeometry? {
+  static func fromCSV(_ csv: String?, _ videoGeo: VideoGeometry) -> MusicModeGeometry? {
     guard !(csv?.isEmpty ?? true) else {
       Logger.log("CSV is empty; returning nil for MusicModeGeometry", level: .debug)
       return nil
@@ -828,17 +852,18 @@ extension MusicModeGeometry {
             let _ = Double(iter.next()!),  /// was `playlistHeight` (defunct as of 1.1)
             let isVideoVisible = Bool.yn(iter.next()!),
             let isPlaylistVisible = Bool.yn(iter.next()!),
-            let videoAspect = Double(iter.next()!),
+            let _ = Double(iter.next()!),  /// was `videoAspect` (defunct as of 1.2)
             let screenID = iter.next()
       else {
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
+        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
         Logger.log("\(errPreamble) could not parse one or more tokens", level: .error)
         return nil
       }
 
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return MusicModeGeometry(windowFrame: windowFrame,
-                               screenID: screenID,
-                               videoAspect: videoAspect,
+                               screenID: screenID, video: videoGeo,
                                isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     })
   }
@@ -889,14 +914,16 @@ extension PWinGeometry {
   }
 
   /// String -> `PWinGeometry`
-  static func fromCSV(_ csv: String?) -> PWinGeometry? {
+  static func fromCSV(_ csv: String?, videoGeo: VideoGeometry? = nil) -> PWinGeometry? {
+    // TODO: refactor to use player log
     guard !(csv?.isEmpty ?? true) else {
       Logger.log("CSV is empty; returning nil for geometry", level: .debug)
       return nil
     }
+
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
                                     expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                    errPreamble: PlayerSaveState.geoErrPre, { errPreamble, iter in
+                                    errPreamble: PlayerSaveState.geoErrPre) { errPreamble, iter in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -911,7 +938,7 @@ extension PWinGeometry {
             let viewportMarginTrailing = Double(iter.next()!),
             let viewportMarginBottom = Double(iter.next()!),
             let viewportMarginLeading = Double(iter.next()!),
-            let videoAspect = Double(iter.next()!),
+            let videoAspect = iter.next(),  /// was `videoAspect` (defunct as of 1.2)
             let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),
@@ -921,6 +948,8 @@ extension PWinGeometry {
             let modeRawValue = Int(iter.next()!)
       else {
         Logger.log("\(errPreamble) could not parse one or more tokens", level: .error)
+        /// NOTE: if Xcode shows a weird error here, it means that the wrong args are being supplied
+        /// to the`PWinGeometry` constructor below, or the constructor of any object passed to it.
         return nil
       }
 
@@ -939,9 +968,22 @@ extension PWinGeometry {
                                    bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
       let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
                                   bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+
+      let video: VideoGeometry
+      if let videoGeo {
+        video = videoGeo
+      } else {
+        Logger.log("Deriving VideoGeometry", level: .warning)
+        let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
+        let videoSize = viewportSize.subtract(viewportMargins.totalSize)
+        let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))
+        video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
+      }
+
       return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
-                          outsideBars: outsideBars, insideBars: insideBars, viewportMargins: viewportMargins, videoAspect: videoAspect)
-    })
+                          outsideBars: outsideBars, insideBars: insideBars, 
+                          viewportMargins: viewportMargins, video: video)
+    }
   }
 
 }

@@ -141,6 +141,11 @@ class PlayerCore: NSObject {
 
   var info: PlaybackInfo
 
+  /// Convenience accessor. Also exists to avoid refactoring legacy code
+  var videoGeo: VideoGeometry {
+    return windowController.geo.video
+  }
+
   var syncUITimer: Timer?
 
   var isUsingMpvOSD = false
@@ -257,7 +262,7 @@ class PlayerCore: NSObject {
   }
 
   init(_ label: String) {
-    let log = Logger.Subsystem(rawValue: "PLR-\(label)")
+    let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore \(label) init")
     self.label = label
     self.subsystem = log
@@ -426,9 +431,8 @@ class PlayerCore: NSObject {
         status = .startedPostVideoInit
       }
 
-      if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log) {
-        info.videoGeo = info.videoGeo.substituting(ffMeta)
-      }
+      // Load into cache while in mpv queue first
+      _ = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log)
 
       DispatchQueue.main.async { [self] in
         if !info.isRestoring {
@@ -1131,7 +1135,7 @@ class PlayerCore: NSObject {
 
   /// Called when `MPVOption.Video.videoRotate` changed
   func userRotationDidChange(to userRotation: Int) {
-    guard userRotation != info.videoGeo.userRotation else { return }
+    guard userRotation != videoGeo.userRotation else { return }
 
     // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
     if windowController.pipStatus == .notInPIP {
@@ -1146,7 +1150,7 @@ class PlayerCore: NSObject {
 
     log.verbose("Calling applyVidParams for new userRotation: \(userRotation)")
     // Update window geometry
-    let oldVidGeo = info.videoGeo
+    let oldVidGeo = videoGeo
     let newVidGeo = oldVidGeo.changingUserRotation(to: userRotation)
     windowController.applyVidGeo(newVidGeo)
 
@@ -1198,8 +1202,8 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
-    if info.videoGeo.selectedAspectLabel != aspectLabel {
-      let newVideoGeo = info.videoGeo.clone(selectedAspectLabel: aspectLabel)
+    if videoGeo.selectedAspectLabel != aspectLabel {
+      let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
 
       // Send update to mpv
       let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
@@ -1236,7 +1240,7 @@ class PlayerCore: NSObject {
       return
     }
     mpv.queue.async { [self] in
-      let desiredVideoScale = deriveVideoScale(from: windowGeo)
+      let desiredVideoScale = windowGeo.mpvVideoScale()
       guard desiredVideoScale > 0.0 else {
         log.verbose("UpdateMPVWindowScale: desiredVideoScale is 0; aborting")
         return
@@ -1248,9 +1252,6 @@ class PlayerCore: NSObject {
         // Not sure if this is an mpv limitation
         log.verbose("Updating mpv window-scale from videoSize \(windowGeo.videoSize) (changing videoScale: \(currentVideoScale) → \(desiredVideoScale))")
 
-        let newVidGeo = info.videoGeo.clone(scale: desiredVideoScale)
-        windowController.applyVidGeo(newVidGeo)
-
         let backingScaleFactor = NSScreen.getScreenOrDefault(screenID: windowGeo.screenID).backingScaleFactor
         let adjustedVideoScale = (desiredVideoScale * backingScaleFactor).truncatedTo6()
         log.verbose("Adjusted videoScale from windowGeo (\(desiredVideoScale)) * BSF (\(backingScaleFactor)) → sending mpv \(adjustedVideoScale)")
@@ -1260,16 +1261,6 @@ class PlayerCore: NSObject {
         log.verbose("Skipping update to mpv window-scale: no change from existing (\(currentVideoScale))")
       }
     }
-  }
-
-  func deriveVideoScale(from geo: PWinGeometry) -> CGFloat {
-    let screen = NSScreen.getScreenOrDefault(screenID: geo.screenID)
-    let backingScaleFactor = screen.backingScaleFactor
-    let videoWidthScaled = (geo.videoSize.width * backingScaleFactor).truncatedTo6()
-    let videoSizeCAR = info.videoGeo.videoSizeCAR
-    let videoScale = (videoWidthScaled / videoSizeCAR.width).truncatedTo6()
-    log.verbose("Derived videoScale from cached vidGeo. GeoVideoSize=\(geo.videoSize) * BSF_screen\(screen.displayId)=\(backingScaleFactor) / VidSizeACR=\(videoSizeCAR) → \(videoScale)")
-    return videoScale
   }
 
   func setVideoRotate(_ userRotation: Int) {
@@ -2099,7 +2090,7 @@ class PlayerCore: NSObject {
   // This is optional but provides a better viewer experience
   private func preResizeVideo(forURL url: URL?) {
     guard let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: url, log) else { return }
-    let newVidGeo = info.videoGeo.substituting(ffMeta)
+    let newVidGeo = videoGeo.substituting(ffMeta)
     log.verbose("Calling applyVidGeo from preResizeVideo with \(newVidGeo)")
     windowController.applyVidGeo(newVidGeo)
   }
@@ -2371,7 +2362,7 @@ class PlayerCore: NSObject {
       // and reports 0 for width or height.
       // But should be fine to ignore because we now get videoSize from ffmpeg before opening in mpv.
       log.verbose("Falling back to cached vidGeo because mpv failed to return a valid rawSize")
-      newVidGeo = info.videoGeo
+      newVidGeo = videoGeo
     }
 
     guard currentMedia.loadStatus.isAtLeast(.started) else {
@@ -2395,17 +2386,16 @@ class PlayerCore: NSObject {
 
     // Always send this to window controller. It should be smart enough to resize only when needed:
     log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
-    windowController.applyVidGeo(newVidGeo)
 
-    // If window was just opened, its opacity was until now set to 0%, to conceal partial drawing.
-    // Now that it is complete, we can show it:
+    /// Show default album art? If yes, then use its video geometry.
+    // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
+    let showDefaultArt: Bool? = info.shouldShowDefaultArt
+
     DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.InitialVideoReconfigDuration) { [self] in
-        windowController.updateCustomBorderBoxAndWindowOpacity()  // set to pref value, which may not be 100%
-      })
+      windowController.updateGeometryForVideoOpen(newVidGeo: newVidGeo, showDefaultArt: showDefaultArt)
     }
 
-    /// Once this is set, `info.justOpenedFile` will return `false`
+    /// Once this is set, `info.isNotDoneLoading` will return `false`
     currentMedia.loadStatus = .videoGeometryApplied
 
     if let priorState = info.priorState {
@@ -2588,9 +2578,13 @@ class PlayerCore: NSObject {
       return
     }
 
+    /// Show default album art? If yes, then use its video geometry.
+    // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
+    let showDefaultArt: Bool? = info.shouldShowDefaultArt
+
     /// This will refresh album art display.
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
-    windowController.applyVidGeo(info.videoGeo)
+    windowController.applyVidGeo(videoGeo, showDefaultArt: showDefaultArt)
 
     DispatchQueue.main.async{ [self] in
       windowController.forceDraw()
@@ -3035,7 +3029,7 @@ class PlayerCore: NSObject {
 
         // Generate thumbnails using video's original dimensions, before aspect ratio correction.
         // We will adjust aspect ratio & rotation when we display the thumbnail, similar to how mpv works.
-        let videoGeo = info.videoGeo
+        let videoGeo = videoGeo
         let videoSizeRaw = videoGeo.videoSizeRaw
 
         let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
@@ -3246,7 +3240,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func setPlaybackInfoFilter(_ filter: MPVFilter) {
+  private func setPlaybackInfoFilter(_ filter: MPVFilter) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
     switch filter.label {
@@ -3297,7 +3291,7 @@ class PlayerCore: NSObject {
       }
       setPlaybackInfoFilter(filter)
     }
-    if !foundCropFilter, info.videoGeo.hasCrop {
+    if !foundCropFilter, videoGeo.hasCrop {
       log.debug("No crop filter found in mpv video filters. Removing crop")
       updateSelectedCrop(to: AppData.noneCropIdentifier)
     }

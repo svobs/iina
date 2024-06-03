@@ -584,7 +584,7 @@ extension PlayerWindowController {
     }
 
     // Converts & updates existing geometry to this layout
-    func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, videoAspect: CGFloat? = nil,
+    func convertWindowedModeGeometry(from existingGeometry: PWinGeometry, video: VideoGeometry? = nil,
                                      keepFullScreenDimensions: Bool) -> PWinGeometry {
       assert(existingGeometry.mode.isWindowed, "Expected existingGeometry to be windowed: \(existingGeometry)")
       let resizedBarsGeo = existingGeometry.withResizedBars(outsideTop: outsideTopBarHeight,
@@ -595,43 +595,43 @@ extension PlayerWindowController {
                                                             insideTrailing: insideTrailingBarWidth,
                                                             insideBottom: insideBottomBarHeight,
                                                             insideLeading: insideLeadingBarWidth,
-                                                            videoAspect: videoAspect,
+                                                            video: video,
                                                             keepFullScreenDimensions: keepFullScreenDimensions)
       return resizedBarsGeo.refit()
     }
     
-    func buildFullScreenGeometry(inScreenID screenID: String, videoAspect: CGFloat) -> PWinGeometry {
+    func buildFullScreenGeometry(inScreenID screenID: String, video: VideoGeometry) -> PWinGeometry {
       let screen = NSScreen.getScreenOrDefault(screenID: screenID)
-      return buildFullScreenGeometry(in: screen, videoAspect: videoAspect)
+      return buildFullScreenGeometry(in: screen, video: video)
     }
 
-    func buildFullScreenGeometry(in screen: NSScreen, videoAspect: CGFloat) -> PWinGeometry {
+    func buildFullScreenGeometry(in screen: NSScreen, video: VideoGeometry) -> PWinGeometry {
       assert(isFullScreen)
       return PWinGeometry.forFullScreen(in: screen, legacy: spec.isLegacyStyle, mode: mode,
                                         outsideBars: outsideBars,
                                         insideBars: insideBars,
-                                        videoAspect: videoAspect,
+                                        video: video,
                                         allowVideoToOverlapCameraHousing: hasTopPaddingForCameraHousing)
     }
 
     func buildGeometry(usingMode modeOverride: PlayerWindowMode? = nil,
-                       windowFrame: NSRect, screenID: String, videoAspect: CGFloat) -> PWinGeometry {
+                       windowFrame: NSRect, screenID: String, video: VideoGeometry) -> PWinGeometry {
       let mode = modeOverride ?? mode
       switch mode {
       case .fullScreen, .fullScreenInteractive:
-        return buildFullScreenGeometry(inScreenID: screenID, videoAspect: videoAspect)
+        return buildFullScreenGeometry(inScreenID: screenID, video: video)
       case .windowedInteractive:
-        return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect)
+        return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, video: video)
       case .windowed:
         let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
                                mode: mode,
                                topMarginHeight: 0,  // is only nonzero when in legacy FS
                                outsideBars: outsideBars,
                                insideBars: insideBars,
-                               videoAspect: videoAspect)
+                               video: video)
         return geo.scaleViewport()
       case .musicMode:
-        let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, videoAspect: videoAspect,
+        let musicModeGeo = MusicModeGeometry(windowFrame: windowFrame, screenID: screenID, video: video,
                                              isVideoVisible: Preference.bool(for: .musicModeShowAlbumArt),
                                              isPlaylistVisible: Preference.bool(for: .musicModeShowPlaylist))
         return musicModeGeo.toPWinGeometry()
@@ -643,7 +643,8 @@ extension PlayerWindowController {
     func buildDefaultInitialGeometry(screen: NSScreen) -> PWinGeometry {
       let videoSize = AppData.defaultVideoSize
       let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
-      let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, videoAspect: videoSize.mpvAspect)
+      let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video:
+                                VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null")))
       return geo.refit(.centerInside)
     }
 

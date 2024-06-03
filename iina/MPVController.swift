@@ -929,7 +929,6 @@ not applying FFmpeg 9599 workaround
 
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
-    let videoScale = getVideoScale()
 
     let dwidth = getInt(MPVProperty.dwidth)
     let dheight = getInt(MPVProperty.dheight)
@@ -940,10 +939,9 @@ not applying FFmpeg 9599 workaround
     }
 
     let vidGeo = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
-                               selectedAspectLabel: player.info.videoGeo.selectedAspectLabel,
+                               selectedAspectLabel: player.videoGeo.selectedAspectLabel,
                                totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
-                               selectedCropLabel: player.info.videoGeo.selectedCropLabel,
-                               scale: videoScale, log: player.log)
+                               selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo)")
     // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
@@ -1207,7 +1205,7 @@ not applying FFmpeg 9599 workaround
       guard let data = UnsafePointer<Int64>(OpaquePointer(property.data))?.pointee else { break }
       let userRotation = Int(data)
 
-      // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched info.videoGeo.
+      // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched videoGeo.
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
       needReloadQuickSettingsView = true
 
@@ -1467,8 +1465,13 @@ not applying FFmpeg 9599 workaround
       let isAlreadySized = player.info.currentMedia?.loadStatus.isAtLeast(.videoGeometryApplied) ?? false
       guard isAlreadySized else { break }
 
+      let cachedVideoScale: CGFloat
+      if player.windowController.currentLayout.mode == .musicMode {
+        cachedVideoScale = player.windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
+      } else {
+        cachedVideoScale = player.windowController.windowedModeGeo.mpvVideoScale()
+      }
       let newVideoScale = getVideoScale()
-      let cachedVideoScale = player.info.videoGeo.scale
       let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
       if needsUpdate {
         player.log.verbose("Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)")

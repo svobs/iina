@@ -319,7 +319,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Aspect settings controls
   private func updateAspectControls() {
-    let aspectLabel = player.info.videoGeo.selectedAspectLabel
+    let aspectLabel = player.videoGeo.selectedAspectLabel
     aspectPresetsSegment.selectSegment(withLabel: aspectLabel)
     let isAspectInPanel = aspectPresetsSegment.selectedSegment >= 0
     customAspectTextField.stringValue = isAspectInPanel ? "" : aspectLabel
@@ -327,7 +327,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Crop settings controls
   private func updateCropControls() {
-    let selectedCropLabel = player.info.videoGeo.selectedCropLabel
+    let selectedCropLabel = player.videoGeo.selectedCropLabel
     cropPresetsSegment.selectSegment(withLabel: selectedCropLabel)
     let isCropInPanel = cropPresetsSegment.selectedSegment >= 0
 
@@ -335,7 +335,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       customCropTextField.isHidden = true
     } else {
       cropPresetsSegment.selectSegment(withTag: cropPresetsSegment.segmentCount - 1)
-      if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.info.videoGeo.cropRect {
+      if Preference.bool(for: .enableAdvancedSettings), let cropRect = player.videoGeo.cropRect {
         customCropTextField.stringValue = MPVFilter.makeCropBoxDisplayString(from: cropRect)
         customCropTextField.isHidden = false
       } else {
@@ -349,7 +349,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     updateAspectControls()
     updateCropControls()
 
-    rotateSegment.selectSegment(withTag: AppData.rotations.firstIndex(of: player.info.videoGeo.userRotation) ?? -1)
+    rotateSegment.selectSegment(withTag: AppData.rotations.firstIndex(of: player.videoGeo.userRotation) ?? -1)
 
     deinterlaceSwitch.checked = player.info.deinterlace
     deinterlaceSwitch.action = {

@@ -55,7 +55,7 @@ extension PlayerCore {
 
   func setCrop(fromLabel cropLabel: String) {
     mpv.queue.async { [self] in
-      guard let vf = info.videoGeo.buildCropFilter(from: cropLabel) else {
+      guard let vf = videoGeo.buildCropFilter(from: cropLabel) else {
         _removeCrop()
         return
       }
@@ -82,11 +82,16 @@ extension PlayerCore {
   func updateSelectedCrop(to newCropLabel: String) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
-    if info.videoGeo.selectedCropLabel != newCropLabel {
+    // special kludge when removing crop while entering interactive mode
+    if newCropLabel == AppData.noneCropIdentifier, info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) {
+      log.verbose("Ignoring \(newCropLabel) because it looks like a transition to interactive mode")
+      return
+    }
+    if videoGeo.selectedCropLabel != newCropLabel {
       log.verbose("Calling applyVidGeo with new selectedCropLabel: \(newCropLabel.quoted)")
-      let oldVidGeo = info.videoGeo
+      let oldVidGeo = videoGeo
       let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
-      windowController.applyVidGeo(newVidGeo)  /// sets `info.videoGeo = newVidGeo`
+      windowController.applyVidGeo(newVidGeo)  /// sets `videoGeo = newVidGeo`
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))

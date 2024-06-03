@@ -27,10 +27,7 @@ class RotationGestureHandler {
 
     switch recognizer.state {
     case .began, .changed:
-      guard let videoGeo = player.mpv.syncVideoGeometryFromMPV() else {
-        return
-      }
-      self.videoGeo = videoGeo
+      self.videoGeo = player.videoGeo
       let cgNewRotationDegrees = recognizer.rotationInDegrees
       IINAAnimation.disableAnimation {
         rotateVideoView(toDegrees: cgNewRotationDegrees)

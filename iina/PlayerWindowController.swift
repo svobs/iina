@@ -12,8 +12,8 @@ import WebKit
 
 // MARK: - Constants
 
-fileprivate let thumbnailExtraOffsetX: CGFloat = 15
-fileprivate let thumbnailExtraOffsetY: CGFloat = 15
+fileprivate let thumbnailExtraOffsetX = Constants.Distance.Thumbnail.extraOffsetX
+fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffsetY
 
 // MARK: - Constants
 
@@ -257,12 +257,25 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @Atomic var thumbDisplayTicketCounter: Int = 0
 
   // MARK: - Window geometry vars
+  var geo: GeometrySet
 
-  lazy var windowedModeGeo: PWinGeometry = PlayerWindowController.windowedModeGeoLastClosed {
-    didSet {
-      log.verbose("Updated windowedModeGeo ≔ \(windowedModeGeo)")
-      assert(windowedModeGeo.mode.isWindowed, "windowedModeGeo has unexpected mode: \(windowedModeGeo.mode)")
-      assert(!windowedModeGeo.fitOption.isFullScreen, "windowedModeGeo has invalid fitOption: \(windowedModeGeo.fitOption)")
+  var windowedModeGeo: PWinGeometry {
+    get {
+      return geo.windowed
+    } set {
+      geo = geo.clone(windowed: newValue)
+      log.verbose("Updated windowedModeGeo ≔ \(newValue)")
+      assert(newValue.mode.isWindowed, "windowedModeGeo has unexpected mode: \(newValue.mode)")
+      assert(!newValue.fitOption.isFullScreen, "windowedModeGeo has invalid fitOption: \(newValue.fitOption)")
+    }
+  }
+
+  var musicModeGeo: MusicModeGeometry {
+    get {
+      return geo.musicMode
+    } set {
+      geo = geo.clone(musicMode: newValue)
+      log.verbose("Updated musicModeGeo ≔ \(newValue)")
     }
   }
 
@@ -273,12 +286,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Will fall back to default geometry",
                  level: .verbose)
-    } else if let savedGeo = PWinGeometry.fromCSV(csv) {
-      if !savedGeo.mode.isWindowed || savedGeo.fitOption.isFullScreen {
+    } else if let savedGeo = PWinGeometry.fromCSV(csv, videoGeo: nil) {
+      if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
+        return savedGeo
+      } else {
         Logger.log("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Will fall back to default geometry (found: \(savedGeo))",
                    level: .error)
-      } else {
-        return savedGeo
       }
     }
     // Compute default geometry for main screen
@@ -295,12 +308,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  lazy var musicModeGeo: MusicModeGeometry = PlayerWindowController.musicModeGeoLastClosed {
-    didSet {
-      log.verbose("Updated musicModeGeo ≔ \(musicModeGeo)")
-    }
-  }
-
   // Remembers the geometry of the "last closed" music mode window, so future music mode windows will default to its layout.
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
   static var musicModeGeoLastClosed: MusicModeGeometry = {
@@ -308,12 +315,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Will fall back to default music mode geometry",
                  level: .verbose)
-    } else if let savedGeo = MusicModeGeometry.fromCSV(csv) {
+    } else if let savedGeo = MusicModeGeometry.fromCSV(csv, VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))) {
       return savedGeo
     }
     let defaultScreen = NSScreen.screens[0]
+    let nullLog = Logger.Subsystem(rawValue: "null")
     let defaultGeo = MiniPlayerController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
-                                                                          videoAspect: AppData.defaultVideoSize.mpvAspect)
+                                                                          video: VideoGeometry.defaultGeometry(nullLog))
     return defaultGeo
   }() {
     didSet {
@@ -902,6 +910,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   init(playerCore: PlayerCore) {
     self.player = playerCore
+    self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
+                           musicMode: PlayerWindowController.musicModeGeoLastClosed,
+                           video: VideoGeometry.defaultGeometry(playerCore.log))
     super.init(window: nil)
     log.verbose("PlayerWindowController init")
   }
@@ -1912,24 +1923,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateOSDPosition()
     addVideoViewToWindow(windowedModeGeo)
 
-    /// `isOpen==true` if opening a new file in an already open window
-    if isOpen, !player.info.isRestoring {
-      /// `windowFrame` may be slightly off; update it
-      if currentLayout.mode == .windowed {
-        windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, 
-                                                      videoAspect: windowedModeGeo.videoAspect)
-        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
-        /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
-      } else if currentLayout.mode == .musicMode {
-        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
-        musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
-      }
-    } else {
-      // Restore layout from last launch or configure from prefs. Do not animate.
-      setInitialWindowLayout()
-    }
+    setLayoutForOpen()
 
     // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
     if player.info.isRestoring {
@@ -1987,14 +1981,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
-    /// Use `!player.info.justOpenedFile` to prevent saving if there was an error loading video
-    if !AppDelegate.shared.isTerminating && !player.info.justOpenedFile {
+    /// Use `!player.info.isNotDoneLoading` to prevent saving if there was an error loading video
+    if !AppDelegate.shared.isTerminating && !player.info.isNotDoneLoading {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
       } else if currentLayout.mode.isWindowed {
         // Update frame since it may have moved
-        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        windowedModeGeo = windowedGeoForCurrentFrame()
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       }
     }
@@ -2135,7 +2129,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if modeToSetAfterExitingFullScreen == .musicMode {
       let windowedLayout = LayoutState.buildFrom(windowedLayoutSpec)
-      let geo = geo(windowed: exitFSTransition.outputGeometry)
+      let geo = geo.clone(windowed: exitFSTransition.outputGeometry)
       let enterMusicModeTransition = buildTransitionToEnterMusicMode(from: windowedLayout, geo)
       animationPipeline.submit(exitFSTransition.tasks)
       animationPipeline.submit(enterMusicModeTransition.tasks)
@@ -2248,7 +2242,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     case .fullScreen, .fullScreenInteractive:
       if currentLayout.isLegacyFullScreen {
-        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, videoAspect: player.info.videoAspect)
+        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
         IINAAnimation.disableAnimation { [self] in
           videoView.apply(newGeometry)
         }
@@ -2332,7 +2326,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to WindowDidChangeScreen")
-          let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, videoAspect: player.info.videoAspect)
+          let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, video: geo.video)
           applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
@@ -2387,7 +2381,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
           log.verbose("Updating legacy full screen window in response to ScreenParametersNotification")
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, videoAspect: player.info.videoAspect)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
           applyLegacyFSGeo(fsGeo)
         } else if layout.mode == .windowed {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
@@ -2423,7 +2417,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           // window management app such as Amethyst. If this happens, move the window back to its proper place:
           let screen = bestScreen
           log.verbose("WindowDidMove: Updating legacy full screen window in response to unexpected windowDidMove to frame=\(window.frame), screen=\(screen.screenID.quoted)")
-          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, videoAspect: player.info.videoAspect)
+          let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
           applyLegacyFSGeo(fsGeo)
         } else {
           player.saveState()
@@ -2992,7 +2986,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
                   accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
     guard player.canShowOSD() else { return }
 
-    let disableOSDForFileLoading: Bool = player.info.justOpenedFile || player.info.timeSinceLastFileOpenFinished < 0.2
+    let disableOSDForFileLoading: Bool = player.info.isNotDoneLoading || player.info.timeSinceLastFileOpenFinished < 0.2
     if disableOSDForFileLoading && !isExternal {
       switch msg {
       case .fileStart,
@@ -3260,26 +3254,28 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let currentLayout = currentLayout
     // Especially needed to avoid duplicate transitions
     guard currentLayout.canEnterInteractiveMode else { return }
-    guard let window else { return }
 
     player.mpv.queue.async { [self] in
-      let videoGeo = player.info.videoGeo
+      let videoGeo = geo.video
       let videoSizeRaw = videoGeo.videoSizeRaw
 
       log.verbose("Entering interactive mode: \(mode)")
 
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
 
-      if mode == .crop, let vf = player.info.videoGeo.cropFilter {
+      let newVideoGeo: VideoGeometry
+      if mode == .crop, let vf = videoGeo.cropFilter {
         log.error("Crop mode requested, but found an existing crop filter (\(vf.stringFormat.quoted)). Will remove it before entering")
         // A crop is already set. Need to temporarily remove it so that the whole video can be seen again,
         // so that a new crop can be chosen. But keep info from the old filter in case the user cancels.
-        player.info.videoFiltersDisabled[vf.label!] = vf
         // Change this pre-emptively so that removeVideoFilter doesn't trigger a window geometry change
-        player.info.videoGeo = player.info.videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
+        player.info.videoFiltersDisabled[vf.label!] = vf
+        newVideoGeo = videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
         if !player.removeVideoFilter(vf) {
           log.error("Failed to remove prev crop filter: (\(vf.stringFormat.quoted)) for some reason. Will ignore and try to proceed anyway")
         }
+      } else {
+        newVideoGeo = geo.video
       }
       // Save disabled crop video filter
       player.saveState()
@@ -3298,17 +3294,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let newVideoAspect = videoSizeRaw.mpvAspect
 
           switch currentLayout.mode {
-          case .windowed:
+          case .windowed, .fullScreen:
             let oldVideoAspect = prevCropBox.size.mpvAspect
             // Scale viewport to roughly match window size
-            assert(windowedModeGeo.mode == .windowed)
             let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
-            var uncroppedClosedBarsGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+            var uncroppedClosedBarsGeo = windowedGeoForCurrentFrame()
               .withResizedBars(outsideTop: 0, outsideTrailing: 0,
                                outsideBottom: 0, outsideLeading: 0,
                                insideTop: 0, insideTrailing: 0,
                                insideBottom: 0, insideLeading: 0,
-                               videoAspect: newVideoAspect,
+                               video: newVideoGeo,
                                keepFullScreenDimensions: !lockViewportToVideoSize)
 
             if lockViewportToVideoSize {
@@ -3336,21 +3331,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             }
             log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)")
 
-            // TODO: integrate this task into LayoutTransition build
-            let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
-            tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
-              isAnimatingLayoutTransition = true  // tell window resize listeners to do nothing
-              videoView.apply(uncroppedClosedBarsGeo)
-              player.window.setFrameImmediately(uncroppedClosedBarsGeo.windowFrame)
-            })
+            if currentLayout.mode == .windowed {
+              // TODO: integrate this task into LayoutTransition build
+              let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
+              tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
+                isAnimatingLayoutTransition = true  // tell window resize listeners to do nothing
+                videoView.apply(uncroppedClosedBarsGeo)
+                player.window.setFrameImmediately(uncroppedClosedBarsGeo.windowFrame)
+              })
+            }
 
             // supply an override for windowedModeGeo here, because it won't be set until the animation above executes
-            let geoOverride = geo(windowed: uncroppedClosedBarsGeo, videoAspect: newVideoAspect)
-            tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
-
-          case .fullScreen:
-
-            let geoOverride = geo(videoAspect: newVideoAspect)
+            let geoOverride = geo.clone(windowed: uncroppedClosedBarsGeo)
             tasks.append(contentsOf: buildTransitionToEnterInteractiveMode(.crop, geoOverride))
 
           default:
@@ -3366,7 +3358,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: Geometries? = nil) -> [IINAAnimation.Task] {
+  func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
     let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
     let startDuration = IINAAnimation.CropAnimationDuration * 0.5
@@ -3403,17 +3395,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   private func exitInteractiveMode(immediately: Bool, newVidGeo: VideoGeometry? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
 
+    var geoSet: GeometrySet? = nil
     // If these params are present and valid, then need to apply a crop
-    if let cropController = cropSettingsView, let videoSizeRaw = newVidGeo?.videoSizeRaw, let cropRect = newVidGeo?.cropRect {
+    if let cropController = cropSettingsView, let newVidGeo, let cropRect = newVidGeo.cropRect {
 
-      log.verbose("Cropping video from videoSizeRaw: \(videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)")
+      log.verbose("Cropping video from videoSizeRaw: \(newVidGeo.videoSizeRaw), videoSizeScaled: \(cropController.cropBoxView.videoRect), cropRect: \(cropRect)")
 
       /// Must update `windowedModeGeo` outside of animation task!
       // this works for full screen modes too
-      let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, videoAspect: videoSizeRaw.mpvAspect)
-      let newIMGeo = currentIMGeo.cropVideo(from: videoSizeRaw, to: cropRect)
+      assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
+      let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, video: geo.video)
+      let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
       if currentLayout.mode == .windowedInteractive {
-        windowedModeGeo = newIMGeo
+        geoSet = buildGeoSet(windowed: newIMGeo)
       }
 
       // Crop animation:
@@ -3445,9 +3439,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
     let startDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.75
     let endDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.25
-    let geo = self.geo(videoAspect: newVidGeo?.cropRect?.size.mpvAspect)
     let transition = buildLayoutTransition(named: "ExitInteractiveMode", from: currentLayout, to: newLayoutSpec,
-                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
+                                           totalStartingDuration: startDuration, totalEndingDuration: endDuration, geoSet)
     tasks.append(contentsOf: transition.tasks)
 
     return tasks
@@ -3492,7 +3485,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // - 2. Thumbnail Preview
 
-    let videoGeo = player.info.videoGeo
+    let videoGeo = player.videoGeo
     let videoAspectCAR = videoGeo.videoAspectCAR
 
     guard let thumbnails = player.info.currentMedia?.thumbnails,
@@ -3540,8 +3533,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     // Thumb too small?
-    if thumbHeight < Constants.Distance.minThumbnailHeight {
-      thumbHeight = Constants.Distance.minThumbnailHeight
+    if thumbHeight < Constants.Distance.Thumbnail.minHeight {
+      thumbHeight = Constants.Distance.Thumbnail.minHeight
     }
 
     // Thumb too tall?
@@ -3598,8 +3591,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     thumbWidth = round(thumbWidth)
     thumbHeight = round(thumbHeight)
 
-    guard thumbWidth >= Constants.Distance.minThumbnailHeight,
-          thumbHeight >= Constants.Distance.minThumbnailHeight else {
+    guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
+          thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
       log.verbose("Not enough space to display thumbnail")
       thumbnailPeekView.isHidden = true
       return
@@ -3612,7 +3605,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let finalImage: NSImage
       // Apply crop first. Then aspect
       let croppedImage: NSImage
-      if let normalizedCropRect = player.info.videoGeo.cropRectNormalized {
+      if let normalizedCropRect = player.videoGeo.cropRectNormalized {
         croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
       } else {
         croppedImage = rotatedImage
@@ -3692,7 +3685,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     })
   }
 
-  private func buildTransitionToEnterMusicMode(from oldLayout: LayoutState, _ geo: Geometries? = nil) -> LayoutTransition {
+  private func buildTransitionToEnterMusicMode(from oldLayout: LayoutState, _ geo: GeometrySet? = nil) -> LayoutTransition {
     let miniPlayerLayout = oldLayout.spec.clone(mode: .musicMode)
     return buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
   }
@@ -4284,7 +4277,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       
       pip.presentAsPicture(inPicture: pipVideo)
       pipOverlayView.isHidden = false
-      let videoSize = player.info.videoGeo.videoSizeCARS
+
+      let videoSize = player.windowController.windowedModeGeo.videoSize
       log.verbose("Setting PiP aspect to \(videoSize.mpvAspect)")
       pip.aspectRatio = videoSize
     }

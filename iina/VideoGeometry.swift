@@ -21,23 +21,23 @@ import Foundation
 ///         ➤ `videoSizeCA`
 ///           ➤ apply `totalRotation` (== `userRotation` + container-specified rotation)
 ///             ➤ `videoSizeCAR`
-///               ➤ apply `scale`
-///                 ➤ `videoSizeCARS` (AKA `videoSize` in `PWinGeometry`)
-struct VideoGeometry: CustomStringConvertible {
-  static let nullGeometry = VideoGeometry(rawWidth: Int(AppData.defaultVideoSize.width),
-                                          rawHeight: Int(AppData.defaultVideoSize.height),
-                                          selectedAspectLabel: "",
-                                          totalRotation: 0, userRotation: 0,
-                                          selectedCropLabel: AppData.noneCropIdentifier,
-                                          scale: 1.0, log: Logger.Subsystem(rawValue: "null"))
+struct VideoGeometry: Equatable, CustomStringConvertible {
+  
+  static func defaultGeometry(_ log: Logger.Subsystem) -> VideoGeometry {
+    return VideoGeometry(rawWidth: Int(AppData.defaultVideoSize.width),
+                         rawHeight: Int(AppData.defaultVideoSize.height),
+                         selectedAspectLabel: "",
+                         totalRotation: 0, userRotation: 0,
+                         selectedCropLabel: AppData.noneCropIdentifier,
+                         log: log)
+  }
 
-  private let log: Logger.Subsystem
+  let log: Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
        selectedAspectLabel: String,
        totalRotation: Int, userRotation: Int,
        selectedCropLabel: String,
-       scale: Double,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
@@ -51,8 +51,13 @@ struct VideoGeometry: CustomStringConvertible {
     self.totalRotation = totalRotation
     self.userRotation = userRotation
     self.selectedCropLabel = selectedCropLabel
-    self.cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
-    self.scale = scale < 0.0 ? 1.0 : scale
+    let cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
+    self.cropRect = cropRect
+    if let cropRect {
+      self.cropRectNormalized = VideoGeometry.makeCropRectNormalized(videoSizeRaw: CGSize(width: rawWidth, height: rawHeight), cropRect: cropRect, log: log)
+    } else {
+      self.cropRectNormalized = nil
+    }
     self.log = log
   }
 
@@ -78,13 +83,11 @@ struct VideoGeometry: CustomStringConvertible {
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              selectedAspectLabel: String? = nil,
              totalRotation: Int? = nil, userRotation: Int? = nil,
-             selectedCropLabel: String? = nil,
-             scale: Double? = nil) -> VideoGeometry {
+             selectedCropLabel: String? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
                          totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
-                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel,
-                         scale: scale ?? self.scale, log: self.log)
+                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: self.log)
   }
 
   func substituting(_ ffMeta: FFVideoMeta) -> VideoGeometry {
@@ -118,23 +121,7 @@ struct VideoGeometry: CustomStringConvertible {
   /// This is derived from `selectedCropLabel`, but has its Y value flipped so that it works with Cocoa views.
   let cropRect: CGRect?
 
-  lazy var cropRectNormalized: CGRect? = {
-    guard let cropRect else { return nil }
-    let xNorm = cropRect.origin.x / videoSizeRaw.width
-    let yNorm = cropRect.origin.y / videoSizeRaw.height
-    let widthNorm = cropRect.width / videoSizeRaw.width
-    let heightNorm = cropRect.height / videoSizeRaw.height
-    let normRect = NSRect(x: xNorm, y: yNorm, width: widthNorm, height: heightNorm)
-    if log.isTraceEnabled {
-      log.trace("Normalized cropRect \(cropRect) → \(normRect)")
-    }
-    guard widthNorm > 0, heightNorm > 0 else {
-      log.warn("Invalid cropRect! Returning nil")
-      return nil
-    }
-    return normRect
-  }()
-
+  let cropRectNormalized: CGRect?
 
   /// The video size after crop applied, or raw video size if no crop applied.
   /// Equal to crop rect size, if crop applied. If there is no crop, then identical to raw video size.
@@ -234,27 +221,29 @@ struct VideoGeometry: CustomStringConvertible {
     return videoSizeCAR.mpvAspect
   }
 
-  // MARK: - TRANSFORMATION 4: Scale
-  // (Crop + Aspect + Rotation + Scale)
-
-  /// `MPVProperty.windowScale`:
-  var scale: Double
-
-  /// Like `videoSizeCAR`, but after applying `scale`.
-  var videoSizeCARS: CGSize {
-    return CGSize(width: round(videoSizeCAR.width * scale),
-                  height: round(videoSizeCAR.height * scale))
-  }
-
+  /// Final aspect ratio of `videoView`. If displaying album art, will be `1` (square).
+  /// Otherwise should match `videoGeo.videoAspectCAR`, which should match the aspect of the currently displayed `videoView`.
   /// Final aspect ratio of `videoView`, equal to `videoAspectCAR`. Takes into account aspect override, crop, and rotation (scale-invariant).
   var videoViewAspect: Double {
     return videoAspectCAR
   }
 
-  // MARK: - Etc
+  // MARK: - Protocol conformance
 
   var description: String {
-    return "VideoGeometry(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), rotation:\(userRotation)|total:\(totalRotation)), scale:\(scale), Sizes: {Raw:(\(rawWidth) x \(rawHeight)), CA:\(videoSizeCA), CAR:\(videoSizeCAR), CARS:\(videoSizeCARS), finalAspect:\(videoAspectCAR)})"
+    return "VideoGeometry(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), rotation:\(userRotation)|total:\(totalRotation)), Sizes: {Raw:(\(rawWidth) x \(rawHeight)), CA:\(videoSizeCA), CAR:\(videoSizeCAR), finalAspect:\(videoAspectCAR)})"
+  }
+
+  static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
+    return lhs.rawWidth == rhs.rawWidth
+    && lhs.selectedAspectLabel == rhs.selectedAspectLabel
+    && lhs.totalRotation == rhs.totalRotation
+    && lhs.userRotation == rhs.userRotation
+    && lhs.selectedCropLabel == rhs.selectedCropLabel
+  }
+
+  static func != (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
+    return !(lhs == rhs)
   }
 
   // MARK: Static util functions
@@ -295,6 +284,22 @@ struct VideoGeometry: CustomStringConvertible {
     }
     Logger.log("Could not parse crop from label: \(cropLabel.quoted)", level: .error)
     return nil
+  }
+
+  static func makeCropRectNormalized(videoSizeRaw: CGSize, cropRect: CGRect, log: Logger.Subsystem) -> CGRect? {
+    let xNorm = cropRect.origin.x / videoSizeRaw.width
+    let yNorm = cropRect.origin.y / videoSizeRaw.height
+    let widthNorm = cropRect.width / videoSizeRaw.width
+    let heightNorm = cropRect.height / videoSizeRaw.height
+    let normRect = NSRect(x: xNorm, y: yNorm, width: widthNorm, height: heightNorm)
+    if log.isTraceEnabled {
+      log.trace("Normalized cropRect \(cropRect) → \(normRect)")
+    }
+    guard widthNorm > 0, heightNorm > 0 else {
+      log.warn("Invalid cropRect! Returning nil")
+      return nil
+    }
+    return normRect
   }
 
   /// Adjusts the dimensions of the given `CGSize` as needed to match the given aspect

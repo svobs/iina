@@ -70,6 +70,10 @@ class MediaItem: CustomStringConvertible {
     return MediaItem.path(for: url)
   }
 
+  var isNetworkResource: Bool {
+    return !url.isFileURL
+  }
+
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
   var isFileLoaded: Bool {
@@ -137,7 +141,7 @@ class PlaybackInfo {
   var priorState: PlayerSaveState? = nil
 
   /// File not completely done loading
-  var justOpenedFile: Bool {
+  var isNotDoneLoading: Bool {
     guard let currentMedia else { return false }
     return currentMedia.loadStatus.isNotYet(.videoGeometryApplied)
   }
@@ -180,8 +184,8 @@ class PlaybackInfo {
   }
 
   var isNetworkResource: Bool {
-    if let currentURL {
-      return !currentURL.isFileURL
+    if let currentMedia {
+      return currentMedia.isNetworkResource
     }
     return false
   }
@@ -215,40 +219,6 @@ class PlaybackInfo {
         log.verbose("Updated intendedViewportSize to nil")
       }
     }
-  }
-
-  /// If displaying album art, will be `1` (square). Otherwise should match `videoGeo.videoAspectCAR`, which should match the aspect of
-  /// the currently displayed `videoView`.
-  var videoAspect: CGFloat {
-    if isShowingAlbumArt {
-      return 1.0  // album art is always square
-    }
-    return videoGeo.videoViewAspect
-  }
-
-  /// If `true`, then `videoView` is used to display album art, or default album art, which is always square
-  var isShowingAlbumArt: Bool = false {
-    didSet {
-      log.verbose("Updated isShowingAlbumArt to: \(isShowingAlbumArt)")
-    }
-  }
-
-  /// Should be read/written on main thread only
-  var videoGeo = VideoGeometry.nullGeometry {
-    didSet {
-      log.verbose("Updated videoGeo to: \(videoGeo)")
-    }
-  }
-
-  var rawWidth: Int? {
-    let width = videoGeo.rawWidth
-    guard width > 0 else { return nil }
-    return width
-  }
-  var rawHeight: Int? {
-    let height = videoGeo.rawHeight
-    guard height > 0 else { return nil }
-    return height
   }
 
   // MARK: - Filters & Equalizers
@@ -320,6 +290,18 @@ class PlaybackInfo {
       return vid != 0
     }
     return false
+  }
+
+  /// If it return `nil`, it means do not change visibility from existing value
+  var shouldShowDefaultArt: Bool? {
+    if let currentMedia {
+      // Don't show art if currently loading
+      let isCompletelyLoaded = currentMedia.loadStatus.isAtLeast(.completelyLoaded)
+      if isCompletelyLoaded, currentMediaAudioStatus == .isAudio {
+        return !isVideoTrackSelected
+      }
+    }
+    return nil
   }
 
   var isSubVisible = true

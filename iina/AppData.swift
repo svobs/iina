@@ -218,7 +218,12 @@ struct Constants {
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
     static let minOSCBarHeight: CGFloat = 24
-    static let minThumbnailHeight: CGFloat = 24
+
+    struct Thumbnail {
+      static let minHeight: CGFloat = 24
+      static let extraOffsetX: CGFloat = 15
+      static let extraOffsetY: CGFloat = 15
+    }
 
     // TODO: move this outside Distance
     struct MusicMode {

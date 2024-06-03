@@ -849,14 +849,14 @@ extension PlayerWindowController {
       leadingSidebarIsResizing = true
       if currentLayout.isWindowed {
         // Update to latest frame in case window has moved
-        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        windowedModeGeo = windowedGeoForCurrentFrame()
       }
       return true
     } else if isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
       Logger.log("User started resize of trailing sidebar", level: .verbose, subsystem: player.subsystem)
       trailingSidebarIsResizing = true
       if currentLayout.isWindowed {
-        windowedModeGeo = windowedModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        windowedModeGeo = windowedGeoForCurrentFrame()
       }
       return true
     }
@@ -872,7 +872,7 @@ extension PlayerWindowController {
     case .windowed:
       oldGeo = windowedModeGeo
     case .fullScreen:
-      oldGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, videoAspect: player.info.videoAspect)
+      oldGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
     }

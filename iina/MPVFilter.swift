@@ -31,37 +31,6 @@ class MPVFilter: NSObject {
     case lavfi = "lavfi"
   }
 
-  // MARK: - Static filters
-
-  static func crop(w: Int?, h: Int?, x: Int?, y: Int?) -> MPVFilter {
-    let f = MPVFilter(name: "crop", label: Constants.FilterLabel.crop,
-                      params: ["w": w?.description ?? "", "h": h?.description ?? "", "x": x?.description ?? "", "y": y?.description ?? ""])
-    return f
-  }
-
-  // FIXME: use lavfi vflip
-  static func flip() -> MPVFilter {
-    return MPVFilter(name: "vflip", label: nil, params: nil)
-  }
-
-  // FIXME: use lavfi hflip
-  static func mirror() -> MPVFilter {
-    return MPVFilter(name: "hflip", label: nil, params: nil)
-  }
-
-  /**
-   A ffmpeg `unsharp` filter.
-   Args: l(uma)x, ly, la, c(hroma)x, xy, ca; default 5:5:0:5:5:0.
-   We only change la and ca here.
-   - parameter msize: Value for lx, ly, cx and cy. Should be an odd integer in [3, 23].
-   - parameter amount: Amount for la and ca. Should be in [-1.5, 1.5].
-   */
-  static func unsharp(amount: Float, msize: Int = 5) -> MPVFilter {
-    let amoutStr = amount.description
-    let msizeStr = msize.description
-    return MPVFilter(lavfiName: "unsharp", label: nil, params: [msizeStr, msizeStr, amoutStr, msizeStr, msizeStr, amoutStr])
-  }
-
   // MARK: - Members
 
   var type: FilterType?
@@ -181,7 +150,7 @@ class MPVFilter: NSObject {
     self.init(name: instance.preset.name, label: nil, params: dict)
   }
 
-  // MARK: - Others
+  // MARK: - Misc static
 
   /** The parameter order when omitting their names. */
   static let formats: [FilterType: String] = [
@@ -259,7 +228,36 @@ class MPVFilter: NSObject {
     return dict
   }
 
-  // MARK: - Param getter
+  /// Returns `true` if this filter is equal to the given filter `false` otherwise.
+  ///
+  /// Filters that support multiple parameters have more than one valid string representation due to there being no requirement on the
+  /// order in which those parameters are given in a filter. In the `mpv_node` tree returned for the mpv property representing the audio
+  /// filter list or the video filter list, filter parameters are contained in random order in a `MPV_FORMAT_NODE_MAP`. When IINA
+  /// converts the `mpv_node` tree into `MPVFilter` objects parameters are stored in a `Dictionary` which also does not
+  /// provide a predictable order. This is all correct behavior as per discussions with the mpv project in mpv issue #9841. Due to this
+  /// issue with the string representation of some types of filters this method gives preference to comparing the dictionaries in the
+  /// `params` property if available over comparing string representations.
+  /// - Note:
+  /// Related issues:
+  /// * [Audio filters with same name cannot be removed. #3620](https://github.com/iina/iina/issues/3620)
+  /// * [mpv_get_property returns filter params in unordered map breaking remove #9841](https://github.com/mpv-player/mpv/issues/9841)
+  /// - Parameter object: The object to compare to this filter.
+  /// - Returns: `true` if this filter is equal to the given object, otherwise `false`.
+  override func isEqual(_ object: Any?) -> Bool {
+    guard let object = object as? MPVFilter, label == object.label, name == object.name else { return false }
+    if let lhs = params, let rhs = object.params {
+      return lhs == rhs
+    }
+    return stringFormat == object.stringFormat
+  }
+
+  // MARK: - Crop Filter
+
+  static func crop(w: Int?, h: Int?, x: Int?, y: Int?) -> MPVFilter {
+    let f = MPVFilter(name: "crop", label: Constants.FilterLabel.crop,
+                      params: ["w": w?.description ?? "", "h": h?.description ?? "", "x": x?.description ?? "", "y": y?.description ?? ""])
+    return f
+  }
 
   // Returns in mpv coords!
   func cropRect(origVideoSize: NSSize, flipY: Bool = false) -> NSRect {
@@ -310,26 +308,29 @@ class MPVFilter: NSObject {
     return "(\(Int(cropBox.origin.x)), \(Int(cropBox.origin.y))) \(Int(cropBox.width))\u{d7}\(Int(cropBox.height))"
   }
 
-  /// Returns `true` if this filter is equal to the given filter `false` otherwise.
-  ///
-  /// Filters that support multiple parameters have more than one valid string representation due to there being no requirement on the
-  /// order in which those parameters are given in a filter. In the `mpv_node` tree returned for the mpv property representing the audio
-  /// filter list or the video filter list, filter parameters are contained in random order in a `MPV_FORMAT_NODE_MAP`. When IINA
-  /// converts the `mpv_node` tree into `MPVFilter` objects parameters are stored in a `Dictionary` which also does not
-  /// provide a predictable order. This is all correct behavior as per discussions with the mpv project in mpv issue #9841. Due to this
-  /// issue with the string representation of some types of filters this method gives preference to comparing the dictionaries in the
-  /// `params` property if available over comparing string representations.
-  /// - Note:
-  /// Related issues:
-  /// * [Audio filters with same name cannot be removed. #3620](https://github.com/iina/iina/issues/3620)
-  /// * [mpv_get_property returns filter params in unordered map breaking remove #9841](https://github.com/mpv-player/mpv/issues/9841)
-  /// - Parameter object: The object to compare to this filter.
-  /// - Returns: `true` if this filter is equal to the given object, otherwise `false`.
-  override func isEqual(_ object: Any?) -> Bool {
-    guard let object = object as? MPVFilter, label == object.label, name == object.name else { return false }
-    if let lhs = params, let rhs = object.params {
-      return lhs == rhs
-    }
-    return stringFormat == object.stringFormat
+  // MARK: - Other static filters
+
+  // FIXME: use lavfi vflip
+  static func flip() -> MPVFilter {
+    return MPVFilter(name: "vflip", label: nil, params: nil)
   }
+
+  // FIXME: use lavfi hflip
+  static func mirror() -> MPVFilter {
+    return MPVFilter(name: "hflip", label: nil, params: nil)
+  }
+
+  /**
+   A ffmpeg `unsharp` filter.
+   Args: l(uma)x, ly, la, c(hroma)x, xy, ca; default 5:5:0:5:5:0.
+   We only change la and ca here.
+   - parameter msize: Value for lx, ly, cx and cy. Should be an odd integer in [3, 23].
+   - parameter amount: Amount for la and ca. Should be in [-1.5, 1.5].
+   */
+  static func unsharp(amount: Float, msize: Int = 5) -> MPVFilter {
+    let amoutStr = amount.description
+    let msizeStr = msize.description
+    return MPVFilter(lavfiName: "unsharp", label: nil, params: [msizeStr, msizeStr, amoutStr, msizeStr, msizeStr, amoutStr])
+  }
+
 }

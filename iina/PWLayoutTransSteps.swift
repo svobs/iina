@@ -66,7 +66,7 @@ extension PlayerWindowController {
       // TODO: extend musicModeGeo from PWinGeometry and then use outputGeo instead of musicModeGeo reference
       let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: transition.outputGeometry.windowFrame)
       musicModeGeo = musicModeGeo.clone(windowFrame: transition.outputGeometry.windowFrame, screenID: screenID,
-                                        videoAspect: transition.outputGeometry.videoAspect)
+                                        video: transition.outputGeometry.video)
     }
 
     guard let window = window else { return }
@@ -622,7 +622,7 @@ extension PlayerWindowController {
         bottomBarView.addSubview(cropController.view)
         cropController.view.addConstraintsToFillSuperview()
         cropController.view.alphaValue = 0
-        let videoSizeRaw = player.info.videoGeo.videoSizeRaw
+        let videoSizeRaw = player.videoGeo.videoSizeRaw
         if let cropController = cropSettingsView {
           addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
 
@@ -846,7 +846,7 @@ extension PlayerWindowController {
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
-      let videoSizeRaw = player.info.videoGeo.videoSizeRaw
+      let videoSizeRaw = player.videoGeo.videoSizeRaw
       if let cropController = cropSettingsView {
         addOrReplaceCropBoxSelection(rawVideoSize: videoSizeRaw, videoViewSize: transition.outputGeometry.videoSize)
         // Hide for now, to prepare for a nice fade-in animation

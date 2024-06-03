@@ -482,14 +482,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
       if Preference.UIState.windowsHidden.remove(activeWindowName) != nil {
-        Logger.log("Hidden window become main; adding to open windows list: \(activeWindowName.quoted)")
+        Logger.log("Hidden window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
         Preference.UIState.windowsOpen.insert(activeWindowName)
       } else if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
-        Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)")
+        Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
         Preference.UIState.windowsOpen.insert(activeWindowName)
       } else {
         // Do not process. Another listener will handle it
-        Logger.log("Unrecognized window became main, ignoring: \(activeWindowName.quoted)")
+        Logger.log("Window became main: \(activeWindowName.quoted)", level: .verbose)
         return
       }
 
@@ -506,7 +506,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
-      Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)")
+      Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)", level: .verbose)
       Preference.UIState.windowsOpen.remove(savedStateName)
       Preference.UIState.windowsMinimized.insert(savedStateName)
       Preference.UIState.windowsHidden.remove(savedStateName)
@@ -523,7 +523,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
-      Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)")
+      Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)", level: .verbose)
       Preference.UIState.windowsOpen.insert(savedStateName)
       Preference.UIState.windowsMinimized.remove(savedStateName)
       Preference.UIState.windowsHidden.remove(savedStateName)

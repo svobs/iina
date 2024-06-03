@@ -56,6 +56,20 @@ class Logger: NSObject {
   fileprivate static let piiFileVersion: Int = 0
   fileprivate static let piiFirstLineFormat = "# IINA_PII \(piiFileVersion) \(sessionDirName)\n"
 
+  /// `playerID` → `Subsystem`
+  fileprivate static var playerLogs: [String: Subsystem] = [:]
+
+  static func subsystem(forPlayerID playerID: String) -> Subsystem {
+    lock.withLock {
+      if let subsystem = playerLogs[playerID] {
+        return subsystem
+      }
+      let subsystem = Logger.Subsystem(rawValue: "PLR-\(playerID)")
+      playerLogs[playerID] = subsystem
+      return subsystem
+    }
+  }
+
   class Log: NSObject {
     @objc dynamic let subsystem: String
     @objc dynamic let level: Int

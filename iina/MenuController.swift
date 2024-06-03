@@ -299,7 +299,7 @@ class MenuController: NSObject, NSMenuDelegate {
     bind(menu: aspectMenu, withOptions: aspectRatioMenuItemTitles, objects: aspectRatioIdentifiers, objectMap: nil,
          action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       /// return `true` if menu item should be checked (i.e. if current aspect matches menu item)
-      return PlayerCore.active.info.videoGeo.selectedAspectLabel == $0.representedObject as? String
+      return PlayerCore.active.videoGeo.selectedAspectLabel == $0.representedObject as? String
     }
 
     // -- crop
@@ -307,7 +307,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // same as aspectList above.
     let cropIdentifiers = [AppData.noneCropIdentifier] + AppData.aspectsInMenu + [AppData.customCropIdentifier]
     bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
-      return PlayerCore.active.info.videoGeo.selectedCropLabel == $0.representedObject as? String
+      return PlayerCore.active.videoGeo.selectedCropLabel == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
     cropMenu.insertItem(NSMenuItem.separator(), at: 1 + AppData.aspectsInMenu.count)
@@ -315,7 +315,7 @@ class MenuController: NSObject, NSMenuDelegate {
     // -- rotation
     let rotationTitles = AppData.rotations.map { "\($0)\(Constants.String.degree)" }
     bind(menu: rotationMenu, withOptions: rotationTitles, objects: AppData.rotations, objectMap: nil, action: #selector(PlayerWindowController.menuChangeRotation(_:))) {
-      PlayerCore.active.info.videoGeo.userRotation == $0.representedObject as? Int
+      PlayerCore.active.videoGeo.userRotation == $0.representedObject as? Int
     }
 
     // -- flip and mirror

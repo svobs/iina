@@ -111,13 +111,21 @@ extension Preference {
       return "\(Preference.UIState.iinaLaunchPrefix)\(launchID)"
     }
 
-    static func launchID(fromPlayerWindowKey key: String) -> Int? {
+    /// Example input=`"PWin-1032m0"` → output=`"1032m0"`
+    static func playerID(fromPlayerWindowKey key: String) -> String? {
       if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
         let splitted = key.split(separator: "-")
         if splitted.count == 2 {
-          let playerWindowID = String(splitted[1])
-          return WindowAutosaveName.playerWindowLaunchID(from: playerWindowID)
+          return String(splitted[1])
         }
+      }
+      return nil
+    }
+
+    /// Example input=`"PWin-1032m0"` → output=`"1032"`
+    static func launchID(fromPlayerWindowKey key: String) -> Int? {
+      if let pid = playerID(fromPlayerWindowKey: key) {
+        return WindowAutosaveName.playerWindowLaunchID(from: pid)
       }
       return nil
     }
@@ -347,7 +355,11 @@ extension Preference {
         Logger.log("Could not find stored UI state for \(key.quoted)", level: .error)
         return nil
       }
-      return PlayerSaveState(propDict)
+      guard let pid = playerID(fromPlayerWindowKey: key) else {
+        Logger.log("Bad player key: \(key.quoted)", level: .error)
+        return nil
+      }
+      return PlayerSaveState(propDict, playerID: pid)
     }
 
     static func savePlayerState(forPlayerID playerID: String, properties: [String: Any]) {
