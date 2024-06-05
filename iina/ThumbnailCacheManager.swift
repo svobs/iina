@@ -19,7 +19,7 @@ class ThumbnailCacheManager {
 
   private func cacheFolderContents() -> [URL]? {
     if needsRefresh {
-      Logger.log("Refreshing cached thumbnails index", level: .verbose, subsystem: ThumbnailCache.subsystem)
+      ThumbnailCache.log.verbose("Refreshing cached thumbnails index")
       var updatedCache: [URL] = []
       if let thumbWidthDirs = try? FileManager.default.contentsOfDirectory(at: Utility.thumbnailCacheURL,
                                                                     includingPropertiesForKeys: [.contentAccessDateKey],
@@ -54,7 +54,7 @@ class ThumbnailCacheManager {
     // if full, delete 50% of max cache
     let cacheToDelete = maxCacheSize * FloatingPointByteCountFormatter.PrefixFactor.mi.rawValue / 2
 
-    ThumbnailCache.subsystem.verbose("Looking for \(cacheToDelete) byte to delete from thumbnail cache")
+    ThumbnailCache.log.verbose("Looking for \(cacheToDelete) byte to delete from thumbnail cache")
 
     // sort by access date
     guard let contents = cacheFolderContents()?.sorted(by: { url1, url2 in
@@ -74,7 +74,7 @@ class ThumbnailCacheManager {
         break
       }
     }
-    Logger.log("Cleared \(clearedCacheSize) bytes from thumbnail cache", subsystem: ThumbnailCache.subsystem)
+    ThumbnailCache.log.verbose("Cleared \(clearedCacheSize) bytes from thumbnail cache")
   }
 
 }

@@ -389,7 +389,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   }
 
   func tableViewSelectionDidChange(_ notification: Notification) {
-    deleteButton.isEnabled = (watchTableView.selectedRow != -1)
+    deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
   }
 
   func resizeTableColumns(forTableWidth tableWidth: CGFloat) {

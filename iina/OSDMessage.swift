@@ -24,7 +24,8 @@ enum OSDType {
   case normal
   case withText(String)
   case withProgress(Double)
-//  case withButton(String)
+  case withLeftToRightProgress(Double)  // always left-to-right, even for R2L languages
+  case withLeftToRightText(String)
 }
 
 enum OSDMessage {
@@ -113,9 +114,9 @@ enum OSDMessage {
         .seek(let videoPosition, let videoDuration):
       let posStr = videoPosition?.stringRepresentation ?? Constants.String.videoTimePlaceholder
       let durStr = videoDuration?.stringRepresentation ?? Constants.String.videoTimePlaceholder
-      let text = "\(posStr)/\(durStr)"
+      let text = "\(posStr) / \(durStr)"
       let percentage = (videoPosition / videoDuration) ?? 1
-      return (text, .withProgress(percentage))
+      return (text, .withLeftToRightProgress(percentage))
 
     case .resumeFromWatchLater:
       return ("Restored playback from watch-later", .normal)
@@ -234,9 +235,11 @@ enum OSDMessage {
       case .cleared:
         return (NSLocalizedString("osd.abloop.clear", comment: "AB-Loop: Cleared"), .normal)
       case .aSet:
-        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"), .withText("{{position}} / {{duration}}"))
+        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"),
+                .withLeftToRightText("{{position}} / {{duration}}"))
       case .bSet:
-        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"), .withText("{{position}} / {{duration}}"))
+        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"),
+                .withLeftToRightText("{{position}} / {{duration}}"))
       }
 
     case .abLoopUpdate(let value, let position):
@@ -245,9 +248,11 @@ enum OSDMessage {
       case .cleared:
         Logger.fatal("Attempt to display invalid OSD message, type: .abLoopUpdate value: .cleared position \(position)")
       case .aSet:
-        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"), .withText("\(position) / {{duration}}"))
+        return (NSLocalizedString("osd.abloop.a", comment: "AB-Loop: A"),
+                .withLeftToRightText("\(position) / {{duration}}"))
       case .bSet:
-        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"), .withText("\(position) / {{duration}}"))
+        return (NSLocalizedString("osd.abloop.b", comment: "AB-Loop: B"),
+                .withLeftToRightText("\(position) / {{duration}}"))
       }
 
     case .stop:
@@ -256,7 +261,7 @@ enum OSDMessage {
     case .chapter(let name):
       return (
         String(format: NSLocalizedString("osd.chapter", comment: "Chapter: %@"), name),
-        .withText("({{currChapter}}/{{chapterCount}}) {{position}} / {{duration}}")
+        .withLeftToRightText("({{currChapter}}/{{chapterCount}}) {{position}} / {{duration}}")
       )
 
     case .track(let track):

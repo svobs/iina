@@ -101,6 +101,7 @@ struct AppData {
   static let toneMappingHelpLink = "https://en.wikipedia.org/wiki/Tone_mapping"
   static let targetPeakHelpLink = "https://mpv.io/manual/stable/#options-target-peak"
   static let algorithmHelpLink = "https://mpv.io/manual/stable/#options-tone-mapping"
+  static let disableAnimationsHelpLink = "https://developer.apple.com/design/human-interface-guidelines/accessibility#Motion"
 
   static let confFileExtension = "conf"
 
@@ -127,8 +128,9 @@ struct Constants {
   struct String {
     static let degree = "°"
     static let dot = "●"
-    static let play = "▶︎"
-    static let videoTimePlaceholder = "D-:--:-D"
+    static let blackRightPointingTriangle = "▶︎"
+    static let blackLeftPointingTriangle = "◀"
+    static let videoTimePlaceholder = "--:--:--"
     static let trackNone = NSLocalizedString("track.none", comment: "<None>")
     static let chapter = "Chapter"
     static let fullScreen = NSLocalizedString("menu.fullscreen", comment: "Full Screen")

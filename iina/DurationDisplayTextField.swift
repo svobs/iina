@@ -51,6 +51,7 @@ class DurationDisplayTextField: NSTextField {
       }
       stringValue = "-\(remaining.stringRepresentationWithPrecision(precision))"
     }
+    baseWritingDirection = .leftToRight
     self.stringValue = stringValue
   }
 

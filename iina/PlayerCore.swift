@@ -393,13 +393,13 @@ class PlayerCore: NSObject {
       var pstr = str
       if performPercentEncoding {
         guard let encoded = str.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-          print("Cannot add percent encoding for \(str)")
+          log.error("Cannot add percent encoding for \(str)")
           return
         }
         pstr = encoded
       }
       guard let url = URL(string: pstr) else {
-        Logger.log("Cannot parse url for \(pstr)", level: .error, subsystem: subsystem)
+        log.error("Cannot parse url for \(pstr)")
         return
       }
       openURL(url)
@@ -891,6 +891,9 @@ class PlayerCore: NSObject {
 
     guard let screenshotImage = NSImage(contentsOf: lastScreenshotURL) else {
       self.sendOSD(.screenshot)
+      if !saveToFile {
+        try? FileManager.default.removeItem(at: lastScreenshotURL)
+      }
       return
     }
     if saveToClipboard {
@@ -899,6 +902,9 @@ class PlayerCore: NSObject {
     }
     guard Preference.bool(for: .screenshotShowPreview) else {
       self.sendOSD(.screenshot)
+      if !saveToFile {
+        try? FileManager.default.removeItem(at: lastScreenshotURL)
+      }
       return
     }
 
@@ -1357,7 +1363,7 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       let code = mpv.command(.videoAdd, args: [url.path], checkError: false)
       if code < 0 {
-        Logger.log("Unsupported video: \(url.path)", level: .error, subsystem: self.subsystem)
+        log.error("Unsupported video: \(url.path)")
         DispatchQueue.main.async {
           Utility.showAlert("unsupported_audio")
         }
@@ -1369,7 +1375,7 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       let code = mpv.command(.audioAdd, args: [url.path], checkError: false)
       if code < 0 {
-        Logger.log("Unsupported audio: \(url.path)", level: .error, subsystem: self.subsystem)
+        log.error("Unsupported audio: \(url.path)")
         DispatchQueue.main.async {
           Utility.showAlert("unsupported_audio")
         }
@@ -1423,7 +1429,7 @@ class PlayerCore: NSObject {
       for subTrack in info.subTracks {
         let code = mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)
         if code < 0 {
-          Logger.log("Failed reloading subtitles: error code \(code)", level: .error, subsystem: self.subsystem)
+          log.error("Failed reloading subtitles: error code \(code)")
         }
       }
       reloadTrackInfo()
@@ -1475,7 +1481,7 @@ class PlayerCore: NSObject {
   }
 
   private func _playlistMove(_ from: Int, to: Int) {
-    mpv.command(.playlistMove, args: ["\(from)", "\(to)"])
+    mpv.command(.playlistMove, args: ["\(from)", "\(to)"], level: .verbose)
   }
 
   func playNextInPlaylist(_ playlistItemIndexes: IndexSet) {
@@ -1581,7 +1587,7 @@ class PlayerCore: NSObject {
 
   func playlistRemove(_ index: Int) {
     mpv.queue.async { [self] in
-      subsystem.verbose("Will remove row \(index) from playlist")
+      log.verbose("Will remove row \(index) from playlist")
       _playlistRemove(index)
       _reloadPlaylist()
     }
@@ -1589,7 +1595,7 @@ class PlayerCore: NSObject {
 
   func playlistRemove(_ indexSet: IndexSet) {
     mpv.queue.async { [self] in
-      subsystem.verbose("Will remove rows \(indexSet.map{$0}) from playlist")
+      log.verbose("Will remove rows \(indexSet.map{$0}) from playlist")
       var count = 0
       for i in indexSet {
         _playlistRemove(i - count)
@@ -1600,7 +1606,7 @@ class PlayerCore: NSObject {
   }
 
   private func _playlistRemove(_ index: Int) {
-    subsystem.verbose("Removing row \(index) from playlist")
+    log.verbose("Removing row \(index) from playlist")
     mpv.command(.playlistRemove, args: [index.description])
   }
 
@@ -1639,7 +1645,7 @@ class PlayerCore: NSObject {
 
   @discardableResult
   func playChapter(_ pos: Int) -> MPVChapter? {
-    Logger.log("Seeking to chapter \(pos)", level: .verbose, subsystem: subsystem)
+    log.verbose("Seeking to chapter \(pos)")
     let chapters = info.chapters
     guard pos < chapters.count else {
       return nil
@@ -1745,6 +1751,14 @@ class PlayerCore: NSObject {
 
     return didSucceed
   }
+  
+  private func logRemoveFilter(type: String, result: Bool, name: String) {
+    if !result {
+      log.warn("Failed to remove \(type) filter \(name)")
+    } else {
+      log.debug("Successfully removed \(type) filter \(name)")
+    }
+  }
 
   /// Remove a video filter based on its position in the list of filters.
   ///
@@ -1766,7 +1780,7 @@ class PlayerCore: NSObject {
     Logger.log("Removing video filter \(filter)...", subsystem: subsystem)
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
-    Logger.log(result ? "Succeeded" : "Failed", subsystem: self.subsystem)
+    logRemoveFilter(type: "video", result: result, name: filter)
     return result
   }
 
@@ -1840,7 +1854,7 @@ class PlayerCore: NSObject {
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   func addAudioFilter(_ filter: String) -> Bool {
-    Logger.log("Adding audio filter \(filter)...", subsystem: subsystem)
+    log.debug("Adding audio filter \(filter)...")
     var result = true
     result = mpv.command(.af, args: ["add", filter], checkError: false) >= 0
     Logger.log(result ? "Succeeded" : "Failed", subsystem: self.subsystem)
@@ -1864,9 +1878,9 @@ class PlayerCore: NSObject {
   /// - Parameter index: The index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeAudioFilter(_ filter: String, _ index: Int) -> Bool {
-    Logger.log("Removing audio filter \(filter)...", subsystem: subsystem)
+    log.debug("Removing audio filter \(filter)...")
     let result = mpv.removeFilter(MPVProperty.af, index)
-    Logger.log(result ? "Succeeded" : "Failed", subsystem: self.subsystem)
+    logRemoveFilter(type: "audio", result: result, name: filter)
     return result
   }
 
@@ -2067,13 +2081,13 @@ class PlayerCore: NSObject {
       }
 
       guard mustShuffle else {
-        Logger.log("Triggered on_before_start_file hook, but no shuffle needed", level: .verbose, subsystem: subsystem)
+        log.verbose("Triggered on_before_start_file hook, but no shuffle needed")
         next()
         return
       }
 
       DispatchQueue.main.async { [self] in
-        Logger.log("Running on_before_start_file hook: shuffling playlist", subsystem: subsystem)
+        log.debug("Running on_before_start_file hook: shuffling playlist")
         mpv.command(.playlistShuffle)
         /// will cancel this file load sequence (so `fileLoaded` will not be called), then will start loading item at index 0
         mpv.command(.playlistPlayIndex, args: ["0"])
@@ -3065,7 +3079,7 @@ class PlayerCore: NSObject {
 
   @available(macOS 10.12.2, *)
   func makeTouchBar() -> NSTouchBar {
-    Logger.log("Activating Touch Bar", subsystem: subsystem)
+    log.debug("Activating Touch Bar")
     needsTouchBar = true
     // The timer that synchronizes the UI is shutdown to conserve energy when the OSC is hidden.
     // However the timer can't be stopped if it is needed to update the information being displayed

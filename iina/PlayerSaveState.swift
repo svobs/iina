@@ -938,7 +938,7 @@ extension PWinGeometry {
             let viewportMarginTrailing = Double(iter.next()!),
             let viewportMarginBottom = Double(iter.next()!),
             let viewportMarginLeading = Double(iter.next()!),
-            let videoAspect = iter.next(),  /// was `videoAspect` (defunct as of 1.2)
+            let _ = iter.next(),  /// was `videoAspect` (defunct as of 1.2)
             let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
             let winWidth = Double(iter.next()!),

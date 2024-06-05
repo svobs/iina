@@ -28,6 +28,9 @@
 "initial.debug.desc" = "Debug builds are usually not optimized for performance, so it is not recommended to be used as daily drive. Debug builds do not support auto update.";
 "initial.bug_report" = "Report via <a href=\"https://github.com/iina/iina/issues\">GitHub issues</a>.";
 
+// Inspector Window
+"inspector.error" = "Error";
+
 // MainWindowController.swift
 "main.buffering_indicator" = "Buffering… %d%%";
 "main.opening_stream" = "Opening stream…";
@@ -115,6 +118,10 @@
 "preference.key_binding_hint_2" = "Double click a row at the right side to edit the corresponding key binding.";
 
 "preference.enable_adv_settings" = "Enable advanced settings";
+
+"preference.sub_override_level.force" = "force";
+"preference.sub_override_level.strip" = "strip";
+"preference.sub_override_level.yes" = "yes";
 
 "menu.volume" = "Volume: %d";
 "menu.volume_muted" = "Volume: %d (Muted)";

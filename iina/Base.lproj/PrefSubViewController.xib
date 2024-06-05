@@ -500,7 +500,7 @@
                                     </binding>
                                 </connections>
                             </textField>
-                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="AaL-am-9qW">
+                            <colorWell mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="AaL-am-9qW">
                                 <rect key="frame" x="58" y="9" width="44" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="19" id="6DX-D0-Bqk"/>
@@ -533,7 +533,7 @@
                                     <binding destination="5Up-Ab-aAm" name="value" keyPath="values.subItalic" id="Led-lG-OWd"/>
                                 </connections>
                             </button>
-                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="6fT-hS-kdG">
+                            <colorWell mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="6fT-hS-kdG">
                                 <rect key="frame" x="205" y="9" width="44" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="38" id="7vO-WO-Jfm"/>
@@ -664,7 +664,7 @@
                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="vyH-G4-g3c">
+                            <colorWell mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="vyH-G4-g3c">
                                 <rect key="frame" x="166" y="9" width="44" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="19" id="IM2-kY-8ZR"/>
@@ -711,7 +711,7 @@
                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <colorWell translatesAutoresizingMaskIntoConstraints="NO" id="Gtc-ii-hE0">
+                                    <colorWell mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="Gtc-ii-hE0">
                                         <rect key="frame" x="166" y="9" width="44" height="23"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="38" id="23T-cD-NiZ"/>

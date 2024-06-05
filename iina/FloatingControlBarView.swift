@@ -152,7 +152,9 @@ class FloatingControlBarView: NSVisualEffectView {
     let currentLocInViewport = viewportView.convert(event.locationInWindow, from: nil)
     let geometry = FloatingControllerGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
 
-    var newCenterX = currentLocInViewport.x - mousePosRelatedToView.x + geometry.halfBarWidth
+    let xxx = currentLocInViewport.x - mousePosRelatedToView.x
+
+    var newCenterX = (userInterfaceLayoutDirection == .rightToLeft ? geometry.maxCenterX - xxx : xxx + geometry.halfBarWidth)
     let newOriginY = currentLocInViewport.y - mousePosRelatedToView.y
     // stick to center
     if Preference.bool(for: .controlBarStickToCenter) {

@@ -42,7 +42,7 @@ extension PlayerWindowController {
       }
       /// Finally call `setFrame()`
 
-      applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+      applyVidGeo(using: newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
     }
   }
 
@@ -51,9 +51,8 @@ extension PlayerWindowController {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
     // Get this in the mpv thread to avoid race condition
     let isRestoring = player.info.isRestoring
-    let oldVidGeo = player.videoGeo
 
-    log.verbose("[applyVidGeo] Entered, restoring=\(isRestoring.yn) new=\(newVidGeo)")
+    log.verbose("[applyVidGeo] Entered, restoring=\(isRestoring.yn), \(newVidGeo)")
 
     guard let currentMedia = player.info.currentMedia else {
       log.verbose("[applyVidGeo] Aborting: currentMedia is nil")
@@ -66,53 +65,45 @@ extension PlayerWindowController {
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitSudden({ [self] in
-        updateVidGeo(from: oldVidGeo, to: newVidGeo, isRestoring: isRestoring, showDefaultArt: showDefaultArt)
+        guard !isRestoring else {
+          log.verbose("[applyVidGeo] Restore is in progress; returning")
+          return
+        }
+
+        // File opened via playlist navigation, or some other change occurred for file
+        let newWindowGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                                        intendedViewportSize: player.info.intendedViewportSize)
+
+        applyVidGeo(using: newWindowGeo, showDefaultArt: showDefaultArt)
       })
     }
   }
 
   /// Only `applyVidGeo` should call this.
-  private func updateVidGeo(from oldVidGeo: VideoGeometry, to newVidGeo: VideoGeometry, isRestoring: Bool,
-                            showDefaultArt: Bool? = nil) {
+  private func applyVidGeo(using newWindowGeo: PWinGeometry,
+                           duration: CGFloat = IINAAnimation.VideoReconfigDuration, timing: CAMediaTimingFunctionName = .easeInEaseOut,
+                           showDefaultArt: Bool? = nil) {
     guard !player.isStopping else {
       log.verbose("[applyVidGeo] Aborting due to status=\(player.status)")
       return
     }
 
-    guard !isRestoring else {
-      log.verbose("[applyVidGeo] Restore is in progress; returning")
-      return
-    }
-
     if #available(macOS 10.12, *) {
-      pip.aspectRatio = newVidGeo.videoSizeCAR
-    }
-
-    // File opened via playlist navigation, or some other change occurred for file
-    let newWindowGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                                intendedViewportSize: player.info.intendedViewportSize)
-
-    if windowedModeGeo.videoSize.equalTo(newWindowGeo.videoSize),
-       // must check actual videoView as well - it's not completely concurrent and may have fallen out of date
-       videoView.frame.size.mpvAspect == newWindowGeo.videoAspect {
-      log.debug("[applyVidGeo F Done] No change; taking no action")
-      return
+      pip.aspectRatio = newWindowGeo.video.videoSizeCAR
     }
 
     let currentLayout = currentLayout
-    let duration = IINAAnimation.VideoReconfigDuration
     /// Finally call `setFrame()`
     log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
 
     switch currentLayout.mode {
     case .windowed:
-      applyWindowGeoInAnimationPipeline(newWindowGeo, duration: IINAAnimation.VideoReconfigDuration, 
-                                        showDefaultArt: showDefaultArt)
+      applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       log.debug("[applyVidGeo Done] Emitting windowSizeAdjusted")
       player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
     case .fullScreen:
-      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, video: newVidGeo)
+      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, video: newWindowGeo.video)
 
       animationPipeline.submit(IINAAnimation.Task(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
@@ -120,16 +111,22 @@ extension PlayerWindowController {
         videoView.apply(fsGeo)
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWindowGeo
+
+        if let showDefaultArt {
+          log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
+          // Update default album art visibility:
+          defaultAlbumArtView.isHidden = !showDefaultArt
+        }
       }))
     case .musicMode:
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      guard musicModeGeo.videoAspect != newVidGeo.videoViewAspect else {
+      guard musicModeGeo.videoAspect != newWindowGeo.video.videoViewAspect else {
         log.debug("[applyVidGeo M Done] Player is in music mode but no change to videoAspect (\(musicModeGeo.videoAspect))")
         return
       }
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
-      let newGeometry = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newVidGeo)
+      let newGeometry = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newWindowGeo.video)
       applyMusicModeGeoInAnimationPipeline(newGeometry, duration: duration, showDefaultArt: showDefaultArt)
     default:
       log.error("[applyVidGeo Apply] INVALID MODE: \(currentLayout.mode)")
@@ -211,13 +208,14 @@ extension PlayerWindowController {
       let oldVidGeo = player.videoGeo
 
       DispatchQueue.main.async { [self] in
+        // TODO: if Preference.bool(for: .usePhysicalResolution) {}
+
+        // FIXME: regression: viewport keeps expanding when video runs into screen boundary
         let videoSizeScaled = oldVidGeo.videoSizeCAR.multiply(desiredVideoScale)
         let newGeoUnconstrained = windowedGeoForCurrentFrame().scaleVideo(to: videoSizeScaled, fitOption: .noConstraints)
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         let fitOption: ScreenFitOption = .stayInside
         let newGeometry = newGeoUnconstrained.refit(fitOption)
-
-        // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
         log.verbose("SetVideoScale: requested scale=\(desiredVideoScale)x, oldVideoSize=\(oldVidGeo.videoSizeCAR) → desiredVideoSize=\(videoSizeScaled)")
         applyWindowGeoInAnimationPipeline(newGeometry)
@@ -259,6 +257,7 @@ extension PlayerWindowController {
     }
   }
 
+  // FIXME: use resizeVideo, not resizeViewport
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     dispatchPrecondition(condition: .onQueue(.main))
     guard let window else { return }

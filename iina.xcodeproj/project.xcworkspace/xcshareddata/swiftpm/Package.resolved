@@ -1,4 +1,5 @@
 {
+  "originHash" : "93f1e2597b10b9262a94c17b5c047f840ca69a3171ece47366264ce487d5d016",
   "pins" : [
     {
       "identity" : "grmustache.swift",
@@ -46,5 +47,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

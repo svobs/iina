@@ -1027,7 +1027,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bufferIndicatorView.roundCorners(withRadius: roundedCornerRadius)
     osdVisualEffectView.roundCorners(withRadius: roundedCornerRadius)
     additionalInfoView.roundCorners(withRadius: roundedCornerRadius)
-    
+
+    // Video controllers and timeline indicators should not flip in a right-to-left language.
+    fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
+    fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
+
     if player.disableUI { hideFadeableViews() }
 
     // add notification observers
@@ -2920,14 +2924,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       osdIconHeightConstraint.priority = .defaultLow
     }
 
+    // Most OSD messages are displayed based on the configured language direction.
+    osdAccessoryProgress.userInterfaceLayoutDirection = osdVStackView.userInterfaceLayoutDirection
+    osdAccessoryText.baseWritingDirection = .natural
+    osdLabel.baseWritingDirection = .natural
     switch osdType {
     case .normal:
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryText)
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
+    case .withLeftToRightProgress(let value):
+      // OSD messages displaying the playback position must always be displayed left to right.
+      osdAccessoryProgress.userInterfaceLayoutDirection = .leftToRight
+      osdLabel.baseWritingDirection = .leftToRight
+      fallthrough
     case .withProgress(let value):
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryText)
       osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryProgress)
       osdAccessoryProgress.doubleValue = value
+    case .withLeftToRightText(let text):
+      // OSD messages displaying the playback position must always be displayed left to right.
+      osdAccessoryText.baseWritingDirection = .leftToRight
+      fallthrough
     case .withText(let text):
       osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryText)
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
@@ -3624,7 +3641,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       thumbOriginY = max(thumbnailExtraOffsetY, oscOriginInWindowY - thumbHeight - thumbnailExtraOffsetY)
     }
     // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
-    let minX = currentLayout.outsideLeadingBarWidth + thumbnailExtraOffsetX
+    let minX = (videoView.userInterfaceLayoutDirection == .rightToLeft ? currentLayout.outsideTrailingBarWidth : currentLayout.outsideLeadingBarWidth) + thumbnailExtraOffsetX
     let maxX = minX + availableWidth
     let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
     thumbnailPeekView.frame.origin = NSPoint(x: thumbOriginX, y: thumbOriginY)

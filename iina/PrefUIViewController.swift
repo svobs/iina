@@ -40,7 +40,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   override var sectionViews: [NSView] {
     return [sectionWindowView, sectionFullScreenView, sectionAppearanceView, sectionOSCView, sectionOSDView,
-            sectionSidebarsView, sectionThumbnailView, sectionPictureInPictureView]
+            sectionSidebarsView, sectionThumbnailView, sectionPictureInPictureView, sectionAccessibilityView]
   }
 
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
@@ -59,6 +59,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet var sectionSidebarsView: NSView!
   @IBOutlet var sectionThumbnailView: NSView!
   @IBOutlet var sectionPictureInPictureView: NSView!
+  @IBOutlet var sectionAccessibilityView: NSView!
 
   @IBOutlet weak var themeMenu: NSMenu!
   @IBOutlet weak var topBarPositionContainerView: NSView!
@@ -531,6 +532,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private func setSubViews(of view: NSBox, enabled: Bool) {
     view.contentView?.subviews.forEach { ($0 as? NSControl)?.isEnabled = enabled }
+  }
+
+  @IBAction func disableAnimationsHelpAction(_ sender: Any) {
+    NSWorkspace.shared.open(URL(string: AppData.disableAnimationsHelpLink)!)
   }
 }
 

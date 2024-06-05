@@ -139,7 +139,7 @@ class IINAAnimation {
         defer {
           CATransaction.commit()
         }
-        let disableAnimation = !isAnimationEnabled || AccessibilityPreferences.motionReductionEnabled
+        let disableAnimation = !isAnimationEnabled
         if disableAnimation {
           context.duration = 0
         } else {
@@ -167,7 +167,7 @@ class IINAAnimation {
       defer {
         CATransaction.commit()
       }
-      let disableAnimation = !isAnimationEnabled || AccessibilityPreferences.motionReductionEnabled
+      let disableAnimation = !isAnimationEnabled
       if disableAnimation {
         context.duration = 0
       } else {

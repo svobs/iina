@@ -632,9 +632,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let isPlaying = self.lastNowPlayingIndex == row
 
       if identifier == .isChosen {
+        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ?
+            Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
         // ▶︎ Is Playing icon
         if let textField = v.textField {
-          let text = isPlaying ? Constants.String.play : ""
+          let text = isPlaying ? pointer : ""
           textField.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
         }
       } else if identifier == .trackName {
@@ -656,7 +658,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
       if identifier == .isChosen {
         // left column
-        v.setTitle(isCurrentChapter ? Constants.String.play : "", textColor: textColor)
+        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ?
+        Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
+        v.setTitle(isCurrentChapter ? pointer : "", textColor: textColor)
       } else if identifier == .trackName {
         // right column
         let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
@@ -804,7 +808,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @IBAction func contextMenuDeleteFile(_ sender: ContextMenuItem) {
-    Logger.log("User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})")
+    player.log.debug("User chose to delete files from playlist at indexes: \(sender.targetRows.map{$0})")
 
     let playlistItems = player.info.playlist
     var successes = IndexSet()
@@ -813,7 +817,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard !playlistItems[index].isNetworkResource else { continue }
       let url = URL(fileURLWithPath: playlistItems[index].filename)
       do {
-        Logger.log("Trashing row \(index): \(url.standardizedFileURL)")
+        Logger.log("Trashing row \(index): \(url.standardizedFileURL)", subsystem: player.subsystem)
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
         successes.insert(index)
       } catch let error {

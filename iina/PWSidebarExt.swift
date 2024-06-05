@@ -811,7 +811,9 @@ extension PlayerWindowController {
   func isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: NSPoint) -> Bool {
     if currentLayout.leadingSidebar.visibleTabGroup == .playlist {
       let sf = leadingSidebarView.frame
-      let dragRectCenterX: CGFloat = sf.origin.x + sf.width
+
+      let dragRectCenterX = videoView.userInterfaceLayoutDirection == .rightToLeft ?
+      sf.origin.x - Constants.Sidebar.resizeActivationRadius : sf.origin.x + sf.width
 
       // TODO: need to find way to resize from inside of sidebar
       let activationRect = NSRect(x: dragRectCenterX,
@@ -828,7 +830,8 @@ extension PlayerWindowController {
   func isMousePosWithinTrailingSidebarResizeRect(mousePositionInWindow: NSPoint) -> Bool {
     if currentLayout.trailingSidebar.visibleTabGroup == .playlist {
       let sf = trailingSidebarView.frame
-      let dragRectCenterX: CGFloat = sf.origin.x
+      let dragRectCenterX = videoView.userInterfaceLayoutDirection == .rightToLeft ?
+      sf.origin.x + sf.width + Constants.Sidebar.resizeActivationRadius : sf.origin.x
 
       // TODO: need to find way to resize from inside of sidebar
       let activationRect = NSRect(x: dragRectCenterX - Constants.Sidebar.resizeActivationRadius,
@@ -843,7 +846,6 @@ extension PlayerWindowController {
   }
 
   func startResizingSidebar(with event: NSEvent) -> Bool {
-    guard let window else { return false }
     if isMousePosWithinLeadingSidebarResizeRect(mousePositionInWindow: event.locationInWindow) {
       Logger.log("User started resize of leading sidebar", level: .verbose, subsystem: player.subsystem)
       leadingSidebarIsResizing = true
@@ -883,9 +885,13 @@ extension PlayerWindowController {
       let newGeo: PWinGeometry?
 
       if leadingSidebarIsResizing {
-        newGeo = resizeLeadingSidebar(from: oldGeo, dragLocationX: dragEvent.locationInWindow.x)
+        let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
+        window!.frame.width - dragEvent.locationInWindow.x : dragEvent.locationInWindow.x) - 2
+        newGeo = resizeLeadingSidebar(from: oldGeo, desiredWidth: newWidth)
       } else if trailingSidebarIsResizing {
-        newGeo = resizeTrailingSidebar(from: oldGeo, dragLocationX: dragEvent.locationInWindow.x)
+        let newWidth = (videoView.userInterfaceLayoutDirection == .rightToLeft ?
+        dragEvent.locationInWindow.x : window!.frame.width - dragEvent.locationInWindow.x) - 2
+        newGeo = resizeTrailingSidebar(from: oldGeo, desiredWidth: newWidth)
       } else {
         return false
       }
@@ -907,11 +913,12 @@ extension PlayerWindowController {
     }
   }
 
-  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, dragLocationX: CGFloat) -> PWinGeometry? {
+  private func resizeLeadingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> PWinGeometry? {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
-    let desiredPlaylistWidth = clampPlaylistWidth(dragLocationX + 2)
+
+    let desiredPlaylistWidth = clampPlaylistWidth(desiredWidth)
 
     if currentLayout.leadingSidebar.placement == .insideViewport {
       // Stop sidebar from resizing when the viewportView is not wide enough to fit it.
@@ -955,12 +962,12 @@ extension PlayerWindowController {
     return newGeo
   }
 
-  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, dragLocationX: CGFloat) -> PWinGeometry? {
+  private func resizeTrailingSidebar(from oldGeo: PWinGeometry, desiredWidth: CGFloat) -> PWinGeometry? {
     let newPlaylistWidth: CGFloat
     let newGeo: PWinGeometry
     let currentLayout = currentLayout
     let viewportSize = oldGeo.viewportSize
-    let desiredPlaylistWidth = clampPlaylistWidth(oldGeo.windowFrame.width - dragLocationX - 2)
+    let desiredPlaylistWidth = clampPlaylistWidth(desiredWidth)
 
     if currentLayout.trailingSidebar.placement == .insideViewport {
       let negativeDeficit = min(0, currentLayout.spec.getExcessSpaceBetweenInsideSidebars(trailingSidebarWidth: desiredPlaylistWidth, in: viewportSize.width))

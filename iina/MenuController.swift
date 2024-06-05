@@ -645,6 +645,7 @@ class MenuController: NSObject, NSMenuDelegate {
       pluginMenu.addItem(.separator())
       pluginMenu.addItem(developerTool)
     }
+    pluginMenu.addItem(withTitle: "Reload all plugins", action: #selector(PlayerWindowController.reloadAllPlugins(_:)), keyEquivalent: "")
   }
 
   @discardableResult

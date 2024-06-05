@@ -69,6 +69,17 @@ class MPVController: NSObject {
     static let screenshot: UInt64 = 1000000
   }
 
+  /// Version number of the libass library.
+  ///
+  /// The mpv libass version property returns an integer encoded as a hex binary-coded decimal.
+  var libassVersion: String {
+    let version = getInt(MPVProperty.libassVersion)
+    let major = String(version >> 28 & 0xF, radix: 16)
+    let minor = String(version >> 20 & 0xFF, radix: 16)
+    let patch = String(version >> 12 & 0xFF, radix: 16)
+    return "\(major).\(minor).\(patch)"
+  }
+
   // The mpv_handle
   var mpv: OpaquePointer!
   var mpvRenderContext: OpaquePointer?
@@ -144,6 +155,13 @@ class MPVController: NSObject {
     MPVProperty.idleActive: MPV_FORMAT_FLAG
   ]
 
+  var log: Logger.Subsystem {
+    return mpvLogScanner.mpvLogSubsystem
+  }
+
+  /// Creates a `MPVController` object.
+  /// - Parameters:
+  ///   - playerCore: The player this `MPVController` will be associated with.
   init(playerCore: PlayerCore) {
     self.player = playerCore
     self.queue = MPVController.createQueue(playerLabel: playerCore.label)
@@ -155,7 +173,6 @@ class MPVController: NSObject {
     removeOptionObservers()
   }
 
-
   /// Determine if this Mac has an Apple Silicon chip.
   /// - Returns: `true` if running on a Mac with an Apple Silicon chip, `false` otherwise.
   private func runningOnAppleSilicon() -> Bool {
@@ -166,12 +183,12 @@ class MPVController: NSObject {
     var sysinfo = utsname()
     let result = uname(&sysinfo)
     guard result == EXIT_SUCCESS else {
-      Logger.log("uname failed returning \(result)", level: .error)
+      log.error("uname failed returning \(result)")
       return false
     }
     let data = Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN))
     guard let machine = String(bytes: data, encoding: .ascii) else {
-      Logger.log("Failed to construct string for sysinfo.machine", level: .error)
+      log.error("Failed to construct string for sysinfo.machine")
       return false
     }
     return machine.starts(with: "arm64")
@@ -188,7 +205,7 @@ class MPVController: NSObject {
   private func applyHardwareAccelerationWorkaround() {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
-      Logger.log("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
+      log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
       return
     }
     // Do not apply the workaround if the user has configured a value for the hwdec-codecs option in
@@ -200,7 +217,7 @@ class MPVController: NSObject {
         let userOptions = Preference.value(for: .userOptions) as? [[String]] {
       for op in userOptions {
         guard op[0] != MPVOption.Video.hwdecCodecs else {
-          Logger.log("""
+          log.debug("""
 Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
 not applying FFmpeg 9599 workaround
 """)
@@ -209,18 +226,8 @@ not applying FFmpeg 9599 workaround
       }
     }
     // Apply the workaround.
-    Logger.log("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
-    let value = "h264,vc1,hevc,vp8,av1,prores"
-    mpv_set_option_string(mpv, MPVOption.Video.hwdecCodecs, value)
-    Logger.log("Option \(MPVOption.Video.hwdecCodecs) has been set to: \(value)")
-  }
-
-  func updateKeepOpenOptionFromPrefs() {
-    setUserOption(PK.playlistAutoPlayNext, type: .other, forName: MPVOption.Window.keepOpen) { key in
-      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
-      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
-      return keepOpenPl ? "always" : (keepOpen ? yes_str : no_str)
-    }
+    log.debug("Disabling hardware acceleration for VP9 encoded videos to workaround FFmpeg 9599")
+    setOptionString(MPVOption.Video.hwdecCodecs, "h264,vc1,hevc,vp8,av1,prores")
   }
 
   /// Returns true if mpv's state has fallen behind the current user intention and it is currently operating on an entry
@@ -241,6 +248,22 @@ not applying FFmpeg 9599 workaround
     return isStale
   }
 
+  func updateKeepOpenOptionFromPrefs() {
+    setUserOption(PK.keepOpenOnFileEnd, type: .other, forName: MPVOption.Window.keepOpen,
+                  level: .verbose) { key in
+      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
+      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
+      return keepOpenPl ? "always" : (keepOpen ? yes_str : no_str)
+    }
+
+    setUserOption(PK.playlistAutoPlayNext, type: .other, forName: MPVOption.Window.keepOpen,
+                  level: .verbose) { key in
+      let keepOpen = Preference.bool(for: PK.keepOpenOnFileEnd)
+      let keepOpenPl = !Preference.bool(for: PK.playlistAutoPlayNext)
+      return keepOpenPl ? "always" : (keepOpen ? yes_str : no_str)
+    }
+  }
+
   /**
    Init the mpv context, set options
    */
@@ -253,10 +276,12 @@ not applying FFmpeg 9599 workaround
 
     if !player.info.isRestoring {
       if Preference.bool(for: .enableInitialVolume) {
-        setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false)
+        setUserOption(PK.initialVolume, type: .int, forName: MPVOption.Audio.volume, sync: false,
+                    level: .verbose)
       } else {
-        setUserOption(PK.softVolume, type: .int, forName: MPVOption.Audio.volume, sync: false)
-      }
+        setUserOption(PK.softVolume, type: .int, forName: MPVOption.Audio.volume, sync: false,
+                      level: .verbose)
+        }
     }
 
     // - Advanced
@@ -275,7 +300,7 @@ not applying FFmpeg 9599 workaround
     if Logger.enabled {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
       player.log.debug("Path of mpv log: \(path.quoted)")
-      chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.logFile, path))
+      chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))
     }
 
     applyHardwareAccelerationWorkaround()
@@ -289,15 +314,19 @@ not applying FFmpeg 9599 workaround
       Utility.screenshotCacheURL.path
     }
 
-    setUserOption(PK.screenshotFolder, type: .other, forName: MPVOption.Screenshot.screenshotDirectory, transformer: setScreenshotPath)
-    setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDirectory, transformer: setScreenshotPath)
+    setUserOption(PK.screenshotFolder, type: .other, forName: MPVOption.Screenshot.screenshotDirectory,
+                  level: .verbose, transformer: setScreenshotPath)
+    setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDirectory,
+                  level: .verbose, transformer: setScreenshotPath)
 
-    setUserOption(PK.screenshotFormat, type: .other, forName: MPVOption.Screenshot.screenshotFormat) { key in
+    setUserOption(PK.screenshotFormat, type: .other, forName: MPVOption.Screenshot.screenshotFormat,
+                  level: .verbose) { key in
       let v = Preference.integer(for: key)
       return Preference.ScreenshotFormat(rawValue: v)?.string
     }
 
-    setUserOption(PK.screenshotTemplate, type: .string, forName: MPVOption.Screenshot.screenshotTemplate)
+    setUserOption(PK.screenshotTemplate, type: .string, forName: MPVOption.Screenshot.screenshotTemplate,
+                  level: .verbose)
 
     // Disable mpv's media key system as it now uses the MediaPlayer Framework.
     // Dropped media key support in 10.11 and 10.12.
@@ -305,40 +334,45 @@ not applying FFmpeg 9599 workaround
 
     updateKeepOpenOptionFromPrefs()
 
-    chkErr(mpv_set_option_string(mpv, MPVOption.WatchLater.watchLaterDirectory, Utility.watchLaterURL.path))
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit)
-    setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback")
+    chkErr(setOptionString(MPVOption.WatchLater.watchLaterDirectory, Utility.watchLaterURL.path, level: .verbose))
+    setUserOption(PK.resumeLastPosition, type: .bool, forName: MPVOption.WatchLater.savePositionOnQuit,
+                  level: .verbose)
+    setUserOption(PK.resumeLastPosition, type: .bool, forName: "resume-playback", level: .verbose)
 
     if !player.info.isRestoring {  // if restoring, will use stored windowFrame instead
-      setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry)
+      setUserOption(.initialWindowSizePosition, type: .string, forName: MPVOption.Window.geometry,
+                  level: .verbose)
     }
 
     // - Codec
 
-    setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec) { key in
+    setUserOption(PK.hardwareDecoder, type: .other, forName: MPVOption.Video.hwdec,
+                  level: .verbose) { key in
       let value = Preference.integer(for: key)
       return Preference.HardwareDecoderOption(rawValue: value)?.mpvString ?? "auto"
     }
 
-    setUserOption(PK.maxVolume, type: .int, forName: MPVOption.Audio.volumeMax)
+    setUserOption(PK.maxVolume, type: .int, forName: MPVOption.Audio.volumeMax, level: .verbose)
 
-    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads)
-    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads)
+    setUserOption(PK.videoThreads, type: .int, forName: MPVOption.Video.vdLavcThreads, level: .verbose)
+    setUserOption(PK.audioThreads, type: .int, forName: MPVOption.Audio.adLavcThreads, level: .verbose)
 
-    setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang)
+    setUserOption(PK.audioLanguage, type: .string, forName: MPVOption.TrackSelection.alang,
+                  level: .verbose)
 
     var spdif: [String] = []
     if Preference.bool(for: PK.spdifAC3) { spdif.append("ac3") }
     if Preference.bool(for: PK.spdifDTS){ spdif.append("dts") }
     if Preference.bool(for: PK.spdifDTSHD) { spdif.append("dts-hd") }
-    setString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","))
+    setString(MPVOption.Audio.audioSpdif, spdif.joined(separator: ","), level: .verbose)
 
-    setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice)
+    setUserOption(PK.audioDevice, type: .string, forName: MPVOption.Audio.audioDevice, level: .verbose)
 
     // - Sub
 
-    chkErr(mpv_set_option_string(mpv, MPVOption.Subtitles.subAuto, "no"))
-    chkErr(mpv_set_option_string(mpv, MPVOption.Subtitles.subCodepage, Preference.string(for: .defaultEncoding)))
+    chkErr(setOptionString(MPVOption.Subtitles.subAuto, "no", level: .verbose))
+    chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
+                                   Preference.string(for: .defaultEncoding), level: .verbose))
     player.info.subEncoding = Preference.string(for: .defaultEncoding)
 
     let subOverrideHandler: OptionObserverInfo.Transformer = { key in
@@ -347,82 +381,96 @@ not applying FFmpeg 9599 workaround
       return v ? level.string : "yes"
     }
 
-    setUserOption(PK.ignoreAssStyles, type: .other, forName: MPVOption.Subtitles.subAssOverride, transformer: subOverrideHandler)
-    setUserOption(PK.subOverrideLevel, type: .other, forName: MPVOption.Subtitles.subAssOverride, transformer: subOverrideHandler)
+    setUserOption(PK.ignoreAssStyles, type: .other, forName: MPVOption.Subtitles.subAssOverride,
+                  level: .verbose, transformer: subOverrideHandler)
+    setUserOption(PK.subOverrideLevel, type: .other, forName: MPVOption.Subtitles.subAssOverride,
+                  level: .verbose, transformer: subOverrideHandler)
 
-    setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont)
-    setUserOption(PK.subTextSize, type: .float, forName: MPVOption.Subtitles.subFontSize)
+    setUserOption(PK.subTextFont, type: .string, forName: MPVOption.Subtitles.subFont, level: .verbose)
+    setUserOption(PK.subTextSize, type: .float, forName: MPVOption.Subtitles.subFontSize, level: .verbose)
 
-    setUserOption(PK.subTextColorString, type: .color, forName: MPVOption.Subtitles.subColor)
-    setUserOption(PK.subBgColorString, type: .color, forName: MPVOption.Subtitles.subBackColor)
+    setUserOption(PK.subTextColorString, type: .color, forName: MPVOption.Subtitles.subColor, level: .verbose)
+    setUserOption(PK.subBgColorString, type: .color, forName: MPVOption.Subtitles.subBackColor, level: .verbose)
 
-    setUserOption(PK.subBold, type: .bool, forName: MPVOption.Subtitles.subBold)
-    setUserOption(PK.subItalic, type: .bool, forName: MPVOption.Subtitles.subItalic)
+    setUserOption(PK.subBold, type: .bool, forName: MPVOption.Subtitles.subBold, level: .verbose)
+    setUserOption(PK.subItalic, type: .bool, forName: MPVOption.Subtitles.subItalic, level: .verbose)
 
-    setUserOption(PK.subBlur, type: .float, forName: MPVOption.Subtitles.subBlur)
-    setUserOption(PK.subSpacing, type: .float, forName: MPVOption.Subtitles.subSpacing)
+    setUserOption(PK.subBlur, type: .float, forName: MPVOption.Subtitles.subBlur, level: .verbose)
+    setUserOption(PK.subSpacing, type: .float, forName: MPVOption.Subtitles.subSpacing, level: .verbose)
 
-    setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subBorderSize)
-    setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subBorderColor)
+    setUserOption(PK.subBorderSize, type: .float, forName: MPVOption.Subtitles.subBorderSize,
+                  level: .verbose)
+    setUserOption(PK.subBorderColorString, type: .color, forName: MPVOption.Subtitles.subBorderColor,
+                  level: .verbose)
 
-    setUserOption(PK.subShadowSize, type: .float, forName: MPVOption.Subtitles.subShadowOffset)
-    setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subShadowColor)
+    setUserOption(PK.subShadowSize, type: .float, forName: MPVOption.Subtitles.subShadowOffset,
+                  level: .verbose)
+    setUserOption(PK.subShadowColorString, type: .color, forName: MPVOption.Subtitles.subShadowColor,
+                  level: .verbose)
 
-    setUserOption(PK.subAlignX, type: .other, forName: MPVOption.Subtitles.subAlignX) { key in
+    setUserOption(PK.subAlignX, type: .other, forName: MPVOption.Subtitles.subAlignX,
+                  level: .verbose) { key in
       let v = Preference.integer(for: key)
       return Preference.SubAlign(rawValue: v)?.stringForX
     }
 
-    setUserOption(PK.subAlignY, type: .other, forName: MPVOption.Subtitles.subAlignY) { key in
+    setUserOption(PK.subAlignY, type: .other, forName: MPVOption.Subtitles.subAlignY,
+                  level: .verbose) { key in
       let v = Preference.integer(for: key)
       return Preference.SubAlign(rawValue: v)?.stringForY
     }
 
-    setUserOption(PK.subMarginX, type: .int, forName: MPVOption.Subtitles.subMarginX)
-    setUserOption(PK.subMarginY, type: .int, forName: MPVOption.Subtitles.subMarginY)
+    setUserOption(PK.subMarginX, type: .int, forName: MPVOption.Subtitles.subMarginX, level: .verbose)
+    setUserOption(PK.subMarginY, type: .int, forName: MPVOption.Subtitles.subMarginY, level: .verbose)
 
-    setUserOption(PK.subPos, type: .int, forName: MPVOption.Subtitles.subPos)
+    setUserOption(PK.subPos, type: .int, forName: MPVOption.Subtitles.subPos, level: .verbose)
 
-    setUserOption(PK.subLang, type: .string, forName: MPVOption.TrackSelection.slang)
+    setUserOption(PK.subLang, type: .string, forName: MPVOption.TrackSelection.slang, level: .verbose)
 
-    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subUseMargins)
-    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subAssForceMargins)
+    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subUseMargins, level: .verbose)
+    setUserOption(PK.displayInLetterBox, type: .bool, forName: MPVOption.Subtitles.subAssForceMargins, level: .verbose)
 
-    setUserOption(PK.subScaleWithWindow, type: .bool, forName: MPVOption.Subtitles.subScaleByWindow)
+    setUserOption(PK.subScaleWithWindow, type: .bool, forName: MPVOption.Subtitles.subScaleByWindow, level: .verbose)
 
     // - Network / cache settings
 
-    setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache) { key in
+    setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
+                  level: .verbose) { key in
       return Preference.bool(for: key) ? nil : "no"
     }
 
-    setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes) { key in
+    setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
+                  level: .verbose) { key in
       return "\(Preference.integer(for: key))KiB"
     }
-    setUserOption(PK.secPrefech, type: .int, forName: MPVOption.Cache.cacheSecs)
+    setUserOption(PK.secPrefech, type: .int, forName: MPVOption.Cache.cacheSecs, level: .verbose)
 
-    setUserOption(PK.userAgent, type: .other, forName: MPVOption.Network.userAgent) { key in
+    setUserOption(PK.userAgent, type: .other, forName: MPVOption.Network.userAgent,
+                  level: .verbose) { key in
       let ua = Preference.string(for: key)!
       return ua.isEmpty ? nil : ua
     }
 
-    setUserOption(PK.transportRTSPThrough, type: .other, forName: MPVOption.Network.rtspTransport) { key in
+    setUserOption(PK.transportRTSPThrough, type: .other, forName: MPVOption.Network.rtspTransport,
+                  level: .verbose) { key in
       let v: Preference.RTSPTransportation = Preference.enum(for: .transportRTSPThrough)
       return v.string
     }
 
-    setUserOption(PK.ytdlEnabled, type: .bool, forName: MPVOption.ProgramBehavior.ytdl)
-    setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions)
+    setUserOption(PK.ytdlEnabled, type: .bool, forName: MPVOption.ProgramBehavior.ytdl, level: .verbose)
+    setUserOption(PK.ytdlRawOptions, type: .string, forName: MPVOption.ProgramBehavior.ytdlRawOptions,
+                  level: .verbose)
     let propertiesToReset = [MPVOption.PlaybackControl.abLoopA, MPVOption.PlaybackControl.abLoopB]
-    chkErr(mpv_set_option_string(mpv, MPVOption.ProgramBehavior.resetOnNextFile, propertiesToReset.joined(separator: ",")))
+    chkErr(setOptionString(MPVOption.ProgramBehavior.resetOnNextFile,
+           propertiesToReset.joined(separator: ","), level: .verbose))
 
     // Set user defined conf dir.
     if Preference.bool(for: .enableAdvancedSettings),
        Preference.bool(for: .useUserDefinedConfDir),
        var userConfDir = Preference.string(for: .userDefinedConfDir) {
       userConfDir = NSString(string: userConfDir).standardizingPath
-      mpv_set_option_string(mpv, "config", "yes")
-      let status = mpv_set_option_string(mpv, MPVOption.ProgramBehavior.configDir, userConfDir)
+      setOptionString("config", "yes", level: .verbose)
+      let status = setOptionString(MPVOption.ProgramBehavior.configDir, userConfDir)
       if status < 0 {
         DispatchQueue.main.async {
           Utility.showAlert("extra_option.config_folder", arguments: [userConfDir])
@@ -433,15 +481,19 @@ not applying FFmpeg 9599 workaround
     // Set user defined options.
     if Preference.bool(for: .enableAdvancedSettings) {
       if let userOptions = Preference.value(for: .userOptions) as? [[String]] {
-        userOptions.forEach { op in
-          let status = mpv_set_option_string(mpv, op[0], op[1])
-          if status < 0 {
-            let errorString = String(cString: mpv_error_string(status))
-            DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
-              Utility.showAlert("extra_option.error", arguments:
-                                  [op[0], op[1], status, errorString])
+        if !userOptions.isEmpty {
+          log.debug("Setting \(userOptions.count) user configured mpv option values")
+          userOptions.forEach { op in
+            let status = setOptionString(op[0], op[1])
+            if status < 0 {
+              let errorString = String(cString: mpv_error_string(status))
+              DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+                Utility.showAlert("extra_option.error", arguments:
+                                                        [op[0], op[1], status, errorString])
+                }
             }
           }
+          log.debug("Set user configured mpv option values")
         }
       } else {
         DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
@@ -454,7 +506,7 @@ not applying FFmpeg 9599 workaround
 
     // Load keybindings. This is still required for mpv to handle media keys or apple remote.
     let inputConfPath = ConfTableState.current.selectedConfFilePath
-    chkErr(mpv_set_option_string(mpv, MPVOption.Input.inputConf, inputConfPath))
+    chkErr(setOptionalOptionString(MPVOption.Input.inputConf, inputConfPath, level: .verbose))
 
     // Receive log messages at given level of verbosity.
     chkErr(mpv_request_log_messages(mpv, mpvLogSubscriptionLevel))
@@ -478,9 +530,9 @@ not applying FFmpeg 9599 workaround
 
     // Set options that can be override by user's config. mpv will log user config when initialize,
     // so we put them here.
-    chkErr(mpv_set_property_string(mpv, MPVOption.Video.vo, "libmpv"))
-    chkErr(mpv_set_property_string(mpv, MPVOption.Window.keepaspect, "no"))
-    chkErr(mpv_set_property_string(mpv, MPVOption.Video.gpuHwdecInterop, "auto"))
+    chkErr(setString(MPVOption.Video.vo, "libmpv", level: .verbose))
+    chkErr(setString(MPVOption.Window.keepaspect, "no", level: .verbose))
+    chkErr(setString(MPVOption.Video.gpuHwdecInterop, "auto", level: .verbose))
 
     // The option watch-later-options is not available until after the mpv instance is initialized.
     // In mpv 0.34.1 the default value for the watch-later-options property contains the option
@@ -613,13 +665,14 @@ not applying FFmpeg 9599 workaround
 
   /// Send arbitrary mpv command. Returns mpv return code.
   @discardableResult
-  func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true) -> Int32 {
+  func command(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
+               level: Logger.Level = .debug) -> Int32 {
     if Logger.isEnabled(.verbose) {
       if command == .loadfile, let filename = args[0] {
         _ = Logger.getOrCreatePII(for: filename)
       }
-      player.log.verbose("Sending mpv cmd: \(command.rawValue.quoted), args: \(args.compactMap{$0})")
     }
+    log.log("Run command: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))", level: level)
     var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
     defer {
       for ptr in cargs {
@@ -635,12 +688,16 @@ not applying FFmpeg 9599 workaround
     return returnValue
   }
 
-  func command(rawString: String) -> Int32 {
+  func command(rawString: String, level: Logger.Level = .debug) -> Int32 {
+    log.log("Run command: \(rawString)", level: level)
     return mpv_command_string(mpv, rawString)
   }
 
-  func asyncCommand(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true, replyUserdata: UInt64) {
+  func asyncCommand(_ command: MPVCommand, args: [String?] = [], checkError: Bool = true,
+                    replyUserdata: UInt64, level: Logger.Level = .debug) {
     guard mpv != nil else { return }
+    log.log("Asynchronously run command: \(command.rawValue) \(args.compactMap{$0}.joined(separator: " "))",
+        level: level)
     var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
     defer {
       for ptr in cargs {
@@ -661,7 +718,8 @@ not applying FFmpeg 9599 workaround
   }
 
   // Set property
-  func setFlag(_ name: String, _ flag: Bool) {
+  func setFlag(_ name: String, _ flag: Bool, level: Logger.Level = .debug) {
+    log.log("Set property: \(name)=\(flag)", level: level)
     var data: Int = flag ? 1 : 0
     let code = mpv_set_property(mpv, name, MPV_FORMAT_FLAG, &data)
     if code < 0 {
@@ -669,12 +727,14 @@ not applying FFmpeg 9599 workaround
     }
   }
 
-  func setInt(_ name: String, _ value: Int) {
+  func setInt(_ name: String, _ value: Int, level: Logger.Level = .debug) {
+    log.log("Set property: \(name)=\(value)", level: level)
     var data = Int64(value)
     mpv_set_property(mpv, name, MPV_FORMAT_INT64, &data)
   }
 
-  func setDouble(_ name: String, _ value: Double) {
+  func setDouble(_ name: String, _ value: Double, level: Logger.Level = .debug) {
+    log.log("Set property: \(name)=\(value)", level: level)
     var data = value
     mpv_set_property(mpv, name, MPV_FORMAT_DOUBLE, &data)
   }
@@ -694,8 +754,10 @@ not applying FFmpeg 9599 workaround
     mpv_set_property_async(mpv, 0, name, MPV_FORMAT_DOUBLE, &data)
   }
 
-  func setString(_ name: String, _ value: String) {
-    mpv_set_property_string(mpv, name, value)
+  @discardableResult
+  func setString(_ name: String, _ value: String, level: Logger.Level = .debug) -> Int32 {
+    log.log("Set property: \(name)=\(value)", level: level)
+    return mpv_set_property_string(mpv, name, value)
   }
 
   func getInt(_ name: String) -> Int {
@@ -816,8 +878,7 @@ not applying FFmpeg 9599 workaround
     // it is unlikely in practice that this method will be called with an invalid index, but we will
     // validate the index nonetheless to insure this code does not trigger a crash.
     guard index < oldList.num else {
-      Logger.log("Found \(oldList.num) \(name) filters, index of filter to remove (\(index)) is invalid",
-                 level: .error)
+      log.error("Found \(oldList.num) \(name) filters, index of filter to remove (\(index)) is invalid")
       return false
     }
 
@@ -860,6 +921,7 @@ not applying FFmpeg 9599 workaround
     newNode.u.list = newListPtr
 
     // Set the list of filters using the new node that leaves out the filter to be removed.
+    log.debug("Set property: \(name)=<a mpv node>")
     let returnValue = mpv_set_property(mpv, name, MPV_FORMAT_NODE, &newNode)
     return returnValue == 0
   }
@@ -893,9 +955,10 @@ not applying FFmpeg 9599 workaround
 
   func setNode(_ name: String, _ value: Any) {
     guard var node = try? MPVNode.create(value) else {
-      Logger.log("setNode: cannot encode value for \(name)", level: .error)
+      log.error("setNode: cannot encode value for \(name)")
       return
     }
+    log.debug("Set property: \(name)=<a mpv node>")
     mpv_set_property(mpv, name, MPV_FORMAT_NODE, &node)
     MPVNode.free(node)
   }
@@ -911,16 +974,16 @@ not applying FFmpeg 9599 workaround
   func syncVideoGeometryFromMPV() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
     guard let currentMedia = player.info.currentMedia else {
-      player.log.verbose("Cannot get videoGeo from mpv: currentMedia is nil")
+      log.verbose("Cannot get videoGeo from mpv: currentMedia is nil")
       return nil
     }
     guard currentMedia.isFileLoaded else {
-      player.log.verbose("Cannot get videoGeo from mpv: file not loaded")
+      log.verbose("Cannot get videoGeo from mpv: file not loaded")
       return nil
     }
     // Will crash if querying mpv after stop command started
     guard !player.isStopping else {
-      player.log.verbose("Cannot get videoGeo: status=\(player.status)")
+      log.verbose("Cannot get videoGeo: status=\(player.status)")
       return nil
     }
 
@@ -1576,29 +1639,50 @@ not applying FFmpeg 9599 workaround
 
   private var optionObservers: [String: [OptionObserverInfo]] = [:]
 
-  private func setUserOption(_ key: Preference.Key, type: UserOptionType, forName name: String, sync: Bool = true, transformer: OptionObserverInfo.Transformer? = nil) {
+  private func setOptionFloat(_ name: String, _ value: Float, level: Logger.Level = .debug) -> Int32 {
+    log.log("Set option: \(name)=\(value)", level: level)
+    var data = Double(value)
+    return mpv_set_option(mpv, name, MPV_FORMAT_DOUBLE, &data)
+  }
+
+  private func setOptionInt(_ name: String, _ value: Int, level: Logger.Level = .debug) -> Int32 {
+    log.log("Set option: \(name)=\(value)", level: level)
+    var data = Int64(value)
+    return mpv_set_option(mpv, name, MPV_FORMAT_INT64, &data)
+  }
+
+  @discardableResult
+  private func setOptionString(_ name: String, _ value: String, level: Logger.Level = .debug) -> Int32 {
+    log.log("Set option: \(name)=\(value)", level: level)
+    return mpv_set_option_string(mpv, name, value)
+  }
+
+  private func setOptionalOptionString(_ name: String, _ value: String?,
+                                       level: Logger.Level = .debug) -> Int32 {
+    guard let value = value else { return 0 }
+    return setOptionString(name, value, level: level)
+  }
+
+  private func setUserOption(_ key: Preference.Key, type: UserOptionType, forName name: String,
+                             sync: Bool = true, level: Logger.Level = .debug,
+                             transformer: OptionObserverInfo.Transformer? = nil) {
     var code: Int32 = 0
 
     let keyRawValue = key.rawValue
 
     switch type {
     case .int:
-      let value = Preference.integer(for: key)
-      var i = Int64(value)
-      code = mpv_set_option(mpv, name, MPV_FORMAT_INT64, &i)
+      code = setOptionInt(name, Preference.integer(for: key), level: level)
 
     case .float:
-      let value = Preference.float(for: key)
-      var d = Double(value)
-      code = mpv_set_option(mpv, name, MPV_FORMAT_DOUBLE, &d)
+      code = setOptionFloat(name, Preference.float(for: key), level: level)
 
     case .bool:
       let value = Preference.bool(for: key)
-      code = mpv_set_option_string(mpv, name, value ? yes_str : no_str)
+      code = setOptionString(name, value ? yes_str : no_str, level: level)
 
     case .string:
-      let value = Preference.string(for: key)
-      code = mpv_set_option_string(mpv, name, value)
+      code = setOptionalOptionString(name, Preference.string(for: key), level: level)
 
     case .color:
       let value = Preference.string(for: key)
@@ -1606,16 +1690,16 @@ not applying FFmpeg 9599 workaround
       // Random error here (perhaps a Swift or mpv one), so set it twice
       // 「没有什么是 set 不了的；如果有，那就 set 两次」
       if code < 0 {
-        code = mpv_set_option_string(mpv, name, value)
+        code = setOptionalOptionString(name, value, level: level)
       }
 
     case .other:
       guard let tr = transformer else {
-        Logger.log("setUserOption: no transformer!", level: .error)
+        log.error("setUserOption: no transformer!")
         return
       }
       if let value = tr(key) {
-        code = mpv_set_option_string(mpv, name, value)
+        code = setOptionString(name, value, level: level)
       } else {
         code = 0
       }
@@ -1668,7 +1752,7 @@ not applying FFmpeg 9599 workaround
 
       case .other:
         guard let tr = info.transformer else {
-          Logger.log("setUserOption: no transformer!", level: .error)
+          log.error("setUserOption: no transformer!")
           return
         }
         if let value = tr(info.prefKey) {

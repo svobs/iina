@@ -125,8 +125,12 @@ class Logger: NSObject {
       Logger.log(rawMessage, level: .warning, subsystem: self)
     }
 
-     func error(_ rawMessage: String) {
-       Logger.log(rawMessage, level: .error, subsystem: self)
+    func error(_ rawMessage: String) {
+      Logger.log(rawMessage, level: .error, subsystem: self)
+    }
+
+    func log(_ rawMessage: String, level: Level = .debug) {
+      Logger.log(rawMessage, level: level, subsystem: self)
     }
   }
 

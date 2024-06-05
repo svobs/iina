@@ -28,7 +28,7 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="qu5-4u-ozP" userLabel="Prefs &gt; Utils &gt; Default Application">
             <rect key="frame" x="0.0" y="0.0" width="420" height="68"/>
             <subviews>
-                <textField identifier="SectionTitleDefaultApp" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jnk-en-c84">
+                <textField identifier="SectionTitleDefaultApp" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jnk-en-c84">
                     <rect key="frame" x="-2" y="44" width="129" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Default Application" id="ORO-lK-yK5">
                         <font key="font" metaFont="systemBold"/>
@@ -61,7 +61,7 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Bem-Ss-PQZ" userLabel="Prefs &gt; Utils &gt; Alerts">
             <rect key="frame" x="0.0" y="0.0" width="420" height="104"/>
             <subviews>
-                <textField identifier="SectionTitleRestoreAlert" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2lD-HN-fmS">
+                <textField identifier="SectionTitleRestoreAlert" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2lD-HN-fmS">
                     <rect key="frame" x="-2" y="80" width="97" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Restore Alerts" id="AAD-Db-Acs">
                         <font key="font" metaFont="systemBold"/>
@@ -79,7 +79,7 @@
                         </connections>
                     </buttonCell>
                 </button>
-                <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="xmX-IR-h5j">
+                <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="xmX-IR-h5j">
                     <rect key="frame" x="-2" y="36" width="424" height="28"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="The button below will restore all alerts that have been suppressed using the &quot;Do not show this message again&quot; checkbox." id="F5i-KF-2SW">
                         <font key="font" metaFont="smallSystem"/>
@@ -87,7 +87,7 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KAc-Jd-4LW">
+                <textField hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KAc-Jd-4LW">
                     <rect key="frame" x="199" y="11" width="55" height="14"/>
                     <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" title="Restored." id="Wdh-me-hdC">
                         <font key="font" metaFont="smallSystem"/>
@@ -116,7 +116,7 @@
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="lOp-07-Z6M" userLabel="Prefs &gt; Utils &gt; Browser Extension">
             <rect key="frame" x="0.0" y="0.0" width="420" height="102"/>
             <subviews>
-                <textField identifier="SectionTitleBrowserExt" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Al6-1d-mCg">
+                <textField identifier="SectionTitleBrowserExt" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Al6-1d-mCg">
                     <rect key="frame" x="-2" y="78" width="211" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Get Browser Extensions for IINA" id="zCe-1f-tkF">
                         <font key="font" metaFont="systemBold"/>
@@ -125,8 +125,8 @@
                     </textFieldCell>
                 </textField>
                 <button identifier="FunctionalButtonChrome" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HRq-fs-0uo">
-                    <rect key="frame" x="0.0" y="8" width="73" height="18"/>
-                    <buttonCell key="cell" type="inline" title="Chrome" bezelStyle="inline" image="NSFollowLinkFreestandingTemplate" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="yuw-2i-ICd">
+                    <rect key="frame" x="0.0" y="8" width="70" height="18"/>
+                    <buttonCell key="cell" type="inline" title="Chrome" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="yuw-2i-ICd">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="smallSystemBold"/>
                     </buttonCell>
@@ -135,8 +135,8 @@
                     </connections>
                 </button>
                 <button identifier="FunctionalButtonFirefox" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="G58-js-HgZ">
-                    <rect key="frame" x="85" y="8" width="68" height="18"/>
-                    <buttonCell key="cell" type="inline" title="Firefox" bezelStyle="inline" image="NSFollowLinkFreestandingTemplate" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="f9i-sS-MJN">
+                    <rect key="frame" x="82" y="8" width="65" height="18"/>
+                    <buttonCell key="cell" type="inline" title="Firefox" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="f9i-sS-MJN">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="smallSystemBold"/>
                     </buttonCell>
@@ -144,7 +144,7 @@
                         <action selector="extFirefoxBtnAction:" target="-2" id="zrp-Bb-ZGc"/>
                     </connections>
                 </button>
-                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DZn-sK-pTY">
+                <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="DZn-sK-pTY">
                     <rect key="frame" x="-2" y="34" width="424" height="28"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Open links or current webpage in IINA with one click. The website must be supported by youtube-dl." id="GAo-fx-NG0">
                         <font key="font" metaFont="smallSystem"/>
@@ -178,7 +178,7 @@
                 <rect key="frame" x="0.0" y="0.0" width="448" height="192"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="2JS-Ar-lM8">
+                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="2JS-Ar-lM8">
                         <rect key="frame" x="18" y="140" width="412" height="32"/>
                         <textFieldCell key="cell" sendsActionOnEndEditing="YES" title="Please select the media types that you want to make IINA as the default Application for." id="uvK-Y1-dZr">
                             <font key="font" metaFont="system"/>
@@ -260,6 +260,6 @@ Gw
         </window>
     </objects>
     <resources>
-        <image name="NSFollowLinkFreestandingTemplate" width="20" height="20"/>
+        <image name="forward" width="11" height="11"/>
     </resources>
 </document>

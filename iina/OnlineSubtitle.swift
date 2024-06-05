@@ -29,6 +29,7 @@ class OnlineSubtitle {
   enum CommonError: Error {
     case noResult
     case canceled
+    case dismissed
     case cannotConnect(Error)
     case networkError(Error?)
     case timedOut(Error)
@@ -264,6 +265,11 @@ class OnlineSubtitle {
         osdMessage = .canceled
         // Not an error.
         log("User canceled download of subtitles")
+      case CommonError.dismissed:
+        // Operation dismissed by, for example, a plugin with custom implementation.
+        log("Default subtitle search wokflow dismissed")
+        player.isSearchingOnlineSubtitle = false
+        return
       default:
         // TODO: include message in network error OSD
         osdMessage = .networkError
