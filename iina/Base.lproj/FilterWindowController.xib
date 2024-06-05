@@ -460,7 +460,7 @@
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="283" y="305" width="620" height="400"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
-            <value key="minSize" type="size" width="320" height="200"/>
+            <value key="minSize" type="size" width="320" height="370"/>
             <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RNP-NG-UVn" userLabel="Window Content View">
                 <rect key="frame" x="0.0" y="0.0" width="450" height="200"/>
                 <subviews>
