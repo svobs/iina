@@ -25,7 +25,6 @@ class MediaItem: CustomStringConvertible {
     case started              /// set after mpv sends `fileStarted` notification
     case loaded               /// set after mpv sends `fileLoaded` notification
     case completelyLoaded     /// everything loaded by mpv, including filters
-    case videoGeometryApplied /// VideoGeometry has been applied by IINA
     case ended                /// Not used at present
 
     var description: String {
@@ -38,8 +37,6 @@ class MediaItem: CustomStringConvertible {
         return "loaded"
       case .completelyLoaded:
         return "completelyLoaded"
-      case .videoGeometryApplied:
-        return "videoGeometryApplied"
       case .ended:
         return "ended"
       }
@@ -143,7 +140,7 @@ class PlaybackInfo {
   /// File not completely done loading
   var isNotDoneLoading: Bool {
     guard let currentMedia else { return false }
-    return currentMedia.loadStatus.isNotYet(.videoGeometryApplied)
+    return currentMedia.loadStatus.isNotYet(.completelyLoaded)
   }
   var timeLastFileOpenFinished: TimeInterval = 0
   var timeSinceLastFileOpenFinished: TimeInterval {

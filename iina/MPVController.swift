@@ -1004,7 +1004,7 @@ not applying FFmpeg 9599 workaround
                                totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 
-    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo)")
+    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentMedia.path)")
     // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
     let videoSizeC = vidGeo.videoSizeC
     if (abs(Int(videoSizeC.width) - dwidth) > 1) || (abs(Int(videoSizeC.height) - dheight) > 1) {
@@ -1522,7 +1522,7 @@ not applying FFmpeg 9599 workaround
       guard player.windowController.loaded else { break }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
-      let isAlreadySized = player.info.currentMedia?.loadStatus.isAtLeast(.videoGeometryApplied) ?? false
+      let isAlreadySized = player.info.currentMedia?.loadStatus.isAtLeast(.completelyLoaded) ?? false
       guard isAlreadySized else { break }
 
       let cachedVideoScale: CGFloat

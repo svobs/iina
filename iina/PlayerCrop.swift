@@ -76,25 +76,24 @@ extension PlayerCore {
   }
 
   func _removeCrop() {
-    updateSelectedCrop(to: AppData.noneCropIdentifier)
+    // special kludge when removing crop while entering interactive mode
+    guard !info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) else {
+      log.verbose("Ignoring request to remove crop because looks like we are transitioning to interactive mode")
+      return
+    }
+
+    guard let cropFilter = videoGeo.cropFilter else { return }
+
+    log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
+    removeVideoFilter(cropFilter, verify: false)
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
-    // special kludge when removing crop while entering interactive mode
-    if newCropLabel == AppData.noneCropIdentifier, info.videoFiltersDisabled.keys.contains(Constants.FilterLabel.crop) {
-      log.verbose("Ignoring \(newCropLabel) because it looks like a transition to interactive mode")
-      return
-    }
     if videoGeo.selectedCropLabel != newCropLabel {
       log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
       let oldVidGeo = videoGeo
-
-      if newCropLabel == AppData.noneCropIdentifier, let cropFilter = oldVidGeo.cropFilter {
-        log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
-        removeVideoFilter(cropFilter, verify: false)
-      }
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))

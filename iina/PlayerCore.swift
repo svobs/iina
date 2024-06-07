@@ -2112,7 +2112,9 @@ class PlayerCore: NSObject {
     guard let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: url, log) else { return }
     let newVidGeo = videoGeo.substituting(ffMeta)
     log.verbose("Calling applyVidGeo from preResizeVideo with \(newVidGeo)")
-    windowController.applyVidGeo(newVidGeo)
+    DispatchQueue.main.async { [self] in
+      windowController.updateGeometryForVideoOpen(newVidGeo: newVidGeo, showDefaultArt: nil)
+    }
   }
 
   func fileStarted(path: String, playlistPos: Int) {
@@ -2371,18 +2373,6 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !mpv.isStale(), let currentMedia = info.currentMedia else { return }
 
-    // Make sure to call this because mpv does not always trigger it.
-    let newVidGeo: VideoGeometry
-    if let mpvVidGeo = mpv.syncVideoGeometryFromMPV() {
-      newVidGeo = mpvVidGeo
-    } else {
-      // Sometimes when closing & reopening player windows too quickly, mpv falls behind
-      // and reports 0 for width or height.
-      // But should be fine to ignore because we now get videoSize from ffmpeg before opening in mpv.
-      log.verbose("Falling back to cached vidGeo because mpv failed to return a valid rawSize")
-      newVidGeo = videoGeo
-    }
-
     guard currentMedia.loadStatus.isAtLeast(.started) else {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentMedia.loadStatus.description.quoted))")
       return
@@ -2396,25 +2386,17 @@ class PlayerCore: NSObject {
 
     log.verbose("File is completely loaded")
 
-    /// Need to distinguish between `completelyLoaded` and `videoGeometryApplied`:
-    /// - `completelyLoaded` means that `fileIsCompletelyDoneLoading` will not get called again, but `applyVidGeo` has to finish up
-    /// - `videoGeometryApplied` means that file is completely done loading for `applyVidGeo` too
     currentMedia.loadStatus = .completelyLoaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
-    // Always send this to window controller. It should be smart enough to resize only when needed:
-    log.verbose("Calling applyVidGeo from fileIsCompletelyDoneLoading")
-
-    /// Show default album art? If yes, then use its video geometry.
-    // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
+    /// Show default album art?
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
-
-    DispatchQueue.main.async { [self] in
-      windowController.updateGeometryForVideoOpen(newVidGeo: newVidGeo, showDefaultArt: showDefaultArt)
+    if let showDefaultArt {
+      DispatchQueue.main.async { [self] in
+        log.verbose("Calling updateDefaultArtVisibility from fileIsCompletelyDoneLoading")
+        windowController.updateDefaultArtVisibility(showDefaultArt)
+      }
     }
-
-    /// Once this is set, `info.isNotDoneLoading` will return `false`
-    currentMedia.loadStatus = .videoGeometryApplied
 
     if let priorState = info.priorState {
       if priorState.string(for: .playPosition) != nil {

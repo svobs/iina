@@ -113,11 +113,7 @@ extension PlayerWindowController {
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWindowGeo
 
-        if let showDefaultArt {
-          log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
-          // Update default album art visibility:
-          defaultAlbumArtView.isHidden = !showDefaultArt
-        }
+        updateDefaultArtVisibility(showDefaultArt)
       })]
 
     case .musicMode:
@@ -475,11 +471,7 @@ extension PlayerWindowController {
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.videoLayer.enterAsynchronousMode()
       hideSeekTimeAndThumbnail()
-      if let showDefaultArt {
-        log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
-        // Update default album art visibility:
-        defaultAlbumArtView.isHidden = !showDefaultArt
-      }
+      updateDefaultArtVisibility(showDefaultArt)
     })
 
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
@@ -528,11 +520,7 @@ extension PlayerWindowController {
     tasks.append(IINAAnimation.suddenTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
 
-      if let showDefaultArt {
-        log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt in musicMode (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
-        // Update default album art visibility:
-        defaultAlbumArtView.isHidden = !showDefaultArt
-      }
+      updateDefaultArtVisibility(showDefaultArt)
     })
     tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
       applyMusicModeGeo(geometry)

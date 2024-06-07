@@ -990,9 +990,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       cv.addSubview(view)
     }
 
-    // Default album art
+    // Init default album art
     defaultAlbumArtView.wantsLayer = true
-    defaultAlbumArtView.alphaValue = 1
     defaultAlbumArtView.isHidden = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
     viewportView.addSubview(defaultAlbumArtView)
@@ -3653,6 +3652,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   // MARK: - UI: Other
+
+  func updateDefaultArtVisibility(_ showDefaultArt: Bool?) {
+    dispatchPrecondition(condition: .onQueue(.main))
+    guard let showDefaultArt else { return }
+
+    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
+    // Update default album art visibility:
+    defaultAlbumArtView.isHidden = !showDefaultArt
+  }
 
   func hideSeekTimeAndThumbnail() {
     thumbnailPeekView.isHidden = true
