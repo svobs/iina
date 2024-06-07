@@ -81,6 +81,9 @@ enum WindowAutosaveName: Equatable, Hashable {
   case audioFilter
   case fontPicker
   case playerWindow(id: String)
+  case newFilter
+  case editFilter
+  case saveFilter
 
   var string: String {
     switch self {
@@ -106,6 +109,12 @@ enum WindowAutosaveName: Equatable, Hashable {
       return "FontPicker"
     case .playerWindow(let id):
       return WindowAutosaveName.formatPlayerWindow(playerUID: id)
+    case .newFilter:
+      return "NewFilter"
+    case .editFilter:
+      return "EditFilter"
+    case .saveFilter:
+      return "SaveFilter"
     }
   }
 

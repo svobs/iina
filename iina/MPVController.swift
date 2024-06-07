@@ -488,12 +488,10 @@ not applying FFmpeg 9599 workaround
             if status < 0 {
               let errorString = String(cString: mpv_error_string(status))
               DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
-                Utility.showAlert("extra_option.error", arguments:
-                                                        [op[0], op[1], status, errorString])
-                }
+                Utility.showAlert("extra_option.error", arguments: [op[0], op[1], status, errorString])
+              }
             }
           }
-          log.debug("Set user configured mpv option values")
         }
       } else {
         DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers

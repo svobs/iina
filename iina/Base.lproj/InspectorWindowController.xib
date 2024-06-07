@@ -65,7 +65,7 @@
         <window title="Inspector" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" frameAutosaveName="IINAInspectorPanel" animationBehavior="default" id="F0z-JX-Cv5" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES" nonactivatingPanel="YES" HUD="YES"/>
             <rect key="contentRect" x="1539" y="436" width="350" height="430"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="InspectorWindow Content View">
                 <rect key="frame" x="0.0" y="0.0" width="468" height="498"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -1319,7 +1319,7 @@
         <collectionViewItem id="STR-xi-slv"/>
     </objects>
     <resources>
-        <image name="NSAddTemplate" width="18" height="16"/>
-        <image name="NSRemoveTemplate" width="18" height="4"/>
+        <image name="NSAddTemplate" width="18" height="17"/>
+        <image name="NSRemoveTemplate" width="18" height="5"/>
     </resources>
 </document>

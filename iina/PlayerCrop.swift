@@ -88,7 +88,7 @@ extension PlayerCore {
       return
     }
     if videoGeo.selectedCropLabel != newCropLabel {
-      log.verbose("Calling applyVidGeo with new selectedCropLabel: \(newCropLabel.quoted)")
+      log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
       let oldVidGeo = videoGeo
       let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
       windowController.applyVidGeo(newVidGeo)  /// sets `videoGeo = newVidGeo`

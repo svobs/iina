@@ -423,6 +423,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeMainNotification, object: nil,
                                                               queue: .main, using: self.windowDidBecomeMain))
 
+      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.willBeginSheetNotification, object: nil,
+                                                              queue: .main, using: self.windowWillBeginSheet))
+
+      observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didEndSheetNotification, object: nil,
+                                                              queue: .main, using: self.windowDidEndSheet))
+
       observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didMiniaturizeNotification, object: nil,
                                                               queue: .main, using: self.windowDidMiniaturize))
 
@@ -463,6 +469,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   // MARK: - Opening/restoring windows
+
+  /// The notification provides no way to actually know which sheet is being added.
+  /// So prior to opening the sheet, the caller must manually add it using `Preference.UIState.addOpenSheet`.
+  private func windowWillBeginSheet(_ notification: Notification) {
+    guard let window = notification.object as? NSWindow else { return }
+    let activeWindowName = window.savedStateName
+    guard !activeWindowName.isEmpty else { return }
+
+    DispatchQueue.main.async { [self] in
+      guard !isTerminating else {
+        return
+      }
+      guard let sheetNames = Preference.UIState.openSheetsDict[activeWindowName] else { return }
+
+      for sheetName in sheetNames {
+        Logger.log("Sheet opened: \(sheetName.quoted)", level: .verbose)
+        Preference.UIState.windowsOpen.insert(sheetName)
+      }
+      Preference.UIState.saveCurrentOpenWindowList()
+    }
+  }
+
+  private func windowDidEndSheet(_ notification: Notification) {
+    guard let window = notification.object as? NSWindow else { return }
+    let activeWindowName = window.savedStateName
+    guard !activeWindowName.isEmpty else { return }
+
+    DispatchQueue.main.async { [self] in
+      guard !isTerminating else {
+        return
+      }
+      // NOTE: not sure how to identify which sheet will end. In the future this could cause problems
+      // if we use a window with multiple sheets. But for now we can assume that there is only one sheet,
+      // so that is the one being closed.
+      guard let sheetNames = Preference.UIState.openSheetsDict[activeWindowName] else { return }
+      Preference.UIState.removeOpenSheets(fromWindow: activeWindowName)
+
+      for sheetName in sheetNames {
+        Logger.log("Sheet closed: \(sheetName.quoted)", level: .verbose)
+        Preference.UIState.windowsOpen.remove(sheetName)
+      }
+
+      Preference.UIState.saveCurrentOpenWindowList()
+    }
+  }
 
   // Saves an ordered list of current open windows (if configured) each time *any* window becomes the key window.
   private func windowDidBecomeMain(_ notification: Notification) {
@@ -708,6 +759,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .playerWindow(let id):
         guard let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
+      case .newFilter, .editFilter, .saveFilter:
+        Logger.log("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping", level: .debug)
+        continue
       default:
         Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
         continue

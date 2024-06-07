@@ -103,6 +103,29 @@ extension Preference {
     static var windowsHidden = Set<String>()
     static var windowsMinimized = Set<String>()
 
+    static var openSheetsDict: [String: Set<String>] = [:]
+
+    static func addOpenSheet(_ sheetName: String, toWindow windowName: String) {
+      if var sheets = openSheetsDict[windowName] {
+        sheets.insert(sheetName)
+        openSheetsDict[windowName] = sheets
+      } else {
+        openSheetsDict[windowName] = Set<String>([sheetName])
+      }
+    }
+
+    static func flattenOpenSheets() -> [String] {
+      return openSheetsDict.values.reduce(Array<String>(), { arr, valSet in
+        var arr = arr
+        arr.append(contentsOf: valSet)
+        return arr
+      })
+    }
+
+    static func removeOpenSheets(fromWindow windowName: String) {
+      openSheetsDict.removeValue(forKey: windowName)
+    }
+
     static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
       return String(format: Preference.UIState.openWindowListFmt, launchID)
     }

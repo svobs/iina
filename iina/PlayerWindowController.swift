@@ -1942,8 +1942,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if !window.isMiniaturized {
       log.verbose("Showing Player Window")
 
-      let windowName = window.savedStateName
-      Preference.UIState.windowsOpen.insert(windowName)
+      Preference.UIState.windowsOpen.insert(window.savedStateName)
 
       window.setIsVisible(true)
 

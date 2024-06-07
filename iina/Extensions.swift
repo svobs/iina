@@ -1365,8 +1365,6 @@ class IINAWindowController: NSWindowController {
       showWindow(sender)
     }
   }
-
-
 }
 
 extension NSTableCellView {

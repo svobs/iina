@@ -716,22 +716,6 @@ extension PlayerWindowController {
     }
   }
 
-  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
-  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
-  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
-  private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
-    guard transition.isTogglingVisibilityOfAnySidebar,
-          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
-          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
-    guard let contentView = window?.contentView else { return }
-
-    if transition.isShowingLeadingSidebar || transition.isHidingLeadingSidebar {
-      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
-    } else if transition.isShowingTrailingSidebar || transition.isHidingTrailingSidebar {
-      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
-    }
-  }
-
   /// -------------------------------------------------
   /// OPEN PANELS & FINALIZE OFFSETS
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
@@ -1208,6 +1192,22 @@ extension PlayerWindowController {
     }
 
     contentView.addSubview(controlBarFloating, positioned: .below, relativeTo: bottomBarView)
+  }
+
+  /// This fixes an edge case when both sidebars are shown and are `.outsideViewport`. When one is toggled, and width of
+  /// `videoView` is smaller than that of the sidebar being toggled, must ensure that the sidebar being animated is below
+  /// the other one, otherwise it will be briefly seen popping out on top of the other one.
+  private func prepareDepthOrderOfOutsideSidebarsForToggle(_ transition: LayoutTransition) {
+    guard transition.isTogglingVisibilityOfAnySidebar,
+          transition.outputLayout.leadingSidebar.placement == .outsideViewport,
+          transition.outputLayout.trailingSidebar.placement == .outsideViewport else { return }
+    guard let contentView = window?.contentView else { return }
+
+    if transition.isShowingLeadingSidebar || transition.isHidingLeadingSidebar {
+      contentView.addSubview(leadingSidebarView, positioned: .below, relativeTo: trailingSidebarView)
+    } else if transition.isShowingTrailingSidebar || transition.isHidingTrailingSidebar {
+      contentView.addSubview(trailingSidebarView, positioned: .below, relativeTo: leadingSidebarView)
+    }
   }
 
   // MARK: - Title bar items

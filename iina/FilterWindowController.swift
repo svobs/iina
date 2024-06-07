@@ -150,8 +150,10 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func saveFilter(_ filter: MPVFilter) {
+    guard let window else { return }
     currentFilter = filter
-    window!.beginSheet(saveFilterSheet)
+    Preference.UIState.addOpenSheet(saveFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    window.beginSheet(saveFilterSheet)
   }
 
   private func syncSavedFilter() {
@@ -179,9 +181,12 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - IBAction
 
   @IBAction func addFilterAction(_ sender: Any) {
+    guard let window else { return }
     saveFilterNameTextField.stringValue = ""
     keyRecordViewLabel.stringValue = ""
-    window!.beginSheet(newFilterSheet)
+    Preference.UIState.windowsOpen.insert(newFilterSheet.savedStateName)
+    Preference.UIState.addOpenSheet(newFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    window.beginSheet(newFilterSheet)
   }
 
   @IBAction func removeFilterAction(_ sender: Any) {
@@ -280,6 +285,7 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   @IBAction func editSavedFilterAction(_ sender: NSButton) {
+    guard let window else { return }
     var row = savedFiltersTableView.clickedRow  // if double-clicking
     if row < 0 {
       row = savedFiltersTableView.row(for: sender)  // If using Edit button
@@ -295,7 +301,8 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
     editFilterKeyRecordView.currentKey = currentSavedFilter!.shortcutKey
     editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter!.shortcutKeyModifiers
     editFilterKeyRecordViewLabel.stringValue = currentSavedFilter!.readableShortCutKey
-    window!.beginSheet(editFilterSheet)
+    Preference.UIState.addOpenSheet(editFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    window.beginSheet(editFilterSheet)
   }
 }
 
