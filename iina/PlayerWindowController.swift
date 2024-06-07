@@ -3016,9 +3016,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Enqueue first, in case main queue is blocked
     osdQueueLock.withLock {
       osdQueue.append({ [self] in
-        animationPipeline.submitSudden{ [self] in
-          _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
-        }
+        // DO NOT use animation pipeline here. It is not needed, and will cause OSD to block
+        _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
     }
     // Need to do the UI sync in the main queue
