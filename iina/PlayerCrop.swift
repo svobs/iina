@@ -90,20 +90,19 @@ extension PlayerCore {
     if videoGeo.selectedCropLabel != newCropLabel {
       log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
       let oldVidGeo = videoGeo
-      let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
-      windowController.applyVidGeo(newVidGeo)  /// sets `videoGeo = newVidGeo`
-
-      let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
-      sendOSD(.crop(osdLabel))
 
       if newCropLabel == AppData.noneCropIdentifier, let cropFilter = oldVidGeo.cropFilter {
         log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
         removeVideoFilter(cropFilter, verify: false)
-        return
       }
-    }
-    DispatchQueue.main.async { [self] in
-      reloadQuickSettingsView()
+
+      let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
+      sendOSD(.crop(osdLabel))
+
+      let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
+      windowController.applyVidGeo(newVidGeo, then: { [self] in
+        reloadQuickSettingsView()
+      })
     }
   }
 }

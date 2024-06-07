@@ -1268,7 +1268,6 @@ not applying FFmpeg 9599 workaround
 
       // Will only get here if rotation was initiated from mpv. If IINA initiated, the new value would have matched videoGeo.
       player.log.verbose("Δ mpv prop: 'video-rotate' ≔ \(userRotation)")
-      needReloadQuickSettingsView = true
 
       player.userRotationDidChange(to: userRotation)
 

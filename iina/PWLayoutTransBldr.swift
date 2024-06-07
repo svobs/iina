@@ -168,10 +168,9 @@ extension PlayerWindowController {
     // Don't need this because we already know how to size the window
     isInitialSizeDone = true
 
+    log.verbose("Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)")
     // Restore music mode geometry & state
-    let priorMusicModeGeometry = priorState.geoSet.musicMode
-    log.verbose("Setting musicModeGeo from prior state: \(priorMusicModeGeometry)")
-    musicModeGeo = priorMusicModeGeometry
+    geo = priorState.geoSet
 
     if initialLayout.mode == .musicMode {
       player.overrideAutoMusicMode = true
@@ -188,9 +187,6 @@ extension PlayerWindowController {
       } else {
         windowedModeGeo = initialLayout.buildDefaultInitialGeometry(screen: bestScreen)
       }
-    } else {
-      log.verbose("Setting windowedModeGeo from prior state: \(priorWindowedModeGeo)")
-      windowedModeGeo = priorWindowedModeGeo
     }
   }
 

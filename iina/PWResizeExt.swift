@@ -47,7 +47,7 @@ extension PlayerWindowController {
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
-  func applyVidGeo(_ newVidGeo: VideoGeometry, showDefaultArt: Bool? = nil) {
+  func applyVidGeo(_ newVidGeo: VideoGeometry, showDefaultArt: Bool? = nil, then doAfter: (() -> Void)? = nil) {
     dispatchPrecondition(condition: .onQueue(player.mpv.queue))
     // Get this in the mpv thread to avoid race condition
     let isRestoring = player.info.isRestoring
@@ -74,7 +74,7 @@ extension PlayerWindowController {
         let newWindowGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                         intendedViewportSize: player.info.intendedViewportSize)
 
-        applyVidGeo(using: newWindowGeo, showDefaultArt: showDefaultArt)
+        applyVidGeo(using: newWindowGeo, showDefaultArt: showDefaultArt, then: doAfter)
       })
     }
   }
@@ -82,7 +82,7 @@ extension PlayerWindowController {
   /// Only `applyVidGeo` should call this.
   private func applyVidGeo(using newWindowGeo: PWinGeometry,
                            duration: CGFloat = IINAAnimation.VideoReconfigDuration, timing: CAMediaTimingFunctionName = .easeInEaseOut,
-                           showDefaultArt: Bool? = nil) {
+                           showDefaultArt: Bool? = nil, then doAfter: TaskFunc? = nil) {
     guard !player.isStopping else {
       log.verbose("[applyVidGeo] Aborting due to status=\(player.status)")
       return
@@ -96,16 +96,17 @@ extension PlayerWindowController {
     /// Finally call `setFrame()`
     log.debug("[applyVidGeo D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
 
+    var tasks: [IINAAnimation.Task]
     switch currentLayout.mode {
     case .windowed:
-      applyWindowGeoInAnimationPipeline(newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+      tasks = buildApplyWindowGeoTasks(newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
       log.debug("[applyVidGeo Done] Emitting windowSizeAdjusted")
       player.events.emit(.windowSizeAdjusted, data: newWindowGeo.windowFrame)
     case .fullScreen:
       let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, video: newWindowGeo.video)
 
-      animationPipeline.submit(IINAAnimation.Task(duration: duration, { [self] in
+      tasks = [IINAAnimation.Task(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
         log.verbose("[applyVidGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
         videoView.apply(fsGeo)
@@ -117,7 +118,8 @@ extension PlayerWindowController {
           // Update default album art visibility:
           defaultAlbumArtView.isHidden = !showDefaultArt
         }
-      }))
+      })]
+
     case .musicMode:
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
@@ -127,10 +129,13 @@ extension PlayerWindowController {
       }
       log.debug("[applyVidGeo M Apply] Player is in music mode; calling applyMusicModeGeo")
       let newGeometry = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newWindowGeo.video)
-      applyMusicModeGeoInAnimationPipeline(newGeometry, duration: duration, showDefaultArt: showDefaultArt)
+      tasks = buildApplyMusicModeGeoTasks(newGeometry, duration: duration, showDefaultArt: showDefaultArt)
     default:
       log.error("[applyVidGeo Apply] INVALID MODE: \(currentLayout.mode)")
+      return
     }
+
+    animationPipeline.submit(tasks, then: doAfter)
   }
 
   /// `windowGeo` is expected to have the most up-to-date `VideoGeometry` already
@@ -478,7 +483,7 @@ extension PlayerWindowController {
     })
 
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) videoSize=\(newGeometry.videoSize) videoAspect=\(newGeometry.videoAspect)")
+      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) video=\(newGeometry)")
 
       if isInitialSizeDone {
         // This is only needed to achieve "fade-in" effect when opening window:
@@ -509,6 +514,16 @@ extension PlayerWindowController {
                                             duration: CGFloat = IINAAnimation.DefaultDuration,
                                             setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
                                             showDefaultArt: Bool? = nil) {
+    let tasks = buildApplyMusicModeGeoTasks(geometry, duration: duration, setFrame: setFrame,
+                                            animate: animate, updateCache: updateCache,
+                                            showDefaultArt: showDefaultArt)
+    animationPipeline.submit(tasks)
+  }
+
+  func buildApplyMusicModeGeoTasks(_ geometry: MusicModeGeometry,
+                                   duration: CGFloat = IINAAnimation.DefaultDuration,
+                                   setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
+                                   showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.suddenTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
@@ -526,7 +541,7 @@ extension PlayerWindowController {
       isAnimatingLayoutTransition = false
     })
 
-    animationPipeline.submit(tasks)
+    return tasks
   }
 
   /// Updates the current window and its subviews to match the given `MusicModeGeometry`.
@@ -543,7 +558,7 @@ extension PlayerWindowController {
       // This is only needed to achieve "fade-in" effect when opening window:
       updateCustomBorderBoxAndWindowOpacity()
     }
-    
+
     // Update defaults:
     Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
     Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)

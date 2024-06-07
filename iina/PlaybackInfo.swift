@@ -296,8 +296,7 @@ class PlaybackInfo {
   var shouldShowDefaultArt: Bool? {
     if let currentMedia {
       // Don't show art if currently loading
-      let isCompletelyLoaded = currentMedia.loadStatus.isAtLeast(.completelyLoaded)
-      if isCompletelyLoaded, currentMediaAudioStatus == .isAudio {
+      if currentMedia.loadStatus.isAtLeast(.completelyLoaded) {
         return !isVideoTrackSelected
       }
     }

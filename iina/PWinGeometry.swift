@@ -241,7 +241,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.strMin) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) videoSize=\(videoSize) aspect=\(videoAspect) windowFrame=\(windowFrame))"
+    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.strMin) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) windowFrame=\(windowFrame) video=\(video))"
   }
 
   var log: Logger.Subsystem { video.log }
@@ -845,7 +845,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     log.verbose("[applyVidGeo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
-    return scaleViewport(to: desiredViewportSize)
+    return clone(video: newVidGeo).scaleViewport(to: desiredViewportSize)
   }
 
   // Resizes the window appropriately to add or subtract from outside bars. Adjusts window origin to prevent the viewport from moving

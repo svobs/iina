@@ -1141,29 +1141,31 @@ class PlayerCore: NSObject {
 
   /// Called when `MPVOption.Video.videoRotate` changed
   func userRotationDidChange(to userRotation: Int) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard userRotation != videoGeo.userRotation else { return }
 
-    // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
-    if windowController.pipStatus == .notInPIP {
-      DispatchQueue.main.async { [self] in
+    log.verbose("Calling applyVidParams for new userRotation: \(userRotation)")
+    // Update window geometry
+    let newVidGeo = videoGeo.changingUserRotation(to: userRotation)
+
+    sendOSD(.rotation(userRotation))
+
+    windowController.applyVidGeo(newVidGeo, then: { [self] in
+      // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
+      if windowController.pipStatus == .notInPIP {
         IINAAnimation.disableAnimation {
           // FIXME: this isn't perfect - a bad frame briefly appears during transition
           log.verbose("Resetting videoView rotation")
           windowController.rotationHandler.rotateVideoView(toDegrees: 0)
         }
       }
-    }
 
-    log.verbose("Calling applyVidParams for new userRotation: \(userRotation)")
-    // Update window geometry
-    let oldVidGeo = videoGeo
-    let newVidGeo = oldVidGeo.changingUserRotation(to: userRotation)
-    windowController.applyVidGeo(newVidGeo)
+      reloadQuickSettingsView()
 
-    sendOSD(.rotation(userRotation))
-    // Thumb rotation needs updating:
-    reloadThumbnails(forMedia: info.currentMedia)
-    saveState()
+      // Thumb rotation needs updating:
+      reloadThumbnails(forMedia: info.currentMedia)
+      saveState()
+    })
   }
 
   /// Set video's aspect ratio. The param may be one of:
@@ -1208,30 +1210,34 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
-    if videoGeo.selectedAspectLabel != aspectLabel {
-      let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
-
-      // Send update to mpv
-      let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
-      log.verbose("Setting mpv video-aspect-override to: \(mpvValue.quoted)")
-      mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
-
-      // FIXME: Default aspect needs i18n
-      sendOSD(.aspect(aspectLabel))
-
-      // Change video size:
-      log.verbose("Calling applyVidGeo from video-aspect-override")
-      windowController.applyVidGeo(newVideoGeo)
+    guard videoGeo.selectedAspectLabel != aspectLabel else {
+      // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
+      // immediately changes the selection to "Default".
+      reloadQuickSettingsView()
+      return
     }
 
-    // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
-    // immediately changes the selection to "Default".
-    reloadQuickSettingsView()
+    let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
+
+    // Send update to mpv
+    let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
+    log.verbose("Setting mpv video-aspect-override to: \(mpvValue.quoted)")
+    mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+
+    // FIXME: Default aspect needs i18n
+    sendOSD(.aspect(aspectLabel))
+
+    // Change video size:
+    log.verbose("Calling applyVidGeo from video-aspect-override")
+    windowController.applyVidGeo(newVideoGeo, then: { [self] in
+      reloadQuickSettingsView()
+    })
   }
 
   private func findLabelForAspectRatio(_ aspectRatioNumber: Double) -> String? {
     let mpvAspect = Aspect.mpvPrecision(of: aspectRatioNumber)
-    for knownAspectRatio in AppData.aspectsInMenu {
+    let userPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
+    for knownAspectRatio in AppData.aspectsInMenu + userPresets {
       if let parsedAspect = Aspect(string: knownAspectRatio), parsedAspect.value == mpvAspect {
         // Matches a known aspect. Use its colon notation (X:Y) instead of decimal value
         return knownAspectRatio
@@ -2142,6 +2148,10 @@ class PlayerCore: NSObject {
         // TableView whole table reload is very expensive. No need to reload entire playlist; just the two changed rows:
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
+
+      if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+        NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
+      }
     }
 
     // set "date last opened" attribute
@@ -2158,12 +2168,6 @@ class PlayerCore: NSObject {
         let _ = data.withUnsafeBytes {
           setxattr(fileSystemPath, name, $0.baseAddress, data.count, 0, 0)
         }
-      }
-    }
-
-    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
-      DispatchQueue.main.async {
-        NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
       }
     }
 
@@ -2596,18 +2600,6 @@ class PlayerCore: NSObject {
     // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
 
-    /// This will refresh album art display.
-    /// Do this first, before `applyVideoVisibility`, for a nicer animation.
-    windowController.applyVidGeo(videoGeo, showDefaultArt: showDefaultArt)
-
-    DispatchQueue.main.async{ [self] in
-      windowController.forceDraw()
-
-      if isMiniPlayerWaitingToShowVideo {
-        isMiniPlayerWaitingToShowVideo = false
-        windowController.miniPlayer.showVideo()
-      }
-    }
     postNotification(.iinaVIDChanged)
     if isInMiniPlayer && (isMiniPlayerWaitingToShowVideo || !windowController.miniPlayer.isVideoVisible) {
       return
@@ -2615,6 +2607,17 @@ class PlayerCore: NSObject {
     if !silent {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
+
+    /// This will refresh album art display.
+    /// Do this first, before `applyVideoVisibility`, for a nicer animation.
+    windowController.applyVidGeo(videoGeo, showDefaultArt: showDefaultArt, then: { [self] in
+      windowController.forceDraw()
+
+      if isMiniPlayerWaitingToShowVideo {
+        isMiniPlayerWaitingToShowVideo = false
+        windowController.miniPlayer.showVideo()
+      }
+    })
   }
 
   ///  `showMiniPlayerVideo` is only used if `enable` is true
