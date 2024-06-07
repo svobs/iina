@@ -178,11 +178,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
                                  height: self.viewportMargins.totalHeight + self.videoSize.height)
     assert((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height), "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
-
-//    let videoSizeCAR = self.video.videoSizeCAR
-//    let widthScale = (videoSize.width / videoSizeCAR.width).stringTrunc2f
-//    let heightScale = (videoSize.height / videoSizeCAR.height).stringTrunc2f
-//    assert(widthScale == heightScale, "Scale from width (\(widthScale)) != from height (\(heightScale))! VideoSize=\(videoSize), sizeCAR=\(videoSizeCAR)")
 #endif
   }
 
@@ -466,20 +461,19 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                   height: windowFrame.height - outsideBars.top - outsideBars.bottom - topMarginHeight)
   }
 
-  /// Snap `value` to `otherValue` if they are less than 1 px apart. If it can't snap, the number is rounded to
+  /// Snap `value` to `otherValue` if they are less than 2 px apart. If it can't snap, the number is rounded to
   /// the nearest integer.
   ///
   /// This helps smooth out division imprecision. The goal is to end up with whole numbers in calculation results
   /// without having to distort things. Fractional values will be interpreted differently by mpv, Core Graphics,
   /// AppKit, which can ultimately result in jarring visual glitches during Core animations.
   ///
-  /// It is the requestor's responsibility to ensure that `otherValue` is already an integer.
+  /// It is the requestor's responsibility to ensure that `otherValue` is already a whole number.
   static func snap(_ value: CGFloat, to otherValue: CGFloat) -> CGFloat {
-    if abs(value - otherValue) < 1 {
+    if abs(value - otherValue) < 2 {
       return otherValue
     } else {
-      let intVal = Int(round(value))
-      return CGFloat(intVal.isOdd ? intVal : intVal)
+      return round(value)
     }
   }
 
