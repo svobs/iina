@@ -625,15 +625,15 @@ extension PlayerWindowController {
       // close completely. will animate reopening if needed later
       insideBottomBarHeight = 0
       outsideBottomBarHeight = 0
-    } else if transition.outputGeometry.outsideBottomBarHeight < transition.inputGeometry.outsideBottomBarHeight {
+    } else if transition.outputGeometry.outsideBars.bottom < transition.inputGeometry.outsideBars.bottom {
       insideBottomBarHeight = 0
-      outsideBottomBarHeight = transition.outputGeometry.outsideBottomBarHeight
-    } else if transition.outputGeometry.insideBottomBarHeight < transition.inputGeometry.insideBottomBarHeight {
-      insideBottomBarHeight = transition.outputGeometry.insideBottomBarHeight
+      outsideBottomBarHeight = transition.outputGeometry.outsideBars.bottom
+    } else if transition.outputGeometry.insideBars.bottom < transition.inputGeometry.insideBars.bottom {
+      insideBottomBarHeight = transition.outputGeometry.insideBars.bottom
       outsideBottomBarHeight = 0
     } else {
-      insideBottomBarHeight = transition.inputGeometry.insideBottomBarHeight
-      outsideBottomBarHeight = transition.inputGeometry.outsideBottomBarHeight
+      insideBottomBarHeight = transition.inputGeometry.insideBars.bottom
+      outsideBottomBarHeight = transition.inputGeometry.outsideBars.bottom
     }
 
     // LEADING
@@ -643,8 +643,8 @@ extension PlayerWindowController {
       insideLeadingBarWidth = 0
       outsideLeadingBarWidth = 0
     } else {
-      insideLeadingBarWidth = transition.inputGeometry.insideLeadingBarWidth
-      outsideLeadingBarWidth = transition.inputGeometry.outsideLeadingBarWidth
+      insideLeadingBarWidth = transition.inputGeometry.insideBars.leading
+      outsideLeadingBarWidth = transition.inputGeometry.outsideBars.leading
     }
 
     // TRAILING
@@ -654,8 +654,8 @@ extension PlayerWindowController {
       insideTrailingBarWidth = 0
       outsideTrailingBarWidth = 0
     } else {
-      insideTrailingBarWidth = transition.inputGeometry.insideTrailingBarWidth
-      outsideTrailingBarWidth = transition.inputGeometry.outsideTrailingBarWidth
+      insideTrailingBarWidth = transition.inputGeometry.insideBars.trailing
+      outsideTrailingBarWidth = transition.inputGeometry.outsideBars.trailing
     }
 
     if transition.outputLayout.isFullScreen {

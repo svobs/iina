@@ -308,7 +308,7 @@ extension PlayerWindowController {
 
     // Update heights of top & bottom bars
     if let middleGeo = transition.middleGeometry {
-      let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideTopBarHeight : middleGeo.outsideTopBarHeight
+      let topBarHeight = transition.inputLayout.topBarPlacement == .insideViewport ? middleGeo.insideBars.top : middleGeo.outsideBars.top
       let cameraOffset: CGFloat
       if transition.isExitingLegacyFullScreen {
         // Use prev offset for a smoother animation
@@ -326,7 +326,7 @@ extension PlayerWindowController {
         updateSidebarVerticalConstraints(tabHeight: tabHeight, downshift: downshift)
       }
 
-      let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBottomBarHeight : middleGeo.outsideBottomBarHeight
+      let bottomBarHeight = transition.inputLayout.bottomBarPlacement == .insideViewport ? middleGeo.insideBars.bottom : middleGeo.outsideBars.bottom
       updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.inputLayout.bottomBarPlacement)
 
       if !transition.isExitingFullScreen {
@@ -438,7 +438,7 @@ extension PlayerWindowController {
     }
 
     /// Show dividing line only for `.outsideViewport` bottom bar. Don't show in music mode as it doesn't look good
-    let showBottomBarTopBorder = transition.outputGeometry.outsideBottomBarHeight > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
+    let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
     if let playSliderHeightConstraint {
@@ -741,7 +741,7 @@ extension PlayerWindowController {
     // Update heights of top & bottom bars:
     updateTopBarHeight(to: outputLayout.topBarHeight, topBarPlacement: transition.outputLayout.topBarPlacement, cameraHousingOffset: transition.outputGeometry.topMarginHeight)
 
-    let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBottomBarHeight : transition.outputGeometry.outsideBottomBarHeight
+    let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
     updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement)
 
     // Sidebars (if opening)
@@ -1101,7 +1101,7 @@ extension PlayerWindowController {
       let screen = NSScreen.forScreenID(geometry.screenID)!
       // OSD & Additional Info must never overlap camera housing, even if video does
       let cameraHousingHeight = screen.cameraHousingHeight ?? 0
-      let usedSpaceAbove = geometry.outsideTopBarHeight + geometry.insideTopBarHeight
+      let usedSpaceAbove = geometry.outsideBars.top + geometry.insideBars.top
 
       if usedSpaceAbove < cameraHousingHeight {
         let windowGapForCameraHousing = screen.frame.height - geometry.windowFrame.height

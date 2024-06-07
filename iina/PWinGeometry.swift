@@ -120,19 +120,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// Outside panels
   let outsideBars: MarginQuad
-  // TODO: remove all uses of these. Use only `outsideBars`
-  var outsideTopBarHeight: CGFloat { outsideBars.top }
-  var outsideTrailingBarWidth: CGFloat { outsideBars.trailing }
-  var outsideBottomBarHeight: CGFloat { outsideBars.bottom }
-  var outsideLeadingBarWidth: CGFloat { outsideBars.leading }
 
   /// Inside panels
   var insideBars: MarginQuad
-  // TODO: remove all uses of these. Use only `insideBars`
-  var insideTopBarHeight: CGFloat { insideBars.top }
-  var insideTrailingBarWidth: CGFloat { insideBars.trailing }
-  var insideBottomBarHeight: CGFloat { insideBars.bottom }
-  var insideLeadingBarWidth: CGFloat { insideBars.leading }
 
   let viewportMargins: MarginQuad
   let video: VideoGeometry
@@ -280,8 +270,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var viewportFrameInScreenCoords: NSRect {
-    let origin = CGPoint(x: windowFrame.origin.x + outsideLeadingBarWidth,
-                         y: windowFrame.origin.y + outsideBottomBarHeight)
+    let origin = CGPoint(x: windowFrame.origin.x + outsideBars.leading,
+                         y: windowFrame.origin.y + outsideBars.bottom)
     return NSRect(origin: origin, size: viewportSize)
   }
 
@@ -298,8 +288,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(viewportSize.height - videoSize.height >= 0)
     let leadingBlackSpace = (viewportSize.width - videoSize.width) * 0.5
     let bottomBlackSpace = (viewportSize.height - videoSize.height) * 0.5
-    let origin = CGPoint(x: outsideLeadingBarWidth + leadingBlackSpace,
-                         y: outsideBottomBarHeight + bottomBlackSpace)
+    let origin = CGPoint(x: outsideBars.leading + leadingBlackSpace,
+                         y: outsideBars.bottom + bottomBlackSpace)
     return NSRect(origin: origin, size: videoSize)
   }
 

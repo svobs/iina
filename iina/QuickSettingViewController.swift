@@ -363,11 +363,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     super.viewWillLayout()
   }
 
-  // MARK: - Validate UI
-
-  /** Do synchronization*/
   override func viewDidAppear() {
-    // image sub
     super.viewDidAppear()
     updateSegmentLabels()
     updateControlsState()

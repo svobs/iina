@@ -936,7 +936,7 @@ extension PlayerWindowController {
     /// Updating the sidebar width when it is in "outside" mode will cause the video width to
     /// grow or shrink, which will require its height to change according to its aspectRatio.
     if currentLayout.leadingSidebar.placement == .outsideViewport {
-      let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideLeadingBarWidth
+      let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.leading
       let viewportSize = oldGeo.viewportSize
       let newViewportWidth = viewportSize.width - playlistWidthDifference
       let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(leading: newPlaylistWidth))
@@ -983,7 +983,7 @@ extension PlayerWindowController {
 
     /// See comments in `resizeLeadingSidebar()` above
     if currentLayout.trailingSidebar.placement == .outsideViewport {
-      let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideTrailingBarWidth
+      let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.trailing
       let newViewportWidth = viewportSize.width - playlistWidthDifference
       let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(trailing: newPlaylistWidth))
 
