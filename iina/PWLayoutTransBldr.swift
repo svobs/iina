@@ -443,11 +443,6 @@ extension PlayerWindowController {
     transition.tasks.append(IINAAnimation.Task(duration: openFinalPanelsDuration, timing: openFinalPanelsTiming, { [self] in
       // If toggling fullscreen, this also changes the window frame:
       openNewPanelsAndFinalizeOffsets(transition)
-
-      if transition.isTogglingFullScreen {
-        // Full screen animations don't have much time. Combine fadeIn step in same animation:
-        fadeInNewViews(transition)
-      }
     }))
 
     // EndingAnimation: Fade in new views
@@ -472,6 +467,10 @@ extension PlayerWindowController {
 
     // After animations all finish
     transition.tasks.append(IINAAnimation.suddenTask{ [self] in
+      if transition.isTogglingFullScreen {
+        // For a better visual experience wait until window finishes moving
+        fadeInNewViews(transition)
+      }
       doPostTransitionWork(transition)
     })
 
