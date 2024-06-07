@@ -335,10 +335,10 @@ extension PlayerWindowController {
     let endingAnimationDuration: CGFloat = totalEndingDuration ?? IINAAnimation.DefaultDuration
 
     // Extra animation when entering legacy full screen: cover camera housing with black bar
-    let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout && endingAnimationDuration > 0.0
+    let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout
 
     // Extra animation when exiting legacy full screen: remove camera housing with black bar
-    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout && endingAnimationDuration > 0.0
+    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
