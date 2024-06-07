@@ -539,6 +539,11 @@ extension PlayerWindowController {
 
     videoView.videoLayer.enterAsynchronousMode()
 
+    if isInitialSizeDone {
+      // This is only needed to achieve "fade-in" effect when opening window:
+      updateCustomBorderBoxAndWindowOpacity()
+    }
+    
     // Update defaults:
     Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
     Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
