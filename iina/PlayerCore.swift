@@ -1687,7 +1687,7 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   /// Can run on either mpv or main DispatchQueue.
   // TODO: refactor to execute mpv commands only on mpv queue
-  func addVideoFilter(_ filter: MPVFilter) -> Bool {
+  func addVideoFilter(_ filter: MPVFilter, updateState: Bool = true) -> Bool {
     let success = addVideoFilter(filter.stringFormat)
     if !success {
       log.verbose("Video filter \(filter.stringFormat) was not added")
@@ -1700,7 +1700,7 @@ class PlayerCore: NSObject {
   /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  func addVideoFilter(_ filter: String) -> Bool {
+  func addVideoFilter(_ filter: String, updateState: Bool = true) -> Bool {
     Logger.log("Adding video filter \(filter.quoted)...", subsystem: subsystem)
 
     // check hwdec
@@ -1801,7 +1801,7 @@ class PlayerCore: NSObject {
   /// - Parameter filter: The filter to remove.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
-  func removeVideoFilter(_ filter: MPVFilter, verify: Bool = true) -> Bool {
+  func removeVideoFilter(_ filter: MPVFilter, verify: Bool = true, notify: Bool = true) -> Bool {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     
     let filterString: String
@@ -1831,7 +1831,9 @@ class PlayerCore: NSObject {
       log.error("Failed to remove video filter \(label.quoted): filter still present after vf remove!")
       return false
     }
-    postNotification(.iinaVFChanged)
+    if notify {
+      postNotification(.iinaVFChanged)
+    }
     return true
   }
 

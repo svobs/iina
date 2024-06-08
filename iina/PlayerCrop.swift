@@ -69,14 +69,13 @@ extension PlayerCore {
 
         let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
         windowController.applyVidGeo(newVidGeo, then: { [self] in
-          reloadQuickSettingsView()
-
           /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-          let addSucceeded = addVideoFilter(vf)
+          let addSucceeded = addVideoFilter(vf, updateState: false)
           if !addSucceeded {
             log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
             _removeCrop()
           }
+          reloadQuickSettingsView()
         })
       }
     }
@@ -103,7 +102,7 @@ extension PlayerCore {
       let newVidGeo = oldVidGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
       windowController.applyVidGeo(newVidGeo, then: { [self] in
         mpv.queue.async { [self] in
-          removeVideoFilter(cropFilter, verify: false)
+          removeVideoFilter(cropFilter, verify: false, notify: false)
         }
       })
     }

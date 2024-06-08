@@ -235,7 +235,10 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
       var removeFilterFunction: (String, Int) -> Bool
       var removeFilterUsingStringFunction: (String) -> Bool
       if filterType == MPVProperty.vf {
-        addFilterFunction = pc.addVideoFilter
+        func addVideoFilterFunc(_ filter: String) -> Bool {
+          return pc.addVideoFilter(filter, updateState: true)
+        }
+        addFilterFunction = addVideoFilterFunc
         removeFilterFunction = pc.removeVideoFilter
         removeFilterUsingStringFunction = pc.removeVideoFilter
       } else {
