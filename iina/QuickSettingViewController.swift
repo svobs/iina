@@ -258,7 +258,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     observe(.iinaTracklistChanged) { [unowned self] _ in
       self.withAllTableViews { view, _ in view.reloadData() }
     }
-    for not in [Notification.Name.iinaVIDChanged, Notification.Name.iinaVFChanged] {
+    for not in [Notification.Name.iinaVIDChanged] {
       observe(not) { [unowned self] _ in
         guard currentTab == .video else { return }
         self.reload()

@@ -53,18 +53,31 @@ extension PlayerCore {
     return nil
   }
 
-  func setCrop(fromLabel cropLabel: String) {
-    mpv.queue.async { [self] in
-      guard let vf = videoGeo.buildCropFilter(from: cropLabel) else {
-        _removeCrop()
-        return
-      }
+  func setCrop(fromLabel newCropLabel: String) {
+    guard let vf = videoGeo.buildCropFilter(from: newCropLabel) else {
+      removeCrop()
+      return
+    }
 
-      /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-      guard addVideoFilter(vf) else {
-        log.error("Failed to add crop filter \(cropLabel.quoted); setting crop to None")
-        _removeCrop()
-        return
+    if videoGeo.selectedCropLabel != newCropLabel {
+      log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+      let oldVidGeo = videoGeo
+
+      mpv.queue.async { [self] in
+        let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
+        sendOSD(.crop(osdLabel))
+
+        let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
+        windowController.applyVidGeo(newVidGeo, then: { [self] in
+          reloadQuickSettingsView()
+
+          /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
+          let addSucceeded = addVideoFilter(vf)
+          if !addSucceeded {
+            log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
+            _removeCrop()
+          }
+        })
       }
     }
   }
@@ -85,7 +98,15 @@ extension PlayerCore {
     guard let cropFilter = videoGeo.cropFilter else { return }
 
     log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
-    removeVideoFilter(cropFilter, verify: false)
+    let oldVidGeo = videoGeo
+    if oldVidGeo.selectedCropLabel != AppData.noneCropIdentifier {
+      let newVidGeo = oldVidGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
+      windowController.applyVidGeo(newVidGeo, then: { [self] in
+        mpv.queue.async { [self] in
+          removeVideoFilter(cropFilter, verify: false)
+        }
+      })
+    }
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
