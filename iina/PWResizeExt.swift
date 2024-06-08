@@ -507,14 +507,13 @@ extension PlayerWindowController {
                                             setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
                                             showDefaultArt: Bool? = nil) {
     let tasks = buildApplyMusicModeGeoTasks(geometry, duration: duration, setFrame: setFrame,
-                                            animate: animate, updateCache: updateCache,
-                                            showDefaultArt: showDefaultArt)
+                                            updateCache: updateCache, showDefaultArt: showDefaultArt)
     animationPipeline.submit(tasks)
   }
 
   func buildApplyMusicModeGeoTasks(_ geometry: MusicModeGeometry,
                                    duration: CGFloat = IINAAnimation.DefaultDuration,
-                                   setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
+                                   setFrame: Bool = true, updateCache: Bool = true,
                                    showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.suddenTask { [self] in
@@ -535,7 +534,7 @@ extension PlayerWindowController {
   /// Updates the current window and its subviews to match the given `MusicModeGeometry`.
   /// If `updateCache` is true, updates `musicModeGeo` and saves player state.
   @discardableResult
-  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, animate: Bool = true, 
+  func applyMusicModeGeo(_ geometry: MusicModeGeometry, setFrame: Bool = true, 
                          updateCache: Bool = true) -> MusicModeGeometry {
     let geometry = geometry.refit()  // enforces internal constraints, and constrains to screen
     log.verbose("Applying \(geometry), setFrame=\(setFrame.yn) updateCache=\(updateCache.yn)")
@@ -573,7 +572,7 @@ extension PlayerWindowController {
     videoView.apply(convertedGeo)
 
     if setFrame {
-      player.window.setFrameImmediately(geometry.windowFrame, animate: animate)
+      player.window.setFrameImmediately(geometry.windowFrame, animate: true)
     }
 
     if updateCache {

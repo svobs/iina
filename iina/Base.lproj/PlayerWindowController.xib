@@ -530,8 +530,8 @@
                                 <rect key="frame" x="0.0" y="0.0" width="19" height="34"/>
                                 <subviews>
                                     <button toolTip="Close Mini Player" translatesAutoresizingMaskIntoConstraints="NO" id="4bB-aE-jrk" userLabel="CloseBtnVE Button">
-                                        <rect key="frame" x="4" y="16" width="11" height="17"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSStopProgressFreestandingTemplate" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="jWV-ER-ajr">
+                                        <rect key="frame" x="4" y="19" width="11" height="11"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="close" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="jWV-ER-ajr">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -542,7 +542,7 @@
                                     </button>
                                     <button toolTip="Back to video mode" translatesAutoresizingMaskIntoConstraints="NO" id="NWr-qI-ocU" userLabel="BackBtnVE Button">
                                         <rect key="frame" x="4" y="4" width="11" height="11"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="back" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="vv6-gY-HJk">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="backward" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="vv6-gY-HJk">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -565,15 +565,15 @@
                                     <constraint firstAttribute="trailing" secondItem="NWr-qI-ocU" secondAttribute="trailing" constant="4" id="zy6-AL-8g4"/>
                                 </constraints>
                             </visualEffectView>
-                            <box hidden="YES" boxType="custom" cornerRadius="8" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="DSj-5w-Wrw" userLabel="CloseBtnBackgroundView Box">
+                            <box hidden="YES" boxType="custom" cornerRadius="8" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="DSj-5w-Wrw" userLabel="CloseBtnBackground Box">
                                 <rect key="frame" x="2" y="2" width="17" height="30"/>
-                                <view key="contentView" id="xfw-EW-lE4">
+                                <view key="contentView" id="xfw-EW-lE4" userLabel="CloseBtnBackground Box View">
                                     <rect key="frame" x="1" y="1" width="15" height="28"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <button toolTip="Close Mini Player" translatesAutoresizingMaskIntoConstraints="NO" id="jjM-U1-8eB" userLabel="CloseBtnBox Button">
-                                            <rect key="frame" x="2" y="12" width="11" height="17"/>
-                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSStopProgressFreestandingTemplate" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="cJ2-qd-Sd1">
+                                            <rect key="frame" x="2" y="15" width="11" height="11"/>
+                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="close" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="cJ2-qd-Sd1">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
                                             </buttonCell>
@@ -587,7 +587,7 @@
                                         </button>
                                         <button toolTip="Back to video mode" translatesAutoresizingMaskIntoConstraints="NO" id="6vJ-s6-gdD" userLabel="BackBtnBox Button">
                                             <rect key="frame" x="2" y="2" width="11" height="11"/>
-                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="back" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="MXE-RM-ach">
+                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="backward" imagePosition="overlaps" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="MXE-RM-ach">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
                                             </buttonCell>
@@ -1047,9 +1047,9 @@
         </customView>
     </objects>
     <resources>
-        <image name="NSStopProgressFreestandingTemplate" width="20" height="20"/>
-        <image name="back" width="11" height="11"/>
+        <image name="backward" width="11" height="11"/>
         <image name="battery" width="24" height="12"/>
+        <image name="close" width="11" height="11"/>
         <image name="mute" width="16" height="14"/>
         <image name="ontop" width="16" height="14"/>
         <image name="ontop_off" width="16" height="14"/>

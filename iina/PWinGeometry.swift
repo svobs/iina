@@ -167,7 +167,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
                                  height: self.viewportMargins.totalHeight + self.videoSize.height)
-    assert((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height), "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
+    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
+           ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
+           "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
 #endif
   }
 

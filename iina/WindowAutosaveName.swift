@@ -81,9 +81,9 @@ enum WindowAutosaveName: Equatable, Hashable {
   case audioFilter
   case fontPicker
   case playerWindow(id: String)
-  case newFilter
-  case editFilter
-  case saveFilter
+  case newFilter   // sheet window, parent: videoFilter/audioFilter
+  case editFilter  // sheet window, parent: videoFilter/audioFilter
+  case saveFilter  // sheet window, parent: videoFilter/audioFilter
 
   var string: String {
     switch self {

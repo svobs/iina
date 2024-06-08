@@ -2583,29 +2583,27 @@ class PlayerCore: NSObject {
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
 
     postNotification(.iinaVIDChanged)
-    if isInMiniPlayer && (isMiniPlayerWaitingToShowVideo || !windowController.miniPlayer.isVideoVisible) {
-      return
-    }
-    if !silent {
+    if !silent && (!isInMiniPlayer || (!isMiniPlayerWaitingToShowVideo && !windowController.miniPlayer.isVideoVisible)) {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
     /// This will refresh album art display.
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
-    windowController.applyVidGeo(videoGeo, showDefaultArt: showDefaultArt, then: { [self] in
+    DispatchQueue.main.async { [self] in
+      windowController.updateDefaultArtVisibility(showDefaultArt)
       windowController.forceDraw()
 
       if isMiniPlayerWaitingToShowVideo {
         isMiniPlayerWaitingToShowVideo = false
-        windowController.miniPlayer.showVideo()
+        windowController.miniPlayer.videoWasEnabled()
       }
-    })
+    }
   }
 
   ///  `showMiniPlayerVideo` is only used if `enable` is true
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
     dispatchPrecondition(condition: .onQueue(.main))
-    log.verbose("Setting video track enabled=\(enable.yn), showMiniPlayerVideo=\(showMiniPlayerVideo.yn)")
+    log.verbose("Setting video track enabled=\(enable.yesno), showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
 
     if enable {
       // Go to first video track found (unless one is already selected):
@@ -2620,7 +2618,7 @@ class PlayerCore: NSObject {
       } else {
         if showMiniPlayerVideo {
           // Don't wait; execute now
-          windowController.miniPlayer.showVideo()
+          windowController.miniPlayer.videoWasEnabled()
         }
       }
     } else {

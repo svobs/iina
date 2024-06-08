@@ -305,14 +305,14 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
   }
 
-  func showVideo() {
+  func videoWasEnabled() {
     applyVideoVisibility(to: true)
   }
 
   // TODO: develop a nice sliding animation if possible
   private func applyVideoVisibility(to showVideo: Bool) {
     guard let window else { return }
-    log.verbose("Applying videoView visibility: \((!showVideo).yn) to \(showVideo.yn)")
+    log.verbose("Applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.suddenTask{ [self] in
       windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
@@ -402,7 +402,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
     IINAAnimation.disableAnimation {
       /// This call is needed to update any necessary constraints
-      newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, animate: false, updateCache: false)
+      newGeo = windowController.applyMusicModeGeo(newGeo, setFrame: false, updateCache: false)
     }
     return newGeo.windowFrame.size
   }
