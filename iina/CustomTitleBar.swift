@@ -157,6 +157,8 @@ class CustomTitleBarViewController: NSViewController {
     trailingTitleBarView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor).isActive = true
 
     view.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    view.configureSubtreeForCoreAnimation()
   }
 
   func makeTitleBarButton(imgName: String, action: Selector) -> NSButton {

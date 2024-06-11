@@ -274,6 +274,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       guard currentTab == .sub else { return }
       self.reload()
     }
+    view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
   }
 

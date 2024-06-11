@@ -346,10 +346,7 @@ extension PlayerWindowController {
       // animation has zero duration.
       if !transition.isInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
         log.debug("[\(transition.name)] Calling setFrame from closeOldPanels with \(middleGeo.windowFrame)")
-        player.window.setFrameImmediately(middleGeo.windowFrame)
-        if !transition.isExitingInteractiveMode {
-          videoView.apply(middleGeo)
-        }
+        player.window.setFrameImmediately(middleGeo, updateVideoView: !transition.isExitingInteractiveMode)
       }
     }
 
@@ -789,8 +786,7 @@ extension PlayerWindowController {
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose("[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)")
-        videoView.apply(transition.outputGeometry)
-        player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
+        player.window.setFrameImmediately(transition.outputGeometry)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
         let newGeo: PWinGeometry
@@ -825,8 +821,7 @@ extension PlayerWindowController {
       applyMusicModeGeo(musicModeGeo)
     case .windowed, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(transition.outputGeometry.windowFrame)")
-      videoView.apply(transition.outputGeometry)
-      player.window.setFrameImmediately(transition.outputGeometry.windowFrame)
+      player.window.setFrameImmediately(transition.outputGeometry)
     }
 
     if transition.outputGeometry.mode.isInteractiveMode {
@@ -1298,6 +1293,8 @@ extension PlayerWindowController {
 
     let toolbarView = rebuildToolbar(iconSize: toolbarIconSize, iconPadding: toolbarIconSpacing)
     containerView.addView(toolbarView, in: .leading)
+
+    containerView.configureSubtreeForCoreAnimation()
 
     containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
     containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)

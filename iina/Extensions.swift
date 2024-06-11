@@ -1510,6 +1510,23 @@ extension NSViewController {
 }
 
 extension NSView {
+
+  /// Recursive func which configures all views in the given subtree for smoother animation.
+  ///
+  /// By configuring each view to use a layer with the correct redraw policy, AppKit will use Core Animation to draw
+  /// them, which uses a dedicated background thread instead of the main thread.
+  /// For more explanation, see https://jwilling.com/blog/osx-animations/
+  func configureSubtreeForCoreAnimation() {
+    if self is NSButton || self is NSSlider {
+      return
+    }
+    self.wantsLayer = true
+    self.layerContentsRedrawPolicy = .onSetNeedsDisplay
+    for subview in self.subviews {
+      subview.configureSubtreeForCoreAnimation()
+    }
+  }
+
   func addConstraintsToFillSuperview(v: Bool = true, h: Bool = true, priority: NSLayoutConstraint.Priority = .required) {
     guard let superview = superview else { return }
 

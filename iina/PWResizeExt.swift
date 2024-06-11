@@ -378,18 +378,27 @@ extension PlayerWindowController {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
 
-    IINAAnimation.disableAnimation {
+    IINAAnimation.disableAnimation { [self] in
       let layout = currentLayout
       let isTransientResize = newGeometry != nil
       let isFullScreen = currentLayout.isFullScreen
       log.verbose("ApplyWindowResize: fs=\(isFullScreen.yn) newGeo=\(newGeometry?.description ?? "nil")")
-      if !layout.isNativeFullScreen {
-        // Keep video margins up to date in almost every case
-        videoView.apply(newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: player.videoGeo))
 
-        if let newGeometry, !isFullScreen {
+      // These may no longer be aligned correctly. Just hide them
+      hideSeekTimeAndThumbnail()
+
+      // Update floating control bar position if applicable
+      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
+
+      if !layout.isNativeFullScreen {
+        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: player.videoGeo)
+
+        if isFullScreen {
+          // Keep video margins up to date in almost every case
+          videoView.apply(geo)
+        } else {
           /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
-          player.window.setFrameImmediately(newGeometry.windowFrame, animate: false)
+          player.window.setFrameImmediately(geo, notify: false)
         }
       }
 
@@ -407,12 +416,6 @@ extension PlayerWindowController {
         }
       }
 
-      // These may no longer be aligned correctly. Just hide them
-      hideSeekTimeAndThumbnail()
-
-      // Update floating control bar position if applicable
-      updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
-
       // Do not cache supplied geometry. Assume caller will handle it.
       if !isFullScreen && !isTransientResize {
         player.saveState()
@@ -429,9 +432,7 @@ extension PlayerWindowController {
   /// Set the window frame and if needed the content view frame to appropriately use the full screen.
   /// For screens that contain a camera housing the content view will be adjusted to not use that area of the screen.
   func applyLegacyFSGeo(_ geometry: PWinGeometry) {
-    guard let window = window else { return }
     let currentLayout = currentLayout
-    videoView.apply(geometry)
 
     if currentLayout.hasFloatingOSC {
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -442,13 +443,8 @@ extension PlayerWindowController {
     let topBarHeight = currentLayout.topBarPlacement == .insideViewport ? geometry.insideBars.top : geometry.outsideBars.top
     updateTopBarHeight(to: topBarHeight, topBarPlacement: currentLayout.topBarPlacement, cameraHousingOffset: geometry.topMarginHeight)
 
-    guard !geometry.windowFrame.equalTo(window.frame) else {
-      log.verbose("No need to update windowFrame for legacyFullScreen - no change")
-      return
-    }
-
     log.verbose("Calling setFrame for legacyFullScreen, to \(geometry)")
-    player.window.setFrameImmediately(geometry.windowFrame)
+    player.window.setFrameImmediately(geometry)
   }
 
   /// Updates/redraws current `window.frame` and its internal views from `newGeometry`. Animated.
@@ -483,9 +479,10 @@ extension PlayerWindowController {
       }
 
       /// Make sure this is up-to-date. Do this before `setFrame`
-      videoView.apply(newGeometry)
       if !isWindowHidden {
-        player.window.setFrameImmediately(newGeometry.windowFrame)
+        player.window.setFrameImmediately(newGeometry)
+      } else {
+        videoView.apply(newGeometry)
       }
       windowedModeGeo = newGeometry
 
@@ -569,10 +566,11 @@ extension PlayerWindowController {
     miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
     updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
     let convertedGeo = geometry.toPWinGeometry()
-    videoView.apply(convertedGeo)
 
     if setFrame {
-      player.window.setFrameImmediately(geometry.windowFrame, animate: true)
+      player.window.setFrameImmediately(convertedGeo, notify: true)
+    } else {
+      videoView.apply(convertedGeo)
     }
 
     if updateCache {

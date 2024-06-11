@@ -26,17 +26,21 @@ class PlayerWindow: NSWindow {
 
    Note: if `animate` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
-  func setFrameImmediately(_ newFrame: NSRect, animate: Bool = true) {
-    guard !frame.equalTo(newFrame) else {
+  func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
+    playerWinController?.videoView.videoLayer.enterAsynchronousMode()
+    if updateVideoView {
+      playerWinController?.videoView.apply(geometry)
+    }
+
+    guard !frame.equalTo(geometry.windowFrame) else {
       log.verbose("[setFrame] no change, skipping")
       return
     }
 
-    playerWinController?.videoView.videoLayer.enterAsynchronousMode()
-
     useZeroDurationForNextResize = true
-    log.verbose("[PWin.setFrame] animate=\(animate.yn) frame=\(newFrame)")
-    setFrame(newFrame, display: true, animate: animate)
+    log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
+    setFrame(geometry.windowFrame, display: false, animate: notify)
+    contentView?.needsDisplay = true
   }
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {

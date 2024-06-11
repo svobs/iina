@@ -1031,6 +1031,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
     fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
 
+    cv.configureSubtreeForCoreAnimation()
+
     if player.disableUI { hideFadeableViews() }
 
     // add notification observers
@@ -2395,10 +2397,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             log.verbose("No need to update windowFrame in response to ScreenParametersNotification - no change")
             return
           }
-          let newWindowFrame = newGeo.windowFrame
-          log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newWindowFrame), videoSize \(newGeo.videoSize)")
-          videoView.apply(newGeo)
-          player.window.setFrameImmediately(newWindowFrame, animate: false)
+          log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newGeo.windowFrame), videoSize \(newGeo.videoSize)")
+          player.window.setFrameImmediately(newGeo, notify: false)
         }
       }))
     }
@@ -3350,8 +3350,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
               let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
               tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
                 isAnimatingLayoutTransition = true  // tell window resize listeners to do nothing
-                videoView.apply(uncroppedClosedBarsGeo)
-                player.window.setFrameImmediately(uncroppedClosedBarsGeo.windowFrame)
+                player.window.setFrameImmediately(uncroppedClosedBarsGeo)
               })
             }
 
@@ -3427,8 +3426,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // Crop animation:
       let cropAnimationDuration = immediately ? 0 : IINAAnimation.CropAnimationDuration * 0.005
       tasks.append(IINAAnimation.Task(duration: cropAnimationDuration, timing: .default) { [self] in
-        videoView.apply(newIMGeo)
-        player.window.setFrameImmediately(newIMGeo.windowFrame)
+        player.window.setFrameImmediately(newIMGeo)
 
         // Add the crop filter now, if applying crop. The timing should mostly add up and look like it cut out a piece of the whole.
         // It's not perfect but better than before

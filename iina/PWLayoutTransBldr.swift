@@ -115,8 +115,7 @@ extension PlayerWindowController {
       /// To smooth out the process, restore window position & size before laying out its internals.
       switch initialLayout.spec.mode {
       case .windowed, .windowedInteractive, .musicMode:
-        videoView.apply(initialTransition.outputGeometry)
-        player.window.setFrameImmediately(initialTransition.outputGeometry.windowFrame)
+        player.window.setFrameImmediately(initialTransition.outputGeometry)
       case .fullScreen, .fullScreenInteractive:
         /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
         /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
@@ -402,8 +401,7 @@ extension PlayerWindowController {
         let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords,
                                                               topMarginHeight: 0,
                                                               outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
-        videoView.apply(intermediateGeo)
-        player.window.setFrameImmediately(intermediateGeo.windowFrame)
+        player.window.setFrameImmediately(intermediateGeo)
         if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
           // Entering music mode when album art is hidden
           miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: false)

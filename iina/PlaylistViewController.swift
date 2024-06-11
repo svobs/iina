@@ -227,6 +227,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
                                                  options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
                                                  owner: windowController, userInfo: [PlayerWindowController.TrackingArea.key: PlayerWindowController.TrackingArea.playerWindow]))
     }
+    view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
   }
 

@@ -1150,6 +1150,7 @@ class PlayerCore: NSObject {
 
     sendOSD(.rotation(userRotation))
 
+    // FIXME: need to calculate vid geo and avoid race conditions
     windowController.applyVidGeo(newVidGeo, then: { [self] in
       // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
       if windowController.pipStatus == .notInPIP {
