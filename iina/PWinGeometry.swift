@@ -295,6 +295,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return NSRect(origin: origin, size: videoSize)
   }
 
+  var widthBetweenInsideSidebars: CGFloat {
+    return viewportSize.width - insideBars.totalWidth
+  }
+
   var outsideBarsTotalWidth: CGFloat {
     return outsideBars.totalWidth
   }

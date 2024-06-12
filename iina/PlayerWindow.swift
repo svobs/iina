@@ -28,9 +28,7 @@ class PlayerWindow: NSWindow {
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
     playerWinController?.videoView.videoLayer.enterAsynchronousMode()
-    if updateVideoView {
-      playerWinController?.videoView.apply(geometry)
-    }
+    playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
       log.verbose("[setFrame] no change, skipping")

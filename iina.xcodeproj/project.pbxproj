@@ -125,7 +125,6 @@
 		84AABE941DBFAF1A00D138FD /* FontPickerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AABE921DBFAF1A00D138FD /* FontPickerWindowController.swift */; };
 		84AABE981DBFB62F00D138FD /* FixedFontManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 84AABE971DBFB62F00D138FD /* FixedFontManager.m */; };
 		84AE59491E0FD65800771B7E /* PlayerWindowMenuActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AE59481E0FD65800771B7E /* PlayerWindowMenuActions.swift */; };
-		84AF03D21E67492C003E3753 /* Contribution.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 84AF03D41E67492C003E3753 /* Contribution.rtf */; };
 		84BEEC3F1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BEEC3D1DFEDE2F00F945CA /* PrefKeyBindingViewController.swift */; };
 		84BEEC421DFEE46200F945CA /* StreamReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BEEC411DFEE46200F945CA /* StreamReader.swift */; };
 		84C3AB8B1E7BF22300FEFB7A /* MPVCommandFormat.strings in Resources */ = {isa = PBXBuildFile; fileRef = 84C3AB8A1E7BF22300FEFB7A /* MPVCommandFormat.strings */; };
@@ -167,6 +166,7 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
+		D101635D2C197D4D00D1D663 /* PWOSDExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D101635C2C197D4D00D1D663 /* PWOSDExt.swift */; };
 		D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* ConfTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* BindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* BindingTableViewController.swift */; };
 		D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* ConfTableState.swift */; };
@@ -1328,7 +1328,6 @@
 		8482985323C384A40088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PreferenceWindowController.strings; sourceTree = "<group>"; };
 		8482985523C384A80088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
 		8482985623C384B00088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		8482985823C384BA0088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Contribution.rtf; sourceTree = "<group>"; };
 		8482985923C384CE0088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/FilterPresets.strings; sourceTree = "<group>"; };
 		8482985A23C384F10088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/KeyBinding.strings; sourceTree = "<group>"; };
 		8483FAFF1EDFF325000F55D6 /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
@@ -1376,7 +1375,6 @@
 		84AABE971DBFB62F00D138FD /* FixedFontManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FixedFontManager.m; sourceTree = "<group>"; };
 		84AB8BCE2122235900E478BB /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sk; path = sk.lproj/PrefUtilsViewController.strings; sourceTree = "<group>"; };
 		84AE59481E0FD65800771B7E /* PlayerWindowMenuActions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlayerWindowMenuActions.swift; sourceTree = "<group>"; };
-		84AF03D51E674930003E3753 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hans"; path = "zh-Hans.lproj/Contribution.rtf"; sourceTree = "<group>"; };
 		84B3B1EB23C0CE7100340754 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/MainMenu.strings; sourceTree = "<group>"; };
 		84B3B1EC23C0CE7100340754 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
 		84B3B1ED23C0CE7100340754 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
@@ -1636,6 +1634,7 @@
 		C7DBA5EB1F07C5FD00C2B416 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InitialWindowController.strings; sourceTree = "<group>"; };
 		C7DC79CE1EC63821002DE23B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
+		D101635C2C197D4D00D1D663 /* PWOSDExt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PWOSDExt.swift; sourceTree = "<group>"; };
 		D1049C842872C154003D47C1 /* ConfTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* BindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableViewController.swift; sourceTree = "<group>"; };
 		D1049C882872CAD6003D47C1 /* ConfTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableState.swift; sourceTree = "<group>"; };
@@ -2681,6 +2680,7 @@
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
 				D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */,
+				D101635C2C197D4D00D1D663 /* PWOSDExt.swift */,
 				D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */,
 				D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */,
 				D13E807D2C026A2700537954 /* PWinGeoSet.swift */,
@@ -3024,7 +3024,6 @@
 				E34A0E012053F93A00B50097 /* PrefOSCToolbarSettingsSheetController.xib in Resources */,
 				E34E909A24F821280073BF04 /* GuideWindowController.xib in Resources */,
 				34F294C02C0B68B300F14962 /* Contribution.rtf in Resources */,
-				E3958566253133E80096811F /* SidebarTabView.xib in Resources */,
 				8400D5D21E1AB312006785F5 /* InspectorWindowController.xib in Resources */,
 				8400D5CC1E1AB2FF006785F5 /* PlaylistViewController.xib in Resources */,
 				8400D5ED1E1AB33F006785F5 /* PrefAdvancedViewController.xib in Resources */,
@@ -3107,7 +3106,7 @@
 				846352581EEEE11A0043F0CC /* ThumbnailPeekView.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
-				D1A4D98A2B1495270009AB4E /* LegacyMigration.swift in Sources */,
+				D101635D2C197D4D00D1D663 /* PWOSDExt.swift in Sources */,
 				E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */,
 				84F5D4951E44D5230060A838 /* KeyBindingCriterion.swift in Sources */,
 				D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */,

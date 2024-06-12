@@ -389,7 +389,7 @@
                     <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
                         <rect key="frame" x="8" y="303" width="160" height="61"/>
                         <subviews>
-                            <stackView wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="irz-R1-ajt" userLabel="OSD Horizontal Stack View">
+                            <stackView wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="irz-R1-ajt" userLabel="OSD Horizontal Stack View">
                                 <rect key="frame" x="8" y="8" width="144" height="45"/>
                                 <subviews>
                                     <textField identifier="OSD-Icon-Label" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yWY-Rb-zjW" userLabel="OSDIcon Label">
@@ -403,7 +403,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <stackView identifier="OSD-Vertical-Stack-View" wantsLayer="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="2" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" horizontalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g0j-zS-jKv" userLabel="OSD Vertical Stack View">
+                                    <stackView identifier="OSD-Vertical-Stack-View" wantsLayer="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="2" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" horizontalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="g0j-zS-jKv" userLabel="OSD Vertical Stack View">
                                         <rect key="frame" x="40" y="0.0" width="104" height="45"/>
                                         <subviews>
                                             <textField identifier="OSD-Label" wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="499" verticalCompressionResistancePriority="1000" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ofw-1d-N4T" userLabel="OSDLabel">
@@ -422,7 +422,7 @@
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                 </textFieldCell>
                                             </textField>
-                                            <progressIndicator identifier="OSD-Horizontal-Progress-Indicator" wantsLayer="YES" verticalHuggingPriority="750" horizontalCompressionResistancePriority="100" maxValue="1" controlSize="small" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="i10-rt-9cb" userLabel="OSDAccessoryProgress Progress Indicator">
+                                            <progressIndicator identifier="OSD-Horizontal-Progress-Indicator" verticalHuggingPriority="750" horizontalCompressionResistancePriority="100" maxValue="1" controlSize="small" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="i10-rt-9cb" userLabel="OSDAccessoryProgress Progress Indicator">
                                                 <rect key="frame" x="0.0" y="0.0" width="104" height="12"/>
                                             </progressIndicator>
                                         </subviews>
@@ -779,7 +779,7 @@
                         <binding destination="-2" name="font" keyPath="monospacedFont" id="6lX-sn-136"/>
                     </connections>
                 </textField>
-                <slider wantsLayer="YES" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="eBP-6g-bAT" userLabel="Playback Slider" customClass="PlaySlider" customModule="IINA" customModuleProvider="target">
+                <slider verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="eBP-6g-bAT" userLabel="Playback Slider" customClass="PlaySlider" customModule="IINA" customModuleProvider="target">
                     <rect key="frame" x="46" y="5" width="408" height="28"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" identifier="playSliderHeightConstraint" id="VU5-c1-ivd"/>

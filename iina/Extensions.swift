@@ -1517,7 +1517,8 @@ extension NSView {
   /// them, which uses a dedicated background thread instead of the main thread.
   /// For more explanation, see https://jwilling.com/blog/osx-animations/
   func configureSubtreeForCoreAnimation() {
-    if self is NSButton || self is NSSlider {
+    if self is NSButton || self is NSSlider || self is NSProgressIndicator {
+      // these still need to be redrawn on every resize or they get very buggy
       return
     }
     self.wantsLayer = true
