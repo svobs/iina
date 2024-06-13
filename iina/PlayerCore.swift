@@ -1144,9 +1144,9 @@ class PlayerCore: NSObject {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard userRotation != videoGeo.userRotation else { return }
 
-    log.verbose("Calling applyVidParams for new userRotation: \(userRotation)")
+    log.verbose("Calling applyVidGeo for new userRotation: \(userRotation)")
     // Update window geometry
-    let newVidGeo = videoGeo.changingUserRotation(to: userRotation)
+    let newVidGeo = videoGeo.clone(userRotation: userRotation)
 
     sendOSD(.rotation(userRotation))
 

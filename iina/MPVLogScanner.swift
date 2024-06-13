@@ -55,7 +55,7 @@ class MPVLogScanner {
 
   init(player: PlayerCore) {
     self.player = player
-    mpvLogSubsystem = Logger.Subsystem(rawValue: "mpv-\(player.label)")
+    mpvLogSubsystem = Logger.Subsystem(rawValue: String(format: Constants.String.iinaMpvCategoryFmt, player.label))
     if let logLevelString = Preference.string(for: .iinaMpvLogLevel), let mpvLogLevel = MPVLogLevel.fromString(logLevelString) {
       fileLogLevel = mpvLogLevel
     } else {

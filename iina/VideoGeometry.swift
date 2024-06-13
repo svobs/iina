@@ -19,7 +19,7 @@ import Foundation
 ///     ➤ `videoSizeC`: (`videoWidthC` x `videoHeightC`), AKA "dsize", per mpv usage)
 ///       ➤ Parse `selectedAspectLabel` into `aspectRatioOverride`, then apply it
 ///         ➤ `videoSizeCA`
-///           ➤ apply `totalRotation` (== `userRotation` + container-specified rotation)
+///           ➤ apply `totalRotation` (== `userRotation` + `codecRotation`)
 ///             ➤ `videoSizeCAR`
 struct VideoGeometry: Equatable, CustomStringConvertible {
   
@@ -27,7 +27,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return VideoGeometry(rawWidth: Int(AppData.defaultVideoSize.width),
                          rawHeight: Int(AppData.defaultVideoSize.height),
                          selectedAspectLabel: "",
-                         totalRotation: 0, userRotation: 0,
+                         codecRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
                          log: log)
   }
@@ -36,7 +36,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   init(rawWidth: Int, rawHeight: Int,
        selectedAspectLabel: String,
-       totalRotation: Int, userRotation: Int,
+       codecRotation: Int, userRotation: Int,
        selectedCropLabel: String,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
@@ -48,7 +48,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
       self.selectedAspectLabel = AppData.defaultAspectIdentifier
       self.aspectRatioOverride = nil
     }
-    self.totalRotation = totalRotation
+    self.codecRotation = codecRotation
     self.userRotation = userRotation
     self.selectedCropLabel = selectedCropLabel
     let cropRect = VideoGeometry.makeCropRect(fromCropLabel: selectedCropLabel, rawWidth: rawWidth, rawHeight: rawHeight)
@@ -82,28 +82,16 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
              selectedAspectLabel: String? = nil,
-             totalRotation: Int? = nil, userRotation: Int? = nil,
+             codecRotation: Int? = nil, userRotation: Int? = nil,
              selectedCropLabel: String? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
                          selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
-                         totalRotation: totalRotation ?? self.totalRotation, userRotation: userRotation ?? self.userRotation,
+                         codecRotation: codecRotation ?? self.codecRotation, userRotation: userRotation ?? self.userRotation,
                          selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: self.log)
   }
 
   func substituting(_ ffMeta: FFVideoMeta) -> VideoGeometry {
-    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height).changingTotalRotation(to: ffMeta.streamRotation)
-  }
-
-  func changingUserRotation(to newUserRotation: Int) -> VideoGeometry {
-    let totalRotationChange = newUserRotation - userRotation
-    let newTotalRotation = (totalRotation + totalRotationChange) %% 360
-    return clone(totalRotation: newTotalRotation, userRotation: newUserRotation)
-  }
-
-  func changingTotalRotation(to newTotalRotation: Int) -> VideoGeometry {
-    let userRotationChange = newTotalRotation - totalRotation
-    let newUserRotation = (userRotation + userRotationChange) %% 360
-    return clone(totalRotation: newTotalRotation, userRotation: newUserRotation)
+    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height, codecRotation: ffMeta.streamRotation)
   }
 
   // MARK: - TRANSFORMATION 1: Crop
@@ -192,17 +180,21 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - TRANSFORMATION 3: Rotation
   // (Crop + Aspect + Rotation)
 
-  /// `MPVProperty.videoParamsRotate`.
-  ///
-  /// Is refreshed as property change events arrive for `MPVProperty.videoParamsRotate` ("video-params/rotate")
-  /// IINA only supports one of [0, 90, 180, 270]
-  let totalRotation: Int
+  let codecRotation: Int
 
   /// `MPVProperty.videoRotate`.
   ///
   /// Is refreshed as property change events arrive for `MPVOption.Video.videoRotate` ("video-rotate").
   /// Not to be confused with the `MPVProperty.videoParamsRotate` ("video-params/rotate")
   let userRotation: Int
+
+  /// `MPVProperty.videoParamsRotate`.
+  ///
+  /// Is refreshed as property change events arrive for `MPVProperty.videoParamsRotate` ("video-params/rotate")
+  /// IINA only supports one of [0, 90, 180, 270]
+  var totalRotation: Int {
+    return (codecRotation + userRotation) %% 360
+  }
 
   var isWidthSwappedWithHeightByRotation: Bool {
     // 90, 270, etc...

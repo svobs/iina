@@ -107,6 +107,10 @@ enum OSDMessage {
   func details() -> (String, OSDType) {
     switch self {
     case .fileStart(let filename, let detailMsg):
+      if detailMsg.isEmpty {
+        // Omit caption if there is nothing to show in it
+        return (filename, .normal)
+      }
       return (filename, .withText(detailMsg))
 
     case .pause(let videoPosition, let videoDuration),

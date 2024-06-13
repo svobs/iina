@@ -161,6 +161,11 @@ struct Constants {
     static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
     static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
     static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
+
+    // Pref keys
+    static let iinaMpvCategoryFmt = "mpv-%@"
+    static let iinaLaunchPrefix = "Launch-"
+    static let openWindowListFmt = "\(iinaLaunchPrefix)%d-Windows"
   }
   struct SizeLimit {
     static let maxCachedVideoSizes: Int = 100000

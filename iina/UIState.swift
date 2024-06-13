@@ -85,9 +85,6 @@ extension Preference {
       }
     }
 
-    static private let iinaLaunchPrefix = "Launch-"
-    // Comma-separated list of open windows, back to front
-    static private let openWindowListFmt = "Launch-%d-Windows"
 
     /// Each instance of IINA, when it starts, grabs the previous launch count from the prefs and increments it by 1, which becomes its launchID.
     static let launchID: Int = {
@@ -127,11 +124,11 @@ extension Preference {
     }
 
     static func makeOpenWindowListKey(forLaunchID launchID: Int) -> String {
-      return String(format: Preference.UIState.openWindowListFmt, launchID)
+      return String(format: Constants.String.openWindowListFmt, launchID)
     }
 
     static func launchName(forID launchID: Int) -> String {
-      return "\(Preference.UIState.iinaLaunchPrefix)\(launchID)"
+      return "\(Constants.String.iinaLaunchPrefix)\(launchID)"
     }
 
     /// Example input=`"PWin-1032m0"` → output=`"1032m0"`
@@ -154,7 +151,7 @@ extension Preference {
     }
 
     static func launchID(fromOpenWindowListKey key: String) -> Int? {
-      if key.starts(with: iinaLaunchPrefix) && key.hasSuffix("Windows") {
+      if key.starts(with: Constants.String.iinaLaunchPrefix) && key.hasSuffix("Windows") {
         let splitted = key.split(separator: "-")
         if splitted.count == 3 {
           return Int(splitted[1])
@@ -174,7 +171,7 @@ extension Preference {
     }
 
     static func launchID(fromLaunchName launchName: String) -> Int? {
-      if launchName.starts(with: iinaLaunchPrefix) {
+      if launchName.starts(with: Constants.String.iinaLaunchPrefix) {
         let splitted = launchName.split(separator: "-")
         if splitted.count == 2 {
           return Int(splitted[1])
@@ -220,7 +217,8 @@ extension Preference {
       Preference.set(value, for: key)
     }
 
-    // Returns the autosave names of windows which have been saved in the set of open windows
+    /// Returns the autosave names of windows which have been saved in the set of open windows
+    /// Value is a comma-separated string containing the list of open windows, back to front
     static private func getSavedOpenWindowsBackToFront(forLaunchID launchID: Int) -> [SavedWindow] {
       let key = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
       let windowList = parseSavedOpenWindowsBackToFront(fromPrefValue: UserDefaults.standard.string(forKey: key))

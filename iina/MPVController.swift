@@ -18,7 +18,7 @@ fileprivate let logEvents = false
  * Change this variable to adjust threshold for *receiving* MPV_EVENT_LOG_MESSAGE messages.
  * NOTE: Lua keybindings require at *least* level "debug", so don't set threshold to be stricter than this level
  */
-fileprivate let mpvLogSubscriptionLevel: String = "debug"
+fileprivate let mpvLogSubscriptionLevel: String = MPVLogLevel.debug.description
 
 fileprivate func errorString(_ code: Int32) -> String {
   return String(cString: mpv_error_string(code))
@@ -999,9 +999,10 @@ not applying FFmpeg 9599 workaround
       return nil
     }
 
+    let codecRotation = (mpvVideoParamsRotate - mpvVideoRotate) %% 360
     let vidGeo = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                                selectedAspectLabel: player.videoGeo.selectedAspectLabel,
-                               totalRotation: mpvVideoParamsRotate, userRotation: mpvVideoRotate,
+                               codecRotation: codecRotation, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentMedia.path)")

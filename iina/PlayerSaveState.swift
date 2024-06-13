@@ -411,11 +411,14 @@ struct PlayerSaveState {
   static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
     // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
     let defaultGeo = VideoGeometry.defaultGeometry(log)
+    let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
+    let userRotation = PlayerSaveState.int(for: .videoRotation, props)
+    let codecRotation = (totalRotation ?? 0) - (userRotation ?? 0)
     let videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
                                     rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
                                     selectedAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
-                                    totalRotation: PlayerSaveState.int(for: .totalRotation, props),
-                                    userRotation: PlayerSaveState.int(for: .videoRotation, props),
+                                    codecRotation: codecRotation,
+                                    userRotation: userRotation,
                                     selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
 
     let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)

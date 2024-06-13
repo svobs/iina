@@ -64,7 +64,7 @@ enum MPVLogLevel: Int, CustomStringConvertible {
     }
   }
 
-  public var description: String {
+  public var string: String {
     get {
       switch self {
       case .no:
@@ -85,6 +85,10 @@ enum MPVLogLevel: Int, CustomStringConvertible {
         return "trace"
       }
     }
+  }
+
+  public var description: String {
+    return string
   }
 
   /*
