@@ -2444,7 +2444,12 @@ class PlayerCore: NSObject {
     syncUI(.volume)
     postNotification(.iinaAIDChanged)
     if !silent {
-      sendOSD(.track(info.currentTrack(.audio) ?? .noneAudioTrack))
+      if let audioTrack = info.currentTrack(.audio) {
+        sendOSD(.audioTrack(info.currentTrack(.audio) ?? .noneAudioTrack, info.volume))
+      } else {
+        // Do not show volume if no audio track:
+        sendOSD(.track(.noneAudioTrack))
+      }
     }
   }
 

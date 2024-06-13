@@ -62,6 +62,7 @@ enum OSDMessage {
   case stop
   case chapter(String)
   case track(MPVTrack)
+  case audioTrack(MPVTrack, Double)
   case addToPlaylist(Int)
   case clearPlaylist
 
@@ -95,7 +96,7 @@ enum OSDMessage {
 
   var isSoundRelated: Bool {
     switch self {
-    case .volume, .audioDelay, .mute, .unMute:
+    case .volume, .audioDelay, .mute, .unMute, .audioTrack(_, _):
       return true
     case .track(let track):
       return track.type == .audio
@@ -108,7 +109,7 @@ enum OSDMessage {
     switch self {
     case .fileStart(let filename, let detailMsg):
       if detailMsg.isEmpty {
-        // Omit caption if there is nothing to show in it
+        // Omit caption if there is nothing to display in it
         return (filename, .normal)
       }
       return (filename, .withText(detailMsg))
@@ -267,6 +268,10 @@ enum OSDMessage {
         String(format: NSLocalizedString("osd.chapter", comment: "Chapter: %@"), name),
         .withLeftToRightText("({{currChapter}}/{{chapterCount}}) {{position}} / {{duration}}")
       )
+
+    case .audioTrack(let track, let volume):
+      return ("Audio: " + track.readableTitle,
+              .withProgress(Double(volume) / Double(Preference.integer(for: .maxVolume))))
 
     case .track(let track):
       let trackTypeStr: String
