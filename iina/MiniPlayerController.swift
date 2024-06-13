@@ -104,7 +104,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     // close button
     windowController.closeButtonVE.action = #selector(windowController.close)
     windowController.closeButtonBox.action = #selector(windowController.close)
-    windowController.closeButtonBackgroundViewVE.roundCorners(withRadius: 8)
+    windowController.closeButtonBackgroundViewVE.roundCorners()
 
     // hide controls initially
     controllerButtonsPanelView.alphaValue = 0

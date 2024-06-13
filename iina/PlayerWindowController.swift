@@ -10,10 +10,6 @@ import Cocoa
 
 // MARK: - Constants
 
-fileprivate let thumbnailExtraOffsetX = Constants.Distance.Thumbnail.extraOffsetX
-fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffsetY
-fileprivate let roundedCornerRadius: CGFloat = 6.0
-
 // MARK: - Constants
 
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
@@ -596,6 +592,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       animationPipeline.submitSudden { [self] in
         let geo = isInMiniPlayer ? musicModeGeo.toPWinGeometry() : windowedModeGeo
         updateOSDTextSize(from: geo)
+        setOSDViews()
       }
     case PK.aspectRatioPanelPresets.rawValue, PK.cropPanelPresets.rawValue:
       quickSettingView.updateSegmentLabels()
@@ -663,6 +660,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var trailingSidebarToOSDSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdTopToTopBarConstraint: NSLayoutConstraint!
   @IBOutlet var osdLeadingToMiniPlayerButtonsTrailingConstraint: NSLayoutConstraint!
+  @IBOutlet weak var osdIconWidthConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdIconHeightConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdTopMarginConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdTrailingMarginConstraint: NSLayoutConstraint!
@@ -731,10 +729,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var leadingSidebarTrailingBorder: NSBox!  // shown if leading sidebar is "outside"
   @IBOutlet weak var trailingSidebarView: NSVisualEffectView!
   @IBOutlet weak var trailingSidebarLeadingBorder: NSBox!  // shown if trailing sidebar is "outside"
+
   @IBOutlet weak var bufferIndicatorView: NSVisualEffectView!
   @IBOutlet weak var bufferProgressLabel: NSTextField!
   @IBOutlet weak var bufferSpin: NSProgressIndicator!
   @IBOutlet weak var bufferDetailLabel: NSTextField!
+
   @IBOutlet weak var additionalInfoView: NSVisualEffectView!
   @IBOutlet weak var additionalInfoLabel: NSTextField!
   @IBOutlet weak var additionalInfoStackView: NSStackView!
@@ -755,10 +755,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var speedLabel: NSTextField!
 
+  // OSD
   @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
   @IBOutlet weak var osdHStackView: NSStackView!
   @IBOutlet weak var osdVStackView: NSStackView!
-  @IBOutlet weak var osdIcon: NSTextField!
+  @IBOutlet weak var osdIconImageView: NSImageView!
   @IBOutlet weak var osdLabel: NSTextField!
   @IBOutlet weak var osdAccessoryText: NSTextField!
   @IBOutlet weak var osdAccessoryProgress: NSProgressIndicator!
@@ -1023,8 +1024,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       view?.state = .active
     }
 
-    bufferIndicatorView.roundCorners(withRadius: roundedCornerRadius)
-    additionalInfoView.roundCorners(withRadius: roundedCornerRadius)
+    bufferIndicatorView.roundCorners()
+    additionalInfoView.roundCorners()
+    osdVisualEffectView.roundCorners()
 
     // Video controllers and timeline indicators should not flip in a right-to-left language.
     fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
@@ -2268,7 +2270,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     updateOSDTextSize(from: newGeometry)
-    osdVisualEffectView.layoutSubtreeIfNeeded()
+    setOSDViews()
   }
 
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
@@ -3062,8 +3064,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // - 1. Time Hover Label
 
-    let mousePosX = playSlider.convert(event.locationInWindow, from: nil).x
     let originalPosX = event.locationInWindow.x
+    let mousePosX = playSlider.convert(event.locationInWindow, from: nil).x
 
     timePositionHoverLabelHorizontalCenterConstraint.constant = mousePosX
 
@@ -3076,12 +3078,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // - 2. Thumbnail Preview
 
-    let videoGeo = player.videoGeo
-    let videoAspectCAR = videoGeo.videoAspectCAR
-
-    guard let thumbnails = player.info.currentMedia?.thumbnails,
-          let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second),
-          let currentControlBar else {
+    guard let currentControlBar else {
       thumbnailPeekView.isHidden = true
       return
     }
@@ -3089,143 +3086,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       thumbnailPeekView.isHidden = true
       return
     }
-
-    let rotatedImage = ffThumbnail.image
-    var thumbWidth: Double = rotatedImage.size.width
-    var thumbHeight: Double = rotatedImage.size.height
-
-    guard thumbWidth > 0, thumbHeight > 0 else {
-      log.error("Cannot display thumbnail: thumbnail width or height is not positive!")
-      return
-    }
-    var thumbAspect = thumbWidth / thumbHeight
-
-    // The aspect ratio of some videos is different at display time. May need to resize these videos
-    // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
-    // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
-    if thumbAspect != videoAspectCAR {
-      thumbHeight = (thumbWidth / videoAspectCAR).rounded()
-      /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
-      thumbAspect = thumbWidth / thumbHeight
-    }
-
-    /// Calculate `availableHeight` (viewport height, minus top & bottom bars)
-    let availableHeight = viewportView.frame.height - currentLayout.insideTopBarHeight - currentLayout.insideBottomBarHeight - thumbnailExtraOffsetY - thumbnailExtraOffsetY
-
-    let sizeOption: Preference.ThumbnailSizeOption = Preference.enum(for: .thumbnailSizeOption)
-    switch sizeOption {
-    case .fixedSize:
-      // Stored thumb size should be correct (but may need to be scaled down)
-      break
-    case .scaleWithViewport:
-      // Scale thumbnail as percentage of available height
-      let percentage = min(1, max(0, Preference.double(for: .thumbnailDisplayedSizePercentage) / 100.0))
-      thumbHeight = availableHeight * percentage
-    }
-
-    // Thumb too small?
-    if thumbHeight < Constants.Distance.Thumbnail.minHeight {
-      thumbHeight = Constants.Distance.Thumbnail.minHeight
-    }
-
-    // Thumb too tall?
-    if thumbHeight > availableHeight {
-      // Scale down thumbnail so it doesn't overlap top or bottom bars
-      thumbHeight = availableHeight
-    }
-    thumbWidth = thumbHeight * thumbAspect
-
-    // Also scale down thumbnail if it's wider than the viewport
-    let availableWidth = viewportView.frame.width - thumbnailExtraOffsetX - thumbnailExtraOffsetX
-    if thumbWidth > availableWidth {
-      thumbWidth = availableWidth
-      thumbHeight = thumbWidth / thumbAspect
-    }
-
-    let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
-    let oscHeight = currentControlBar.frame.size.height
-
-    let showAbove: Bool
-    if currentLayout.isMusicMode {
-      showAbove = true  // always show above in music mode
-    } else {
-      switch currentLayout.oscPosition {
-      case .top:
-        showAbove = false
-      case .bottom:
-        showAbove = true
-      case .floating:
-        let totalMargin = thumbnailExtraOffsetY + thumbnailExtraOffsetY
-        let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalMargin)
-        if availableHeightBelow > thumbHeight {
-          // Show below by default, if there is space for the desired size
-          showAbove = false
-        } else {
-          // If not enough space to show the full-size thumb below, then show above if it has more space
-          let availableHeightAbove = max(0, viewportView.frame.height - (oscOriginInWindowY + oscHeight + totalMargin + currentLayout.insideTopBarHeight))
-          showAbove = availableHeightAbove > availableHeightBelow
-          if showAbove, thumbHeight > availableHeightAbove {
-            // Scale down thumbnail so it doesn't get clipped by the side of the window
-            thumbHeight = availableHeightAbove
-            thumbWidth = thumbHeight * thumbAspect
-          }
-        }
-
-        if !showAbove, thumbHeight > availableHeightBelow {
-          thumbHeight = availableHeightBelow
-          thumbWidth = thumbHeight * thumbAspect
-        }
-      }
-    }
-
-    // Need integers below.
-    thumbWidth = round(thumbWidth)
-    thumbHeight = round(thumbHeight)
-
-    guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
-          thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
-      log.verbose("Not enough space to display thumbnail")
-      thumbnailPeekView.isHidden = true
-      return
-    }
-
-    // Scaling is a potentially expensive operation, so reuse the last image if no change is needed
-    if thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
-      thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
-
-      let finalImage: NSImage
-      // Apply crop first. Then aspect
-      let croppedImage: NSImage
-      if let normalizedCropRect = player.videoGeo.cropRectNormalized {
-        croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
-      } else {
-        croppedImage = rotatedImage
-      }
-      finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight))
-      thumbnailPeekView.imageView.image = finalImage
-      thumbnailPeekView.frame.size = finalImage.size
-    }
-
-    let thumbOriginY: CGFloat
-    if showAbove {
-      // Show thumbnail above seek time, which is above slider
-      thumbOriginY = oscOriginInWindowY + oscHeight + thumbnailExtraOffsetY
-    } else {
-      // Show thumbnail below slider
-      thumbOriginY = max(thumbnailExtraOffsetY, oscOriginInWindowY - thumbHeight - thumbnailExtraOffsetY)
-    }
-    // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
-    let minX = (videoView.userInterfaceLayoutDirection == .rightToLeft ? currentLayout.outsideTrailingBarWidth : currentLayout.outsideLeadingBarWidth) + thumbnailExtraOffsetX
-    let maxX = minX + availableWidth
-    let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
-    thumbnailPeekView.frame.origin = NSPoint(x: thumbOriginX, y: thumbOriginY)
-
-    thumbnailPeekView.refreshBorderStyle()
-
-    if log.isTraceEnabled {
-      log.trace("Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(thumbnailPeekView.frame.size)")
-    }
-    thumbnailPeekView.isHidden = false
+    thumbnailPeekView.displayThumbnail(forTime: previewTime, originalPosX: originalPosX, player, currentLayout,
+                                       currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
+                                       isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
   }
 
   // MARK: - UI: Other

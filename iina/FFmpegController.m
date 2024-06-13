@@ -458,7 +458,7 @@ return -1;\
   if (sd) {
     double r = av_display_rotation_get(((const int32_t *)sd));
     rotation = ((((int)(-r)) % 360) + 360) % 360;
-    NSLog(@"ROTATION: %d", rotation);
+//    NSLog(@"ROTATION: %d", rotation);
   }
 
   static int sizeArray[3];

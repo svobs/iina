@@ -38,7 +38,7 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   override func awakeFromNib() {
-    self.roundCorners(withRadius: 6)
+    self.roundCorners()
     self.translatesAutoresizingMaskIntoConstraints = false
   }
 

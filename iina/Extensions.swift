@@ -1043,11 +1043,12 @@ extension NSImage {
 
 extension NSVisualEffectView {
   func roundCorners(withRadius cornerRadius: CGFloat) {
-    if #available(macOS 10.14, *) {
-      maskImage = .maskImage(cornerRadius: cornerRadius)
-    } else {
-      layer?.cornerRadius = cornerRadius
-    }
+    layer?.cornerRadius = cornerRadius
+  }
+
+  func roundCorners() {
+    let radius = suggestedRoundedCornerRadius()
+    roundCorners(withRadius: radius)
   }
 }
 
@@ -1509,7 +1510,17 @@ extension NSViewController {
   }
 }
 
+extension NSLayoutConstraint.Priority {
+  static let minimum: NSLayoutConstraint.Priority = NSLayoutConstraint.Priority(rawValue: 1)
+}
+
 extension NSView {
+
+  func suggestedRoundedCornerRadius() -> CGFloat {
+    // Set corner radius to betwen 10 and 20
+    return 10 + min(10, max(0, (frame.height - 400) * 0.01))
+  }
+
 
   /// Recursive func which configures all views in the given subtree for smoother animation.
   ///

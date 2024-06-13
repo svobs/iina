@@ -38,7 +38,7 @@ extension PlayerWindowController {
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
     dispatchPrecondition(condition: .onQueue(.main))
 
-    let message: OSDMessage
+    let message: OSDMessage?
 
     if let newMessage {
       message = newMessage
@@ -53,77 +53,22 @@ extension PlayerWindowController {
       case .seek(_, _):
         message = .seek(videoPosition: pos, videoDuration: duration)
       default:
-        return
+        message = nil
       }
     } else {
-      return
+      message = nil
     }
+
+    guard let message else { return }
+
+    defer {
+      osdVisualEffectView.layout()
+    }
+
+    updateOSDIcon(from: message)
 
     let (osdText, osdType) = message.details()
-
-    var icon: NSImage? = nil
-    var isImageDisabled = false
-    if #available(macOS 11.0, *) {
-      if message.isSoundRelated {
-        // Add sound icon which indicates current audio status.
-        // Gray color == disabled. Slash == muted. Can be combined
-
-        let isAudioDisabled = !player.info.isAudioTrackSelected
-        let currentVolume = player.info.volume
-        let isMuted = player.info.isMuted
-        isImageDisabled = isAudioDisabled
-        if isMuted {
-          icon = NSImage(systemSymbolName: "speaker.slash.fill", accessibilityDescription: "Audio is muted")!
-        } else if isAudioDisabled {
-          icon = NSImage(systemSymbolName: "speaker.fill", accessibilityDescription: "No audio track is selected")!
-        } else {
-          if #available(macOS 13.0, *) {
-            // Vary icon slightly based on volume level
-            icon = NSImage(systemSymbolName: "speaker.wave.3.fill", variableValue: currentVolume, accessibilityDescription: "Sound is enabled")!
-          } else {
-            icon = NSImage(systemSymbolName: "speaker.wave.3.fill", accessibilityDescription: "Sound is enabled")!
-          }
-        }
-      } else {
-        switch message {
-        case .resume:
-          icon = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")!
-        case .pause:
-          icon = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "Pause")!
-        case .stop:
-          icon = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "Stop")!
-        case .seek:
-          icon = osdCurrentSeekIcon
-        default:
-          break
-        }
-      }
-    }
-
-    if let icon {
-      let attachment = NSTextAttachment()
-      attachment.image = icon
-      let iconString = NSMutableAttributedString(attachment: attachment)
-      if isImageDisabled {
-        iconString.addAttributes([.foregroundColor: NSColor.disabledControlTextColor], range: NSMakeRange(0, iconString.length))
-      }
-      osdIcon.isHidden = false
-      osdIcon.attributedStringValue = iconString
-      osdLabel.stringValue = osdText
-
-      if #available(macOS 11.0, *) {
-        // Need this only for OSD messages which use the icon, and MacOS 11.0+
-        osdIconHeightConstraint.priority = .required
-      }
-    } else {
-      // No icon
-      osdIcon.isHidden = true
-      osdIcon.stringValue = ""
-      osdLabel.stringValue = osdText
-
-      osdIconHeightConstraint.constant = 0
-      osdIconHeightConstraint.priority = .defaultLow
-    }
+    osdLabel.stringValue = osdText
 
     // Most OSD messages are displayed based on the configured language direction.
     osdAccessoryProgress.userInterfaceLayoutDirection = osdVStackView.userInterfaceLayoutDirection
@@ -159,6 +104,61 @@ extension PlayerWindowController {
       ]
       osdAccessoryText.stringValue = try! (try! Template(string: text)).render(osdData)
     }
+  }
+
+  private func updateOSDIcon(from message: OSDMessage) {
+    guard #available(macOS 11.0, *) else { return }
+
+    var icon: NSImage? = nil
+    var isIconGrayedOut = false
+
+    if message.isSoundRelated {
+      // Add sound icon which indicates current audio status.
+      // Gray color == disabled. Slash == muted. Can be combined
+
+      let isAudioDisabled = !player.info.isAudioTrackSelected
+      let currentVolume = player.info.volume
+      let isMuted = player.info.isMuted
+      isIconGrayedOut = isAudioDisabled
+      if isMuted {
+        icon = NSImage(systemSymbolName: "speaker.slash.fill", accessibilityDescription: "Audio is muted")!
+      } else if isAudioDisabled {
+        icon = NSImage(systemSymbolName: "speaker.fill", accessibilityDescription: "No audio track is selected")!
+      } else {
+        if #available(macOS 13.0, *) {
+          // Vary icon slightly based on volume level
+          icon = NSImage(systemSymbolName: "speaker.wave.3.fill", variableValue: currentVolume, accessibilityDescription: "Sound is enabled")!
+        } else {
+          icon = NSImage(systemSymbolName: "speaker.wave.3.fill", accessibilityDescription: "Sound is enabled")!
+        }
+      }
+    } else {
+      switch message {
+      case .resume:
+        icon = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")!
+      case .pause:
+        icon = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "Pause")!
+      case .stop:
+        icon = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "Stop")!
+      case .seek:
+        icon = osdCurrentSeekIcon
+      default:
+        break
+      }
+    }
+
+    if let icon {
+      let finalheight = osdIconHeightConstraint.constant
+      let finalWidth = round(icon.size.aspect * finalheight)
+      osdIconWidthConstraint.constant = finalWidth
+
+      osdIconImageView.image =  icon
+      osdIconImageView.contentTintColor = isIconGrayedOut ? .disabledControlTextColor : .controlTextColor
+    }
+    let isIconVisible = icon != nil
+    // Need this only for OSD messages which use the icon
+    osdIconImageView.isHidden = !isIconVisible
+    log.verbose("OSD icon visible=\(isIconVisible.yesno) for msg: \(message)")
   }
 
   /// If `position` and `duration` are different than their previously cached values, overwrites the cached values and
@@ -421,18 +421,19 @@ extension PlayerWindowController {
       osdTextSize = min(osdTextSize, 150)
     }
 
-    Logger.log("               SIZE: \(osdTextSize)")
     guard osdTextSize != osdTextSizeLast else { return }
+
+    log.verbose("Changing OSD textSize: \(osdTextSizeLast) → \(osdTextSize)")
 
     let osdAccessoryTextSize = (osdTextSize * 0.75).clamped(to: 11...25)
     osdAccessoryText.font = NSFont.monospacedDigitSystemFont(ofSize: osdAccessoryTextSize, weight: .regular)
+    osdVisualEffectView.roundCorners()
 
-    let fullMargin = 8 + (osdTextSize * 0.12)
-    let halfMargin = fullMargin * 0.5
-    osdTopMarginConstraint.constant = halfMargin
-    osdBottomMarginConstraint.constant = halfMargin
-    osdTrailingMarginConstraint.constant = fullMargin
-    osdLeadingMarginConstraint.constant = fullMargin
+    let marginScaled = 8 + (osdTextSize * 0.06)
+    osdTopMarginConstraint.constant = marginScaled
+    osdBottomMarginConstraint.constant = marginScaled
+    osdTrailingMarginConstraint.constant = marginScaled
+    osdLeadingMarginConstraint.constant = marginScaled
 
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
     osdLabel.font = osdLabelFont
@@ -446,9 +447,9 @@ extension PlayerWindowController {
       }
     }
 
-    let osdIconTextSize = (osdTextSize * 1.1) + (osdAccessoryProgress.fittingSize.height * 1.5)
+    let osdIconTextSize = osdTextSize + (osdAccessoryProgress.fittingSize.height)
     let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
-    osdIcon.font = osdIconFont
+    osdIconImageView.font = osdIconFont
 
     if #available(macOS 11.0, *) {
       // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
@@ -461,10 +462,6 @@ extension PlayerWindowController {
       let iconHeight = iconString.size().height
 
       osdIconHeightConstraint.constant = iconHeight
-    } else {
-      // don't use constraint for older versions. OSD text's vertical position may change depending on icon
-      osdIconHeightConstraint.priority = .defaultLow
-      osdIconHeightConstraint.constant = 0
     }
     osdTextSizeLast = osdTextSize
   }
