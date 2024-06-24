@@ -1672,6 +1672,7 @@ class MainWindowController: PlayerWindowController {
   }
 
   func windowWillStartLiveResize(_ notification: Notification) {
+    Logger.log("RESIZE START")
     videoView.videoLayer.isAsynchronous = true
   }
 
@@ -1682,6 +1683,7 @@ class MainWindowController: PlayerWindowController {
     guard !isClosing else { return }
     videoView.videoSize = window!.convertToBacking(videoView.bounds).size
     videoView.videoLayer.isAsynchronous = false
+    Logger.log("   RESIZE END")
     updateWindowParametersForMPV()
   }
 
@@ -2599,7 +2601,8 @@ class MainWindowController: PlayerWindowController {
     if let videoWidth = player.info.videoWidth {
       let windowScale = Double((frame ?? window.frame).width) / Double(videoWidth)
       player.info.cachedWindowScale = windowScale
-      player.mpv.setDouble(MPVProperty.windowScale, windowScale, level: .verbose)
+      Logger.log("Setting mpv WINDOW-SCALE to \(windowScale)")
+//      player.mpv.setDouble(MPVProperty.windowScale, windowScale, level: .verbose)
     }
   }
 

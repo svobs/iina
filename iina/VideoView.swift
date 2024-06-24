@@ -68,6 +68,8 @@ class VideoView: NSView {
     autoresizingMask = [.width, .height]
     wantsBestResolutionOpenGLSurface = true
     wantsExtendedDynamicRangeOpenGLSurface = true
+    /// This has a default of `.never`:
+//    self.layerContentsRedrawPolicy = .duringViewResize
 
     // dragging init
     registerForDraggedTypes([.nsFilenames, .nsURL, .string])

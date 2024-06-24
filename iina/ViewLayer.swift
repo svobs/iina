@@ -184,6 +184,7 @@ class ViewLayer: CAOpenGLLayer {
     let needsFlush: Bool = videoView.$isUninited.withLock() { isUninited in
       guard !isUninited else { return false }
 
+      Logger.log("VideoView DISPLAY")
       super.display()
       return true
     }
