@@ -17,7 +17,7 @@ class ViewLayer: CAOpenGLLayer {
   let mpvGLQueue = DispatchQueue(label: "com.colliderli.iina.mpvgl", qos: .userInteractive)
   @Atomic var blocked = false
 
-  private let displayLock = NSRecursiveLock()
+  private let displayLock = NSLock()
 
   private var fbo: GLint = 1
 
@@ -167,9 +167,12 @@ class ViewLayer: CAOpenGLLayer {
     display()
   }
 
+  var first = true
   override func display() {
-    displayLock.lock()
-    defer { displayLock.unlock() }
+    if first {
+    } else {
+      displayLock.lock()
+    }
 
     super.display()
     CATransaction.flush()
@@ -200,6 +203,12 @@ class ViewLayer: CAOpenGLLayer {
         }
       }
       needsMPVRender = false
+    }
+
+    if first {
+      first = false
+    } else {
+      displayLock.unlock()
     }
   }
 
