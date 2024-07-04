@@ -29,18 +29,16 @@ class PlayerWindow: NSWindow {
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
     playerWinController?.videoView.videoLayer.enterAsynchronousMode()
     useZeroDurationForNextResize = true
-    IINAAnimation.disableAnimation { [self] in
-      playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
+    playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
 
-      guard !frame.equalTo(geometry.windowFrame) else {
-        log.verbose("[setFrame] no change, skipping")
-        return
-      }
-
-      log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
-      setFrame(geometry.windowFrame, display: false, animate: notify)
-      contentView?.needsDisplay = true
+    guard !frame.equalTo(geometry.windowFrame) else {
+      log.verbose("[setFrame] no change, skipping")
+      return
     }
+
+    log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
+    setFrame(geometry.windowFrame, display: false, animate: notify)
+//    contentView?.needsDisplay = true
   }
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {

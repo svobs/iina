@@ -2265,9 +2265,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func resizeSubviewsForWindowResize(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     if updateVideoView {
-      IINAAnimation.disableAnimation { [self] in
-        videoView.apply(newGeometry)
-      }
+      videoView.apply(newGeometry)
     }
 
     updateOSDTextSize(from: newGeometry)
