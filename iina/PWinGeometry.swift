@@ -233,6 +233,17 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   var log: Logger.Subsystem { video.log }
 
+  /// Can only be `false` while in music mode. All other modes should return `true` always.
+  var isVideoVisible: Bool {
+    return viewportSize.height == 0
+  }
+
+  var isMusicModePlaylistVisible: Bool {
+    guard mode == .musicMode else { return false }
+    let playlistHeight = outsideBars.totalHeight - Constants.Distance.MusicMode.oscHeight
+    return playlistHeight > 0
+  }
+
   var videoAspect: CGFloat {
     return video.videoAspectCAR
   }
@@ -824,7 +835,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if let intendedViewportSize  {
         // Just use existing size in this case:
         desiredViewportSize = intendedViewportSize
-        log.verbose("[applyVidGeo D-2] Using intendedViewportSize \(intendedViewportSize)")
+        log.verbose("[applyVideoGeoTransform D-2] Using intendedViewportSize \(intendedViewportSize)")
       }
 
       let minNewViewportHeight = round(desiredViewportSize.width / newVidGeo.videoViewAspect)
@@ -834,7 +845,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
     }
 
-    log.verbose("[applyVidGeo D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
+    log.verbose("[applyVideoGeoTransform D-3] Minimal resize: applying desiredViewportSize \(desiredViewportSize)")
     return clone(video: newVidGeo).scaleViewport(to: desiredViewportSize)
   }
 

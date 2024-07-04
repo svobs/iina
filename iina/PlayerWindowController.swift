@@ -397,6 +397,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     .shortenFileGroupsInPlaylist,
     .autoSwitchToMusicMode,
     .hideWindowsWhenInactive,
+    .enableControlBarAutoHide,
     .osdAutoHideTimeout,
     .osdTextSize,
     .osdPosition,
@@ -443,17 +444,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     switch keyPath {
     case PK.enableAdvancedSettings.rawValue:
-      animationPipeline.submit(IINAAnimation.Task({ [self] in
+      animationPipeline.submitTask({ [self] in
         updateCustomBorderBoxAndWindowOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
-      }))
+      })
     case PK.themeMaterial.rawValue:
       applyThemeMaterial()
     case PK.playerWindowOpacity.rawValue:
-      animationPipeline.submit(IINAAnimation.Task({ [self] in
+      animationPipeline.submitTask({ [self] in
         updateCustomBorderBoxAndWindowOpacity()
-      }))
+      })
     case PK.showRemainingTime.rawValue:
       if let newValue = change[.newKey] as? Bool {
         rightLabel.mode = newValue ? .remaining : .duration
@@ -575,7 +576,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if let newRawValue = change[.newKey] as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
         self.moveTabGroup(.playlist, toSidebarLocation: newLocationID)
       }
-    case PK.osdAutoHideTimeout.rawValue:
+    case PK.osdAutoHideTimeout.rawValue, PK.enableControlBarAutoHide.rawValue:
       if let newTimeout = change[.newKey] as? Double {
         if osdAnimationState == .shown, let hideOSDTimer = hideOSDTimer, hideOSDTimer.isValid {
           // Reschedule timer to prevent prev long timeout from lingering
@@ -2332,7 +2333,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
-      animationPipeline.submit(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
+      animationPipeline.submitTask(timing: .easeInEaseOut, { [self] in
         let screenID = bestScreen.screenID
 
         /// Need to recompute legacy FS's window size so it exactly fills the new screen.
@@ -2352,7 +2353,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let newWindowFrame = NSRect(origin: window.frame.origin, size: windowedModeGeo.windowFrame.size)
           windowedModeGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID)
         }
-      }))
+      })
     }
   }
 
@@ -2392,7 +2393,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // is disconnected. In legacy full screen mode IINA is responsible for adjusting the window's
       // frame.
       // Use very short duration. This usually gets triggered at the end when entering fullscreen, when the dock and/or menu bar are hidden.
-      animationPipeline.submit(IINAAnimation.Task(duration: IINAAnimation.FullScreenTransitionDuration * 0.2, { [self] in
+      animationPipeline.submitTask(duration: IINAAnimation.FullScreenTransitionDuration * 0.2, { [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
@@ -2412,7 +2413,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newGeo.windowFrame), videoSize \(newGeo.videoSize)")
           player.window.setFrameImmediately(newGeo, notify: false)
         }
-      }))
+      })
     }
   }
 
@@ -2709,6 +2710,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard pipStatus == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
       return false
     }
+
+    // Don't hide UI when auto hide control bar is disabled
+    guard Preference.bool(for: .enableControlBarAutoHide) else { return false }
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -3013,7 +3017,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // It's not perfect but better than before
         if let cropController = cropSettingsView {
           let newCropFilter = MPVFilter.crop(w: cropController.cropw, h: cropController.croph, x: cropController.cropx, y: cropController.cropy)
-          /// Set the filter. This will result in `applyVidGeo` getting called, which will trigger an exit from interactive mode.
+          /// Set the filter. This will result in `applyVideoGeoTransform` getting called, which will trigger an exit from interactive mode.
           /// But that task can only happen once we return and relinquish the main queue.
           _ = player.addVideoFilter(newCropFilter)
         }
@@ -3244,6 +3248,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func updateUI() {
     dispatchPrecondition(condition: .onQueue(.main))
+    // This method is often run outside of the animation queue, which can be dangerous.
+    // Just don't update in this case
+    guard !isAnimatingLayoutTransition else { return }
+
     player.updatePlaybackTimeInfo()
 
     // Run all tasks in the OSD queue until it is depleted

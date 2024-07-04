@@ -54,11 +54,11 @@ extension PlayerWindowController {
       if currentLayout.mode == .windowed {
         windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
                                                       video: videoGeo)
-        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
+        /// Set this so that `applyVideoGeoTransform` will use the correct window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
         PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       } else if currentLayout.mode == .musicMode {
-        /// Set this so that `applyVidGeo` will use the correct window frame if it looks for it.
+        /// Set this so that `applyVideoGeoTransform` will use the correct window frame if it looks for it.
         musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: videoGeo)
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
       }
@@ -122,8 +122,12 @@ extension PlayerWindowController {
         break
       }
 
-      for task in initialTransition.tasks {
-        task.runFunc()
+      do {
+        for task in initialTransition.tasks {
+          try task.runFunc()
+        }
+      } catch {
+        log.error("Failed to run initial layout tasks: \(error)")
       }
       /// Note: `isAnimatingLayoutTransition` should be `false` now
       log.verbose("Done with transition to initial layout")

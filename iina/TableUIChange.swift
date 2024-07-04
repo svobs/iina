@@ -19,6 +19,7 @@ import Foundation
 class TableUIChange {
   // MARK: - Static definitions
 
+  typealias AnimationBlock = (NSAnimationContext) -> Void
   typealias CompletionHandler = (TableUIChange) -> Void
 
   // After removal of rows, select the next single row after the last one removed:

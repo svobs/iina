@@ -8,10 +8,8 @@
 
 import Foundation
 
-typealias TaskFunc = (() -> Void)
-typealias AnimationBlock = (NSAnimationContext) -> Void
-
 class IINAAnimation {
+  typealias TaskFunc = (() throws -> Void)
 
   // MARK: Durations
 
@@ -66,13 +64,17 @@ class IINAAnimation {
     let timingName: CAMediaTimingFunctionName?
     let runFunc: TaskFunc
 
-    init(duration: CGFloat = IINAAnimation.DefaultDuration,
+    init(duration: CGFloat? = nil,
          timing timingName: CAMediaTimingFunctionName? = nil,
          _ runFunc: @escaping TaskFunc) {
-      self.duration = duration
+      self.duration = duration ?? IINAAnimation.DefaultDuration
       self.timingName = timingName
       self.runFunc = runFunc
     }
+  }
+
+  struct Transaction {
+    let tasks: [Task]
   }
 
   static func suddenTask(_ runFunc: @escaping TaskFunc) -> Task {
@@ -83,9 +85,26 @@ class IINAAnimation {
 
   /// Serial queue which executes `Task`s one after another.
   class Pipeline {
+    /// ID of the latest transaction to be generated, but not necessarily run.
+    /// (Basically used for ID generation).
+    private var newestTxID: Int = 0
+    /// ID of the currently executing transaction. When enqueued, all tasks in the same transaction are
+    /// associated with an identical ID, which is one greater than the previous transaction
+    /// (see `newestTxID`). If an exception is thrown by any task, `currentTxID` will be incremented. Any task associated with ID less than `currentTxID` will not be run, but if a task is found to have an ID greater
+    /// than `currentTxID`, then `currentTxID` will be updated to its value and the task will be run.
+    /// In this way, if any task in the transaction throws an exception, this will cause the remaining tasks
+    /// to be skipped.
+    private var currentTxID: Int = 0
 
     private(set) var isRunning = false
-    private var taskQueue = LinkedList<Task>()
+    private var taskQueue = LinkedList<(Int, Task)>()
+
+    /// Convenience function. Same as `submit(Task)`
+    func submitTask(duration: CGFloat? = nil, timing timingName: CAMediaTimingFunctionName? = nil,
+                    _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+      let task = Task(duration: duration, timing: timingName, runFunc)
+      submit(task)
+    }
 
     /// Convenience function. Same as `submit([Task])`, but for a single animation.
     func submit(_ task: Task, then doAfter: TaskFunc? = nil) {
@@ -105,10 +124,16 @@ class IINAAnimation {
       // Fail if not running on main thread:
       dispatchPrecondition(condition: .onQueue(.main))
 
+      newestTxID += 1
+      let transactionID = newestTxID
+
       var needsLaunch = false
-      taskQueue.appendAll(tasks)
+      for task in tasks {
+        taskQueue.append((transactionID, task))
+      }
       if let doAfter = doAfter {
-        taskQueue.append(suddenTask(doAfter))
+        newestTxID += 1
+        taskQueue.append((newestTxID, suddenTask(doAfter)))
       }
 
       if isRunning {
@@ -123,16 +148,24 @@ class IINAAnimation {
       }
     }
 
-    private func runTasks() {
-      var nextTask: IINAAnimation.Task? = nil
+    private func popNextValidTask() -> IINAAnimation.Task? {
+      while true {
+        guard let (taskTxID, poppedTask) = taskQueue.removeFirst() else {
+          self.isRunning = false
+          return nil
+        }
 
-      if let poppedTask = taskQueue.removeFirst() {
-        nextTask = poppedTask
-      } else {
-        self.isRunning = false
+        guard taskTxID >= currentTxID else {
+          Logger.log("Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          continue
+        }
+        currentTxID = taskTxID
+        return poppedTask
       }
+    }
 
-      guard let nextTask = nextTask else { return }
+    private func runTasks() {
+      guard let nextTask = popNextValidTask() else { return }
 
       NSAnimationContext.runAnimationGroup({ context in
         CATransaction.begin()
@@ -150,7 +183,11 @@ class IINAAnimation {
         if let timingName = nextTask.timingName {
           context.timingFunction = CAMediaTimingFunction(name: timingName)
         }
-        nextTask.runFunc()
+        do {
+          try nextTask.runFunc()
+        } catch {
+          Logger.log("Caught error thrown by task func: \(error)")
+        }
       }, completionHandler: {
         self.runTasks()
       })
@@ -178,10 +215,18 @@ class IINAAnimation {
       if let timingName = task.timingName {
         context.timingFunction = CAMediaTimingFunction(name: timingName)
       }
-      task.runFunc()
+      do {
+        try task.runFunc()
+      } catch {
+        Logger.log("Caught error thrown by task func: \(error)")
+      }
     }, completionHandler: {
       if let doAfter = doAfter {
-        doAfter()
+        do {
+          try doAfter()
+        } catch {
+          Logger.log("Caught error thrown by doAfter func: \(error)")
+        }
       }
     })
   }

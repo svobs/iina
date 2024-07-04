@@ -1142,16 +1142,16 @@ class PlayerCore: NSObject {
   /// Called when `MPVOption.Video.videoRotate` changed
   func userRotationDidChange(to userRotation: Int) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
-    guard userRotation != videoGeo.userRotation else { return }
 
-    log.verbose("Calling applyVidGeo for new userRotation: \(userRotation)")
-    // Update window geometry
-    let newVidGeo = videoGeo.clone(userRotation: userRotation)
+    let transform: VideoGeometry.Transform = { [self] videoGeo in
+      guard userRotation != videoGeo.userRotation else { return nil }
+      log.verbose("Inside applyVideoGeoTransform: applying new userRotation: \(userRotation)")
+      // Update window geometry
+      sendOSD(.rotation(userRotation))
+      return videoGeo.clone(userRotation: userRotation)
+    }
 
-    sendOSD(.rotation(userRotation))
-
-    // FIXME: need to calculate vid geo and avoid race conditions
-    windowController.applyVidGeo(newVidGeo, then: { [self] in
+    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
       // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
       if windowController.pipStatus == .notInPIP {
         IINAAnimation.disableAnimation {
@@ -1211,26 +1211,32 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
-    guard videoGeo.selectedAspectLabel != aspectLabel else {
-      // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
-      // immediately changes the selection to "Default".
-      reloadQuickSettingsView()
-      return
+    let transform: VideoGeometry.Transform = { [self] videoGeo in
+      guard videoGeo.selectedAspectLabel != aspectLabel else {
+        // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
+        // immediately changes the selection to "Default".
+        reloadQuickSettingsView()
+        return nil
+      }
+
+      let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
+
+      // Send update to mpv
+      mpv.queue.async { [self] in
+        let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
+        log.verbose("Setting mpv video-aspect-override to: \(mpvValue.quoted)")
+        mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
+      }
+
+      // FIXME: Default aspect needs i18n
+      sendOSD(.aspect(aspectLabel))
+
+      // Change video size:
+      log.verbose("Inside applyVideoGeoTransform: applying video-aspect-override")
+      return newVideoGeo
     }
 
-    let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
-
-    // Send update to mpv
-    let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
-    log.verbose("Setting mpv video-aspect-override to: \(mpvValue.quoted)")
-    mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
-
-    // FIXME: Default aspect needs i18n
-    sendOSD(.aspect(aspectLabel))
-
-    // Change video size:
-    log.verbose("Calling applyVidGeo from video-aspect-override")
-    windowController.applyVidGeo(newVideoGeo, then: { [self] in
+    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
       reloadQuickSettingsView()
     })
   }
@@ -2113,10 +2119,10 @@ class PlayerCore: NSObject {
   // This is optional but provides a better viewer experience
   private func preResizeVideo(forURL url: URL?) {
     guard let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: url, log) else { return }
-    let newVidGeo = videoGeo.substituting(ffMeta)
-    log.verbose("Calling applyVidGeo from preResizeVideo with \(newVidGeo)")
+
     DispatchQueue.main.async { [self] in
-      windowController.updateGeometryForVideoOpen(newVidGeo: newVidGeo, showDefaultArt: nil)
+      log.verbose("Calling updateGeometryForVideoOpen from preResizeVideo")
+      windowController.updateGeometryForVideoOpen(ffMeta)
     }
   }
 
@@ -2381,7 +2387,7 @@ class PlayerCore: NSObject {
       return
     }
 
-    /// Make sure to set this *after* calling `applyVidGeo`
+    /// Make sure to set this *after* calling `applyVideoGeoTransform`
     guard currentMedia.loadStatus.isNotYet(.completelyLoaded) else {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")
       return
@@ -2445,7 +2451,7 @@ class PlayerCore: NSObject {
     postNotification(.iinaAIDChanged)
     if !silent {
       if let audioTrack = info.currentTrack(.audio) {
-        sendOSD(.audioTrack(info.currentTrack(.audio) ?? .noneAudioTrack, info.volume))
+        sendOSD(.audioTrack(audioTrack, info.volume))
       } else {
         // Do not show volume if no audio track:
         sendOSD(.track(.noneAudioTrack))

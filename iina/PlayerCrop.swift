@@ -59,26 +59,29 @@ extension PlayerCore {
       return
     }
 
-    if videoGeo.selectedCropLabel != newCropLabel {
-      log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
-      let oldVidGeo = videoGeo
+    mpv.queue.async { [self] in
+      let transform: VideoGeometry.Transform = { [self] videoGeo in
+        guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-      mpv.queue.async { [self] in
+        log.verbose("Changing videoGeo selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+
         let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
         sendOSD(.crop(osdLabel))
 
-        let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
-        windowController.applyVidGeo(newVidGeo, then: { [self] in
-          /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-          let addSucceeded = addVideoFilter(vf, updateState: false)
-          if !addSucceeded {
-            log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
-            _removeCrop()
-          }
-          reloadQuickSettingsView()
-        })
+        return videoGeo.clone(selectedCropLabel: newCropLabel)
       }
+
+      windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+        /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
+        let addSucceeded = addVideoFilter(vf, updateState: false)
+        if !addSucceeded {
+          log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
+          _removeCrop()
+        }
+        reloadQuickSettingsView()
+      })
     }
+
   }
 
   func removeCrop() {
@@ -94,35 +97,38 @@ extension PlayerCore {
       return
     }
 
-    guard let cropFilter = videoGeo.cropFilter else { return }
+    let transform: VideoGeometry.Transform = { [self] videoGeo in
+      guard let cropFilter = videoGeo.cropFilter else { return nil }
+      guard videoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
-    log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
-    let oldVidGeo = videoGeo
-    if oldVidGeo.selectedCropLabel != AppData.noneCropIdentifier {
-      let newVidGeo = oldVidGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
-      windowController.applyVidGeo(newVidGeo, then: { [self] in
-        mpv.queue.async { [self] in
-          removeVideoFilter(cropFilter, verify: false, notify: false)
-        }
-      })
+      log.verbose("Setting crop to \(AppData.noneCropIdentifier.quoted) and removing crop filter")
+
+      mpv.queue.async { [self] in
+        removeVideoFilter(cropFilter, verify: false, notify: false)
+      }
+      return videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
     }
+
+    windowController.applyVideoGeoTransform(transform)
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
 
-    if videoGeo.selectedCropLabel != newCropLabel {
-      log.verbose("Calling applyVidGeo, changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
-      let oldVidGeo = videoGeo
+    let transform: VideoGeometry.Transform = { [self] videoGeo in
+      guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
+
+      log.verbose("Inside applyVideoGeoTransform: changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))
 
-      let newVidGeo = oldVidGeo.clone(selectedCropLabel: newCropLabel)
-      windowController.applyVidGeo(newVidGeo, then: { [self] in
-        reloadQuickSettingsView()
-      })
+      return videoGeo.clone(selectedCropLabel: newCropLabel)
     }
+
+    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+      reloadQuickSettingsView()
+    })
   }
 }
 

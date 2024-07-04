@@ -1609,16 +1609,18 @@ For smoothest results, also enable custom full screen.</string>
                         <rect key="frame" x="4" y="5" width="282" height="60"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NpR-4X-AUC" userLabel="Auto-hide after:">
-                                <rect key="frame" x="14" y="34" width="98" height="16"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Auto hide after:" id="82A-XQ-BvS">
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
+                                <rect key="frame" x="14" y="33" width="120" height="18"/>
+                                <buttonCell key="cell" type="check" title="Auto hide after:" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="XOh-46-9Jf">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                </textFieldCell>
-                            </textField>
+                                </buttonCell>
+                                <connections>
+                                    <binding destination="lH7-Vv-0M1" name="value" keyPath="values.enableControlBarAutoHide" id="2eJ-Jp-ybW"/>
+                                </connections>
+                            </button>
                             <textField focusRingType="none" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Abq-vA-BcZ" userLabel="Overlay-Auto-Hide-Timeout Text Field">
-                                <rect key="frame" x="118" y="31" width="58" height="21"/>
+                                <rect key="frame" x="142" y="31" width="58" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="58" id="asW-La-UC2"/>
                                 </constraints>
@@ -1639,7 +1641,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </connections>
                             </textField>
                             <textField identifier="AccessoryLabelOSCAutoHide" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hkU-0W-pJb">
-                                <rect key="frame" x="178" y="34" width="11" height="16"/>
+                                <rect key="frame" x="202" y="34" width="11" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="s" id="S8H-Xr-uVa">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1661,17 +1663,17 @@ For smoothest results, also enable custom full screen.</string>
                             </button>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="Abq-vA-BcZ" firstAttribute="leading" secondItem="NpR-4X-AUC" secondAttribute="trailing" constant="8" id="3ea-pt-pfw"/>
+                            <constraint firstItem="Abq-vA-BcZ" firstAttribute="leading" secondItem="IvI-R5-Sdu" secondAttribute="trailing" constant="8" id="3ea-pt-pfw"/>
                             <constraint firstItem="hkU-0W-pJb" firstAttribute="leading" secondItem="Abq-vA-BcZ" secondAttribute="trailing" constant="4" id="9a6-YX-T9W"/>
                             <constraint firstAttribute="trailing" secondItem="kw0-f3-qrz" secondAttribute="trailing" constant="16" id="Bgc-hx-O3t"/>
                             <constraint firstAttribute="bottom" secondItem="kw0-f3-qrz" secondAttribute="bottom" constant="10" id="CP9-jT-pKn"/>
-                            <constraint firstItem="kw0-f3-qrz" firstAttribute="top" secondItem="NpR-4X-AUC" secondAttribute="bottom" constant="8" id="UGn-Sw-1Fb"/>
+                            <constraint firstItem="kw0-f3-qrz" firstAttribute="top" secondItem="IvI-R5-Sdu" secondAttribute="bottom" constant="8" id="UGn-Sw-1Fb"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="hkU-0W-pJb" secondAttribute="trailing" constant="16" id="VcD-tU-gvU"/>
-                            <constraint firstItem="Abq-vA-BcZ" firstAttribute="firstBaseline" secondItem="NpR-4X-AUC" secondAttribute="firstBaseline" id="bJQ-Iy-TuK"/>
-                            <constraint firstItem="hkU-0W-pJb" firstAttribute="firstBaseline" secondItem="NpR-4X-AUC" secondAttribute="firstBaseline" id="fRJ-I6-0c2"/>
-                            <constraint firstItem="kw0-f3-qrz" firstAttribute="leading" secondItem="NpR-4X-AUC" secondAttribute="leading" id="k23-9e-qaE"/>
-                            <constraint firstItem="NpR-4X-AUC" firstAttribute="top" secondItem="s79-ch-C1D" secondAttribute="top" constant="10" id="x5e-mW-QJe"/>
-                            <constraint firstItem="NpR-4X-AUC" firstAttribute="leading" secondItem="s79-ch-C1D" secondAttribute="leading" constant="16" id="xft-Dx-9oW"/>
+                            <constraint firstItem="Abq-vA-BcZ" firstAttribute="firstBaseline" secondItem="IvI-R5-Sdu" secondAttribute="firstBaseline" id="bJQ-Iy-TuK"/>
+                            <constraint firstItem="hkU-0W-pJb" firstAttribute="firstBaseline" secondItem="IvI-R5-Sdu" secondAttribute="firstBaseline" id="fRJ-I6-0c2"/>
+                            <constraint firstItem="kw0-f3-qrz" firstAttribute="leading" secondItem="IvI-R5-Sdu" secondAttribute="leading" id="k23-9e-qaE"/>
+                            <constraint firstItem="IvI-R5-Sdu" firstAttribute="top" secondItem="s79-ch-C1D" secondAttribute="top" constant="10" id="x5e-mW-QJe"/>
+                            <constraint firstItem="IvI-R5-Sdu" firstAttribute="leading" secondItem="s79-ch-C1D" secondAttribute="leading" constant="16" id="xft-Dx-9oW"/>
                         </constraints>
                     </view>
                 </box>
@@ -1685,7 +1687,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="rft-T0-lds" firstAttribute="top" secondItem="OMM-mG-Uts" secondAttribute="bottom" constant="8" id="GKq-oC-uGE"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="top" secondItem="rft-T0-lds" secondAttribute="bottom" constant="16" id="HLQ-xF-5Qa"/>
                 <constraint firstItem="4SE-r9-OnD" firstAttribute="top" secondItem="4XH-GU-VhV" secondAttribute="top" id="Hc6-fh-jM2"/>
-                <constraint firstItem="NpR-4X-AUC" firstAttribute="height" secondItem="6ml-Xj-nVX" secondAttribute="height" id="NQF-dV-lTJ"/>
+                <constraint firstItem="IvI-R5-Sdu" firstAttribute="height" secondItem="6ml-Xj-nVX" secondAttribute="height" id="NQF-dV-lTJ"/>
                 <constraint firstItem="OMM-mG-Uts" firstAttribute="leading" secondItem="HgG-px-UUt" secondAttribute="leading" id="Ns3-1S-8Ol"/>
                 <constraint firstItem="omS-tS-OVJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="gjB-It-iFS" secondAttribute="leading" id="NsV-90-5Lg"/>
                 <constraint firstItem="gVR-so-xgt" firstAttribute="firstBaseline" secondItem="q8D-b2-H0y" secondAttribute="firstBaseline" id="OEQ-c0-3H3"/>
