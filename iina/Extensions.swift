@@ -1532,6 +1532,10 @@ extension NSView {
       // these still need to be redrawn on every resize or they get very buggy
       return
     }
+    if self is VideoView {
+      // Don't mess with these
+      return
+    }
     self.wantsLayer = true
     self.layerContentsRedrawPolicy = .onSetNeedsDisplay
     for subview in self.subviews {
