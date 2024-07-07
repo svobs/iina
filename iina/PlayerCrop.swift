@@ -113,7 +113,7 @@ extension PlayerCore {
   }
 
   func updateSelectedCrop(to newCropLabel: String) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard videoGeo.selectedCropLabel != newCropLabel else { return nil }

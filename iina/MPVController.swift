@@ -92,7 +92,7 @@ class MPVController: NSObject {
   var queue: DispatchQueue
 
   static func createQueue(playerLabel: String) -> DispatchQueue {
-    return DispatchQueue(label: "com.colliderli.iina.controller.\(playerLabel)", qos: .userInitiated)
+    return DispatchQueue.newDQ(label: "com.colliderli.iina.controller.\(playerLabel)", qos: .userInitiated)
   }
 
   unowned let player: PlayerCore
@@ -308,7 +308,7 @@ class MPVController: NSObject {
   /// mpv's `playlist-current-pos` tracks the lifecycle of a playlist entry from start to end.
   /// Should not be confused with `playlist-playing-pos`, which is used for the "playing" highlighted row in the playlist.
   func isStale() -> Bool {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
     let mpv = getInt(MPVProperty.playlistCurrentPos)
     guard let iina = player.info.currentMedia?.playlistPos else {
       // Note: not current if both are nil
@@ -985,7 +985,7 @@ class MPVController: NSObject {
   /// - Parameter index: Index of the filter to be removed.
   /// - Returns: `true` if the filter was successfully removed, `false` if the filter was not removed.
   func removeFilter(_ name: String, _ index: Int) -> Bool {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
     Logger.ensure(name == MPVProperty.vf || name == MPVProperty.af, "removeFilter() does not support \(name)!")
 
     // Get the current list of filters from mpv as a mpv_node tree.

@@ -330,7 +330,7 @@ struct PlayerSaveState {
   }
 
   static func saveSynchronously(_ player: PlayerCore) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
     /// Using `saveLock` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
     saveLock.withLock {
@@ -507,7 +507,7 @@ struct PlayerSaveState {
 
   /// Restore player state from prior launch
   func restoreTo(_ player: PlayerCore) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     let log = player.log
 

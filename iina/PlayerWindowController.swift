@@ -2026,7 +2026,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Hide menu bar & dock if current window is in legacy full screen.
   /// Show menu bar & dock if current window is not in full screen (either legacy or native).
   func updatePresentationOptionsForLegacyFullScreen(entering: Bool? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     // Use currentLayout if not explicitly specified
     let isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
@@ -3105,7 +3105,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - UI: Other
 
   func updateDefaultArtVisibility(_ showDefaultArt: Bool?) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
     log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
@@ -3124,7 +3124,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func abLoop() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     player.mpv.queue.async { [self] in
       _abLoop()
@@ -3133,7 +3133,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @discardableResult
   func _abLoop() -> Int32 {
-    dispatchPrecondition(condition: .onQueue(player.mpv.queue))
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
     let returnValue = player.abLoop()
     if returnValue == 0 {
@@ -3254,7 +3254,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - Sync UI with playback
 
   func updateUI() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
@@ -3308,7 +3308,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateVolumeUI() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard loaded, !isClosing else { return }
     guard player.info.isFileLoaded || player.info.isRestoring else { return }
 
@@ -3353,7 +3353,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updatePlayButtonAndSpeedUI() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
 
     let isPaused = player.info.isPaused
@@ -3378,7 +3378,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func syncPlaySliderABLoop() {
-    dispatchPrecondition(condition: .onQueue(player.mpv.queue))
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
     let a = player.abLoopA
     let b = player.abLoopB
 
@@ -3468,7 +3468,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func forceDraw() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
       log.verbose("Will not force video redraw: no video track selected")
       return
@@ -3683,7 +3683,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 extension PlayerWindowController: PIPViewControllerDelegate {
 
   func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     // Must not try to enter PiP if already in PiP - will crash!
     guard pipStatus == .notInPIP else { return }

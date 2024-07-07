@@ -12,7 +12,7 @@ import Foundation
 extension PlayerWindowController {
 
   func updateGeometryForVideoOpen(_ ffMeta: FFVideoMeta) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     // If window was just opened, its opacity was until now set to 0%, to conceal partial drawing.
     // Now that it is complete, we can show it:
@@ -53,7 +53,7 @@ extension PlayerWindowController {
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
                               showDefaultArt: Bool? = nil,
                               onSuccess: (() -> Void)? = nil) {
-    dispatchPrecondition(condition: .onQueue(player.mpv.queue))
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
     let isRestoring = player.info.isRestoring
 
@@ -203,7 +203,7 @@ extension PlayerWindowController {
   // MARK: - Window geometry functions
 
   func setVideoScale(_ desiredVideoScale: Double) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
     guard currentLayout.mode == .windowed else { return }
     guard desiredVideoScale > 0.0 else {
@@ -237,7 +237,7 @@ extension PlayerWindowController {
    ensure it is placed entirely inside `screen.visibleFrame`.
    */
   func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false, duration: CGFloat = IINAAnimation.DefaultDuration) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let window else { return }
 
     switch currentLayout.mode {
@@ -266,7 +266,7 @@ extension PlayerWindowController {
 
   // FIXME: use resizeVideo, not resizeViewport
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard let window else { return }
     let currentViewportSize: NSSize
     switch currentLayout.mode {

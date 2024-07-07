@@ -1473,6 +1473,12 @@ extension DispatchQueue {
 // MARK: public functionality
 
 extension DispatchQueue {
+  static func newDQ(label: String, qos: DispatchQoS) -> DispatchQueue {
+    let q = DispatchQueue(label: label, qos: qos)
+    registerDetection(of: q)
+    return q
+  }
+
   public static func registerDetection(of queue: DispatchQueue) {
     _registerDetection(of: [queue], key: key)
   }
@@ -1481,12 +1487,13 @@ extension DispatchQueue {
   public static var current: DispatchQueue? { getSpecific(key: key)?.queue }
 
   /**
-   USE THIS instead of "dispatchPrecondition(condition: .onQueue(...))": this will at least show an error msg
+   USE THIS instead of `DispatchQueue.isExecutingIn(...))`: this will at least show an error msg.
+   To work, the desired queue must first be registered with `registerDetection()` (or use `newDQ` to init)
    */
   public static func isExecutingIn(_ dq: DispatchQueue) -> Bool {
     let isExpected = DispatchQueue.current == dq
     if !isExpected {
-      NSLog("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))")
+      Logger.log("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))", level: .error)
     }
     return isExpected
   }
@@ -1494,7 +1501,7 @@ extension DispatchQueue {
   public static func isNotExecutingIn(_ dq: DispatchQueue) -> Bool {
     let isExpected = DispatchQueue.current != dq
     if !isExpected {
-      NSLog("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'")
+      Logger.log("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'", level: .error)
     }
     return isExpected
   }

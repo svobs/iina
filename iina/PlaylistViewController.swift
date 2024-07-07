@@ -600,7 +600,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // Updates index of playing item Don't need to reload whole playlist
   func refreshNowPlayingIndex(setNewIndexTo newNowPlayingIndex: Int? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard isViewLoaded else { return }
     guard !view.isHidden else { return }
 

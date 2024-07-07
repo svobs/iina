@@ -301,7 +301,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func reloadData() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard isWindowLoaded else { return }
 
     // Reload data:

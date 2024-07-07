@@ -28,7 +28,7 @@ class Utility {
 
   @available(*, deprecated, message: "showAlert(message:alertStyle:) is deprecated, use showAlert(_ key:comment:arguments:alertStyle:) instead")
   static func showAlert(message: String, alertStyle: NSAlert.Style = .critical) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     let alert = NSAlert()
     switch alertStyle {
     case .critical:

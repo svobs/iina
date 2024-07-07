@@ -197,7 +197,7 @@ class BindingTableStateManager: NSObject {
    */
   func applyStateUpdate(_ appInputConfigNew: AppInputConfig, desiredTableUIChange: TableUIChange? = nil,
                         newFilterString: String? = nil, newInputConfFile: InputConfFile? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)
 

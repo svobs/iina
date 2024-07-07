@@ -14,7 +14,7 @@ class HistoryController {
 
   var plistURL: URL
   var history: [PlaybackHistory]
-  var queue = DispatchQueue(label: "IINAHistoryController", qos: .background)
+  var queue = DispatchQueue.newDQ(label: "IINAHistoryController", qos: .background)
   var log = Logger.Subsystem(rawValue: "history")
   var folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
 
@@ -87,7 +87,7 @@ class HistoryController {
   }
 
   func reloadAll(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     log.verbose("ReloadAll starting from \(plistURL.path.pii.quoted)")
     let sw = Utility.Stopwatch()
@@ -104,7 +104,7 @@ class HistoryController {
   }
 
   func add(_ url: URL, duration: Double) {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
     guard Preference.bool(for: .recordPlaybackHistory) else { return }
     
     if let existingItem = history.first(where: { $0.mpvMd5 == url.path.md5 }), let index = history.firstIndex(of: existingItem) {
@@ -115,7 +115,7 @@ class HistoryController {
   }
 
   func remove(_ entries: [PlaybackHistory]) {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     history = history.filter { !entries.contains($0) }
     saveHistoryToFile()
@@ -150,14 +150,14 @@ class HistoryController {
   /// information..
   /// - Parameter url: The URL to evaluate.
   func noteNewRecentDocumentURL(_ url: URL) {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     NSDocumentController.shared.noteNewRecentDocumentURL(url)
     saveRecentDocuments()
   }
 
   func noteNewRecentDocumentURLs(_ urls: [URL]) {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     for url in urls {
       NSDocumentController.shared.noteNewRecentDocumentURL(url)
@@ -185,7 +185,7 @@ class HistoryController {
   /// Then this method assumes that the macOS daemon `sharedfilelistd` cleared the list and it populates the list of recent
   /// document URLs with the list stored in IINA's settings.
   private func restoreRecentDocuments() {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs
@@ -236,7 +236,7 @@ class HistoryController {
   /// `restoreRecentDocuments` and the issue [#4688](https://github.com/iina/iina/issues/4688) for more
   /// information..
   func saveRecentDocuments() {
-    dispatchPrecondition(condition: .onQueue(queue))
+    assert(DispatchQueue.isExecutingIn(queue))
 
     defer {
       // Notify even for older MacOS

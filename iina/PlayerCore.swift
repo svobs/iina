@@ -96,9 +96,9 @@ class PlayerCore: NSObject {
   var needsTouchBar = false
 
   /// A dispatch queue for auto load feature.
-  static let backgroundQueue = DispatchQueue(label: "IINAPlayerCoreTask", qos: .background)
-  static let playlistQueue = DispatchQueue(label: "IINAPlaylistTask", qos: .utility)
-  static let thumbnailQueue = DispatchQueue(label: "IINAPlayerCoreThumbnailTask", qos: .utility)
+  static let backgroundQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreTask", qos: .background)
+  static let playlistQueue = DispatchQueue.newDQ(label: "IINAPlaylistTask", qos: .utility)
+  static let thumbnailQueue = DispatchQueue.newDQ(label: "IINAPlayerCoreThumbnailTask", qos: .utility)
 
   /**
    This ticket will be increased each time before a new task being submitted to `backgroundQueue`.
@@ -315,7 +315,7 @@ class PlayerCore: NSObject {
    */
   @discardableResult
   func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true, mpvRestoreWorkItem: (() -> Void)? = nil) -> Int? {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
     log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{MediaItem.path(for: $0).pii.quoted})")
@@ -400,7 +400,7 @@ class PlayerCore: NSObject {
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
   private func openPlayerWindow(_ urls: [URL], mpvRestoreWorkItem: (() -> Void)? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     guard urls.count > 0 else {
       log.error("Cannot open player window: empty url list!")
@@ -518,7 +518,7 @@ class PlayerCore: NSObject {
 
   // unload main window video view
   private func uninitVideo() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard status.rawValue < PlayerStatus.shuttingDown.rawValue else { return }
     status = .shuttingDown
     log.debug("Uninit video")
@@ -534,7 +534,7 @@ class PlayerCore: NSObject {
   ///     sent to mpv using the synchronous API mpv executes the quit command asynchronously. The player is not fully shutdown
   ///     until mpv finishes executing the quit command and shuts down.
   func shutdown() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard !isShuttingDown else {
       log.verbose("Player is already shutting down")
       return
@@ -549,7 +549,7 @@ class PlayerCore: NSObject {
   }
 
   func mpvHasShutdown(isMPVInitiated: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
@@ -604,7 +604,7 @@ class PlayerCore: NSObject {
   ///     asleep. Thus `setFlag` **must not** be called if the `mpv` core is idle or stopping. See issue
   ///     [#4520](https://github.com/iina/iina/issues/4520)
   func pause() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     let isNormalSpeed = info.playSpeed == 1
     info.isPaused = true  // set preemptively to prevent inconsistencies in UI
     mpv.queue.async { [self] in
@@ -620,7 +620,7 @@ class PlayerCore: NSObject {
   }
 
   private func _resume() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     // Restart playback when reached EOF
     if mpv.getFlag(MPVProperty.eofReached) && Preference.bool(for: .resumeFromEndRestartsPlayback) {
       _seek(absoluteSecond: 0)
@@ -640,7 +640,7 @@ class PlayerCore: NSObject {
 
   /// Stop playback and unload the media.
   func stop() {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     guard status.rawValue < PlayerStatus.stopping.rawValue else {
       log.debug("Stop called, but status is already \(status); aborting")
@@ -692,7 +692,7 @@ class PlayerCore: NSObject {
   /// has completed executing.
   func playbackStopped() {
     log.debug("Playback has stopped")
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     /// Do not set `isStopped` here. This method seems to get called when it shouldn't (e.g., when changing current pos in playlist)
 
     DispatchQueue.main.async { [self] in
@@ -805,7 +805,7 @@ class PlayerCore: NSObject {
   /// `Preference.Key.screenshotIncludeSubtitle` to decide between `subtitles` or `video`.
   @discardableResult
   func screenshot(fromKeyBinding keyBinding: KeyMapping? = nil) -> Bool {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     
     let saveToFile = Preference.bool(for: .screenshotSaveToFile)
     let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
@@ -945,7 +945,7 @@ class PlayerCore: NSObject {
   /// a second time it sets the B loop point to the timestamp of the current frame, activating looping and causing mpv to seek back to
   /// the A loop point. When the command is invoked again both loop points are cleared (set to zero) and looping stops.
   func abLoop() -> Int32 {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     // may subject to change
     let returnValue = mpv.command(.abLoop)
@@ -958,7 +958,7 @@ class PlayerCore: NSObject {
 
   /// Synchronize IINA with the state of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
   func syncAbLoop() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
     let a = abLoopA
@@ -1062,7 +1062,7 @@ class PlayerCore: NSObject {
 
   func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
     log.verbose("Setting \(trackType) track to \(index)")
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let name: String
     switch trackType {
@@ -1154,7 +1154,7 @@ class PlayerCore: NSObject {
 
   /// Called when `MPVOption.Video.videoRotate` changed
   func userRotationDidChange(to userRotation: Int) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard userRotation != videoGeo.userRotation else { return nil }
@@ -1203,7 +1203,7 @@ class PlayerCore: NSObject {
 
   func _setVideoAspectOverride(_ aspectString: String) {
     log.verbose("Got request to set videoAspectOverride to: \(aspectString.quoted)")
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let aspectLabel: String
     if aspectString.contains(":"), Aspect(string: aspectString) != nil {
@@ -1537,7 +1537,7 @@ class PlayerCore: NSObject {
   /// Also note that each item in `pathList` may be either a file path or a
   /// network URl.
   private func restorePlaylist(itemPathList: [String]) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     _reloadPlaylist(silent: true)
 
@@ -1773,7 +1773,7 @@ class PlayerCore: NSObject {
           setPlaybackInfoFilter(vf)
         }
       } else {
-        dispatchPrecondition(condition: .onQueue(mpv.queue))
+        assert(DispatchQueue.isExecutingIn(mpv.queue))
         setPlaybackInfoFilter(vf)
       }
     }
@@ -1807,7 +1807,7 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   func removeVideoFilter(_ filter: String, _ index: Int) -> Bool {
     Logger.log("Removing video filter \(filter)...", subsystem: subsystem)
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     let result = mpv.removeFilter(MPVProperty.vf, index)
     logRemoveFilter(type: "video", result: result, name: filter)
     return result
@@ -1825,7 +1825,7 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
   @discardableResult
   func removeVideoFilter(_ filter: MPVFilter, verify: Bool = true, notify: Bool = true) -> Bool {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     
     let filterString: String
     if let label = filter.label {
@@ -2144,7 +2144,7 @@ class PlayerCore: NSObject {
   }
 
   func fileStarted(path: String, playlistPos: Int) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
     guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
@@ -2232,7 +2232,7 @@ class PlayerCore: NSObject {
   /// This function is called right after file loaded, triggered by mpv `fileLoaded` notification.
   /// We should now be able to get track info from mpv and can start rendering the video in the final size.
   func fileLoaded() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     // note: player may be "stopped" here
     guard !isStopping else { return }
@@ -2404,7 +2404,7 @@ class PlayerCore: NSObject {
   /// The mpv `file-loaded` event is emitted before everything associated with the file (such as filters) is completely done loading.
   /// This event should be called when everything is truly done.
   func fileIsCompletelyDoneLoading() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !mpv.isStale(), let currentMedia = info.currentMedia else { return }
 
     guard currentMedia.loadStatus.isAtLeast(.started) else {
@@ -2465,7 +2465,7 @@ class PlayerCore: NSObject {
   }
 
   func aidChanged(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
@@ -2530,7 +2530,7 @@ class PlayerCore: NSObject {
   }
 
   func ontopChanged() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard windowController.loaded else { return }
     let ontop = mpv.getFlag(MPVOption.Window.ontop)
     log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
@@ -2542,7 +2542,7 @@ class PlayerCore: NSObject {
   }
 
   func playbackRestarted() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.debug("Playback restarted")
 
     info.isIdle = false
@@ -2575,19 +2575,19 @@ class PlayerCore: NSObject {
   }
 
   func secondarySubDelayChanged(_ delay: Double) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     sendOSD(.secondSubDelay(delay))
     reloadQuickSettingsView()
   }
 
   func secondarySubPosChanged(_ position: Double) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     sendOSD(.secondSubPos(position))
     reloadQuickSettingsView()
   }
 
   func sidChanged(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
@@ -2604,7 +2604,7 @@ class PlayerCore: NSObject {
   }
 
   func secondSubVisibilityChanged(_ visible: Bool) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard info.isSecondSubVisible != visible else { return }
     info.isSecondSubVisible = visible
     sendOSD(visible ? .secondSubVisible : .secondSubHidden)
@@ -2612,7 +2612,7 @@ class PlayerCore: NSObject {
   }
 
   func secondarySidChanged(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard ssid != info.secondSid else { return }
@@ -2624,20 +2624,20 @@ class PlayerCore: NSObject {
   }
 
   func subDelayChanged(_ delay: Double) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     info.subDelay = delay
     sendOSD(.subDelay(delay))
     reloadQuickSettingsView()
   }
 
   func subPosChanged(_ position: Double) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     sendOSD(.subPos(position))
     reloadQuickSettingsView()
   }
 
   func subVisibilityChanged(_ visible: Bool) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard info.isSubVisible != visible else { return }
     info.isSubVisible = visible
     sendOSD(visible ? .subVisible : .subHidden)
@@ -2645,7 +2645,7 @@ class PlayerCore: NSObject {
   }
 
   func trackListChanged() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     // No need to process track list changes if playback is being stopped. Must not process track
     // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
     // trigger a crash.
@@ -2666,7 +2666,7 @@ class PlayerCore: NSObject {
   }
 
   func vfChanged() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     _ = getVideoFilters()
     postNotification(.iinaVFChanged)
@@ -2675,7 +2675,7 @@ class PlayerCore: NSObject {
   }
 
   func vidChanged(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid != info.vid else { return }
@@ -2710,7 +2710,7 @@ class PlayerCore: NSObject {
 
   ///  `showMiniPlayerVideo` is only used if `enable` is true
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Setting video track enabled=\(enable.yesno), showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
 
     if enable {
@@ -2835,7 +2835,7 @@ class PlayerCore: NSObject {
   /// etc.) are set *before* calling this method, not after, so that it makes the correct decisions.
   func refreshSyncUITimer(logMsg: String = "") {
     // Check if timer should start/restart
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     let useTimer: Bool
     if isStopping {
@@ -3187,7 +3187,7 @@ class PlayerCore: NSObject {
   // MARK: - Getting info
 
   func reloadTrackInfo() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.trace("Reloading tracklist from mpv")
     var audioTracks: [MPVTrack] = []
     var videoTracks: [MPVTrack] = []
@@ -3235,7 +3235,7 @@ class PlayerCore: NSObject {
   }
 
   private func reloadSelectedTracks(silent: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.verbose("Reloading selected tracks")
     aidChanged(silent: silent)
     vidChanged(silent: silent)
@@ -3254,7 +3254,7 @@ class PlayerCore: NSObject {
 
   private func _reloadPlaylist(silent: Bool = false) {
     log.verbose("Reloading playlist")
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     var newPlaylist: [MPVPlaylistItem] = []
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
     log.verbose("Reloaded playlist will have \(playlistCount) items")
@@ -3287,7 +3287,7 @@ class PlayerCore: NSObject {
 
   func _reloadChapters() {
     Logger.log("Reloading chapter list", level: .verbose, subsystem: subsystem)
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     var chapters: [MPVChapter] = []
     let chapterCount = mpv.getInt(MPVProperty.chapterListCount)
     for index in 0..<chapterCount {
@@ -3343,7 +3343,7 @@ class PlayerCore: NSObject {
   }
 
   private func setPlaybackInfoFilter(_ filter: MPVFilter) {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     switch filter.label {
     case Constants.FilterLabel.crop:
@@ -3368,7 +3368,7 @@ class PlayerCore: NSObject {
 
   /** Check if there are IINA filters saved in watch_later file. */
   func reloadSavedIINAfilters() {
-    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     let videoFilters = getVideoFilters()
     postNotification(.iinaVFChanged)

@@ -36,7 +36,7 @@ extension PlayerWindowController {
   }
 
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
 
     let message: OSDMessage?
@@ -232,7 +232,7 @@ extension PlayerWindowController {
 
   private func _displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                            accessoryViewController: NSViewController? = nil) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     // Check again. May have been enqueued a while
     guard player.canShowOSD() else { return }
@@ -380,7 +380,7 @@ extension PlayerWindowController {
 
   @objc
   func hideOSD(immediately: Bool = false) {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Hiding OSD")
     osdAnimationState = .willHide
     isShowingPersistentOSD = false

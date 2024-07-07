@@ -122,7 +122,7 @@ class IINAAnimation {
     /// If animating, it uses either the supplied `duration` for duration, or if that is not provided, uses `IINAAnimation.DefaultDuration`.
     func submit(_ tasks: [Task], then doAfter: TaskFunc? = nil) {
       // Fail if not running on main thread:
-      dispatchPrecondition(condition: .onQueue(.main))
+      assert(DispatchQueue.isExecutingIn(.main))
 
       newestTxID += 1
       let transactionID = newestTxID
@@ -197,7 +197,7 @@ class IINAAnimation {
   /// Convenience wrapper for chaining multiple tasks together via `NSAnimationContext.runAnimationGroup()`. Does not use pipeline.
   static func runAsync(_ task: Task, then doAfter: TaskFunc? = nil) {
     // Fail if not running on main thread:
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
     
     NSAnimationContext.runAnimationGroup({ context in
       CATransaction.begin()

@@ -85,7 +85,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   }
 
   func loadThumbnails() {
-    dispatchPrecondition(condition: .onQueue(PlayerCore.thumbnailQueue))
+    assert(DispatchQueue.isExecutingIn(PlayerCore.thumbnailQueue))
 
     let cacheName = mediaFilePathMD5
     if ThumbnailCache.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {

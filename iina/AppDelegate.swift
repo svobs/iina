@@ -609,7 +609,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func restoreWindowsFromPreviousLaunch() -> Bool {
-    dispatchPrecondition(condition: .onQueue(.main))
+    assert(DispatchQueue.isExecutingIn(.main))
 
     guard Preference.UIState.isRestoreEnabled else {
       Logger.log("Restore is disabled. Wll not restore windows")

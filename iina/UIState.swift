@@ -252,7 +252,7 @@ extension Preference {
     }
 
     static func saveCurrentOpenWindowList(excludingWindowName nameToExclude: String? = nil) {
-      dispatchPrecondition(condition: .onQueue(.main))
+      assert(DispatchQueue.isExecutingIn(.main))
       guard !AppDelegate.shared.isTerminating else { return }
       guard !Preference.bool(for: .isRestoreInProgress) else { return }
       let openWindowsSet = windowsOpen
