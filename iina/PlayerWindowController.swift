@@ -1960,6 +1960,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("PlayerWindow openWindow done")
   }
 
+  override func showWindow(_ sender: Any?) {
+    // Call this to patch possible holes when restoring (e.g., interactive mode window)
+    updateCustomBorderBoxAndWindowOpacity()
+    super.showWindow(sender)
+  }
+
   func windowWillClose(_ notification: Notification) {
     log.verbose("Window will close")
 
