@@ -37,6 +37,7 @@ extension PlayerWindowController {
 
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
     dispatchPrecondition(condition: .onQueue(.main))
+    guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
 
     let message: OSDMessage?
 

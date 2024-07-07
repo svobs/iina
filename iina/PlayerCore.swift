@@ -512,7 +512,7 @@ class PlayerCore: NSObject {
   }
 
   func saveState() {
-    PlayerSaveState.save(self)  // record the pause state
+    PlayerSaveState.save(self)
   }
 
 

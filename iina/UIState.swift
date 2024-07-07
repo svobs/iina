@@ -263,7 +263,7 @@ extension Preference {
       if openWindowsSet.count != openWindowNames.count {
         let errorMsg = "While saving window list: openWindowSet (\(openWindowsSet)) does not match open window list: \(openWindowNames) + Hidden=\(hiddenWindowNames) + Minimized=\(minimizedWindowNames); excluded=\(nameToExclude?.quoted ?? "nil")"
         #if DEBUG
-        Logger.fatal(errorMsg)
+        Utility.showAlert(errorMsg, logAlert: true)
         #else
         Logger.log(errorMsg, level: .error)
         #endif

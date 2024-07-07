@@ -931,7 +931,7 @@ extension PlayerWindowController {
     fadeableTopBarAnimationState = .shown
     resetFadeTimer()
 
-    guard let window = window else { return }
+    guard let window else { return }
 
     if transition.isEnteringFullScreen {
       // Entered FullScreen
