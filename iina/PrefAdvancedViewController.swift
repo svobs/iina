@@ -42,7 +42,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBOutlet var loggingSettingsView: NSView!
   @IBOutlet var mpvSettingsView: NSView!
 
-  @IBOutlet weak var enableAdvancedSettingsBtn: Switch!
+  @IBOutlet weak var enableAdvancedSettingsLabel: NSTextField!
   @IBOutlet weak var optionsTableView: EditableTableView!
   @IBOutlet weak var useAnotherConfigDirBtn: NSButton!
   @IBOutlet weak var chooseConfigDirBtn: NSButton!
@@ -63,16 +63,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.sizeLastColumnToFit()
     optionsTableView.editableTextColumnIndexes = [0, 1]
     refreshRemoveButton()
-
-    enableAdvancedSettingsBtn.checked = Preference.bool(for: .enableAdvancedSettings)
-    enableAdvancedSettingsBtn.action = { [self] enable in
-      Preference.set(enable, for: .enableAdvancedSettings)
-      if !enable {
-        optionsTableView.selectApprovedRowIndexes(IndexSet())  // deselect rows
-      }
-      optionsTableView.reloadData()
-      refreshRemoveButton()
-    }
+    
+    enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings", comment: "Enable advanced settings")
   }
 
   func saveToUserDefaults() {

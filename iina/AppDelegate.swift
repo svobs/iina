@@ -170,7 +170,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let date = InfoDictionary.shared.buildDate,
           let sdk = InfoDictionary.shared.buildSDK,
           let xcode = InfoDictionary.shared.buildXcode else { return }
-    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(date)")
+    let toString = DateFormatter()
+    toString.dateStyle = .medium
+    toString.timeStyle = .medium
+    // Always use the en_US locale for dates in the log file.
+    toString.locale = Locale(identifier: "en_US")
+    Logger.log("Built using Xcode \(xcode) and macOS SDK \(sdk) on \(toString.string(from: date))")
     guard let branch = InfoDictionary.shared.buildBranch,
           let commit = InfoDictionary.shared.buildCommit else { return }
     Logger.log("From branch \(branch), commit \(commit)")
@@ -233,6 +238,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     logPlatformDetails()
 
     Logger.log("App will launch. LaunchID: \(Preference.UIState.launchID)")
+
+    // Start asynchronously gathering and caching information about the hardware decoding
+    // capabilities of this Mac.
+    HardwareDecodeCapabilities.shared.checkCapabilities()
 
     for key in self.observedPrefKeys {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
@@ -1246,6 +1255,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
     }
   }
+
+  /// Method to opt-in to secure restorable state.
+  ///
+  /// From the `Restorable State` section of the [AppKit Release Notes for macOS 14](https://developer.apple.com/documentation/macos-release-notes/appkit-release-notes-for-macos-14#Restorable-State):
+  ///
+  /// Secure coding is automatically enabled for restorable state for applications linked on the macOS 14.0 SDK. Applications that
+  /// target prior versions of macOS should implement `NSApplicationDelegate.applicationSupportsSecureRestorableState()`
+  /// to return`true` so it’s enabled on all supported OS versions.
+  ///
+  /// This is about conformance to [NSSecureCoding](https://developer.apple.com/documentation/foundation/nssecurecoding)
+  /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
+  /// reporting secure coding is not enabled for restorable state.
+  @available(macOS 12.0, *)
+  @MainActor func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
 
   // MARK: - Accept dropped string and URL on Dock icon
 

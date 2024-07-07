@@ -85,13 +85,7 @@ class PlayerCore: NSObject {
   var disableUI = false
   var disableWindowAnimation = false
 
-  @available(macOS 10.12.2, *)
-  var touchBarSupport: TouchBarSupport {
-    get {
-      return self._touchBarSupport as! TouchBarSupport
-    }
-  }
-  private var _touchBarSupport: Any?
+  var touchBarSupport: TouchBarSupport!
 
   private var subFileMonitor: FileMonitor? = nil
 
@@ -127,7 +121,7 @@ class PlayerCore: NSObject {
   var windowController: PlayerWindowController!
 
   var window: PlayerWindow {
-    return (windowController.window as! PlayerWindow)
+    return windowController.window as! PlayerWindow
   }
 
   var mpv: MPVController!
@@ -271,9 +265,7 @@ class PlayerCore: NSObject {
     self.mpv = MPVController(playerCore: self)
     self.bindingController = PlayerBindingController(playerCore: self)
     self.windowController = PlayerWindowController(playerCore: self)
-    if #available(macOS 10.12.2, *) {
-      self._touchBarSupport = TouchBarSupport(playerCore: self)
-    }
+    self.touchBarSupport = TouchBarSupport(playerCore: self)
   }
 
   // MARK: - Plugins
@@ -584,7 +576,7 @@ class PlayerCore: NSObject {
   }
 
   func exitMusicMode(automatically: Bool = false) {
-    Logger.log("Switch to normal window from mini player, automatically=\(automatically)", subsystem: subsystem)
+    log.debug("Switch to normal window from mini player, automatically=\(automatically)")
     if !automatically {
       overrideAutoMusicMode = !overrideAutoMusicMode
       log.verbose("Changed overrideAutoMusicMode to \(overrideAutoMusicMode)")
@@ -874,13 +866,34 @@ class PlayerCore: NSObject {
     return true
   }
 
+  /// Initializes and returns an image object with the contents of the specified URL.
+  ///
+  /// At this time, the normal [NSImage](https://developer.apple.com/documentation/appkit/nsimage/1519907-init)
+  /// initializer will fail to create an image object if the image file was encoded in [JPEG XL](https://jpeg.org/jpegxl/) format.
+  /// In older versions of macOS this will also occur if the image file was encoded in [WebP](https://en.wikipedia.org/wiki/WebP/)
+  /// format. As these are supported formats for screenshots this method will fall back to using FFmpeg to create the `NSImage` if
+  /// the normal initializer fails to return an object.
+  /// - Parameter url: The URL identifying the image.
+  /// - Returns: An initialized `NSImage` object or `nil` if the method cannot create an image representation from the contents
+  ///       of the specified URL.
+  private func createImage(_ url: URL) -> NSImage? {
+    if let image = NSImage(contentsOf: url) {
+      return image
+    }
+    // The following internal property was added to provide a way to disable the FFmpeg image
+    // decoder should a problem be discovered by users running old versions of macOS.
+    guard Preference.bool(for: .enableFFmpegImageDecoder) else { return nil }
+    Logger.log("Using FFmpeg to decode screenshot: \(url)")
+    return FFmpegController.createNSImage(withContentsOf: url)
+  }
+
   func screenshotCallback() {
     let saveToFile = Preference.bool(for: .screenshotSaveToFile)
     let saveToClipboard = Preference.bool(for: .screenshotCopyToClipboard)
     guard saveToFile || saveToClipboard else { return }
     Logger.log("Screenshot done: saveToFile=\(saveToFile), saveToClipboard=\(saveToClipboard)", level: .verbose)
 
-    guard let imageFolder = mpv.getString(MPVOption.Screenshot.screenshotDirectory) else { return }
+    guard let imageFolder = mpv.getString(MPVOption.Screenshot.screenshotDir) else { return }
     guard let lastScreenshotURL = Utility.getLatestScreenshot(from: imageFolder) else { return }
 
     defer {
@@ -890,7 +903,7 @@ class PlayerCore: NSObject {
     }
 
     guard let screenshotImage = NSImage(contentsOf: lastScreenshotURL) else {
-      self.sendOSD(.screenshot)
+      sendOSD(.screenshot)
       if !saveToFile {
         try? FileManager.default.removeItem(at: lastScreenshotURL)
       }
@@ -901,7 +914,7 @@ class PlayerCore: NSObject {
       NSPasteboard.general.writeObjects([screenshotImage])
     }
     guard Preference.bool(for: .screenshotShowPreview) else {
-      self.sendOSD(.screenshot)
+      sendOSD(.screenshot)
       if !saveToFile {
         try? FileManager.default.removeItem(at: lastScreenshotURL)
       }
@@ -917,7 +930,7 @@ class PlayerCore: NSObject {
                        size: previewImageSize,
                        fileURL: saveToFile ? lastScreenshotURL : nil)
 
-      self.sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: osdViewController)
+      sendOSD(.screenshot, forcedTimeout: 5, accessoryViewController: osdViewController)
     }
   }
 
@@ -1396,21 +1409,23 @@ class PlayerCore: NSObject {
     }
   }
 
-  func toggleSubVisibility() {
+  func toggleSubVisibility(_ set: Bool? = nil) {
     mpv.queue.async { [self] in
-      mpv.setFlag(MPVOption.Subtitles.subVisibility, !info.isSubVisible)
+      let newState = set ?? !info.isSubVisible
+      mpv.setFlag(MPVOption.Subtitles.subVisibility, newState)
     }
   }
 
-  func toggleSecondSubVisibility() {
+  func toggleSecondSubVisibility(_ set: Bool? = nil) {
     mpv.queue.async { [self] in
-      mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, !info.isSecondSubVisible)
+      let newState = set ?? !info.isSecondSubVisible
+      mpv.setFlag(MPVOption.Subtitles.secondarySubVisibility, newState)
     }
   }
 
   func loadExternalSubFile(_ url: URL, delay: Bool = false) {
     mpv.queue.async { [self] in
-      if let track = info.subTracks.first(where: { $0.externalFilename == url.path }) {
+      if let track = info.findExternalSubTrack(withURL: url) {
         mpv.command(.subReload, args: [String(track.id)], checkError: false)
         return
       }
@@ -1462,9 +1477,10 @@ class PlayerCore: NSObject {
     }
   }
 
-  func setSubDelay(_ delay: Double) {
+  func setSubDelay(_ delay: Double, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
-      mpv.setDouble(MPVOption.Subtitles.subDelay, delay)
+      let option = forPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
+    mpv.setDouble(option, delay)
     }
   }
 
@@ -1764,7 +1780,7 @@ class PlayerCore: NSObject {
 
     return didSucceed
   }
-  
+
   private func logRemoveFilter(type: String, result: Bool, name: String) {
     if !result {
       log.warn("Failed to remove \(type) filter \(name)")
@@ -1952,10 +1968,11 @@ class PlayerCore: NSObject {
     }
   }
 
-  func setSubPos(_ pos: Int) {
+  func setSubPos(_ pos: Int, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
       Preference.set(pos, for: .subPos)
-      mpv.setInt(MPVOption.Subtitles.subPos, pos)
+      let option = forPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
+    mpv.setInt(option, pos)
     }
   }
 
@@ -2332,12 +2349,20 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       refreshSyncUITimer()
 
-      if #available(macOS 10.12.2, *) {
-        touchBarSupport.setupTouchBarUI()
+      touchBarSupport.setupTouchBarUI()
+
+      if info.aid == 0 {
+        windowController.muteButton.isEnabled = false
+        windowController.volumeSlider.isEnabled = false
       }
     }
 
-    // Add to global history & Recent Documents list
+    if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
+      DispatchQueue.main.async { [self] in
+        windowController.toggleWindowFullScreen()
+      }
+    }
+    // add to history
     if let url = info.currentURL {
       let duration = info.videoDuration ?? .zero
       HistoryController.shared.queue.async { [self] in
@@ -2439,7 +2464,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  func reloadAID(silent: Bool = false) {
+  func aidChanged(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
@@ -2456,6 +2481,23 @@ class PlayerCore: NSObject {
         // Do not show volume if no audio track:
         sendOSD(.track(.noneAudioTrack))
       }
+    }
+  }
+
+  func chapterChanged() {
+    guard !isShuttingDown else { return }
+    let chapter = Int(mpv.getInt(MPVProperty.chapter))
+    info.chapter = chapter
+    log.verbose("Δ mpv prop: `chapter` = \(info.chapter)")
+    syncUI(.chapterList)
+    postNotification(.iinaMediaTitleChanged)
+  }
+
+  func fullscreenChanged() {
+    guard windowController.loaded, !isStopping else { return }
+    let fs = mpv.getFlag(MPVOption.Window.fullscreen)
+    if fs != isFullScreen {
+      windowController.toggleWindowFullScreen()
     }
   }
 
@@ -2487,6 +2529,18 @@ class PlayerCore: NSObject {
     sendOSD(.seek(videoPosition: info.videoPosition, videoDuration: info.videoDuration))
   }
 
+  func ontopChanged() {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    guard windowController.loaded else { return }
+    let ontop = mpv.getFlag(MPVOption.Window.ontop)
+    log.verbose("Δ mpv prop: 'ontop' = \(ontop.yesno)")
+    if ontop != windowController.isOnTop {
+      DispatchQueue.main.async { [self] in
+        windowController.setWindowFloatingOnTop(ontop)
+      }
+    }
+  }
+
   func playbackRestarted() {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     log.debug("Playback restarted")
@@ -2512,18 +2566,27 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  @available(macOS 10.15, *)
   func refreshEdrMode() {
     guard windowController.loaded else { return }
-    DispatchQueue.main.async { [self] in
-      // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
-      // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
-      guard !isStopping else { return }
-      videoView.refreshEdrMode()
-    }
+    // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
+    // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
+    guard !isStopping else { return }
+    videoView.refreshEdrMode()
   }
 
-  func reloadSID(silent: Bool = false) {
+  func secondarySubDelayChanged(_ delay: Double) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    sendOSD(.secondSubDelay(delay))
+    reloadQuickSettingsView()
+  }
+
+  func secondarySubPosChanged(_ position: Double) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    sendOSD(.secondSubPos(position))
+    reloadQuickSettingsView()
+  }
+
+  func sidChanged(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
@@ -2537,9 +2600,18 @@ class PlayerCore: NSObject {
     startWatchingSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
+    sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSubTrack))
   }
 
-  func reloadSecondSID(silent: Bool = false) {
+  func secondSubVisibilityChanged(_ visible: Bool) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    guard info.isSecondSubVisible != visible else { return }
+    info.isSecondSubVisible = visible
+    sendOSD(visible ? .secondSubVisible : .secondSubHidden)
+    postNotification(.iinaSecondSubVisibilityChanged)
+  }
+
+  func secondarySidChanged(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
@@ -2548,7 +2620,28 @@ class PlayerCore: NSObject {
 
     log.verbose("SSID changed to \(ssid)")
     postNotification(.iinaSIDChanged)
-    saveState()
+    reloadQuickSettingsView()
+  }
+
+  func subDelayChanged(_ delay: Double) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    info.subDelay = delay
+    sendOSD(.subDelay(delay))
+    reloadQuickSettingsView()
+  }
+
+  func subPosChanged(_ position: Double) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    sendOSD(.subPos(position))
+    reloadQuickSettingsView()
+  }
+
+  func subVisibilityChanged(_ visible: Bool) {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
+    guard info.isSubVisible != visible else { return }
+    info.isSubVisible = visible
+    sendOSD(visible ? .subVisible : .subHidden)
+    postNotification(.iinaSubVisibilityChanged)
   }
 
   func trackListChanged() {
@@ -2573,6 +2666,7 @@ class PlayerCore: NSObject {
   }
 
   func vfChanged() {
+    dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping else { return }
     _ = getVideoFilters()
     postNotification(.iinaVFChanged)
@@ -2580,7 +2674,7 @@ class PlayerCore: NSObject {
     saveState()
   }
 
-  func reloadVID(silent: Bool = false) {
+  func vidChanged(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     guard !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
@@ -3074,7 +3168,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  @available(macOS 10.12.2, *)
   func makeTouchBar() -> NSTouchBar {
     log.debug("Activating Touch Bar")
     needsTouchBar = true
@@ -3086,10 +3179,8 @@ class PlayerCore: NSObject {
   }
 
   func refreshTouchBarSlider() {
-    if #available(macOS 10.12.2, *) {
-      DispatchQueue.main.async {
-        self.touchBarSupport.touchBarPlaySlider?.needsDisplay = true
-      }
+    DispatchQueue.main.async {
+      self.touchBarSupport.touchBarPlaySlider?.needsDisplay = true
     }
   }
 
@@ -3146,10 +3237,10 @@ class PlayerCore: NSObject {
   private func reloadSelectedTracks(silent: Bool = false) {
     dispatchPrecondition(condition: .onQueue(mpv.queue))
     log.verbose("Reloading selected tracks")
-    reloadAID(silent: silent)
-    reloadVID(silent: silent)
-    reloadSID(silent: silent)
-    reloadSecondSID(silent: silent)
+    aidChanged(silent: silent)
+    vidChanged(silent: silent)
+    sidChanged(silent: silent)
+    secondarySidChanged(silent: silent)
 
     saveState()
   }
@@ -3359,12 +3450,27 @@ class PlayerCore: NSObject {
   }
 
   static func checkStatusForSleep() {
-    for player in playing {
-      if player.info.isPlaying {
-        SleepPreventer.preventSleep()
-        return
-      }
+    guard Preference.bool(for: .preventScreenSaver) else {
+      SleepPreventer.allowSleep()
+      return
     }
+    // Look for players actively playing that are not in music mode and are not just playing audio.
+    for player in playing {
+      guard player.info.isPlaying,
+            player.info.currentMediaAudioStatus != .isAudio && !player.isInMiniPlayer else { continue }
+      SleepPreventer.preventSleep()
+      return
+    }
+    // Now look for players in music mode or playing audio.
+    for player in playing {
+      guard player.info.isPlaying,
+            player.info.currentMediaAudioStatus == .isAudio || player.isInMiniPlayer else { continue }
+      // Either prevent the screen saver from activating or prevent system from sleeping depending
+      // upon user setting.
+      SleepPreventer.preventSleep(allowScreenSaver: Preference.bool(for: .allowScreenSaverForAudio))
+      return
+    }
+    // No players are actively playing.
     SleepPreventer.allowSleep()
   }
 }

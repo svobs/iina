@@ -127,9 +127,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBOutlet weak var switchHorizontalLine: NSBox!
   @IBOutlet weak var switchHorizontalLine2: NSBox!
-  @IBOutlet weak var hardwareDecodingSwitch: Switch!
-  @IBOutlet weak var deinterlaceSwitch: Switch!
-  @IBOutlet weak var hdrSwitch: Switch!
+  @IBOutlet weak var hardwareDecodingSwitch: NSSwitch!
+  @IBOutlet weak var deinterlaceSwitch: NSSwitch!
+  @IBOutlet weak var hdrSwitch: NSSwitch!
+  @IBOutlet weak var hardwareDecodingLabel: NSTextField!
+  @IBOutlet weak var deinterlaceLabel: NSTextField!
+  @IBOutlet weak var hdrLabel: NSTextField!
 
   @IBOutlet weak var brightnessSlider: NSSlider!
   @IBOutlet weak var contrastSlider: NSSlider!
@@ -148,13 +151,15 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   @IBOutlet weak var audioDelaySliderConstraint: NSLayoutConstraint!
   @IBOutlet weak var customAudioDelayTextField: NSTextField!
   @IBOutlet weak var audioDelayResetBtn: NSButton!
-
+  @IBOutlet weak var hideSwitch: NSSwitch!
+  @IBOutlet weak var secHideSwitch: NSSwitch!
   @IBOutlet weak var subLoadSementedControl: NSSegmentedControl!
   @IBOutlet weak var subDelaySlider: NSSlider!
   @IBOutlet weak var subDelaySliderIndicator: NSTextField!
   @IBOutlet weak var subDelaySliderConstraint: NSLayoutConstraint!
   @IBOutlet weak var customSubDelayTextField: NSTextField!
   @IBOutlet weak var subDelayResetBtn: NSButton!
+  @IBOutlet weak var subSegmentedControl: NSSegmentedControl!
 
   @IBOutlet weak var audioEqSlider1: NSSlider!
   @IBOutlet weak var audioEqSlider2: NSSlider!
@@ -274,6 +279,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       guard currentTab == .sub else { return }
       self.reload()
     }
+    observe(.iinaSecondSubVisibilityChanged) { [unowned self] _ in secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off }
+    observe(.iinaSubVisibilityChanged) { [unowned self] _ in hideSwitch.state = player.info.isSubVisible ? .on : .off }
+
     view.configureSubtreeForCoreAnimation()
     view.layoutSubtreeIfNeeded()
   }
@@ -453,22 +461,15 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     rotateSegment.selectSegment(withTag: AppData.rotations.firstIndex(of: player.videoGeo.userRotation) ?? -1)
 
-    deinterlaceSwitch.checked = player.info.deinterlace
-    deinterlaceSwitch.action = {
-      self.player.toggleDeinterlace($0)
-    }
-    hardwareDecodingSwitch.checked = player.info.hwdecEnabled
-    hardwareDecodingSwitch.action = {
-      self.player.toggleHardwareDecoding($0)
-    }
+    hardwareDecodingSwitch.state = player.info.hwdecEnabled ? .on : .off
+    deinterlaceSwitch.state = player.info.deinterlace ? .on : .off
     hdrSwitch.isEnabled = player.info.hdrAvailable
-    hdrSwitch.checked = player.info.hdrAvailable && player.info.hdrEnabled
-    if #available(macOS 10.15, *) {
-      hdrSwitch.action = {
-        self.player.info.hdrEnabled = $0
-        self.player.refreshEdrMode()
-      }
-    }
+    hdrSwitch.state = (player.info.hdrAvailable && player.info.hdrEnabled) ? .on : .off
+    
+    // These strings are also contained in the strings file of this view. Remove these lines if the localization of these strings are complete enough.
+    hardwareDecodingLabel.stringValue = NSLocalizedString("quicksetting.hwdec", comment: "Hardware Decoding")
+    deinterlaceLabel.stringValue = NSLocalizedString("quicksetting.deinterlace", comment: "Deinterlace")
+    hdrLabel.stringValue = NSLocalizedString("quicksetting.hdr", comment: "HDR")
 
     let speed = player.mpv.getDouble(MPVOption.PlaybackControl.speed)
     customSpeedTextField.doubleValue = speed
@@ -488,6 +489,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload `Subtitles` tab
   private func updateSubTabControls() {
+    hideSwitch.state = player.info.isSubVisible ? .on : .off
+    secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off
+
     if let currSub = player.info.currentTrack(.sub) {
       // FIXME: CollorWells cannot be disable?
       let enableTextSettings = !(currSub.isAssSub || currSub.isImageSub)
@@ -503,18 +507,25 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     if let subBgColorString = Preference.string(for: .subBgColorString), let subBgColor = NSColor(mpvColorString: subBgColorString) {
       subTextBgColorWell.color = subBgColor
     }
+    let isPrimary = (subSegmentedControl.selectedSegment == 0)
+    let posOption = isPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
+    let currSubPos = player.mpv.getInt(posOption)
+    subPosSlider.intValue = Int32(currSubPos)
+
     let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
     let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
     subScaleSlider.doubleValue = displaySubScale + (displaySubScale > 0 ? -1 : 1)
+
     subScaleResetBtn.isHidden = displaySubScale == 1.0
-    let subDelay = player.mpv.getDouble(MPVOption.Subtitles.subDelay)
+
+    // controls can apply to either primary or secondary sub
+    let delayOption = isPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
+    let subDelay = player.mpv.getDouble(delayOption)
+
     subDelaySlider.doubleValue = subDelay
     customSubDelayTextField.doubleValue = subDelay
     subDelayResetBtn.isHidden = subDelay == 0.0
     redraw(indicator: subDelaySliderIndicator, constraint: subDelaySliderConstraint, slider: subDelaySlider, value: "\(customSubDelayTextField.stringValue)s")
-
-    let currSubPos = player.mpv.getInt(MPVOption.Subtitles.subPos)
-    subPosSlider.intValue = Int32(currSubPos)
 
     let fontSize = player.mpv.getInt(MPVOption.Subtitles.subFontSize)
     subTextSizePopUp.selectItem(withTitle: fontSize.description)
@@ -667,7 +678,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     player.info.hdrAvailable = available
     if isViewLoaded {
       hdrSwitch.isEnabled = available
-      hdrSwitch.checked = available && player.info.hdrEnabled
+      hdrSwitch.state = (available && player.info.hdrEnabled) ? .on : .off
     }
   }
 
@@ -691,7 +702,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     } else if tableView == audioTableView {
       return player.info.audioTracks.count + 1
     } else if tableView == subTableView || tableView == secSubTableView {
-      return player.info.subTracks.count + 1
+      let subTracks = player.info.subTracks
+      return subTracks.count + 1
     } else {
       return 0
     }
@@ -807,6 +819,19 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     if value != "" {
       player.setVideoAspectOverride(value)
     }
+  }
+
+  @IBAction func hardwareDecodingAction(_ sender: NSSwitch) {
+    player.toggleHardwareDecoding(sender.state == .on)
+  }
+  
+  @IBAction func deinterlaceAction(_ sender: NSSwitch) {
+    player.toggleDeinterlace(sender.state == .on)
+  }
+  
+  @IBAction func hdrAction(_ sender: NSSwitch) {
+    self.player.info.hdrEnabled = sender.state == .on
+    self.player.refreshEdrMode()
   }
 
   private func redraw(indicator: NSTextField, constraint: NSLayoutConstraint, slider: NSSlider, value: String) {
@@ -985,6 +1010,14 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   // MARK: Sub tab
 
+  @IBAction func hideSubAction(_ sender: NSSwitch) {
+    player.toggleSubVisibility()
+  }
+
+  @IBAction func hideSecSubAction(_ sender: NSSwitch) {
+    player.toggleSecondSubVisibility()
+  }
+
   @IBAction func loadExternalSubAction(_ sender: NSSegmentedControl) {
     if sender.selectedSegment == 0 {
       let currentDir = player.info.currentURL?.deletingLastPathComponent()
@@ -1063,6 +1096,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     windowController.menuFindOnlineSub(.dummy)
   }
 
+  @IBAction func subSegmentedControlAction(_ sender: NSSegmentedControl) {
+    updateSubTabControls()
+  }
+
   @IBAction func subDelayChangedAction(_ sender: NSSlider) {
     let eventType = NSApp.currentEvent!.type
     if eventType == .leftMouseDown {
@@ -1077,13 +1114,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     subDelayResetBtn.isHidden = sliderValue == 0.0
     if let event = NSApp.currentEvent {
       if event.type == .leftMouseUp {
-        player.setSubDelay(sliderValue)
+        player.setSubDelay(sliderValue, forPrimary: subSegmentedControl.selectedSegment == 0)
       }
     }
   }
 
   @IBAction func resetSubDelayAction(_ sender: AnyObject) {
-    player.setSubDelay(0.0)
+    player.setSubDelay(0.0, forPrimary: subSegmentedControl.selectedSegment == 0)
   }
 
   @IBAction func customSubDelayEditFinishedAction(_ sender: NSTextField) {
@@ -1091,7 +1128,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       sender.stringValue = "0"
     }
     let value = sender.doubleValue
-    player.setSubDelay(value)
+    player.setSubDelay(value, forPrimary: subSegmentedControl.selectedSegment == 0)
     subDelaySlider.doubleValue = value
     redraw(indicator: subDelaySliderIndicator, constraint: subDelaySliderConstraint, slider: subDelaySlider, value: "\(sender.stringValue)s")
   }
@@ -1102,7 +1139,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func subPosSliderAction(_ sender: NSSlider) {
-    player.setSubPos(Int(sender.intValue))
+    player.setSubPos(Int(sender.intValue), forPrimary: subSegmentedControl.selectedSegment == 0)
   }
 
   @IBAction func subScaleSliderAction(_ sender: NSSlider) {

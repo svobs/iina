@@ -87,8 +87,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @IBOutlet weak var addBtn: NSButton!
   @IBOutlet weak var removeBtn: NSButton!
   
-  private var playlistTotalLengthIsReady = false
-  private var playlistTotalLength: Double? = nil
+  @Atomic private var playlistTotalLengthIsReady = false
+  @Atomic private var playlistTotalLength: Double? = nil
   private var lastNowPlayingIndex: Int = -1
 
   private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
@@ -390,10 +390,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func copyToPasteboard(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) {
-    let playlistItems = player.info.playlist
-    let filePaths = rowIndexes.compactMap { playlistItems[$0].filename }
-    pboard.declareTypes([.nsFilenames], owner: tableView)
-    pboard.setPropertyList(filePaths, forType: .nsFilenames)
+    do {
+      let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
+      let filePaths = rowIndexes.map { player.info.playlist[$0].filename }
+      pboard.declareTypes([.iinaPlaylistItem, .nsFilenames], owner: tableView)
+      pboard.setData(indexesData, forType: .iinaPlaylistItem)
+      pboard.setPropertyList(filePaths, forType: .nsFilenames)
+    } catch {
+      // Internal error, archivedData should not fail.
+      Logger.log("Failed to copy from playlist to pasteboard: \(error)", level: .error,
+                 subsystem: player.subsystem)
+    }
   }
 
   @discardableResult
@@ -434,12 +441,22 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
-    if let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
-          sequenceNumber == info.draggingSequenceNumber {
-
-      DispatchQueue.main.async { [self] in
-        player.playlistMove(draggedRowIndexes, to: row)
+    if info.draggingSource as? NSTableView === tableView,
+      let rowData = info.draggingPasteboard.data(forType: .iinaPlaylistItem),
+      let indexSet = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSIndexSet.self, from: rowData) as? IndexSet {
+      // Drag & drop within playlistTableView
+      var oldIndexOffset = 0, newIndexOffset = 0
+      for oldIndex in indexSet {
+        if oldIndex < row {
+          player.playlistMove(oldIndex + oldIndexOffset, to: row)
+          oldIndexOffset -= 1
+        } else {
+          player.playlistMove(oldIndex, to: row + newIndexOffset)
+          newIndexOffset += 1
+        }
+        Logger.log("Playlist Drag & Drop from \(oldIndex) to \(row)", subsystem: player.subsystem)
       }
+      player.postNotification(.iinaPlaylistChanged)
       return true
     }
     // Otherwise, could be copy/cut & paste within playlistTableView

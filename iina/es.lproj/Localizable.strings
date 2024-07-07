@@ -46,6 +46,7 @@
 "quicksetting.hwdec" = "Decodificación de hardware";
 "quicksetting.deinterlace" = "Desentrelazar";
 "quicksetting.hdr" = "HDR";
+"quicksetting.hide" = "Ocultar";
 
 // OSDMessage.swift
 "osd.pause" = "Pausa";
@@ -64,6 +65,14 @@
 "osd.sub_delay.later" = "Retraso de subtítulos: %.2fs Después";
 "osd.sub_delay.earlier" = "Retraso de subtítulos: %.2fs Antes";
 "osd.subtitle_pos" = "Posición de subtítulos: %.1f";
+"osd.sub_hidden" = "Subtítulos Visibles";
+"osd.sub_visible" = "Subtítulos Visibles";
+"osd.sub_second_delay.nodelay" = "Secondary Subtitle Delay: No Delay";
+"osd.sub_second_delay.later" = "Secondary Subtitle Delay: %.2fs Later";
+"osd.sub_second_delay.earlier" = "Secondary Subtitle Delay: %.2fs Earlier";
+"osd.sub_second_hidden" = "Secondary Subtitles Hidden";
+"osd.sub_second_pos" = "Secondary Subtitle Position: %.1f";
+"osd.sub_second_visible" = "Secondary Subtitles Visible";
 "osd.mute" = "Silenciar";
 "osd.unmute" = "No silenciar";
 "osd.screenshot" = "Captura de pantalla";
@@ -83,7 +92,8 @@
 "osd.find_online_sub" = "Buscando subtítulos en línea…";
 "osd.find_online_sub.source" = "desde";
 "osd.sub_not_found" = "No se encontraron subtítulos";
-"osd.sub_found" = "%d subtítulos encontrados. Descargando…";
+"osd.sub_found" = "%d subtitles found.";
+"osd.sub_downloading" = "Downloading %d subtitles";
 "osd.sub_downloaded" = "Subtítulos descargados";
 "osd.sub_saved" = "Subtítulo guardado";
 "osd.network_error" = "Error de red";
@@ -119,14 +129,18 @@
 
 "preference.enable_adv_settings" = "Habilitar configuración avanzada";
 
-"preference.sub_override_level.force" = "force";
+"preference.sub_override_level.force" = "fuerza";
 "preference.sub_override_level.strip" = "tira";
-"preference.sub_override_level.yes" = "yes";
+"preference.sub_override_level.yes" = "sí";
 
 "menu.volume" = "Volumen: %d";
 "menu.volume_muted" = "Volumen: %d (Silenciado)";
 "menu.audio_delay" = "Retraso de audio: %.2fs";
 "menu.sub_delay" = "Retraso de subtítulos: %.2fs";
+"menu.sub_hide" = "Ocultar Subtítulos";
+"menu.sub_show" = "Mostrar Subtítulos";
+"menu.sub_second_hide" = "Hide Secondary Subtitles";
+"menu.sub_second_show" = "Show Secondary Subtitles";
 "menu.fullscreen" = "Ver a pantalla completa";
 "menu.exit_fullscreen" = "Salir de pantalla completa";
 "menu.pip" = "Ver en picture in picture";
@@ -158,10 +172,13 @@
 "menu.sub_delay_up" = "Retrasar subtítulos + %.1fs";
 "menu.sub_delay_down" = "Retrasar subtítulos - %.1fs";
 
-"menu.crop_custom" = "Personalizado...";
+"menu.crop_custom" = "Personalizado…";
 "menu.find_online_sub" = "Buscar subtítulos en línea desde %@";
 
+"track.audio" = "Audio";
 "track.none" = "<Ninguno>";
+"track.sub" = "Subtítulos";
+"track.video" = "Vídeo";
 
 "subtrack.no_loaded" = "No se cargaron subtítulos";
 "subtrack.no_external" = "No se encontraron subtítulos externos";
@@ -193,11 +210,13 @@
 "alert.config.duplicate.title" = "Configuración duplicada";
 "alert.config.duplicate.message" = "Por favor, introduzca el nombre para el archivo de configuración duplicado.";
 "alert.config.empty_name" = "El nombre no puede estar vacío.";
-"alert.config.name_existing" = "El nombre ya existe.";
+"alert.config.name_existing" = "A config with the same name already exists.";
 "alert.config.file_existing.title" = "El archivo ya existe";
-"alert.config.file_existing.message" = "Esto no debería suceder. Seleccione Aceptar para sobrescribir, Cancelar para revelar el archivo en el Finder.";
+"alert.config.file_existing.message" = "A config file with the same filename already exists. Choose OK to show the file in Finder.";
 "alert.config.cannot_create" = "¡No se puede crear el archivo de configuración!\n%@";
 "alert.config.cannot_write" = "¡No se puede escribir en el archivo de configuración!";
+"alert.config.rename.title" = "Rename Input Configuration";
+"alert.config.rename.message" = "Please enter the new name for the configuration.";
 
 "alert.filter.incorrect" = "Se produjo un error al configurar los filtros. Por favor, compruebe el formato de los parámetros.";
 "alert.add_filter.title" = "Nuevo filtro";

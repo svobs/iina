@@ -1059,10 +1059,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     })
 
-    if #available(macOS 10.15, *) {
-      addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification, object: nil) { [unowned self] noti in
-        player.refreshEdrMode()
-      }
+    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification, object: nil) { [unowned self] noti in
+      player.refreshEdrMode()
     }
 
     addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
@@ -3631,7 +3629,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .openFile:
       AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
     case .openURL:
-      AppDelegate.shared.showOpenURLWindow(isAlternativeAction: false)
+      AppDelegate.shared.openURL(self)
     case .flip:
       menuToggleFlip(.dummy)
     case .mirror:
@@ -3644,36 +3642,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       menuFindOnlineSub(.dummy)
     case .saveDownloadedSub:
       saveDownloadedSub(.dummy)
-    case .toggleMusicMode:
-      menuSwitchToMiniPlayer(.dummy)
-    case .togglePIP:
-      if #available(macOS 10.12, *) {
-        menuTogglePIP(.dummy)
-      }
-    case .videoPanel:
-      menuShowVideoQuickSettings(.dummy)
-    case .audioPanel:
-      menuShowAudioQuickSettings(.dummy)
-    case .subPanel:
-      menuShowSubQuickSettings(.dummy)
-    case .playlistPanel:
-      menuShowPlaylistPanel(.dummy)
-    case .chapterPanel:
-      menuShowChaptersPanel(.dummy)
-    case .deleteCurrentFileHard:
-      menuDeleteCurrentFileHard(.dummy)
-    case .biggerWindow:
-      let item = NSMenuItem()
-      item.tag = 11
-      menuChangeWindowSize(item)
-    case .smallerWindow:
-      let item = NSMenuItem()
-      item.tag = 10
-      menuChangeWindowSize(item)
-    case .fitToScreen:
-      let item = NSMenuItem()
-      item.tag = 3
-      menuChangeWindowSize(item)
+    default:
+      break
     }
   }
 
@@ -3872,4 +3842,21 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     // Stopping PIP pauses playback
     player.pause()
   }
+}
+
+fileprivate func mouseEventArgs(_ event: NSEvent) -> [[String: Any]] {
+  return [[
+    "x": event.locationInWindow.x,
+    "y": event.locationInWindow.y,
+    "clickCount": event.clickCount,
+    "pressure": event.pressure
+  ] as [String : Any]]
+}
+
+fileprivate func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
+  return [[
+    "x": event.locationInWindow.x,
+    "y": event.locationInWindow.y,
+    "isRepeat": event.isARepeat
+  ] as [String : Any]]
 }

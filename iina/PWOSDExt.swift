@@ -202,8 +202,9 @@ extension PlayerWindowController {
   /// themselves process the display of any enqueued OSD messages.
   func displayOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                   accessoryViewController: NSViewController? = nil, isExternal: Bool = false) {
-    guard player.canShowOSD() else { return }
-
+    guard player.canShowOSD() || msg.alwaysEnabled else { return }
+    guard !msg.isDisabled else { return }
+    
     let disableOSDForFileLoading: Bool = player.info.isNotDoneLoading || player.info.timeSinceLastFileOpenFinished < 0.2
     if disableOSDForFileLoading && !isExternal {
       switch msg {

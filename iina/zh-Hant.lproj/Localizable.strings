@@ -46,6 +46,7 @@
 "quicksetting.hwdec" = "硬體解碼";
 "quicksetting.deinterlace" = "去交錯";
 "quicksetting.hdr" = "高動態範圍成效";
+"quicksetting.hide" = "隱藏";
 
 // OSDMessage.swift
 "osd.pause" = "暫停";
@@ -64,6 +65,14 @@
 "osd.sub_delay.later" = "字幕延遲：延遲 %.2f 秒";
 "osd.sub_delay.earlier" = "字幕延遲：提前 %.2f 秒";
 "osd.subtitle_pos" = "字幕位置：%.1f";
+"osd.sub_hidden" = "Subtitles Hidden";
+"osd.sub_visible" = "Subtitles Visible";
+"osd.sub_second_delay.nodelay" = "Secondary Subtitle Delay: No Delay";
+"osd.sub_second_delay.later" = "Secondary Subtitle Delay: %.2fs Later";
+"osd.sub_second_delay.earlier" = "Secondary Subtitle Delay: %.2fs Earlier";
+"osd.sub_second_hidden" = "Secondary Subtitles Hidden";
+"osd.sub_second_pos" = "Secondary Subtitle Position: %.1f";
+"osd.sub_second_visible" = "Secondary Subtitles Visible";
 "osd.mute" = "靜音";
 "osd.unmute" = "取消靜音";
 "osd.screenshot" = "已儲存畫面截圖";
@@ -83,7 +92,8 @@
 "osd.find_online_sub" = "正在搜尋線上字幕⋯";
 "osd.find_online_sub.source" = "從";
 "osd.sub_not_found" = "找不到字幕";
-"osd.sub_found" = "已找到 %d 個字幕，下載中⋯";
+"osd.sub_found" = "%d subtitles found.";
+"osd.sub_downloading" = "Downloading %d subtitles";
 "osd.sub_downloaded" = "字幕下載完成";
 "osd.sub_saved" = "字幕已保存";
 "osd.network_error" = "網路連線錯誤";
@@ -127,6 +137,10 @@
 "menu.volume_muted" = "音量：%d (靜音)";
 "menu.audio_delay" = "音訊延遲：%.2f 秒";
 "menu.sub_delay" = "字幕延遲：%.2f 秒";
+"menu.sub_hide" = "Hide Subtitles";
+"menu.sub_show" = "Show Subtitles";
+"menu.sub_second_hide" = "Hide Secondary Subtitles";
+"menu.sub_second_show" = "Show Secondary Subtitles";
 "menu.fullscreen" = "進入全螢幕";
 "menu.exit_fullscreen" = "離開全螢幕";
 "menu.pip" = "進入子母畫面";
@@ -158,10 +172,13 @@
 "menu.sub_delay_up" = "字幕延遲 + %.1f 秒";
 "menu.sub_delay_down" = "字幕延遲 - %.1f 秒";
 
-"menu.crop_custom" = "自訂...";
+"menu.crop_custom" = "自定⋯";
 "menu.find_online_sub" = "從 %@ 尋找線上字幕";
 
+"track.audio" = "音訊";
 "track.none" = "<無>";
+"track.sub" = "字幕";
+"track.video" = "視訊";
 
 "subtrack.no_loaded" = "沒有已載入的字幕";
 "subtrack.no_external" = "沒有找到外部字幕";
@@ -193,11 +210,13 @@
 "alert.config.duplicate.title" = "複製設定檔";
 "alert.config.duplicate.message" = "請輸入複製的設定檔名稱";
 "alert.config.empty_name" = "名稱不能留空";
-"alert.config.name_existing" = "名稱已經存在";
+"alert.config.name_existing" = "A config with the same name already exists.";
 "alert.config.file_existing.title" = "檔案已經存在";
-"alert.config.file_existing.message" = "這不該發生。按一下「好」來覆寫，或是按一下「取消」在 Finder 中顯示檔案。";
+"alert.config.file_existing.message" = "A config file with the same filename already exists. Choose OK to show the file in Finder.";
 "alert.config.cannot_create" = "無法建立設定檔\n%@";
 "alert.config.cannot_write" = "無法寫入設定檔";
+"alert.config.rename.title" = "Rename Input Configuration";
+"alert.config.rename.message" = "Please enter the new name for the configuration.";
 
 "alert.filter.incorrect" = "設定濾鏡時出現錯誤，請檢查參數格式";
 "alert.add_filter.title" = "新增濾鏡";

@@ -8,6 +8,9 @@
 
 import Cocoa
 
+fileprivate let fm = FileManager.default
+fileprivate typealias KC = PrefKeyBindingViewController
+
 @objcMembers
 class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable {
 

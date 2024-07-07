@@ -114,6 +114,9 @@ struct Preference {
     /** Resume from last position */
     static let resumeLastPosition = Key("resumeLastPosition")
 
+    static let preventScreenSaver = Key("preventScreenSaver")
+    static let allowScreenSaverForAudio = Key("allowScreenSaverForAudio")
+
     /// Always float on top while playing:
     static let alwaysFloatOnTop = Key("alwaysFloatOnTop")
     static let alwaysShowOnTopIcon = Key("alwaysShowOnTopIcon")
@@ -176,6 +179,7 @@ struct Preference {
     /** Timeout for auto hiding control bar (float) */
     static let controlBarAutoHideTimeout = Key("controlBarAutoHideTimeout")
 
+
     /** Whether auto hiding control bar is enabled. (bool)*/
     static let enableControlBarAutoHide = Key("enableControlBarAutoHide")
 
@@ -188,6 +192,11 @@ struct Preference {
     static let enableOSDInMusicMode = Key("enableOSDInMusicMode")
 
     static let osdPosition = Key("osdPosition")
+    static let disableOSDFileStartMsg = Key("disableOSDFileStartMsg")
+    static let disableOSDPauseResumeMsgs = Key("disableOSDPauseResumeMsgs")
+    static let disableOSDSeekMsg = Key("disableOSDSeekMsg")
+    static let disableOSDSpeedMsg = Key("disableOSDSpeedMsg")
+
     static let osdAutoHideTimeout = Key("osdAutoHideTimeout")
     static let osdTextSize = Key("osdTextSize")
 
@@ -270,6 +279,11 @@ struct Preference {
 
     static let enableInitialVolume = Key("enableInitialVolume")
     static let initialVolume = Key("initialVolume")
+
+    static let replayGain = Key("replayGain")
+    static let replayGainPreamp = Key("replayGainPreamp")
+    static let replayGainClip = Key("replayGainClip")
+    static let replayGainFallback = Key("replayGainFallback")
 
     // MARK: - Keys: Subtitle
 
@@ -363,9 +377,6 @@ struct Preference {
     static let useMediaKeys = Key("useMediaKeys")
     static let useAppleRemote = Key("useAppleRemote")
 
-    /** User created input config list (dic) */
-    static let inputConfigs = Key("inputConfigs")
-
     /** Current input config name */
     static let currentInputConfigName = Key("currentInputConfigName")
 
@@ -440,12 +451,15 @@ struct Preference {
     static let iinaLastPlayedFilePath = Key("iinaLastPlayedFilePath")
     static let iinaLastPlayedFilePosition = Key("iinaLastPlayedFilePosition")
 
-    /** Alerts */
-    static let suppressCannotPreventDisplaySleep = Key("suppressCannotPreventDisplaySleep")
-
+    /** Internal */
     static let iinaEnablePluginSystem = Key("iinaEnablePluginSystem")
 
-    /** Workaround for issue [#4688](https://github.com/iina/iina/issues/4688) */
+    /// Workaround for issue [#4688](https://github.com/iina/iina/issues/4688)
+    /// - Note: This workaround can cause significant slowdown at startup if the list of recent documents contains files on a mounted
+    ///         volume that is unreachable. For this reason the workaround is disabled by default and must be enabled by running the
+    ///         following command in [Terminal](https://support.apple.com/guide/terminal/welcome/mac):
+    ///         `defaults write com.colliderli.iina enableRecentDocumentsWorkaround true`
+    static let enableRecentDocumentsWorkaround = Key("enableRecentDocumentsWorkaround")
     static let recentDocuments = Key("recentDocuments")
 
     static let aspectRatioPanelPresets = Key("aspectRatioPanelPresets")
@@ -477,11 +491,8 @@ struct Preference {
     static let uiPrefDetailViewScrollOffsetY = Key("uiPrefDetailViewScrollOffsetY")
     /// These must match the identifier of their respective CollapseView's button, except replacing the "Trigger" prefix with
     /// "uiCollapseView": `true` == open;  `false` == folded
-    static let uiCollapseViewMediaIsOpened = Key("uiCollapseViewMediaIsOpened")
-    static let uiCollapseViewMediaIsStarted = Key("uiCollapseViewMediaIsStarted")
-    static let uiCollapseViewPauseResume = Key("uiCollapseViewPauseResume")
+    static let uiCollapseViewSuppressOSDMessages = Key("uiCollapseViewSuppressOSDMessages")
     static let uiCollapseViewSubAutoLoadAdvanced = Key("uiCollapseViewSubAutoLoadAdvanced")
-    static let uiCollapseViewSubTextSubsAdvanced = Key("uiCollapseViewSubTextSubsAdvanced")
     static let uiPrefBindingsTableSearchString = Key("uiPrefBindingsTableSearchString")
     static let showKeyBindingsFromAllSources = Key("showKeyBindingsFromAllSources")
     static let uiPrefBindingsTableScrollOffsetY = Key("uiPrefBindingsTableScrollOffsetY")
@@ -494,6 +505,13 @@ struct Preference {
 
     static let uiLastClosedWindowedModeGeometry = Key("uiLastClosedWindowedModeGeometry")
     static let uiLastClosedMusicModeGeometry = Key("uiLastClosedMusicModeGeometry")
+
+    static let enableFFmpegImageDecoder = Key("enableFFmpegImageDecoder")
+
+    /// The belief is that the workaround for issue #3844 that adds a tiny subview to the player window is no longer needed.
+    /// To confirm this the workaround is being disabled by default using this preference. Should all go well this workaround will be
+    /// removed in the future.
+    static let enableHdrWorkaround = Key("enableHdrWorkaround")
   }
 
   // MARK: - Enums
@@ -842,10 +860,8 @@ struct Preference {
     case png = 0
     case jpg
     case jpeg
-    case ppm
-    case pgm
-    case pgmyuv
-    case tga
+    case webp
+    case jxl
 
     static var defaultValue = ScreenshotFormat.png
 
@@ -859,10 +875,8 @@ struct Preference {
         case .png: return "png"
         case .jpg: return "jpg"
         case .jpeg: return "jpeg"
-        case .ppm: return "ppm"
-        case .pgm: return "pgm"
-        case .pgmyuv: return "pgmyuv"
-        case .tga: return "tga"
+        case .webp: return "webp"
+        case .jxl: return "jxl"
         }
       }
     }
@@ -1040,6 +1054,28 @@ struct Preference {
     }
   }
 
+  enum ReplayGainOption: Int, InitializingFromKey {
+    case no = 0
+    case track
+    case album
+
+    static var defaultValue = ReplayGainOption.no
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+
+    var mpvString: String {
+      get {
+        switch self {
+        case .no: return "no"
+        case .track : return "track"
+        case .album: return "album"
+        }
+      }
+    }
+  }
+
   // MARK: - Defaults
 
   static let defaultPreference: [Preference.Key: Any] = [
@@ -1089,6 +1125,10 @@ struct Preference {
     .enableOSD: true,
     .enableOSDInMusicMode: false,
     .osdPosition: OSDPosition.topLeading.rawValue,
+    .disableOSDFileStartMsg: false,
+    .disableOSDPauseResumeMsgs: false,
+    .disableOSDSeekMsg: false,
+    .disableOSDSpeedMsg: false,
     .osdAutoHideTimeout: Float(1),
     .osdTextSize: Float(28),
     .softVolume: 100,
@@ -1104,6 +1144,8 @@ struct Preference {
     .useLegacyFullScreen: true,
     .showChapterPos: false,
     .resumeLastPosition: false,
+    .preventScreenSaver: true,
+    .allowScreenSaverForAudio: false,
     .useMediaKeys: true,
     .useAppleRemote: false,
     .alwaysFloatOnTop: false,
@@ -1173,6 +1215,10 @@ struct Preference {
     .enablePlaylistLoop: false,
     .enableFileLoop: false,
     .shortenFileGroupsInPlaylist: true,
+    .replayGain: ReplayGainOption.no.rawValue,
+    .replayGainPreamp: 0,
+    .replayGainClip: false,
+    .replayGainFallback: 0,
 
       .subAutoLoadIINA: IINAAutoLoadAction.iina.rawValue,
     .subAutoLoadPriorityString: "",
@@ -1219,8 +1265,7 @@ struct Preference {
     .ytdlRawOptions: "",
     .httpProxy: "",
 
-      .inputConfigs: [String: Any](),
-    .currentInputConfigName: "IINA Default",
+      .currentInputConfigName: AppData.defaultConfNamesSorted[0],
 
       .enableAdvancedSettings: false,
     .useMpvOsd: false,
@@ -1243,11 +1288,8 @@ struct Preference {
     .isRestoreInProgress: false,
     .uiPrefWindowNavTableSelectionIndex: 0,
     .uiPrefDetailViewScrollOffsetY: 0.0,
-    .uiCollapseViewMediaIsOpened: true,
-    .uiCollapseViewMediaIsStarted: true,
-    .uiCollapseViewPauseResume: true,
+    .uiCollapseViewSuppressOSDMessages: true,
     .uiCollapseViewSubAutoLoadAdvanced: false,
-    .uiCollapseViewSubTextSubsAdvanced: false,
     .uiPrefBindingsTableSearchString: "",
     .uiPrefBindingsTableScrollOffsetY: 0,
     .uiInspectorWindowTabIndex: 0,
@@ -1292,11 +1334,13 @@ struct Preference {
     .savedVideoFilters: [SavedFilter](),
     .savedAudioFilters: [SavedFilter](),
 
-    .suppressCannotPreventDisplaySleep: false,
+    .enableRecentDocumentsWorkaround: false,
+    .recentDocuments: [Any](),
 
     .aspectRatioPanelPresets: "4:3,16:9,16:10,21:9,5:4",
     .cropPanelPresets: "4:3,16:9,16:10,21:9,5:4",
-    .recentDocuments: [Any]()
+    .enableFFmpegImageDecoder: true,
+    .enableHdrWorkaround: false
   ]
 
 

@@ -80,10 +80,6 @@ class OpenSub {
         tokens.append("(\(releaseYear))")
       }
 
-      if let isCC = attributes.hearingImpaired, isCC {
-        tokens.append("CC")
-      }
-
       if let fps = attributes.fps, fps != 0 {
         tokens.append("\(fps.stringMaxFrac2) fps")
       }

@@ -28,6 +28,9 @@
 "initial.debug.desc" = "Bangunan debug biasanya tidak dioptimalkan performanya, sehingga tidak disarankan untuk digunakan sebagai drive harian. Bangunan debug tidak mendukung pembaruan otomatis.";
 "initial.bug_report" = "Laporkan melalui <a href=\"https://github.com/iina/iina/issues\">Masalah GitHub</a>.";
 
+// Inspector Window
+"inspector.error" = "Eror";
+
 // MainWindowController.swift
 "main.buffering_indicator" = "Menyangga… %d%%";
 "main.opening_stream" = "Membuka stream…";
@@ -43,6 +46,7 @@
 "quicksetting.hwdec" = "Dekoding perangkat keras";
 "quicksetting.deinterlace" = "Deinterlace";
 "quicksetting.hdr" = "HDR";
+"quicksetting.hide" = "Sembunyikan";
 
 // OSDMessage.swift
 "osd.pause" = "Jeda";
@@ -61,6 +65,14 @@
 "osd.sub_delay.later" = "Penundaan Terjemahan: %.2f dtk lebih cepat";
 "osd.sub_delay.earlier" = "Penundaan Terjemahan: %.2f dtk lebih lambat";
 "osd.subtitle_pos" = "Posisi Terjemahan: %.1f";
+"osd.sub_hidden" = "Subtitles Hidden";
+"osd.sub_visible" = "Subtitles Visible";
+"osd.sub_second_delay.nodelay" = "Secondary Subtitle Delay: No Delay";
+"osd.sub_second_delay.later" = "Secondary Subtitle Delay: %.2fs Later";
+"osd.sub_second_delay.earlier" = "Secondary Subtitle Delay: %.2fs Earlier";
+"osd.sub_second_hidden" = "Secondary Subtitles Hidden";
+"osd.sub_second_pos" = "Secondary Subtitle Position: %.1f";
+"osd.sub_second_visible" = "Secondary Subtitles Visible";
 "osd.mute" = "Bisukan Suara";
 "osd.unmute" = "Nyalakan Suara";
 "osd.screenshot" = "Tangkapan Layar Berhasil";
@@ -80,7 +92,8 @@
 "osd.find_online_sub" = "Mencari terjemahan online…";
 "osd.find_online_sub.source" = "dari";
 "osd.sub_not_found" = "Terjemahan tidak ditemukan";
-"osd.sub_found" = "%d terjemahan ditemukan. Mengunduh…";
+"osd.sub_found" = "%d subtitles found.";
+"osd.sub_downloading" = "Downloading %d subtitles";
 "osd.sub_downloaded" = "Terjemahan terunduh";
 "osd.sub_saved" = "Terjemahan tersimpan";
 "osd.network_error" = "Jaringan bermasalah";
@@ -124,6 +137,10 @@
 "menu.volume_muted" = "Volume: %d (Dimatikan)";
 "menu.audio_delay" = "Penundaan Audio: %.2f dtk";
 "menu.sub_delay" = "Penundaan Terjemahan: %.2f dtk";
+"menu.sub_hide" = "Hide Subtitles";
+"menu.sub_show" = "Show Subtitles";
+"menu.sub_second_hide" = "Hide Secondary Subtitles";
+"menu.sub_second_show" = "Show Secondary Subtitles";
 "menu.fullscreen" = "Masuk Layar Penuh";
 "menu.exit_fullscreen" = "Keluar dari Layar Penuh";
 "menu.pip" = "Masuk Picture-in-Picture";
@@ -155,10 +172,13 @@
 "menu.sub_delay_up" = "Penundaan Terjemahan + %.1fdtk";
 "menu.sub_delay_down" = "Penundaan Terjemahan - %.1fdtk";
 
-"menu.crop_custom" = "Kustom...";
+"menu.crop_custom" = "Kustom…";
 "menu.find_online_sub" = "Cari Terjemahan Online dari %@";
 
+"track.audio" = "Audio";
 "track.none" = "<Tidak Ada>";
+"track.sub" = "Terjemahan";
+"track.video" = "Video";
 
 "subtrack.no_loaded" = "Tidak Ada Terjemahan Aktif";
 "subtrack.no_external" = "Terjemahan Eksternal Tidak Ditemukan";
@@ -190,11 +210,13 @@
 "alert.config.duplicate.title" = "Duplikat Konfigurasi";
 "alert.config.duplicate.message" = "Masukkan nama untuk duplikasi konfigurasi.";
 "alert.config.empty_name" = "Nama tidak boleh kosong.";
-"alert.config.name_existing" = "Nama ini sudah ada.";
+"alert.config.name_existing" = "A config with the same name already exists.";
 "alert.config.file_existing.title" = "File Sudah Ada";
-"alert.config.file_existing.message" = "This should not happen. Choose OK to overwrite, Cancel to reveal the file in Finder.";
+"alert.config.file_existing.message" = "A config file with the same filename already exists. Choose OK to show the file in Finder.";
 "alert.config.cannot_create" = "Tidak dapat membuat file konfigurasi!\n%@";
 "alert.config.cannot_write" = "Tidak dapat menulis pada file konfig!";
+"alert.config.rename.title" = "Rename Input Configuration";
+"alert.config.rename.message" = "Please enter the new name for the configuration.";
 
 "alert.filter.incorrect" = "Kesalahan terjadi saat menyetel filter. Mohon cek kembali format parameter Anda.";
 "alert.add_filter.title" = "Filter Baru";

@@ -26,7 +26,7 @@ class ConfTableStateManager: NSObject {
     super.init()
 
     // This will notify that a pref has changed, even if it was changed by another instance of IINA:
-    for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
+    for key in [Preference.Key.currentInputConfigName] {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
   }
@@ -57,9 +57,19 @@ class ConfTableStateManager: NSObject {
 
     // Remove observers for IINA preferences.
     ObjcUtils.silenced {
-      for key in [Preference.Key.currentInputConfigName, Preference.Key.inputConfigs] {
+      for key in [Preference.Key.currentInputConfigName] {
         UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
       }
+    }
+  }
+
+  static func findUserConfigs() -> [String: String] {
+    do {
+      let files = try FileManager.default.contentsOfDirectory(at: Utility.userInputConfDirURL, includingPropertiesForKeys: nil)
+      let configFiles = files.filter { $0.pathExtension == "conf" }
+      return Dictionary(uniqueKeysWithValues: configFiles.map { ($0.deletingPathExtension().lastPathComponent, $0.path) })
+    } catch {
+      Logger.fatal("Cannot get user config files!")
     }
   }
 
@@ -72,14 +82,7 @@ class ConfTableStateManager: NSObject {
       selectedConfName = defaultConfName
     }
 
-    let userConfDict: [String: String]
-    if let prefDict = Preference.dictionary(for: .inputConfigs), let userConfigStringDict = prefDict as? [String: String] {
-      userConfDict = userConfigStringDict
-    } else {
-      AppInputConfig.log.warn("Could not get pref: \(Preference.Key.inputConfigs.rawValue): will use default empty dictionary")
-      userConfDict = [:]
-    }
-
+    let userConfDict: [String: String] = findUserConfigs()
     return ConfTableState(userConfDict: userConfDict, selectedConfName: selectedConfName, specialState: .none)
   }
 
@@ -106,16 +109,19 @@ class ConfTableStateManager: NSObject {
         // Update the UI in case the update came from an external source. Make sure not to update prefs,
         // as this can cause a runaway chain reaction of back-and-forth updates if two or more instances are open!
         ConfTableState.current.changeSelectedConf(selectedConfNameNew, skipSaveToPrefs: true)
-      case Preference.Key.inputConfigs.rawValue:
-        guard let userConfDictNew = change[.newKey] as? [String: String] else { return }
-        if !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) {
-          AppInputConfig.log.verbose("Detected pref update for inputConfigs")
-          self.changeState(userConfDictNew, selectedConfName: curr.selectedConfName, skipSaveToPrefs: true)
-        }
       default:
         return
       }
     }
+  }
+
+  // TODO: monitor conf dir for changes and call this on change
+  private func confDirDidChange() {
+    let curr = ConfTableState.current
+    let userConfDictNew: [String: String] = ConfTableStateManager.findUserConfigs()
+    guard !userConfDictNew.keys.sorted().elementsEqual(curr.userConfDict.keys.sorted()) else { return }
+    AppInputConfig.log.verbose("Detected pref update for inputConfigs")
+    changeState(userConfDictNew, selectedConfName: curr.selectedConfName, skipSaveToPrefs: true)
   }
 
   // MARK: State updates
@@ -250,16 +256,6 @@ class ConfTableStateManager: NSObject {
                                        specialState: specialState)
 
     ConfTableState.current = tableStateNew
-
-    // Update userConfDict pref if changed
-    if hasConfListChange {
-      if skipSaveToPrefs {
-        AppInputConfig.log.verbose("Skipping pref save for inputConfigs=\(tableStateNew.userConfDict)")
-      } else {
-        AppInputConfig.log.verbose("Saving pref: inputConfigs=\(tableStateNew.userConfDict)")
-        Preference.set(tableStateNew.userConfDict, for: .inputConfigs)
-      }
-    }
 
     // Update selectedConfName and load new file if changed
     let hasSelectionChange = !tableStateOld.selectedConfName.equalsIgnoreCase(tableStateNew.selectedConfName)

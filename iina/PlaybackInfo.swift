@@ -335,6 +335,20 @@ class PlaybackInfo {
   var videoTracks: [MPVTrack] = []
   var subTracks: [MPVTrack] = []
 
+  var selectedSub: MPVTrack? {
+    let selected = infoLock.withLock { subTracks.filter { $0.id == sid } }
+    if selected.count > 0 {
+      return selected[0]
+    }
+    return nil
+  }
+
+  func findExternalSubTrack(withURL url: URL) -> MPVTrack? {
+    infoLock.withLock {
+      return subTracks.first(where: { $0.externalFilename == url.path })
+    }
+  }
+
   func replaceTracks(audio: [MPVTrack], video: [MPVTrack], sub: [MPVTrack]) {
     infoLock.withLock {
       audioTracks = audio

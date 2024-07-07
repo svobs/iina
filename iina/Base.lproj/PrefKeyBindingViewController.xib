@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -438,7 +438,7 @@
                                 <rect key="frame" x="38" y="0.0" width="5" height="20"/>
                             </box>
                             <button horizontalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="ogR-hg-OWq" userLabel="Show bindings from all sources Button">
-                                <rect key="frame" x="49" y="5" width="242" height="11"/>
+                                <rect key="frame" x="49" y="0.0" width="242" height="20"/>
                                 <string key="toolTip">Shows the complete set of key bindings which are active in the most recent player window, in addition to the current configuration. When this is checked, the list can include key bindings which cannot be changed or can only be configured elsewhere, such as filter shortcuts, built-in menu items, and bindings set by Lua scripts.</string>
                                 <buttonCell key="cell" type="check" title="Display all other bindings present in player window" bezelStyle="regularSquare" imagePosition="left" controlSize="mini" lineBreakMode="truncatingTail" state="on" inset="2" id="ofM-Fl-e5N">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -449,7 +449,7 @@
                                 </connections>
                             </button>
                             <button toolTip="Show the raw mpv key code and command." horizontalHuggingPriority="501" translatesAutoresizingMaskIntoConstraints="NO" id="l2M-TH-eCt" userLabel="Display raw values Button">
-                                <rect key="frame" x="299" y="5" width="100" height="11"/>
+                                <rect key="frame" x="299" y="0.0" width="100" height="20"/>
                                 <buttonCell key="cell" type="check" title="Display raw values" bezelStyle="regularSquare" imagePosition="left" controlSize="mini" lineBreakMode="truncatingTail" inset="2" id="3RK-1k-otl">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="label" size="9"/>
@@ -463,19 +463,20 @@
                         <constraints>
                             <constraint firstItem="ogR-hg-OWq" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="GnK-98-Zrg" secondAttribute="trailing" priority="751" constant="8" id="1ri-Vd-Cck"/>
                             <constraint firstItem="uFG-OF-DJ5" firstAttribute="top" secondItem="0le-1T-r5f" secondAttribute="top" id="Fj3-Ay-5aJ"/>
+                            <constraint firstItem="ogR-hg-OWq" firstAttribute="centerY" secondItem="0le-1T-r5f" secondAttribute="centerY" id="Jdz-cv-44O"/>
                             <constraint firstAttribute="bottom" secondItem="uFG-OF-DJ5" secondAttribute="bottom" id="QpE-rf-DFB"/>
                             <constraint firstItem="GnK-98-Zrg" firstAttribute="top" secondItem="0le-1T-r5f" secondAttribute="top" id="XSn-ja-Q3m"/>
                             <constraint firstAttribute="trailing" secondItem="l2M-TH-eCt" secondAttribute="trailing" constant="6" id="ced-22-S2H"/>
                             <constraint firstItem="f5l-5w-zmm" firstAttribute="top" secondItem="0le-1T-r5f" secondAttribute="top" id="cs5-Bc-qpt"/>
-                            <constraint firstItem="ogR-hg-OWq" firstAttribute="centerY" secondItem="0le-1T-r5f" secondAttribute="centerY" id="dZe-e4-Kid"/>
                             <constraint firstItem="uFG-OF-DJ5" firstAttribute="leading" secondItem="f5l-5w-zmm" secondAttribute="trailing" id="fpH-b3-2dm"/>
                             <constraint firstItem="ogR-hg-OWq" firstAttribute="leading" secondItem="GnK-98-Zrg" secondAttribute="trailing" priority="499" constant="8" id="hze-oJ-lAg"/>
                             <constraint firstAttribute="bottom" secondItem="f5l-5w-zmm" secondAttribute="bottom" id="msC-WR-Ru1"/>
+                            <constraint firstItem="l2M-TH-eCt" firstAttribute="top" secondItem="0le-1T-r5f" secondAttribute="top" id="pvq-gz-TE0"/>
                             <constraint firstItem="f5l-5w-zmm" firstAttribute="leading" secondItem="0le-1T-r5f" secondAttribute="leading" id="tMy-fs-AYa"/>
                             <constraint firstItem="GnK-98-Zrg" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="uFG-OF-DJ5" secondAttribute="trailing" id="tN0-kz-2Oi"/>
-                            <constraint firstItem="l2M-TH-eCt" firstAttribute="centerY" secondItem="0le-1T-r5f" secondAttribute="centerY" id="umX-M8-lLx"/>
                             <constraint firstAttribute="bottom" secondItem="GnK-98-Zrg" secondAttribute="bottom" id="wG6-Hf-CPU"/>
                             <constraint firstItem="l2M-TH-eCt" firstAttribute="leading" secondItem="ogR-hg-OWq" secondAttribute="trailing" constant="8" id="yJP-YC-qzF"/>
+                            <constraint firstAttribute="bottom" secondItem="l2M-TH-eCt" secondAttribute="bottom" id="zZt-GH-7RY"/>
                         </constraints>
                     </view>
                     <constraints>
@@ -538,6 +539,7 @@
                 <constraint firstAttribute="trailing" secondItem="ER0-iU-7fy" secondAttribute="trailing" id="Y4g-9e-aDt"/>
                 <constraint firstItem="ZWR-gT-S2p" firstAttribute="top" secondItem="ER0-iU-7fy" secondAttribute="bottom" constant="16" id="ZX7-1F-af0"/>
                 <constraint firstItem="2pX-29-I87" firstAttribute="top" secondItem="x6N-6q-HiV" secondAttribute="bottom" constant="8" id="aGz-Kt-wfl"/>
+                <constraint firstItem="ogR-hg-OWq" firstAttribute="firstBaseline" secondItem="5WK-s3-J9x" secondAttribute="firstBaseline" id="bI9-NC-2Ys"/>
                 <constraint firstItem="Mhk-DT-3CM" firstAttribute="bottom" secondItem="2pX-29-I87" secondAttribute="bottom" id="bIy-L9-gJ1"/>
                 <constraint firstItem="Le4-ai-PiB" firstAttribute="leading" secondItem="Mhk-DT-3CM" secondAttribute="leading" id="bgz-zS-geZ"/>
                 <constraint firstItem="bm5-rb-Qjb" firstAttribute="centerY" secondItem="LU9-QU-BFL" secondAttribute="centerY" id="dVn-Pj-vDl"/>

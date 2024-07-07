@@ -24,6 +24,7 @@ extension Int {
     return self % 2 != 0
   }
 }
+import CryptoKit
 
 extension NSSlider {
   /** Returns the position of knob center by point */
@@ -593,11 +594,7 @@ extension NSMutableAttributedString {
 
 
 extension NSData {
-  func md5() -> NSString {
-    let dataString = String(data: self as Data, encoding: .utf8)!
-    let md5String = MD5(dataString)
-    return md5String as NSString
-  }
+  var md5: String { Insecure.MD5.hash(data: self).map { String(format: "%02x", $0) }.joined() }
 }
 
 extension Data {
@@ -618,7 +615,7 @@ extension Data {
 
   var md5: String {
     get {
-      return (self as NSData).md5() as String
+      return (self as NSData).md5
     }
   }
 
@@ -1065,6 +1062,7 @@ extension NSBox {
 extension NSPasteboard.PasteboardType {
   static let nsURL = NSPasteboard.PasteboardType("NSURL")
   static let nsFilenames = NSPasteboard.PasteboardType("NSFilenamesPboardType")
+  static let iinaPlaylistItem = NSPasteboard.PasteboardType("IINAPlaylistItem")
 }
 
 

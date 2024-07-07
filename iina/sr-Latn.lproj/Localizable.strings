@@ -46,6 +46,7 @@
 "quicksetting.hwdec" = "Hardversko dekodiranje";
 "quicksetting.deinterlace" = "Rasplitanje";
 "quicksetting.hdr" = "HDR";
+"quicksetting.hide" = "Sakrij";
 
 // OSDMessage.swift
 "osd.pause" = "Pauziraj";
@@ -64,6 +65,14 @@
 "osd.sub_delay.later" = "Kašnjenje titla: %.2fs kasnije";
 "osd.sub_delay.earlier" = "Kašnjenje titla: %.2fs ranije";
 "osd.subtitle_pos" = "Položaj titla: %.1f";
+"osd.sub_hidden" = "Subtitles Hidden";
+"osd.sub_visible" = "Subtitles Visible";
+"osd.sub_second_delay.nodelay" = "Secondary Subtitle Delay: No Delay";
+"osd.sub_second_delay.later" = "Secondary Subtitle Delay: %.2fs Later";
+"osd.sub_second_delay.earlier" = "Secondary Subtitle Delay: %.2fs Earlier";
+"osd.sub_second_hidden" = "Secondary Subtitles Hidden";
+"osd.sub_second_pos" = "Secondary Subtitle Position: %.1f";
+"osd.sub_second_visible" = "Secondary Subtitles Visible";
 "osd.mute" = "Isključi zvuk";
 "osd.unmute" = "Ponovo uključi zvuk";
 "osd.screenshot" = "Snimak ekrana je napravljen";
@@ -83,7 +92,8 @@
 "osd.find_online_sub" = "Pronalaženje titlova na mreži…";
 "osd.find_online_sub.source" = "sa lokacije";
 "osd.sub_not_found" = "Nije pronađen nijedan titl";
-"osd.sub_found" = "Pronađeno titlova: %d. Preuzimam…";
+"osd.sub_found" = "%d subtitles found.";
+"osd.sub_downloading" = "Downloading %d subtitles";
 "osd.sub_downloaded" = "Titl je preuzet";
 "osd.sub_saved" = "Titl je sačuvan";
 "osd.network_error" = "Greška na mreži";
@@ -127,6 +137,10 @@
 "menu.volume_muted" = "Jačina zvuka: %d (isključen zvuk)";
 "menu.audio_delay" = "Kašnjenje zvuka: %.2fs";
 "menu.sub_delay" = "Kašnjenje titla: %.2fs";
+"menu.sub_hide" = "Hide Subtitles";
+"menu.sub_show" = "Show Subtitles";
+"menu.sub_second_hide" = "Hide Secondary Subtitles";
+"menu.sub_second_show" = "Show Secondary Subtitles";
 "menu.fullscreen" = "Uđi u režim celog ekrana";
 "menu.exit_fullscreen" = "Izađi iz rеžima cеlog еkrana";
 "menu.pip" = "Uđi u režim slike u slici";
@@ -158,10 +172,13 @@
 "menu.sub_delay_up" = "Kašnjenje titla + %.1fs";
 "menu.sub_delay_down" = "Kašnjenje titla - %.1fs";
 
-"menu.crop_custom" = "Prilagođeno...";
+"menu.crop_custom" = "Prilagođeno…";
 "menu.find_online_sub" = "Pronađi titlove na mreži s lokacije %@";
 
+"track.audio" = "Zvuk";
 "track.none" = "<None>";
+"track.sub" = "Titl";
+"track.video" = "Video";
 
 "subtrack.no_loaded" = "Nije učitan nijedan titl";
 "subtrack.no_external" = "Nije pronađen nijedan spoljni titl";
@@ -193,11 +210,13 @@
 "alert.config.duplicate.title" = "Duplirana konfiguracija";
 "alert.config.duplicate.message" = "Unеsitе naziv za dupliranu konfiguracionu datoteku.";
 "alert.config.empty_name" = "Naziv ne može biti prazan.";
-"alert.config.name_existing" = "Naziv već postoji.";
+"alert.config.name_existing" = "A config with the same name already exists.";
 "alert.config.file_existing.title" = "Datoteka već postoji";
-"alert.config.file_existing.message" = "To ne bi smelo da se dešava. Odaberite U redu da biste datoteku zamenili, Otkaži da biste je prikazali u Finderu.";
+"alert.config.file_existing.message" = "A config file with the same filename already exists. Choose OK to show the file in Finder.";
 "alert.config.cannot_create" = "Nije moguće kreirati konfiguracionu datoteku!\n%@";
 "alert.config.cannot_write" = "Nije moguće upisivati u konfiguracionu datoteku!";
+"alert.config.rename.title" = "Rename Input Configuration";
+"alert.config.rename.message" = "Please enter the new name for the configuration.";
 
 "alert.filter.incorrect" = "Došlo je do greške prilikom postavljanja filtera. Proverite format parametra.";
 "alert.add_filter.title" = "Novi filter";

@@ -88,7 +88,7 @@ struct AppData {
 
   static let githubLink = "https://github.com/svobs/iina-advance"
   static let contributorsLink = "https://github.com/iina/iina/graphs/contributors"
-  static let crowdinMembersLink = "https://crowdin.com/project/iina/members"
+  static let crowdinMembersLink = "https://crowdin.com/project/iina"
   static let wikiLink = "https://github.com/iina/iina/wiki"
   static let websiteLink = "https://iina.io"
   static let emailLink = "developers@iina.io"
@@ -102,6 +102,7 @@ struct AppData {
   static let targetPeakHelpLink = "https://mpv.io/manual/stable/#options-target-peak"
   static let algorithmHelpLink = "https://mpv.io/manual/stable/#options-tone-mapping"
   static let disableAnimationsHelpLink = "https://developer.apple.com/design/human-interface-guidelines/accessibility#Motion"
+  static let gainAdjustmentHelpLink = "https://mpv.io/manual/stable/#options-replaygain"
 
   static let confFileExtension = "conf"
 
@@ -169,6 +170,10 @@ struct Constants {
   }
   struct SizeLimit {
     static let maxCachedVideoSizes: Int = 100000
+    static let hideSubtitles = NSLocalizedString("menu.sub_hide", comment: "Hide Subtitles")
+    static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
+    static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
+    static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
   }
   struct Time {
     static let infinite = VideoTime(999, 0, 0)
@@ -321,4 +326,6 @@ extension Notification.Name {
   static let watchLaterOptionsDidChange = Notification.Name("watchLaterOptionsDidChange")
   static let recentDocumentsDidChange = Notification.Name("recentDocumentsDidChange")
   static let savedWindowStateDidChange = Notification.Name("savedWindowStateDidChange")
+  static let iinaSecondSubVisibilityChanged = Notification.Name("iinaSecondSubVisibilityChanged")
+  static let iinaSubVisibilityChanged = Notification.Name("iinaSubVisibilityChanged")
 }

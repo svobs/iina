@@ -16,6 +16,12 @@
 /* Class = "NSTextFieldCell"; title = "Color:"; ObjectID = "6LO-6y-IsA"; */
 "6LO-6y-IsA.title" = "Renk:";
 
+/* Class = "NSSegmentedCell"; 88M-pi-2Hc.ibShadowedLabels[0] = "Primary Subtitles"; ObjectID = "88M-pi-2Hc"; */
+"88M-pi-2Hc.ibShadowedLabels[0]" = "Primary Subtitles";
+
+/* Class = "NSSegmentedCell"; 88M-pi-2Hc.ibShadowedLabels[1] = "Secondary Subtitles"; ObjectID = "88M-pi-2Hc"; */
+"88M-pi-2Hc.ibShadowedLabels[1]" = "Secondary Subtitles";
+
 /* Class = "NSButtonCell"; title = "Load External Audio Track…"; ObjectID = "8Ax-5X-osl"; */
 "8Ax-5X-osl.title" = "Harici Ses İzi Yükle...";
 
@@ -195,6 +201,9 @@
 
 /* Class = "NSTextFieldCell"; title = "+5s"; ObjectID = "xfX-wr-DTJ"; */
 "xfX-wr-DTJ.title" = "+5s";
+
+/* Class = "NSTextFieldCell"; title = "+5s"; ObjectID = "Kt8-Kg-i2O"; */
+"Kt8-Kg-i2O.title" = "+5s";
 
 /* Class = "NSTextFieldCell"; title = "Equalizer"; ObjectID = "zcD-Tg-7Oi"; */
 "zcD-Tg-7Oi.title" = "Ekolayzer:";

@@ -330,13 +330,9 @@ class VideoView: NSView {
       log.debug("Falling back to standard display refresh rate: 60 from \(actualFps)")
       actualFps = 60
     }
-    player.mpv.setDouble(MPVOption.Video.overrideDisplayFps, actualFps)
+    player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
 
-    if #available(macOS 10.15, *) {
-      refreshEdrMode()
-    } else {
-      setICCProfile(displayId)
-    }
+    refreshEdrMode()
     log.verbose("Done updating DisplayLink")
   }
 
@@ -505,7 +501,6 @@ class VideoView: NSView {
 
 // MARK: - HDR
 
-@available(macOS 10.15, *)
 extension VideoView {
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }

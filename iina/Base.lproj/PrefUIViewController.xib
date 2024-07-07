@@ -1733,10 +1733,10 @@ For smoothest results, also enable custom full screen.</string>
             <point key="canvasLocation" x="-26" y="29"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="520" height="135"/>
+            <rect key="frame" x="0.0" y="0.0" width="500" height="279"/>
             <subviews>
                 <textField identifier="SectionTitleOSD" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zyi-J3-lSp">
-                    <rect key="frame" x="-2" y="95" width="124" height="32"/>
+                    <rect key="frame" x="-2" y="239" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="On Screen Display:" id="F2e-CS-KXl">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1744,10 +1744,10 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" spacing="4" verticalStackHuggingPriority="751" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tw5-VT-L9M" userLabel="OSDRightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="335" height="120"/>
+                    <rect key="frame" x="120" y="8" width="380" height="264"/>
                     <subviews>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ler-Pn-RNT" userLabel="EnableOSD HStack View">
-                            <rect key="frame" x="0.0" y="100" width="263" height="20"/>
+                            <rect key="frame" x="0.0" y="244" width="263" height="20"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MU2-yF-bjd">
                                     <rect key="frame" x="-2" y="2" width="98" height="18"/>
@@ -1817,7 +1817,7 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3NQ-aR-1pj" userLabel="OSDMusicMode HStack View">
-                            <rect key="frame" x="0.0" y="80" width="177" height="16"/>
+                            <rect key="frame" x="0.0" y="224" width="177" height="16"/>
                             <subviews>
                                 <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="sca-Kc-ZN7" userLabel="12pt Spacer">
                                     <rect key="frame" x="0.0" y="2" width="12" height="1"/>
@@ -1847,6 +1847,164 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                             <connections>
                                 <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="bmI-x9-tCy">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </stackView>
+                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="1l9-NL-hzn" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="219" width="0.0" height="1"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="1" id="rIc-h6-YLH"/>
+                                <constraint firstAttribute="width" id="wyZ-mY-geX"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="lwy-Yr-cAC">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                            </connections>
+                        </customView>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yfc-Gq-NE4" userLabel="SuppressMessages HStack View">
+                            <rect key="frame" x="0.0" y="80" width="380" height="135"/>
+                            <subviews>
+                                <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="wNT-2N-RFT" userLabel="12pt Spacer">
+                                    <rect key="frame" x="0.0" y="134" width="12" height="1"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="12" id="6s7-fl-JoE"/>
+                                        <constraint firstAttribute="height" constant="1" id="Crj-Zx-8G7"/>
+                                    </constraints>
+                                </customView>
+                                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nbb-vz-BDi" userLabel="SuppressMessages View" customClass="CollapseView" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="20" y="0.0" width="360" height="135"/>
+                                    <subviews>
+                                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="n6h-el-nAa" userLabel="SuppressMessagesHeader View">
+                                            <rect key="frame" x="0.0" y="118" width="360" height="17"/>
+                                            <subviews>
+                                                <button identifier="TriggerSuppressOSDMessages" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="d0a-mf-53n" userLabel="SuppressMessagesHeader Disclosure">
+                                                    <rect key="frame" x="0.0" y="0.0" width="13" height="13"/>
+                                                    <buttonCell key="cell" type="disclosureTriangle" bezelStyle="disclosure" imagePosition="only" alignment="left" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="lMd-h2-ALd">
+                                                        <behavior key="behavior" pushIn="YES" changeBackground="YES" changeGray="YES" lightByContents="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                </button>
+                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jNj-dh-I4c">
+                                                    <rect key="frame" x="13" y="0.0" width="150" height="17"/>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Suppress messages for:" id="RE5-Cf-ed9">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstAttribute="bottom" secondItem="d0a-mf-53n" secondAttribute="bottom" id="61e-0o-gNk"/>
+                                                <constraint firstAttribute="height" constant="17" id="Enc-XK-4wE"/>
+                                                <constraint firstItem="jNj-dh-I4c" firstAttribute="leading" secondItem="d0a-mf-53n" secondAttribute="trailing" constant="2" id="Hcd-Oi-3Gj"/>
+                                                <constraint firstAttribute="bottom" secondItem="jNj-dh-I4c" secondAttribute="bottom" id="Kq5-Jk-uaA"/>
+                                                <constraint firstItem="d0a-mf-53n" firstAttribute="leading" secondItem="n6h-el-nAa" secondAttribute="leading" id="djc-nk-Ujm"/>
+                                                <constraint firstItem="jNj-dh-I4c" firstAttribute="top" secondItem="n6h-el-nAa" secondAttribute="top" id="f2N-Ad-Gvn"/>
+                                                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="jNj-dh-I4c" secondAttribute="trailing" constant="20" symbolic="YES" id="hlG-N9-4AC"/>
+                                            </constraints>
+                                        </customView>
+                                        <box identifier="Content2" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="4KC-lJ-6Fs" userLabel="SuppressMessagesBody Box">
+                                            <rect key="frame" x="-3" y="-4" width="366" height="120"/>
+                                            <view key="contentView" id="4f4-xe-lQs" userLabel="SuppressMessagesBody Content View">
+                                                <rect key="frame" x="4" y="5" width="358" height="112"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fir-AD-HK4" userLabel="File start">
+                                                        <rect key="frame" x="14" y="83" width="79" height="18"/>
+                                                        <buttonCell key="cell" type="check" title="File start" bezelStyle="regularSquare" imagePosition="left" inset="2" id="DAm-C4-5BQ">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                        <connections>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.disableOSDFileStartMsg" id="1hs-e8-jb6"/>
+                                                            <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSD" id="K6z-Df-hyK"/>
+                                                        </connections>
+                                                    </button>
+                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="viC-gB-s8u" userLabel="Pause / Resume">
+                                                        <rect key="frame" x="14" y="59" width="123" height="18"/>
+                                                        <buttonCell key="cell" type="check" title="Pause / Resume" bezelStyle="regularSquare" imagePosition="left" inset="2" id="i84-B8-gqD">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                        <connections>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.disableOSDPauseResumeMsgs" id="Vdg-sw-gpQ"/>
+                                                            <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSD" id="Ea8-6U-X73"/>
+                                                        </connections>
+                                                    </button>
+                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sAH-y4-RQW" userLabel="Seek">
+                                                        <rect key="frame" x="14" y="35" width="56" height="18"/>
+                                                        <buttonCell key="cell" type="check" title="Seek" bezelStyle="regularSquare" imagePosition="left" inset="2" id="RuR-Df-K2G">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                        <connections>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.disableOSDSeekMsg" id="cFQ-mr-nC1"/>
+                                                            <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSD" id="JDU-iR-jtS"/>
+                                                        </connections>
+                                                    </button>
+                                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H1n-rN-LvY" userLabel="Speed">
+                                                        <rect key="frame" x="14" y="11" width="65" height="18"/>
+                                                        <buttonCell key="cell" type="check" title="Speed" bezelStyle="regularSquare" imagePosition="left" inset="2" id="MVv-Mx-GTD">
+                                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                            <font key="font" metaFont="system"/>
+                                                        </buttonCell>
+                                                        <connections>
+                                                            <binding destination="lH7-Vv-0M1" name="value" keyPath="values.disableOSDSpeedMsg" id="0Jj-8h-fot"/>
+                                                            <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSD" id="zHe-hs-dJ3"/>
+                                                        </connections>
+                                                    </button>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstAttribute="bottom" secondItem="H1n-rN-LvY" secondAttribute="bottom" constant="12" id="Bim-51-j3r"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="sAH-y4-RQW" secondAttribute="trailing" constant="16" id="ID7-GO-AuU"/>
+                                                    <constraint firstItem="fir-AD-HK4" firstAttribute="top" secondItem="4f4-xe-lQs" secondAttribute="top" constant="12" id="JJU-Rs-GkE"/>
+                                                    <constraint firstItem="viC-gB-s8u" firstAttribute="leading" secondItem="4f4-xe-lQs" secondAttribute="leading" constant="16" id="JjU-6F-0Mx"/>
+                                                    <constraint firstItem="sAH-y4-RQW" firstAttribute="top" secondItem="viC-gB-s8u" secondAttribute="bottom" constant="8" id="M0z-iH-PWO"/>
+                                                    <constraint firstItem="H1n-rN-LvY" firstAttribute="top" secondItem="sAH-y4-RQW" secondAttribute="bottom" constant="8" id="MvS-jL-m5u"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="viC-gB-s8u" secondAttribute="trailing" constant="16" id="VuS-Nt-jjh"/>
+                                                    <constraint firstItem="H1n-rN-LvY" firstAttribute="leading" secondItem="4f4-xe-lQs" secondAttribute="leading" constant="16" id="cEb-Zr-Pza"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="H1n-rN-LvY" secondAttribute="trailing" constant="16" id="lY4-Au-mNN"/>
+                                                    <constraint firstItem="viC-gB-s8u" firstAttribute="top" secondItem="fir-AD-HK4" secondAttribute="bottom" constant="8" id="oIq-70-wX5"/>
+                                                    <constraint firstItem="fir-AD-HK4" firstAttribute="leading" secondItem="4f4-xe-lQs" secondAttribute="leading" constant="16" id="p4o-iS-wGt"/>
+                                                    <constraint firstItem="sAH-y4-RQW" firstAttribute="leading" secondItem="4f4-xe-lQs" secondAttribute="leading" constant="16" id="vu6-Zf-PXA"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="fir-AD-HK4" secondAttribute="trailing" constant="16" id="xWe-RH-B58"/>
+                                                </constraints>
+                                            </view>
+                                        </box>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstAttribute="trailing" secondItem="n6h-el-nAa" secondAttribute="trailing" id="Eto-Ww-1fi"/>
+                                        <constraint firstItem="4KC-lJ-6Fs" firstAttribute="top" secondItem="n6h-el-nAa" secondAttribute="bottom" constant="4" id="lJ8-3J-FKg"/>
+                                        <constraint firstItem="4KC-lJ-6Fs" firstAttribute="leading" secondItem="nbb-vz-BDi" secondAttribute="leading" id="pmw-xD-a58"/>
+                                        <constraint firstAttribute="trailing" secondItem="4KC-lJ-6Fs" secondAttribute="trailing" id="ubC-yh-mHI"/>
+                                        <constraint firstItem="n6h-el-nAa" firstAttribute="leading" secondItem="nbb-vz-BDi" secondAttribute="leading" id="xU1-ne-6es"/>
+                                    </constraints>
+                                    <visibilityPriorities>
+                                        <integer value="1000"/>
+                                        <integer value="1000"/>
+                                    </visibilityPriorities>
+                                    <customSpacing>
+                                        <real value="3.4028234663852886e+38"/>
+                                        <real value="3.4028234663852886e+38"/>
+                                    </customSpacing>
+                                </stackView>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSD" id="vY9-mb-G41">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
@@ -2066,8 +2224,12 @@ For smoothest results, also enable custom full screen.</string>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
@@ -2089,7 +2251,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="tw5-VT-L9M" secondAttribute="trailing" id="vw0-T4-cYz"/>
                 <constraint firstItem="zyi-J3-lSp" firstAttribute="top" secondItem="c8m-G4-or8" secondAttribute="top" constant="8" id="wfr-Ab-w5u"/>
             </constraints>
-            <point key="canvasLocation" x="-10" y="457"/>
+            <point key="canvasLocation" x="-20" y="558"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="520" height="439"/>
@@ -2597,9 +2759,9 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>
                 <constraint firstItem="kog-j2-kGH" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="l2c-o1-o6t"/>
             </constraints>
-            <point key="canvasLocation" x="-10" y="776"/>
+            <point key="canvasLocation" x="-10" y="992"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="500" height="274"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
@@ -3156,7 +3318,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="bottom" secondItem="47i-yB-uyE" secondAttribute="bottom" constant="8" id="f1R-1U-HFp"/>
                 <constraint firstItem="maZ-e8-1vw" firstAttribute="top" secondItem="3uJ-UU-1zw" secondAttribute="top" constant="8" id="tNX-yo-ggt"/>
             </constraints>
-            <point key="canvasLocation" x="-20" y="1202"/>
+            <point key="canvasLocation" x="-20" y="1401"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="1fz-oP-RhZ" userLabel="Prefs &gt; UI &gt; PIP" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="480" height="138"/>
@@ -3277,9 +3439,9 @@ Picture:</string>
                 <constraint firstItem="ghC-br-cK9" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="1fz-oP-RhZ" secondAttribute="leading" constant="120" id="pTG-PR-Adh"/>
                 <constraint firstItem="eTQ-fy-fNJ" firstAttribute="leading" secondItem="l21-mq-zWd" secondAttribute="leading" id="xog-r6-yIL"/>
             </constraints>
-            <point key="canvasLocation" x="-30" y="1482"/>
+            <point key="canvasLocation" x="-30" y="1655"/>
         </customView>
-        <customView id="k9o-rY-z6u" userLabel="Prefs &gt; UI &gt; Accessibility">
+        <customView id="k9o-rY-z6u" userLabel="Prefs &gt; UI &gt; Accessibility" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="550" height="94"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
@@ -3335,7 +3497,7 @@ Picture:</string>
                 <constraint firstItem="M1d-6z-urt" firstAttribute="top" secondItem="k9o-rY-z6u" secondAttribute="top" constant="8" id="nbs-Tz-GDd"/>
                 <constraint firstItem="6DX-Ep-AbS" firstAttribute="leading" secondItem="k9o-rY-z6u" secondAttribute="leading" constant="120" id="ray-E7-Kek"/>
             </constraints>
-            <point key="canvasLocation" x="5" y="1648"/>
+            <point key="canvasLocation" x="5" y="1824"/>
         </customView>
     </objects>
     <resources>

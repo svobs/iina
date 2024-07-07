@@ -33,6 +33,11 @@ extension PlayerWindowController {
     }
   }
 
+  @objc func menuShowCurrentFileInFinder(_ sender: NSMenuItem) {
+    guard let url = player.info.currentURL, !player.info.isNetworkResource else { return }
+    NSWorkspace.shared.activateFileViewerSelecting([url])
+  }
+
   @objc func menuDeleteCurrentFile(_ sender: NSMenuItem) {
     guard let url = player.info.currentURL else { return }
     do {
@@ -393,13 +398,11 @@ extension PlayerWindowController {
   }
 
   @objc func saveDownloadedSub(_ sender: NSMenuItem) {
-    let selected = player.info.subTracks.filter { $0.id == player.info.sid }
-    guard selected.count > 0 else {
+    guard let sub = player.info.selectedSub else {
       Utility.showAlert("sub.no_selected")
 
       return
     }
-    let sub = selected[0]
     // make sure it's a downloaded sub
     guard let path = sub.externalFilename, path.contains("/var/") else {
       Utility.showAlert("sub.no_selected")
@@ -518,6 +521,16 @@ extension PlayerWindowController {
     }
   }
 
+  func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+    switch menuItem.action {
+    case #selector(menuShowCurrentFileInFinder(_:)):
+      return player.info.currentURL != nil && !player.info.isNetworkResource
+    default:
+      break
+    }
+    return menuItem.isEnabled
+  }
+  
   // MARK: - Plugin
 
   @objc func reloadAllPlugins(_ sender: NSMenuItem) {

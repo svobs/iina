@@ -56,7 +56,7 @@ class HistoryController {
   private func saveHistoryToFile() {
     do {
       log.verbose("Saving playback history to file \(plistURL.path.pii.quoted)")
-      let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: false)
+      let data = try NSKeyedArchiver.archivedData(withRootObject: history, requiringSecureCoding: true)
       try data.write(to: plistURL)
     } catch {
       log.error("Failed to save playback history to file \(plistURL.path.pii.quoted): \(error)")
@@ -68,12 +68,14 @@ class HistoryController {
   }
 
   private func readHistoryFromFile() {
+    // Avoid logging a scary error if the file does not exist.
+    guard FileManager.default.fileExists(atPath: plistURL.path) else { return }
+
     do {
       log.verbose("Reading playback history file \(plistURL.path.pii.quoted)")
       let data = try Data(contentsOf: plistURL)
-      let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
-      unarchiver.requiresSecureCoding = false
-      let deserData = try unarchiver.decodeTopLevelObject(of: [PlaybackHistory.self], forKey: NSKeyedArchiveRootObjectKey)
+      let deserData = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, PlaybackHistory.self],
+                                                          from: data)
       guard let historyItemList = deserData as? [PlaybackHistory] else {
         log.error("Failed deserialize PlaybackHistory array from file \(plistURL.path.pii.quoted)!")
         return

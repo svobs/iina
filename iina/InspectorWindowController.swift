@@ -186,13 +186,13 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
           MPVProperty.fileFormat: self.fileFormatField,
           MPVProperty.chapters: self.chaptersField,
           MPVProperty.editions: self.editionsField,
-
-          MPVProperty.videoFormat: self.vformatField,
-          MPVProperty.videoCodec: self.vcodecField,
+          // in mpv 0.38, video-codec-name is an alias of current-tracks/video/codec, etc
+          MPVProperty.currentTracksVideoCodec: self.vformatField,
+          MPVProperty.currentTracksVideoCodecDesc: self.vcodecField,
           MPVProperty.hwdecCurrent: self.vdecoderField,
           MPVProperty.containerFps: self.vfpsField,
           MPVProperty.currentVo: self.voField,
-          MPVProperty.audioCodec: self.acodecField,
+          MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
           MPVProperty.currentAo: self.aoField,
           MPVProperty.audioParamsFormat: self.aformatField,
           MPVProperty.audioParamsChannels: self.achannelsField,
@@ -277,7 +277,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
       let player = PlayerCore.lastActive
       if player.windowController.loaded && player.info.isFileLoaded {
-        if #available(macOS 10.15, *), let colorspace = PlayerCore.lastActive.windowController.videoView.videoLayer.colorspace {
+        if let colorspace = PlayerCore.lastActive.windowController.videoView.videoLayer.colorspace {
           let isHdr = colorspace != VideoView.SRGB
           self.vcolorspaceField.stringValue = "\(colorspace.name!) (\(isHdr ? "H" : "S")DR)"
         } else {
@@ -364,7 +364,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       if let textField = cell.textField {
         if !player.isStopping, let value = PlayerCore.lastActive.mpv.getString(property) {
           textField.stringValue = value
-          textField.textColor = .controlTextColor
+          textField.textColor = .labelColor
         } else {
           let errorString = NSLocalizedString("inspector.error", comment: "Error")
 
@@ -489,7 +489,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: Utils
 
   private func setLabelColor(_ label: NSTextField, by state: Bool) {
-    label.textColor = state ? NSColor.textColor : NSColor.disabledControlTextColor
+    label.textColor = state ? NSColor.labelColor : NSColor.disabledControlTextColor
   }
 
   private func saveWatchList() {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -34,7 +34,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="Window Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -114,7 +114,7 @@
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y6B-pc-JRB" userLabel="BuildInfo Vertical Stack View">
                                             <rect key="frame" x="20" y="147" width="180" height="22"/>
                                             <subviews>
-                                                <textField focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
+                                                <textField focusRingType="none" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
                                                     <rect key="frame" x="-2" y="11" width="184" height="11"/>
                                                     <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" selectable="YES" refusesFirstResponder="YES" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="Date" usesSingleLineMode="YES" id="hp8-K0-WQf">
                                                         <font key="font" metaFont="miniSystem"/>
@@ -292,8 +292,8 @@
                                                         </constraints>
                                                     </visualEffectView>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0PM-oG-4Qs">
-                                                        <rect key="frame" x="140" y="70" width="121" height="18"/>
-                                                        <buttonCell key="cell" type="inline" title="iina/contributors" bezelStyle="inline" image="NSFollowLinkFreestandingTemplate" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="U9l-uR-i7g">
+                                                        <rect key="frame" x="141" y="70" width="118" height="18"/>
+                                                        <buttonCell key="cell" type="inline" title="iina/contributors" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="U9l-uR-i7g">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="smallSystemBold"/>
                                                         </buttonCell>
@@ -302,8 +302,8 @@
                                                         </connections>
                                                     </button>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="trK-iz-kG7">
-                                                        <rect key="frame" x="136" y="0.0" width="128" height="18"/>
-                                                        <buttonCell key="cell" type="inline" title="crowdin/members" bezelStyle="inline" image="NSFollowLinkFreestandingTemplate" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="7k7-70-Kku">
+                                                        <rect key="frame" x="164" y="0.0" width="72" height="18"/>
+                                                        <buttonCell key="cell" type="inline" title="Crowdin" bezelStyle="inline" image="forward" imagePosition="left" alignment="center" borderStyle="border" inset="2" id="7k7-70-Kku">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="smallSystemBold"/>
                                                         </buttonCell>
@@ -411,6 +411,6 @@
         </window>
     </objects>
     <resources>
-        <image name="NSFollowLinkFreestandingTemplate" width="20" height="20"/>
+        <image name="forward" width="11" height="11"/>
     </resources>
 </document>
