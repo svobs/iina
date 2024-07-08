@@ -2708,12 +2708,13 @@ class PlayerCore: NSObject {
     /// This will refresh album art display.
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
     DispatchQueue.main.async { [self] in
-      windowController.updateDefaultArtVisibility(showDefaultArt)
-      windowController.forceDraw()
+      windowController.animationPipeline.submitSudden { [self] in
+        windowController.updateDefaultArtVisibility(showDefaultArt)
 
-      if isMiniPlayerWaitingToShowVideo {
-        isMiniPlayerWaitingToShowVideo = false
-        windowController.miniPlayer.videoWasEnabled()
+        if isMiniPlayerWaitingToShowVideo {
+          isMiniPlayerWaitingToShowVideo = false
+          windowController.miniPlayer.videoWasEnabled()
+        }
       }
     }
   }

@@ -329,7 +329,7 @@ extension PlayerWindowController {
       player.info.intendedViewportSize = chosenGeo.viewportSize
     }
 
-    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:Y currWinSize:\(currentGeo.windowFrame.size) returning:\(chosenGeo.windowFrame.size)")
+    log.verbose("WinWillResize isLive:\(window.inLiveResize.yn) req:\(requestedSize) lockViewport:\(lockViewportToVideoSize.yn) currWinSize:\(currentGeo.windowFrame.size) returning:\(chosenGeo.windowFrame.size)")
 
     return chosenGeo
   }
@@ -397,7 +397,7 @@ extension PlayerWindowController {
       updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
 
       if !layout.isNativeFullScreen {
-        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: player.videoGeo)
+        let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
 
         if isFullScreen {
           // Keep video margins up to date in almost every case

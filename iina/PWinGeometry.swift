@@ -736,14 +736,16 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     // Now enforce min & max viewport size [again]:
     newViewportSize = NSSize(width: max(minViewportSize.width, newViewportSize.width),
                              height: max(minViewportSize.height, newViewportSize.height))
-    if let maxViewportSize {
-      newViewportSize = NSSize(width: min(newViewportSize.width, maxViewportSize.width),
-                               height: min(newViewportSize.height, maxViewportSize.height))
-    }
 
     let oldViewportSize = viewportSize
     newViewportSize = NSSize(width: PWinGeometry.snap(newViewportSize.width, to: oldViewportSize.width),
                              height: PWinGeometry.snap(newViewportSize.height, to: oldViewportSize.height))
+
+    // Enforce this AFTER snapping to old size so that we don't snap to increased size!
+    if let maxViewportSize {
+      newViewportSize = NSSize(width: min(newViewportSize.width, maxViewportSize.width),
+                               height: min(newViewportSize.height, maxViewportSize.height))
+    }
 
     // -- Window size calculation
 

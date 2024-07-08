@@ -57,7 +57,7 @@ class PlaySliderCell: NSSliderCell {
       NSGraphicsContext.saveGraphicsState()
       let shadow = NSShadow()
       shadow.shadowBlurRadius = 1
-      shadow.shadowColor = .controlShadowColor
+      shadow.shadowColor = .shadowColor
       shadow.shadowOffset = NSSize(width: 0, height: -0.5)
       shadow.set()
     }
@@ -68,7 +68,7 @@ class PlaySliderCell: NSSliderCell {
 
     if #available(macOS 10.14, *), isLightTheme {
       path.lineWidth = 0.4
-      NSColor.controlShadowColor.setStroke()
+      NSColor.shadowColor.setStroke()
       path.stroke()
       NSGraphicsContext.restoreGraphicsState()
     }

@@ -176,8 +176,6 @@ class VideoView: NSView {
     rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
                        eqIsActive: true, eqPriority: .required,
                        centerIsActive: true, centerPriority: .defaultLow)
-
-    window?.layoutIfNeeded()
   }
 
   func apply(_ geometry: PWinGeometry?) {
