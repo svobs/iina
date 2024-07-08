@@ -211,8 +211,7 @@ extension PlayerWindowController {
     let disableOSDForFileLoading: Bool = player.info.isNotDoneLoading || player.info.timeSinceLastFileOpenFinished < 0.2
     if disableOSDForFileLoading && !isExternal {
       switch msg {
-      case .fileStart,
-          .resumeFromWatchLater:
+      case .fileStart, .resumeFromWatchLater:
         break
       default:
         return
