@@ -145,8 +145,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.insideBars = insideBars
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
+    assert(viewportSize.width >= 0 && viewportSize.height >= 0, "Expected viewportSize width & height >= 0, found \(viewportSize)")
     let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: video.videoViewAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
+    assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected videoSize width & height >= 0, found \(videoSize)")
     self.videoSize = videoSize
     self.viewportMargins = viewportMargins ?? PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                                       insideBars: insideBars, mode: mode)
@@ -235,7 +237,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   /// Can only be `false` while in music mode. All other modes should return `true` always.
   var isVideoVisible: Bool {
-    return viewportSize.height == 0
+    return viewportSize.height > 0
   }
 
   var isMusicModePlaylistVisible: Bool {

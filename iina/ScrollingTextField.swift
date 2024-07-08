@@ -70,7 +70,6 @@ class ScrollingTextField: NSTextField {
     stepIndex = 0
     drawPoint = startPoint
     needsDisplay = true
-    self.display()
   }
 
   override func draw(_ dirtyRect: NSRect) {

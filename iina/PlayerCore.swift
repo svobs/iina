@@ -508,6 +508,9 @@ class PlayerCore: NSObject {
   }
 
   func initVideo() {
+    defer {
+      videoView.startDisplayLink()
+    }
     guard status == .startePreVideoInit else { return }
     log.verbose("Init video")
     status = .startedPostVideoInit

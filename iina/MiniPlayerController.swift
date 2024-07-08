@@ -344,7 +344,6 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
       /// Allow it to show again
       windowController.closeButtonView.isHidden = false
-      windowController.videoView.display()
 
       if !showVideo {
         player.setVideoTrackEnabled(false)

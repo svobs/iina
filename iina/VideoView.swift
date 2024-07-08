@@ -78,8 +78,9 @@ class VideoView: NSView {
   }
 
   override func makeBackingLayer() -> CALayer {
-    let layer = GLVideoLayer(videoView: self)
+    let layer = GLVideoLayer()
     layer.colorspace = VideoView.SRGB
+    layer.videoView = self
     return layer
   }
 
