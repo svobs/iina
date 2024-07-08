@@ -15,6 +15,7 @@ struct FFVideoMeta {
   let streamRotation: Int
 }
 
+/// Current state of player's mpv core. Reused between playbacks. For a single playback, see class `Playback`.
 class PlaybackInfo {
   unowned var log: Logger.Subsystem
 

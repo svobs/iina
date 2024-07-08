@@ -10,8 +10,8 @@ import Cocoa
 import MediaPlayer
 
 /// Should always be updated in mpv DQ
-enum PlayerStatus: Int {
-  case notStarted = 1
+enum PlayerStatus: Int, StatusEnum {
+  case notYetStarted = 1
 
   case startePreVideoInit
 
@@ -28,6 +28,14 @@ enum PlayerStatus: Int {
 
   /// Whether shutdown of this player has completed (mpv has shutdown).
   case shutDown
+
+  func isAtLeast(_ minStatus: PlayerStatus) -> Bool {
+    return rawValue >= minStatus.rawValue
+  }
+
+  func isNotYet(_ status: PlayerStatus) -> Bool {
+    return rawValue < status.rawValue
+  }
 }
 
 class PlayerCore: NSObject {
@@ -144,26 +152,26 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false
 
-  var status: PlayerStatus = .notStarted {
+  var status: PlayerStatus = .notYetStarted {
     didSet {
       log.verbose("Updated playerStatus to \(status)")
     }
   }
 
   var isShuttingDown: Bool {
-    status.rawValue >= PlayerStatus.shuttingDown.rawValue
+    status.isAtLeast(.shuttingDown)
   }
 
   var isShutDown: Bool {
-    status.rawValue >= PlayerStatus.shutDown.rawValue
+    status.isAtLeast(.shutDown)
   }
 
   var isStopping: Bool {
-    status.rawValue >= PlayerStatus.stopping.rawValue
+    status.isAtLeast(.stopping)
   }
 
   var isStopped: Bool {
-    status.rawValue >= PlayerStatus.stopped.rawValue
+    status.isAtLeast(.stopped)
   }
 
   var isInMiniPlayer: Bool {
@@ -465,7 +473,7 @@ class PlayerCore: NSObject {
 
   // Does nothing if already started
   func start() {
-    guard status == .notStarted else { return }
+    guard status == .notYetStarted else { return }
 
     log.verbose("Player start")
 

@@ -17,8 +17,9 @@ class Playback: CustomStringConvertible {
     return "Playback(plPos:\(playlistPos) status:\(loadStatus) path:\(path.pii.quoted))"
   }
 
-  enum LoadStatus: Int, CustomStringConvertible {
-    case notStarted = 1       /// set before mpv is aware of it
+  enum LoadStatus: Int, StatusEnum, CustomStringConvertible {
+    
+    case notYetStarted = 1       /// set before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
     case loaded               /// set after mpv sends `fileLoaded` notification
     case completelyLoaded     /// everything loaded by mpv, including filters
@@ -26,8 +27,8 @@ class Playback: CustomStringConvertible {
 
     var description: String {
       switch self {
-      case .notStarted:
-        return "notStarted"
+      case .notYetStarted:
+        return "notYetStarted"
       case .started:
         return "started"
       case .loaded:
@@ -75,7 +76,7 @@ class Playback: CustomStringConvertible {
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  init(url: URL?, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
+  init(url: URL?, playlistPos: Int = 0, loadStatus: LoadStatus = .notYetStarted) {
     let url = url ?? URL(string: "stdin")!
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
@@ -83,7 +84,7 @@ class Playback: CustomStringConvertible {
     self.loadStatus = loadStatus
   }
 
-  convenience init?(path: String, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
+  convenience init?(path: String, playlistPos: Int = 0, loadStatus: LoadStatus = .notYetStarted) {
     let url = path.contains("://") ?
     URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
     URL(fileURLWithPath: path)

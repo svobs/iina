@@ -360,6 +360,7 @@
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
 		D1EF40EB2C3BCEA800921252 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EA2C3BCEA800921252 /* Playback.swift */; };
+		D1EF40ED2C3BD10B00921252 /* StatusEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EC2C3BD10B00921252 /* StatusEnum.swift */; };
 		D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
@@ -1836,6 +1837,7 @@
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
 		D1EF40EA2C3BCEA800921252 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
+		D1EF40EC2C3BD10B00921252 /* StatusEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEnum.swift; sourceTree = "<group>"; };
 		D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWResizeExt.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
 		D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfig.swift; sourceTree = "<group>"; };
@@ -2317,6 +2319,7 @@
 				D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */,
 				D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */,
 				D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */,
+				D1EF40EC2C3BD10B00921252 /* StatusEnum.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -3375,6 +3378,7 @@
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */,
+				D1EF40ED2C3BD10B00921252 /* StatusEnum.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
 				D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
