@@ -2251,7 +2251,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .windowed, .windowedInteractive:
       let newGeometry = resizeWindow(window, to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize, isLiveResizingWidth: isLiveResizingWidth)
 
-      resizeSubviewsForWindowResize(using: newGeometry)
+      /// This is copied from `resizeSubviewsForWindowResize`, but the animation seems to look worse when run from a function call.
+      /// Possibly a timing issue? It doesn't help that AppKit is calling `setFrame` after this method returns, and we cannot access
+      /// that code to ensure it is encapsulated within the same animation transaction as the code below. But this solution
+      /// seems to get us 99% there; the video only exhibits a small noticeable wobble for some limited cases ...
+      IINAAnimation.disableAnimation { [self] in
+        videoView.apply(newGeometry)
+
+        // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
+        if osdAnimationState == .shown {
+          updateOSDTextSize(from: newGeometry)
+          setOSDViews()
+        }
+      }
 
       return newGeometry.windowFrame.size
 
@@ -2286,13 +2298,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
   /// Not currently used!
-  func windowDidResize(_ notification: Notification) {
+//  func windowDidResize(_ notification: Notification) {
     // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
-    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
-    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
+//    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
+//    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
 
-    applyWindowResize()
-  }
+//    applyWindowResize()
+//  }
 
   // MARK: - Window Delegate: window move, screen changes
 

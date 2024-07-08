@@ -189,4 +189,10 @@ class PlayerWindow: NSWindow {
   override func performMiniaturize(_ sender: Any?) {
     self.miniaturize(self)
   }
+
+  override func zoom(_ sender: Any?) {
+    super.zoom(sender)
+    // Need to update VideoView constraints and other things
+    playerWinController?.applyWindowResize()
+  }
 }
