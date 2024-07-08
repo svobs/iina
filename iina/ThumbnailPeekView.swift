@@ -95,7 +95,7 @@ class ThumbnailPeekView: NSView {
                         _ currentLayout: PlayerWindowController.LayoutState, currentControlBar: NSView,
                         _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
 
-    guard let thumbnails = player.info.currentMedia?.thumbnails,
+    guard let thumbnails = player.info.currentPlayback?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second) else {
       isHidden = true
       return

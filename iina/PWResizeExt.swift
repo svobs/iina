@@ -64,8 +64,8 @@ extension PlayerWindowController {
       return
     }
 
-    guard let currentMedia = player.info.currentMedia else {
-      log.verbose("[applyVideoGeoTransform] Aborting: currentMedia is nil")
+    guard let currentPlayback = player.info.currentPlayback else {
+      log.verbose("[applyVideoGeoTransform] Aborting: currentPlayback is nil")
       return
     }
 
@@ -79,8 +79,8 @@ extension PlayerWindowController {
         let tasks = buildVideoGeoUpdateTasks(using: newWindowGeo, showDefaultArt: showDefaultArt)
         guard !tasks.isEmpty else { return }  // indicates no op or abort
 
-        if newWindowGeo.video.totalRotation != currentMedia.thumbnails?.rotationDegrees {
-          player.reloadThumbnails(forMedia: currentMedia)
+        if newWindowGeo.video.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
+          player.reloadThumbnails(forMedia: currentPlayback)
         }
         animationPipeline.submit(tasks, then: onSuccess)
       }

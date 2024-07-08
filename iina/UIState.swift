@@ -514,7 +514,7 @@ extension Preference {
 
             for playerKey in launch.playerKeys {
               if Logger.isEnabled(.warning) {
-                let path = MediaItem.path(for: Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)?.url(for: .url))
+                let path = Playback.path(for: Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)?.url(for: .url))
                 Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)",
                            level: .warning)
               }

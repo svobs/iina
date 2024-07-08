@@ -310,7 +310,7 @@ class MPVController: NSObject {
   func isStale() -> Bool {
     assert(DispatchQueue.isExecutingIn(queue))
     let mpv = getInt(MPVProperty.playlistCurrentPos)
-    guard let iina = player.info.currentMedia?.playlistPos else {
+    guard let iina = player.info.currentPlayback?.playlistPos else {
       // Note: not current if both are nil
       player.log.verbose("The current playlistPos from mpv (\(mpv)) is stale because there should be no media loaded")
       return true
@@ -1097,11 +1097,11 @@ class MPVController: NSObject {
   /// Makes calls to mpv to get the latest video params, then returns them.
   func syncVideoGeometryFromMPV() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
-    guard let currentMedia = player.info.currentMedia else {
-      log.verbose("Cannot get videoGeo from mpv: currentMedia is nil")
+    guard let currentPlayback = player.info.currentPlayback else {
+      log.verbose("Cannot get videoGeo from mpv: currentPlayback is nil")
       return nil
     }
-    guard currentMedia.isFileLoaded else {
+    guard currentPlayback.isFileLoaded else {
       log.verbose("Cannot get videoGeo from mpv: file not loaded")
       return nil
     }
@@ -1131,7 +1131,7 @@ class MPVController: NSObject {
                                codecRotation: codecRotation, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 
-    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentMedia.path)")
+    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentPlayback.path)")
     // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
     let videoSizeC = vidGeo.videoSizeC
     if (abs(Int(videoSizeC.width) - dwidth) > 1) || (abs(Int(videoSizeC.height) - dheight) > 1) {
@@ -1670,7 +1670,7 @@ class MPVController: NSObject {
       guard player.windowController.loaded else { break }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
-      let isAlreadySized = player.info.currentMedia?.loadStatus.isAtLeast(.completelyLoaded) ?? false
+      let isAlreadySized = player.info.currentPlayback?.loadStatus.isAtLeast(.completelyLoaded) ?? false
       guard isAlreadySized else { break }
 
       let cachedVideoScale: CGFloat

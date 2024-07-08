@@ -533,7 +533,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       log.verbose("Pref \(keyPath.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
-      player.reloadThumbnails(forMedia: player.info.currentMedia)
+      player.reloadThumbnails(forMedia: player.info.currentPlayback)
 
     case PK.showChapterPos.rawValue:
       if let newValue = change[.newKey] as? Bool {
@@ -2017,7 +2017,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     player.mpv.queue.async { [self] in
-      player.info.currentMedia = nil
+      player.info.currentPlayback = nil
     }
 
     player.events.emit(.windowWillClose)
@@ -2818,8 +2818,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @objc
   func updateTitle() {
     guard let window else { return }
-    guard let currentMedia = player.info.currentMedia else {
-      log.verbose("Cannot update window title: currentMedia is nil")
+    guard let currentPlayback = player.info.currentPlayback else {
+      log.verbose("Cannot update window title: currentPlayback is nil")
       return
     }
 
@@ -2853,8 +2853,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // This problem has been reported to Apple as:
       // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
       // Feedback number FB9789129
-      title = currentMedia.url.lastPathComponent
-      window.setTitleWithRepresentedFilename(currentMedia.url.path)
+      title = currentPlayback.url.lastPathComponent
+      window.setTitleWithRepresentedFilename(currentPlayback.url.path)
     }
 
     /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
@@ -3122,7 +3122,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
-    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentMedia?.loadStatus.description ?? "nil"))")
+    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentPlayback?.loadStatus.description ?? "nil"))")
     // Update default album art visibility:
     defaultAlbumArtView.isHidden = !showDefaultArt
   }

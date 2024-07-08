@@ -318,7 +318,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{MediaItem.path(for: $0).pii.quoted})")
+    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(for: $0).pii.quoted})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
 
@@ -409,11 +409,11 @@ class PlayerCore: NSObject {
 
     /// Need to use `sync` so that:
     /// 1. Prev use of mpv core can finish stopping / drain queue
-    /// 2. `currentMedia` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
+    /// 2. `currentPlayback` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
     mpv.queue.sync { [self] in
-      let mediaItem = MediaItem(url: urls[0])
-      let path = mediaItem.path
-      info.currentMedia = mediaItem
+      let playback = Playback(url: urls[0])
+      let path = playback.path
+      info.currentPlayback = playback
       log.debug("Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn)")
 
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
@@ -505,10 +505,7 @@ class PlayerCore: NSObject {
     status = .startedPostVideoInit
 
     // init mpv render context.
-    // The video layer must be displayed once to get the OpenGL context initialized.
-    videoView.videoLayer.display()
     mpv.mpvInitRendering()
-    videoView.startDisplayLink()
   }
 
   func saveState() {
@@ -1177,7 +1174,7 @@ class PlayerCore: NSObject {
       reloadQuickSettingsView()
 
       // Thumb rotation needs updating:
-      reloadThumbnails(forMedia: info.currentMedia)
+      reloadThumbnails(forMedia: info.currentPlayback)
       saveState()
     })
   }
@@ -2147,11 +2144,11 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    guard let mediaFromPath = MediaItem(path: path, playlistPos: playlistPos, loadStatus: .started) else {
+    guard let mediaFromPath = Playback(path: path, playlistPos: playlistPos, loadStatus: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
-    if let existingMedia = info.currentMedia, existingMedia.url == mediaFromPath.url {
+    if let existingMedia = info.currentPlayback, existingMedia.url == mediaFromPath.url {
       guard existingMedia.loadStatus.isNotYet(.started) else {
         log.warn("FileStarted: loadStatus is not yet started for \(existingMedia.url.absoluteString.pii.quoted) (found: \(existingMedia.loadStatus.rawValue))")
         return
@@ -2162,13 +2159,13 @@ class PlayerCore: NSObject {
     } else {
       // New media, perhaps initiated by mpv
       log.verbose("FileStarted: media is new. PlaylistPos: \(mediaFromPath.playlistPos)")
-      info.currentMedia = mediaFromPath
+      info.currentPlayback = mediaFromPath
     }
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
-    preResizeVideo(forURL: info.currentMedia?.url)
+    preResizeVideo(forURL: info.currentPlayback?.url)
 
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue
@@ -2249,7 +2246,7 @@ class PlayerCore: NSObject {
     } else {
       pause = Preference.bool(for: .pauseWhenOpen)
     }
-    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") path=\(info.currentMedia?.path.pii.quoted ?? "nil")")
+    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
     mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
 
     let duration = mpv.getDouble(MPVProperty.duration)
@@ -2267,21 +2264,21 @@ class PlayerCore: NSObject {
       status = .startedPostVideoInit
     }
 
-    guard let currentMedia = info.currentMedia else {
-      log.debug("FileLoaded: aborting - currentMedia was nil")
+    guard let currentPlayback = info.currentPlayback else {
+      log.debug("FileLoaded: aborting - currentPlayback was nil")
       return
     }
 
     if !mpv.isStale() {
-      if currentMedia.loadStatus.isNotYet(.loaded) {
-        currentMedia.loadStatus = .loaded
+      if currentPlayback.loadStatus.isNotYet(.loaded) {
+        currentPlayback.loadStatus = .loaded
       } else {
-        log.warn("FileLoaded: loadStatus is \(currentMedia.loadStatus.description.quoted)")
+        log.warn("FileLoaded: loadStatus is \(currentPlayback.loadStatus.description.quoted)")
       }
     }
 
     // Kick off thumbnails load/gen - it can happen in background
-    reloadThumbnails(forMedia: currentMedia)
+    reloadThumbnails(forMedia: currentPlayback)
 
     checkUnsyncedWindowOptions()
     reloadTrackInfo()
@@ -2316,7 +2313,7 @@ class PlayerCore: NSObject {
         self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
       }
       // auto load matched subtitles
-      if let matchedSubs = self.info.getMatchedSubs(currentMedia.path) {
+      if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
         log.debug("Found \(matchedSubs.count) external subs for current file")
         for sub in matchedSubs {
           guard currentTicket == self.backgroundQueueTicket else { return }
@@ -2405,22 +2402,22 @@ class PlayerCore: NSObject {
   /// This event should be called when everything is truly done.
   func fileIsCompletelyDoneLoading() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !mpv.isStale(), let currentMedia = info.currentMedia else { return }
+    guard !mpv.isStale(), let currentPlayback = info.currentPlayback else { return }
 
-    guard currentMedia.loadStatus.isAtLeast(.started) else {
-      log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentMedia.loadStatus.description.quoted))")
+    guard currentPlayback.loadStatus.isAtLeast(.started) else {
+      log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentPlayback.loadStatus.description.quoted))")
       return
     }
 
     /// Make sure to set this *after* calling `applyVideoGeoTransform`
-    guard currentMedia.loadStatus.isNotYet(.completelyLoaded) else {
-      log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentMedia.loadStatus.description.quoted)")
+    guard currentPlayback.loadStatus.isNotYet(.completelyLoaded) else {
+      log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentPlayback.loadStatus.description.quoted)")
       return
     }
 
     log.verbose("File is completely loaded")
 
-    currentMedia.loadStatus = .completelyLoaded
+    currentPlayback.loadStatus = .completelyLoaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
     /// Show default album art?
@@ -3089,30 +3086,30 @@ class PlayerCore: NSObject {
     windowController.close()
   }
 
-  func reloadThumbnails(forMedia currentMedia: MediaItem?) {
-    guard let currentMedia else {
+  func reloadThumbnails(forMedia currentPlayback: Playback?) {
+    guard let currentPlayback else {
       log.debug("Cannot generate thumbnails: no file active")
       return
     }
     DispatchQueue.main.asyncAfter(deadline: .now() + AppData.thumbnailRegenerationDelay) { [self] in
       guard !info.isNetworkResource, let url = info.currentURL, let mpvMD5 = info.mpvMd5 else {
         log.debug("Thumbnails reload stopped because cannot get file path")
-        clearExistingThumbnails(for: currentMedia)
+        clearExistingThumbnails(for: currentPlayback)
         return
       }
       guard Preference.bool(for: .enableThumbnailPreview) else {
         log.verbose("Thumbnails reload stopped because thumbnails are disabled by user")
-        clearExistingThumbnails(for: currentMedia)
+        clearExistingThumbnails(for: currentPlayback)
         return
       }
       if !Preference.bool(for: .enableThumbnailForRemoteFiles) && info.isMediaOnRemoteDrive {
         log.debug("Thumbnails reload stopped because file is on a mounted remote drive")
-        clearExistingThumbnails(for: currentMedia)
+        clearExistingThumbnails(for: currentPlayback)
         return
       }
       if isInMiniPlayer && !Preference.bool(for: .enableThumbnailForMusicMode) {
         log.verbose("Thumbnails reload stopped because user has not enabled for music mode")
-        clearExistingThumbnails(for: currentMedia)
+        clearExistingThumbnails(for: currentPlayback)
         return
       }
 
@@ -3141,29 +3138,29 @@ class PlayerCore: NSObject {
 
         let thumbnailWidth = SingleMediaThumbnailsLoader.determineWidthOfThumbnail(from: videoSizeRaw, log: log)
 
-        if let oldThumbs = currentMedia.thumbnails {
+        if let oldThumbs = currentPlayback.thumbnails {
           if !oldThumbs.isCancelled, oldThumbs.mediaFilePath == url.path,
              thumbnailWidth == oldThumbs.thumbnailWidth,
              videoGeo.totalRotation == oldThumbs.rotationDegrees {
             log.debug("Already loaded \(oldThumbs.thumbnails.count) thumbnails (\(oldThumbs.thumbnailsProgress * 100.0)%) for file (\(thumbnailWidth)px, \(videoGeo.totalRotation)°). Nothing to do")
             return
           } else {
-            clearExistingThumbnails(for: currentMedia)
+            clearExistingThumbnails(for: currentPlayback)
           }
         }
 
         let newMediaThumbnailLoader = SingleMediaThumbnailsLoader(self, queueTicket: queueTicket, mediaFilePath: url.path, mediaFilePathMD5: mpvMD5,
                                                                   thumbnailWidth: thumbnailWidth, rotationDegrees: videoGeo.totalRotation)
-        currentMedia.thumbnails = newMediaThumbnailLoader
+        currentPlayback.thumbnails = newMediaThumbnailLoader
         guard queueTicket == thumbnailQueueTicket else { return }
         newMediaThumbnailLoader.loadThumbnails()
       }
     }
   }
 
-  private func clearExistingThumbnails(for currentMedia: MediaItem) {
-    if currentMedia.thumbnails != nil {
-      currentMedia.thumbnails = nil
+  private func clearExistingThumbnails(for currentPlayback: Playback) {
+    if currentPlayback.thumbnails != nil {
+      currentPlayback.thumbnails = nil
     }
     if #available(macOS 10.12.2, *) {
       self.touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
@@ -3267,7 +3264,7 @@ class PlayerCore: NSObject {
     }
     info.playlist = newPlaylist
     let mpvPlaylistPos = mpv.getInt(MPVProperty.playlistPos)
-    info.currentMedia?.playlistPos = mpvPlaylistPos
+    info.currentPlayback?.playlistPos = mpvPlaylistPos
     if isPlaylistVisible {
       DispatchQueue.main.async { [self] in
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: mpvPlaylistPos)

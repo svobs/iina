@@ -257,7 +257,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func scrollPlaylistToCurrentItem() {
     guard let playlistTableView else { return }
-    if let entryIndex = player.info.currentMedia?.playlistPos {
+    if let entryIndex = player.info.currentPlayback?.playlistPos {
       playlistTableView.scrollRowToVisible(entryIndex)
     }
   }
@@ -605,7 +605,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard !view.isHidden else { return }
 
     let oldNowPlayingIndex = self.lastNowPlayingIndex
-    let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentMedia?.playlistPos ?? oldNowPlayingIndex
+    let newNowPlayingIndex = newNowPlayingIndex ?? player.info.currentPlayback?.playlistPos ?? oldNowPlayingIndex
     if newNowPlayingIndex != oldNowPlayingIndex {
       player.log.verbose("Updating nowPlayingIndex: \(oldNowPlayingIndex) → \(newNowPlayingIndex)")
       self.lastNowPlayingIndex = newNowPlayingIndex

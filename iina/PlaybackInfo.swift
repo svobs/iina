@@ -15,95 +15,6 @@ struct FFVideoMeta {
   let streamRotation: Int
 }
 
-class MediaItem: CustomStringConvertible {
-  var description: String {
-    return "MediaItem(plPos:\(playlistPos) status:\(loadStatus) path:\(path.pii.quoted))"
-  }
-
-  enum LoadStatus: Int, CustomStringConvertible {
-    case notStarted = 1       /// set before mpv is aware of it
-    case started              /// set after mpv sends `fileStarted` notification
-    case loaded               /// set after mpv sends `fileLoaded` notification
-    case completelyLoaded     /// everything loaded by mpv, including filters
-    case ended                /// Not used at present
-
-    var description: String {
-      switch self {
-      case .notStarted:
-        return "notStarted"
-      case .started:
-        return "started"
-      case .loaded:
-        return "loaded"
-      case .completelyLoaded:
-        return "completelyLoaded"
-      case .ended:
-        return "ended"
-      }
-    }
-
-    func isAtLeast(_ minStatus: LoadStatus) -> Bool {
-      return rawValue >= minStatus.rawValue
-    }
-
-    func isNotYet(_ status: LoadStatus) -> Bool {
-      return rawValue < status.rawValue
-    }
-  }  /// `MediaItem.LoadStatus`
-
-  let url: URL
-  let mpvMD5: String
-
-  var playlistPos: Int
-  var loadStatus: LoadStatus {
-    willSet {
-      if newValue != loadStatus {
-        Logger.log("Δ Media LoadStatus: \(loadStatus) → \(newValue)")
-      }
-    }
-  }
-
-  var path: String {
-    return MediaItem.path(for: url)
-  }
-
-  var isNetworkResource: Bool {
-    return !url.isFileURL
-  }
-
-  var thumbnails: SingleMediaThumbnailsLoader? = nil
-
-  var isFileLoaded: Bool {
-    return loadStatus.rawValue >= LoadStatus.loaded.rawValue
-  }
-
-  /// if `url` is `nil`, assumed to be `stdin`
-  init(url: URL?, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
-    let url = url ?? URL(string: "stdin")!
-    self.url = url
-    mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
-    self.playlistPos = playlistPos
-    self.loadStatus = loadStatus
-  }
-
-  convenience init?(path: String, playlistPos: Int = 0, loadStatus: LoadStatus = .notStarted) {
-    let url = path.contains("://") ?
-    URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
-    URL(fileURLWithPath: path)
-    guard let url else { return nil }
-    self.init(url: url, playlistPos: playlistPos, loadStatus: loadStatus)
-  }
-
-  static func path(for url: URL?) -> String {
-    let url = url ?? URL(string: "stdin")!
-    if url.absoluteString == "stdin" {
-      return "-"
-    } else {
-      return url.isFileURL ? url.path : url.absoluteString
-    }
-  }
-}
-
 class PlaybackInfo {
   unowned var log: Logger.Subsystem
 
@@ -139,8 +50,8 @@ class PlaybackInfo {
 
   /// File not completely done loading
   var isNotDoneLoading: Bool {
-    guard let currentMedia else { return false }
-    return currentMedia.loadStatus.isNotYet(.completelyLoaded)
+    guard let currentPlayback else { return false }
+    return currentPlayback.loadStatus.isNotYet(.completelyLoaded)
   }
   var timeLastFileOpenFinished: TimeInterval = 0
   var timeSinceLastFileOpenFinished: TimeInterval {
@@ -148,7 +59,7 @@ class PlaybackInfo {
   }
 
   var isFileLoaded: Bool {
-    return currentMedia?.isFileLoaded ?? false
+    return currentPlayback?.isFileLoaded ?? false
   }
 
   var shouldAutoLoadFiles: Bool = false
@@ -170,24 +81,24 @@ class PlaybackInfo {
   }
   var pauseStateWasChangedLocally = false
 
-  var currentMedia: MediaItem? = nil {
+  var currentPlayback: Playback? = nil {
     didSet {
-      log.verbose("Updated currentMedia to \(currentMedia?.description ?? "nil")")
+      log.verbose("Updated currentPlayback to \(currentPlayback?.description ?? "nil")")
     }
   }
 
   var currentURL: URL? {
-    return currentMedia?.url
+    return currentPlayback?.url
   }
 
   var isNetworkResource: Bool {
-    if let currentMedia {
-      return currentMedia.isNetworkResource
+    if let currentPlayback {
+      return currentPlayback.isNetworkResource
     }
     return false
   }
   var mpvMd5: String? {
-    return currentMedia?.mpvMD5
+    return currentPlayback?.mpvMD5
   }
 
   var isMediaOnRemoteDrive: Bool {
@@ -291,9 +202,9 @@ class PlaybackInfo {
 
   /// If it return `nil`, it means do not change visibility from existing value
   var shouldShowDefaultArt: Bool? {
-    if let currentMedia {
+    if let currentPlayback {
       // Don't show art if currently loading
-      if currentMedia.loadStatus.isAtLeast(.completelyLoaded) {
+      if currentPlayback.loadStatus.isAtLeast(.completelyLoaded) {
         return !isVideoTrackSelected
       }
     }
@@ -463,7 +374,7 @@ class PlaybackInfo {
       missed = true
       ffMeta = updateCachedFFVideoMeta(forURL: url)
     }
-    let path = MediaItem.path(for: url)
+    let path = Playback.path(for: url)
 
     guard let ffMeta else {
       log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")
