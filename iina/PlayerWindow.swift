@@ -38,7 +38,7 @@ class PlayerWindow: NSWindow {
 
     log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
     setFrame(geometry.windowFrame, display: false, animate: notify)
-//    contentView?.needsDisplay = true
+    contentView?.needsDisplay = true  // set this or sometimes VideoView is not redrawn while paused
   }
 
   override func animationResizeTime(_ newFrame: NSRect) -> TimeInterval {
