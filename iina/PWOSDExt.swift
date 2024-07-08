@@ -35,6 +35,8 @@ extension PlayerWindowController {
     contentView.layoutSubtreeIfNeeded()
   }
 
+  /// If `newMessage` is provided, the OSD will be updated to display it. Otherwise if the OSD is
+  /// already shown and is displaying one of the message types which requires live updates, it will be updated.
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
@@ -432,10 +434,10 @@ extension PlayerWindowController {
     osdVisualEffectView.roundCorners()
 
     let marginScaled = 8 + (osdTextSize * 0.06)
-    osdTopMarginConstraint.constant = marginScaled
-    osdBottomMarginConstraint.constant = marginScaled
-    osdTrailingMarginConstraint.constant = marginScaled
-    osdLeadingMarginConstraint.constant = marginScaled
+    osdTopMarginConstraint.animateToConstant(marginScaled)
+    osdBottomMarginConstraint.animateToConstant(marginScaled)
+    osdTrailingMarginConstraint.animateToConstant(marginScaled)
+    osdLeadingMarginConstraint.animateToConstant(marginScaled)
 
     let osdLabelFont = NSFont.monospacedDigitSystemFont(ofSize: osdTextSize, weight: .regular)
     osdLabel.font = osdLabelFont

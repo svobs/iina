@@ -2277,8 +2277,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       videoView.apply(newGeometry)
     }
 
-    updateOSDTextSize(from: newGeometry)
-    setOSDViews()
+    if osdAnimationState == .shown {
+      updateOSDTextSize(from: newGeometry)
+      setOSDViews()
+    }
   }
 
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
