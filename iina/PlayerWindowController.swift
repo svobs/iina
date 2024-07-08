@@ -993,22 +993,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       cv.addSubview(view)
     }
 
-    // Init default album art
-    defaultAlbumArtView.wantsLayer = true
-    defaultAlbumArtView.isHidden = true
-    defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
-    viewportView.addSubview(defaultAlbumArtView)
-    defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
-    // Add 1:1 aspect ratio constraint
-    defaultAlbumArtView.widthAnchor.constraint(equalTo: defaultAlbumArtView.heightAnchor, multiplier: 1).isActive = true
-    // Always fill superview
-    defaultAlbumArtView.leadingAnchor.constraint(lessThanOrEqualTo: defaultAlbumArtView.superview!.leadingAnchor).isActive = true
-    defaultAlbumArtView.trailingAnchor.constraint(greaterThanOrEqualTo: defaultAlbumArtView.superview!.trailingAnchor).isActive = true
-    defaultAlbumArtView.topAnchor.constraint(lessThanOrEqualTo: defaultAlbumArtView.superview!.topAnchor).isActive = true
-    defaultAlbumArtView.bottomAnchor.constraint(greaterThanOrEqualTo: defaultAlbumArtView.superview!.bottomAnchor).isActive = true
-    // Center in superview
-    defaultAlbumArtView.centerXAnchor.constraint(equalTo: defaultAlbumArtView.superview!.centerXAnchor).isActive = true
-    defaultAlbumArtView.centerYAnchor.constraint(equalTo: defaultAlbumArtView.superview!.centerYAnchor).isActive = true
+    initDefaultAlbumArtView()
 
     playlistView.windowController = self
     quickSettingView.windowController = self
@@ -1119,6 +1104,36 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   deinit {
     removeObservers()
+  }
+
+  private func initDefaultAlbumArtView() {
+    defaultAlbumArtView.wantsLayer = true
+    defaultAlbumArtView.isHidden = true
+    defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
+    viewportView.addSubview(defaultAlbumArtView)
+
+    defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
+
+    // Add 1:1 aspect ratio constraint
+    let aspectConstraint = defaultAlbumArtView.widthAnchor.constraint(equalTo: defaultAlbumArtView.heightAnchor, multiplier: 1)
+    aspectConstraint.priority = .defaultHigh
+    aspectConstraint.isActive = true
+    // Always fill superview
+    let widthGE = defaultAlbumArtView.widthAnchor.constraint(greaterThanOrEqualTo: viewportView.widthAnchor)
+    widthGE.priority = .defaultHigh
+    widthGE.isActive = true
+    let heightGE = defaultAlbumArtView.heightAnchor.constraint(greaterThanOrEqualTo: viewportView.heightAnchor)
+    heightGE.priority = .defaultHigh
+    heightGE.isActive = true
+    let widthEq = defaultAlbumArtView.widthAnchor.constraint(equalTo: viewportView.widthAnchor)
+    widthEq.priority = .defaultLow
+    widthEq.isActive = true
+    let heightEq = defaultAlbumArtView.heightAnchor.constraint(equalTo: viewportView.heightAnchor)
+    heightEq.priority = .defaultLow
+    heightEq.isActive = true
+    // Center in superview
+    defaultAlbumArtView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
+    defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
   }
 
   private func removeObservers() {
