@@ -2568,10 +2568,12 @@ class PlayerCore: NSObject {
 
   func refreshEdrMode() {
     guard windowController.loaded else { return }
-    // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
-    // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
-    guard !isStopping else { return }
-    videoView.refreshEdrMode()
+    DispatchQueue.main.async { [self] in
+      // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
+      // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
+      guard !isStopping else { return }
+      videoView.refreshEdrMode()
+    }
   }
 
   func secondarySubDelayChanged(_ delay: Double) {
