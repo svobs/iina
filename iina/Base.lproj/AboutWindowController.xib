@@ -34,7 +34,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <view key="contentView" wantsLayer="YES" id="se5-gp-TjO" userLabel="Window Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -64,7 +64,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ARZ-RP-Yma">
-                                            <rect key="frame" x="78" y="231" width="65" height="17"/>
+                                            <rect key="frame" x="78" y="233" width="65" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="advance" id="oM3-P7-wkD">
                                                 <font key="font" size="15" name="ArialMT"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -72,7 +72,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bR2-NT-yUx">
-                                            <rect key="frame" x="92" y="203" width="36" height="16"/>
+                                            <rect key="frame" x="92" y="205" width="36" height="16"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" alignment="center" title="0.0.1" id="gZA-85-Zaw">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
@@ -80,7 +80,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="X9Q-Ig-Deb" userLabel="Versions Vertical Stack View">
-                                            <rect key="frame" x="20" y="177" width="180" height="22"/>
+                                            <rect key="frame" x="20" y="179" width="180" height="22"/>
                                             <subviews>
                                                 <textField focusRingType="none" verticalHuggingPriority="751" preferredMaxLayoutWidth="90" translatesAutoresizingMaskIntoConstraints="NO" id="nXJ-o9-ufd">
                                                     <rect key="frame" x="-2" y="11" width="184" height="11"/>
@@ -112,7 +112,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y6B-pc-JRB" userLabel="BuildInfo Vertical Stack View">
-                                            <rect key="frame" x="20" y="147" width="180" height="22"/>
+                                            <rect key="frame" x="20" y="149" width="180" height="22"/>
                                             <subviews>
                                                 <textField focusRingType="none" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
                                                     <rect key="frame" x="-2" y="11" width="184" height="11"/>
@@ -177,7 +177,7 @@
                                         <constraint firstItem="ZI5-MK-cHL" firstAttribute="top" secondItem="tKq-yl-nhe" secondAttribute="bottom" constant="4" id="0zh-1R-g5F"/>
                                         <constraint firstItem="4mA-gM-aUl" firstAttribute="centerX" secondItem="1qX-fa-Cpb" secondAttribute="centerX" id="31J-fW-S4j"/>
                                         <constraint firstAttribute="bottom" secondItem="XuI-3z-cJF" secondAttribute="bottom" constant="30" id="3TY-1t-7L6"/>
-                                        <constraint firstItem="ARZ-RP-Yma" firstAttribute="top" secondItem="1qX-fa-Cpb" secondAttribute="bottom" constant="-6" id="6RW-3B-jXT"/>
+                                        <constraint firstItem="ARZ-RP-Yma" firstAttribute="top" secondItem="1qX-fa-Cpb" secondAttribute="bottom" constant="-8" id="6RW-3B-jXT"/>
                                         <constraint firstItem="ARZ-RP-Yma" firstAttribute="centerX" secondItem="1qX-fa-Cpb" secondAttribute="centerX" id="7mL-pE-MBj"/>
                                         <constraint firstItem="ZI5-MK-cHL" firstAttribute="height" secondItem="tKq-yl-nhe" secondAttribute="height" id="9rq-qH-GAP"/>
                                         <constraint firstItem="ZI5-MK-cHL" firstAttribute="leading" relation="lessThanOrEqual" secondItem="v8u-ZU-g1d" secondAttribute="leading" constant="40" id="IVe-WF-6PC"/>
