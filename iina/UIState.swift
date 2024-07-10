@@ -582,13 +582,13 @@ extension Preference {
       let launchesNewestToOldest = cachedLaunches ?? collectLaunchStateForRestore()
 
       // Remove duplicates, favoring front-most copies
-      var deduplicatedReverseWindowList: [SavedWindow] = []
+      var deduplicatedWindowList: [SavedWindow] = []
       var nameSet = Set<String>()
       for launch in launchesNewestToOldest {
         if let savedWindows = launch.savedWindows {
           for savedWindow in savedWindows {
             if !nameSet.contains(savedWindow.saveName.string) {
-              deduplicatedReverseWindowList.append(savedWindow)
+              deduplicatedWindowList.append(savedWindow)
               nameSet.insert(savedWindow.saveName.string)
             } else {
               Logger.log("Skipping duplicate open window: \(savedWindow.saveName.string.quoted)", level: .verbose)
@@ -598,9 +598,8 @@ extension Preference {
       }
 
       // First save under new window list:
-      let finalWindowList = Array(deduplicatedReverseWindowList.reversed())
-      let finalWindowStringList = finalWindowList.map({$0.saveString})
-      Logger.log("Consolidating windows from \(launchesNewestToOldest.count) past launches to current launch (\(launchID)): \(finalWindowList.map({$0.saveName.string}))", level: .verbose)
+      let finalWindowStringList = deduplicatedWindowList.map({$0.saveString})
+      Logger.log("Consolidating windows from \(launchesNewestToOldest.count) past launches to current launch (\(launchID)): \(deduplicatedWindowList.map({$0.saveName.string}))", level: .verbose)
       saveOpenWindowList(windowNamesBackToFront: finalWindowStringList, forLaunchID: launchID)
 
       // Now remove entries for old launches (keeping player state entries)
@@ -620,7 +619,7 @@ extension Preference {
       }
 
       NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
-      return finalWindowList
+      return deduplicatedWindowList
     }
 
   }

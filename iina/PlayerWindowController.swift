@@ -1945,30 +1945,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     setLayoutForOpen()
 
-    // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
-    if player.info.isRestoring {
-      window.postWindowIsReadyToShow()
-    }
-
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)
-    }
-
-    /// Do this *after* `restoreFromMiscWindowBools` call
-    if !window.isMiniaturized {
-      log.verbose("Showing Player Window")
-
-      Preference.UIState.windowsOpen.insert(window.savedStateName)
-
-      window.setIsVisible(true)
-
-      /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
-      Preference.UIState.saveCurrentOpenWindowList()
-    }
-
-    if !player.info.isRestoring {
-      // Make sure to save newly opened window immediately to avoid losing state due to race
-      PlayerSaveState.saveSynchronously(player)
     }
 
     log.verbose("Hiding defaultAlbumArt for window open")
@@ -1976,6 +1954,30 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.initVideo()
     videoView.startDisplayLink()
+
+    /// Do this *after* `restoreFromMiscWindowBools` call
+    if !window.isMiniaturized {
+      log.verbose("Showing Player Window")
+
+      Preference.UIState.windowsOpen.insert(window.savedStateName)
+
+      if !player.info.isRestoring {
+        window.setIsVisible(true)
+      }
+
+      /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
+      Preference.UIState.saveCurrentOpenWindowList()
+    }
+
+    // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
+    if player.info.isRestoring {
+      animationPipeline.submitSudden({
+        window.postWindowIsReadyToShow()
+      })
+    } else {
+      // Make sure to save newly opened window immediately to avoid losing state due to race
+      PlayerSaveState.saveSynchronously(player)
+    }
 
     log.verbose("PlayerWindow openWindow done")
   }

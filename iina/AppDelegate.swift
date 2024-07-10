@@ -686,13 +686,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Preference.set(true, for: .isRestoreInProgress)
 
     // Try to wait until all windows are ready so that we can show all of them at once.
-    var wcsToRestore = Set<NSWindowController>()
+    var wcsToRestore: [NSWindowController] = []
     var wcsReady = Set<NSWindowController>()
     var isFinishedAddingWindows = false
 
     func finishRestoreIfReady() {
       guard isFinishedAddingWindows else { return }
-
       guard wcsReady.count == wcsToRestore.count else { return }
 
       Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch.secElapsedString); showing all", level: .verbose)
@@ -780,7 +779,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         wc.window?.miniaturize(self)
       } else {
         // Add to list of windows to wait for
-        wcsToRestore.insert(wc)
+        wcsToRestore.append(wc)
       }
     }
 
