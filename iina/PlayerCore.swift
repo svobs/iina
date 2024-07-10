@@ -704,9 +704,6 @@ class PlayerCore: NSObject {
     /// Do not set `isStopped` here. This method seems to get called when it shouldn't (e.g., when changing current pos in playlist)
 
     DispatchQueue.main.async { [self] in
-      // In case of window reuse, do not display the last OSD of the previous player (e.g. this one at this point in the code)
-      windowController.hideOSD(immediately: true)
-
       postNotification(.iinaPlayerStopped)
     }
   }

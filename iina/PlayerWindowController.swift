@@ -2007,6 +2007,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     contentView.trackingAreas.forEach(contentView.removeTrackingArea)
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
 
+    // In case of window reuse, do not display the last OSD of the previous player
+    hideOSD(immediately: true)
+
     // Reset state flags
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
