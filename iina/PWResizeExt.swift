@@ -122,6 +122,7 @@ extension PlayerWindowController {
         windowedModeGeo = newWindowGeo
 
         updateDefaultArtVisibility(showDefaultArt)
+        updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
 
     case .musicMode:
@@ -500,6 +501,8 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.suddenTask{ [self] in
       isAnimatingLayoutTransition = false
+      // OSD messages may have been supressed because file was not done loading. Display now if needed:
+      updateUI()
       player.events.emit(.windowSizeAdjusted, data: newGeometry.windowFrame)
     })
 
@@ -531,6 +534,7 @@ extension PlayerWindowController {
     }))
     tasks.append(IINAAnimation.suddenTask { [self] in
       isAnimatingLayoutTransition = false
+      updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
 
     return tasks

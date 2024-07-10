@@ -3290,10 +3290,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.updatePlaybackTimeInfo()
 
-    // Run all tasks in the OSD queue until it is depleted
-    osdQueueLock.withLock {
-      while !osdQueue.isEmpty {
-        osdQueue.removeFirst()?()
+    /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
+    /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
+    if isInitialSizeDone && (player.info.currentPlayback?.loadStatus.isAtLeast(.completelyLoaded) ?? false) {
+      // Run all tasks in the OSD queue until it is depleted
+      osdQueueLock.withLock {
+        while !osdQueue.isEmpty {
+          osdQueue.removeFirst()?()
+        }
       }
     }
 
