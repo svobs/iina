@@ -39,7 +39,6 @@ extension PlayerWindowController {
   /// already shown and is displaying one of the message types which requires live updates, it will be updated.
   func setOSDViews(fromMessage newMessage: OSDMessage? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
 
     let message: OSDMessage?
 
@@ -95,6 +94,7 @@ extension PlayerWindowController {
       osdAccessoryText.baseWritingDirection = .leftToRight
       fallthrough
     case .withText(let text):
+      guard !player.isStopping else { return }  /// prevent crash when `mpv.getInt()` is used below
       osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryText)
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
 
@@ -351,7 +351,7 @@ extension PlayerWindowController {
       log.verbose("Showing OSD '\(msg)', no timeout")
     }
 
-    let geo = isInMiniPlayer ? musicModeGeo.toPWinGeometry() : windowedModeGeo
+    let geo = isInMiniPlayer ? musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID).toPWinGeometry() : windowedGeoForCurrentFrame()
     updateOSDTextSize(from: geo)
     setOSDViews(fromMessage: msg)
 

@@ -535,13 +535,7 @@ extension VideoView {
       }
 
     case "bt.2020":
-      if #available(macOS 11.0, *) {
-        name = CGColorSpace.itur_2100_PQ
-      } else if #available(macOS 10.15.4, *) {
-        name = CGColorSpace.itur_2020_PQ
-      } else {
-        name = CGColorSpace.itur_2020_PQ_EOTF
-      }
+      name = CGColorSpace.itur_2100_PQ
 
     case "bt.709":
       return false // SDR
