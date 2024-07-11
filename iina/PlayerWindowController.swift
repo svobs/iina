@@ -1985,6 +1985,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   override func showWindow(_ sender: Any?) {
     // Call this to patch possible holes when restoring (e.g., interactive mode window)
     updateCustomBorderBoxAndWindowOpacity()
+    animationPipeline.submitSudden({
+      self.forceDraw()  // needed if restoring while paused
+    })
     super.showWindow(sender)
   }
 
