@@ -732,8 +732,6 @@ class MPVController: NSObject {
   func mpvUninitRendering() {
     guard let mpvRenderContext = mpvRenderContext else { return }
     player.log.verbose("Uninit mpv rendering")
-    lockAndSetOpenGLContext()
-    defer { unlockOpenGLContext() }
     mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
     mpv_render_context_free(mpvRenderContext)
     player.log.verbose("Uninit mpv rendering: done")

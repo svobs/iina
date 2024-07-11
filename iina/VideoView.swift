@@ -64,10 +64,12 @@ class VideoView: NSView {
   /// - Important: Once mpv has been instructed to quit accessing the mpv core can result in a crash, therefore locks must be
   ///     used to coordinate uninitializing the view so that other threads do not attempt to use the mpv core while it is shutting down.
   func uninit() {
+    player.mpv.lockAndSetOpenGLContext()
+    defer { player.mpv.unlockOpenGLContext() }
     $isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
       isUninited = true
-
+      
       stopDisplayLink()
       player.mpv.mpvUninitRendering()
     }
@@ -275,11 +277,7 @@ class VideoView: NSView {
   func startDisplayLink() {
     let link = obtainDisplayLink()
 
-    var canProceed = true
-    $isUninited.withLock() { isUninited in
-      canProceed = !isUninited
-    }
-    guard canProceed else { return }
+    guard !isUninited else { return }
     guard !CVDisplayLinkIsRunning(link) else { return }
     updateDisplayLink()
 

@@ -89,7 +89,9 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    videoView.$isUninited.withLock() { isUninited in
+    videoView.player.mpv.lockAndSetOpenGLContext()
+    defer { videoView.player.mpv.unlockOpenGLContext() }
+    return videoView.$isUninited.withLock { isUninited in
       guard !isUninited else { return false }
 #if LOG_VIDEO_LAYER
       canDrawCountTotal += 1
@@ -99,7 +101,7 @@ class GLVideoLayer: CAOpenGLLayer {
       } else {
         NSLog("CAN_DRAW")
       }
-//    printStats()
+      //    printStats()
 #endif
       if forceRender { return true }
       return videoView.player.mpv.shouldRenderUpdateFrame()
@@ -108,52 +110,52 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func draw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                      forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
-    videoView.$isUninited.withLock() { isUninited in
-      guard !isUninited else { return }
+    videoView.player.mpv.lockAndSetOpenGLContext()
+    defer { videoView.player.mpv.unlockOpenGLContext() }
+    guard !videoView.isUninited else { return }
 
-      let mpv = videoView.player.mpv!
-      needsMPVRender = false
+    let mpv = videoView.player.mpv!
+    needsMPVRender = false
 
-      glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
+    glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
 
-      var i: GLint = 0
-      glGetIntegerv(GLenum(GL_DRAW_FRAMEBUFFER_BINDING), &i)
-      var dims: [GLint] = [0, 0, 0, 0]
-      glGetIntegerv(GLenum(GL_VIEWPORT), &dims);
+    var i: GLint = 0
+    glGetIntegerv(GLenum(GL_DRAW_FRAMEBUFFER_BINDING), &i)
+    var dims: [GLint] = [0, 0, 0, 0]
+    glGetIntegerv(GLenum(GL_VIEWPORT), &dims);
 
-      var flip: CInt = 1
+    var flip: CInt = 1
 
-      withUnsafeMutablePointer(to: &flip) { flip in
-        if let context = mpv.mpvRenderContext {
-          fbo = i != 0 ? i : fbo
+    withUnsafeMutablePointer(to: &flip) { flip in
+      if let context = mpv.mpvRenderContext {
+        fbo = i != 0 ? i : fbo
 #if LOG_VIDEO_LAYER
-          lastWidth = Int32(dims[2])
-          lastHeight = Int32(dims[3])
-          drawCountTotal += 1
-          printStats()
+        lastWidth = Int32(dims[2])
+        lastHeight = Int32(dims[3])
+        drawCountTotal += 1
+        printStats()
 
-//        NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime) layerTime: \(t)\(ts == nil ? "" : ", hostTS: \(ts!.hostTime)")")
+        //        NSLog("DRAW fbo: \(fbo) vidTS: \(ts.videoTime) layerTime: \(t)\(ts == nil ? "" : ", hostTS: \(ts!.hostTime)")")
 #endif
-          var data = mpv_opengl_fbo(fbo: Int32(fbo),
-                                    w: Int32(dims[2]),
-                                    h: Int32(dims[3]),
-                                    internal_format: 0)
-          withUnsafeMutablePointer(to: &data) { data in
-            var params: [mpv_render_param] = [
-              mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: .init(data)),
-              mpv_render_param(type: MPV_RENDER_PARAM_FLIP_Y, data: .init(flip)),
-              mpv_render_param()
-            ]
-            mpv_render_context_render(context, &params)
-            ignoreGLError()
-          }
-        } else {
-          glClearColor(0, 0, 0, 1)
-          glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
+        var data = mpv_opengl_fbo(fbo: Int32(fbo),
+                                  w: Int32(dims[2]),
+                                  h: Int32(dims[3]),
+                                  internal_format: 0)
+        withUnsafeMutablePointer(to: &data) { data in
+          var params: [mpv_render_param] = [
+            mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: .init(data)),
+            mpv_render_param(type: MPV_RENDER_PARAM_FLIP_Y, data: .init(flip)),
+            mpv_render_param()
+          ]
+          mpv_render_context_render(context, &params)
+          ignoreGLError()
         }
+      } else {
+        glClearColor(0, 0, 0, 1)
+        glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
       }
-      glFlush()
     }
+    glFlush()
   }
 
   /// We want `isAsynchronous = true` while executing any animation which causes the layer to resize.
@@ -199,7 +201,10 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 
   func draw(forced: Bool = false) {
-    videoView.$isUninited.withLock() { isUninited in
+    do {
+      videoView.player.mpv.lockAndSetOpenGLContext()
+      defer { videoView.player.mpv.unlockOpenGLContext() }
+
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
       // lock. This avoids the need for separate locks to avoid data races with these flags. No need
       // to check isUninited at this point.
@@ -218,7 +223,12 @@ class GLVideoLayer: CAOpenGLLayer {
 #if LOG_VIDEO_LAYER
     displayCountTotal += 1
 #endif
-    videoView.$isUninited.withLock() { isUninited in
+    // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
+    // This can happen when IINA is playing in another space, as might occur when just playing
+    // audio. See issue #5025.
+    videoView.player.mpv.lockAndSetOpenGLContext()
+    defer { videoView.player.mpv.unlockOpenGLContext() }
+    videoView.$isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
 
       guard !forceRender else {
@@ -227,11 +237,6 @@ class GLVideoLayer: CAOpenGLLayer {
       }
       guard needsMPVRender else { return }
 
-      // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
-      // This can happen when IINA is playing in another space, as might occur when just playing
-      // audio. See issue #5025.
-      videoView.player.mpv.lockAndSetOpenGLContext()
-      defer { videoView.player.mpv.unlockOpenGLContext() }
       if let renderContext = videoView.player.mpv.mpvRenderContext,
          videoView.player.mpv.shouldRenderUpdateFrame() {
         var skip: CInt = 1

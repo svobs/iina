@@ -3738,7 +3738,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     pipStatus = .inPIP
     showFadeableViews()
 
-    videoView.$isUninited.withLock() { isUninited in
+    do {
+      videoView.player.mpv.lockAndSetOpenGLContext()
+      defer { videoView.player.mpv.unlockOpenGLContext() }
       pipVideo = NSViewController()
       // Remove these. They screw up PIP drag
       videoView.apply(nil)
