@@ -569,8 +569,15 @@ extension PlayerWindowController {
         /// Special case for music mode. Only really applies to `playlistView`,
         /// because `quickSettingView` is never shown in this mode.
         outputLayout.sidebarTabHeight = Constants.Sidebar.musicModeTabHeight
-      } else if outputLayout.topBarView.isShowable && outputLayout.topBarPlacement == .insideViewport {
-        outputLayout.sidebarDownshift = outputLayout.titleBarHeight
+      } else if outputLayout.topBarView.isShowable {
+        // Top bar always spans the whole width of the window (unlike the bottom bar)
+        // FIXME: someday, refactor title bar & top OSC outside of top bar & make iinto 2 independent bars.
+        // (so that top OSC will not overlap outside sidebars)
+        if outputLayout.topBarPlacement == .outsideViewport {
+          outputLayout.sidebarDownshift = Constants.Sidebar.defaultDownshift
+        } else {
+          outputLayout.sidebarDownshift = outputLayout.topBarHeight
+        }
 
         let tabHeight = outputLayout.topOSCHeight
         // Put some safeguards in place. Don't want to waste space or be too tiny to read.
