@@ -307,7 +307,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     // Reload data:
 
     let sw = Utility.Stopwatch()
-    let recentsUnfiltered = HistoryController.shared.cachedRecentDocumentURLs
+    let recentsUnfiltered = Preference.bool(for: .enableRecentDocumentsWorkaround) ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
     /// Make sure to resolve symlinks in `lastPlaybackURL`
     lastPlaybackURL = getLastPlaybackIfValid()?.resolvingSymlinksInPath() ?? nil
     if let lastURL = lastPlaybackURL {

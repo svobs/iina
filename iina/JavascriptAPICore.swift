@@ -116,7 +116,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   }
 
   func getRecentDocuments() -> Any {
-    let recentDocumentURLs = HistoryController.shared.cachedRecentDocumentURLs
+    let recentDocumentURLs = Preference.bool(for: .enableRecentDocumentsWorkaround) ? HistoryController.shared.cachedRecentDocumentURLs : NSDocumentController.shared.recentDocumentURLs
     return recentDocumentURLs.map {
       [
         "name": $0.lastPathComponent,

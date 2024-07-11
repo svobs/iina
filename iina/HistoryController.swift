@@ -189,7 +189,8 @@ class HistoryController {
 
     /// Make sure `reloadAll()` was called before this
     let recentDocumentsURLs = cachedRecentDocumentURLs
-    guard #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
+    guard Preference.bool(for: .enableRecentDocumentsWorkaround),
+          #available(macOS 14, *), Preference.bool(for: .recordRecentFiles),
           recentDocumentsURLs.isEmpty,
           let recentDocuments = Preference.array(for: .recentDocuments),
           !recentDocuments.isEmpty else {
