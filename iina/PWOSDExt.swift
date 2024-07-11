@@ -61,7 +61,14 @@ extension PlayerWindowController {
       message = nil
     }
 
-    guard let message else { return }
+    guard let message else {
+      // Often this method was called in response to a layout change.
+      // For some reason the text wrap of the following is not recomputed or the text may be smashed/stretched,
+      // so mark it expclitly as needing redisplay here:
+      osdLabel.needsDisplay = true
+      osdAccessoryText.needsDisplay = true
+      return
+    }
 
     defer {
       osdVisualEffectView.layout()
@@ -450,10 +457,6 @@ extension PlayerWindowController {
       }
     }
 
-    let osdIconTextSize = osdTextSize + (osdAccessoryProgress.fittingSize.height)
-    let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
-    osdIconImageView.font = osdIconFont
-
     if #available(macOS 11.0, *) {
       // Use dimensions of a dummy image to keep the height fixed. Because all the components are vertically aligned
       // and each icon has a different height, this is needed to prevent the progress bar from jumping up and down
@@ -461,6 +464,8 @@ extension PlayerWindowController {
       let attachment = NSTextAttachment()
       attachment.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "")!
       let iconString = NSMutableAttributedString(attachment: attachment)
+      let osdIconTextSize = osdTextSize + (osdAccessoryProgress.fittingSize.height)
+      let osdIconFont = NSFont.monospacedDigitSystemFont(ofSize: osdIconTextSize, weight: .regular)
       iconString.addAttribute(.font, value: osdIconFont, range: NSRange(location: 0, length: iconString.length))
       let iconHeight = iconString.size().height
 
