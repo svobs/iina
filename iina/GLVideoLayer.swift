@@ -89,7 +89,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func canDraw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                         forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) -> Bool {
-    videoView.player.mpv.lockAndSetOpenGLContext()
+    guard videoView.player.mpv.lockAndSetOpenGLContext() else { return false }
     defer { videoView.player.mpv.unlockOpenGLContext() }
     return videoView.$isUninited.withLock { isUninited in
       guard !isUninited else { return false }
@@ -202,7 +202,7 @@ class GLVideoLayer: CAOpenGLLayer {
 
   func draw(forced: Bool = false) {
     do {
-      videoView.player.mpv.lockAndSetOpenGLContext()
+      guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
       defer { videoView.player.mpv.unlockOpenGLContext() }
 
       // The properties forceRender and needsMPVRender are always accessed while holding isUninited's
@@ -226,7 +226,7 @@ class GLVideoLayer: CAOpenGLLayer {
     // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
     // This can happen when IINA is playing in another space, as might occur when just playing
     // audio. See issue #5025.
-    videoView.player.mpv.lockAndSetOpenGLContext()
+    guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
     defer { videoView.player.mpv.unlockOpenGLContext() }
     videoView.$isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }

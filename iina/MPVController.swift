@@ -719,9 +719,11 @@ class MPVController: NSObject {
   /// - Reference: [Concurrency and OpenGL](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_threading/opengl_threading.html)
   /// - Reference: [OpenGL Context](https://www.khronos.org/opengl/wiki/OpenGL_Context)
   /// - Attention: Do not forget to unlock the OpenGL context by calling `unlockOpenGLContext`
-  func lockAndSetOpenGLContext() {
+  func lockAndSetOpenGLContext() -> Bool {
+    guard let openGLContext else { return false }
     CGLLockContext(openGLContext)
     CGLSetCurrentContext(openGLContext)
+    return true
   }
 
   /// Unlock the OpenGL context associated with the mpv renderer.
