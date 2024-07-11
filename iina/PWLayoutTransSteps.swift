@@ -278,6 +278,10 @@ extension PlayerWindowController {
       cropController.cropBoxView.isHidden = true
       cropController.cropBoxView.alphaValue = 0
     }
+
+    if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementChanging || transition.isTogglingVisibilityOfAnySidebar {
+      hideSeekTimeAndThumbnail()
+    }
   }
 
   /// -------------------------------------------------

@@ -615,8 +615,8 @@ extension PlayerWindowController {
       insideTopBarHeight = 0
       outsideTopBarHeight = transition.outputLayout.topBarHeight
     } else {
-      insideTopBarHeight = transition.inputLayout.topBarHeight  // leave the same
-      outsideTopBarHeight = 0
+      insideTopBarHeight = transition.inputLayout.insideTopBarHeight  // leave the same
+      outsideTopBarHeight = transition.inputLayout.outsideTopBarHeight
     }
 
     // BOTTOM
