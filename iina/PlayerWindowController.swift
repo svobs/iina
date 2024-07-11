@@ -3362,15 +3362,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     muteButton.image = volumeImage
 
-    if isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
-
-      miniPlayer.volumeSlider.isEnabled = hasAudio
-      miniPlayer.volumeSlider.doubleValue = volume
-      miniPlayer.volumeLabel.intValue = Int32(volume)
-      miniPlayer.volumeButton.image = volumeImage
-      miniPlayer.muteButton.image = volumeImage
-    }
+    // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
+    // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
+    // TODO: consolidate music mode buttons with regular player's
+    miniPlayer.loadIfNeeded()
+    miniPlayer.volumeSlider.isEnabled = hasAudio
+    miniPlayer.volumeSlider.doubleValue = volume
+    miniPlayer.volumeLabel.intValue = Int32(volume)
+    miniPlayer.volumeButton.image = volumeImage
+    miniPlayer.muteButton.image = volumeImage
   }
 
   func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {
@@ -3396,10 +3396,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let isPaused = player.info.isPaused
     let state: NSControl.StateValue = isPaused ? .off : .on
-    if isInMiniPlayer {
-      player.windowController.miniPlayer.loadIfNeeded()
-      player.windowController.miniPlayer.playButton.state = state
-    }
+    // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
+    // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
+    player.windowController.miniPlayer.loadIfNeeded()
+    player.windowController.miniPlayer.playButton.state = state
+    Logger.log("IS PLAYING: \(state == .on)")
     playButton.state = state
 
     let playSpeed = player.info.playSpeed

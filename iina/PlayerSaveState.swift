@@ -312,6 +312,10 @@ struct PlayerSaveState {
 
       DispatchQueue.main.async {
         let wc = player.windowController!
+        guard !wc.isAnimatingLayoutTransition else {
+          /// The transition itself will call `save` when it is done. Just return
+          return
+        }
         // Retrieve appropriate geometry values, updating to latest window frame if needed:
         let geo = wc.buildGeoSet(from: wc.currentLayout)
         saveQueue.async {
