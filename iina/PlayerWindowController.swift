@@ -2333,11 +2333,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowDidChangeBackingProperties(_ notification: Notification) {
     log.verbose("WindowDidChangeBackingProperties received")
-    if videoView.refreshContentsScale() {
-      // Do not allow MacOS to change the window size:
-      log.verbose("Will deny next window resize")
-      denyNextWindowResize = true
-    }
+    videoView.refreshContentsScale()
+    // Do not allow MacOS to change the window size when changing screen
+    denyNextWindowResize = true
   }
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
@@ -2347,6 +2345,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       $0 += 1
       ticket = $0
     }
+    // Do not allow MacOS to change the window size
+    denyNextWindowResize = true
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
     DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1) { [self] in
