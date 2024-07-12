@@ -719,6 +719,7 @@ class MPVController: NSObject {
   /// - Reference: [Concurrency and OpenGL](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_threading/opengl_threading.html)
   /// - Reference: [OpenGL Context](https://www.khronos.org/opengl/wiki/OpenGL_Context)
   /// - Attention: Do not forget to unlock the OpenGL context by calling `unlockOpenGLContext`
+  @discardableResult
   func lockAndSetOpenGLContext() -> Bool {
     guard let openGLContext else { return false }
     CGLLockContext(openGLContext)
@@ -1437,7 +1438,18 @@ class MPVController: NSObject {
       player.reloadQuickSettingsView()
 
     case MPVOption.PlaybackControl.loopPlaylist, MPVOption.PlaybackControl.loopFile:
-      player.syncUI(.loop)
+      DispatchQueue.main.async { [self] in
+        let loopMode = player.getLoopMode()
+        switch loopMode {
+        case .file:
+          player.sendOSD(.fileLoop)
+        case .playlist:
+          player.sendOSD(.playlistLoop)
+        default:
+          player.sendOSD(.noLoop)
+        }
+        player.syncUI(.loop)
+      }
 
     case MPVOption.Video.deinterlace:
       guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }

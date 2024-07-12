@@ -1245,28 +1245,6 @@ extension NSScreen {
     }
     return 1.0  // default fallback
   }
-
-
-  /// Log the given `NSScreen` object.
-  ///
-  /// Due to issues with multiple monitors and how the screen to use for a window is selected detailed logging has been added in this
-  /// area in case additional problems are encountered in the future.
-  /// - parameter label: Label to include in the log message.
-  /// - parameter screen: The `NSScreen` object to log.
-  func log(_ prefix: String = "") {
-    // Unfortunately localizedName is not available until macOS Catalina.
-    if #available(macOS 10.15, *) {
-      let maxPossibleEDR = maximumPotentialExtendedDynamicRangeColorComponentValue
-      let canEnableEDR = maxPossibleEDR > 1.0
-      let nativeResStr = nativeResolution?.description ?? "<err>"
-      // Screen frame coordinates have their origin at the lower left of the primary display.
-      // So any display to the left of primary will be in negative X, and any below primary will have negative Y.
-      // `visibleFrame` is what we most care about.
-      Logger.log("\(prefix)\"\(localizedName)\" id:\(displayId) vis:\(visibleFrame) native:\(nativeResStr) scale:\(screenScaleFactor)x backing:\(backingScaleFactor)x EDR:\(canEnableEDR.yn) ≤\(maxPossibleEDR)", level: .verbose)
-    } else {
-      Logger.log("\(prefix) screen\(displayId) vis:\(visibleFrame)", level: .verbose)
-    }
-  }
 }
 
 extension NSWindow {
