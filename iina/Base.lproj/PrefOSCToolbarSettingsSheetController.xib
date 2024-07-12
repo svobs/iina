@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -23,7 +23,7 @@
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="Content View">
                 <rect key="frame" x="0.0" y="0.0" width="300" height="300"/>
                 <subviews>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pX0-I5-dea">
+                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pX0-I5-dea">
                         <rect key="frame" x="18" y="264" width="91" height="16"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Current Items:" id="rNU-8V-iQt">
                             <font key="font" metaFont="system"/>
@@ -31,7 +31,7 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <textField horizontalHuggingPriority="249" verticalHuggingPriority="749" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xw0-SN-fkf">
+                    <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="749" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xw0-SN-fkf">
                         <rect key="frame" x="18" y="246" width="211" height="14"/>
                         <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Drag an item out of the box to delete it." id="jlb-xc-k6x">
                             <font key="font" metaFont="smallSystem"/>
@@ -39,21 +39,17 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <box horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" verticalCompressionResistancePriority="800" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="l1W-AA-5L4" userLabel="Current-Items Box">
-                        <rect key="frame" x="146" y="220" width="8" height="18"/>
+                    <box horizontalCompressionResistancePriority="800" verticalCompressionResistancePriority="800" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="l1W-AA-5L4" userLabel="Current-Items Box">
+                        <rect key="frame" x="117" y="220" width="66" height="18"/>
                         <view key="contentView" id="Xci-wI-yo3" userLabel="Current-Items-Box Content View">
-                            <rect key="frame" x="4" y="5" width="0.0" height="10"/>
+                            <rect key="frame" x="4" y="5" width="58" height="10"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" userLabel="PrefOSCToolbarCurrentItems Stack View" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="0.0" height="10"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" secondItem="63i-B1-8o0" secondAttribute="height" multiplier="5" priority="1" id="lfY-RO-AJG"/>
-                                    </constraints>
+                                <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" userLabel="PrefOSCToolbarCurrentItems Stack View" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="0.0" y="0.0" width="58" height="10"/>
                                 </stackView>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="63i-B1-8o0" firstAttribute="height" relation="lessThanOrEqual" secondItem="Xci-wI-yo3" secondAttribute="height" id="RzK-5O-QSl"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" priority="900" id="jDI-OC-9Ay"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerY" secondItem="Xci-wI-yo3" secondAttribute="centerY" id="w45-pP-TuN"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerX" secondItem="Xci-wI-yo3" secondAttribute="centerX" id="xjD-Ua-vTC"/>
@@ -63,9 +59,10 @@
                             <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="l1W-AA-5L4" secondAttribute="height" constant="-2" id="Fzu-qd-y9O"/>
                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="12" id="N21-2K-asb"/>
                             <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="l1W-AA-5L4" secondAttribute="width" constant="-2" id="XJj-zB-JbE"/>
+                            <constraint firstAttribute="width" secondItem="l1W-AA-5L4" secondAttribute="height" multiplier="5" id="b8W-Sg-Xfc"/>
                         </constraints>
                     </box>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Neb-Rz-hK4">
+                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Neb-Rz-hK4">
                         <rect key="frame" x="18" y="188" width="99" height="16"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Available Items:" id="DeE-Yj-Q4D">
                             <font key="font" metaFont="system"/>
@@ -73,7 +70,7 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BJG-7U-eKu">
+                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BJG-7U-eKu">
                         <rect key="frame" x="18" y="156" width="239" height="28"/>
                         <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Drag an item and drop it to the box above to add it." id="VCG-VX-E3M">
                             <font key="font" metaFont="smallSystem"/>
