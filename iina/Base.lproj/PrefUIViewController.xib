@@ -1827,7 +1827,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </customView>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4uv-uu-iqN">
                                     <rect key="frame" x="18" y="-1" width="159" height="18"/>
-                                    <buttonCell key="cell" type="check" title="Enable in music mode" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Wep-uD-jGW">
+                                    <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot; also" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Wep-uD-jGW">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
@@ -2779,7 +2779,7 @@ For smoothest results, also enable custom full screen.</string>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="4GJ-sd-vQm" userLabel="Enable in music mode Checkbox">
                             <rect key="frame" x="18" y="187" width="171" height="20"/>
-                            <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot;" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1bZ-wY-ysJ">
+                            <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot; also" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1bZ-wY-ysJ">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
