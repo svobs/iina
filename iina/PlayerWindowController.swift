@@ -10,8 +10,6 @@ import Cocoa
 
 // MARK: - Constants
 
-// MARK: - Constants
-
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   enum TrackingArea: Int {
     static let key: String = "area"
