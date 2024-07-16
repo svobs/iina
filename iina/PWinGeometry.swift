@@ -13,10 +13,10 @@ enum ScreenFitOption: Int {
 
   case noConstraints = 0
 
-  /// Constrains inside `screen.visibleFrame`
+  /// Constrains inside `screen.visibleFrame`. Windowed modes only.
   case stayInside
 
-  /// Constrains and centers inside `screen.visibleFrame`
+  /// Constrains and centers inside `screen.visibleFrame`. Windowed modes only.
   case centerInside
 
   /// Constrains inside `screen.frame`

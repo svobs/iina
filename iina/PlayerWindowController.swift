@@ -2054,7 +2054,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Use currentLayout if not explicitly specified
-    let isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
+    var isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
+    if let window, window.isAnotherWindowInFullScreen {
+      isEnteringLegacyFS = true  // override if still in FS in another window
+    }
 
     guard !NSApp.presentationOptions.contains(.fullScreen) else {
       log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
@@ -2333,6 +2336,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Window Delegate: window move, screen changes
 
+  /// This does not appear to be called anymore in MacOS 14.5...
+  /// Make sure to duplicate its functionality in `windowDidChangeScreenParameters`
   func windowDidChangeBackingProperties(_ notification: Notification) {
     log.verbose("WindowDidChangeBackingProperties received")
     videoView.refreshContentsScale()
@@ -2428,9 +2433,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.verbose("WindowDidChangeScreenParameters (tkt \(ticket)): screenIDs was \(cachedScreenIDs), is now \(screenIDs)")
 
       // Update the cached value
-      self.cachedScreens = screens
+      cachedScreens = screens
 
-      self.videoView.updateDisplayLink()
+      videoView.updateDisplayLink()
+      videoView.refreshContentsScale()
 
       guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
@@ -2497,7 +2503,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if currentLayout.isLegacyFullScreen {
         log.verbose("WindowDidBecomeKey: resuming legacy FS window")
         window?.level = .iinaFloating
-        updatePresentationOptionsForLegacyFullScreen(entering: true)
       }
 
       // If focus changed from a different window, need to recalculate the current bindings
@@ -2519,7 +2524,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let otherAppWindow = NSApp.keyWindow
       let wholeAppIsInactive = otherAppWindow == nil
       let otherPlayerWindow = otherAppWindow?.windowController as? PlayerWindowController
-      let anotherAppWindowIsActive = !wholeAppIsInactive
       let anotherPlayerWindowIsActive = otherPlayerWindow != nil
       if wholeAppIsInactive || anotherPlayerWindowIsActive {
         if Preference.bool(for: .pauseWhenInactive), player.info.isPlaying {
@@ -2532,18 +2536,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         /// Always restore window level from `floating` to `normal`, so that other windows aren't blocked and lead to confusion
         log.verbose("WindowDidResignKey: restoring legacy FS window level to normal")
         window?.level = .normal
-
-        // Restore presentation options only for other windows in the same app which are not in FS!
-        // For the case of other apps, MacOS will figure out what to do
-        var shouldRestoreMenuBarAndDock = anotherAppWindowIsActive
-        if let otherPlayerWindow, !otherPlayerWindow.currentLayout.isFullScreen {
-          shouldRestoreMenuBarAndDock = true
-        }
-        if shouldRestoreMenuBarAndDock {
-          log.verbose("WindowDidResignKey: relaxing legacy FS window because another non-FS app window is now active")
-          /// Restore menu bar visibility
-          updatePresentationOptionsForLegacyFullScreen(entering: false)
-        }
       }
     }
   }

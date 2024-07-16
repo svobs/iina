@@ -1285,6 +1285,15 @@ extension NSWindow {
     return selectDefaultScreen().screenScaleFactor
   }
 
+  var isAnotherWindowInFullScreen: Bool {
+    for window in NSApp.windows {
+      if window != self, let winCon = window.windowController as? PlayerWindowController, winCon.isFullScreen {
+        return true
+      }
+    }
+    return false
+  }
+
   /// Excludes the Inspector window
   var isOnlyOpenWindow: Bool {
     if savedStateName == WindowAutosaveName.openFile.string && AppDelegate.shared.isShowingOpenFileWindow {
