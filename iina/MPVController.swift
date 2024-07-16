@@ -738,6 +738,9 @@ class MPVController: NSObject {
     mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
     mpv_render_context_free(mpvRenderContext)
     player.log.verbose("Uninit mpv rendering: done")
+    self.mpvRenderContext = nil
+    mpv_destroy(mpv)
+    mpv = nil
   }
 
   func mpvReportSwap() {
@@ -773,7 +776,7 @@ class MPVController: NSObject {
     mpv_unobserve_property(mpv, 0)
     // Start mpv quitting. Even though this command is being sent using the synchronous
     // command API the quit command is special and will be executed by mpv asynchronously.
-    command(.quit)
+    command(.quit, level: .verbose)
   }
 
   // MARK: - Command & property
@@ -1184,18 +1187,6 @@ class MPVController: NSObject {
     }
   }
 
-  /// Tell Cocoa to terminate the application.
-  ///
-  /// - Note: This code must be in a method that can be a target of a selector in order to support macOS 10.11.
-  ///     The `perform` method in `RunLoop` that accepts a closure was introduced in macOS 10.12. If IINA drops
-  ///     support for 10.11 then the code in this method can be moved to the closure in `handleEvent and this
-  ///     method can then be removed.`
-  @objc
-  internal func terminateApplication() {
-    player.log.verbose("Calling NSApp.terminate()")
-    NSApp.terminate(nil)
-  }
-
   // Handle the event
   private func handleEvent(_ event: UnsafePointer<mpv_event>!) {
     let eventId: mpv_event_id = event.pointee.event_id
@@ -1221,33 +1212,14 @@ class MPVController: NSObject {
       let quitByMPV = !player.isShuttingDown
       player.log.verbose("Got mpv shutdown event, quitByMPV: \(quitByMPV.yesno)")
       if quitByMPV {
-        // This happens when the user presses "q" in a player window and the quit command is sent
-        // directly to mpv. The user could also use mpv's IPC interface to send the quit command to
+        // This happens when the user uses mpv's IPC interface to send the quit command directly to
         // mpv. Must not attempt to change a mpv setting in response to an IINA preference change
         // now that mpv has shut down. This is not needed when IINA sends the quit command to mpv
         // as in that case the observers are removed before the quit command is sent.
         removeOptionObservers()
-        DispatchQueue.main.sync { [self] in
-          player.mpvHasShutdown(isMPVInitiated: true)
-        }
-        // Initiate application termination. AppKit requires this be done from the main thread,
-        // however the main dispatch queue must not be used to avoid blocking the queue as per
-        // instructions from Apple.
-        if #available(macOS 10.12, *) {
-          RunLoop.main.perform(inModes: [.common]) {
-            self.terminateApplication()
-          }
-        } else {
-          RunLoop.main.perform(#selector(self.terminateApplication), target: self,
-                               argument: nil, order: Int.min, modes: [.common])
-        }
-      } else {
-        player.log.verbose("Calling mpv_destroy")
-        mpv_destroy(mpv)
-        mpv = nil
-        DispatchQueue.main.async { [self] in
-          player.mpvHasShutdown()
-        }
+      }
+      DispatchQueue.main.sync {
+        self.player.mpvHasShutdown(isMPVInitiated: quitByMPV)
       }
 
     case MPV_EVENT_LOG_MESSAGE:

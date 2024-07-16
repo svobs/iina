@@ -530,7 +530,6 @@ class PlayerCore: NSObject {
     guard status.rawValue < PlayerStatus.shuttingDown.rawValue else { return }
     status = .shuttingDown
     log.debug("Uninit video")
-    videoView.stopDisplayLink()
     videoView.uninit()
   }
 
@@ -551,8 +550,6 @@ class PlayerCore: NSObject {
     savePlaybackPosition() // Save state to mpv watch-later (if enabled)
     stop()
     refreshSyncUITimer()   // Shut down timer
-    uninitVideo()          // Shut down DisplayLink
-
     mpv.mpvQuit()
   }
 
@@ -564,12 +561,20 @@ class PlayerCore: NSObject {
     if isMPVInitiated {
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
       refreshSyncUITimer()   // Shut down timer
-      uninitVideo()          // Shut down DisplayLink
     }
+    uninitVideo()          // Shut down DisplayLink
     log.debug("Removing player \(label)")
     PlayerCore.manager.removePlayer(withLabel: label)
 
     postNotification(.iinaPlayerShutdown)
+    if isMPVInitiated {
+      // Initiate application termination. AppKit requires this be done from the main thread,
+      // however the main dispatch queue must not be used to avoid blocking the queue as per
+      // instructions from Apple.
+      RunLoop.main.perform(inModes: [.common]) {
+        NSApp.terminate(nil)
+      }
+    }
   }
 
   func enterMusicMode(automatically: Bool = false) {
@@ -686,7 +691,7 @@ class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         refreshSyncUITimer()
       }
-      mpv.command(.stop)
+      mpv.command(.stop, level: .verbose)
 
       if status.rawValue < PlayerStatus.stopped.rawValue {
         status = .stopped
