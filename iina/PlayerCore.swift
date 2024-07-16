@@ -2468,7 +2468,7 @@ class PlayerCore: NSObject {
 
   func aidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
+    guard !info.isRestoring, !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
     info.aid = aid
@@ -2592,7 +2592,7 @@ class PlayerCore: NSObject {
 
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
+    guard !info.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
     guard sid != info.sid else { return }
     info.sid = sid
@@ -2607,17 +2607,9 @@ class PlayerCore: NSObject {
     sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSubTrack))
   }
 
-  func secondSubVisibilityChanged(_ visible: Bool) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard info.isSecondSubVisible != visible else { return }
-    info.isSecondSubVisible = visible
-    sendOSD(visible ? .secondSubVisible : .secondSubHidden)
-    postNotification(.iinaSecondSubVisibilityChanged)
-  }
-
   func secondarySidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
+    guard !info.isRestoring, !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
@@ -2625,6 +2617,14 @@ class PlayerCore: NSObject {
     log.verbose("SSID changed to \(ssid)")
     postNotification(.iinaSIDChanged)
     reloadQuickSettingsView()
+  }
+
+  func secondSubVisibilityChanged(_ visible: Bool) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard info.isSecondSubVisible != visible else { return }
+    info.isSecondSubVisible = visible
+    sendOSD(visible ? .secondSubVisible : .secondSubHidden)
+    postNotification(.iinaSecondSubVisibilityChanged)
   }
 
   func subDelayChanged(_ delay: Double) {
@@ -2680,7 +2680,7 @@ class PlayerCore: NSObject {
 
   func vidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !isStopping else { return }
+    guard !info.isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid != info.vid else { return }
     info.vid = vid

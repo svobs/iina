@@ -1971,9 +1971,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
     if player.info.isRestoring {
-      animationPipeline.submitSudden({
-        window.postWindowIsReadyToShow()
-      })
+      DispatchQueue.main.async { [self] in  // needs slight delay to avoid race condition with unknown cause in FS
+        animationPipeline.submitSudden({
+          window.postWindowIsReadyToShow()
+        })
+      }
     } else {
       // Make sure to save newly opened window immediately to avoid losing state due to race
       PlayerSaveState.saveSynchronously(player)
