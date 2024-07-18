@@ -545,7 +545,8 @@ class MPVController: NSObject {
     // As mpv support for audio using the AVFoundation framework is new we enable it before applying
     // user's settings. This allows a user to roll back to the Core Audio framework should a problem
     // be encountered with the new code.
-    chkErr(setOptionString(MPVOption.Audio.ao, "avfoundation", level: .verbose))
+    // TODO: "avfoundation" has unacceptable 2s lag when muting. Add "ao" switch to Settings UI instead
+// [fall back to coreaudio for now!]   chkErr(setOptionString(MPVOption.Audio.ao, "avfoundation", level: .verbose))
 
     // Set user defined conf dir.
     if Preference.bool(for: .enableAdvancedSettings),
