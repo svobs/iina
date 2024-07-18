@@ -415,7 +415,7 @@
                                                             </customView>
                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="fms-nd-RFo">
                                                                 <rect key="frame" x="18" y="-1" width="406" height="18"/>
-                                                                <buttonCell key="cell" type="check" title="Not while in Music Mode or only playing audio" bezelStyle="regularSquare" imagePosition="left" inset="2" id="yla-DT-YTx">
+                                                                <buttonCell key="cell" type="check" title="Not while in &quot;music mode&quot; or only playing audio" bezelStyle="regularSquare" imagePosition="left" inset="2" id="yla-DT-YTx">
                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                     <font key="font" metaFont="system"/>
                                                                 </buttonCell>
