@@ -84,6 +84,7 @@ enum WindowAutosaveName: Equatable, Hashable {
   case newFilter   // sheet window, parent: videoFilter/audioFilter
   case editFilter  // sheet window, parent: videoFilter/audioFilter
   case saveFilter  // sheet window, parent: videoFilter/audioFilter
+  case logViewer
 
   var string: String {
     switch self {
@@ -115,6 +116,8 @@ enum WindowAutosaveName: Equatable, Hashable {
       return "EditFilter"
     case .saveFilter:
       return "SaveFilter"
+    case .logViewer:
+      return "LogViewer"
     }
   }
 
@@ -140,6 +143,8 @@ enum WindowAutosaveName: Equatable, Hashable {
       self = .audioFilter
     case WindowAutosaveName.fontPicker.string:
       self = .fontPicker
+    case WindowAutosaveName.logViewer.string:
+      self = .logViewer
     default:
       if let id = WindowAutosaveName.parseID(from: string, mustStartWith: WindowAutosaveName.playerWindowPrefix) {
         self = .playerWindow(id: id)

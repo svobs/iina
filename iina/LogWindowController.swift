@@ -26,6 +26,15 @@ class LogWindowController: IINAWindowController, NSMenuDelegate {
   @objc dynamic var logs: [Logger.Log] = []
   @objc dynamic var predicate = NSPredicate(value: true)
 
+  init() {
+    super.init(window: nil)
+    self.windowFrameAutosaveName = WindowAutosaveName.logViewer.string
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
   override func windowDidLoad() {
     super.windowDidLoad()
 

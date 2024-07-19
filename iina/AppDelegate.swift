@@ -765,6 +765,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       case .audioFilter:
         showAudioFilterWindow(self)
         wc = afWindow
+      case .logViewer:
+        showLogWindow(self)
+        wc = logWindow
       case .playerWindow(let id):
         guard let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
