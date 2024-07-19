@@ -115,7 +115,9 @@ extension PlayerWindowController {
         // auto hide menubar and dock (this will freeze all other animations, so must do it last)
         updatePresentationOptionsForLegacyFullScreen(entering: true)
 
-        window.level = .iinaFloating
+        /// When restoring, it's possible this window is not actually topmost.
+        /// Make sure to check before putting it on top.
+        refreshKeyWindowStatus()
       }
       if !player.isStopping {
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)

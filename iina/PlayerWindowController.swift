@@ -1997,6 +1997,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   override func showWindow(_ sender: Any?) {
     // Call this to patch possible holes when restoring (e.g., interactive mode window)
     updateCustomBorderBoxAndWindowOpacity()
+    refreshKeyWindowStatus()
     super.showWindow(sender)
     animationPipeline.submitSudden({
       self.forceDraw()  // needed if restoring while paused
@@ -2508,22 +2509,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitSudden { [self] in
+      guard let window else { return }
       guard !isClosing else { return }
-      log.verbose("WindowDidBecomeKey")
-      if currentLayout.isLegacyFullScreen {
-        log.verbose("WindowDidBecomeKey: resuming legacy FS window")
-        window?.level = .iinaFloating
-      }
-
-      // If focus changed from a different window, need to recalculate the current bindings
-      // so that this window's input sections are included and the other window's are not:
-      AppInputConfig.rebuildCurrent()
+      log.verbose("Window became key: \(window.savedStateName.quoted)")
 
       if Preference.bool(for: .pauseWhenInactive) && isPausedDueToInactive {
-        log.verbose("WindowDidBecomeKey: resuming cuz isPausedDueToInactive")
+        log.verbose("Window is key & isPausedDueToInactive=Y. Resuming playback")
         player.resume()
         isPausedDueToInactive = false
       }
+
+      refreshKeyWindowStatus()
     }
   }
 
@@ -2542,55 +2538,68 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           isPausedDueToInactive = true
         }
       }
-      if currentLayout.isLegacyFullScreen {
-        /// Always restore window level from `floating` to `normal`, so that other windows aren't blocked and lead to confusion
-        log.verbose("WindowDidResignKey: restoring legacy FS window level to normal")
-        window?.level = .normal
-      }
+      
+      refreshKeyWindowStatus()
     }
   }
 
-  func windowDidBecomeMain(_ notification: Notification) {
-    guard let window else { return }
+  func refreshKeyWindowStatus() {
     animationPipeline.submitSudden { [self] in
-      log.verbose("Window became main: \(window.savedStateName.quoted)")
-
-      PlayerCore.lastActive = player
-      if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
-        NowPlayingInfoManager.updateInfo(withTitle: true)
-      }
-      AppDelegate.shared.menuController?.updatePluginMenu()
-
-      if isFullScreen && Preference.bool(for: .blackOutMonitor) {
-        blackOutOtherMonitors()
-      }
+      guard let window else { return }
+      guard !isClosing else { return }
 
       if let customTitleBar {
-        // The traffic light buttons should change to active
+        // The traffic light buttons should change to active/inactive
         customTitleBar.leadingTitleBarView.markButtonsDirty()
         customTitleBar.refreshTitle()
       }
 
+      if window.isKeyWindow {
+        PlayerCore.lastActive = player
+
+        if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+          NowPlayingInfoManager.updateInfo(withTitle: true)
+        }
+        AppDelegate.shared.menuController?.updatePluginMenu()
+
+        if isFullScreen && Preference.bool(for: .blackOutMonitor) {
+          blackOutOtherMonitors()
+        }
+
+        if currentLayout.isLegacyFullScreen && window.level != .iinaFloating {
+          log.verbose("Window is key: resuming legacy FS window")
+          window.level = .iinaFloating
+        }
+
+        // If focus changed from a different window, need to recalculate the current bindings
+        // so that this window's input sections are included and the other window's are not:
+        AppInputConfig.rebuildCurrent()
+      } else {
+        /// Always restore window level from `floating` to `normal`, so other windows aren't blocked & cause confusion
+        if currentLayout.isLegacyFullScreen && window.level != .normal {
+          log.verbose("Window is not key: restoring legacy FS window level to normal")
+          window.level = .normal
+        }
+
+        if Preference.bool(for: .blackOutMonitor) {
+          removeBlackWindows()
+        }
+      }
+    }
+  }
+
+  // Don't really care if window is main in IINA Advance; we care only if window is key,
+  // because the key window is the active window in AppKit.
+  // Fire events anyway to keep compatibility with upstream IINA.
+  func windowDidBecomeMain(_ notification: Notification) {
+    animationPipeline.submitSudden { [self] in
       player.events.emit(.windowMainStatusChanged, data: true)
       NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: true)
     }
   }
 
   func windowDidResignMain(_ notification: Notification) {
-    guard let window else { return }
     animationPipeline.submitSudden { [self] in
-      log.verbose("Window is no longer main: \(window.savedStateName.quoted)")
-
-      if Preference.bool(for: .blackOutMonitor) {
-        removeBlackWindows()
-      }
-
-      if let customTitleBar {
-        // The traffic light buttons should change to inactive
-        customTitleBar.leadingTitleBarView.markButtonsDirty()
-        customTitleBar.refreshTitle()
-      }
-
       player.events.emit(.windowMainStatusChanged, data: false)
       NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: false)
     }

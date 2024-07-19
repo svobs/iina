@@ -192,9 +192,9 @@ class CustomTitleBarViewController: NSViewController {
       windowController.player.log.debug("Cannot update window title for custom title bar: no current media")
       return
     }
-    let drawAsMainWindow = titleText.window?.isMainWindow ?? false
-    titleText.alphaValue = drawAsMainWindow ? activeTitleTextOpacity : inactiveTitleTextOpacity
-    let controlAlpha = drawAsMainWindow ? 1 : inactiveTitleControlOpacity
+    let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
+    titleText.alphaValue = drawAsKeyWindow ? activeTitleTextOpacity : inactiveTitleTextOpacity
+    let controlAlpha = drawAsKeyWindow ? 1 : inactiveTitleControlOpacity
     for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton] {
       // Skip buttons which are not visible
       guard let view, view.alphaValue > 0.0 else { continue }

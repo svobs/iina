@@ -524,10 +524,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  // Saves an ordered list of current open windows (if configured) each time *any* window becomes the key window.
+  // Saves an ordered list of current open windows (if configured) each time *any* window becomes the main window.
   private func windowDidBecomeMain(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
-    // Assume new key window is the active window. AppKit does not provide an API to notify when a window is opened,
+    // Assume new main window is the active window. AppKit does not provide an API to notify when a window is opened,
     // so this notification will serve as a proxy, since a window which becomes active is by definition an open window.
     let activeWindowName = window.savedStateName
     guard !activeWindowName.isEmpty else { return }
@@ -685,7 +685,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Starting restore of \(savedWindowsBackToFront.count) windows", level: .verbose)
     Preference.set(true, for: .isRestoreInProgress)
 
-    // Try to wait until all windows are ready so that we can show all of them at once.
+    /// Try to wait until all windows are ready so that we can show all of them at once.
+    /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
     var wcsToRestore: [NSWindowController] = []
     var wcsReady = Set<NSWindowController>()
     var isFinishedAddingWindows = false
@@ -696,7 +697,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch.secElapsedString); showing all", level: .verbose)
       for wc in wcsToRestore {
-        wc.showWindow(self)
+        wc.showWindow(self)  // orders the window to the front
       }
 
       Logger.log("Done restoring windows", level: .verbose)
