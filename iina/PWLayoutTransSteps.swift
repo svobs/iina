@@ -599,6 +599,7 @@ extension PlayerWindowController {
         player.setVideoTrackEnabled(false)
       }
     }
+    
     // Need to call this for initial layout also:
     updateMusicModeButtonsVisibility()
 

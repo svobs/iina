@@ -565,7 +565,7 @@ extension Preference {
 
       let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
       if Logger.isVerboseEnabled {
-        Logger.log("Saved launch data (current=\(launchID)): \(culledLaunches)", level: .verbose)
+        Logger.log("Found saved launches (current=\(launchID)): \(culledLaunches)", level: .verbose)
       }
       return culledLaunches
     }

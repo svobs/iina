@@ -3416,7 +3416,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
     player.windowController.miniPlayer.loadIfNeeded()
     player.windowController.miniPlayer.playButton.state = state
-    Logger.log("IS PLAYING: \(state == .on)")
     playButton.state = state
 
     let playSpeed = player.info.playSpeed
@@ -3509,11 +3508,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateMusicModeButtonsVisibility() {
-    // Show only in music mode when video is visible
-    closeButtonBackgroundViewVE.isHidden = !miniPlayer.isVideoVisible
+    if isInMiniPlayer {
+      // Show only in music mode when video is visible
+      let showCloseButtonOverVideo = miniPlayer.isVideoVisible
+      closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
-    // Show only in music mode when video is hidden
-    closeButtonBackgroundViewBox.isHidden = miniPlayer.isVideoVisible
+      // Show only in music mode when video is hidden
+      closeButtonBackgroundViewBox.isHidden = showCloseButtonOverVideo
+    } else {
+      closeButtonBackgroundViewVE.isHidden = true
+      closeButtonBackgroundViewBox.isHidden = true
+    }
 
     guard isInMiniPlayer else { return }
 
