@@ -593,12 +593,10 @@ extension PlayerWindowController {
     /// For the case where video is hidden but playlist is shown, AppKit won't allow the window's height to be changed by the user
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
-    let shouldEnableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
-    if shouldEnableConstraint {
-      animationPipeline.submitSudden({ [self] in
-        viewportBottomOffsetFromContentViewBottomConstraint.isActive = shouldEnableConstraint
-      })
-    }
+    let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
+    animationPipeline.submitSudden({ [self] in
+      viewportBottomOffsetFromContentViewBottomConstraint.isActive = !shouldDisableConstraint
+    })
 
     return geometry
   }
