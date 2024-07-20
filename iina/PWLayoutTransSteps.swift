@@ -452,10 +452,13 @@ extension PlayerWindowController {
       timePositionHoverLabelVerticalSpaceConstraint.isActive = false
     }
 
-    if transition.isExitingMusicMode {
-      // Exiting music mode. Make sure to execute this before adding OSC below
+    if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
-      miniPlayer.cleanUpForMusicModeExit()
+      showOrHidePipOverlayView()
+
+      if transition.isExitingMusicMode {
+        miniPlayer.cleanUpForMusicModeExit()
+      }
     }
 
     // [Re-]add OSC:
@@ -595,7 +598,7 @@ extension PlayerWindowController {
       updateTitle()
       applyThemeMaterial()
 
-      if !miniPlayer.isVideoVisible, player.info.isVideoTrackSelected, pipStatus == .notInPIP {
+      if !miniPlayer.isVideoVisible, pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       }
     }

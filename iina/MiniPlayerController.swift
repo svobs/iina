@@ -305,12 +305,16 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
   }
 
-  func videoTrackWasSelected() {
-    applyVideoVisibility(to: true)
+  func applyVideoTrackFromVideoVisibility() {
+    if !isVideoVisible && windowController.pipStatus == .notInPIP {
+      player.setVideoTrackEnabled(false)
+    } else {
+      player.setVideoTrackEnabled(true)
+    }
   }
 
   // TODO: develop a nice sliding animation if possible
-  private func applyVideoVisibility(to showVideo: Bool) {
+  func applyVideoVisibility(to showVideo: Bool) {
     guard let window else { return }
     log.verbose("Applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
     var tasks: [IINAAnimation.Task] = []

@@ -1030,8 +1030,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if !window.isOnActiveSpace && pipStatus == .notInPIP {
         animationPipeline.submitSudden({ [self] in
           log.debug("Window is no longer in active space; entering PIP")
-          enterPIP()
-          isWindowPipDueToInactiveSpace = true
+          enterPIP(then: { [self] in
+            isWindowPipDueToInactiveSpace = true
+          })
         })
       } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pipStatus == .inPIP {
         animationPipeline.submitSudden({ [self] in
@@ -3742,7 +3743,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 @available(macOS 10.12, *)
 extension PlayerWindowController: PIPViewControllerDelegate {
 
-  func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil) {
+  func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Must not try to enter PiP if already in PiP - will crash!
@@ -3751,19 +3752,39 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     exitInteractiveMode(then: { [self] in
       log.verbose("About to enter PIP")
+
+      guard player.info.isVideoTrackSelected else {
+        log.debug("Aborting request for PIP entry: no video track selected!")
+        pipStatus = .notInPIP
+        return
+      }
+      // Special case if in music mode
+      miniPlayer.loadIfNeeded()
+      if isInMiniPlayer && !miniPlayer.isVideoVisible {
+        // need to re-enable video
+        player.setVideoTrackEnabled(true)
+      }
+
       doPIPEntry(usePipBehavior: usePipBehavior)
+      if let doOnSuccess {
+        doOnSuccess()
+      }
     })
   }
 
   func showOrHidePipOverlayView() {
+    let mustHide: Bool
     if pipStatus == .inPIP {
-      pipOverlayView.isHidden = isInMiniPlayer && !musicModeGeo.isVideoVisible
+      mustHide = isInMiniPlayer && !musicModeGeo.isVideoVisible
     } else {
-      pipOverlayView.isHidden = true
+      mustHide = true
     }
+    log.verbose("\(mustHide ? "Hiding" : "Showing") PiP overlay")
+    pipOverlayView.isHidden = mustHide
   }
 
-  private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil) {
+  private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil,
+                          then doAfter: (() -> Void)? = nil) {
     guard let window else { return }
     pipStatus = .inPIP
     showFadeableViews()
@@ -3889,6 +3910,11 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
       let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
       addVideoViewToWindow(geo)
+
+      if isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        miniPlayer.applyVideoTrackFromVideoVisibility()
+      }
 
       // If using legacy windowed mode, need to manually add title to Window menu & Dock
       updateTitle()

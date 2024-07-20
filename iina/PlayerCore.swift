@@ -2712,13 +2712,14 @@ class PlayerCore: NSObject {
 
         if isShowVideoPendingInMiniPlayer {
           isShowVideoPendingInMiniPlayer = false
-          windowController.miniPlayer.videoTrackWasSelected()
+          windowController.miniPlayer.applyVideoVisibility(to: true)
         }
       }
     }
   }
 
-  ///  `showMiniPlayerVideo` is only used if `enable` is true
+  ///  `showMiniPlayerVideo` is only used if `enable` is true.
+  ///  Does nothing if already in the target state
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
     assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Setting video track enabled=\(enable.yesno), showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
@@ -2736,7 +2737,7 @@ class PlayerCore: NSObject {
       } else {
         if showMiniPlayerVideo {
           // Don't wait; execute now
-          windowController.miniPlayer.videoTrackWasSelected()
+          windowController.miniPlayer.applyVideoVisibility(to: true)
         }
       }
     } else {  // disable
