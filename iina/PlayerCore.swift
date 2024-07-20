@@ -200,7 +200,7 @@ class PlayerCore: NSObject {
   /// For supporting mpv `--shuffle` arg, to shuffle playlist when launching from command line
   @Atomic private var shufflePending = false
 
-  var isMiniPlayerWaitingToShowVideo: Bool = false
+  var isShowVideoPendingInMiniPlayer: Bool = false
 
   // test seeking
   var triedUsingExactSeekForCurrentFile: Bool = false
@@ -2700,7 +2700,7 @@ class PlayerCore: NSObject {
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
 
     postNotification(.iinaVIDChanged)
-    if !silent && (!isInMiniPlayer || (!isMiniPlayerWaitingToShowVideo && !windowController.miniPlayer.isVideoVisible)) {
+    if !silent && (!isInMiniPlayer || (!isShowVideoPendingInMiniPlayer && !windowController.miniPlayer.isVideoVisible)) {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
@@ -2710,9 +2710,9 @@ class PlayerCore: NSObject {
       windowController.animationPipeline.submitSudden { [self] in
         windowController.updateDefaultArtVisibility(showDefaultArt)
 
-        if isMiniPlayerWaitingToShowVideo {
-          isMiniPlayerWaitingToShowVideo = false
-          windowController.miniPlayer.videoWasEnabled()
+        if isShowVideoPendingInMiniPlayer {
+          isShowVideoPendingInMiniPlayer = false
+          windowController.miniPlayer.videoTrackWasSelected()
         }
       }
     }
@@ -2727,7 +2727,7 @@ class PlayerCore: NSObject {
       // Go to first video track found (unless one is already selected):
       if !info.isVideoTrackSelected {
         if showMiniPlayerVideo {
-          isMiniPlayerWaitingToShowVideo = true
+          isShowVideoPendingInMiniPlayer = true
         }
         log.verbose("Sending mpv request to cycle video track")
         mpv.queue.sync { [self] in
@@ -2736,10 +2736,10 @@ class PlayerCore: NSObject {
       } else {
         if showMiniPlayerVideo {
           // Don't wait; execute now
-          windowController.miniPlayer.videoWasEnabled()
+          windowController.miniPlayer.videoTrackWasSelected()
         }
       }
-    } else {
+    } else {  // disable
       // Change video track to None
       log.verbose("Sending request to mpv: set video track to 0")
       setTrack(0, forType: .video, silent: true)

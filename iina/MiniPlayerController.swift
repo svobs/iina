@@ -305,7 +305,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     })
   }
 
-  func videoWasEnabled() {
+  func videoTrackWasSelected() {
     applyVideoVisibility(to: true)
   }
 
@@ -318,6 +318,8 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
       // Hide OSD during animation
       windowController.hideOSD(immediately: true)
+      // Hide PiP overlay (if in PiP) during animation
+      windowController.pipOverlayView.isHidden = true
 
       /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
       windowController.closeButtonView.isHidden = true
@@ -344,8 +346,10 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
 
       /// Allow it to show again
       windowController.closeButtonView.isHidden = false
+      
+      windowController.showOrHidePipOverlayView()
 
-      if !showVideo {
+      if !showVideo && windowController.pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       }
     })

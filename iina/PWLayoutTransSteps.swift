@@ -168,7 +168,7 @@ extension PlayerWindowController {
       resetViewsForModeTransition()
 
       if transition.isExitingMusicMode && !miniPlayer.isVideoVisible {
-        // Restore video if needed
+        // Video was disabled in music mode, but need to restore it now
         player.setVideoTrackEnabled(true)
       }
     }
@@ -595,11 +595,11 @@ extension PlayerWindowController {
       updateTitle()
       applyThemeMaterial()
 
-      if !miniPlayer.isVideoVisible, player.info.isVideoTrackSelected {
+      if !miniPlayer.isVideoVisible, player.info.isVideoTrackSelected, pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       }
     }
-    
+
     // Need to call this for initial layout also:
     updateMusicModeButtonsVisibility()
 
@@ -1038,7 +1038,7 @@ extension PlayerWindowController {
     }
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible {
+      if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       } else {
         player.updateMPVWindowScale(using: transition.outputGeometry)

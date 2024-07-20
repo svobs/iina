@@ -3507,6 +3507,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
+  // These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
+  // There are 2 variants because of different styling needs depending on whether videoView is visible
   func updateMusicModeButtonsVisibility() {
     if isInMiniPlayer {
       // Show only in music mode when video is visible
@@ -3515,16 +3517,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       // Show only in music mode when video is hidden
       closeButtonBackgroundViewBox.isHidden = showCloseButtonOverVideo
+
+      miniPlayer.loadIfNeeded()
+      // Push the volume button to the right if the buttons on at the same vertical position
+      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(miniPlayer.isVideoVisible ? 12 : 24)
     } else {
       closeButtonBackgroundViewVE.isHidden = true
       closeButtonBackgroundViewBox.isHidden = true
     }
-
-    guard isInMiniPlayer else { return }
-
-    miniPlayer.loadIfNeeded()
-    // Push the volume button to the right if the buttons on at the same vertical position
-    miniPlayer.volumeButtonLeadingConstraint.animateToConstant(miniPlayer.isVideoVisible ? 12 : 24)
   }
 
   func forceDraw() {
@@ -3755,6 +3755,14 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     })
   }
 
+  func showOrHidePipOverlayView() {
+    if pipStatus == .inPIP {
+      pipOverlayView.isHidden = isInMiniPlayer && !musicModeGeo.isVideoVisible
+    } else {
+      pipOverlayView.isHidden = true
+    }
+  }
+
   private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil) {
     guard let window else { return }
     pipStatus = .inPIP
@@ -3772,7 +3780,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.title = window.title
       
       pip.presentAsPicture(inPicture: pipVideo)
-      pipOverlayView.isHidden = false
+      showOrHidePipOverlayView()
 
       let videoSize = player.windowController.windowedModeGeo.videoSize
       log.verbose("Setting PiP aspect to \(videoSize.mpvAspect)")
@@ -3830,7 +3838,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     // Hide the overlay view preemptively, to prevent any issues where it does
     // not hide in time and ends up covering the video view (which will be added
     // to the window under everything else, including the overlay).
-    pipOverlayView.isHidden = true
+    showOrHidePipOverlayView()
 
     if AppDelegate.shared.isTerminating {
       // Don't bother restoring window state past this point
