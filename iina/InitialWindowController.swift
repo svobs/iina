@@ -185,8 +185,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     Logger.log("WelcomeWindow windowDidLoad starting", level: .verbose)
     super.windowDidLoad()
 
-    window?.titlebarAppearsTransparent = true
-    window?.titleVisibility = .hidden
     window?.isMovableByWindowBackground = true
 
     window?.contentView?.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
