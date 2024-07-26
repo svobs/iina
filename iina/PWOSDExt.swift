@@ -373,10 +373,6 @@ extension PlayerWindowController {
       osdContext = accessoryViewController
       isShowingPersistentOSD = true
 
-      if #available(macOS 10.14, *) {} else {
-        accessoryView.appearance = NSAppearance(named: .vibrantDark)
-      }
-
       osdVStackView.addView(accessoryView, in: .bottom)
     }
 

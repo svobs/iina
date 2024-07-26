@@ -91,9 +91,7 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
 
     bindingSearchField.stringValue = bindingTableState.filterString
 
-    if #available(macOS 10.13, *) {
-      useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
-    }
+    useMediaKeysButton.title = NSLocalizedString("preference.system_media_control", comment: "Use system media control")
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaPendingUIChangeForConfTable, object: nil, queue: .main) { _ in
       self.updateTableButtonVisibilities()
@@ -201,36 +199,34 @@ class PrefKeyBindingViewController: NSViewController, PreferenceWindowEmbeddable
   }
 
   private func setCustomTableColors() {
-    if #available(macOS 10.14, *) {
-      let builtInItemTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
-      confTableController?.setCustomColors(builtInItemTextColor: builtInItemTextColor)
-      confTableView.reloadExistingRows(reselectRowsAfter: true)
+    let builtInItemTextColor: NSColor = .controlAccentColor.blended(withFraction: blendFraction, of: .textColor)!
+    confTableController?.setCustomColors(builtInItemTextColor: builtInItemTextColor)
+    confTableView.reloadExistingRows(reselectRowsAfter: true)
 
-      bindingTableController?.setCustomColors(builtInItemTextColor: builtInItemTextColor)
-      bindingTableView.reloadExistingRows(reselectRowsAfter: true)
+    bindingTableController?.setCustomColors(builtInItemTextColor: builtInItemTextColor)
+    bindingTableView.reloadExistingRows(reselectRowsAfter: true)
 
-      let lastPlayerStr = NSLocalizedString("preference.show_all_bindings.last_player", comment: "last player window")
-      let allSourcesStr = NSLocalizedString("preference.show_all_bindings.other_sources", comment: "other bindings")
-      let btnTitle = String(format: NSLocalizedString("preference.show_all_bindings", comment: "Include %@ which are present in %@"), allSourcesStr, lastPlayerStr)
-      let attrString = NSMutableAttributedString(string: btnTitle, attributes: [:])
+    let lastPlayerStr = NSLocalizedString("preference.show_all_bindings.last_player", comment: "last player window")
+    let allSourcesStr = NSLocalizedString("preference.show_all_bindings.other_sources", comment: "other bindings")
+    let btnTitle = String(format: NSLocalizedString("preference.show_all_bindings", comment: "Include %@ which are present in %@"), allSourcesStr, lastPlayerStr)
+    let attrString = NSMutableAttributedString(string: btnTitle, attributes: [:])
 
-      // Add special formatting for "from all sources" substring
-      if let nsRange = btnTitle.range(of: allSourcesStr)?.nsRange(in: btnTitle) {
-        attrString.addAttributes([.foregroundColor: builtInItemTextColor], range: nsRange)
+    // Add special formatting for "from all sources" substring
+    if let nsRange = btnTitle.range(of: allSourcesStr)?.nsRange(in: btnTitle) {
+      attrString.addAttributes([.foregroundColor: builtInItemTextColor], range: nsRange)
 
-        // Add italic
-        if let buttonFont = showFromAllSourcesBtn.font {
-          let italicDescriptor: NSFontDescriptor = buttonFont.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
-          if let italicFont = NSFont(descriptor: italicDescriptor, size: 0) {
-            attrString.addAttributes([.font: italicFont], range: nsRange)
-          }
+      // Add italic
+      if let buttonFont = showFromAllSourcesBtn.font {
+        let italicDescriptor: NSFontDescriptor = buttonFont.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+        if let italicFont = NSFont(descriptor: italicDescriptor, size: 0) {
+          attrString.addAttributes([.font: italicFont], range: nsRange)
         }
       }
-
-      // TODO: add link to last player window, and update it as it changes
-
-      showFromAllSourcesBtn.attributedTitle = attrString
-      showFromAllSourcesBtn.layout() // Re-layout in case width changed due to formatting changes
     }
+
+    // TODO: add link to last player window, and update it as it changes
+
+    showFromAllSourcesBtn.attributedTitle = attrString
+    showFromAllSourcesBtn.layout() // Re-layout in case width changed due to formatting changes
   }
 }

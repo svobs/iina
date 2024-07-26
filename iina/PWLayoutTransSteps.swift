@@ -999,9 +999,7 @@ extension PlayerWindowController {
         videoView.displayIdle()
       }
 
-      if #available(macOS 10.12.2, *) {
-        player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
-      }
+      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: false)
 
       if transition.outputLayout.spec.isLegacyStyle {  // legacy windowed
         setWindowStyleToLegacy()
@@ -1362,9 +1360,6 @@ extension PlayerWindowController {
   private func rebuildToolbar(iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) -> NSStackView {
     let buttonTypeRawValues = Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []
     var buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
-    if #available(macOS 10.12.2, *) {} else {
-      buttonTypes = buttonTypes.filter { $0 != .pip }
-    }
     log.verbose("Adding buttons to OSC toolbar: \(buttonTypes)")
 
     var toolButtons: [OSCToolbarButton] = []

@@ -50,15 +50,13 @@ class BindingTableViewController: NSObject {
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
-    if #available(macOS 10.13, *) {
-      var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
-      if Preference.bool(for: .acceptRawTextAsKeyBindings) {
-        acceptableDraggedTypes.append(.string)
-      }
-      tableView.registerForDraggedTypes(acceptableDraggedTypes)
-      tableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
-      tableView.draggingDestinationFeedbackStyle = .regular
+    var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
+    if Preference.bool(for: .acceptRawTextAsKeyBindings) {
+      acceptableDraggedTypes.append(.string)
     }
+    tableView.registerForDraggedTypes(acceptableDraggedTypes)
+    tableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
+    tableView.draggingDestinationFeedbackStyle = .regular
 
     if bindingTableState.appInputConfig.version < AppInputConfig.current.version {
       Logger.log("Binding table is out of date. Requesting rebuild")
@@ -91,13 +89,11 @@ class BindingTableViewController: NSObject {
   fileprivate var builtinConfTextColor: NSColor = .textColor
 
   func setCustomColors(builtInItemTextColor: NSColor) {
-    if #available(macOS 10.14, *) {
-      nonConfTextColor = builtInItemTextColor
-      pluginIconColor = builtInItemTextColor
-      libmpvIconColor = builtInItemTextColor
-      filterIconColor = builtInItemTextColor
-      builtinMenuItemIconColor = builtInItemTextColor
-    }
+    nonConfTextColor = builtInItemTextColor
+    pluginIconColor = builtInItemTextColor
+    libmpvIconColor = builtInItemTextColor
+    filterIconColor = builtInItemTextColor
+    builtinMenuItemIconColor = builtInItemTextColor
   }
 }
 

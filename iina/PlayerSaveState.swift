@@ -783,13 +783,8 @@ struct ScreenMeta {
   }
 
   static func from(_ screen: NSScreen) -> ScreenMeta {
-    let name: String
-    if #available(macOS 10.15, *) {
       // Can't store comma in CSV. Just convert to semicolon
-      name = screen.localizedName.replacingOccurrences(of: ",", with: ";")
-    } else {
-      name = ""
-    }
+    let name: String = screen.localizedName.replacingOccurrences(of: ",", with: ";")
     return ScreenMeta(displayID: screen.displayId, name: name, frame: screen.frame, visibleFrame: screen.visibleFrame,
                       nativeResolution: screen.nativeResolution ?? CGSizeZero, cameraHousingHeight: screen.cameraHousingHeight ?? 0,
                       backingScaleFactor: screen.backingScaleFactor)

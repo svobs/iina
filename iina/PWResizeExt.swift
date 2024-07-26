@@ -99,9 +99,7 @@ extension PlayerWindowController {
     }
 
     // TODO: find place for this in tasks
-    if #available(macOS 10.12, *) {
-      pip.aspectRatio = newWindowGeo.video.videoSizeCAR
-    }
+    pip.aspectRatio = newWindowGeo.video.videoSizeCAR
 
     let currentLayout = currentLayout
 

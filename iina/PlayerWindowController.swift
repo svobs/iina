@@ -894,13 +894,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   lazy var _pip: PIPViewController = {
     let pip = VideoPIPViewController()
-    if #available(macOS 10.12, *) {
-      pip.delegate = self
-    }
+    pip.delegate = self
     return pip
   }()
-  
-  @available(macOS 10.12, *)
+
   var pip: PIPViewController {
     _pip
   }
@@ -998,9 +995,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
-    if #available(macOS 10.14, *) {
-      topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
-    }
+    topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
 
     // Do not make visual effects views opaque when window is not in focus
     for view in [topBarView, osdVisualEffectView, bottomBarView, controlBarFloating,
@@ -1670,9 +1665,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .hideOSC:
       hideFadeableViews()
     case .togglePIP:
-      if #available(macOS 10.12, *) {
-        menuTogglePIP(.dummy)
-      }
+      menuTogglePIP(.dummy)
     case .contextMenu:
       showContextMenu()
     default:
@@ -2018,9 +2011,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Close PIP
     if pipStatus == .inPIP {
-      if #available(macOS 10.12, *) {
-        exitPIP()
-      }
+      exitPIP()
     }
 
     if currentLayout.isLegacyFullScreen {
@@ -2568,7 +2559,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if window.isKeyWindow {
         PlayerCore.lastActive = player
 
-        if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+        if RemoteCommandController.useSystemMediaControl {
           NowPlayingInfoManager.updateInfo(withTitle: true)
         }
         AppDelegate.shared.menuController?.updatePluginMenu()
@@ -2628,9 +2619,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.verbose("Window did miniaturize")
       isWindowMiniturized = true
       if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
-        if #available(macOS 10.12, *) {
-          enterPIP()
-        }
+        enterPIP()
       }
       player.events.emit(.windowMiniaturized)
     }
@@ -2644,8 +2633,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         player.resume()
         isPausedDueToMiniaturization = false
       }
-      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip, 
-          #available(macOS 10.12, *) {
+      if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
         exitPIP()
       }
       player.events.emit(.windowDeminiaturized)
@@ -3366,10 +3354,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     playSlider.updateTo(percentage: percentage)
 
     // Touch bar
-    if #available(macOS 10.12.2, *) {
-      player.touchBarSupport.touchBarPlaySlider?.setDoubleValueSafely(percentage)
-      player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: pos) }
-    }
+    player.touchBarSupport.touchBarPlaySlider?.setDoubleValueSafely(percentage)
+    player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: pos) }
   }
 
   func updateVolumeUI() {
@@ -3437,9 +3423,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
     }
 
-    if #available(macOS 10.12.2, *) {
-      player.touchBarSupport.updateTouchBarPlayBtn()
-    }
+    player.touchBarSupport.updateTouchBarPlayBtn()
   }
 
   func syncPlaySliderABLoop() {
@@ -3686,12 +3670,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .musicMode:
       player.enterMusicMode()
     case .pip:
-      if #available(macOS 10.12, *) {
-        if pipStatus == .inPIP {
-          exitPIP()
-        } else if pipStatus == .notInPIP {
-          enterPIP()
-        }
+      if pipStatus == .inPIP {
+        exitPIP()
+      } else if pipStatus == .notInPIP {
+        enterPIP()
       }
     case .playlist:
       showSidebar(forTabGroup: .playlist)

@@ -1140,7 +1140,7 @@ class PlayerCore: NSObject {
       } else {  // resume
         videoView.displayActive()
       }
-      if #available(macOS 10.12, *), windowController.pipStatus == .inPIP {
+      if windowController.pipStatus == .inPIP {
         windowController.pip.playing = !paused
       }
 
@@ -2184,7 +2184,7 @@ class PlayerCore: NSObject {
         windowController.playlistView.refreshNowPlayingIndex(setNewIndexTo: playlistPos)
       }
 
-      if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+      if RemoteCommandController.useSystemMediaControl {
         NowPlayingInfoManager.updateInfo(state: .playing, withTitle: true)
       }
     }
@@ -2565,7 +2565,7 @@ class PlayerCore: NSObject {
         videoView.displayIdle()
       }
 
-      if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+      if RemoteCommandController.useSystemMediaControl {
         NowPlayingInfoManager.updateInfo()
       }
     }
@@ -3174,9 +3174,7 @@ class PlayerCore: NSObject {
     if currentPlayback.thumbnails != nil {
       currentPlayback.thumbnails = nil
     }
-    if #available(macOS 10.12.2, *) {
-      self.touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
-    }
+    touchBarSupport.touchBarPlaySlider?.resetCachedThumbnails()
   }
 
   func makeTouchBar() -> NSTouchBar {
@@ -3486,7 +3484,6 @@ class PlayerCore: NSObject {
   }
 }
 
-@available (macOS 10.13, *)
 class NowPlayingInfoManager {
 
   /// Update the information shown by macOS in `Now Playing`.

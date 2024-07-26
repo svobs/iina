@@ -129,10 +129,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     deleteButton.isEnabled = false
 
-    if #available(macOS 10.14, *) {} else {
-      window?.appearance = NSAppearance(named: .vibrantDark)
-    }
-
     // Restore tab selection
     let selectTabIndex: Int = Preference.UIState.get(.uiInspectorWindowTabIndex)
     tabButtonGroup.selectSegment(withTag: selectTabIndex)

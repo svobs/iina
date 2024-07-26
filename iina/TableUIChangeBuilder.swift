@@ -102,10 +102,6 @@ class TableUIChangeBuilder {
    */
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
                            TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = false) -> TableUIChange where R:Hashable {
-    guard #available(macOS 10.15, *) else {
-      Logger.log("Animated table diff not available in MacOS versions below 10.15. Falling back to ReloadAll")
-      return TableUIChange(.reloadAll, completionHandler: completionHandler)
-    }
 
     let diff = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
     diff.toRemove = IndexSet()

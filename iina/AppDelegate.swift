@@ -336,10 +336,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     updaterController.updater.clearFeedURLFromUserDefaults()
 
     // other initializations at App level
-    if #available(macOS 10.12.2, *) {
-      NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
-      NSWindow.allowsAutomaticWindowTabbing = false
-    }
+    NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
+    NSWindow.allowsAutomaticWindowTabbing = false
 
     JavascriptPlugin.loadGlobalInstances()
     menuController.updatePluginMenu()
@@ -449,7 +447,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Note: UI state saving is disabled")
     }
 
-    if #available(macOS 10.13, *), RemoteCommandController.useSystemMediaControl {
+    if RemoteCommandController.useSystemMediaControl {
       Logger.log("Setting up MediaPlayer integration")
       RemoteCommandController.setup()
       NowPlayingInfoManager.updateInfo(state: .unknown)
@@ -634,7 +632,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if Preference.bool(for: .isRestoreInProgress) {
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
-      Logger.log("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue) == true). Asking user whether to retry or skip")
+      Logger.log("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
       isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
     } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
       Logger.log("Prompting user whether to restore app state, per pref", level: .verbose)
