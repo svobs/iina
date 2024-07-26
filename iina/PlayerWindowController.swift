@@ -1946,9 +1946,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       p.lineBreakMode = .byTruncatingMiddle
       attrTitle.addAttribute(.paragraphStyle, value: p, range: NSRange(location: 0, length: attrTitle.length))
     }
-    updateTitle()  // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
-    window.isExcludedFromWindowsMenu = false
 
+    /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
+    /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
+    /// to cause flickering while animating.
+    /// Always use option `.fullScreenDisallowsTiling`. As of MacOS 14.2.1, tiling is at best glitchy &
+    /// at worst results in an infinite loop with our code.
+    // FIXME: support tiling for at least native full screen
+    window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
     resetCollectionBehavior()
     updateBufferIndicatorView()
     updateOSDPosition()
@@ -1973,7 +1978,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Preference.UIState.windowsOpen.insert(window.savedStateName)
 
       if !player.info.isRestoring {
-        window.setIsVisible(true)
+        showWindow(self)
       }
 
       /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
@@ -1998,9 +2003,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   override func showWindow(_ sender: Any?) {
     // Call this to patch possible holes when restoring (e.g., interactive mode window)
     updateCustomBorderBoxAndWindowOpacity()
-    refreshKeyWindowStatus()
     super.showWindow(sender)
+    refreshKeyWindowStatus()
+
     animationPipeline.submitSudden({
+      self.updateTitle()  // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
+      self.window?.isExcludedFromWindowsMenu = false
       self.forceDraw()  // needed if restoring while paused
     })
   }
@@ -2219,6 +2227,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       })
     } else if !isFullScreen {
+      /// `collectionBehavior` *must* be correct or else `toggleFullScreen` may do nothing!
+      resetCollectionBehavior()
       window.toggleFullScreen(self)
     }
   }
@@ -3726,13 +3736,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.error("resetCollectionBehavior() should not have been called while in native FS - ignoring")
       return
     }
-    /// Set option `.fullScreenDisallowsTiling` always.
-    /// As of MacOS 14.2.1, tiling is at best glitchy and at worst results in an infinite loop
-    // FIXME: support tiling for at least native full screen
+    guard let window else { return }
     if Preference.bool(for: .useLegacyFullScreen) {
-      window?.collectionBehavior = [.managed, .fullScreenDisallowsTiling, .fullScreenAuxiliary]
+      window.collectionBehavior.remove(.fullScreenPrimary)
+      window.collectionBehavior.insert(.fullScreenAuxiliary)
     } else {
-      window?.collectionBehavior = [.managed, .fullScreenDisallowsTiling, .fullScreenPrimary]
+      window.collectionBehavior.remove(.fullScreenAuxiliary)
+      window.collectionBehavior.insert(.fullScreenPrimary)
     }
   }
 
