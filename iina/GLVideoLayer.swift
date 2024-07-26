@@ -24,7 +24,7 @@ class GLVideoLayer: CAOpenGLLayer {
   private var needsMPVRender = false
   private var forceRender = false
 
-  private let asychronousModeLock = Lock()
+  private let asychronousModeLock: Lock
   private var asychronousModeTimer: Timer?
 
   /// To enable `LOG_VIDEO_LAYER`:
@@ -67,14 +67,17 @@ class GLVideoLayer: CAOpenGLLayer {
   override init() {
     cglPixelFormat = GLVideoLayer.createPixelFormat()
     cglContext = GLVideoLayer.createContext(cglPixelFormat)
+    asychronousModeLock = Lock()
     super.init()
   }
 
-  override convenience init(layer: Any) {
+  override init(layer: Any) {
     let previousLayer = layer as! GLVideoLayer
-
-    self.init()
+    self.cglPixelFormat = previousLayer.cglPixelFormat
+    self.cglContext = previousLayer.cglContext
     self.videoView = previousLayer.videoView
+    self.asychronousModeLock = previousLayer.asychronousModeLock
+    super.init()
   }
 
   required init?(coder aDecoder: NSCoder) {

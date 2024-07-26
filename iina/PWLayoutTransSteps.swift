@@ -970,13 +970,10 @@ extension PlayerWindowController {
         }
       }
 
-      if #available(macOS 10.12.2, *) {
-        player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
-      }
+      player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
 
-      // Exit PIP if necessary
-      if pipStatus == .inPIP,
-         #available(macOS 10.12, *) {
+      // Exit PIP when entering full screen
+      if pipStatus == .inPIP {
         exitPIP()
       }
 
