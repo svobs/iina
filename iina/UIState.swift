@@ -499,6 +499,8 @@ extension Preference {
       // Iterate backwards through past launches, from most recent to least recent.
       let launchesNewestToOldest = launchDict.values.sorted(by: { $0.id > $1.id })
 
+      let currentBuildNumber = Int(InfoDictionary.shared.version.1)!
+
       for launch in launchesNewestToOldest {
         guard launch.status != LaunchStatus.none else {
           if isCleanUpEnabled {
@@ -513,8 +515,21 @@ extension Preference {
             }
 
             for playerKey in launch.playerKeys {
+              guard let savedState = Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey) else {
+                Logger.log("Skipping delete of pref key \(playerKey.quoted): could not parse as PlayerSavedState!", level: .error)
+                continue
+              }
+              /// May want to reuse this data for different purposes in future versions. Do not blindly delete!
+              /// Only delete data which is tagged with the current build or previous builds. The `buildNumber` field
+              ///  was not present until the 1.2 release (buildNum 3), so assume previous release if not present.
+              let buildNumber = savedState.int(for: .buildNumber) ?? 0
+              guard buildNumber <= currentBuildNumber else {
+                Logger.log("Skipping delete of pref key \(playerKey.quoted): its buildNumber (\(buildNumber)) > currentBuildNumber (\(currentBuildNumber))", level: .verbose)
+                continue
+              }
+
               if Logger.isEnabled(.warning) {
-                let path = Playback.path(for: Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey)?.url(for: .url))
+                let path = Playback.path(for: savedState.url(for: .url))
                 Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)",
                            level: .warning)
               }

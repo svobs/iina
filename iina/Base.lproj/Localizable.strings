@@ -210,7 +210,7 @@
 "alert.restore_prev_error.ok" = "Yes, Restore";
 "alert.restore_prev_error.cancel" = "No, Discard Save";
 "alert.restore_confirm.title" = "Confirm Restore";
-"alert.restore_confirm.message" = "Do you want to restore windows from the previous launch?";
+"alert.restore_confirm.message" = "Restore windows from the previous launch?";
 "alert.restore_confirm.ok" = "Yes, Restore";
 "alert.restore_confirm.cancel" = "No, Discard";
 

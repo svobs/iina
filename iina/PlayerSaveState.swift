@@ -11,6 +11,7 @@ import Foundation
 // Data structure for saving to prefs / restoring from prefs the UI state of a single player window
 struct PlayerSaveState {
   enum PropName: String {
+    case buildNumber = "buildNum"       // Added in v1.2
     case launchID = "launchID"
 
     case playlistPaths = "playlistPaths"
@@ -123,6 +124,9 @@ struct PlayerSaveState {
     let wc = player.windowController!
     let layout = wc.currentLayout
 
+    let buildNumber: String = InfoDictionary.shared.version.1
+    assert(Int(buildNumber) != nil, "InfoDictionary.shared.version.1 is not an int: \(buildNumber)")
+    props[PropName.buildNumber.rawValue] = buildNumber
     props[PropName.launchID.rawValue] = Preference.UIState.launchID
 
     // - Window Layout & Geometry
@@ -840,7 +844,7 @@ struct ScreenMeta {
 
 extension MusicModeGeometry {
 
-  /// String -> `MusicModeGeometry`
+  /// (`String`, `VideoGeometry`) -> `MusicModeGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type MusicModeGeometry",
   /// check the arguments to the `MusicModeGeometry` constructor. For some reason the error lands in the wrong place.
   static func fromCSV(_ csv: String?, _ videoGeo: VideoGeometry) -> MusicModeGeometry? {
@@ -875,7 +879,7 @@ extension MusicModeGeometry {
     })
   }
 
-  /// `MusicModeGeometry` -> String
+  /// `MusicModeGeometry` -> `String`
   func toCSV() -> String {
     return [PlayerSaveState.musicModeGeoPrefStringVersion,
             self.windowFrame.origin.x.stringMaxFrac2,
@@ -893,7 +897,7 @@ extension MusicModeGeometry {
 
 extension PWinGeometry {
 
-  /// `PWinGeometry` -> String
+  /// `PWinGeometry` -> `String`
   func toCSV() -> String {
     return [PlayerSaveState.windowGeometryPrefStringVersion,
             self.topMarginHeight.stringMaxFrac2,
@@ -920,7 +924,7 @@ extension PWinGeometry {
     ].joined(separator: ",")
   }
 
-  /// String -> `PWinGeometry`
+  /// (`String`, `VideoGeometry`) -> `PWinGeometry`
   static func fromCSV(_ csv: String?, videoGeo: VideoGeometry? = nil) -> PWinGeometry? {
     // TODO: refactor to use player log
     guard !(csv?.isEmpty ?? true) else {
@@ -996,7 +1000,7 @@ extension PWinGeometry {
 }
 
 extension PlayerWindowController.LayoutSpec {
-  /// `LayoutSpec` -> String
+  /// `LayoutSpec` -> `String`
   func toCSV() -> String {
     let leadingSidebarTab: String = self.leadingSidebar.visibleTab?.name ?? "nil"
     let trailingSidebarTab: String = self.trailingSidebar.visibleTab?.name ?? "nil"
@@ -1015,7 +1019,7 @@ extension PlayerWindowController.LayoutSpec {
     ].joined(separator: ",")
   }
 
-  /// String -> `LayoutSpec`
+  /// `String` -> `LayoutSpec`
   static func fromCSV(_ csv: String?) -> PlayerWindowController.LayoutSpec? {
     guard !(csv?.isEmpty ?? true) else {
       Logger.log("CSV is empty; returning nil for LayoutSpec", level: .debug)
