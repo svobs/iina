@@ -364,6 +364,8 @@ class PlaybackInfo {
         cachedFFMeta[url] = ffMeta
       }
       return ffMeta
+    } else {
+      Logger.log("Failed to read video size for file \(url.path.pii.quoted)", level: .error)
     }
     return nil
   }

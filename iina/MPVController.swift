@@ -1396,7 +1396,7 @@ class MPVController: NSObject {
         player.log.error("Failed to parse mpv pause data!")
         break
       }
-      player.log.verbose("Δ mpv prop: 'pause' = \(paused)")
+      player.log.verbose("Δ mpv prop: 'pause' = \(paused.yn)")
 
       player.pausedStateDidChange(to: paused)
 

@@ -452,15 +452,15 @@ struct PlayerSaveState {
   }
 
   // Utility function for parsing complex object from CSV
-  static fileprivate func parseCSV<T>(_ csvString: String?, expectedTokenCount: Int, expectedVersion: String,
-                                      errPreamble: String, 
+  static fileprivate func parseCSV<T>(_ csv: String?, expectedTokenCount: Int, expectedVersion: String,
+                                      targetObjName: String, errPreamble: String,
                                       _ parseFunc: (String, inout IndexingIterator<[String]>) throws -> T?) rethrows -> T? {
-    guard let csv = csvString else { return nil }
-    Logger.log("Parsing CSV: \(csv.quoted)", level: .verbose)
+    guard let csv else { return nil }
+    Logger.log("Parsing CSV as \(targetObjName): \(csv.quoted)", level: .verbose)
     let tokens = csv.split(separator: ",").map{String($0)}
     // Check version first, for a cleaner error msg
     guard tokens.count > 0 else {
-      Logger.log("\(errPreamble) could not parse any tokens!", level: .error)
+      Logger.log("\(errPreamble) could not parse any tokens from CSV for \(targetObjName)! (CSV: \(csv))", level: .error)
       return nil
     }
     var iter = tokens.makeIterator()
@@ -849,6 +849,7 @@ extension MusicModeGeometry {
     }
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 10,
                                     expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
+                                    targetObjName: "MusicModeGeometry",
                                     errPreamble: PlayerSaveState.geoErrPre, { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
@@ -929,6 +930,7 @@ extension PWinGeometry {
 
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
                                     expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
+                                    targetObjName: "PWinGeometry",
                                     errPreamble: PlayerSaveState.geoErrPre) { errPreamble, iter in
 
       guard let topMarginHeight = Double(iter.next()!),
@@ -979,7 +981,7 @@ extension PWinGeometry {
       if let videoGeo {
         video = videoGeo
       } else {
-        Logger.log("Deriving VideoGeometry", level: .warning)
+        Logger.log("VideoGeometry for PWinGeometry is nil! Will try to derive it", level: .error)
         let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
         let videoSize = viewportSize.subtract(viewportMargins.totalSize)
         let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))
@@ -1021,7 +1023,9 @@ extension PlayerWindowController.LayoutSpec {
       return nil
     }
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
-                                    expectedVersion: PlayerSaveState.specPrefStringVersion, errPreamble: PlayerSaveState.specErrPre, { errPreamble, iter in
+                                    expectedVersion: PlayerSaveState.specPrefStringVersion,
+                                    targetObjName: "LayoutSpec",
+                                    errPreamble: PlayerSaveState.specErrPre, { errPreamble, iter in
 
       let leadingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
       let traillingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
