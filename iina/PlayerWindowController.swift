@@ -1964,13 +1964,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     player.initVideo()
     videoView.startDisplayLink()
 
+    let startup = AppDelegate.shared.startupState
+    let showAsynchronously = player.info.isRestoring || (startup.status != .doneOpening && startup.wcForOpenFile == self)
     /// Do this *after* `restoreFromMiscWindowBools` call
     if !window.isMiniaturized {
       log.verbose("Showing Player Window")
 
       Preference.UIState.windowsOpen.insert(window.savedStateName)
 
-      if !player.info.isRestoring {
+      if !showAsynchronously {
         showWindow(self)
       }
 
@@ -1979,7 +1981,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
-    if player.info.isRestoring {
+    if showAsynchronously {
       DispatchQueue.main.async { [self] in  // needs slight delay to avoid race condition with unknown cause in FS
         animationPipeline.submitSudden({
           window.postWindowIsReadyToShow()

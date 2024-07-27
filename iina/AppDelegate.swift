@@ -17,12 +17,15 @@ fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
 fileprivate let AlternativeMenuItemTag = 1
 
+class StartupState {
 
-@NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
+  enum OpenWindowsStatus: Int {
+    case stillEnqueuing = 1
+    case doneEnqueuing
+    case doneOpening
+  }
 
-  /// The `AppDelegate` singleton object.
-  static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
+  var status: OpenWindowsStatus = .stillEnqueuing
 
   /**
    Becomes true once `application(_:openFile:)` or `droppedText()` is called.
@@ -31,6 +34,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   var openFileCalled = false
   var shouldIgnoreOpenFile = false
 
+  var windowIsReadyToShowListener: NSObjectProtocol? = nil
+
+  /// Try to wait until all windows are ready so that we can show all of them at once.
+  /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
+  var wcsToRestore: [NSWindowController] = []
+  var wcForOpenFile: PlayerWindowController? = nil
+
+  var wcsReady = Set<NSWindowController>()
+}
+
+@NSApplicationMain
+class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
+
+  /// The `AppDelegate` singleton object.
+  static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
+
+  var startupState = StartupState()
   var isShowingOpenFileWindow = false
 
   private var commandLineStatus = CommandLineStatus()
@@ -247,6 +267,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
     }
 
+    /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
+    /// before `applicationDidFinishLaunching`.
+    startupState.windowIsReadyToShowListener = NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main) { [self] note in
+      guard let window = note.object as? NSWindow else { return }
+      guard let wc = window.windowController else {
+        Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
+        return
+      }
+      startupState.wcsReady.insert(wc)
+
+      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startupState.wcsReady.count)/\(startupState.status == .doneEnqueuing ? "\(startupState.wcsToRestore.count)" : "?")", level: .verbose)
+
+      showWindowsIfReady()
+    }
+
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
     LegacyMigration.migrateLegacyPreferences()
@@ -311,7 +346,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    shouldIgnoreOpenFile = true
+    startupState.shouldIgnoreOpenFile = true
     commandLineStatus.isCommandLine = true
     commandLineStatus.filenames = iinaArgFilenames
   }
@@ -352,23 +387,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Configuration when building mpv: \(mpv.getString(MPVProperty.mpvConfiguration)!)", level: .verbose)
 
     // Restore window state *before* hooking up the listener which saves state.
-    let restoredSomething = restoreWindowsFromPreviousLaunch()
+    let isRestoringSomething = restoreWindowsFromPreviousLaunch()
 
     if commandLineStatus.isCommandLine {
       // (Option A) Launch from command line.
       startFromCommandLine()
-    } else {
-      if !restoredSomething && !openFileCalled {
-        // (Option B) Launch app (standalone), but no windows to restore.
-        // Fall back to default action:
-        doLaunchOrReopenAction()
-      }
-      /// Else: (Option C) Launch app from UI via file open (`openFileCalled==true`)
+    } else if !isRestoringSomething && !startupState.openFileCalled {
+      // (Option B) Launch app (standalone), but no windows to restore.
+      // Fall back to default action:
+      doLaunchOrReopenAction()
     }
+    /// Else: (Option C) Launch app from UI via file open (`openFileCalled==true`)
 
-    if !restoredSomething {
-      finishLaunching()
-    }
+    startupState.status = .doneEnqueuing
+    // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
+    showWindowsIfReady()
   }
 
   private func startFromCommandLine() {
@@ -417,7 +450,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  private func finishLaunching() {
+  private func showWindowsIfReady() {
+    guard startupState.status == .doneEnqueuing else { return }
+    guard startupState.wcsReady.count == startupState.wcsToRestore.count else { return }
+    guard !startupState.openFileCalled || startupState.wcForOpenFile != nil else { return }
+
+    Logger.log("All \(startupState.wcsToRestore.count) restored \(startupState.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
+
+    if let windowIsReadyToShowListener = startupState.windowIsReadyToShowListener {
+      // Listener is no longer needed. Remove it so that it doesn't cause problems for future opened windows
+      NotificationCenter.default.removeObserver(windowIsReadyToShowListener)
+      startupState.windowIsReadyToShowListener = nil
+    }
+
+    for wc in startupState.wcsToRestore {
+      wc.showWindow(self)  // orders the window to the front
+    }
+    if let wcForOpenFile = startupState.wcForOpenFile {
+      wcForOpenFile.showWindow(self)  // open last, thus making frontmost
+    }
+
+    if Preference.bool(for: .isRestoreInProgress) {
+      Logger.log("Done restoring windows", level: .verbose)
+      Preference.set(false, for: .isRestoreInProgress)
+    }
+
     Logger.log("Adding window observers")
 
     // The "action on last window closed" action will vary slightly depending on which type of window was closed.
@@ -455,6 +512,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
+    startupState.status = .doneOpening
   }
 
   func applicationShouldAutomaticallyLocalizeKeyEquivalents(_ application: NSApplication) -> Bool {
@@ -683,41 +741,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Starting restore of \(savedWindowsBackToFront.count) windows", level: .verbose)
     Preference.set(true, for: .isRestoreInProgress)
 
-    /// Try to wait until all windows are ready so that we can show all of them at once.
-    /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
-    var wcsToRestore: [NSWindowController] = []
-    var wcsReady = Set<NSWindowController>()
-    var isFinishedAddingWindows = false
-
-    func finishRestoreIfReady() {
-      guard isFinishedAddingWindows else { return }
-      guard wcsReady.count == wcsToRestore.count else { return }
-
-      Logger.log("All \(wcsToRestore.count) windows ready after \(stopwatch.secElapsedString); showing all", level: .verbose)
-      for wc in wcsToRestore {
-        wc.showWindow(self)  // orders the window to the front
-      }
-
-      Logger.log("Done restoring windows", level: .verbose)
-      Preference.set(false, for: .isRestoreInProgress)
-
-      finishLaunching()
-    }
-
-    var observers: [NSObjectProtocol] = []
-    observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main) { note in
-      guard let window = note.object as? NSWindow else { return }
-      guard let wc = window.windowController else {
-        Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
-        return
-      }
-      wcsReady.insert(wc)
-
-      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(wcsReady.count)/\(isFinishedAddingWindows ? "\(wcsToRestore.count)" : "?")", level: .verbose)
-
-      finishRestoreIfReady()
-    })
-
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
       Logger.log("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")", level: .verbose)
@@ -756,7 +779,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
         // So just mark it as 'ready' and show with the rest when they are ready.
         wc = inspector
-        wcsReady.insert(wc)
+        startupState.wcsReady.insert(wc)
       case .videoFilter:
         showVideoFilterWindow(self)
         wc = vfWindow
@@ -781,15 +804,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         wc.window?.miniaturize(self)
       } else {
         // Add to list of windows to wait for
-        wcsToRestore.append(wc)
+        startupState.wcsToRestore.append(wc)
       }
     }
 
-    isFinishedAddingWindows = true
-    // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
-    finishRestoreIfReady()
-
-    return !wcsToRestore.isEmpty
+    return !startupState.wcsToRestore.isEmpty
   }
 
   func showWelcomeWindow() {
@@ -1228,29 +1247,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
-    openFileCalled = true
-    // if launched from command line, should ignore openFile once
-    if shouldIgnoreOpenFile {
-      shouldIgnoreOpenFile = false
+    startupState.openFileCalled = true
+    // if launched from command line, should ignore openFile during launch
+    if startupState.shouldIgnoreOpenFile {
+      startupState.shouldIgnoreOpenFile = false
       return
     }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
     
     // if installing a plugin package
     if let pluginPackageURL = urls.first(where: { $0.pathExtension == "iinaplgz" }) {
+      Logger.log("Opening plugin URL: \(pluginPackageURL.absoluteString.pii.quoted)")
       showPreferencesWindow(self)
       preferenceWindowController.performAction(.installPlugin(url: pluginPackageURL))
       return
     }
 
-    DispatchQueue.main.async {
+    DispatchQueue.main.async { [self] in
       Logger.log("Opening \(urls.count) files")
       // open pending files
-      var playableFileCount = 0
-      if let openedFileCount = PlayerCore.activeOrNew.openURLs(urls) {
-        playableFileCount += openedFileCount
-      }
-      if playableFileCount == 0 {
+      let player = PlayerCore.activeOrNew
+      guard let openedFileCount = player.openURLs(urls) else { return }
+
+      startupState.wcForOpenFile = player.windowController
+      if openedFileCount == 0 {
         Logger.log("Notifying user nothing was opened", level: .verbose)
         Utility.showAlert("nothing_to_open")
       }
@@ -1277,6 +1297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func droppedText(_ pboard: NSPasteboard, userData:String, error: NSErrorPointer) {
     Logger.log("Text dropped on app's Dock icon", level: .verbose)
     if let url = pboard.string(forType: .string) {
+      startupState.openFileCalled = true
       PlayerCore.active.openURLString(url)
     }
   }
@@ -1303,7 +1324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - URL Scheme
 
   @objc func handleURLEvent(event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
-    openFileCalled = true
+    startupState.openFileCalled = true
     guard let url = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue else { return }
     Logger.log("Handling URL event: \(url)")
     parsePendingURL(url)

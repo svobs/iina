@@ -1359,7 +1359,7 @@ extension PlayerWindowController {
 
   private func rebuildToolbar(iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) -> NSStackView {
     let buttonTypeRawValues = Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []
-    var buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
+    let buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
     log.verbose("Adding buttons to OSC toolbar: \(buttonTypes)")
 
     var toolButtons: [OSCToolbarButton] = []
