@@ -126,12 +126,8 @@ extension PlayerWindowController {
     case .musicMode:
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      guard musicModeGeo.videoAspect != newWindowGeo.video.videoViewAspect else {
-        log.debug("[applyVideoGeoTransform M Done] Player is in music mode but no change to videoAspect (\(musicModeGeo.videoAspect))")
-        return []
-      }
-      log.debug("[applyVideoGeoTransform M Apply] Player is in music mode; calling applyMusicModeGeo")
       let newGeometry = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newWindowGeo.video)
+      log.debug("[applyVideoGeoTransform M Apply] Player is in music mode. Calling applyMusicModeGeo with \(newGeometry)")
       return buildApplyMusicModeGeoTasks(newGeometry, duration: duration, showDefaultArt: showDefaultArt)
     default:
       log.error("[applyVideoGeoTransform Apply] INVALID MODE: \(currentLayout.mode)")
@@ -568,7 +564,7 @@ extension PlayerWindowController {
     }
 
     guard hasChange else {
-      log.verbose("Not updating music mode windowFrame or constraints - no changes needed")
+      log.verbose("No changes needed for music mode windowFrame or constraints")
       return geometry
     }
 

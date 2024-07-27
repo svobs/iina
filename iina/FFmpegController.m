@@ -358,7 +358,7 @@ return -1;\
   ret = avformat_open_input(&pFormatCtx, cFilename, NULL, NULL);
   free(cFilename);
   if (ret < 0) {
-    LOG_ERROR(@"Error when opening file %@ to obtain info: %s (%d)", file, av_err2str(ret), ret);
+    LOG_ERROR(@"Error when opening file \"%@\" to obtain info: %s (%d)", file, av_err2str(ret), ret);
     return NULL;
   }
 
@@ -366,7 +366,7 @@ return -1;\
   if (duration <= 0) {
     ret = avformat_find_stream_info(pFormatCtx, NULL);
     if (ret < 0) {
-      LOG_ERROR(@"Error when probing %@ to obtain info: %s (%d)", file, av_err2str(ret), ret);
+      LOG_ERROR(@"Error when probing file \"%@\" to obtain info: %s (%d)", file, av_err2str(ret), ret);
       duration = -1;
     } else
       duration = pFormatCtx->duration;

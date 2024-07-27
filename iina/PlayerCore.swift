@@ -2362,14 +2362,13 @@ class PlayerCore: NSObject {
         windowController.muteButton.isEnabled = false
         windowController.volumeSlider.isEnabled = false
       }
-    }
 
-    if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
-      DispatchQueue.main.async { [self] in
+      if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
         windowController.toggleWindowFullScreen()
       }
     }
-    // add to history
+
+    // History thread: update history
     if let url = info.currentURL {
       let duration = info.videoDuration ?? .zero
       HistoryController.shared.queue.async { [self] in
@@ -2395,24 +2394,10 @@ class PlayerCore: NSObject {
       }
     }
 
-    fileIsCompletelyDoneLoading()
-
-    postNotification(.iinaFileLoaded)
-    events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
-  }
-
-  func afChanged() {
-    guard !isStopping else { return }
-    _ = getAudioFilters()
-    saveState()
-    postNotification(.iinaAFChanged)
-  }
-  
-  /// The mpv `file-loaded` event is emitted before everything associated with the file (such as filters) is completely done loading.
-  /// This event should be called when everything is truly done.
-  func fileIsCompletelyDoneLoading() {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard !mpv.isStale(), let currentPlayback = info.currentPlayback else { return }
+    guard !mpv.isStale() else {
+      log.debug("FileCompletelyLoaded: skipping cuz mpv is stale")
+      return
+    }
 
     guard currentPlayback.loadStatus.isAtLeast(.started) else {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentPlayback.loadStatus.description.quoted))")
@@ -2424,8 +2409,6 @@ class PlayerCore: NSObject {
       log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentPlayback.loadStatus.description.quoted)")
       return
     }
-
-    log.verbose("File is completely loaded")
 
     currentPlayback.loadStatus = .completelyLoaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
@@ -2449,26 +2432,35 @@ class PlayerCore: NSObject {
       info.isRestoring = false
 
       log.debug("Done with restore")
-      return
-    }
 
-    let currentMediaAudioStatus = info.currentMediaAudioStatus
+    } else {  // Not restoring
+      let currentMediaAudioStatus = info.currentMediaAudioStatus
 
-    DispatchQueue.main.async { [self] in
-
-      // if need to switch to music mode
-      if Preference.bool(for: .autoSwitchToMusicMode) {
-        if overrideAutoMusicMode {
-          log.verbose("Skipping music mode auto-switch because overrideAutoMusicMode is true")
-        } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
-          log.debug("Current media is audio: auto-switching to music mode")
-          enterMusicMode(automatically: true)
-        } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-          log.debug("Current media is not audio: auto-switching to normal window")
-          exitMusicMode(automatically: true)
+      DispatchQueue.main.async { [self] in
+        // if need to switch to music mode
+        if Preference.bool(for: .autoSwitchToMusicMode) {
+          if overrideAutoMusicMode {
+            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
+            log.debug("Current media is audio: auto-switching to music mode")
+            enterMusicMode(automatically: true)
+          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
+            log.debug("Current media is not audio: auto-switching to normal window")
+            exitMusicMode(automatically: true)
+          }
         }
       }
     }
+
+    postNotification(.iinaFileLoaded)
+    events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
+  }
+
+  func afChanged() {
+    guard !isStopping else { return }
+    _ = getAudioFilters()
+    saveState()
+    postNotification(.iinaAFChanged)
   }
 
   func aidChanged(silent: Bool = false) {

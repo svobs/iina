@@ -981,7 +981,7 @@ extension PWinGeometry {
       if let videoGeo {
         video = videoGeo
       } else {
-        Logger.log("VideoGeometry for PWinGeometry is nil! Will try to derive it", level: .error)
+        Logger.log("VideoGeometry for PWinGeometry is nil! Will try to derive it", level: .error)  // FIXME: persist this
         let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
         let videoSize = viewportSize.subtract(viewportMargins.totalSize)
         let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))

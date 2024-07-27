@@ -2901,7 +2901,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     NSApplication.shared.addWindowsItem(window, title: title, filename: false)
     NSApplication.shared.changeWindowsItem(window, title: title, filename: false)
 
-    log.verbose("Updating window title to: \(title.pii.quoted)")
+    if log.isTraceEnabled {
+      log.trace("Updating window title to: \(title.pii.quoted)")
+    }
     customTitleBar?.refreshTitle()
   }
 

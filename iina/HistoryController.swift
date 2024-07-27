@@ -27,7 +27,6 @@ class HistoryController {
   }
 
   private func watchLaterDirDidChange() {
-    log.verbose("WatchLaterDir changed")
     NotificationCenter.default.post(Notification(name: .watchLaterDirDidChange))
   }
 
