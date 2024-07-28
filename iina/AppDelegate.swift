@@ -28,7 +28,7 @@ class StartupState {
   var status: OpenWindowsStatus = .stillEnqueuing
 
   /**
-   Becomes true once `application(_:openFile:)` or `droppedText()` is called.
+   Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
    Mainly used to distinguish normal launches from others triggered by drag-and-dropping files.
    */
   var openFileCalled = false
@@ -387,17 +387,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Configuration when building mpv: \(mpv.getString(MPVProperty.mpvConfiguration)!)", level: .verbose)
 
     // Restore window state *before* hooking up the listener which saves state.
-    let isRestoringSomething = restoreWindowsFromPreviousLaunch()
+    restoreWindowsFromPreviousLaunch()
 
     if commandLineStatus.isCommandLine {
-      // (Option A) Launch from command line.
       startFromCommandLine()
-    } else if !isRestoringSomething && !startupState.openFileCalled {
-      // (Option B) Launch app (standalone), but no windows to restore.
-      // Fall back to default action:
-      doLaunchOrReopenAction()
     }
-    /// Else: (Option C) Launch app from UI via file open (`openFileCalled==true`)
 
     startupState.status = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
@@ -422,6 +416,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
         }
       }
+      guard !validFileURLs.isEmpty else {
+        Logger.log("No valid file URLs provided via command line! Nothing to do", level: .error)
+        return
+      }
+
       if commandLineStatus.openSeparateWindows {
         validFileURLs.forEach { url in
           getNewPlayerCore().openURL(url)
@@ -470,9 +469,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       wcForOpenFile.showWindow(self)  // open last, thus making frontmost
     }
 
-    if Preference.bool(for: .isRestoreInProgress) {
+    let didRestoreSomething = !startupState.wcsToRestore.isEmpty
+    var didOpenSomething = didRestoreSomething && startupState.wcForOpenFile != nil
+
+    if didRestoreSomething && Preference.bool(for: .isRestoreInProgress) {
       Logger.log("Done restoring windows", level: .verbose)
       Preference.set(false, for: .isRestoreInProgress)
+    }
+
+    if !commandLineStatus.isCommandLine && !didOpenSomething {
+      // Fall back to default action:
+      doLaunchOrReopenAction()
     }
 
     Logger.log("Adding window observers")
@@ -664,6 +671,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// Returns `true` if any windows were restored; `false` otherwise.
+  @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -1247,7 +1256,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
-    startupState.openFileCalled = true
     // if launched from command line, should ignore openFile during launch
     if startupState.shouldIgnoreOpenFile {
       startupState.shouldIgnoreOpenFile = false
@@ -1263,14 +1271,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
+    startupState.openFileCalled = true
+
     DispatchQueue.main.async { [self] in
       Logger.log("Opening \(urls.count) files")
       // open pending files
       let player = PlayerCore.activeOrNew
-      guard let openedFileCount = player.openURLs(urls) else { return }
-
       startupState.wcForOpenFile = player.windowController
-      if openedFileCount == 0 {
+      if player.openURLs(urls) == 0 {
+        abortWaitForPlayerStartup()
+
         Logger.log("Notifying user nothing was opened", level: .verbose)
         Utility.showAlert("nothing_to_open")
       }
@@ -1296,10 +1306,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @objc
   func droppedText(_ pboard: NSPasteboard, userData:String, error: NSErrorPointer) {
     Logger.log("Text dropped on app's Dock icon", level: .verbose)
-    if let url = pboard.string(forType: .string) {
-      startupState.openFileCalled = true
-      PlayerCore.active.openURLString(url)
+    guard let url = pboard.string(forType: .string) else { return }
+
+    let player = PlayerCore.active
+    startupState.openFileCalled = true
+    startupState.wcForOpenFile = player.windowController
+    if player.openURLString(url) == 0 {
+      abortWaitForPlayerStartup()
     }
+  }
+
+  private func abortWaitForPlayerStartup() {
+    startupState.openFileCalled = false
+    startupState.wcForOpenFile = nil
+    showWindowsIfReady()
   }
 
   // MARK: - Dock menu
@@ -1324,7 +1344,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // MARK: - URL Scheme
 
   @objc func handleURLEvent(event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
-    startupState.openFileCalled = true
     guard let url = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue else { return }
     Logger.log("Handling URL event: \(url)")
     parsePendingURL(url)
@@ -1354,7 +1373,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     
     if parsed.scheme != "iina" {
       // try to open the URL directly
-      PlayerCore.activeOrNewForMenuAction(isAlternative: false).openURLString(url)
+      let player = PlayerCore.activeOrNewForMenuAction(isAlternative: false)
+      startupState.openFileCalled = true
+      startupState.wcForOpenFile = player.windowController
+      if player.openURLString(url) == 0 {
+        abortWaitForPlayerStartup()
+      }
       return
     }
     
@@ -1380,12 +1404,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player = PlayerCore.activeOrNewForMenuAction(isAlternative: false)
       }
 
+      startupState.openFileCalled = true
+      startupState.wcForOpenFile = player.windowController
+
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1", !PlayerCore.lastActive.info.playlist.isEmpty {
         PlayerCore.lastActive.addToPlaylist(urlValue)
         PlayerCore.lastActive.sendOSD(.addToPlaylist(1))
       } else {
-        player.openURLString(urlValue)
+        if player.openURLString(urlValue) == 0 {
+          abortWaitForPlayerStartup()
+        }
       }
 
       // presentation options

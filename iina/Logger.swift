@@ -129,6 +129,10 @@ class Logger: NSObject {
       Logger.log(rawMessage, level: .error, subsystem: self)
     }
 
+    func fatalError(_ rawMessage: String) -> Never {
+      Logger.fatal(rawMessage)
+    }
+
     func log(_ rawMessage: String, level: Level = .debug) {
       Logger.log(rawMessage, level: level, subsystem: self)
     }

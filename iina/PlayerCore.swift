@@ -318,8 +318,8 @@ class PlayerCore: NSObject {
    Open a list of urls. If there are more than one urls, add the remaining ones to
    playlist and disable auto loading.
 
-   - Returns: `nil` if no further action is needed, like opened a BD Folder; otherwise the
-   count of playable files.
+   - Returns: `nil` if no further action is needed, like opened a BD Folder; otherwise the count of playable files.
+     `0` if no playable files were found & the player window was not opened.
    */
   @discardableResult
   func openURLs(_ urls: [URL], shouldAutoLoadPlaylist: Bool = true, mpvRestoreWorkItem: (() -> Void)? = nil) -> Int? {
@@ -371,14 +371,16 @@ class PlayerCore: NSObject {
     return openURLs([url])
   }
 
-  func openURLString(_ str: String) {
+  /// Returns number of playable URLs opened. If `0`, no player window was opened.
+  @discardableResult
+  func openURLString(_ str: String) -> Int? {
     if str == "-" {
       info.shouldAutoLoadFiles = false  // reset
       openPlayerWindow([URL(string: "stdin")!])
-      return
+      return 1
     }
     if str.first == "/" {
-      openURL(URL(fileURLWithPath: str))
+      return openURL(URL(fileURLWithPath: str))
     } else {
       // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
       // running under macOS Sonoma or later. The behavior now matches URLComponents and will
@@ -394,25 +396,25 @@ class PlayerCore: NSObject {
       if performPercentEncoding {
         guard let encoded = str.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
           log.error("Cannot add percent encoding for \(str)")
-          return
+          return 0
         }
         pstr = encoded
       }
       guard let url = URL(string: pstr) else {
         log.error("Cannot parse url for \(pstr)")
-        return
+        return 0
       }
-      openURL(url)
+      return openURL(url)
     }
   }
 
   /// Loads the first URL into the player, and adds any remaining URLs to playlist.
+  /// The caller must ensure that `urls` is *never* empty!
   private func openPlayerWindow(_ urls: [URL], mpvRestoreWorkItem: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard urls.count > 0 else {
-      log.error("Cannot open player window: empty url list!")
-      return
+      log.fatalError("Cannot open player window: empty url list!")
     }
 
     /// Need to use `sync` so that:
