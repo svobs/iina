@@ -279,8 +279,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Falling back to default geometry",
-                 level: .verbose)
-    } else if let savedGeo = PWinGeometry.fromCSV(csv, videoGeo: nil) {  // FIXME: save videoGeo!
+                 level: .debug)
+    } else if let savedGeo = PWinGeometry.fromCSV(csv) {
       if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
         Logger.log("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)", level: .verbose)
         return savedGeo
@@ -312,7 +312,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return savedGeo
     }
     Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Falling back to default music mode geometry",
-               level: .verbose)
+               level: .debug)
     let defaultScreen = NSScreen.screens[0]
     let nullLog = Logger.Subsystem(rawValue: "null")
     let defaultGeo = MiniPlayerController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,

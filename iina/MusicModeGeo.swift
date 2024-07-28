@@ -71,15 +71,20 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     return windowFrame.height - videoHeight
   }
 
+  var log: Logger.Subsystem {
+    return video.log
+  }
+
   init(windowFrame: NSRect, screenID: String, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) {
     var windowFrame = windowFrame
     let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible)
     let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
+    let log = video.log
 
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
     if extraWidthNeeded > 0 {
-      if Logger.isTraceEnabled {
-        Logger.log("MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)")
+      if log.isTraceEnabled {
+        log.trace("MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)")
       }
       windowFrame = NSRect(origin: windowFrame.origin, size: CGSize(width: windowFrame.width + extraWidthNeeded, height: windowFrame.height))
     }
@@ -87,8 +92,8 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     if isPlaylistVisible {
       let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - playlistHeight
       if extraHeightNeeded > 0 {
-        if Logger.isTraceEnabled {
-          Logger.log("MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)")
+        if log.isTraceEnabled {
+          log.trace("MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)")
         }
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
@@ -96,8 +101,8 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     } else {
       let extraHeightNeeded = -playlistHeight
       if extraHeightNeeded != 0 {
-        if Logger.isTraceEnabled {
-          Logger.log("MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)")
+        if log.isTraceEnabled {
+          log.trace("MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)")
         }
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
@@ -208,7 +213,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
     }
     let fittedGeo = self.clone(windowFrame: newWindowFrame)
-    Logger.log("Refitted \(fittedGeo), from requestedSize: \(requestedSize)", level: .verbose)
+    log.verbose("Refitted \(fittedGeo), from requestedSize: \(requestedSize)")
     return fittedGeo
   }
 
@@ -221,7 +226,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                   screenID: String? = nil) -> MusicModeGeometry? {
 
     var newVideoWidth = desiredWidth ?? windowFrame.width
-    Logger.log("Scaling MusicMode video to desiredWidth: \(newVideoWidth)", level: .verbose)
+    log.verbose("Scaling MusicMode video to desiredWidth: \(newVideoWidth)")
 
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!

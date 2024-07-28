@@ -140,6 +140,9 @@ class Logger: NSObject {
 
   @Atomic static var subsystems: [Subsystem] = [.general]
 
+  /// Default log
+  static let log = Subsystem.general
+
   static func makeSubsystem(_ rawValue: String) -> Subsystem {
     $subsystems.withLock() { subsystems in
       for (index, subsystem) in subsystems.enumerated() {

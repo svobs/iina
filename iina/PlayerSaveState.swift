@@ -22,13 +22,13 @@ struct PlayerSaveState {
 
     case intendedViewportSize = "intendedViewportSize"
     case layoutSpec = "layoutSpec"
+    case videoGeo = "videoGeo"
     case windowedModeGeo = "windowedModeGeo"
     case musicModeGeo = "musicModeGeo"
     case screens = "screens"
     case miscWindowBools = "miscWindowBools"
     case overrideAutoMusicMode = "overrideAutoMusicMode"
     case isOnTop = "onTop"
-    case windowScale = "windowScale"  /// `MPVProperty.windowScale`
 
     case url = "url"
     case playPosition = "playPosition"/// `MPVOption.PlaybackControl.start`
@@ -79,12 +79,11 @@ struct PlayerSaveState {
     case loopFile = "loopFile"        /// `MPVOption.PlaybackControl.loopFile`
   }
 
+  static fileprivate let videoGeometryPrefStringVersion = "1"
   static fileprivate let specPrefStringVersion = "1"
   static fileprivate let windowGeometryPrefStringVersion = "1"
   static fileprivate let musicModeGeoPrefStringVersion = "1"
   static fileprivate let playlistVideosCSVVersion = "1"
-  static fileprivate let specErrPre = "Failed to parse LayoutSpec from string:"
-  static fileprivate let geoErrPre = "Failed to parse WindowGeometry from string:"
 
   static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
   static let saveLock = Lock()
@@ -153,8 +152,10 @@ struct PlayerSaveState {
       props[PropName.isOnTop.rawValue] = true.yn
     }
 
-    // - Video geometry
+    // - VideoGeometry
 
+    props[PropName.videoGeo.rawValue] = geo.video.toCSV()
+    // TODO: stop saving these in v1.3
     props[PropName.videoRawWidth.rawValue] = String(geo.video.rawWidth)
     props[PropName.videoRawHeight.rawValue] = String(geo.video.rawHeight)
     props[PropName.videoAspectLabel.rawValue] = geo.video.selectedAspectLabel
@@ -416,18 +417,33 @@ struct PlayerSaveState {
     return nil
   }
 
+  /// Returns IINA-Advance build number associated with stored player's properties (param).
+  /// Defaults to `1` for v1.0 & v1.1, because `buildNumber` property was not added until v1.2.
+  static private func buildNumber(from properties: [String: Any]) -> Int {
+    return int(for: .buildNumber, properties) ?? 1
+  }
+
   static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
     // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
-    let defaultGeo = VideoGeometry.defaultGeometry(log)
-    let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
-    let userRotation = PlayerSaveState.int(for: .videoRotation, props)
-    let codecRotation = (totalRotation ?? 0) - (userRotation ?? 0)
-    let videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
-                                    rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
-                                    selectedAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
-                                    codecRotation: codecRotation,
-                                    userRotation: userRotation,
-                                    selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
+    let videoGeo: VideoGeometry
+    if let parsedVideoGeo = VideoGeometry.fromCSV(PlayerSaveState.string(for: .videoGeo, props), log) {
+      videoGeo = parsedVideoGeo
+    } else {
+      if buildNumber(from: props) < 3 {
+        // Older than IINA 1.2
+        log.debug("Failed to restore VideoGeometry from CSV! Will attempt to build it from legacy properties instead")
+      }
+      let defaultGeo = VideoGeometry.defaultGeometry(log)
+      let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
+      let userRotation = PlayerSaveState.int(for: .videoRotation, props)
+      let codecRotation = (totalRotation ?? 0) - (userRotation ?? 0)
+      videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
+                                  rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
+                                  selectedAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
+                                  codecRotation: codecRotation,
+                                  userRotation: userRotation,
+                                  selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
+    }
 
     let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)
     let savedWindowedGeo = PWinGeometry.fromCSV(windowedCSV, videoGeo: videoGeo)
@@ -453,10 +469,11 @@ struct PlayerSaveState {
 
   // Utility function for parsing complex object from CSV
   static fileprivate func parseCSV<T>(_ csv: String?, expectedTokenCount: Int, expectedVersion: String,
-                                      targetObjName: String, errPreamble: String,
+                                      targetObjName: String,
                                       _ parseFunc: (String, inout IndexingIterator<[String]>) throws -> T?) rethrows -> T? {
     guard let csv else { return nil }
     Logger.log("Parsing CSV as \(targetObjName): \(csv.quoted)", level: .verbose)
+    let errPreamble = "Failed to parse \(targetObjName) CSV:"
     let tokens = csv.split(separator: ",").map{String($0)}
     // Check version first, for a cleaner error msg
     guard tokens.count > 0 else {
@@ -672,10 +689,6 @@ struct PlayerSaveState {
       mpv.setInt(MPVOption.Video.videoRotate, userRotation)
     }
 
-    if let windowScale = double(for: .windowScale), windowScale > 0.0 {
-      mpv.setDouble(MPVProperty.windowScale, windowScale)
-    }
-
     if let videoAspectLabel = string(for: .videoAspectLabel) {
       // Update videoGeo above first so that UI doesn't alert the user
       if player.windowController.geo.video.aspectRatioOverride != nil {
@@ -837,20 +850,57 @@ struct ScreenMeta {
   }
 }
 
+extension VideoGeometry {
+  /// `String`, `Logger.Subsystem` -> `VideoGeometry`
+  /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type VideoGeometry",
+  /// check the arguments to the `VideoGeometry` constructor. For some reason the error lands in the wrong place.
+  static func fromCSV(_ csv: String?, _ log: Logger.Subsystem) -> VideoGeometry? {
+    guard !(csv?.isEmpty ?? true) else {
+      log.debug("CSV is empty; returning nil for MusicModeGeometry")
+      return nil
+    }
+    return PlayerSaveState.parseCSV(csv, expectedTokenCount: 7,
+                                    expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion,
+                                    targetObjName: "VideoGeometry") { errPreamble, iter in
+
+      guard let rawWidth = Int(iter.next()!),
+            let rawHeight = Int(iter.next()!),
+            let codecRotation = Int(iter.next()!),
+            let userRotation = Int(iter.next()!),
+            let selectedAspectLabel = iter.next(),
+            let selectedCropLabel = iter.next()
+      else {
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
+        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        log.error("\(errPreamble) could not parse one or more tokens")
+        return nil
+      }
+
+      return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight, selectedAspectLabel: selectedAspectLabel,
+                           codecRotation: codecRotation, userRotation: userRotation, selectedCropLabel: selectedCropLabel, log: log)
+    }
+  }
+
+  /// `VideoGeometry` -> `String`
+  func toCSV() -> String {
+    "\(PlayerSaveState.videoGeometryPrefStringVersion),\(rawWidth),\(rawHeight),\(codecRotation),\(userRotation),\(selectedAspectLabel),\(selectedCropLabel)"
+  }
+}
+
 extension MusicModeGeometry {
 
   /// (`String`, `VideoGeometry`) -> `MusicModeGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type MusicModeGeometry",
   /// check the arguments to the `MusicModeGeometry` constructor. For some reason the error lands in the wrong place.
   static func fromCSV(_ csv: String?, _ videoGeo: VideoGeometry) -> MusicModeGeometry? {
+    let log = videoGeo.log
     guard !(csv?.isEmpty ?? true) else {
-      Logger.log("CSV is empty; returning nil for MusicModeGeometry", level: .debug)
+      log.debug("CSV is empty; returning nil for MusicModeGeometry")
       return nil
     }
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 10,
-                                    expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                    targetObjName: "MusicModeGeometry",
-                                    errPreamble: PlayerSaveState.geoErrPre, { errPreamble, iter in
+                                    expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
+                                    targetObjName: "MusicModeGeometry") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -864,7 +914,7 @@ extension MusicModeGeometry {
       else {
         /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
         /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
-        Logger.log("\(errPreamble) could not parse one or more tokens", level: .error)
+        log.error("\(errPreamble) could not parse one or more tokens")
         return nil
       }
 
@@ -872,7 +922,7 @@ extension MusicModeGeometry {
       return MusicModeGeometry(windowFrame: windowFrame,
                                screenID: screenID, video: videoGeo,
                                isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
-    })
+    }
   }
 
   /// `MusicModeGeometry` -> `String`
@@ -930,8 +980,7 @@ extension PWinGeometry {
 
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
                                     expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                    targetObjName: "PWinGeometry",
-                                    errPreamble: PlayerSaveState.geoErrPre) { errPreamble, iter in
+                                    targetObjName: "PWinGeometry") { errPreamble, iter in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1024,8 +1073,7 @@ extension PlayerWindowController.LayoutSpec {
     }
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
                                     expectedVersion: PlayerSaveState.specPrefStringVersion,
-                                    targetObjName: "LayoutSpec",
-                                    errPreamble: PlayerSaveState.specErrPre, { errPreamble, iter in
+                                    targetObjName: "LayoutSpec", { errPreamble, iter in
 
       let leadingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
       let traillingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
