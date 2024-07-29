@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let embeddedSeparator: Character = "|"
+
 // Data structure for saving to prefs / restoring from prefs the UI state of a single player window
 struct PlayerSaveState {
   enum PropName: String {
@@ -81,12 +83,17 @@ struct PlayerSaveState {
 
   static fileprivate let videoGeometryPrefStringVersion = "1"
   static fileprivate let specPrefStringVersion = "1"
-  static fileprivate let windowGeometryPrefStringVersion = "1"
-  static fileprivate let musicModeGeoPrefStringVersion = "1"
+  /// Updated to "2" in v1.2
+  static fileprivate let windowGeometryPrefStringVersion = "2"
+  /// Updated to "2" in v1.2
+  static fileprivate let musicModeGeoPrefStringVersion = "2"
   static fileprivate let playlistVideosCSVVersion = "1"
 
   static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
   static let saveLock = Lock()
+
+  /// IINA general log
+  static let log = Logger.log
 
   /// The player's log
   let log: Logger.Subsystem
@@ -382,7 +389,7 @@ struct PlayerSaveState {
       if tokens.count == 2, let width = Double(tokens[0]), let height = Double(tokens[1]) {
         return NSSize(width: width, height: height)
       }
-      Logger.log("Failed to parse property as NSSize: \(name.rawValue.quoted)")
+      log.debug("Failed to parse property as NSSize: \(name.rawValue.quoted)")
     }
     return nil
   }
@@ -446,7 +453,7 @@ struct PlayerSaveState {
     }
 
     let windowedCSV = PlayerSaveState.string(for: .windowedModeGeo, props)
-    let savedWindowedGeo = PWinGeometry.fromCSV(windowedCSV, videoGeo: videoGeo)
+    let savedWindowedGeo = PWinGeometry.fromCSV(windowedCSV, videoGeoFallback: videoGeo, log)
     let windowedGeo: PWinGeometry
     if let savedWindowedGeo {
       windowedGeo = savedWindowedGeo
@@ -456,7 +463,7 @@ struct PlayerSaveState {
     }
 
     let musicModeCSV = PlayerSaveState.string(for: .musicModeGeo, props)
-    let savedMusicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV, videoGeo)
+    let savedMusicModeGeo = MusicModeGeometry.fromCSV(musicModeCSV, videoGeoFallback: videoGeo, log)
     let musicModeGeo: MusicModeGeometry
     if let savedMusicModeGeo {
       musicModeGeo = savedMusicModeGeo
@@ -468,27 +475,33 @@ struct PlayerSaveState {
   }
 
   // Utility function for parsing complex object from CSV
-  static fileprivate func parseCSV<T>(_ csv: String?, expectedTokenCount: Int, expectedVersion: String,
+  static fileprivate func parseCSV<T>(_ csv: String?, separator: Character = ",",
+                                      expectedTokenCount: Int, expectedVersion: String,
                                       targetObjName: String,
                                       _ parseFunc: (String, inout IndexingIterator<[String]>) throws -> T?) rethrows -> T? {
     guard let csv else { return nil }
-    Logger.log("Parsing CSV as \(targetObjName): \(csv.quoted)", level: .verbose)
+    log.verbose("Parsing CSV as \(targetObjName): \(csv.quoted)")
     let errPreamble = "Failed to parse \(targetObjName) CSV:"
-    let tokens = csv.split(separator: ",").map{String($0)}
+    let tokens = csv.split(separator: separator).map{String($0)}
     // Check version first, for a cleaner error msg
     guard tokens.count > 0 else {
-      Logger.log("\(errPreamble) could not parse any tokens from CSV for \(targetObjName)! (CSV: \(csv))", level: .error)
+      log.error("\(errPreamble) could not parse any tokens from CSV for \(targetObjName)! (CSV: \(csv))")
       return nil
     }
     var iter = tokens.makeIterator()
     let version = iter.next()
     guard version == expectedVersion else {
-      Logger.log("\(errPreamble) bad version (expected \(expectedVersion.quoted) but found \(version?.quoted ?? "nil"))", level: .error)
+      if let version, let vInt = Int(version), let evInt = Int(expectedVersion), vInt < evInt {
+        // Not an error to encounter an old version
+        log.verbose("\(errPreamble) version (\(version.quoted)) is older than expected (\(expectedVersion.quoted))")
+      } else {
+        log.error("\(errPreamble) version found (\(version?.quoted ?? "nil")) too new (expected \(expectedVersion.quoted))")
+      }
       return nil
     }
 
     guard tokens.count == expectedTokenCount else {
-      Logger.log("\(errPreamble) wrong token count (expected \(expectedTokenCount) but found \(tokens.count))", level: .error)
+      log.error("\(errPreamble) wrong token count (expected \(expectedTokenCount) but found \(tokens.count))")
       return nil
     }
 
@@ -503,18 +516,18 @@ struct PlayerSaveState {
       // Do not parse more than the first 2 tokens. The URL can contain commas
       let tokens = csvString.split(separator: ",", maxSplits: 2).map{String($0)}
       guard tokens.count == 3 else {
-        Logger.log("Could not parse PlaylistVideoInfo: not enough tokens (expected 3 but found \(tokens.count))", level: .error)
+        log.error("Could not parse PlaylistVideoInfo: not enough tokens (expected 3 but found \(tokens.count))")
         continue
       }
       guard tokens[0] == playlistVideosCSVVersion else {
-        Logger.log("Could not parse PlaylistVideoInfo: wrong version (expected \(playlistVideosCSVVersion) but found \(tokens[0].quoted))", level: .error)
+        log.error("Could not parse PlaylistVideoInfo: wrong version (expected \(playlistVideosCSVVersion) but found \(tokens[0].quoted))")
         continue
       }
 
       guard let prefixLength = Int(tokens[1]),
             let url = URL(string: tokens[2])
       else {
-        Logger.log("Could not parse PlaylistVideoInfo url or prefixLength!", level: .error)
+        log.error("Could not parse PlaylistVideoInfo url or prefixLength!")
         continue
       }
 
@@ -808,20 +821,20 @@ struct ScreenMeta {
     var iter = tokens.makeIterator()
 
     guard let versionStr = iter.next(), let version = Int(versionStr) else {
-      Logger.log("While parsing ScreenMeta from CSV: failed to parse version", level: .error)
+      Logger.log.error("While parsing ScreenMeta from CSV: failed to parse version")
       return nil
     }
     guard version == csvVersion else {
       if version == 1 {
-        Logger.log("Discarding ScreenMeta from CSV: format is obsolete (expected version \(csvVersion) but found \(version))", level: .error)
+        Logger.log.error("Discarding ScreenMeta from CSV: format is obsolete (expected version \(csvVersion) but found \(version))")
       } else {
-        Logger.log("While parsing ScreenMeta from CSV: bad version (expected \(csvVersion) but found \(version))", level: .error)
+        Logger.log.error("While parsing ScreenMeta from CSV: bad version (expected \(csvVersion) but found \(version))")
       }
       return nil
     }
     // Check this after parsing version, for cleaner error messages
     guard tokens.count == expectedCSVTokenCount else {
-      Logger.log("While parsing ScreenMeta from CSV: wrong token count (expected \(expectedCSVTokenCount) but found \(tokens.count))", level: .error)
+      Logger.log.error("While parsing ScreenMeta from CSV: wrong token count (expected \(expectedCSVTokenCount) but found \(tokens.count))")
       return nil
     }
 
@@ -839,7 +852,7 @@ struct ScreenMeta {
           let nativeResH = Double(iter.next()!),
           let cameraHousingHeight = Double(iter.next()!),
           let backingScaleFactor = Double(iter.next()!) else {
-      Logger.log("While parsing ScreenMeta from CSV: could not parse one or more tokens", level: .error)
+      Logger.log.error("While parsing ScreenMeta from CSV: could not parse one or more tokens")
       return nil
     }
 
@@ -854,12 +867,12 @@ extension VideoGeometry {
   /// `String`, `Logger.Subsystem` -> `VideoGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type VideoGeometry",
   /// check the arguments to the `VideoGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromCSV(_ csv: String?, _ log: Logger.Subsystem) -> VideoGeometry? {
-    guard !(csv?.isEmpty ?? true) else {
-      log.debug("CSV is empty; returning nil for MusicModeGeometry")
+  static func fromCSV(_ csv: String?, _ log: Logger.Subsystem, separator: Character = ",") -> VideoGeometry? {
+    guard let csv, !csv.isEmpty else {
+      log.debug("CSV is empty; returning nil for VideoGeometry")
       return nil
     }
-    return PlayerSaveState.parseCSV(csv, expectedTokenCount: 7,
+    return PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 7,
                                     expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion,
                                     targetObjName: "VideoGeometry") { errPreamble, iter in
 
@@ -883,24 +896,89 @@ extension VideoGeometry {
 
   /// `VideoGeometry` -> `String`
   func toCSV() -> String {
-    "\(PlayerSaveState.videoGeometryPrefStringVersion),\(rawWidth),\(rawHeight),\(codecRotation),\(userRotation),\(selectedAspectLabel),\(selectedCropLabel)"
+    "\(PlayerSaveState.videoGeometryPrefStringVersion),\(fieldStrings.joined(separator: ","))"
+  }
+
+  // MARK: Embedded CSV
+
+  fileprivate var fieldStrings: [String] {
+    [
+      "\(rawWidth)",
+      "\(rawHeight)",
+      "\(codecRotation)",
+      "\(userRotation)",
+      "\(selectedAspectLabel)",
+      "\(selectedCropLabel)"
+    ]
+  }
+
+  /// `VideoGeometry` -> `String` (without version token)
+  fileprivate func toEmbeddedCSV() -> String {
+    fieldStrings.joined(separator: String(embeddedSeparator))
+  }
+
+  /// Assumes embedded CSV is current version
+  static func fromEmbeddedCSV(_ csvEmbedded: String?, _ log: Logger.Subsystem) -> VideoGeometry? {
+    guard let csvEmbedded, !csvEmbedded.isEmpty else {
+      log.debug("CSV is empty; returning nil for MusicModeGeometry")
+      return nil
+    }
+    let csv = "\(PlayerSaveState.videoGeometryPrefStringVersion)\(embeddedSeparator)\(csvEmbedded)"
+    return fromCSV(csv, log, separator: embeddedSeparator)
   }
 }
 
 extension MusicModeGeometry {
 
-  /// (`String`, `VideoGeometry`) -> `MusicModeGeometry`
+  /// v2: `String` -> `MusicModeGeometry`
+  /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry`
   /// Note to maintainers: if compiler is complaining with the message "nil is not compatible with closure result type MusicModeGeometry",
   /// check the arguments to the `MusicModeGeometry` constructor. For some reason the error lands in the wrong place.
-  static func fromCSV(_ csv: String?, _ videoGeo: VideoGeometry) -> MusicModeGeometry? {
-    let log = videoGeo.log
-    guard !(csv?.isEmpty ?? true) else {
+  static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> MusicModeGeometry? {
+    guard let csv, !csv.isEmpty else {
       log.debug("CSV is empty; returning nil for MusicModeGeometry")
       return nil
     }
+
+    // Try v2 first.
+    let mmGeo: MusicModeGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: 9,
+                                         expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
+                                         targetObjName: "MusicModeGeometry(v2)") { errPreamble, iter in
+
+      guard let winOriginX = Double(iter.next()!),
+            let winOriginY = Double(iter.next()!),
+            let winWidth = Double(iter.next()!),
+            let winHeight = Double(iter.next()!),
+            let isVideoVisible = Bool.yn(iter.next()!),
+            let isPlaylistVisible = Bool.yn(iter.next()!),
+            let screenID = iter.next(),
+            let videoGeoEmbeddedCSV = iter.next()
+      else {
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
+        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        log.error("\(errPreamble) could not parse one or more tokens")
+        return nil
+      }
+
+      guard let videoGeo = VideoGeometry.fromEmbeddedCSV(videoGeoEmbeddedCSV, log) else {
+        Logger.log.error("\(errPreamble) could not parse VideoGeometry")
+        return nil
+      }
+
+      let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
+      return MusicModeGeometry(windowFrame: windowFrame,
+                               screenID: screenID, video: videoGeo,
+                               isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
+    }
+
+    if let mmGeo {
+      return mmGeo
+    }
+
+    // Fall back to v1
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 10,
-                                    expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
-                                    targetObjName: "MusicModeGeometry") { errPreamble, iter in
+                                    expectedVersion: "1",
+                                    targetObjName: "MusicModeGeometry(v1)") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -918,6 +996,14 @@ extension MusicModeGeometry {
         return nil
       }
 
+      let videoGeo: VideoGeometry
+      if let videoGeoFallback {
+        videoGeo = videoGeoFallback
+      } else {
+        log.warn("No VideoGeometry given for legacy v1 MusicModeGeometry! Falling back to default VideoGeometry")
+        videoGeo = VideoGeometry.defaultGeometry()
+      }
+
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       return MusicModeGeometry(windowFrame: windowFrame,
                                screenID: screenID, video: videoGeo,
@@ -932,11 +1018,10 @@ extension MusicModeGeometry {
             self.windowFrame.origin.y.stringMaxFrac2,
             self.windowFrame.width.stringMaxFrac2,
             self.windowFrame.height.stringMaxFrac2,
-            self.playlistHeight.stringMaxFrac2,
             self.isVideoVisible.yn,
             self.isPlaylistVisible.yn,
-            self.videoAspect.aspectNormalDecimalString,
-            self.screenID
+            self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
+            self.video.toEmbeddedCSV()
     ].joined(separator: ",")
   }
 }
@@ -959,28 +1044,93 @@ extension PWinGeometry {
             self.viewportMargins.trailing.stringMaxFrac2,
             self.viewportMargins.bottom.stringMaxFrac2,
             self.viewportMargins.leading.stringMaxFrac2,
-            self.videoAspect.aspectNormalDecimalString,
             self.windowFrame.origin.x.stringMaxFrac2,
             self.windowFrame.origin.y.stringMaxFrac2,
             self.windowFrame.width.stringMaxFrac2,
             self.windowFrame.height.stringMaxFrac2,
             String(self.fitOption.rawValue),
-            self.screenID,
-            String(self.mode.rawValue)
+            self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
+            String(self.mode.rawValue),
+            self.video.toEmbeddedCSV()
     ].joined(separator: ",")
   }
 
   /// (`String`, `VideoGeometry`) -> `PWinGeometry`
-  static func fromCSV(_ csv: String?, videoGeo: VideoGeometry? = nil) -> PWinGeometry? {
-    // TODO: refactor to use player log
-    guard !(csv?.isEmpty ?? true) else {
-      Logger.log("CSV is empty; returning nil for geometry", level: .debug)
+  /// `log` is needed to construct embedded `VideoGeometry`.
+  /// `videoGeoFallback` is only used if CSV is legacy version
+  static func fromCSV(_ csv: String?, videoGeoFallback: VideoGeometry? = nil, _ log: Logger.Subsystem) -> PWinGeometry? {
+    guard let csv, !csv.isEmpty else {
+      Logger.log.debug("CSV is empty; returning nil for geometry")
       return nil
     }
 
+    /// Try v2 first.
+    /// Version 2 removes `videoAspect` field and adds 6 `videoGeometry` fields.
+    let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
+                             expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
+                                           targetObjName: "PWinGeometry(v2)") { errPreamble, iter in
+
+      guard let topMarginHeight = Double(iter.next()!),
+            let outsideTopBarHeight = Double(iter.next()!),
+            let outsideTrailingBarWidth = Double(iter.next()!),
+            let outsideBottomBarHeight = Double(iter.next()!),
+            let outsideLeadingBarWidth = Double(iter.next()!),
+            let insideTopBarHeight = Double(iter.next()!),
+            let insideTrailingBarWidth = Double(iter.next()!),
+            let insideBottomBarHeight = Double(iter.next()!),
+            let insideLeadingBarWidth = Double(iter.next()!),
+            let viewportMarginTop = Double(iter.next()!),
+            let viewportMarginTrailing = Double(iter.next()!),
+            let viewportMarginBottom = Double(iter.next()!),
+            let viewportMarginLeading = Double(iter.next()!),
+            let winOriginX = Double(iter.next()!),
+            let winOriginY = Double(iter.next()!),
+            let winWidth = Double(iter.next()!),
+            let winHeight = Double(iter.next()!),
+            let fitOptionRawValue = Int(iter.next()!),
+            let screenID = iter.next(),
+            let modeRawValue = Int(iter.next()!),
+            let videoGeoEmbeddedCSV = iter.next()
+      else {
+        Logger.log.error("\(errPreamble) could not parse one or more tokens")
+        /// NOTE: if Xcode shows a weird error here, it means that the wrong args are being supplied
+        /// to the`PWinGeometry` constructor below, or the constructor of any object passed to it.
+        return nil
+      }
+
+      guard let mode = PlayerWindowMode(rawValue: modeRawValue) else {
+        Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
+        return nil
+      }
+      guard let fitOption = ScreenFitOption(rawValue: fitOptionRawValue) else {
+        Logger.log.error("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)")
+        return nil
+      }
+      let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
+      let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
+                                       bottom: viewportMarginBottom, leading: viewportMarginLeading)
+      let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
+                                   bottom: outsideBottomBarHeight, leading: outsideLeadingBarWidth)
+      let insideBars = MarginQuad(top: insideTopBarHeight, trailing: insideTrailingBarWidth,
+                                  bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
+
+      guard let videoGeo = VideoGeometry.fromEmbeddedCSV(videoGeoEmbeddedCSV, log) else {
+        Logger.log.error("\(errPreamble) could not parse VideoGeometry")
+        return nil
+      }
+
+      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
+                          outsideBars: outsideBars, insideBars: insideBars,
+                          viewportMargins: viewportMargins, video: videoGeo)
+    }
+    if let pwinGeo {
+      return pwinGeo
+    }
+
+    // Fall back to v1, which did not include embedded VideoGeometry CSV.
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
-                                    expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                    targetObjName: "PWinGeometry") { errPreamble, iter in
+                                    expectedVersion: "1",
+                                    targetObjName: "PWinGeometry(v1)") { errPreamble, iter in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
@@ -1004,18 +1154,18 @@ extension PWinGeometry {
             let screenID = iter.next(),
             let modeRawValue = Int(iter.next()!)
       else {
-        Logger.log("\(errPreamble) could not parse one or more tokens", level: .error)
+        Logger.log.error("\(errPreamble) could not parse one or more tokens")
         /// NOTE: if Xcode shows a weird error here, it means that the wrong args are being supplied
         /// to the`PWinGeometry` constructor below, or the constructor of any object passed to it.
         return nil
       }
 
       guard let mode = PlayerWindowMode(rawValue: modeRawValue) else {
-        Logger.log("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)", level: .error)
+        Logger.log.error("\(errPreamble) unrecognized PlayerWindowMode: \(modeRawValue)")
         return nil
       }
       guard let fitOption = ScreenFitOption(rawValue: fitOptionRawValue) else {
-        Logger.log("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)", level: .error)
+        Logger.log.error("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)")
         return nil
       }
       let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
@@ -1027,13 +1177,14 @@ extension PWinGeometry {
                                   bottom: insideBottomBarHeight, leading: insideLeadingBarWidth)
 
       let video: VideoGeometry
-      if let videoGeo {
-        video = videoGeo
+      if let videoGeoFallback {
+        video = videoGeoFallback
       } else {
-        Logger.log("VideoGeometry for PWinGeometry is nil! Will try to derive it", level: .error)  // FIXME: persist this
+        // we will do our best but our best may not be good enough
+        Logger.log.error("VideoGeometry for legacy PWinGeometry is nil! Will try to derive it")
         let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
         let videoSize = viewportSize.subtract(viewportMargins.totalSize)
-        let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))
+        let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(log)
         video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
       }
 
@@ -1067,8 +1218,8 @@ extension PlayerWindowController.LayoutSpec {
 
   /// `String` -> `LayoutSpec`
   static func fromCSV(_ csv: String?) -> PlayerWindowController.LayoutSpec? {
-    guard !(csv?.isEmpty ?? true) else {
-      Logger.log("CSV is empty; returning nil for LayoutSpec", level: .debug)
+    guard let csv, !csv.isEmpty else {
+      Logger.log.debug("CSV is empty; returning nil for LayoutSpec")
       return nil
     }
     return PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
@@ -1080,7 +1231,7 @@ extension PlayerWindowController.LayoutSpec {
 
       guard let modeInt = Int(iter.next()!), let mode = PlayerWindowMode(rawValue: modeInt),
             let isLegacyStyle = Bool.yn(iter.next()) else {
-        Logger.log("\(errPreamble) could not parse mode or isLegacyStyle", level: .error)
+        Logger.log.error("\(errPreamble) could not parse mode or isLegacyStyle")
         return nil
       }
 
@@ -1088,14 +1239,14 @@ extension PlayerWindowController.LayoutSpec {
             let trailingSidebarPlacement = Preference.PanelPlacement(Int(iter.next()!)),
             let bottomBarPlacement = Preference.PanelPlacement(Int(iter.next()!)),
             let leadingSidebarPlacement = Preference.PanelPlacement(Int(iter.next()!)) else {
-        Logger.log("\(errPreamble) could not parse bar placements", level: .error)
+        Logger.log.error("\(errPreamble) could not parse bar placements")
         return nil
       }
 
       guard let enableOSC = Bool.yn(iter.next()),
             let oscPositionInt = Int(iter.next()!),
             let oscPosition = Preference.OSCPosition(rawValue: oscPositionInt) else {
-        Logger.log("\(errPreamble) could not parse enableOSC or oscPosition", level: .error)
+        Logger.log.error("\(errPreamble) could not parse enableOSC or oscPosition")
         return nil
       }
 
@@ -1107,7 +1258,7 @@ extension PlayerWindowController.LayoutSpec {
       // If the tab groups prefs changed somehow since the last run, just add it for now so that the geometry can be restored.
       // Will correct this at the end of restore.
       if let visibleTab = leadVis.visibleTab, !leadingTabGroups.contains(visibleTab.group) {
-        Logger.log("Restore state is invalid: leadingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups", level: .error)
+        Logger.log.error("Restore state is invalid: leadingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups")
         leadingTabGroups.insert(visibleTab.group)
       }
       let leadingSidebar = PlayerWindowController.Sidebar(.leadingSidebar, tabGroups: leadingTabGroups, placement: leadingSidebarPlacement, visibility: leadVis)
@@ -1116,7 +1267,7 @@ extension PlayerWindowController.LayoutSpec {
       let trailVis: PlayerWindowController.Sidebar.Visibility = traillingSidebarTab == nil ? .hide : .show(tabToShow: traillingSidebarTab!)
       // Account for invalid visible tab (see note above)
       if let visibleTab = trailVis.visibleTab, !trailingTabGroups.contains(visibleTab.group) {
-        Logger.log("Restore state is invalid: trailingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups", level: .error)
+        Logger.log.error("Restore state is invalid: trailingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups")
         trailingTabGroups.insert(visibleTab.group)
       }
       let trailingSidebar = PlayerWindowController.Sidebar(.trailingSidebar, tabGroups: trailingTabGroups, placement: trailingSidebarPlacement, visibility: trailVis)

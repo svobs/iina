@@ -651,7 +651,7 @@ extension PlayerWindowController {
       let videoSize = AppData.defaultVideoSize
       let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
       let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video:
-                                VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null")))
+                                VideoGeometry.defaultGeometry())
       return geo.refit(.centerInside)
     }
 

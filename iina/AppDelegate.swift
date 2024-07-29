@@ -470,7 +470,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     let didRestoreSomething = !startupState.wcsToRestore.isEmpty
-    var didOpenSomething = didRestoreSomething && startupState.wcForOpenFile != nil
+    let didOpenSomething = didRestoreSomething && startupState.wcForOpenFile != nil
 
     if didRestoreSomething && Preference.bool(for: .isRestoreInProgress) {
       Logger.log("Done restoring windows", level: .verbose)

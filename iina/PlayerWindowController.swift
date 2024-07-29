@@ -280,7 +280,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if csv?.isEmpty ?? true {
       Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Falling back to default geometry",
                  level: .debug)
-    } else if let savedGeo = PWinGeometry.fromCSV(csv) {
+    } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
         Logger.log("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)", level: .verbose)
         return savedGeo
@@ -307,16 +307,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // The first "get" of this will load from saved pref. Every "set" of this will update the pref.
   static var musicModeGeoLastClosed: MusicModeGeometry = {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
-    if let savedGeo = MusicModeGeometry.fromCSV(csv, VideoGeometry.defaultGeometry(Logger.Subsystem(rawValue: "null"))) {
+    if let savedGeo = MusicModeGeometry.fromCSV(csv, Logger.log) {
       Logger.log("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)", level: .verbose)
       return savedGeo
     }
     Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Falling back to default music mode geometry",
                level: .debug)
     let defaultScreen = NSScreen.screens[0]
-    let nullLog = Logger.Subsystem(rawValue: "null")
     let defaultGeo = MiniPlayerController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
-                                                                          video: VideoGeometry.defaultGeometry(nullLog))
+                                                                          video: VideoGeometry.defaultGeometry())
     return defaultGeo
   }() {
     didSet {
