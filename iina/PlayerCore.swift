@@ -2470,6 +2470,10 @@ class PlayerCore: NSObject {
     guard !info.isRestoring, !isStopping else { return }
     let aid = Int(mpv.getInt(MPVOption.TrackSelection.aid))
     guard aid != info.aid else { return }
+    guard info.isFileLoaded else {
+      log.verbose("Audio track changed to \(aid) but file is not loaded; ignoring")
+      return
+    }
     info.aid = aid
 
     log.verbose("Audio track changed to: \(aid)")
@@ -2593,6 +2597,10 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !info.isRestoring, !isStopping else { return }
     let sid = Int(mpv.getInt(MPVOption.TrackSelection.sid))
+    guard info.isFileLoaded else {
+      log.verbose("SID changed to \(sid) but file is not loaded; ignoring")
+      return
+    }
     guard sid != info.sid else { return }
     info.sid = sid
 
@@ -2610,6 +2618,10 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !info.isRestoring, !isStopping else { return }
     let ssid = Int(mpv.getInt(MPVOption.Subtitles.secondarySid))
+    guard info.isFileLoaded else {
+      log.verbose("SSID changed to \(ssid) but file is not loaded; ignoring")
+      return
+    }
     guard ssid != info.secondSid else { return }
     info.secondSid = ssid
 
@@ -2653,6 +2665,7 @@ class PlayerCore: NSObject {
     // list changes if mpv is terminating as accessing mpv once shutdown has been initiated can
     // trigger a crash.
     guard !isStopping else { return }
+    guard info.isFileLoaded else { return }
     log.debug("Track list changed")
     reloadTrackInfo()
     reloadSelectedTracks()
@@ -2682,12 +2695,11 @@ class PlayerCore: NSObject {
     guard !info.isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
     guard vid != info.vid else { return }
-    info.vid = vid
-
     guard info.isFileLoaded else {
-      log.verbose("After video track changed to: \(vid): file is not loaded!")
+      log.verbose("Video track changed to \(vid) but file is not loaded; ignoring")
       return
     }
+    info.vid = vid
 
     /// Show default album art? If yes, then use its video geometry.
     // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
