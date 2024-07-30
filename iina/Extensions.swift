@@ -1336,7 +1336,6 @@ class IINAWindowController: NSWindowController {
       return
     }
     if Preference.bool(for: .isRestoreInProgress) {
-      window.orderOut(self)
       window.postWindowIsReadyToShow()
       return
     } else {

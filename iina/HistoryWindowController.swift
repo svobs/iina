@@ -129,7 +129,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   override func openWindow(_ sender: Any?) {
     guard let window else { return }
-    window.orderOut(self)  // Hide window. Should load window as a side effect, if not loaded already
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
     let isInitialLoad = reloadTicketCounter == 0

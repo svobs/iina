@@ -161,7 +161,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
     /// If welcome window is shown at startup, recentDocuments may not be finished loading.
     /// We want to wait until recentDocuments are done loading before displaying the window.
-    window.orderOut(self)  // should load window as a side effect, if not loaded already
     assert(isWindowLoaded, "Expected WelcomeWindow to be loaded!")
 
     if isFirstLoad {

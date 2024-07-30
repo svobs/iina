@@ -922,7 +922,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   override func windowDidLoad() {
     log.verbose("PlayerWindow windowDidLoad starting")
     super.windowDidLoad()
-    
+
     miniPlayer = MiniPlayerController()
     miniPlayer.windowController = self
 
@@ -932,6 +932,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     guard let window = window else { return }
     guard let cv = window.contentView else { return }
+
+    /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
+    /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
+    /// to cause flickering while animating.
+    /// Always use option `.fullScreenDisallowsTiling`. As of MacOS 14.2.1, tiling is at best glitchy &
+    /// at worst results in an infinite loop with our code.
+    // FIXME: support tiling for at least native full screen
+    window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
+    window.orderOut(self)
 
     window.initialFirstResponder = nil
 
@@ -1044,25 +1053,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
       updateTitle()
-    }
-
-    /// The `iinaFileLoaded` event is useful here because it is posted after `fileLoaded`.
-    /// This ensures that `info.vid` will have been updated with the current audio track selection, or `0` if none selected.
-    /// Before `fileLoaded` it may be `0` (indicating no selection) as the track info is still being processed, which is misleading.
-    addObserver(to: .default, forName: .iinaFileLoaded, object: player) { [self] note in
-      log.verbose("Got iinaFileLoaded notification")
-
-      hideSeekTimeAndThumbnail()
-
-      quickSettingView.reload()
-
-      updateTitle()
-      playlistView.scrollPlaylistToCurrentItem()
-
-      if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !player.info.isRestoring {
-        log.debug("Changing to fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-        enterFullScreen()
-      }
     }
 
     // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
@@ -1893,8 +1883,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - Window delegate: Open / Close
 
   override func openWindow(_ sender: Any?) {
+    animationPipeline.submitSudden({ [self] in
+      _openWindow()
+    })
+  }
+
+  func _openWindow() {
     guard let window = self.window, let cv = window.contentView else { return }
     isInitialSizeDone = false  // reset for reopen
+    window.orderOut(self)  // hide while adjusting layout for new video
 
     log.verbose("PlayerWindow openWindow starting")
 
@@ -1940,13 +1937,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       attrTitle.addAttribute(.paragraphStyle, value: p, range: NSRange(location: 0, length: attrTitle.length))
     }
 
-    /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
-    /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
-    /// to cause flickering while animating.
-    /// Always use option `.fullScreenDisallowsTiling`. As of MacOS 14.2.1, tiling is at best glitchy &
-    /// at worst results in an infinite loop with our code.
-    // FIXME: support tiling for at least native full screen
-    window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
     resetCollectionBehavior()
     updateBufferIndicatorView()
     updateOSDPosition()
@@ -1962,50 +1952,43 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     defaultAlbumArtView.isHidden = true
 
     player.initVideo()
-    videoView.startDisplayLink()
 
     let startup = AppDelegate.shared.startupState
     let showAsynchronously = player.info.isRestoring || (startup.status != .doneOpening && startup.wcForOpenFile == self)
     /// Do this *after* `restoreFromMiscWindowBools` call
     if !window.isMiniaturized {
-      log.verbose("Showing Player Window")
-
       Preference.UIState.windowsOpen.insert(window.savedStateName)
-
-      if !showAsynchronously {
-        showWindow(self)
-      }
-
-      /// Need to call this because `super.openWindow` doesn't get called for PlayerWindows
-      Preference.UIState.saveCurrentOpenWindowList()
     }
 
-    // Unlike other windows, we need to show player window as soon as mpv starts because it will crash if it tries to render offscreen.
-    if showAsynchronously {
-      DispatchQueue.main.async { [self] in  // needs slight delay to avoid race condition with unknown cause in FS
-        animationPipeline.submitSudden({
-          window.postWindowIsReadyToShow()
-        })
-      }
-    } else {
+    if !showAsynchronously {
       // Make sure to save newly opened window immediately to avoid losing state due to race
-      PlayerSaveState.saveSynchronously(player)
-    }
+      showWindow(self)
+    }  // else wait for video to load before posting
 
     log.verbose("PlayerWindow openWindow done")
   }
 
   override func showWindow(_ sender: Any?) {
-    // Call this to patch possible holes when restoring (e.g., interactive mode window)
-    updateCustomBorderBoxAndWindowOpacity()
+    log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
-    refreshKeyWindowStatus()
+    DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
+      self.animationPipeline.submitSudden({
+        // Call this to patch possible holes when restoring (e.g., interactive mode window)
+        self.updateCustomBorderBoxAndWindowOpacity()
 
-    animationPipeline.submitSudden({
-      self.updateTitle()  // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
-      self.window?.isExcludedFromWindowsMenu = false
-      self.forceDraw()  // needed if restoring while paused
-    })
+        self.refreshKeyWindowStatus()
+        // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
+        self.updateTitle()
+        self.window?.isExcludedFromWindowsMenu = false
+      })
+    }
+
+    DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
+      self.animationPipeline.submitSudden({ [self] in
+        forceDraw()  // needed if restoring while paused
+        PlayerSaveState.saveSynchronously(self.player)
+      })
+    }
   }
 
   func windowWillClose(_ notification: Notification) {

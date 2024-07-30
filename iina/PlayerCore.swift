@@ -2310,7 +2310,6 @@ class PlayerCore: NSObject {
     reloadSelectedTracks()
     _reloadChapters()
     syncAbLoop()
-    saveState()
 
     // Auto load
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -2358,14 +2357,23 @@ class PlayerCore: NSObject {
 
       touchBarSupport.setupTouchBarUI()
 
-      if info.aid == 0 {
-        windowController.muteButton.isEnabled = false
-        windowController.volumeSlider.isEnabled = false
-      }
+      windowController.animationPipeline.submitSudden({ [self] in
+        /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
+        /// current audio track selection, or `0` if none selected.
+        /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
+        /// because it can mislead us into thinking that the user has deselected the audio track.
+        if info.aid == 0 {
+          windowController.muteButton.isEnabled = false
+          windowController.volumeSlider.isEnabled = false
+        }
 
-      if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
-        windowController.toggleWindowFullScreen()
-      }
+        windowController.hideSeekTimeAndThumbnail()
+        windowController.quickSettingView.reload()
+        windowController.updateTitle()
+        windowController.playlistView.scrollPlaylistToCurrentItem()
+
+        windowController.window?.postWindowIsReadyToShow()
+      })
     }
 
     // History thread: update history
@@ -2444,9 +2452,17 @@ class PlayerCore: NSObject {
           } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
             log.debug("Current media is audio: auto-switching to music mode")
             enterMusicMode(automatically: true)
+            return  // do not even try to go to full screen if already going to music mode
           } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
             log.debug("Current media is not audio: auto-switching to normal window")
             exitMusicMode(automatically: true)
+          }
+        }
+
+        windowController.animationPipeline.submitSudden { [self] in
+          if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !info.isRestoring {
+            log.debug("Changing to fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+            windowController.enterFullScreen()
           }
         }
       }
