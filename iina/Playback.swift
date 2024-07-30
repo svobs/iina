@@ -21,8 +21,7 @@ class Playback: CustomStringConvertible {
     
     case notYetStarted = 1       /// set before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
-    case loaded               /// set after mpv sends `fileLoaded` notification
-    case completelyLoaded     /// everything loaded by mpv, including filters
+    case loaded               /// set after mpv sends `fileLoaded` notification & IINA has processed it
     case ended                /// Not used at present
 
     var description: String {
@@ -33,8 +32,6 @@ class Playback: CustomStringConvertible {
         return "started"
       case .loaded:
         return "loaded"
-      case .completelyLoaded:
-        return "completelyLoaded"
       case .ended:
         return "ended"
       }

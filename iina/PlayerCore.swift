@@ -2279,12 +2279,14 @@ class PlayerCore: NSObject {
       return
     }
 
-    if !mpv.isStale() {
-      if currentPlayback.loadStatus.isNotYet(.loaded) {
-        currentPlayback.loadStatus = .loaded
-      } else {
-        log.warn("FileLoaded: loadStatus is \(currentPlayback.loadStatus.description.quoted)")
-      }
+    guard !mpv.isStale() else {
+      log.debug("FileLoaded: aborting - mpv is stale")
+      return
+    }
+
+    guard currentPlayback.loadStatus.isNotYet(.loaded) else {
+      log.warn("FileLoaded: aborting - loadStatus of \(currentPlayback.path.pii.quoted) is \(currentPlayback.loadStatus.description.quoted)")
+      return
     }
 
     // Kick off thumbnails load/gen - it can happen in background
@@ -2297,6 +2299,7 @@ class PlayerCore: NSObject {
     let isRestoring = info.isRestoring
     let priorState = info.priorState
 
+    // Sync tracks
     if isRestoring, let priorState {
       /// Cannot set tracks until after `fileLoaded`, or else mpv will error out
       log.debug("FileLoaded: restoring vid & aid tracks")
@@ -2306,12 +2309,127 @@ class PlayerCore: NSObject {
       if let aid = priorState.int(for: .aid) {
         mpv.setInt(MPVOption.TrackSelection.aid, aid)
       }
+
+      // Also finish up restore
+      if priorState.string(for: .playPosition) != nil {
+        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
+        log.verbose("Clearing mpv 'start' option now that restore is complete")
+        mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
+      }
+      info.priorState = nil
+      info.isRestoring = false
+
+      log.debug("Done with restore")
     }
     reloadSelectedTracks()
     _reloadChapters()
     syncAbLoop()
 
-    // Auto load
+    // Done syncing tracks
+    currentPlayback.loadStatus = .loaded
+    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
+
+    // Launch auto-load tasks on background thread
+    startBackgroundTasksAfterFileLoaded(for: currentPlayback, isRestoring: isRestoring, priorState: priorState)
+
+    // History thread: update history given new playback URL
+    if let url = info.currentURL {
+      startHistoryUpdateTasksAfterFileLoaded(for: url)
+    }
+
+    DispatchQueue.main.async { [self] in
+      doMainThreadWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
+                                      showDefaultArt: info.shouldShowDefaultArt,
+                                      currentMediaAudioStatus: info.currentMediaAudioStatus)
+    }
+  }
+
+  private func doMainThreadWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
+                                               showDefaultArt: Bool?,
+                                               currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    refreshSyncUITimer()
+    touchBarSupport.setupTouchBarUI()
+
+    windowController.animationPipeline.submitSudden({ [self] in
+      /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
+      /// current audio track selection, or `0` if none selected.
+      /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
+      /// because it can mislead us into thinking that the user has deselected the audio track.
+      if info.aid == 0 {
+        windowController.muteButton.isEnabled = false
+        windowController.volumeSlider.isEnabled = false
+      }
+
+      if let showDefaultArt {
+        log.verbose("Calling updateDefaultArtVisibility from fileIsCompletelyDoneLoading")
+        windowController.updateDefaultArtVisibility(showDefaultArt)
+      }
+
+      windowController.hideSeekTimeAndThumbnail()
+      windowController.quickSettingView.reload()
+      windowController.updateTitle()
+      windowController.playlistView.scrollPlaylistToCurrentItem()
+
+      if !isRestoring {
+        // Need to switch to music mode?
+        if Preference.bool(for: .autoSwitchToMusicMode) {
+          if overrideAutoMusicMode {
+            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
+            log.debug("Current media is audio: auto-switching to music mode")
+            enterMusicMode(automatically: true)
+            return  // do not even try to go to full screen if already going to music mode
+          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
+            log.debug("Current media is not audio: auto-switching to normal window")
+            exitMusicMode(automatically: true)
+          }
+        }
+
+        // Need to switch to full screen?
+        if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !info.isRestoring {
+          log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+          windowController.enterFullScreen()
+        }
+      }
+
+      // Post notifications
+      postNotification(.iinaFileLoaded)
+      events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
+      windowController.window?.postWindowIsReadyToShow()
+    })
+  }
+
+  // History tasks via history queue
+  private func startHistoryUpdateTasksAfterFileLoaded(for url: URL) {
+    let duration = info.videoDuration ?? .zero
+    HistoryController.shared.queue.async { [self] in
+      // 1. Update main history list
+      HistoryController.shared.add(url, duration: duration.second)
+
+      // 2. IINA's [ancient] "resume last playback" feature
+      // Add this now, or else welcome window will fall out of sync with history list
+      saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
+
+      if Preference.bool(for: .recordRecentFiles) {
+        // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
+        if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+          HistoryController.shared.noteNewRecentDocumentURL(url)
+        } else {
+          /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
+          /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
+          NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+        }
+      }
+      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+      postFileHistoryUpdateNotification()
+    }
+  }
+
+  // Auto load via background queue
+  private func startBackgroundTasksAfterFileLoaded(for currentPlayback: Playback,
+                                                   isRestoring: Bool, priorState: PlayerSaveState?) {
     $backgroundQueueTicket.withLock { $0 += 1 }
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
     let currentTicket = backgroundQueueTicket
@@ -2350,126 +2468,6 @@ class PlayerCore: NSObject {
       }
       log.debug("Done with auto load")
     }
-
-    // main thread stuff
-    DispatchQueue.main.async { [self] in
-      refreshSyncUITimer()
-
-      touchBarSupport.setupTouchBarUI()
-
-      windowController.animationPipeline.submitSudden({ [self] in
-        /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
-        /// current audio track selection, or `0` if none selected.
-        /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
-        /// because it can mislead us into thinking that the user has deselected the audio track.
-        if info.aid == 0 {
-          windowController.muteButton.isEnabled = false
-          windowController.volumeSlider.isEnabled = false
-        }
-
-        windowController.hideSeekTimeAndThumbnail()
-        windowController.quickSettingView.reload()
-        windowController.updateTitle()
-        windowController.playlistView.scrollPlaylistToCurrentItem()
-
-        windowController.window?.postWindowIsReadyToShow()
-      })
-    }
-
-    // History thread: update history
-    if let url = info.currentURL {
-      let duration = info.videoDuration ?? .zero
-      HistoryController.shared.queue.async { [self] in
-        // 1. Update main history list
-        HistoryController.shared.add(url, duration: duration.second)
-
-        // 2. IINA's [ancient] "resume last playback" feature
-        // Add this now, or else welcome window will fall out of sync with history list
-        saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
-
-        if Preference.bool(for: .recordRecentFiles) {
-          // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
-          if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-            HistoryController.shared.noteNewRecentDocumentURL(url)
-          } else {
-            /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
-            /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
-            NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
-          }
-        }
-        NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
-        postFileHistoryUpdateNotification()
-      }
-    }
-
-    guard !mpv.isStale() else {
-      log.debug("FileCompletelyLoaded: skipping cuz mpv is stale")
-      return
-    }
-
-    guard currentPlayback.loadStatus.isAtLeast(.started) else {
-      log.debug("FileCompletelyLoaded: skipping cuz loadStatus not yet started (\(currentPlayback.loadStatus.description.quoted))")
-      return
-    }
-
-    /// Make sure to set this *after* calling `applyVideoGeoTransform`
-    guard currentPlayback.loadStatus.isNotYet(.completelyLoaded) else {
-      log.debug("FileCompletelyLoaded: skipping cuz loadStatus is \(currentPlayback.loadStatus.description.quoted)")
-      return
-    }
-
-    currentPlayback.loadStatus = .completelyLoaded
-    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
-
-    /// Show default album art?
-    let showDefaultArt: Bool? = info.shouldShowDefaultArt
-    if let showDefaultArt {
-      DispatchQueue.main.async { [self] in
-        log.verbose("Calling updateDefaultArtVisibility from fileIsCompletelyDoneLoading")
-        windowController.updateDefaultArtVisibility(showDefaultArt)
-      }
-    }
-
-    if let priorState = info.priorState {
-      if priorState.string(for: .playPosition) != nil {
-        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
-        log.verbose("Clearing mpv 'start' option now that restore is complete")
-        mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
-      }
-      info.priorState = nil
-      info.isRestoring = false
-
-      log.debug("Done with restore")
-
-    } else {  // Not restoring
-      let currentMediaAudioStatus = info.currentMediaAudioStatus
-
-      DispatchQueue.main.async { [self] in
-        // if need to switch to music mode
-        if Preference.bool(for: .autoSwitchToMusicMode) {
-          if overrideAutoMusicMode {
-            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
-          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
-            log.debug("Current media is audio: auto-switching to music mode")
-            enterMusicMode(automatically: true)
-            return  // do not even try to go to full screen if already going to music mode
-          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-            log.debug("Current media is not audio: auto-switching to normal window")
-            exitMusicMode(automatically: true)
-          }
-        }
-
-        windowController.animationPipeline.submitSudden { [self] in
-          if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !info.isRestoring {
-            log.debug("Changing to fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-            windowController.enterFullScreen()
-          }
-        }
-      }
-    }
-
-    postNotification(.iinaFileLoaded)
-    events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
   }
 
   func afChanged() {

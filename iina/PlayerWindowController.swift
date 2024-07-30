@@ -1986,7 +1986,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
       self.animationPipeline.submitSudden({ [self] in
         forceDraw()  // needed if restoring while paused
-        PlayerSaveState.saveSynchronously(self.player)
       })
     }
   }
@@ -3299,7 +3298,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
-    if isInitialSizeDone && (player.info.currentPlayback?.loadStatus.isAtLeast(.completelyLoaded) ?? false) {
+    if isInitialSizeDone && (player.info.currentPlayback?.loadStatus.isAtLeast(.loaded) ?? false) {
       // Run all tasks in the OSD queue until it is depleted
       osdQueueLock.withLock {
         while !osdQueue.isEmpty {

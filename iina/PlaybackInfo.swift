@@ -52,7 +52,7 @@ class PlaybackInfo {
   /// File not completely done loading
   var isNotDoneLoading: Bool {
     guard let currentPlayback else { return false }
-    return currentPlayback.loadStatus.isNotYet(.completelyLoaded)
+    return currentPlayback.loadStatus.isNotYet(.loaded)
   }
   var timeLastFileOpenFinished: TimeInterval = 0
   var timeSinceLastFileOpenFinished: TimeInterval {
@@ -205,7 +205,7 @@ class PlaybackInfo {
   var shouldShowDefaultArt: Bool? {
     if let currentPlayback {
       // Don't show art if currently loading
-      if currentPlayback.loadStatus.isAtLeast(.completelyLoaded) {
+      if currentPlayback.loadStatus.isAtLeast(.loaded) {
         return !isVideoTrackSelected
       }
     }
