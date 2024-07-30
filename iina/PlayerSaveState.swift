@@ -103,7 +103,7 @@ struct PlayerSaveState {
   /// Cached values parsed from `properties`
 
   /// Describes the current layout configuration of the player window.
-  /// See `setLayoutForOpen()` in `PlayerWindowLayout.swift`.
+  /// See `setLayoutForWindowOpen()` in `PlayerWindowLayout.swift`.
   let layoutSpec: PlayerWindowController.LayoutSpec?
 
   let geoSet: GeometrySet
@@ -114,7 +114,8 @@ struct PlayerSaveState {
     self.log = Logger.subsystem(forPlayerID: playerID)
 
     let layoutSpecCSV = PlayerSaveState.string(for: .layoutSpec, props)
-    self.layoutSpec = PlayerWindowController.LayoutSpec.fromCSV(layoutSpecCSV)
+    let layoutSpec = PlayerWindowController.LayoutSpec.fromCSV(layoutSpecCSV)
+    self.layoutSpec = layoutSpec
     self.geoSet = PlayerSaveState.geoSet(from: props, log)
 
     self.screens = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
@@ -141,11 +142,21 @@ struct PlayerSaveState {
     props[PropName.layoutSpec.rawValue] = layout.spec.toCSV()
 
     /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
-    let windowedGeo = geo.windowed
-    props[PropName.windowedModeGeo.rawValue] = windowedGeo.toCSV()
+    props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
 
     /// `musicModeGeo`: use supplied GeometrySet for most up-to-date window frame
     props[PropName.musicModeGeo.rawValue] = geo.musicMode.toCSV()
+
+    /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
+    props[PropName.videoGeo.rawValue] = geo.video.toCSV()
+
+    // TODO: stop saving these in v1.3
+    props[PropName.videoRawWidth.rawValue] = String(geo.video.rawWidth)
+    props[PropName.videoRawHeight.rawValue] = String(geo.video.rawHeight)
+    props[PropName.videoAspectLabel.rawValue] = geo.video.selectedAspectLabel
+    props[PropName.cropLabel.rawValue] = geo.video.selectedCropLabel
+    props[PropName.totalRotation.rawValue] = String(geo.video.totalRotation)
+    props[PropName.videoRotation.rawValue] = String(geo.video.userRotation)
 
     let screenMetaCSVList: [String] = wc.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
@@ -158,17 +169,6 @@ struct PlayerSaveState {
     if player.windowController.isOnTop {
       props[PropName.isOnTop.rawValue] = true.yn
     }
-
-    // - VideoGeometry
-
-    props[PropName.videoGeo.rawValue] = geo.video.toCSV()
-    // TODO: stop saving these in v1.3
-    props[PropName.videoRawWidth.rawValue] = String(geo.video.rawWidth)
-    props[PropName.videoRawHeight.rawValue] = String(geo.video.rawHeight)
-    props[PropName.videoAspectLabel.rawValue] = geo.video.selectedAspectLabel
-    props[PropName.cropLabel.rawValue] = geo.video.selectedCropLabel
-    props[PropName.totalRotation.rawValue] = String(geo.video.totalRotation)
-    props[PropName.videoRotation.rawValue] = String(geo.video.userRotation)
 
     // - Misc window state
 
@@ -431,7 +431,7 @@ struct PlayerSaveState {
   }
 
   static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
-    // totalRotation is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
+    // VideoGeometry is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
     let videoGeo: VideoGeometry
     if let parsedVideoGeo = VideoGeometry.fromCSV(PlayerSaveState.string(for: .videoGeo, props), log) {
       videoGeo = parsedVideoGeo

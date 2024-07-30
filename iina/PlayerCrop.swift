@@ -118,7 +118,7 @@ extension PlayerCore {
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
-      log.verbose("Inside applyVideoGeoTransform: changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
+      log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
 
       let osdLabel = newCropLabel.isEmpty ? AppData.customCropIdentifier : newCropLabel
       sendOSD(.crop(osdLabel))

@@ -1167,7 +1167,7 @@ class PlayerCore: NSObject {
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard userRotation != videoGeo.userRotation else { return nil }
-      log.verbose("Inside applyVideoGeoTransform: applying new userRotation: \(userRotation)")
+      log.verbose("[applyVideoGeo:transform] Applying userRotation: \(userRotation)")
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
@@ -1233,6 +1233,7 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
+    /// Begin `VideoGeometry.Transform`
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard videoGeo.selectedAspectLabel != aspectLabel else {
         // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
@@ -1254,9 +1255,9 @@ class PlayerCore: NSObject {
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose("Inside applyVideoGeoTransform: applying video-aspect-override")
+      log.verbose("[applyVideoGeo:transform] changing selectedAspectLabel: \(videoGeo.selectedAspectLabel.quoted) → \(aspectLabel.quoted)")
       return newVideoGeo
-    }
+    }  /// End `VideoGeometry.Transform`
 
     windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
       reloadQuickSettingsView()
@@ -2141,17 +2142,6 @@ class PlayerCore: NSObject {
 
   // MARK: - Listeners
 
-  // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
-  // This is optional but provides a better viewer experience
-  private func preResizeVideo(forURL url: URL?) {
-    guard let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: url, log) else { return }
-
-    DispatchQueue.main.async { [self] in
-      log.verbose("Calling updateGeometryForVideoOpen from preResizeVideo")
-      windowController.updateGeometryForVideoOpen(ffMeta)
-    }
-  }
-
   func fileStarted(path: String, playlistPos: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
@@ -2177,7 +2167,15 @@ class PlayerCore: NSObject {
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
-    preResizeVideo(forURL: info.currentPlayback?.url)
+    // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
+    // This is optional but provides a better viewer experience.
+    if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log) {
+      log.verbose("Calling applyVideoGeoTransform with FFVideoMeta")
+      let transform: VideoGeometry.Transform = { videoGeo in
+        return videoGeo.substituting(ffMeta)
+      }
+      windowController.applyVideoGeoTransform(transform, fileJustOpened: true)
+    }
 
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue

@@ -162,7 +162,7 @@ class ThumbnailCache {
     }
 
     ThumbnailCacheManager.shared.needsRefresh = true
-    log.debug("Finished writing thumbnail cache: \(path.pii.quoted)")
+    log.debug("Finished writing to: \(path.pii.quoted)")
   }
 
   /// Read thumbnail cache to file.
@@ -171,10 +171,10 @@ class ThumbnailCache {
     let pathURL = urlFor(name, width: width)
     let sw = Utility.Stopwatch()
     guard let file = try? FileHandle(forReadingFrom: pathURL) else {
-      log.error("Cannot open thumbnail cache file: \(pathURL.path.pii.quoted)")
+      log.error("Cannot open file: \(pathURL.path.pii.quoted)")
       return nil
     }
-    log.debug("Reading thumbnail cache from \(pathURL.path.pii.quoted)")
+    log.debug("Reading from \(pathURL.path.pii.quoted)")
 
     defer {
       file.closeFile()

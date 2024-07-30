@@ -318,7 +318,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
       recentDocuments = recentsUnfiltered
     }
 
-    Logger.log("Reloading data for WelcomeWindow: finished resolving \(recentDocuments.count) recentDocuments in \(sw) ms")
+    Logger.log("[ReloadWelcomeWindow] finished resolving \(recentDocuments.count) recentDocuments in \(sw) ms")
 
     // Refresh UI:
 
@@ -332,7 +332,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     // Debug logging:
     if Logger.isEnabled(.verbose) {
       let last = lastPlaybackURL?.path.pii.quoted ?? "nil"
-      Logger.log("Reloaded WelcomeWindow, displayedRecents=[\(recentDocuments.count) of \(recentsUnfiltered.count)], lastPlaybackURL=\(last)", level: .verbose)
+      Logger.log("[ReloadWelcomeWindow] Recents displayed: \(recentDocuments.count) of \(recentsUnfiltered.count); lastPlaybackURL=\(last)", level: .verbose)
 
       for (index, url) in recentDocuments.enumerated() {
         Logger.log("Recents[\(index)]: \(url.path.pii.quoted)", level: .verbose)

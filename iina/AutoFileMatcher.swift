@@ -74,7 +74,7 @@ class AutoFileMatcher {
   }
 
   static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
-    log.verbose("Filling in video sizes...")
+    log.verbose("Filling in video sizes for \(videoFiles.count) files...")
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
@@ -211,7 +211,7 @@ class AutoFileMatcher {
       }
     }
 
-    log.debug("Finished matching")
+    log.debug("Done matching")
     return matchedPrefixes
   }
 
@@ -224,11 +224,13 @@ class AutoFileMatcher {
 
     for video in videoFiles {
       var matchedSubs = Set<FileInfo>()
-      log.debug("Matching for \(video.filename.pii)")
+      if log.isTraceEnabled {
+        log.trace("Matching for \(video.filename.pii.quoted)")
+      }
 
       // match video and sub if both are the closest one to each other
       if subAutoLoadOption.shouldLoadSubsMatchedByIINA() {
-        log.verbose("Matching by IINA...")
+        log.trace("Matching by IINA...")
         // is in series
         if !video.prefix.isEmpty, let matchedSubPrefix = matchedPrefixes[video.prefix] {
           // find sub with same name
@@ -241,7 +243,7 @@ class AutoFileMatcher {
               nameMatched = vn == sn
             }
             if nameMatched {
-              log.verbose("Matched \(video.filename.pii) (\(vn)) and \(sub.filename.pii) (\(sn)) ...")
+              log.verbose("Matched by IINA: \(video.filename.pii.quoted) (\(vn)) & \(sub.filename.pii.quoted) (\(sn)) ...")
               video.relatedSubs.append(sub)
               if sub.prefix == matchedSubPrefix {
                 try checkTicket()
@@ -252,30 +254,30 @@ class AutoFileMatcher {
             }
           }
         }
-        log.verbose("Finished")
+        log.trace("Matching by IINA: done")
       }
 
       // add subs that contains video name
       if subAutoLoadOption.shouldLoadSubsContainingVideoName() {
-        log.verbose("Matching subtitles containing video name...")
+        log.trace("Matching subtitles containing video name...")
         try subtitles.filter {
           $0.filename.contains(video.filename) && !$0.isMatched
         }.forEach { sub in
           try checkTicket()
-          log.verbose("Matched \(sub.filename.pii) and \(video.filename.pii)")
+          log.verbose("Matched by name: \(sub.filename.pii.quoted) & \(video.filename.pii.quoted)")
           player.info.$matchedSubs.withLock { $0[video.path, default: []].append(sub.url) }
           sub.isMatched = true
           matchedSubs.insert(sub)
         }
-        log.verbose("Finished")
+        log.trace("Matching subtitles containing video name: done")
       }
 
       // if no match
       if matchedSubs.isEmpty {
-        log.debug("No matched sub for this file")
+        log.debug("No matched subs for \(video.filename.pii.quoted)")
         unmatchedVideos.append(video)
       } else {
-        log.debug("Matched \(matchedSubs.count) subtitles")
+        log.debug("Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)")
       }
 
       // move the sub to front if it contains priority strings
@@ -299,13 +301,13 @@ class AutoFileMatcher {
             .compactMap { subs[video.path]!.firstIndex(of: $0.url) }   // get index
             .forEach { // move the sub with index to first
               try checkTicket()
-              log.verbose("Move \(subs[video.path]![$0].absoluteString.pii) to front")
+              log.verbose("Move \(subs[video.path]![$0].absoluteString.pii.quoted) to front")
               if let s = subs[video.path]?.remove(at: $0) {
                 subs[video.path]!.insert(s, at: 0)
               }
             }
         }
-        log.verbose("Finished")
+        log.trace("Moving sub: done")
       }
     }
 

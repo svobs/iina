@@ -8,116 +8,131 @@
 
 import Foundation
 
+fileprivate enum NewOpenedFileStatus: Int {
+  case no = 0
+  case openedManually
+  case openedViaPlaylistNavigation
+}
+
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
-
-  func updateGeometryForVideoOpen(_ ffMeta: FFVideoMeta) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    // If window was just opened, its opacity was until now set to 0%, to conceal partial drawing.
-    // Now that it is complete, we can show it:
-    animationPipeline.submitSudden { [self] in
-      let openedManually = !isInitialSizeDone
-      if openedManually {
-        log.verbose("Setting isInitialSizeDone=YES")
-        isInitialSizeDone = true
-      }
-
-      let newVidGeo = geo.video.substituting(ffMeta)
-
-      let newWindowGeo: PWinGeometry
-      if let resizedGeo = resizeAfterFileOpen(openedManually: openedManually, newVidGeo: newVidGeo) {
-        newWindowGeo = resizedGeo
-      } else {
-        assert(!openedManually, "resizeAfterFileOpen returned nil when openedManually was true!")
-        // File opened via playlist navigation, or some other change occurred for file
-        newWindowGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo, 
-                                                                    intendedViewportSize: player.info.intendedViewportSize)
-      }
-
-      var duration = IINAAnimation.VideoReconfigDuration
-      var timing = CAMediaTimingFunctionName.easeInEaseOut
-      if openedManually {
-        // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
-        duration = IINAAnimation.InitialVideoReconfigDuration
-        timing = .linear
-      }
-      /// Finally call `setFrame()`
-      let tasks = buildVideoGeoUpdateTasks(using: newWindowGeo, duration: duration, timing: timing)
-      guard !tasks.isEmpty else { return }  // indicates no op or abort
-      animationPipeline.submit(tasks)
-    }
-  }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
                               showDefaultArt: Bool? = nil,
+                              fileJustOpened: Bool = false,
                               onSuccess: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
     let isRestoring = player.info.isRestoring
 
-    log.verbose("[applyVideoGeoTransform] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
+    log.verbose("[applyVideoGeo] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
 
     guard !isRestoring else {
-      log.verbose("[applyVideoGeoTransform] Restore is in progress; aborting")
+      log.verbose("[applyVideoGeo] Restore is in progress; aborting")
       return
     }
 
     guard let currentPlayback = player.info.currentPlayback else {
-      log.verbose("[applyVideoGeoTransform] Aborting: currentPlayback is nil")
+      log.verbose("[applyVideoGeo] Aborting: currentPlayback is nil")
       return
     }
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitSudden { [self] in
-        guard let newVidGeo = videoTransform(geo.video) else { return }
-        // File opened via playlist navigation, or some other change occurred for file
-        let newWindowGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                                        intendedViewportSize: player.info.intendedViewportSize)
+        guard let newVidGeo = videoTransform(geo.video) else {
+          log.verbose("[applyVideoGeo] Aborting due to transform returning nil")
+          return
+        }
 
-        let tasks = buildVideoGeoUpdateTasks(using: newWindowGeo, showDefaultArt: showDefaultArt)
-        guard !tasks.isEmpty else { return }  // indicates no op or abort
+        guard !player.isStopping else {
+          log.verbose("[applyVideoGeo] Aborting because player is stopping (status=\(player.status))")
+          return
+        }
 
-        if newWindowGeo.video.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
+        if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
           player.reloadThumbnails(forMedia: currentPlayback)
         }
+
+        let newOpenedFileState: NewOpenedFileStatus
+        if fileJustOpened {
+          let openedManually = !isInitialSizeDone
+          if openedManually {
+            log.verbose("Setting isInitialSizeDone=YES")
+            isInitialSizeDone = true
+            newOpenedFileState = .openedManually
+          } else {
+            newOpenedFileState = .openedViaPlaylistNavigation
+          }
+        } else {
+          newOpenedFileState = .no
+        }
+
+        let tasks = applyVideoGeoUpdates(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
+                                         showDefaultArt: showDefaultArt)
+
         animationPipeline.submit(tasks, then: onSuccess)
       }
     }
   }
 
   /// Only `applyVideoGeoTransform` should call this.
-  private func buildVideoGeoUpdateTasks(using newWindowGeo: PWinGeometry,
-                                        showDefaultArt: Bool? = nil,
-                                        duration: CGFloat = IINAAnimation.VideoReconfigDuration,
-                                        timing: CAMediaTimingFunctionName = .easeInEaseOut) -> [IINAAnimation.Task] {
+  private func applyVideoGeoUpdates(forNewVideoGeo newVidGeo: VideoGeometry,
+                                    newOpenedFileState: NewOpenedFileStatus,
+                                    showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
 
-    guard !player.isStopping else {
-      log.verbose("[applyVideoGeoTransform] Aborting due to status=\(player.status)")
-      return []
+    var duration = IINAAnimation.VideoReconfigDuration
+    var timing = CAMediaTimingFunctionName.easeInEaseOut
+    if newOpenedFileState == .openedManually {
+      // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+      duration = IINAAnimation.InitialVideoReconfigDuration
+      timing = .linear
     }
-
-    // TODO: find place for this in tasks
-    pip.aspectRatio = newWindowGeo.video.videoSizeCAR
 
     let currentLayout = currentLayout
 
-    log.debug("[applyVideoGeoTransform D-2 Apply] Applying result (FS:\(isFullScreen.yn)) → \(newWindowGeo)")
+    // TODO: find place for this in tasks
+    pip.aspectRatio = newVidGeo.videoSizeCAR
+
+    let tasks: [IINAAnimation.Task]
 
     switch currentLayout.mode {
     case .windowed:
-      return buildApplyWindowGeoTasks(newWindowGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
+
+      let newGeo: PWinGeometry
+      switch newOpenedFileState {
+      case .no:
+        // File opened via playlist navigation, or some other change occurred for file
+        newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                              intendedViewportSize: player.info.intendedViewportSize)
+
+      case .openedManually, .openedViaPlaylistNavigation:
+        if let resizedGeo = resizeAfterFileOpen(openedManually: newOpenedFileState == .openedManually, newVidGeo: newVidGeo) {
+          newGeo = resizedGeo
+        } else {
+          assert(newOpenedFileState != .openedManually, "resizeAfterFileOpen returned nil when openedManually was true!")
+          /// If in windowed mode: file opened via playlist navigation, or some other change occurred for file.
+          /// If in other mode: do as little as possible. `PWinGeometry` will be used mostly for storage for other fields.
+          newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                                intendedViewportSize: player.info.intendedViewportSize)
+        }
+      }
+
+      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(newOpenedFileState)): \(newGeo)")
+      return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreen:
-      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWindowGeo.screenID, video: newWindowGeo.video)
+      let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                                   intendedViewportSize: player.info.intendedViewportSize)
+      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
+      log.debug("[applyVideoGeo Apply] Applying FS result: \(fsGeo)")
 
       return [IINAAnimation.Task(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose("[applyVideoGeoTransform Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
+        log.verbose("[applyVideoGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
         videoView.apply(fsGeo)
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
-        windowedModeGeo = newWindowGeo
+        windowedModeGeo = newWinGeo
 
         updateDefaultArtVisibility(showDefaultArt)
         updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
@@ -126,11 +141,13 @@ extension PlayerWindowController {
     case .musicMode:
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      let newGeometry = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newWindowGeo.video)
-      log.debug("[applyVideoGeoTransform M Apply] Player is in music mode. Calling applyMusicModeGeo with \(newGeometry)")
-      return buildApplyMusicModeGeoTasks(newGeometry, duration: duration, showDefaultArt: showDefaultArt)
+      log.debug("[applyVideoGeo] Prev cached value of musicModeGeo = \(musicModeGeo)")
+      let musicModeGeoForCurrentFrame = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID)
+      let newMusicModeGeo = musicModeGeoForCurrentFrame.clone(video: newVidGeo)
+      log.debug("[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)")
+      return buildApplyMusicModeGeoTasks(newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
     default:
-      log.error("[applyVideoGeoTransform Apply] INVALID MODE: \(currentLayout.mode)")
+      log.error("[applyVideoGeo Apply] INVALID MODE: \(currentLayout.mode)")
       return []
     }
   }
@@ -141,19 +158,19 @@ extension PlayerWindowController {
     let resizeTiming = Preference.enum(for: .resizeWindowTiming) as Preference.ResizeWindowTiming
     switch resizeTiming {
     case .always:
-      log.verbose("[applyVideoGeoTransform C-1] FileOpened & resizeTiming='Always' → will resize window")
+      log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='Always' → will resize window")
     case .onlyWhenOpen:
       guard openedManually else {
-        log.verbose("[applyVideoGeoTransform C-1] FileOpened & resizeTiming='OnlyWhenOpen', but openedManually=NO → will resize minimally")
+        log.verbose("[applyVideoGeo C-1] FileOpened & resizeTiming='OnlyWhenOpen', but openedManually=NO → will resize minimally")
         return nil
       }
     case .never:
       if openedManually {
-        log.verbose("[applyVideoGeoTransform C-1] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
+        log.verbose("[applyVideoGeo C-1] FileOpenedManually & resizeTiming='Never' → using windowedModeGeoLastClosed: \(PlayerWindowController.windowedModeGeoLastClosed)")
         return currentLayout.convertWindowedModeGeometry(from: PlayerWindowController.windowedModeGeoLastClosed,
                                                          video: newVidGeo, keepFullScreenDimensions: true)
       } else {
-        log.verbose("[applyVideoGeoTransform C-1] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
+        log.verbose("[applyVideoGeo C-1] FileOpened (not manually) & resizeTiming='Never' → will resize minimally")
         return nil
       }
     }
@@ -168,28 +185,28 @@ extension PlayerWindowController {
       if let mpvGeometry = player.getMPVGeometry() {
         var preferredGeo = windowGeo
         if Preference.bool(for: .lockViewportToVideoSize), let intendedViewportSize = player.info.intendedViewportSize  {
-          log.verbose("[applyVideoGeoTransform C-6] Using intendedViewportSize \(intendedViewportSize)")
+          log.verbose("[applyVideoGeo C-6] Using intendedViewportSize \(intendedViewportSize)")
           preferredGeo = windowGeo.scaleViewport(to: intendedViewportSize)
         }
-        log.verbose("[applyVideoGeoTransform C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
+        log.verbose("[applyVideoGeo C-7] Applying mpv \(mpvGeometry) within screen \(screenVisibleFrame)")
         return windowGeo.apply(mpvGeometry: mpvGeometry, desiredWindowSize: preferredGeo.windowFrame.size)
       } else {
-        log.debug("[applyVideoGeoTransform C-5] No mpv geometry found. Will fall back to default scheme")
+        log.debug("[applyVideoGeo C-5] No mpv geometry found. Will fall back to default scheme")
         return nil
       }
     case .simpleVideoSizeMultiple:
       let resizeWindowStrategy: Preference.ResizeWindowOption = Preference.enum(for: .resizeWindowOption)
       if resizeWindowStrategy == .fitScreen {
-        log.verbose("[applyVideoGeoTransform C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
+        log.verbose("[applyVideoGeo C-4] ResizeWindowOption=FitToScreen. Using screenFrame \(screenVisibleFrame)")
         return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
         let scaledVideoSize = newVidGeo.videoSizeCAR.multiply(CGFloat(resizeRatio))
-        log.verbose("[applyVideoGeoTransform C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)")
+        log.verbose("[applyVideoGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)")
         let centeredScaledGeo = windowGeo.scaleVideo(to: scaledVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = centeredScaledGeo.viewportSize
-        log.verbose("[applyVideoGeoTransform C-3] After scaleVideo: \(centeredScaledGeo)")
+        log.verbose("[applyVideoGeo C-3] After scaleVideo: \(centeredScaledGeo)")
         return centeredScaledGeo
       }
     }

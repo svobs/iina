@@ -124,26 +124,31 @@ class IINAAnimation {
       // Fail if not running on main thread:
       assert(DispatchQueue.isExecutingIn(.main))
 
-      newestTxID += 1
-      let transactionID = newestTxID
+      var enqueuedSomething = false
 
-      var needsLaunch = false
-      for task in tasks {
-        taskQueue.append((transactionID, task))
+      if !tasks.isEmpty {
+        newestTxID += 1
+        let transactionID = newestTxID
+
+        for task in tasks {
+          taskQueue.append((transactionID, task))
+        }
+        enqueuedSomething = true
       }
-      if let doAfter = doAfter {
+
+      if let doAfter {
         newestTxID += 1
         taskQueue.append((newestTxID, suddenTask(doAfter)))
+        enqueuedSomething = true
       }
+
+      guard enqueuedSomething else { return }
 
       if isRunning {
         // Let existing chain pick up the new animations
       } else {
+        // Launch for new tasks
         isRunning = true
-        needsLaunch = true
-      }
-
-      if needsLaunch {
         runTasks()
       }
     }

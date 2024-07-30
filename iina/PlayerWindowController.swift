@@ -1952,7 +1952,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateOSDPosition()
     addVideoViewToWindow(windowedModeGeo)
 
-    setLayoutForOpen()
+    setLayoutForWindowOpen()
 
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)

@@ -17,13 +17,13 @@ extension PlayerWindowController {
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func setLayoutForOpen() {
+  func setLayoutForWindowOpen() {
     let initialLayout: LayoutState
     let isRestoringFromPrevLaunch: Bool
     var needsNativeFullScreen = false
 
     if player.info.isRestoring,
-        let priorState = player.info.priorState,
+       let priorState = player.info.priorState,
        let priorLayoutSpec = priorState.layoutSpec {
       log.verbose("Transitioning to initial layout from prior window state")
       isRestoringFromPrevLaunch = true
@@ -41,7 +41,8 @@ extension PlayerWindowController {
       configureFromRestore(priorState, initialLayout)
 
     } else if isOpen {
-      log.verbose("Opening a new file in an already open window")
+      let currentLayout = currentLayout
+      log.verbose("Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return }
 
       var videoGeo: VideoGeometry = geo.video
@@ -52,15 +53,13 @@ extension PlayerWindowController {
 
       /// `windowFrame` may be slightly off; update it
       if currentLayout.mode == .windowed {
-        windowedModeGeo = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
-                                                      video: videoGeo)
-        /// Set this so that `applyVideoGeoTransform` will use the correct window frame if it looks for it.
+        /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
+        PlayerWindowController.windowedModeGeoLastClosed = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
+                                                                                       video: videoGeo)
       } else if currentLayout.mode == .musicMode {
-        /// Set this so that `applyVideoGeoTransform` will use the correct window frame if it looks for it.
-        musicModeGeo = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: videoGeo)
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
+        /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: videoGeo)
       }
       // No additional layout needed
       return
@@ -160,7 +159,7 @@ extension PlayerWindowController {
       log.verbose("Saved layout is consistent with IINA global prefs")
     } else {
       // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
-      log.warn("Player's saved layout does not match IINA app prefs. Will fix and apply corrected layout")
+      log.warn("Player's saved layout does not match IINA app prefs. Will fix & apply corrected layout")
       log.debug("SavedSpec: \(currentLayout.spec). PrefsSpec: \(prefsSpec)")
       buildLayoutTransition(named: "FixInvalidInitialLayout",
                             from: initialTransition.outputLayout, to: prefsSpec, thenRun: true)
