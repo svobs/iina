@@ -525,6 +525,9 @@ class PlayerCore: NSObject {
     PlayerSaveState.save(self)
   }
 
+  func clearSavedState() {
+    Preference.UIState.clearPlayerSaveState(forPlayerID: label)
+  }
 
   // unload main window video view
   private func uninitVideo() {
@@ -3121,6 +3124,7 @@ class PlayerCore: NSObject {
     Preference.UIState.windowsOpen.remove(savedStateName)
     Preference.UIState.windowsHidden.remove(savedStateName)
     Preference.UIState.windowsMinimized.remove(savedStateName)
+    clearSavedState()
   }
 
   func reloadThumbnails(forMedia currentPlayback: Playback?) {
