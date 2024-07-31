@@ -1969,6 +1969,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   override func showWindow(_ sender: Any?) {
+    guard player.status.isNotYet(.stopping) else {
+      log.verbose("Aborting showWindow - player is stopping")
+      return
+    }
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
     DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause

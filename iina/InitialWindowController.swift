@@ -175,7 +175,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
         }
       }
     } else {
-      Logger.log("Showing WelcomeWindow", level: .verbose)
+      Logger.log("Opening WelcomeWindow", level: .verbose)
       super.openWindow(sender)
     }
   }

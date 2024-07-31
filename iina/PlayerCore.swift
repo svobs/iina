@@ -658,7 +658,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard status.rawValue < PlayerStatus.stopping.rawValue else {
-      log.debug("Stop called, but status is already \(status); aborting")
+      log.debug("Stop called, but status is already \(status); aborting redundant stop call")
       return
     }
     status = .stopping
@@ -2363,7 +2363,7 @@ class PlayerCore: NSObject {
       }
 
       if let showDefaultArt {
-        log.verbose("Calling updateDefaultArtVisibility from fileIsCompletelyDoneLoading")
+        log.verbose("Calling updateDefaultArtVisibility from fileLoaded")
         windowController.updateDefaultArtVisibility(showDefaultArt)
       }
 
