@@ -109,13 +109,22 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var isOnTop: Bool = false 
 
+  /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     if !self.loaded {
       return false
     }
     guard let window = self.window else { return false }
-    // Also check if hidden due to PIP, or minimized
-    return window.isVisible || isWindowHidden || window.isMiniaturized
+    /// Also check if hidden due to PIP, or minimized.
+    /// NOTE: `window.isVisible` returns `false` if the window is ordered out, which we do sometimes.
+    /// Use our internally tracked window state lists instead:
+    let savedStateName = window.savedStateName
+    let isVisible = Preference.UIState.windowsOpen.contains(savedStateName)
+    let isHidden = Preference.UIState.windowsHidden.contains(savedStateName)
+    let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
+    return isVisible || isHidden || isMinimized
   }
   private(set) var isWindowHidden: Bool = false
 

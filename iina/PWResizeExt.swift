@@ -94,8 +94,6 @@ extension PlayerWindowController {
     // TODO: find place for this in tasks
     pip.aspectRatio = newVidGeo.videoSizeCAR
 
-    let tasks: [IINAAnimation.Task]
-
     switch currentLayout.mode {
     case .windowed:
 
@@ -141,8 +139,9 @@ extension PlayerWindowController {
     case .musicMode:
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
-      log.debug("[applyVideoGeo] Prev cached value of musicModeGeo = \(musicModeGeo)")
+      log.debug("[applyVideoGeo] Prev cached value of musicModeGeo: \(musicModeGeo)")
       let musicModeGeoForCurrentFrame = musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID)
+      log.debug("[applyVideoGeo] Current frame's musicModeGeo: \(musicModeGeo)")
       let newMusicModeGeo = musicModeGeoForCurrentFrame.clone(video: newVidGeo)
       log.debug("[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)")
       return buildApplyMusicModeGeoTasks(newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)

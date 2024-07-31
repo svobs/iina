@@ -1165,7 +1165,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       let allPlayersShutdown = PlayerCoreManager.allPlayersShutdown
       let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
       // All players have shut down.
-      Logger.log("AllPlayersShutdown: \(allPlayersShutdown), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut)")
+      Logger.log("AllPlayersShutdown: \(allPlayersShutdown.yesno), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut.yesno)")
       // If any player has not shut down then continue waiting.
       guard allPlayersShutdown && didSubtitleSvcLogOut else { return }
       // All players have shutdown. No longer logged into an online subtitles provider.

@@ -18,9 +18,12 @@ extension PlayerWindowController {
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
   func setLayoutForWindowOpen() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     let initialLayout: LayoutState
     let isRestoringFromPrevLaunch: Bool
     var needsNativeFullScreen = false
+    let windowIsAlreadyOpen = isOpen
 
     if player.info.isRestoring,
        let priorState = player.info.priorState,
@@ -40,7 +43,7 @@ extension PlayerWindowController {
 
       configureFromRestore(priorState, initialLayout)
 
-    } else if isOpen {
+    } else if windowIsAlreadyOpen {
       let currentLayout = currentLayout
       log.verbose("Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return }
@@ -65,22 +68,21 @@ extension PlayerWindowController {
       return
 
     } else {
+      assert(!windowIsAlreadyOpen)
       log.verbose("Transitioning to initial layout from app prefs")
       isRestoringFromPrevLaunch = false
 
-      let mode: PlayerWindowMode
+      var mode: PlayerWindowMode = .windowed
+
       if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
-        let isLegacyFS = Preference.bool(for: .useLegacyFullScreen)
-        log.debug("Changing to \(isLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-        if isLegacyFS {
+        let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
+        log.debug("Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+        if useLegacyFS {
           mode = .fullScreen
         } else {
-          mode = .windowed
           needsNativeFullScreen = true
         }
-      } else {
-        mode = .windowed
       }
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
