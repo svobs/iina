@@ -3112,8 +3112,15 @@ class PlayerCore: NSObject {
   }
 
   private func _closeWindow() {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     log.verbose("Closing window")
     windowController.close()
+    let savedStateName = window.savedStateName
+    /// `windowController.close()` doesn't always fire notification. Remove from windows lists manually
+    Preference.UIState.windowsOpen.remove(savedStateName)
+    Preference.UIState.windowsHidden.remove(savedStateName)
+    Preference.UIState.windowsMinimized.remove(savedStateName)
   }
 
   func reloadThumbnails(forMedia currentPlayback: Playback?) {
