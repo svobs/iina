@@ -105,34 +105,19 @@ extension PlayerWindowController {
 
     // For initial layout (when window is first shown), to reduce jitteriness when drawing,
     // do all the layout in a single animation block
-    IINAAnimation.disableAnimation {
 
-      // Set window opacity to 0 initially to start fade-in effect
-      updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
+    // Set window opacity to 0 initially to start fade-in effect
+    updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
 
-      /// Although the animations in the `LayoutTransition` below will set the window layout, they
-      /// mostly assume they are incrementally changing a previous layout, which can result in brief visual
-      /// artifacts in the process if we start with an undefined layout.
-      /// To smooth out the process, restore window position & size before laying out its internals.
-      switch initialLayout.spec.mode {
-      case .windowed, .windowedInteractive, .musicMode:
-        player.window.setFrameImmediately(initialTransition.outputGeometry)
-      case .fullScreen, .fullScreenInteractive:
-        /// Don't need to set window frame here because it will be set by `LayoutTransition` to full screen (below).
-        /// Similarly, when window exits full screen, the windowed mode position will be restored from `windowedModeGeo`.
-        break
+    do {
+      for task in initialTransition.tasks {
+        try task.runFunc()
       }
-
-      do {
-        for task in initialTransition.tasks {
-          try task.runFunc()
-        }
-      } catch {
-        log.error("Failed to run initial layout tasks: \(error)")
-      }
-      /// Note: `isAnimatingLayoutTransition` should be `false` now
-      log.verbose("Done with transition to initial layout")
+    } catch {
+      log.error("Failed to run initial layout tasks: \(error)")
     }
+    /// Note: `isAnimatingLayoutTransition` should be `false` now
+    log.verbose("Done with transition to initial layout")
 
     if !isRestoringFromPrevLaunch {
       if initialLayout.mode == .windowed {

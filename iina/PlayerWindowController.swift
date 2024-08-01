@@ -118,10 +118,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     guard let window = self.window else { return false }
     /// Also check if hidden due to PIP, or minimized.
-    /// NOTE: `window.isVisible` returns `false` if the window is ordered out, which we do sometimes.
-    /// Use our internally tracked window state lists instead:
+    /// NOTE: `window.isVisible` returns `false` if the window is ordered out, which we do sometimes,
+    /// as well as in the minimized or hidden states.
+    /// Check against our internally tracked window state lists also:
     let savedStateName = window.savedStateName
-    let isVisible = Preference.UIState.windowsOpen.contains(savedStateName)
+    let isVisible = window.isVisible || Preference.UIState.windowsOpen.contains(savedStateName)
     let isHidden = Preference.UIState.windowsHidden.contains(savedStateName)
     let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
     return isVisible || isHidden || isMinimized
@@ -949,7 +950,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// at worst results in an infinite loop with our code.
     // FIXME: support tiling for at least native full screen
     window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
-    window.orderOut(self)
+//    window.orderOut(self)
 
     window.initialFirstResponder = nil
 
@@ -1007,6 +1008,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     initDefaultAlbumArtView()
+    addVideoViewToWindow()
 
     playlistView.windowController = self
     quickSettingView.windowController = self
@@ -1172,7 +1174,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow(_ geometry: PWinGeometry) {
+  func addVideoViewToWindow() {
     guard let window else { return }
     videoView.$isUninited.withLock() { isUninited in
       guard !viewportView.subviews.contains(videoView) else { return }
@@ -1183,10 +1185,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // Screen may have changed. Refresh contentsScale
       videoView.refreshContentsScale()
     }
-    // add constraints
+    /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !player.info.isRestoring {  // this can mess up music mode restore
-      videoView.apply(geometry)
+      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
+      videoView.apply(geo)
     }
   }
 
@@ -1900,7 +1903,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func _openWindow() {
     guard let window = self.window, let cv = window.contentView else { return }
     isInitialSizeDone = false  // reset for reopen
-    window.orderOut(self)  // hide while adjusting layout for new video
 
     log.verbose("PlayerWindow openWindow starting")
 
@@ -1949,7 +1951,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     resetCollectionBehavior()
     updateBufferIndicatorView()
     updateOSDPosition()
-    addVideoViewToWindow(windowedModeGeo)
 
     setLayoutForWindowOpen()
 
@@ -2033,12 +2034,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if !AppDelegate.shared.isTerminating && !player.info.isNotDoneLoading {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
+        musicModeGeo = musicModeGeoForCurrentFrame()
       } else if currentLayout.mode.isWindowed {
         // Update frame since it may have moved
         windowedModeGeo = windowedGeoForCurrentFrame()
-        PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       }
+      // The user may expect both to be updated
+      PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
+      PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
     }
     lastWindowedLayoutSpec = LayoutSpec.defaultLayout()
 
@@ -3899,8 +3902,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       /// Must set this before calling `addVideoViewToWindow()`
       pipStatus = .notInPIP
 
-      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
-      addVideoViewToWindow(geo)
+      addVideoViewToWindow()
 
       if isInMiniPlayer {
         miniPlayer.loadIfNeeded()

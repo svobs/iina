@@ -896,6 +896,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func windowWillClose(_ window: NSWindow) {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return }
 
     let windowName = window.savedStateName
@@ -928,6 +929,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func doActionWhenLastWindowWillClose() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return }
     guard let noOpenWindowAction = Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) else { return }
     Logger.log("ActionWhenNoOpenWindow: \(noOpenWindowAction). LastClosedWindowName: \(lastClosedWindowName.quoted)", level: .verbose)

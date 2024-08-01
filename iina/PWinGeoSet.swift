@@ -68,9 +68,17 @@ extension PlayerWindowController {
       // If user moved the window recently, window frame might not be completely up to date. Update it & return:
       return windowedModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newVidGeo)
     }
-    // Doesn't make sense to update window if currently in FS or some other mode
+    // Doesn't make sense to update window if currently in FS or some other mode. But update video
     return geo.windowed.clone(video: newVidGeo)
   }
 
+
+  /// See also `windowedGeoForCurrentFrame`
+  func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> MusicModeGeometry {
+    if currentLayout.mode == .musicMode {
+      return musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newVidGeo)
+    }
+    return geo.musicMode.clone(video: newVidGeo)
+  }
 
 }
