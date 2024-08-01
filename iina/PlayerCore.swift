@@ -186,6 +186,8 @@ class PlayerCore: NSObject {
     return windowController.isInInteractiveMode
   }
 
+  var receivedEndFileWhileLoading: Bool = false
+
   /// Set this to `true` if user changes "music mode" status manually. This disables `autoSwitchToMusicMode`
   /// functionality for the duration of this player even if the preference is `true`. But if they manually change the
   /// "music mode" status again, change this to `false` so that the preference is honored again.
@@ -439,6 +441,7 @@ class PlayerCore: NSObject {
       DispatchQueue.main.async { [self] in
         if !info.isRestoring {
           AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
+          windowController.clearOSDQueue()
         }
         windowController.openWindow(nil)
 
@@ -665,6 +668,7 @@ class PlayerCore: NSObject {
       return
     }
     status = .stopping
+    info.timeLastFileOpenFinished = 0 // reset
 
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
@@ -692,7 +696,10 @@ class PlayerCore: NSObject {
       guard !isStopped else { return }
       log.debug("Stopping playback")
 
-      sendOSD(.stop)
+      // Do not enqueue after window is closed (and info.currentPlayback is nil)
+      if info.currentPlayback != nil {
+        sendOSD(.stop)
+      }
       DispatchQueue.main.async { [self] in
         refreshSyncUITimer()
       }
@@ -2473,6 +2480,21 @@ class PlayerCore: NSObject {
     }
   }
 
+  func fileEnded(dueToStopCommand: Bool) {
+    // if receive end-file when loading file, might be error
+    // wait for idle
+    if !info.isFileLoaded {
+      if !dueToStopCommand {
+        receivedEndFileWhileLoading = true
+      }
+    } else {
+      info.shouldAutoLoadFiles = false
+    }
+    if dueToStopCommand {
+      playbackStopped()
+    }
+  }
+
   func afChanged() {
     guard !isStopping else { return }
     _ = getAudioFilters()
@@ -2519,6 +2541,19 @@ class PlayerCore: NSObject {
     if fs != isFullScreen {
       windowController.toggleWindowFullScreen()
     }
+  }
+
+  func idleActiveChanged(to idleActive: Bool) {
+    let isFileLoaded = info.isFileLoaded
+    log.verbose("Got mpv 'idle-active': \(idleActive.yn) (isFileLoaded: \(isFileLoaded.yn))")
+    if receivedEndFileWhileLoading && !isFileLoaded {
+      log.error("Received fileEnded + 'idle-active' from mpv while loading \(info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
+      errorOpeningFileAndClosePlayerWindow(url: info.currentURL)
+    } else if isFileLoaded {
+      closeWindow()
+    }
+    info.isIdle = true
+    receivedEndFileWhileLoading = false
   }
 
   func mediaTitleChanged() {
@@ -3116,15 +3151,11 @@ class PlayerCore: NSObject {
 
   private func _closeWindow() {
     assert(DispatchQueue.isExecutingIn(.main))
-
     log.verbose("Closing window")
     windowController.close()
-    let savedStateName = window.savedStateName
-    /// `windowController.close()` doesn't always fire notification. Remove from windows lists manually
-    Preference.UIState.windowsOpen.remove(savedStateName)
-    Preference.UIState.windowsHidden.remove(savedStateName)
-    Preference.UIState.windowsMinimized.remove(savedStateName)
-    clearSavedState()
+    /// `windowController.close()` doesn't always fire notification (e.g., if the window is ordered out).
+    /// Call manually to ensure things execute:
+    AppDelegate.shared.windowWillClose(window)
   }
 
   func reloadThumbnails(forMedia currentPlayback: Playback?) {

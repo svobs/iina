@@ -895,18 +895,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     windowWillClose(window)
   }
 
-  private func windowWillClose(_ window: NSWindow) {
+  /// This method can be called multiple times safely because it always runs on the main thread and does not
+  /// continue unless the window is found to be in an existing list
+  func windowWillClose(_ window: NSWindow) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return }
 
     let windowName = window.savedStateName
     guard !windowName.isEmpty else { return }
 
+    let wasOpen = Preference.UIState.windowsOpen.remove(windowName) != nil
+    let wasHidden = Preference.UIState.windowsHidden.remove(windowName) != nil
+    let wasMinimized = Preference.UIState.windowsMinimized.remove(windowName) != nil
+
+    guard wasOpen || wasHidden || wasMinimized else {
+      Logger.log("Window already closed, ignoring: \(windowName)", level: .verbose)
+      return
+    }
+
     Logger.log("Window will close: \(windowName)", level: .verbose)
     lastClosedWindowName = windowName
-    Preference.UIState.windowsOpen.remove(windowName)
-    Preference.UIState.windowsHidden.remove(windowName)
-    Preference.UIState.windowsMinimized.remove(windowName)
 
     /// Query for the list of open windows and save it (excluding the window which is about to close).
     /// Most cases are covered by saving when `windowDidBecomeMain` is called, but this covers the case where
@@ -914,6 +922,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Preference.UIState.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
 
     if let player = (window.windowController as? PlayerWindowController)?.player {
+      player.windowController.windowWillClose()
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
 

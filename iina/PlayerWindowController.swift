@@ -2004,8 +2004,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func windowWillClose(_ notification: Notification) {
+  /// Do not use the offical `NSWindowDelegate` method. This method will be called be the global window listener.
+  func windowWillClose() {
     log.verbose("Window will close")
+    defer {
+      player.events.emit(.windowWillClose)
+    }
 
     // Close PIP
     if pipStatus == .inPIP {
@@ -2018,20 +2022,30 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Stop playing. This will save state if configured to do so:
     player.stop()
+
+    guard !AppDelegate.shared.isTerminating else { return }
+    
     // stop tracking mouse event
     guard let window, let contentView = window.contentView else { return }
     contentView.trackingAreas.forEach(contentView.removeTrackingArea)
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
 
-    // In case of window reuse, do not display the last OSD of the previous player
-    hideOSD(immediately: true)
+    /// Hide OSD immediately & clear its queue.
+    /// This should match a simplified `hideOSD()`
+    isShowingPersistentOSD = false
+    osdContext = nil
+    hideOSDTimer?.invalidate()
+    osdVisualEffectView.alphaValue = 0
+    osdAnimationState = .hidden
+    osdVisualEffectView.isHidden = true
+    osdVStackView.views(in: .bottom).forEach { self.osdVStackView.removeView($0) }
 
     // Reset state flags
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
     /// Use `!player.info.isNotDoneLoading` to prevent saving if there was an error loading video
-    if !AppDelegate.shared.isTerminating && !player.info.isNotDoneLoading {
+    if !player.info.isNotDoneLoading {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         musicModeGeo = musicModeGeoForCurrentFrame()
@@ -2054,9 +2068,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.mpv.queue.async { [self] in
       player.info.currentPlayback = nil
+      clearOSDQueue()
     }
-
-    player.events.emit(.windowWillClose)
   }
 
   /// Hide menu bar & dock if current window is in legacy full screen.

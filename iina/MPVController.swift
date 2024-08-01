@@ -101,8 +101,6 @@ class MPVController: NSObject {
   var recordedSeekStartTime: CFTimeInterval = 0
   var recordedSeekTimeListener: ((Double) -> Void)?
 
-  var receivedEndFileWhileLoading: Bool = false
-
   let mpvLogScanner: MPVLogScanner!
 
   @Atomic private var hooks: [UInt64: MPVHookValue] = [:]
@@ -1288,16 +1286,7 @@ class MPVController: NSObject {
       let reason = dataPtr.pointee.reason
       let reasonString = dataPtr.pointee.reasonString
       player.log.verbose("FileEnded, reason: \(reasonString)")
-      if !player.info.isFileLoaded {
-        if reason != MPV_END_FILE_REASON_STOP {
-          receivedEndFileWhileLoading = true
-        }
-      } else {
-        player.info.shouldAutoLoadFiles = false
-      }
-      if reason == MPV_END_FILE_REASON_STOP {
-        player.playbackStopped()
-      }
+      player.fileEnded(dueToStopCommand: reason == MPV_END_FILE_REASON_STOP)
 
     case MPV_EVENT_COMMAND_REPLY:
       let reply = event.pointee.reply_userdata
@@ -1685,16 +1674,7 @@ class MPVController: NSObject {
         break
       }
       guard idleActive else { break }
-      let isFileLoaded = player.info.isFileLoaded
-      player.log.verbose("Got mpv 'idle-active': \(idleActive.yn) (isFileLoaded: \(isFileLoaded.yn))")
-      if receivedEndFileWhileLoading && !isFileLoaded {
-        player.log.error("Received fileEnded + 'idle-active' from mpv while loading \(player.info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
-        player.errorOpeningFileAndClosePlayerWindow(url: player.info.currentURL)
-      } else if isFileLoaded {
-        player.closeWindow()
-      }
-      player.info.isIdle = true
-      receivedEndFileWhileLoading = false
+      player.idleActiveChanged(to: idleActive)
 
     case MPVProperty.inputBindings:
       do {
