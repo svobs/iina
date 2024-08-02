@@ -1970,6 +1970,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Preference.UIState.windowsOpen.insert(window.savedStateName)
     }
 
+    if !player.info.isRestoring {
+      PlayerSaveState.saveSynchronously(player)
+      AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
+    }
+
     if !showAsynchronously {
       // Make sure to save newly opened window immediately to avoid losing state due to race
       showWindow(self)

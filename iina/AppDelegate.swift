@@ -870,22 +870,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
 
-    // Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
-    guard !PlayerCore.active.windowController.isOpen else { return false }
+    /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
+    /// Another case is when the welcome window is closed prior to a new player window opening.
+    /// For these reasons we must keep a list of windows which meet our definition of "open", which
+    /// may not match Apple's definition which is more closely tied to `window.isVisible`.
+    guard Preference.UIState.windowsOpen.isEmpty else {
+      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are counted as still open", level: .verbose)
+      return false
+    }
 
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !isShowingOpenFileWindow else { return false }
 
-    Logger.log("Last window was closed", level: .verbose)
 
     if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
       Preference.UIState.clearSavedStateForThisLaunch()
-      Logger.log("Will quit due to last window closed", level: .verbose)
+      Logger.log("Last window was closed. App will quit due to configured pref", level: .verbose)
       return true
     }
 
+    Logger.log("Last window was closed. Will do configured action", level: .verbose)
     doActionWhenLastWindowWillClose()
     return false
   }
@@ -961,7 +968,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         case .openFile:
           quitForAction = .openPanel
         case .welcome:
-          guard !initialWindow.expectingAnotherWindowToOpen else {
+          guard !Preference.UIState.windowsOpen.isEmpty else {
             return
           }
           quitForAction = .welcomeWindow

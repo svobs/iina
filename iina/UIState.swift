@@ -255,22 +255,32 @@ extension Preference {
       assert(DispatchQueue.isExecutingIn(.main))
       guard !AppDelegate.shared.isTerminating else { return }
       guard !Preference.bool(for: .isRestoreInProgress) else { return }
-      let openWindowsSet = windowsOpen
-      let openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
+      var openWindowsSet = windowsOpen
+      var openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
       // Don't care about ordering of these:
       let minimizedWindowNames = Array(windowsMinimized)
       let hiddenWindowNames = Array(windowsHidden)
       if openWindowsSet.count != openWindowNames.count {
+        for windName in openWindowNames {
+          openWindowsSet.remove(windName)
+        }
+        // Add missing windows to end of list (front):
+        Logger.log("Assuming windows are still opening; appending to saved open windows list: \(openWindowsSet)", level: .verbose)
+        for windName in openWindowsSet {
+          openWindowNames.append(windName)
+        }
+        /*
         let errorMsg = "While saving window list: set of actual open windows (\(openWindowsSet)) does not match cached open window list: \(openWindowNames) + Hidden=\(hiddenWindowNames) + Minimized=\(minimizedWindowNames); excluded=\(nameToExclude?.quoted ?? "nil")"
         #if DEBUG
         Utility.showAlert(errorMsg, logAlert: true)
         #else
         Logger.log(errorMsg, level: .error)
         #endif
+         */
       }
       if Logger.isTraceEnabled {
         Logger.log("Saving window list: open=\(openWindowNames), hidden=\(hiddenWindowNames), minimized=\(minimizedWindowNames)", 
-                   level: .verbose)
+                   level: .trace)
       }
       let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
       saveOpenWindowList(windowNamesBackToFront: minimizedStrings + hiddenWindowNames + openWindowNames,

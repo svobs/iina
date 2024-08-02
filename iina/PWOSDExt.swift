@@ -228,6 +228,7 @@ extension PlayerWindowController {
     // Enqueue first, in case main queue is blocked
     osdQueueLock.withLock {
       osdQueue.append({ [self] in
+        guard player.info.currentPlayback != nil else { return }
         // DO NOT use animation pipeline here. It is not needed, and will cause OSD to block
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })

@@ -112,8 +112,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
   var isFirstLoad = true
 
-  var expectingAnotherWindowToOpen = false
-
   @IBOutlet weak var recentFilesTableView: NSTableView!
   @IBOutlet weak var appIcon: NSImageView!
   @IBOutlet weak var versionLabel: NSTextField!
@@ -345,10 +343,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
   // Need to add special logic around `close()` so that it doesn't think the last window is being closed, and decide to quit.
   func closePriorToOpeningPlayerWindow() {
     Logger.log("Welcome window closing prior to opening player window", level: .verbose)
-    expectingAnotherWindowToOpen = true
-    defer {
-      expectingAnotherWindowToOpen = false
-    }
     self.close()
   }
 }

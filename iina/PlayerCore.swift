@@ -440,7 +440,6 @@ class PlayerCore: NSObject {
 
       DispatchQueue.main.async { [self] in
         if !info.isRestoring {
-          AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
           windowController.clearOSDQueue()
         }
         windowController.openWindow(nil)
@@ -697,9 +696,7 @@ class PlayerCore: NSObject {
       log.debug("Stopping playback")
 
       // Do not enqueue after window is closed (and info.currentPlayback is nil)
-      if info.currentPlayback != nil {
-        sendOSD(.stop)
-      }
+      sendOSD(.stop)
       DispatchQueue.main.async { [self] in
         refreshSyncUITimer()
       }
