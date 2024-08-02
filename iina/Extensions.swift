@@ -1342,13 +1342,7 @@ class IINAWindowController: NSWindowController {
       Preference.UIState.windowsOpen.insert(windowName)
     }
 
-    if Preference.bool(for: .isRestoreInProgress) {
-      window.postWindowIsReadyToShow()
-      return
-    } else {
-      Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
-      showWindow(sender)
-    }
+    window.postWindowIsReadyToShow()
   }
 }
 

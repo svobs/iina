@@ -34,8 +34,6 @@ class StartupState {
   var openFileCalled = false
   var shouldIgnoreOpenFile = false
 
-  var windowIsReadyToShowListener: NSObjectProtocol? = nil
-
   /// Try to wait until all windows are ready so that we can show all of them at once.
   /// Make sure order of `wcsToRestore` is from back to front to restore the order properly
   var wcsToRestore: [NSWindowController] = []
@@ -269,18 +267,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Attach this in `applicationWillFinishLaunching`, because `application(openFiles:)` will be called after this but
     /// before `applicationDidFinishLaunching`.
-    startupState.windowIsReadyToShowListener = NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main) { [self] note in
-      guard let window = note.object as? NSWindow else { return }
-      guard let wc = window.windowController else {
-        Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
-        return
-      }
-      startupState.wcsReady.insert(wc)
-
-      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startupState.wcsReady.count)/\(startupState.status == .doneEnqueuing ? "\(startupState.wcsToRestore.count)" : "?")", level: .verbose)
-
-      showWindowsIfReady()
-    }
+    observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main,
+                                                            using: self.windowIsReadyToShow))
 
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
@@ -301,6 +289,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let arguments = ProcessInfo.processInfo.arguments.dropFirst()
     if !arguments.isEmpty {
       parseCommandLine(arguments)
+    }
+  }
+
+  private func windowIsReadyToShow(_ notification: Notification) {
+    guard let window = notification.object as? NSWindow else { return }
+    guard let wc = window.windowController else {
+      Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
+      return
+    }
+
+    if Preference.bool(for: .isRestoreInProgress) {
+      // Still waiting to show
+      startupState.wcsReady.insert(wc)
+
+      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startupState.wcsReady.count)/\(startupState.status == .doneEnqueuing ? "\(startupState.wcsToRestore.count)" : "?")", level: .verbose)
+
+      showWindowsIfReady()
+    } else {
+      Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
+      wc.showWindow(window)
     }
   }
 
@@ -455,12 +463,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !startupState.openFileCalled || startupState.wcForOpenFile != nil else { return }
 
     Logger.log("All \(startupState.wcsToRestore.count) restored \(startupState.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
-
-    if let windowIsReadyToShowListener = startupState.windowIsReadyToShowListener {
-      // Listener is no longer needed. Remove it so that it doesn't cause problems for future opened windows
-      NotificationCenter.default.removeObserver(windowIsReadyToShowListener)
-      startupState.windowIsReadyToShowListener = nil
-    }
 
     for wc in startupState.wcsToRestore {
       wc.showWindow(self)  // orders the window to the front

@@ -599,8 +599,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     case PK.osdTextSize.rawValue:
       animationPipeline.submitSudden { [self] in
-        let geo = isInMiniPlayer ? musicModeGeo.toPWinGeometry() : windowedModeGeo
-        updateOSDTextSize(from: geo)
+        updateOSDTextSize()
         setOSDViews()
       }
     case PK.aspectRatioPanelPresets.rawValue, PK.cropPanelPresets.rawValue:
@@ -2322,7 +2321,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
         if osdAnimationState == .shown {
           updateOSDTextSize(from: newGeometry)
-          setOSDViews()
+          if player.info.isLoadedAndSized {
+            setOSDViews()
+          }
         }
       }
 
@@ -2350,7 +2351,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       videoView.apply(newGeometry)
     }
 
-    if osdAnimationState == .shown {
+    if osdAnimationState == .shown, player.info.isLoadedAndSized {
       updateOSDTextSize(from: newGeometry)
       setOSDViews()
     }
@@ -3334,11 +3335,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
-    if isInitialSizeDone && (player.info.currentPlayback?.loadStatus.isAtLeast(.loaded) ?? false) {
+    if isInitialSizeDone && player.info.isLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
       osdQueueLock.withLock {
         while !osdQueue.isEmpty {
-          osdQueue.removeFirst()?()
+          if let taskFunc = osdQueue.removeFirst() {
+            taskFunc()
+          }
         }
       }
     }

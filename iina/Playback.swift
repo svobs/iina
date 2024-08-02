@@ -72,7 +72,7 @@ class Playback: CustomStringConvertible {
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
   var isFileLoaded: Bool {
-    return loadStatus.rawValue >= LoadStatus.loaded.rawValue
+    return loadStatus.isAtLeast(.loaded)
   }
 
   /// if `url` is `nil`, assumed to be `stdin`

@@ -1251,15 +1251,15 @@ class MPVController: NSObject {
       break
 
     case MPV_EVENT_START_FILE:
-      /// Do not use `playlist_entry_id`. It doesn't make sense outside of FileStarted & FileEnded
-      let playlistPos = getInt(MPVProperty.playlistPos)
-      player.log.verbose("FileStarted playlistPos: \(playlistPos)")
-
-      player.info.isIdle = false
       guard let path = getString(MPVProperty.path) else {
-        player.log.warn("FileStarted: no path!")
+        player.log.error("FileStarted: no path!")
         break
       }
+      /// Do not use `playlist_entry_id`. It doesn't make sense outside of FileStarted & FileEnded
+      let playlistPos = getInt(MPVProperty.playlistPos)
+
+      player.info.isIdle = false
+
       player.fileStarted(path: path, playlistPos: playlistPos)
 
     case MPV_EVENT_FILE_LOADED:

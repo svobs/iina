@@ -359,8 +359,7 @@ extension PlayerWindowController {
       log.verbose("Showing OSD '\(msg)', no timeout")
     }
 
-    let geo = isInMiniPlayer ? musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID).toPWinGeometry() : windowedGeoForCurrentFrame()
-    updateOSDTextSize(from: geo)
+    updateOSDTextSize()
     setOSDViews(fromMessage: msg)
 
     let existingAccessoryViews = osdVStackView.views(in: .bottom)
@@ -405,8 +404,25 @@ extension PlayerWindowController {
     })
   }
 
-  func updateOSDTextSize(from geo: PWinGeometry) {
-    let availableSpaceForOSD = geo.widthBetweenInsideSidebars
+  func updateOSDTextSize(from geo: PWinGeometry? = nil) {
+    guard player.info.isLoadedAndSized else { return }
+
+    let pwGeo: PWinGeometry
+    if let geo {
+      pwGeo = geo
+    } else {
+      switch currentLayout.mode {
+      case .windowed, .windowedInteractive:
+        pwGeo = windowedGeoForCurrentFrame()
+      case .fullScreen, .fullScreenInteractive:
+        pwGeo = currentLayout.buildFullScreenGeometry(inScreenID: bestScreen.screenID, video: self.geo.video)
+      case .musicMode:
+        pwGeo = musicModeGeoForCurrentFrame().toPWinGeometry()
+      }
+    }
+
+    let availableSpaceForOSD = pwGeo.widthBetweenInsideSidebars
+
     // Reduce text size if horizontal space is tight
     var osdTextSize = max(8.0, CGFloat(Preference.float(for: .osdTextSize)))
     switch availableSpaceForOSD {

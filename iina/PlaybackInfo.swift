@@ -63,6 +63,10 @@ class PlaybackInfo {
     return currentPlayback?.isFileLoaded ?? false
   }
 
+  var isLoadedAndSized: Bool {
+    return currentPlayback?.loadStatus.isAtLeast(.loadedAndSized) ?? false
+  }
+
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false
 

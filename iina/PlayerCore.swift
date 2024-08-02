@@ -2160,15 +2160,16 @@ class PlayerCore: NSObject {
     }
     if let existingMedia = info.currentPlayback, existingMedia.url == mediaFromPath.url {
       guard existingMedia.loadStatus.isNotYet(.started) else {
-        log.warn("FileStarted: loadStatus is not yet started for \(existingMedia.url.absoluteString.pii.quoted) (found: \(existingMedia.loadStatus.rawValue))")
+        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but status is unexpected; aborting (expected: 'started', found: \(existingMedia.loadStatus.rawValue))")
         return
       }
       // update existing entry
       existingMedia.playlistPos = mediaFromPath.playlistPos
       existingMedia.loadStatus = mediaFromPath.loadStatus
+      log.verbose("FileStarted existing playbackPath=\(path.pii.quoted),  PL#=\(mediaFromPath.playlistPos)")
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: media is new. PlaylistPos: \(mediaFromPath.playlistPos)")
+      log.verbose("FileStarted new playbackPath=\(path.pii.quoted), PL#=\(mediaFromPath.playlistPos)")
       info.currentPlayback = mediaFromPath
     }
 
@@ -2337,6 +2338,9 @@ class PlayerCore: NSObject {
     currentPlayback.loadStatus = .loaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
+    let shouldShowDefaultArt = info.shouldShowDefaultArt
+    let currentMediaAudioStatus = info.currentMediaAudioStatus
+
     // Launch auto-load tasks on background thread
     startBackgroundTasksAfterFileLoaded(for: currentPlayback, isRestoring: isRestoring, priorState: priorState)
 
@@ -2345,10 +2349,12 @@ class PlayerCore: NSObject {
       startHistoryUpdateTasksAfterFileLoaded(for: url)
     }
 
+    currentPlayback.loadStatus = .loadedAndSized
+
     DispatchQueue.main.async { [self] in
       doMainThreadWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
-                                      showDefaultArt: info.shouldShowDefaultArt,
-                                      currentMediaAudioStatus: info.currentMediaAudioStatus)
+                                      showDefaultArt: shouldShowDefaultArt,
+                                      currentMediaAudioStatus: currentMediaAudioStatus)
     }
   }
 
@@ -2393,6 +2399,8 @@ class PlayerCore: NSObject {
             log.debug("Current media is not audio: auto-switching to normal window")
             exitMusicMode(automatically: true)
           }
+        } else if currentMediaAudioStatus == .isAudio {
+          // TODO: square album art
         }
 
         // Need to switch to full screen?
