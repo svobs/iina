@@ -155,7 +155,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   override func openWindow(_ sender: Any?) {
-    guard let window else { return }
+    guard let _ = window else { return }
 
     /// If welcome window is shown at startup, recentDocuments may not be finished loading.
     /// We want to wait until recentDocuments are done loading before displaying the window.
