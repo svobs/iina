@@ -1335,18 +1335,18 @@ class IINAWindowController: NSWindowController {
       Logger.log("Cannot open window: no window object!", level: .error)
       return
     }
+
+    /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
+    let windowName = window.savedStateName
+    if !windowName.isEmpty {
+      Preference.UIState.windowsOpen.insert(windowName)
+    }
+
     if Preference.bool(for: .isRestoreInProgress) {
       window.postWindowIsReadyToShow()
       return
     } else {
       Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
-
-      /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
-      let windowName = window.savedStateName
-      if !windowName.isEmpty {
-        Preference.UIState.windowsOpen.insert(windowName)
-      }
-
       showWindow(sender)
     }
   }

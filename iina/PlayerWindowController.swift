@@ -1966,7 +1966,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let startup = AppDelegate.shared.startupState
     let showAsynchronously = player.info.isRestoring || (startup.status != .doneOpening && startup.wcForOpenFile == self)
     /// Do this *after* `restoreFromMiscWindowBools` call
-    if !window.isMiniaturized {
+    if window.isMiniaturized {
+      Preference.UIState.windowsMinimized.insert(window.savedStateName)
+    } else {
       Preference.UIState.windowsOpen.insert(window.savedStateName)
     }
 

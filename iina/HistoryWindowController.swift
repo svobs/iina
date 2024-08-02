@@ -128,7 +128,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   }
 
   override func openWindow(_ sender: Any?) {
-    guard let window else { return }
+    guard let _ = window else { return }  // load window
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
     let isInitialLoad = reloadTicketCounter == 0
@@ -139,7 +139,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       }
     } else {
       // No need to reload data (it's an expensive operation)
-      showWindow(sender)
+      super.openWindow(sender)
     }
   }
 

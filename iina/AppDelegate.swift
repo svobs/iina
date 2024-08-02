@@ -472,7 +472,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let didRestoreSomething = !startupState.wcsToRestore.isEmpty
     let didOpenSomething = didRestoreSomething || startupState.wcForOpenFile != nil
 
-    if didRestoreSomething && Preference.bool(for: .isRestoreInProgress) {
+    if Preference.bool(for: .isRestoreInProgress) {
       Logger.log("Done restoring windows", level: .verbose)
       Preference.set(false, for: .isRestoreInProgress)
     }
@@ -753,12 +753,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
       Logger.log("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")", level: .verbose)
-      // Rebuild window maps as we go:
-      if savedWindow.isMinimized {
-        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
-      } else {
-        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
-      }
 
       let wc: NSWindowController
       switch savedWindow.saveName {
@@ -808,6 +802,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
         continue
       }
+
+      // Rebuild window maps as we go:
+      if savedWindow.isMinimized {
+        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
+      } else {
+        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
+      }
+
       if savedWindow.isMinimized {
         // Don't need to wait for wc
         wc.window?.miniaturize(self)
@@ -872,13 +874,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
+    guard startupState.status == .doneOpening else { return false }
 
     /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     /// Another case is when the welcome window is closed prior to a new player window opening.
     /// For these reasons we must keep a list of windows which meet our definition of "open", which
     /// may not match Apple's definition which is more closely tied to `window.isVisible`.
     guard Preference.UIState.windowsOpen.isEmpty else {
-      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are counted as still open", level: .verbose)
+      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are still in open list: \(Preference.UIState.windowsOpen)", level: .verbose)
       return false
     }
 
@@ -916,7 +919,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let wasMinimized = Preference.UIState.windowsMinimized.remove(windowName) != nil
 
     guard wasOpen || wasHidden || wasMinimized else {
-      Logger.log("Window already closed, ignoring: \(windowName)", level: .verbose)
+      Logger.log("Window already closed, ignoring: \(windowName.quoted)", level: .verbose)
       return
     }
 

@@ -538,6 +538,7 @@ class PlayerCore: NSObject {
     status = .shuttingDown
     log.debug("Uninit video")
     videoView.uninit()
+    status = .shutDown
   }
 
   /// Initiate shutdown of this player.
