@@ -2338,7 +2338,11 @@ class PlayerCore: NSObject {
     }
     log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
     windowController.applyVideoGeoTransform(transform,
-                                            showDefaultArt: shouldShowDefaultArt, fileJustOpened: true)
+                                            showDefaultArt: shouldShowDefaultArt, fileJustOpened: true, onSuccess: {
+      // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
+      // The OSD can have weird stretching glitches if displayed while zooming open...
+      currentPlayback.loadStatus = .loadedAndSized
+    })
 
     // Launch auto-load tasks on background thread
     startBackgroundTasksAfterFileLoaded(for: currentPlayback, isRestoring: isRestoring, priorState: priorState)
@@ -2351,7 +2355,6 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       doMainQueueWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
                                       currentMediaAudioStatus: currentMediaAudioStatus)
-      currentPlayback.loadStatus = .loadedAndSized
     }
   }
 

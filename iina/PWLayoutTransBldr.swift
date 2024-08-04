@@ -128,7 +128,7 @@ extension PlayerWindowController {
       }
 
       if !initialLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
-        log.verbose("Setting window OnTop=true per app pref")
+        log.verbose("Setting window OnTop=Y per app pref")
         setWindowFloatingOnTop(true)
       }
     }

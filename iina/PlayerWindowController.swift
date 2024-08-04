@@ -2024,15 +2024,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     contentView.trackingAreas.forEach(contentView.removeTrackingArea)
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
 
-    /// Hide OSD immediately & clear its queue.
-    /// This should match a simplified `hideOSD()`
-    isShowingPersistentOSD = false
-    osdContext = nil
-    hideOSDTimer?.invalidate()
-    osdVisualEffectView.alphaValue = 0
-    osdAnimationState = .hidden
-    osdVisualEffectView.isHidden = true
-    osdVStackView.views(in: .bottom).forEach { self.osdVStackView.removeView($0) }
+    hideOSD(immediately: true)
 
     // Reset state flags
     isWindowMiniturized = false
@@ -3332,6 +3324,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           }
         }
       }
+    } else {
+      // Do not refresh syncUITimer. It will cause an infinite loop
+      hideOSD(immediately: true, refreshSyncUITimer: false)
     }
 
     updatePlayButtonAndSpeedUI()

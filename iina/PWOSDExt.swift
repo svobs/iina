@@ -228,7 +228,6 @@ extension PlayerWindowController {
     // Enqueue first, in case main queue is blocked
     osdQueueLock.withLock {
       osdQueue.append({ [self] in
-        guard player.info.currentPlayback != nil else { return }
         // DO NOT use animation pipeline here. It is not needed, and will cause OSD to block
         _displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController)
       })
@@ -383,7 +382,7 @@ extension PlayerWindowController {
   }
 
   @objc
-  func hideOSD(immediately: Bool = false) {
+  func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Hiding OSD")
     osdAnimationState = .willHide
@@ -391,7 +390,9 @@ extension PlayerWindowController {
     osdContext = nil
     hideOSDTimer?.invalidate()
 
-    player.refreshSyncUITimer()
+    if refreshSyncUITimer {
+      player.refreshSyncUITimer()
+    }
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : IINAAnimation.OSDAnimationDuration, { [self] in
       osdVisualEffectView.alphaValue = 0

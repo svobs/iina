@@ -68,6 +68,7 @@ extension PlayerWindowController {
         if fileJustOpened {
           if isRestoring, let priorState {
             newOpenedFileState = .restoring(playerState: priorState)
+            isInitialSizeDone = true
           } else if !isInitialSizeDone {
             log.verbose("Setting isInitialSizeDone=YES")
             isInitialSizeDone = true
@@ -77,6 +78,7 @@ extension PlayerWindowController {
           }
 
           setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
+          // TODO: guarantee the timing for showing window. It works ok now, but may break in the future...
           window?.postWindowIsReadyToShow()
         } else {
           newOpenedFileState = .no
