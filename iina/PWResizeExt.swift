@@ -8,10 +8,11 @@
 
 import Foundation
 
-fileprivate enum NewOpenedFileStatus: Int {
-  case no = 0
+enum NewOpenedFileStatus {
+  case no
   case openedManually
   case openedViaPlaylistNavigation
+  case restoring(playerState: PlayerSaveState)
 }
 
 /// `PlayerWindowController` geometry functions
@@ -25,13 +26,9 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
 
     let isRestoring = player.info.isRestoring
+    let priorState = player.info.priorState
 
     log.verbose("[applyVideoGeo] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
-
-    guard !isRestoring else {
-      log.verbose("[applyVideoGeo] Restore is in progress; aborting")
-      return
-    }
 
     guard let currentPlayback = player.info.currentPlayback else {
       log.verbose("[applyVideoGeo] Aborting: currentPlayback is nil")
@@ -56,14 +53,17 @@ extension PlayerWindowController {
 
         let newOpenedFileState: NewOpenedFileStatus
         if fileJustOpened {
-          let openedManually = !isInitialSizeDone
-          if openedManually {
+          if isRestoring, let priorState {
+            newOpenedFileState = .restoring(playerState: priorState)
+          } else if !isInitialSizeDone {
             log.verbose("Setting isInitialSizeDone=YES")
             isInitialSizeDone = true
             newOpenedFileState = .openedManually
           } else {
             newOpenedFileState = .openedViaPlaylistNavigation
           }
+
+          setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
         } else {
           newOpenedFileState = .no
         }
@@ -83,7 +83,7 @@ extension PlayerWindowController {
 
     var duration = IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
-    if newOpenedFileState == .openedManually {
+    if case .openedManually = newOpenedFileState {
       // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
       duration = IINAAnimation.InitialVideoReconfigDuration
       timing = .linear
@@ -105,15 +105,22 @@ extension PlayerWindowController {
                                                               intendedViewportSize: player.info.intendedViewportSize)
 
       case .openedManually, .openedViaPlaylistNavigation:
-        if let resizedGeo = resizeAfterFileOpen(openedManually: newOpenedFileState == .openedManually, newVidGeo: newVidGeo) {
+        var openedManually = false
+        if case .openedManually = newOpenedFileState {
+          openedManually = true
+        }
+        if let resizedGeo = resizeAfterFileOpen(openedManually: openedManually, newVidGeo: newVidGeo) {
           newGeo = resizedGeo
         } else {
-          assert(newOpenedFileState != .openedManually, "resizeAfterFileOpen returned nil when openedManually was true!")
+          assert(!openedManually, "resizeAfterFileOpen returned nil when openedManually was true!")
           /// If in windowed mode: file opened via playlist navigation, or some other change occurred for file.
           /// If in other mode: do as little as possible. `PWinGeometry` will be used mostly for storage for other fields.
           newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                 intendedViewportSize: player.info.intendedViewportSize)
         }
+      case .restoring(_):
+        log.verbose("[applyVideoGeo] Restore is in progress; aborting")
+        return []
       }
 
       log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(newOpenedFileState)): \(newGeo)")

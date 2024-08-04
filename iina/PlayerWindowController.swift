@@ -1951,14 +1951,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateBufferIndicatorView()
     updateOSDPosition()
 
-    setLayoutForWindowOpen()
-
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)
     }
-
-    log.verbose("Hiding defaultAlbumArt for window open")
-    defaultAlbumArtView.isHidden = true
 
     player.initVideo()
 
@@ -1975,11 +1970,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       PlayerSaveState.saveSynchronously(player)
       AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
     }
-
-    if !showAsynchronously {
-      // Make sure to save newly opened window immediately to avoid losing state due to race
-      showWindow(self)
-    }  // else wait for video to load before posting
 
     log.verbose("PlayerWindow openWindow done")
   }

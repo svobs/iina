@@ -17,39 +17,43 @@ extension PlayerWindowController {
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func setLayoutForWindowOpen() {
+  func setLayoutForWindowOpen(newOpenedFileState: NewOpenedFileStatus) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let initialLayout: LayoutState
     let isRestoringFromPrevLaunch: Bool
     var needsNativeFullScreen = false
-    let windowIsAlreadyOpen = isOpen
 
-    if player.info.isRestoring,
-       let priorState = player.info.priorState,
-       let priorLayoutSpec = priorState.layoutSpec {
-      log.verbose("Transitioning to initial layout from prior window state")
-      isRestoringFromPrevLaunch = true
+    switch newOpenedFileState {
+    case .restoring(let priorState):
+      if let priorLayoutSpec = priorState.layoutSpec {
+        log.verbose("Transitioning to initial layout from prior window state")
+        isRestoringFromPrevLaunch = true
 
-      let initialLayoutSpec: LayoutSpec
-      if priorLayoutSpec.isNativeFullScreen {
-        // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
-        initialLayoutSpec = priorLayoutSpec.clone(mode: .windowed)
-        needsNativeFullScreen = true
+        let initialLayoutSpec: LayoutSpec
+        if priorLayoutSpec.isNativeFullScreen {
+          // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
+          initialLayoutSpec = priorLayoutSpec.clone(mode: .windowed)
+          needsNativeFullScreen = true
+        } else {
+          initialLayoutSpec = priorLayoutSpec
+        }
+        initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
-        initialLayoutSpec = priorLayoutSpec
+        log.error("Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
+        isRestoringFromPrevLaunch = false
+        let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
+        initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
-      initialLayout = LayoutState.buildFrom(initialLayoutSpec)
 
       configureFromRestore(priorState, initialLayout)
 
-    } else if windowIsAlreadyOpen {
+    case .openedViaPlaylistNavigation:
       let currentLayout = currentLayout
       log.verbose("Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return }
 
       var videoGeo: VideoGeometry = geo.video
-      // This should be fast because it should have been cached already
       if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: player.info.currentURL, log) {
         videoGeo = videoGeo.substituting(ffMeta)
       }
@@ -67,8 +71,7 @@ extension PlayerWindowController {
       // No additional layout needed
       return
 
-    } else {
-      assert(!windowIsAlreadyOpen)
+    case .openedManually:
       log.verbose("Transitioning to initial layout from app prefs")
       isRestoringFromPrevLaunch = false
 
@@ -90,6 +93,8 @@ extension PlayerWindowController {
       initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
 
       configureFromPrefs(initialLayout)
+    case .no:
+      Logger.fatal("Invalid state: \(newOpenedFileState)")
     }
 
     // Don't want window resize/move listeners doing something untoward
@@ -154,9 +159,6 @@ extension PlayerWindowController {
   }
 
   private func configureFromRestore(_ priorState: PlayerSaveState, _ initialLayout: LayoutState) {
-    // Don't need this because we already know how to size the window
-    isInitialSizeDone = true
-
     log.verbose("Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)")
     // Restore music mode geometry & state
     geo = priorState.geoSet
@@ -181,8 +183,6 @@ extension PlayerWindowController {
 
   private func configureFromPrefs(_ initialLayout: LayoutState) {
     // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
-    assert(!isOpen)
-    assert(!isInitialSizeDone)
 
     var videoGeo = player.videoGeo
     if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: player.info.currentURL, log) {

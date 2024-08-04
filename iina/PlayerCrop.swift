@@ -109,7 +109,9 @@ extension PlayerCore {
       return videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
     }
 
-    windowController.applyVideoGeoTransform(transform)
+    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+      reloadQuickSettingsView()
+    })
   }
 
   func updateSelectedCrop(to newCropLabel: String) {

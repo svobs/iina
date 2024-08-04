@@ -1184,11 +1184,9 @@ class PlayerCore: NSObject {
     windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
       // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
       if windowController.pipStatus == .notInPIP {
-        IINAAnimation.disableAnimation {
-          // FIXME: this isn't perfect - a bad frame briefly appears during transition
-          log.verbose("Resetting videoView rotation")
-          windowController.rotationHandler.rotateVideoView(toDegrees: 0)
-        }
+        // FIXME: this isn't perfect - a bad frame briefly appears during transition
+        log.verbose("Resetting videoView rotation")
+        windowController.rotationHandler.rotateVideoView(toDegrees: 0)
       }
 
       reloadQuickSettingsView()
@@ -1250,8 +1248,6 @@ class PlayerCore: NSObject {
         return nil
       }
 
-      let newVideoGeo = videoGeo.clone(selectedAspectLabel: aspectLabel)
-
       // Send update to mpv
       mpv.queue.async { [self] in
         let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
@@ -1264,7 +1260,7 @@ class PlayerCore: NSObject {
 
       // Change video size:
       log.verbose("[applyVideoGeo:transform] changing selectedAspectLabel: \(videoGeo.selectedAspectLabel.quoted) → \(aspectLabel.quoted)")
-      return newVideoGeo
+      return videoGeo.clone(selectedAspectLabel: aspectLabel)
     }  /// End `VideoGeometry.Transform`
 
     windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
