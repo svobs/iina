@@ -111,9 +111,6 @@ extension PlayerWindowController {
     // For initial layout (when window is first shown), to reduce jitteriness when drawing,
     // do all the layout in a single animation block
 
-    // Set window opacity to 0 initially to start fade-in effect
-    updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
-
     do {
       for task in initialTransition.tasks {
         try task.runFunc()
@@ -121,12 +118,13 @@ extension PlayerWindowController {
     } catch {
       log.error("Failed to run initial layout tasks: \(error)")
     }
-    /// Note: `isAnimatingLayoutTransition` should be `false` now
-    log.verbose("Done with transition to initial layout")
 
     if !isRestoringFromPrevLaunch {
       if initialLayout.mode == .windowed {
         player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
+
+        // Set window opacity to 0 initially to start fade-in effect
+        updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
       }
 
       if !initialLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
@@ -134,6 +132,9 @@ extension PlayerWindowController {
         setWindowFloatingOnTop(true)
       }
     }
+
+    /// Note: `isAnimatingLayoutTransition` should be `false` now
+    log.verbose("Done with transition to initial layout")
 
     if needsNativeFullScreen {
       animationPipeline.submitSudden({ [self] in

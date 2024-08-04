@@ -2172,16 +2172,6 @@ class PlayerCore: NSObject {
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
 
-    // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
-    // This is optional but provides a better viewer experience.
-    if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log) {
-      log.verbose("Calling applyVideoGeoTransform with FFVideoMeta")
-      let transform: VideoGeometry.Transform = { videoGeo in
-        return videoGeo.substituting(ffMeta)
-      }
-      windowController.applyVideoGeoTransform(transform, fileJustOpened: true)
-    }
-
     DispatchQueue.main.async { [self] in
       // Check this inside main DispatchQueue
       if isPlaylistVisible {
@@ -2321,21 +2311,34 @@ class PlayerCore: NSObject {
         log.verbose("Clearing mpv 'start' option now that restore is complete")
         mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
       }
-      info.priorState = nil
-      info.isRestoring = false
 
-      log.debug("Done with restore")
+      /// Will complete restore when `applyVideoGeoTransform` is done
     }
-    reloadSelectedTracks()
-    _reloadChapters()
-    syncAbLoop()
-
-    // Done syncing tracks
+    // Set this *before* reloading track selections! They will check status
     currentPlayback.loadStatus = .loaded
     info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
+    reloadSelectedTracks(silent: true)
+    _reloadChapters()
+    syncAbLoop()
+    // Done syncing tracks
+
     let shouldShowDefaultArt = info.shouldShowDefaultArt
     let currentMediaAudioStatus = info.currentMediaAudioStatus
+
+    // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
+    // This is optional but provides a better viewer experience.
+    let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log)
+    let transform: VideoGeometry.Transform = { videoGeo in
+      if let ffMeta {
+        return videoGeo.substituting(ffMeta)
+      } else {
+        return videoGeo
+      }
+    }
+    log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
+    windowController.applyVideoGeoTransform(transform,
+                                            showDefaultArt: shouldShowDefaultArt, fileJustOpened: true)
 
     // Launch auto-load tasks on background thread
     startBackgroundTasksAfterFileLoaded(for: currentPlayback, isRestoring: isRestoring, priorState: priorState)
@@ -2347,14 +2350,12 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       doMainQueueWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
-                                      showDefaultArt: shouldShowDefaultArt,
                                       currentMediaAudioStatus: currentMediaAudioStatus)
       currentPlayback.loadStatus = .loadedAndSized
     }
   }
 
   private func doMainQueueWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
-                                               showDefaultArt: Bool?,
                                                currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -2369,11 +2370,6 @@ class PlayerCore: NSObject {
       if info.aid == 0 {
         windowController.muteButton.isEnabled = false
         windowController.volumeSlider.isEnabled = false
-      }
-
-      if let showDefaultArt {
-        log.verbose("Calling updateDefaultArtVisibility from fileLoaded")
-        windowController.updateDefaultArtVisibility(showDefaultArt)
       }
 
       windowController.hideSeekTimeAndThumbnail()
@@ -2765,7 +2761,10 @@ class PlayerCore: NSObject {
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submitSudden { [self] in
-        windowController.updateDefaultArtVisibility(showDefaultArt)
+        // Check status so that we don't duplicate work
+        if info.isLoadedAndSized {
+          windowController.updateDefaultArtVisibility(showDefaultArt)
+        }
 
         if isShowVideoPendingInMiniPlayer {
           isShowVideoPendingInMiniPlayer = false

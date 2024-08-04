@@ -35,6 +35,19 @@ extension PlayerWindowController {
       return
     }
 
+    guard currentPlayback.isFileLoaded else {
+      log.verbose("[applyVideoGeo] Aborting: file not done loading")
+      return
+    }
+
+    if player.info.isRestoring {
+      // Clear status & state while still in mpv queue (but after making a local copy for final work)
+      player.info.priorState = nil
+      player.info.isRestoring = false
+
+      log.debug("Done with restore")
+    }
+
     DispatchQueue.main.async { [self] in
       animationPipeline.submitSudden { [self] in
         guard let newVidGeo = videoTransform(geo.video) else {
@@ -94,16 +107,12 @@ extension PlayerWindowController {
 
       let newGeo: PWinGeometry
       switch newOpenedFileState {
-      case .no:
-        // File opened via playlist navigation, or some other change occurred for file
-        newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
-                                                              intendedViewportSize: player.info.intendedViewportSize)
 
       case .openedManually:
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
         duration = IINAAnimation.InitialVideoReconfigDuration
         timing = .linear
-        
+
         fallthrough
 
       case .openedViaPlaylistNavigation:
@@ -120,12 +129,17 @@ extension PlayerWindowController {
           newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                 intendedViewportSize: player.info.intendedViewportSize)
         }
+
+      case .no:
+        // File opened via playlist navigation, or some other change occurred for file
+        newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
+                                                              intendedViewportSize: player.info.intendedViewportSize)
       case .restoring(_):
         log.verbose("[applyVideoGeo] Restore is in progress; aborting")
         return []
       }
 
-      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(newOpenedFileState)): \(newGeo)")
+      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(newOpenedFileState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreen:
@@ -136,7 +150,7 @@ extension PlayerWindowController {
 
       return [IINAAnimation.Task(duration: duration, { [self] in
         // Make sure video constraints are up to date, even in full screen. Also remember that FS & windowed mode share same screen.
-        log.verbose("[applyVideoGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize)")
+        log.verbose("[applyVideoGeo Apply]: Updating videoView (FS), videoSize: \(fsGeo.videoSize), showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
         videoView.apply(fsGeo)
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWinGeo
@@ -498,10 +512,8 @@ extension PlayerWindowController {
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) video=\(newGeometry)")
 
-      if isInitialSizeDone {
-        // This is only needed to achieve "fade-in" effect when opening window:
-        updateCustomBorderBoxAndWindowOpacity()
-      }
+      // This is only needed to achieve "fade-in" effect when opening window:
+      updateCustomBorderBoxAndWindowOpacity()
 
       /// Make sure this is up-to-date. Do this before `setFrame`
       if !isWindowHidden {
