@@ -3310,6 +3310,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // This method is often run outside of the animation queue, which can be dangerous.
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
+    guard loaded else { return }
 
     player.updatePlaybackTimeInfo()
 

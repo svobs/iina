@@ -20,23 +20,32 @@ extension PlayerWindowController {
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
-                              showDefaultArt: Bool? = nil,
                               fileJustOpened: Bool = false,
-                              onSuccess: (() -> Void)? = nil) {
+                              then doAfter: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-
     let isRestoring = player.info.isRestoring
     let priorState = player.info.priorState
+    let showDefaultArt = player.info.shouldShowDefaultArt
 
     log.verbose("[applyVideoGeo] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
 
+    var aborted = false
+
+    defer {
+      if aborted, let doAfter {
+        doAfter()
+      }
+    }
+
     guard let currentPlayback = player.info.currentPlayback else {
       log.verbose("[applyVideoGeo] Aborting: currentPlayback is nil")
+      aborted = true
       return
     }
 
     guard currentPlayback.isFileLoaded else {
       log.verbose("[applyVideoGeo] Aborting: file not done loading")
+      aborted = true
       return
     }
 
@@ -52,11 +61,13 @@ extension PlayerWindowController {
       animationPipeline.submitSudden { [self] in
         guard let newVidGeo = videoTransform(geo.video) else {
           log.verbose("[applyVideoGeo] Aborting due to transform returning nil")
+          aborted = true
           return
         }
 
         guard !player.isStopping else {
           log.verbose("[applyVideoGeo] Aborting because player is stopping (status=\(player.status))")
+          aborted = true
           return
         }
 
@@ -87,7 +98,7 @@ extension PlayerWindowController {
         let tasks = applyVideoGeoUpdates(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
                                          showDefaultArt: showDefaultArt)
 
-        animationPipeline.submit(tasks, then: onSuccess)
+        animationPipeline.submit(tasks, then: doAfter)
       }
     }
   }

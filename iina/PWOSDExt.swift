@@ -374,6 +374,7 @@ extension PlayerWindowController {
   @objc
   func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
+    guard loaded else { return }
     log.verbose("Hiding OSD")
     osdAnimationState = .willHide
     isShowingPersistentOSD = false

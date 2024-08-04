@@ -60,7 +60,7 @@ extension PlayerCore {
     }
 
     mpv.queue.async { [self] in
-      let transform: VideoGeometry.Transform = { [self] videoGeo in
+      windowController.applyVideoGeoTransform({ [self] videoGeo in
         guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
         log.verbose("Changing videoGeo selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
@@ -69,9 +69,8 @@ extension PlayerCore {
         sendOSD(.crop(osdLabel))
 
         return videoGeo.clone(selectedCropLabel: newCropLabel)
-      }
 
-      windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+      }, then: { [self] in
         /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
         let addSucceeded = addVideoFilter(vf, updateState: false)
         if !addSucceeded {
@@ -97,7 +96,7 @@ extension PlayerCore {
       return
     }
 
-    let transform: VideoGeometry.Transform = { [self] videoGeo in
+    windowController.applyVideoGeoTransform({ [self] videoGeo in
       guard let cropFilter = videoGeo.cropFilter else { return nil }
       guard videoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
@@ -107,9 +106,8 @@ extension PlayerCore {
         removeVideoFilter(cropFilter, verify: false, notify: false)
       }
       return videoGeo.clone(selectedCropLabel: AppData.noneCropIdentifier)
-    }
 
-    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+    }, then: { [self] in
       reloadQuickSettingsView()
     })
   }
@@ -117,7 +115,7 @@ extension PlayerCore {
   func updateSelectedCrop(to newCropLabel: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let transform: VideoGeometry.Transform = { [self] videoGeo in
+    windowController.applyVideoGeoTransform({ [self] videoGeo in
       guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
       log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
@@ -126,9 +124,8 @@ extension PlayerCore {
       sendOSD(.crop(osdLabel))
 
       return videoGeo.clone(selectedCropLabel: newCropLabel)
-    }
 
-    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+    }, then: { [self] in
       reloadQuickSettingsView()
     })
   }

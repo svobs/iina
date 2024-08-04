@@ -1172,15 +1172,14 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let transform: VideoGeometry.Transform = { [self] videoGeo in
+    windowController.applyVideoGeoTransform({ [self] videoGeo in
       guard userRotation != videoGeo.userRotation else { return nil }
       log.verbose("[applyVideoGeo:transform] Applying userRotation: \(userRotation)")
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
-    }
 
-    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+    }, then: { [self] in
       // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
       if windowController.pipStatus == .notInPIP {
         // FIXME: this isn't perfect - a bad frame briefly appears during transition
@@ -1238,14 +1237,8 @@ class PlayerCore: NSObject {
       log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
     }
 
-    /// Begin `VideoGeometry.Transform`
-    let transform: VideoGeometry.Transform = { [self] videoGeo in
-      guard videoGeo.selectedAspectLabel != aspectLabel else {
-        // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
-        // immediately changes the selection to "Default".
-        reloadQuickSettingsView()
-        return nil
-      }
+    windowController.applyVideoGeoTransform({ [self] videoGeo in
+      guard videoGeo.selectedAspectLabel != aspectLabel else { return nil }
 
       // Send update to mpv
       mpv.queue.async { [self] in
@@ -1260,9 +1253,10 @@ class PlayerCore: NSObject {
       // Change video size:
       log.verbose("[applyVideoGeo:transform] changing selectedAspectLabel: \(videoGeo.selectedAspectLabel.quoted) → \(aspectLabel.quoted)")
       return videoGeo.clone(selectedAspectLabel: aspectLabel)
-    }  /// End `VideoGeometry.Transform`
 
-    windowController.applyVideoGeoTransform(transform, onSuccess: { [self] in
+    }, then: { [self] in
+      // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
+      // immediately changes the selection to "Default".
       reloadQuickSettingsView()
     })
   }
@@ -2321,22 +2315,21 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    let shouldShowDefaultArt = info.shouldShowDefaultArt
     let currentMediaAudioStatus = info.currentMediaAudioStatus
 
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
     let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log)
-    let transform: VideoGeometry.Transform = { videoGeo in
+
+    log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
+    windowController.applyVideoGeoTransform({ videoGeo in
       if let ffMeta {
         return videoGeo.substituting(ffMeta)
       } else {
         return videoGeo
       }
-    }
-    log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
-    windowController.applyVideoGeoTransform(transform,
-                                            showDefaultArt: shouldShowDefaultArt, fileJustOpened: true, onSuccess: {
+    },
+                                            fileJustOpened: true, then: {
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
       currentPlayback.loadStatus = .loadedAndSized
@@ -2354,6 +2347,7 @@ class PlayerCore: NSObject {
       doMainQueueWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
                                       currentMediaAudioStatus: currentMediaAudioStatus)
     }
+
   }
 
   private func doMainQueueWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
@@ -2560,7 +2554,8 @@ class PlayerCore: NSObject {
 
   func reloadQuickSettingsView() {
     DispatchQueue.main.async { [self] in
-      guard !isShuttingDown else { return }
+      guard windowController.loaded else { return }
+      guard !isStopping else { return }
 
       // Easiest place to put this - need to call it when setting equalizers
       videoView.displayActive(temporary: info.isPaused)

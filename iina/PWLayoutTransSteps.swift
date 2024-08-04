@@ -1049,24 +1049,27 @@ extension PlayerWindowController {
     if !transition.isInitialLayout {
       window.layoutIfNeeded()
       forceDraw()
+
+      // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
+      // animation task, which means that frames will not be updated yet & can't be measured correctly
+      if Logger.isEnabled(.error) {
+        let actualVideoSize = videoView.frame.size
+        let expectedVideoSize = transition.outputGeometry.videoSize
+        if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
+          if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
+            log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
+          }
+        }
+        let actualWindowSize = window.frame.size
+        let expectedWindowSize = transition.outputGeometry.windowFrame.size
+        if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
+          log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
+        }
+      }
+
     }
 
     log.verbose("[\(transition.name)] Done with transition. IsFullScreen:\(transition.outputLayout.isFullScreen.yn), IsLegacy:\(transition.outputLayout.spec.isLegacyStyle.yn), Mode:\(currentLayout.mode)")
-
-    if Logger.isEnabled(.error) {
-      let actualVideoSize = videoView.frame.size
-      let expectedVideoSize = transition.outputGeometry.videoSize
-      if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
-        if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
-          log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
-        }
-      }
-      let actualWindowSize = window.frame.size
-      let expectedWindowSize = transition.outputGeometry.windowFrame.size
-      if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
-        log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
-      }
-    }
 
     // abort any queued screen updates
     $screenChangedTicketCounter.withLock { $0 += 1 }
