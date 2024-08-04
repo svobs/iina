@@ -107,7 +107,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  var isOnTop: Bool = false 
+  var isOnTop: Bool = false
+
+  // TODO: window states: .notYetLoaded, .willOpen, .openVisible, .openHidden, .openMiniturized, .closing
+
+  var isInitialSizeDone = false // TODO: -> willOpen
+  var isWindowMiniturized = false
+
+  private(set) var isWindowHidden = false
 
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
@@ -123,18 +130,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// Check against our internally tracked window state lists also:
     let savedStateName = window.savedStateName
     let isVisible = window.isVisible || Preference.UIState.windowsOpen.contains(savedStateName)
-    let isHidden = Preference.UIState.windowsHidden.contains(savedStateName)
     let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
-    return isVisible || isHidden || isMinimized
+    return isVisible || isMinimized
   }
-  private(set) var isWindowHidden: Bool = false
 
   var isClosing: Bool {
     return player.status.rawValue >= PlayerStatus.stopping.rawValue
   }
 
-  var isInitialSizeDone = false
-  var isWindowMiniturized = false
   var isWindowMiniaturizedDueToPip = false
   var isWindowPipDueToInactiveSpace = false
 
@@ -1957,8 +1960,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.initVideo()
 
-    let startup = AppDelegate.shared.startupState
-    let showAsynchronously = player.info.isRestoring || (startup.status != .doneOpening && startup.wcForOpenFile == self)
     /// Do this *after* `restoreFromMiscWindowBools` call
     if window.isMiniaturized {
       Preference.UIState.windowsMinimized.insert(window.savedStateName)
@@ -1983,9 +1984,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     super.showWindow(sender)
     DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
       self.animationPipeline.submitSudden({
-        // Call this to patch possible holes when restoring (e.g., interactive mode window)
-        self.updateCustomBorderBoxAndWindowOpacity()
-
         self.refreshKeyWindowStatus()
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         self.updateTitle()
@@ -3825,7 +3823,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
         isWindowHidden = true
         window.orderOut(self)
         log.verbose("PIP entered; adding player to hidden windows list: \(window.savedStateName.quoted)")
-        Preference.UIState.windowsHidden.insert(window.savedStateName)
         break
       case .minimize:
         isWindowMiniaturizedDueToPip = true
@@ -3904,9 +3901,10 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       tasks.append(contentsOf: buildApplyWindowGeoTasks(windowedModeGeo)) // may have skipped updates while hidden
       tasks.append(IINAAnimation.Task({ [self] in
         showWindow(self)
+
         if let window {
           log.verbose("PIP did close; removing player from hidden windows list: \(window.savedStateName.quoted)")
-          Preference.UIState.windowsHidden.remove(window.savedStateName)
+          isWindowHidden = false
         }
       }))
     }
@@ -3936,7 +3934,6 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       resetFadeTimer()
 
       isWindowMiniaturizedDueToPip = false
-      isWindowHidden = false
       player.saveState()
     })
 

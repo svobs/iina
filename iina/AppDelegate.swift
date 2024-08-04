@@ -607,10 +607,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       }
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
-      if Preference.UIState.windowsHidden.remove(activeWindowName) != nil {
-        Logger.log("Hidden window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
-        Preference.UIState.windowsOpen.insert(activeWindowName)
-      } else if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
+      if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
         Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
         Preference.UIState.windowsOpen.insert(activeWindowName)
       } else {
@@ -635,7 +632,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)", level: .verbose)
       Preference.UIState.windowsOpen.remove(savedStateName)
       Preference.UIState.windowsMinimized.insert(savedStateName)
-      Preference.UIState.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -652,7 +648,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)", level: .verbose)
       Preference.UIState.windowsOpen.insert(savedStateName)
       Preference.UIState.windowsMinimized.remove(savedStateName)
-      Preference.UIState.windowsHidden.remove(savedStateName)
       Preference.UIState.saveCurrentOpenWindowList()
     }
   }
@@ -917,10 +912,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard !windowName.isEmpty else { return }
 
     let wasOpen = Preference.UIState.windowsOpen.remove(windowName) != nil
-    let wasHidden = Preference.UIState.windowsHidden.remove(windowName) != nil
     let wasMinimized = Preference.UIState.windowsMinimized.remove(windowName) != nil
 
-    guard wasOpen || wasHidden || wasMinimized else {
+    guard wasOpen || wasMinimized else {
       Logger.log("Window already closed, ignoring: \(windowName.quoted)", level: .verbose)
       return
     }

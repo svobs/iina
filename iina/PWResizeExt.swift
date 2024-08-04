@@ -83,11 +83,6 @@ extension PlayerWindowController {
 
     var duration = IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
-    if case .openedManually = newOpenedFileState {
-      // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
-      duration = IINAAnimation.InitialVideoReconfigDuration
-      timing = .linear
-    }
 
     let currentLayout = currentLayout
 
@@ -104,7 +99,14 @@ extension PlayerWindowController {
         newGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                               intendedViewportSize: player.info.intendedViewportSize)
 
-      case .openedManually, .openedViaPlaylistNavigation:
+      case .openedManually:
+        // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
+        duration = IINAAnimation.InitialVideoReconfigDuration
+        timing = .linear
+        
+        fallthrough
+
+      case .openedViaPlaylistNavigation:
         var openedManually = false
         if case .openedManually = newOpenedFileState {
           openedManually = true

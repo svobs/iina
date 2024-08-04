@@ -2342,19 +2342,18 @@ class PlayerCore: NSObject {
 
     // History thread: update history given new playback URL
     if let url = info.currentURL {
-      startHistoryUpdateTasksAfterFileLoaded(for: url)
+      startHistoryTasksAfterFileLoaded(for: url)
     }
 
-    currentPlayback.loadStatus = .loadedAndSized
-
     DispatchQueue.main.async { [self] in
-      doMainThreadWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
+      doMainQueueWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
                                       showDefaultArt: shouldShowDefaultArt,
                                       currentMediaAudioStatus: currentMediaAudioStatus)
+      currentPlayback.loadStatus = .loadedAndSized
     }
   }
 
-  private func doMainThreadWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
+  private func doMainQueueWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
                                                showDefaultArt: Bool?,
                                                currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -2414,15 +2413,15 @@ class PlayerCore: NSObject {
   }
 
   // History tasks via history queue
-  private func startHistoryUpdateTasksAfterFileLoaded(for url: URL) {
-    let duration = info.videoDuration ?? .zero
+  private func startHistoryTasksAfterFileLoaded(for url: URL) {
+    let mediaDuration = info.videoDuration ?? .zero
     HistoryController.shared.queue.async { [self] in
       // 1. Update main history list
-      HistoryController.shared.add(url, duration: duration.second)
+      HistoryController.shared.add(url, duration: mediaDuration.second)
 
       // 2. IINA's [ancient] "resume last playback" feature
       // Add this now, or else welcome window will fall out of sync with history list
-      saveToLastPlayedFile(url, duration: duration, position: info.videoPosition)
+      saveToLastPlayedFile(url, duration: mediaDuration, position: info.videoPosition)
 
       if Preference.bool(for: .recordRecentFiles) {
         // 3. Workaround for File > Recent Documents getting cleared when it shouldn't

@@ -97,7 +97,6 @@ extension Preference {
     static let launchName: String = Preference.UIState.launchName(forID: launchID)
 
     static var windowsOpen = Set<String>()
-    static var windowsHidden = Set<String>()
     static var windowsMinimized = Set<String>()
 
     static var openSheetsDict: [String: Set<String>] = [:]
@@ -259,7 +258,7 @@ extension Preference {
       var openWindowNames = getCurrentOpenWindowNames(excludingWindowName: nameToExclude)
       // Don't care about ordering of these:
       let minimizedWindowNames = Array(windowsMinimized)
-      let hiddenWindowNames = Array(windowsHidden)
+      
       if openWindowsSet.count != openWindowNames.count {
         for windName in openWindowNames {
           openWindowsSet.remove(windName)
@@ -269,21 +268,13 @@ extension Preference {
         for windName in openWindowsSet {
           openWindowNames.append(windName)
         }
-        /*
-        let errorMsg = "While saving window list: set of actual open windows (\(openWindowsSet)) does not match cached open window list: \(openWindowNames) + Hidden=\(hiddenWindowNames) + Minimized=\(minimizedWindowNames); excluded=\(nameToExclude?.quoted ?? "nil")"
-        #if DEBUG
-        Utility.showAlert(errorMsg, logAlert: true)
-        #else
-        Logger.log(errorMsg, level: .error)
-        #endif
-         */
       }
       if Logger.isTraceEnabled {
-        Logger.log("Saving window list: open=\(openWindowNames), hidden=\(hiddenWindowNames), minimized=\(minimizedWindowNames)", 
+        Logger.log("Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)",
                    level: .trace)
       }
       let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
-      saveOpenWindowList(windowNamesBackToFront: minimizedStrings + hiddenWindowNames + openWindowNames,
+      saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames,
                          forLaunchID: launchID)
       
       if UserDefaults.standard.integer(forKey: launchName) != LaunchStatus.stillRunning.rawValue {
