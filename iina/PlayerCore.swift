@@ -2404,7 +2404,6 @@ class PlayerCore: NSObject {
       // Post notifications
       postNotification(.iinaFileLoaded)
       events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
-      windowController.window?.postWindowIsReadyToShow()
     })
   }
 

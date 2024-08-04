@@ -77,6 +77,7 @@ extension PlayerWindowController {
           }
 
           setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
+          window?.postWindowIsReadyToShow()
         } else {
           newOpenedFileState = .no
         }
