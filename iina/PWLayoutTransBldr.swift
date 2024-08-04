@@ -161,14 +161,14 @@ extension PlayerWindowController {
 
   private func configureFromRestore(_ priorState: PlayerSaveState, _ initialLayout: LayoutState) {
     log.verbose("Setting geometries from prior state, windowed=\(priorState.geoSet.windowed), musicMode=\(priorState.geoSet.musicMode)")
-    // Restore music mode geometry & state
+    // Restore geometries
     geo = priorState.geoSet
 
     if initialLayout.mode == .musicMode {
       player.overrideAutoMusicMode = true
     }
 
-    // Restore windowed mode geometry
+    // Clean up if serious errors found
     let priorWindowedModeGeo = priorState.geoSet.windowed
     if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
       log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or fitOption (\(priorWindowedModeGeo.fitOption)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")

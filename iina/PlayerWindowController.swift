@@ -952,7 +952,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// at worst results in an infinite loop with our code.
     // FIXME: support tiling for at least native full screen
     window.collectionBehavior = [.managed, .fullScreenDisallowsTiling]
-//    window.orderOut(self)
 
     window.initialFirstResponder = nil
 
