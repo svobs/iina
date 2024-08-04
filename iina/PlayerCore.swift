@@ -668,7 +668,6 @@ class PlayerCore: NSObject {
       return
     }
     status = .stopping
-    info.timeLastFileOpenFinished = 0 // reset
 
     // If the user immediately closes the player window it is possible the background task may still
     // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
@@ -2316,7 +2315,6 @@ class PlayerCore: NSObject {
     }
     // Set this *before* reloading track selections! They will check status
     currentPlayback.loadStatus = .loaded
-    info.timeLastFileOpenFinished = Date().timeIntervalSince1970
 
     reloadSelectedTracks(silent: true)
     _reloadChapters()
@@ -3122,6 +3120,17 @@ class PlayerCore: NSObject {
 
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
+    /// Check `isLoadedAndSized` early to prevent race condition
+    let disableOSDForFileLoading: Bool = !info.isLoadedAndSized
+    if disableOSDForFileLoading && !external {
+      switch msg {
+      case .fileStart, .resumeFromWatchLater:
+        break
+      default:
+        return
+      }
+    }
+
     windowController.displayOSD(msg, autoHide: autoHide, forcedTimeout: forcedTimeout, accessoryViewController: accessoryViewController, isExternal: external)
   }
 

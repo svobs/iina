@@ -2030,8 +2030,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
-    /// Use `!player.info.isNotDoneLoading` to prevent saving if there was an error loading video
-    if !player.info.isNotDoneLoading {
+    /// Use `!player.info.isLoadedAndSized` to prevent saving if there was an error loading video
+    if player.info.isLoadedAndSized {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         musicModeGeo = musicModeGeoForCurrentFrame()

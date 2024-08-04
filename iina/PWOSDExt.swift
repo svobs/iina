@@ -215,16 +215,6 @@ extension PlayerWindowController {
     guard player.canShowOSD() || msg.alwaysEnabled else { return }
     guard !msg.isDisabled else { return }
     
-    let disableOSDForFileLoading: Bool = player.info.isNotDoneLoading || player.info.timeSinceLastFileOpenFinished < 0.2
-    if disableOSDForFileLoading && !isExternal {
-      switch msg {
-      case .fileStart, .resumeFromWatchLater:
-        break
-      default:
-        return
-      }
-    }
-
     // Enqueue first, in case main queue is blocked
     osdQueueLock.withLock {
       osdQueue.append({ [self] in

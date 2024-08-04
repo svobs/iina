@@ -49,16 +49,6 @@ class PlaybackInfo {
   /// Contains info needed to restore the UI state from a previous launch. Should only be used if `isRestoring==true`
   var priorState: PlayerSaveState? = nil
 
-  /// File not completely done loading
-  var isNotDoneLoading: Bool {
-    guard let currentPlayback else { return false }
-    return currentPlayback.loadStatus.isNotYet(.loaded)
-  }
-  var timeLastFileOpenFinished: TimeInterval = 0
-  var timeSinceLastFileOpenFinished: TimeInterval {
-    Date().timeIntervalSince1970 - timeLastFileOpenFinished
-  }
-
   var isFileLoaded: Bool {
     return currentPlayback?.isFileLoaded ?? false
   }
