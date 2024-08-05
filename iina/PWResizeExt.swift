@@ -90,28 +90,31 @@ extension PlayerWindowController {
             newOpenedFileState = .openedViaPlaylistNavigation
           }
 
-          setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
-          // TODO: guarantee the timing for showing window. It works ok now, but may break in the future...
-          window?.postWindowIsReadyToShow()
+          var windowOpenLayoutTasks = setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
+          windowOpenLayoutTasks.append(IINAAnimation.suddenTask{ [self] in
+            // TODO: guarantee the timing for showing window. It works ok now, but may break in the future...
+            window?.postWindowIsReadyToShow()
+          })
+          animationPipeline.submit(windowOpenLayoutTasks)
         } else {
           newOpenedFileState = .no
         }
 
-        var tasks = applyVideoGeoUpdates(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
-                                         showDefaultArt: showDefaultArt)
+        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
+                                             showDefaultArt: showDefaultArt)
         if let doAfter {
           tasks.append(IINAAnimation.suddenTask(doAfter))
         }
 
-        animationPipeline.submit(tasks, then: doAfter)
+        animationPipeline.submit(tasks)
       }
     }
   }
 
   /// Only `applyVideoGeoTransform` should call this.
-  private func applyVideoGeoUpdates(forNewVideoGeo newVidGeo: VideoGeometry,
-                                    newOpenedFileState: NewOpenedFileStatus,
-                                    showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
+  private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
+                                        newOpenedFileState: NewOpenedFileStatus,
+                                        showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
 
     var duration = IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
