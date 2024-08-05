@@ -1994,18 +1994,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
-    DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
+
+    DispatchQueue.main.async {  /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
       self.animationPipeline.submitSudden({
         self.refreshKeyWindowStatus()
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         self.updateTitle()
         self.window?.isExcludedFromWindowsMenu = false
-      })
-    }
-
-    DispatchQueue.main.async {  // seem to need this to avoid race condition with unknown cause
-      self.animationPipeline.submitSudden({ [self] in
-        forceDraw()  // needed if restoring while paused
+        self.forceDraw()  // needed if restoring while paused
       })
     }
   }

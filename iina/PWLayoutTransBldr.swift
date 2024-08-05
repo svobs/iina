@@ -213,9 +213,10 @@ extension PlayerWindowController {
       let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
                                       height: viewportSize.height + initialLayout.outsideTopBarHeight + initialLayout.outsideBottomBarHeight)
       let windowFrame = NSRect(origin: NSPoint.zero, size: intendedWindowSize)
-      /// Change the window origin so that it opens where the mouse is. This visually reinforces the user-initiated behavior and is less jarring
-      /// than popping out of the periphery. The final location will be set after the file is completely done loading (which will be very soon).
-      let mouseLoc = NSEvent.mouseLocation
+      /// Change the window origin so that it opens where the mouse was when `openURLs` was called. This visually reinforces the user-initiated
+      /// behavior and is less jarring than popping out of the periphery. It will move while zooming to its final location, which remains
+      /// well-defined based on current user prefs and/or last closed window.
+      let mouseLoc = PlayerCore.mouseLocationAtLastOpen ?? NSEvent.mouseLocation
       let mouseLocScreenID = NSScreen.getOwnerOrDefaultScreenID(forPoint: mouseLoc)
       let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: videoGeo).refit(.stayInside)
       let windowSize = initialGeo.windowFrame.size

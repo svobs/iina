@@ -92,7 +92,7 @@ extension PlayerWindowController {
 
           var windowOpenLayoutTasks = setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
           windowOpenLayoutTasks.append(IINAAnimation.suddenTask{ [self] in
-            // TODO: guarantee the timing for showing window. It works ok now, but may break in the future...
+            /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
             window?.postWindowIsReadyToShow()
           })
           animationPipeline.submit(windowOpenLayoutTasks)
@@ -100,8 +100,10 @@ extension PlayerWindowController {
           newOpenedFileState = .no
         }
 
+        // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
         var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
                                              showDefaultArt: showDefaultArt)
+
         if let doAfter {
           tasks.append(IINAAnimation.suddenTask(doAfter))
         }

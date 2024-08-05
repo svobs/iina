@@ -78,6 +78,8 @@ class PlayerCore: NSObject {
     return useNew ? newPlayerCore : active
   }
 
+  static var mouseLocationAtLastOpen: NSPoint? = nil
+
   // MARK: - Fields
 
   let subsystem: Logger.Subsystem
@@ -331,6 +333,8 @@ class PlayerCore: NSObject {
     log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(for: $0).pii.quoted})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
+
+    PlayerCore.mouseLocationAtLastOpen = NSEvent.mouseLocation
 
     let urls = Utility.resolveURLs(urls)
 
@@ -2747,7 +2751,7 @@ class PlayerCore: NSObject {
       log.verbose("Video track is 0!")
     }
 #endif
-    
+
     info.vid = vid
 
     /// Show default album art? If yes, then use its video geometry.
