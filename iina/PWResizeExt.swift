@@ -33,7 +33,9 @@ extension PlayerWindowController {
 
     defer {
       if aborted, let doAfter {
-        doAfter()
+        DispatchQueue.main.async { [self] in
+          animationPipeline.submitSudden(doAfter)
+        }
       }
     }
 
@@ -95,8 +97,11 @@ extension PlayerWindowController {
           newOpenedFileState = .no
         }
 
-        let tasks = applyVideoGeoUpdates(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
+        var tasks = applyVideoGeoUpdates(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
                                          showDefaultArt: showDefaultArt)
+        if let doAfter {
+          tasks.append(IINAAnimation.suddenTask(doAfter))
+        }
 
         animationPipeline.submit(tasks, then: doAfter)
       }

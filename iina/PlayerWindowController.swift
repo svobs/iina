@@ -1034,7 +1034,20 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     cv.configureSubtreeForCoreAnimation()
 
-    if player.disableUI { hideFadeableViews() }
+    animationPipeline.submitSudden{ [self] in
+      if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
+        // Preemptively set window frames to prevent windows from "jumping" during restore
+        if layoutSpec.mode == .musicMode {
+          let geo = priorState.geoSet.musicMode.toPWinGeometry()
+          player.window.setFrameImmediately(geo, updateVideoView: true, notify: false)
+        } else {
+          let geo = priorState.geoSet.windowed
+          player.window.setFrameImmediately(geo, updateVideoView: true, notify: false)
+        }
+      }
+
+      if player.disableUI { hideFadeableViews() }
+    }
 
     // add notification observers
 

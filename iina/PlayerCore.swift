@@ -2741,6 +2741,13 @@ class PlayerCore: NSObject {
       log.verbose("Video track changed to \(vid) but file is not loaded; ignoring")
       return
     }
+
+#if DEBUG
+    if vid == 0 {
+      log.verbose("Video track is 0!")
+    }
+#endif
+    
     info.vid = vid
 
     /// Show default album art? If yes, then use its video geometry.
