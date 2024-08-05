@@ -17,7 +17,7 @@ extension PlayerWindowController {
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func setLayoutForWindowOpen(newOpenedFileState: NewOpenedFileStatus) -> [IINAAnimation.Task] {
+  func buildLayoutTasksForWindowOpen(newOpenedFileState: NewOpenedFileStatus) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let initialLayout: LayoutState

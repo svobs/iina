@@ -2302,7 +2302,6 @@ class PlayerCore: NSObject {
         mpv.setInt(MPVOption.TrackSelection.aid, aid)
       }
 
-      // Also finish up restore
       if priorState.string(for: .playPosition) != nil {
         /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
         log.verbose("Clearing mpv 'start' option now that restore is complete")
@@ -2335,145 +2334,96 @@ class PlayerCore: NSObject {
       } else {
         return videoGeo
       }
-    },
-                                            fileJustOpened: true, then: {
+
+    }, fileJustOpened: true, then: {
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
       currentPlayback.loadStatus = .loadedAndSized
     })
 
     // Launch auto-load tasks on background thread
-    startBackgroundTasksAfterFileLoaded(for: currentPlayback, isRestoring: isRestoring, priorState: priorState)
-
-    // History thread: update history given new playback URL
-    if let url = info.currentURL {
-      startHistoryTasksAfterFileLoaded(for: url)
-    }
-
-    DispatchQueue.main.async { [self] in
-      doMainQueueWorkAfterFileLoaded(isRestoring: isRestoring, priorState: priorState,
-                                      currentMediaAudioStatus: currentMediaAudioStatus)
-    }
-
-  }
-
-  private func doMainQueueWorkAfterFileLoaded(isRestoring: Bool, priorState: PlayerSaveState?,
-                                               currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    refreshSyncUITimer()
-    touchBarSupport.setupTouchBarUI()
-
-    windowController.animationPipeline.submitSudden({ [self] in
-      /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
-      /// current audio track selection, or `0` if none selected.
-      /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
-      /// because it can mislead us into thinking that the user has deselected the audio track.
-      if info.aid == 0 {
-        windowController.muteButton.isEnabled = false
-        windowController.volumeSlider.isEnabled = false
-      }
-
-      windowController.hideSeekTimeAndThumbnail()
-      windowController.quickSettingView.reload()
-      windowController.updateTitle()
-      windowController.playlistView.scrollPlaylistToCurrentItem()
-
-      if !isRestoring {
-        // Need to switch to music mode?
-        if Preference.bool(for: .autoSwitchToMusicMode) {
-          if overrideAutoMusicMode {
-            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
-          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !windowController.isFullScreen {
-            log.debug("Current media is audio: auto-switching to music mode")
-            enterMusicMode(automatically: true)
-            return  // do not even try to go to full screen if already going to music mode
-          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-            log.debug("Current media is not audio: auto-switching to normal window")
-            exitMusicMode(automatically: true)
-          }
-        }
-
-        // Need to switch to full screen?
-        if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !info.isRestoring {
-          log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
-          windowController.enterFullScreen()
-        }
-      }
-
-      // Post notifications
-      postNotification(.iinaFileLoaded)
-      events.emit(.fileLoaded, data: info.currentURL?.absoluteString ?? "")
-    })
-  }
-
-  // History tasks via history queue
-  private func startHistoryTasksAfterFileLoaded(for url: URL) {
-    let mediaDuration = info.videoDuration ?? .zero
-    HistoryController.shared.queue.async { [self] in
-      // 1. Update main history list
-      HistoryController.shared.add(url, duration: mediaDuration.second)
-
-      // 2. IINA's [ancient] "resume last playback" feature
-      // Add this now, or else welcome window will fall out of sync with history list
-      saveToLastPlayedFile(url, duration: mediaDuration, position: info.videoPosition)
-
-      if Preference.bool(for: .recordRecentFiles) {
-        // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
-        if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
-          HistoryController.shared.noteNewRecentDocumentURL(url)
-        } else {
-          /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
-          /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
-          NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
-        }
-      }
-      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
-      postFileHistoryUpdateNotification()
-    }
-  }
-
-  // Auto load via background queue
-  private func startBackgroundTasksAfterFileLoaded(for currentPlayback: Playback,
-                                                   isRestoring: Bool, priorState: PlayerSaveState?) {
     $backgroundQueueTicket.withLock { $0 += 1 }
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
     let currentTicket = backgroundQueueTicket
     PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.autoLoadDelay) { [self] in
-      // add files in same folder
-      if shouldAutoLoadFiles {
-        log.debug("Started auto load of files in current folder, isRestoring=\(isRestoring.yn)")
-        self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
-      }
-      // auto load matched subtitles
-      if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
-        log.debug("Found \(matchedSubs.count) external subs for current file")
-        for sub in matchedSubs {
-          guard currentTicket == self.backgroundQueueTicket else { return }
-          self.loadExternalSubFile(sub)
-        }
-        if !isRestoring {
-          // set sub to the first one
-          // TODO: why?
-          log.debug("Setting subtitle track to because an external sub was found")
-          guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
-          self.setTrack(1, forType: .sub)
-        }
-      }
-
-      self.autoSearchOnlineSub()
-
-      // Set SID & S2ID now that all subs are available
-      if isRestoring, let priorState {
-        if let priorSID = priorState.int(for: .sid) {
-          setTrack(priorSID, forType: .sub, silent: true)
-        }
-        if let priorS2ID = priorState.int(for: .s2id) {
-          setTrack(priorS2ID, forType: .secondSub, silent: true)
-        }
-      }
-      log.debug("Done with auto load")
+      fileLoaded_backgroundQueueWork(for: currentPlayback, currentTicket: currentTicket,
+                                     shouldAutoLoadFiles: shouldAutoLoadFiles,
+                                     isRestoring: isRestoring, priorState: priorState)
     }
+
+    // History thread: update history given new playback URL
+    if let url = info.currentURL {
+      HistoryController.shared.queue.async { [self] in
+        fileLoaded_historyQueueWork(for: url, mediaDuration: info.videoDuration ?? .zero)
+      }
+    }
+  }
+
+  // History task via history queue
+  private func fileLoaded_historyQueueWork(for url: URL, mediaDuration: VideoTime) {
+    assert(DispatchQueue.isExecutingIn(HistoryController.shared.queue))
+
+    // 1. Update main history list
+    HistoryController.shared.add(url, duration: mediaDuration.second)
+
+    // 2. IINA's [ancient] "resume last playback" feature
+    // Add this now, or else welcome window will fall out of sync with history list
+    saveToLastPlayedFile(url, duration: mediaDuration, position: info.videoPosition)
+
+    if Preference.bool(for: .recordRecentFiles) {
+      // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
+      if Preference.bool(for: .trackAllFilesInRecentOpenMenu) {
+        HistoryController.shared.noteNewRecentDocumentURL(url)
+      } else {
+        /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
+        /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
+        NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+      }
+    }
+    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+    postFileHistoryUpdateNotification()
+  }
+
+  /// Auto load via background queue
+  private func fileLoaded_backgroundQueueWork(for currentPlayback: Playback,
+                                              currentTicket: Int,
+                                              shouldAutoLoadFiles: Bool,
+                                              isRestoring: Bool, priorState: PlayerSaveState?) {
+    assert(DispatchQueue.isExecutingIn(PlayerCore.backgroundQueue))
+
+    // add files in same folder
+    if shouldAutoLoadFiles {
+      log.debug("Started auto load of files in current folder, isRestoring=\(isRestoring.yn)")
+      self.autoLoadFilesInCurrentFolder(ticket: currentTicket)
+    }
+    // auto load matched subtitles
+    if let matchedSubs = self.info.getMatchedSubs(currentPlayback.path) {
+      log.debug("Found \(matchedSubs.count) external subs for current file")
+      for sub in matchedSubs {
+        guard currentTicket == self.backgroundQueueTicket else { return }
+        self.loadExternalSubFile(sub)
+      }
+      if !isRestoring {
+        // set sub to the first one
+        // TODO: why?
+        log.debug("Setting subtitle track to because an external sub was found")
+        guard currentTicket == self.backgroundQueueTicket, self.mpv.mpv != nil else { return }
+        self.setTrack(1, forType: .sub)
+      }
+    }
+
+    self.autoSearchOnlineSub()
+
+    // Set SID & S2ID now that all subs are available
+    if isRestoring, let priorState {
+      if let priorSID = priorState.int(for: .sid) {
+        setTrack(priorSID, forType: .sub, silent: true)
+      }
+      if let priorS2ID = priorState.int(for: .s2id) {
+        setTrack(priorS2ID, forType: .secondSub, silent: true)
+      }
+    }
+    log.debug("Done with auto load")
   }
 
   func fileEnded(dueToStopCommand: Bool) {
@@ -2873,6 +2823,18 @@ class PlayerCore: NSObject {
   private func checkUnsyncedWindowOptions() {
     guard windowController.loaded else { return }
 
+    syncFullScreenState()
+    let ontop = mpv.getFlag(MPVOption.Window.ontop)
+    if ontop != windowController.isOnTop {
+      log.verbose("IINA OnTop state (\(windowController.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state")
+      DispatchQueue.main.async {
+        self.windowController.setWindowFloatingOnTop(ontop, updateOnTopStatus: false)
+      }
+    }
+  }
+
+  func syncFullScreenState() {
+    guard windowController.loaded else { return }
     let mpvFS = mpv.getFlag(MPVOption.Window.fullscreen)
     let iinaFS = windowController.isFullScreen
     log.verbose("IINA FullScreen state: \(iinaFS.yn), mpv: \(mpvFS.yn)")
@@ -2888,14 +2850,6 @@ class PlayerCore: NSObject {
             windowController.exitFullScreen()
           }
         }
-      }
-    }
-
-    let ontop = mpv.getFlag(MPVOption.Window.ontop)
-    if ontop != windowController.isOnTop {
-      log.verbose("IINA OnTop state (\(windowController.isOnTop.yn)) does not match mpv (\(ontop.yn)). Will change to match mpv state")
-      DispatchQueue.main.async {
-        self.windowController.setWindowFloatingOnTop(ontop, updateOnTopStatus: false)
       }
     }
   }

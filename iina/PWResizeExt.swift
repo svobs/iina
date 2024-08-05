@@ -26,11 +26,13 @@ extension PlayerWindowController {
     let isRestoring = player.info.isRestoring
     let priorState = player.info.priorState
     let showDefaultArt = player.info.shouldShowDefaultArt
+    let currentMediaAudioStatus = player.info.currentMediaAudioStatus
 
     log.verbose("[applyVideoGeo] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
 
     var aborted = false
 
+    /// Make sure `doAfter` is always executed
     defer {
       if aborted, let doAfter {
         DispatchQueue.main.async { [self] in
@@ -90,8 +92,14 @@ extension PlayerWindowController {
             newOpenedFileState = .openedViaPlaylistNavigation
           }
 
-          var windowOpenLayoutTasks = setLayoutForWindowOpen(newOpenedFileState: newOpenedFileState)
+          var windowOpenLayoutTasks = buildLayoutTasksForWindowOpen(newOpenedFileState: newOpenedFileState)
+
           windowOpenLayoutTasks.append(IINAAnimation.suddenTask{ [self] in
+            finishFileLoadedUIUpdates(isRestoring: isRestoring, priorState: priorState, currentMediaAudioStatus: currentMediaAudioStatus)
+
+            // Post notifications
+            player.postNotification(.iinaFileLoaded)
+            player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
             /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
             window?.postWindowIsReadyToShow()
           })
@@ -252,6 +260,50 @@ extension PlayerWindowController {
         player.info.intendedViewportSize = centeredScaledGeo.viewportSize
         log.verbose("[applyVideoGeo C-3] After scaleVideo: \(centeredScaledGeo)")
         return centeredScaledGeo
+      }
+    }
+  }
+
+  private func finishFileLoadedUIUpdates(isRestoring: Bool, priorState: PlayerSaveState?,
+                                         currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    player.refreshSyncUITimer()
+    player.touchBarSupport.setupTouchBarUI()
+
+    /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
+    /// current audio track selection, or `0` if none selected.
+    /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
+    /// because it can mislead us into thinking that the user has deselected the audio track.
+    if player.info.aid == 0 {
+      muteButton.isEnabled = false
+      volumeSlider.isEnabled = false
+    }
+
+    hideSeekTimeAndThumbnail()
+    quickSettingView.reload()
+    updateTitle()
+    playlistView.scrollPlaylistToCurrentItem()
+
+    if !isRestoring {
+      // Need to switch to music mode?
+      if Preference.bool(for: .autoSwitchToMusicMode) {
+        if player.overrideAutoMusicMode {
+          log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+        } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !isFullScreen {
+          log.debug("Current media is audio: auto-switching to music mode")
+          player.enterMusicMode(automatically: true)
+          return  // do not even try to go to full screen if already going to music mode
+        } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
+          log.debug("Current media is not audio: auto-switching to normal window")
+          player.exitMusicMode(automatically: true)
+        }
+      }
+
+      // Need to switch to full screen?
+      if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !isRestoring {
+        log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+        enterFullScreen()
       }
     }
   }

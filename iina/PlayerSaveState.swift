@@ -103,7 +103,7 @@ struct PlayerSaveState {
   /// Cached values parsed from `properties`
 
   /// Describes the current layout configuration of the player window.
-  /// See `setLayoutForWindowOpen()` in `PlayerWindowLayout.swift`.
+  /// See `buildLayoutTasksForWindowOpen()` in `PlayerWindowLayout.swift`.
   let layoutSpec: PlayerWindowController.LayoutSpec?
 
   let geoSet: GeometrySet

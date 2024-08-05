@@ -1621,19 +1621,7 @@ class MPVController: NSObject {
       player._setVideoAspectOverride(aspect)
 
     case MPVOption.Window.fullscreen:
-      let fs = getFlag(MPVOption.Window.fullscreen)
-      player.log.verbose("Δ mpv prop: 'fullscreen' = \(fs.yesno)")
-      guard player.windowController.loaded else { break }
-      if fs != player.windowController.isFullScreen {
-        if fs && player.didEnterFullScreenViaUserToggle {
-          player.didEnterFullScreenViaUserToggle = false
-          setFlag(MPVOption.Window.fullscreen, false)
-        } else {
-          DispatchQueue.main.async { [self] in
-            player.windowController.toggleWindowFullScreen()
-          }
-        }
-      }
+      player.syncFullScreenState()
 
     case MPVOption.Window.ontop:
       player.ontopChanged()
