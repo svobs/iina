@@ -73,7 +73,6 @@ class PlayerCoreManager {
     lock.withLock {
       core = _getOrCreateFirst()
     }
-    core!.start()
     return core!
   }
 
@@ -90,7 +89,6 @@ class PlayerCoreManager {
         }
       }
     }
-    core!.start()
     return core!
   }
 
@@ -130,7 +128,6 @@ class PlayerCoreManager {
     lock.withLock {
       core = _getIdleOrCreateNew()
     }
-    core.start()
     return core
   }
 
@@ -145,7 +142,6 @@ class PlayerCoreManager {
       return wc.player
     } else {
       let core: PlayerCore! = _getOrCreateFirst()
-      core.start()
       return core
     }
   }
@@ -183,7 +179,6 @@ class PlayerCoreManager {
     lock.withLock {
       pc = _createNewPlayerCore(withLabel: label)
     }
-    pc!.start()
     return pc!
   }
 

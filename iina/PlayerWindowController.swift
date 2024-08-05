@@ -1010,6 +1010,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     initDefaultAlbumArtView()
     addVideoViewToWindow()
+    player.start()
 
     playlistView.windowController = self
     quickSettingView.windowController = self
@@ -1974,8 +1975,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)
     }
-
-    player.initVideo()
 
     /// Do this *after* `restoreFromMiscWindowBools` call
     if window.isMiniaturized {

@@ -670,6 +670,12 @@ class MPVController: NSObject {
 
     // get version
     mpvVersion = getString(MPVProperty.mpvVersion)
+
+    // Unlike upstream IINA, we do not start any mpv cores until a window has been opened.
+    // So we must wait until now to log this info, instead of at app start.
+    // Should be fine to log this for every mpv core - it may be useful to have it in every mpv log file.
+    player.log.debug("Using \(mpvVersion!) and libass \(libassVersion)")
+    player.log.verbose("Configuration when building mpv: \(getString(MPVProperty.mpvConfiguration)!)")
   }
 
   /// Initialize the `mpv` renderer.

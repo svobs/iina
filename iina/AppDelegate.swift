@@ -390,10 +390,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: Preference.UIState.launchName)
     UserDefaults.standard.addObserver(self, forKeyPath: Preference.UIState.launchName, options: .new, context: nil)
 
-    let mpv = PlayerCore.active.mpv!
-    Logger.log("Using \(mpv.mpvVersion!) and libass \(mpv.libassVersion)")
-    Logger.log("Configuration when building mpv: \(mpv.getString(MPVProperty.mpvConfiguration)!)", level: .verbose)
-
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
 

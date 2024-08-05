@@ -13,9 +13,7 @@ import MediaPlayer
 enum PlayerStatus: Int, StatusEnum {
   case notYetStarted = 1
 
-  case startePreVideoInit
-
-  case startedPostVideoInit
+  case started
 
   /// Whether stopping of this player has been initiated.
   case stopping
@@ -436,7 +434,7 @@ class PlayerCore: NSObject {
 
       // Reset state flags
       if status == .stopping || status == .stopped {
-        status = .startedPostVideoInit
+        status = .started
       }
 
       // Load into cache while in mpv queue first
@@ -487,7 +485,8 @@ class PlayerCore: NSObject {
 
     startMPV()
     loadPlugins()
-    status = .startePreVideoInit
+    initVideo()
+    status = .started
   }
 
   private func startMPV() {
@@ -515,24 +514,12 @@ class PlayerCore: NSObject {
     }
   }
 
-  func initVideo() {
-    defer {
-      videoView.startDisplayLink()
-    }
-    guard status == .startePreVideoInit else { return }
+  private func initVideo() {
     log.verbose("Init video")
-    status = .startedPostVideoInit
 
     // init mpv render context.
     mpv.mpvInitRendering()
-  }
-
-  func saveState() {
-    PlayerSaveState.save(self)
-  }
-
-  func clearSavedState() {
-    Preference.UIState.clearPlayerSaveState(forPlayerID: label)
+    videoView.startDisplayLink()
   }
 
   // unload main window video view
@@ -543,6 +530,14 @@ class PlayerCore: NSObject {
     log.debug("Uninit video")
     videoView.uninit()
     status = .shutDown
+  }
+
+  func saveState() {
+    PlayerSaveState.save(self)
+  }
+
+  func clearSavedState() {
+    Preference.UIState.clearPlayerSaveState(forPlayerID: label)
   }
 
   /// Initiate shutdown of this player.
@@ -556,6 +551,11 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isShuttingDown else {
       log.verbose("Player is already shutting down")
+      return
+    }
+    guard status.isAtLeast(.started) else {
+      log.debug("Player was never started")
+      mpvHasShutdown()
       return
     }
     log.debug("Shutting down player")
@@ -1139,7 +1139,7 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       if !paused {
         if status == .stopping || status == .stopped {
-          status = .startedPostVideoInit
+          status = .started
         }
       }
       windowController.updatePlayButtonAndSpeedUI()
@@ -2263,7 +2263,7 @@ class PlayerCore: NSObject {
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
     if status == .stopping || status == .stopped {
-      status = .startedPostVideoInit
+      status = .started
     }
 
     guard let currentPlayback = info.currentPlayback else {
@@ -2293,17 +2293,9 @@ class PlayerCore: NSObject {
 
     // Sync tracks
     if isRestoring, let priorState {
-      /// Cannot set tracks until after `fileLoaded`, or else mpv will error out
-      log.debug("FileLoaded: restoring vid & aid tracks")
-      if let vid = priorState.int(for: .vid) {
-        mpv.setInt(MPVOption.TrackSelection.vid, vid)
-      }
-      if let aid = priorState.int(for: .aid) {
-        mpv.setInt(MPVOption.TrackSelection.aid, aid)
-      }
-
       if priorState.string(for: .playPosition) != nil {
-        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist is started
+        /// Need to manually clear this, because mpv will try to seek to this time when any item in playlist 
+        /// is started. Run this on the mpv queue to ensure proper ordering.
         log.verbose("Clearing mpv 'start' option now that restore is complete")
         mpv.setString(MPVOption.PlaybackControl.start, AppData.mpvArgNone)
       }
@@ -2979,7 +2971,7 @@ class PlayerCore: NSObject {
   private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
-    guard status == .startedPostVideoInit else {
+    guard status == .started else {
       log.verbose("syncUITime: not syncing")
       return
     }

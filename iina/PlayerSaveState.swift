@@ -769,10 +769,17 @@ struct PlayerSaveState {
       mpv.setDouble(MPVOption.PlaybackControl.abLoopA, abLoopA)
     }
 
+    if let vid = int(for: .vid) {
+      mpv.setInt(MPVOption.TrackSelection.vid, vid)
+    }
+    if let aid = int(for: .aid) {
+      mpv.setInt(MPVOption.TrackSelection.aid, aid)
+    }
     if let audioFilters = string(for: .audioFilters) {
       mpv.setString(MPVProperty.af, audioFilters)
     }
     if let videoFilters = string(for: .videoFilters) {
+      // This includes crop
       mpv.setString(MPVProperty.vf, videoFilters)
     }
   }
