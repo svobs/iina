@@ -586,6 +586,7 @@ struct PlayerSaveState {
     info.isRestoring = true
 
     let windowController = player.windowController!
+    windowController.geo = self.geoSet
 
     log.verbose("Screens from prior launch: \(self.screens)")
 
