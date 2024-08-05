@@ -2326,9 +2326,12 @@ class PlayerCore: NSObject {
     let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log)
 
     log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
-    windowController.applyVideoGeoTransform({ videoGeo in
+    windowController.applyVideoGeoTransform({ [self] videoGeo in
       if let ffMeta {
         return videoGeo.substituting(ffMeta)
+      } else if currentMediaAudioStatus == .isAudio {
+        // Square album art
+        return VideoGeometry.albumArtGeometry(log)
       } else {
         return videoGeo
       }
@@ -2389,8 +2392,6 @@ class PlayerCore: NSObject {
             log.debug("Current media is not audio: auto-switching to normal window")
             exitMusicMode(automatically: true)
           }
-        } else if currentMediaAudioStatus == .isAudio {
-          // TODO: square album art
         }
 
         // Need to switch to full screen?
@@ -2754,8 +2755,7 @@ class PlayerCore: NSObject {
 
     info.vid = vid
 
-    /// Show default album art? If yes, then use its video geometry.
-    // FIXME: override videoGeo with VideoGeometry.defaultAlbumArt
+    /// Show default album art if loaded and vid is 0:
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
 
     postNotification(.iinaVIDChanged)

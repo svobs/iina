@@ -34,6 +34,16 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
                          log: log)
   }
 
+  /// Uses Spotify's standard 1600x1600 dimensions, but the only important property is that its aspect ratio is square.
+  static func albumArtGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
+    let log = log ?? Logger.log
+    return VideoGeometry(rawWidth: 1600, rawHeight: 1600,
+                         selectedAspectLabel: "",
+                         codecRotation: 0, userRotation: 0,
+                         selectedCropLabel: AppData.noneCropIdentifier,
+                         log: log)
+  }
+
   let log: Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
