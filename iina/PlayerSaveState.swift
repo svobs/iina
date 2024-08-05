@@ -698,22 +698,13 @@ struct PlayerSaveState {
       mpv.setFlag(MPVOption.Video.deinterlace, deinterlace)
     }
 
-    if let userRotation = int(for: .videoRotation) {
-      mpv.setInt(MPVOption.Video.videoRotate, userRotation)
-    }
+    mpv.setInt(MPVOption.Video.videoRotate, self.geoSet.video.userRotation)
 
-    if let videoAspectLabel = string(for: .videoAspectLabel) {
-      // Update videoGeo above first so that UI doesn't alert the user
-      if player.windowController.geo.video.aspectRatioOverride != nil {
-        let mpvValue = videoAspectLabel == AppData.defaultAspectIdentifier ? "no" : videoAspectLabel
-        mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
-      }
-    }
+    let selectedAspectLabel = self.geoSet.video.selectedAspectLabel
+    let mpvValue = selectedAspectLabel == AppData.defaultAspectIdentifier ? "no" : selectedAspectLabel
+    mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
 
-    if let selectedCropLabel = string(for: .cropLabel) {
-      // Update videoGeo above first so that UI doesn't alert the user
-      player.setCrop(fromLabel: selectedCropLabel)
-    }
+    player.setCrop(fromLabel: self.geoSet.video.selectedCropLabel)
 
     if let brightness = int(for: .brightness) {
       mpv.setInt(MPVOption.Equalizer.brightness, brightness)
