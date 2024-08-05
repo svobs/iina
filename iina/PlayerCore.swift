@@ -2327,10 +2327,13 @@ class PlayerCore: NSObject {
         return videoGeo
       }
 
-    }, fileJustOpened: true, then: {
+    }, fileJustOpened: true, then: { [self] in
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
       currentPlayback.loadStatus = .loadedAndSized
+      // Need to call here to ensure file title OSD is displayed when navigating playlist
+      refreshSyncUITimer()
+      windowController.updateUI()
     })
 
     // Launch auto-load tasks on background thread
