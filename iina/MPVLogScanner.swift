@@ -87,6 +87,8 @@ class MPVLogScanner {
       // Sometimes the crop can fail, but mpv does not return an error msg directly
       player.log.warn("Removing crop filter because msg was found in mpv log: \(removeNewline(from: msg).quoted)")
       player.removeCrop()
+      // At least show something to the user if crop failed
+      player.sendOSD(.crop("failed"))
       return
     }
 
