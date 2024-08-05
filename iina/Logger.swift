@@ -40,9 +40,9 @@ class Logger: NSObject {
 
   /// If true, strings which are indicated to contain personally identifiable information (PII) are replaced with a
   /// unique PII token (see `piiFormat` below) when they are logged to iina.log.
-  static var enablePiiMasking: Bool {
+  static var enablePiiMasking: Bool = {
     return Preference.bool(for: .enablePiiMaskingInLog)
-  }
+  }()
 
   /// Is ignored unless `Preference.enablePiiMaskingInLog` is true. If `writeUnmaskedPiiToFile` is true, each PII token and its value is written to
   /// a separate file which can be used to look up the PII tokens from the log; if it is false, then the values are not logged.

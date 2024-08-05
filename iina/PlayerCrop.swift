@@ -72,7 +72,7 @@ extension PlayerCore {
 
       }, then: { [self] in
         /// No need to call `updateSelectedCrop` - it will be called by `addVideoFilter`
-        let addSucceeded = addVideoFilter(vf, updateState: false)
+        let addSucceeded = addVideoFilter(vf)
         if !addSucceeded {
           log.error("Failed to add crop filter \(newCropLabel.quoted); setting crop to None")
           _removeCrop()

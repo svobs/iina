@@ -1721,7 +1721,7 @@ class PlayerCore: NSObject {
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
   /// Can run on either mpv or main DispatchQueue.
   // TODO: refactor to execute mpv commands only on mpv queue
-  func addVideoFilter(_ filter: MPVFilter, updateState: Bool = true) -> Bool {
+  func addVideoFilter(_ filter: MPVFilter) -> Bool {
     let success = addVideoFilter(filter.stringFormat)
     if !success {
       log.verbose("Video filter \(filter.stringFormat) was not added")
@@ -1734,7 +1734,7 @@ class PlayerCore: NSObject {
   /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
-  func addVideoFilter(_ filter: String, updateState: Bool = true) -> Bool {
+  func addVideoFilter(_ filter: String) -> Bool {
     Logger.log("Adding video filter \(filter.quoted)...", subsystem: subsystem)
 
     // check hwdec
@@ -2746,7 +2746,7 @@ class PlayerCore: NSObject {
       log.verbose("Video track changed to \(vid) but file is not loaded; ignoring")
       return
     }
-
+    
 #if DEBUG
     if vid == 0 {
       log.verbose("Video track is 0!")

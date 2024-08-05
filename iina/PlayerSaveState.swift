@@ -436,9 +436,12 @@ struct PlayerSaveState {
     if let parsedVideoGeo = VideoGeometry.fromCSV(PlayerSaveState.string(for: .videoGeo, props), log) {
       videoGeo = parsedVideoGeo
     } else {
-      if buildNumber(from: props) < 3 {
+      let buildNumber = buildNumber(from: props)
+      if buildNumber < 3 {
         // Older than IINA 1.2
-        log.debug("Failed to restore VideoGeometry from CSV! Will attempt to build it from legacy properties instead")
+        log.debug("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties). Will attempt to build it from legacy properties instead")
+      } else {
+        log.error("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties)! Possible tampering occurred with the prefs, or a backwards-incompatible version of of IINA Advance was run. Will attempt to build VideoGeometry from legacy properties instead...")
       }
       let defaultGeo = VideoGeometry.defaultGeometry(log)
       let totalRotation = PlayerSaveState.int(for: .totalRotation, props)
@@ -704,8 +707,6 @@ struct PlayerSaveState {
     let selectedAspectLabel = self.geoSet.video.selectedAspectLabel
     let mpvValue = selectedAspectLabel == AppData.defaultAspectIdentifier ? "no" : selectedAspectLabel
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
-
-    player.setCrop(fromLabel: self.geoSet.video.selectedCropLabel)
 
     if let brightness = int(for: .brightness) {
       mpv.setInt(MPVOption.Equalizer.brightness, brightness)

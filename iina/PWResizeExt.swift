@@ -51,7 +51,7 @@ extension PlayerWindowController {
       return
     }
 
-    if player.info.isRestoring {
+    if isRestoring {
       // Clear status & state while still in mpv queue (but after making a local copy for final work)
       player.info.priorState = nil
       player.info.isRestoring = false

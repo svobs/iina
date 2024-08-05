@@ -1596,9 +1596,7 @@ class MPVController: NSObject {
       player.sendOSD(.saturation(intData))
       player.reloadQuickSettingsView()
 
-      // following properties may change before file loaded
-
-    case MPVProperty.playlistCount:
+    case MPVProperty.playlistCount: 
       player.log.verbose("Δ mpv prop: 'playlist-count'")
       player.reloadPlaylist()
 
