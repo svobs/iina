@@ -1194,7 +1194,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow() {
+  private func addVideoViewToWindow() {
     guard let window else { return }
     videoView.$isUninited.withLock() { isUninited in
       guard !viewportView.subviews.contains(videoView) else { return }

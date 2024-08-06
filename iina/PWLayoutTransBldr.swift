@@ -17,19 +17,21 @@ extension PlayerWindowController {
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func buildLayoutTasksForWindowOpen(newOpenedFileState: NewOpenedFileStatus) -> [IINAAnimation.Task] {
+  func buildLayoutTasksForWindowOpen(newOpenedFileState: NewOpenedFileStatus,
+                                     currentPlayback: Playback,
+                                     currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    let initialLayout: LayoutState
-    let isRestoringFromPrevLaunch: Bool
+    var isRestoring = false
     var needsNativeFullScreen = false
-    let newGeo: GeometrySet
+    var tasks: [IINAAnimation.Task]
 
     switch newOpenedFileState {
     case .restoring(let priorState):
+      let initialLayout: LayoutState
       if let priorLayoutSpec = priorState.layoutSpec {
         log.verbose("Transitioning to initial layout from prior window state")
-        isRestoringFromPrevLaunch = true
+        isRestoring = true
 
         let initialLayoutSpec: LayoutSpec
         if priorLayoutSpec.isNativeFullScreen {
@@ -42,12 +44,15 @@ extension PlayerWindowController {
         initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
         log.error("Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
-        isRestoringFromPrevLaunch = false
         let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
         initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
 
-      newGeo = configureFromRestore(priorState, initialLayout)
+      let newGeoSet = configureFromRestore(priorState, initialLayout)
+      tasks = buildTransitionTasks(for: initialLayout, newGeoSet,
+                                   isRestoringFromPrevLaunch: isRestoring,
+                                   needsNativeFullScreen: needsNativeFullScreen)
+
 
     case .openedViaPlaylistNavigation:
       let currentLayout = currentLayout
@@ -70,12 +75,10 @@ extension PlayerWindowController {
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: videoGeo)
       }
       // No additional layout needed
-      return []
+      tasks = []
 
     case .openedManually:
       log.verbose("Transitioning to initial layout from app prefs")
-      isRestoringFromPrevLaunch = false
-
       var mode: PlayerWindowMode = .windowed
 
       if Preference.bool(for: .fullScreenWhenOpen) {
@@ -91,12 +94,69 @@ extension PlayerWindowController {
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
       let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
-      initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+      let initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+      let newGeoSet = configureFromPrefs(initialLayout)
 
-      newGeo = configureFromPrefs(initialLayout)
+      tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
+                                   needsNativeFullScreen: needsNativeFullScreen)
     case .no:
       Logger.fatal("Invalid state: \(newOpenedFileState)")
     }
+
+    tasks.append(IINAAnimation.suddenTask{ [self] in
+      player.refreshSyncUITimer()
+      player.touchBarSupport.setupTouchBarUI()
+
+      /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
+      /// current audio track selection, or `0` if none selected.
+      /// Before `fileLoaded` it may change to `0` while the track info is still being processed, but this is unhelpful
+      /// because it can mislead us into thinking that the user has deselected the audio track.
+      if player.info.aid == 0 {
+        muteButton.isEnabled = false
+        volumeSlider.isEnabled = false
+      }
+
+      hideSeekTimeAndThumbnail()
+      quickSettingView.reload()
+      updateTitle()
+      playlistView.scrollPlaylistToCurrentItem()
+
+      if !isRestoring {
+        // Need to switch to music mode?
+        if Preference.bool(for: .autoSwitchToMusicMode) {
+          if player.overrideAutoMusicMode {
+            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !isFullScreen {
+            log.debug("Current media is audio: auto-switching to music mode")
+            player.enterMusicMode(automatically: true)
+            return  // do not even try to go to full screen if already going to music mode
+          } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
+            log.debug("Current media is not audio: auto-switching to normal window")
+            player.exitMusicMode(automatically: true)
+          }
+        }
+
+        // Need to switch to full screen?
+        if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !isRestoring {
+          log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+          enterFullScreen()
+        }
+      }
+
+      // Post notifications
+      player.postNotification(.iinaFileLoaded)
+      player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+      /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
+      window?.postWindowIsReadyToShow()
+    })
+
+    return tasks
+  }
+
+  private func buildTransitionTasks(for initialLayout: LayoutState, _ newGeo: GeometrySet,
+                                    isRestoringFromPrevLaunch: Bool, needsNativeFullScreen: Bool) -> [IINAAnimation.Task] {
+
+    var tasks: [IINAAnimation.Task] = []
 
     // Don't want window resize/move listeners doing something untoward
     isAnimatingLayoutTransition = true
@@ -108,9 +168,8 @@ extension PlayerWindowController {
     let initialTransition = buildLayoutTransition(named: transitionName,
                                                   from: currentLayout, to: initialLayout.spec, isInitialLayout: true, newGeo)
 
-    var tasks: [IINAAnimation.Task] = []
-
     tasks.append(IINAAnimation.suddenTask { [self] in
+
       // For initial layout (when window is first shown), to reduce jitteriness when drawing, do all the layout
       // in a single animation block.
 
@@ -227,6 +286,7 @@ extension PlayerWindowController {
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: videoGeo)
   }
+
 
   // MARK: - Building LayoutTransition
 
