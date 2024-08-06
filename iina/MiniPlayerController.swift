@@ -340,7 +340,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     tasks.append(IINAAnimation.Task(timing: .easeInEaseOut, { [self] in
       let screenID = windowController.bestScreen.screenID
       let newGeometry = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID).withVideoViewVisible(showVideo)
-      log.verbose("VideoView setting videoViewVisible=\(showVideo.yn), videoHeight=\(newGeometry.videoHeight)")
+      log.verbose("MusicMode: setting videoViewVisible=\(showVideo.yn), videoHeight=\(newGeometry.videoHeight)")
       windowController.applyMusicModeGeo(newGeometry)
     }))
 

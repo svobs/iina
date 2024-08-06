@@ -72,6 +72,7 @@ extension PlayerWindowController {
           player.reloadThumbnails(forMedia: currentPlayback)
         }
         
+        let newLayout: LayoutState  // kludge/workaround for timing issue, see below
         let state: WindowStateAtFileOpen
         if fileJustOpened {
           if isRestoring, let priorState {
@@ -85,18 +86,20 @@ extension PlayerWindowController {
           }
 
           log.verbose("[applyVideoGeo] JustOpenedFile, windowState: \(state)")
-          let windowOpenLayoutTasks = buildLayoutTasksForFileOpen(windowState: state,
+          let (initialLayout, windowOpenLayoutTasks) = buildLayoutTasksForFileOpen(windowState: state,
                                                                   currentPlayback: currentPlayback,
                                                                   currentMediaAudioStatus: currentMediaAudioStatus,
                                                                   newVidGeo: newVidGeo)
+          newLayout = initialLayout
 
           animationPipeline.submit(windowOpenLayoutTasks)
         } else {
           state = .notApplicable
+          newLayout = currentLayout
         }
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
-        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, windowState: state,
+        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
                                              showDefaultArt: showDefaultArt)
 
         if let doAfter {
@@ -110,18 +113,17 @@ extension PlayerWindowController {
 
   /// Only `applyVideoGeoTransform` should call this.
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
+                                        newLayout: LayoutState,
                                         windowState: WindowStateAtFileOpen,
                                         showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
 
     var duration = IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
 
-    let currentLayout = currentLayout
-
     // TODO: find place for this in tasks
     pip.aspectRatio = newVidGeo.videoSizeCAR
 
-    switch currentLayout.mode {
+    switch newLayout.mode {
     case .windowed:
 
       let newGeo: PWinGeometry
@@ -164,7 +166,7 @@ extension PlayerWindowController {
     case .fullScreen:
       let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                    intendedViewportSize: player.info.intendedViewportSize)
-      let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
+      let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
       log.debug("[applyVideoGeo Apply] Applying FS result: \(fsGeo)")
 
       return [IINAAnimation.Task(duration: duration, { [self] in
@@ -190,7 +192,7 @@ extension PlayerWindowController {
       log.verbose("[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)")
       return buildApplyMusicModeGeoTasks(newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
     default:
-      log.error("[applyVideoGeo Apply] INVALID MODE: \(currentLayout.mode)")
+      log.error("[applyVideoGeo Apply] INVALID MODE: \(newLayout.mode)")
       return []
     }
   }
@@ -522,7 +524,6 @@ extension PlayerWindowController {
                                 duration: CGFloat = IINAAnimation.DefaultDuration,
                                 timing: CAMediaTimingFunctionName = .easeInEaseOut,
                                 showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
-    assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
     var tasks: [IINAAnimation.Task] = []
     tasks.append(IINAAnimation.suddenTask{ [self] in
@@ -534,6 +535,7 @@ extension PlayerWindowController {
 
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
       log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) video=\(newGeometry)")
+      assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
       // This is only needed to achieve "fade-in" effect when opening window:
       updateCustomBorderBoxAndWindowOpacity()

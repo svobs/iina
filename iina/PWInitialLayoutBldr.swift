@@ -23,16 +23,16 @@ extension PlayerWindowController {
   func buildLayoutTasksForFileOpen(windowState: WindowStateAtFileOpen,
                                    currentPlayback: Playback,
                                    currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
-                                   newVidGeo: VideoGeometry) -> [IINAAnimation.Task] {
+                                   newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     var isRestoring = false
     var needsNativeFullScreen = false
     var tasks: [IINAAnimation.Task]
+    let initialLayout: LayoutState
 
     switch windowState {
     case .restoring(let priorState):
-      let initialLayout: LayoutState
       if let priorLayoutSpec = priorState.layoutSpec {
         log.verbose("[applyVideoGeo] Transitioning to initial layout from prior window state")
         isRestoring = true
@@ -57,19 +57,18 @@ extension PlayerWindowController {
                                    isRestoringFromPrevLaunch: isRestoring,
                                    needsNativeFullScreen: needsNativeFullScreen)
 
-
     case .alreadyOpen:
-      let currentLayout = currentLayout
-      log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(currentLayout.mode)")
-      guard let window = self.window else { return [] }
+      initialLayout = currentLayout
+      log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(initialLayout.mode)")
+      guard let window = self.window else { return (initialLayout, []) }
 
       /// `windowFrame` may be slightly off; update it
-      if currentLayout.mode == .windowed {
+      if initialLayout.mode == .windowed {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
+        PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
                                                                                        video: newVidGeo)
-      } else if currentLayout.mode == .musicMode {
+      } else if initialLayout.mode == .musicMode {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: newVidGeo)
       }
@@ -96,7 +95,7 @@ extension PlayerWindowController {
 
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
       let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
-      let initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
+      initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       let newGeoSet = configureFromPrefs(initialLayout, newVidGeo)
 
       tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
@@ -131,6 +130,7 @@ extension PlayerWindowController {
       updateTitle()
       playlistView.scrollPlaylistToCurrentItem()
 
+      // FIXME: here be race conditions
       if case .alreadyOpen = windowState {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
@@ -155,7 +155,7 @@ extension PlayerWindowController {
       }
     })
 
-    return tasks
+    return (initialLayout, tasks)
   }
 
   private func buildTransitionTasks(for initialLayout: LayoutState, _ newGeoSet: GeometrySet,
