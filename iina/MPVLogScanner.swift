@@ -59,7 +59,7 @@ class MPVLogScanner {
     if let logLevelString = Preference.string(for: .iinaMpvLogLevel), let mpvLogLevel = MPVLogLevel.fromString(logLevelString) {
       fileLogLevel = mpvLogLevel
     } else {
-      mpvLogSubsystem.error("Invalid value for pref: \(Preference.Key.iinaMpvLogLevel.rawValue). Will disable mpv log printing in the IINA log file")
+      mpvLogSubsystem.error("Invalid value for pref \(Preference.Key.iinaMpvLogLevel.rawValue): \(Preference.string(for: .iinaMpvLogLevel)?.quoted ?? "nil"). Will disable mpv log printing in the IINA log file")
       fileLogLevel = MPVLogLevel.no
     }
     mpvLogSubsystem.debug("Log level for mpv events: \(fileLogLevel)")

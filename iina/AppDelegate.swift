@@ -306,7 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startupState.wcsReady.count)/\(startupState.status == .doneEnqueuing ? "\(startupState.wcsToRestore.count)" : "?")", level: .verbose)
 
       showWindowsIfReady()
-    } else {
+    } else if !window.isMiniaturized {
       Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
       wc.showWindow(window)
     }
@@ -454,6 +454,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func showWindowsIfReady() {
+    assert(DispatchQueue.isExecutingIn(.main))
     guard startupState.status == .doneEnqueuing else { return }
     guard startupState.wcsReady.count == startupState.wcsToRestore.count else { return }
     guard !startupState.openFileCalled || startupState.wcForOpenFile != nil else { return }
@@ -461,9 +462,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("All \(startupState.wcsToRestore.count) restored \(startupState.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
 
     for wc in startupState.wcsToRestore {
-      wc.showWindow(self)  // orders the window to the front
+      if !(wc.window?.isMiniaturized ?? false) {
+        wc.showWindow(self)  // orders the window to the front
+      }
     }
-    if let wcForOpenFile = startupState.wcForOpenFile {
+    if let wcForOpenFile = startupState.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
       wcForOpenFile.showWindow(self)  // open last, thus making frontmost
     }
 

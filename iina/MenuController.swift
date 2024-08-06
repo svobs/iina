@@ -493,10 +493,12 @@ class MenuController: NSObject, NSMenuDelegate {
     let isDisplayingChapters = player.windowController.isShowing(sidebarTab: .chapters)
     chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
-    abLoop.state = player.isABLoopActive ? .on : .off
-    let loopMode = player.getLoopMode()
-    fileLoop.state = loopMode == .file ? .on : .off
-    playlistLoop.state = loopMode == .playlist ? .on : .off
+    if player.status.isAtLeast(.started) && player.status.isNotYet(.stopping) {
+      abLoop.state = player.isABLoopActive ? .on : .off
+      let loopMode = player.getLoopMode()
+      fileLoop.state = loopMode == .file ? .on : .off
+      playlistLoop.state = loopMode == .playlist ? .on : .off
+    }
     speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), player.info.playSpeed.stringTrunc3f)
   }
 
