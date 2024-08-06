@@ -1988,6 +1988,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("PlayerWindow openWindow done")
   }
 
+   var tasks: [IINAAnimation.Task] = []
   override func showWindow(_ sender: Any?) {
     guard player.status.isNotYet(.stopping) else {
       log.verbose("Aborting showWindow - player is stopping")
@@ -2004,6 +2005,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         self.window?.isExcludedFromWindowsMenu = false
         self.forceDraw()  // needed if restoring while paused
       })
+      self.animationPipeline.submit(self.tasks)
+      self.tasks = []
     }
   }
 

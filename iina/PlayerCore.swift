@@ -38,7 +38,6 @@ enum PlayerStatus: Int, StatusEnum {
 
 class PlayerCore: NSObject {
   // MARK: - Multiple instances
-  static var manager = PlayerCoreManager()
 
   /// TODO: make `lastActive` and `active` Optional, so creating an uncessary player randomly at startup isn't needed
 
@@ -46,34 +45,23 @@ class PlayerCore: NSObject {
   ///              result in a reference the `active` property and that requires use of the main thread.
   static var lastActive: PlayerCore {
     get {
-      return manager.lastActive ?? active
+      return PlayerCoreManager.shared.lastActive ?? PlayerCoreManager.shared.getActive()
     }
     set {
-      manager.lastActive = newValue
+      PlayerCoreManager.shared.lastActive = newValue
     }
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
   ///              [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
   static var active: PlayerCore {
-    return manager.getActive()
-  }
-
-  static var newPlayerCore: PlayerCore {
-    return manager.getIdleOrCreateNew()
-  }
-
-  static var activeOrNew: PlayerCore {
-    return manager.getActiveOrCreateNew()
-  }
-
-  static var playing: [PlayerCore] {
-    return manager.getNonIdle()
+    return PlayerCoreManager.shared.getActive()
   }
 
   static func activeOrNewForMenuAction(isAlternative: Bool) -> PlayerCore {
     let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternative
-    return useNew ? newPlayerCore : active
+    let pcMan = PlayerCoreManager.shared
+    return useNew ? pcMan.getIdleOrCreateNew() : pcMan.getActive()
   }
 
   static var mouseLocationAtLastOpen: NSPoint? = nil
@@ -83,6 +71,7 @@ class PlayerCore: NSObject {
   let subsystem: Logger.Subsystem
   unowned var log: Logger.Subsystem { self.subsystem }
   var label: String
+  let audioOnly: Bool
 
   @Atomic var saveTicketCounter: Int = 0
   @Atomic private var thumbnailReloadTicketCounter: Int = 0
@@ -213,7 +202,7 @@ class PlayerCore: NSObject {
   }
 
   var isOnlyOpenPlayer: Bool {
-    for player in PlayerCore.manager.getPlayerCores() {
+    for player in PlayerCoreManager.shared.playerCores {
       if player != self && player.windowController.isOpen {
         return false
       }
@@ -265,12 +254,13 @@ class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
-  init(_ label: String) {
+  init(_ label: String, audioOnly: Bool = false) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore \(label) init")
     self.label = label
     self.subsystem = log
     self.info = PlaybackInfo(log: log)
+    self.audioOnly = audioOnly
     super.init()
     self.mpv = MPVController(playerCore: self)
     self.bindingController = PlayerBindingController(playerCore: self)
@@ -281,7 +271,7 @@ class PlayerCore: NSObject {
   // MARK: - Plugins
 
   static func reloadPluginForAll(_ plugin: JavascriptPlugin) {
-    manager.getPlayerCores().forEach { $0.reloadPlugin(plugin) }
+    PlayerCoreManager.shared.playerCores.forEach { $0.reloadPlugin(plugin) }
     AppDelegate.shared.menuController?.updatePluginMenu()
   }
 
@@ -485,7 +475,11 @@ class PlayerCore: NSObject {
 
     startMPV()
     loadPlugins()
-    initVideo()
+    if audioOnly {
+      log.debug("Player is audio only. Will not init video")
+    } else {
+      initVideo()
+    }
     status = .started
   }
 
@@ -576,7 +570,7 @@ class PlayerCore: NSObject {
     }
     uninitVideo()          // Shut down DisplayLink
     log.debug("Removing player \(label)")
-    PlayerCore.manager.removePlayer(withLabel: label)
+    PlayerCoreManager.shared.removePlayer(withLabel: label)
 
     postNotification(.iinaPlayerShutdown)
     if isMPVInitiated {
@@ -3498,6 +3492,7 @@ class PlayerCore: NSObject {
       SleepPreventer.allowSleep()
       return
     }
+    let playing = PlayerCoreManager.shared.getNonIdle()
     // Look for players actively playing that are not in music mode and are not just playing audio.
     for player in playing {
       guard player.info.isPlaying,

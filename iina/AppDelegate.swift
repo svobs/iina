@@ -405,7 +405,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private func startFromCommandLine() {
     var lastPlayerCore: PlayerCore? = nil
     let getNewPlayerCore = { [self] () -> PlayerCore in
-      let pc = PlayerCore.newPlayerCore
+      let pc = PlayerCoreManager.shared.getIdleOrCreateNew()
       commandLineStatus.applyMPVArguments(to: pc)
       lastPlayerCore = pc
       return pc
@@ -531,7 +531,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationDidBecomeActive(_ notfication: Notification) {
     // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
     // Make sure to add them again if they are missing:
-    for player in PlayerCoreManager.playerCores {
+    for player in PlayerCoreManager.shared.playerCores {
       if player.windowController.loaded && !player.isShutDown {
         player.windowController.updateTitle()
       }
@@ -789,7 +789,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         showLogWindow(self)
         wc = logWindow
       case .playerWindow(let id):
-        guard let player = PlayerCoreManager.restoreFromPriorLaunch(playerID: id) else { continue }
+        guard let player = PlayerCoreManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
       case .newFilter, .editFilter, .saveFilter:
         Logger.log("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping", level: .debug)
@@ -1004,10 +1004,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @objc
   func shutdownDidTimeout() {
     timedOut = true
-    if !PlayerCoreManager.allPlayersShutdown {
+    if !PlayerCoreManager.shared.allPlayersShutdown {
       Logger.log("Timed out waiting for players to stop and shut down", level: .warning)
       // For debugging list players that have not terminated.
-      for player in PlayerCoreManager.playerCores {
+      for player in PlayerCoreManager.shared.playerCores {
         let label = player.label
         if !player.isShutDown {
           Logger.log("Player \(label) failed to shut down", level: .warning)
@@ -1101,7 +1101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // player and shutdown was initiated by typing "q" in the player window. That sends a quit
     // command directly to mpv causing mpv and the player to shutdown before application
     // termination is initiated.
-    let allPlayersShutdown = PlayerCoreManager.allPlayersShutdown
+    let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
     if allPlayersShutdown {
       Logger.log("All players have shut down")
     } else {
@@ -1178,7 +1178,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// request has completed. If there are no other termination tasks outstanding then this method will instruct AppKit to proceed with
     /// termination.
     func proceedWithTermination() {
-      let allPlayersShutdown = PlayerCoreManager.allPlayersShutdown
+      let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
       let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
       // All players have shut down.
       Logger.log("AllPlayersShutdown: \(allPlayersShutdown.yesno), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut.yesno)")
@@ -1237,9 +1237,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     })
 
     // Instruct any players that are already stopped to start shutting down.
-    for player in PlayerCoreManager.playerCores {
+    for player in PlayerCoreManager.shared.playerCores {
       if !player.isShutDown {
         player.log.verbose("Requesting shutdown of player")
+        player.shutdown()
+      }
+    }
+    if let player = PlayerCoreManager.shared.demoPlayer {
+      if !player.isShutDown {
+        player.log.verbose("Requesting shutdown of demo player")
         player.shutdown()
       }
     }
@@ -1292,7 +1298,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     DispatchQueue.main.async { [self] in
       Logger.log("Opening \(urls.count) files")
       // open pending files
-      let player = PlayerCore.activeOrNew
+      let player = PlayerCoreManager.shared.getActiveOrCreateNew()
       startupState.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
         abortWaitForPlayerStartup()
@@ -1415,7 +1421,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // new_window
       let player: PlayerCore
       if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
-        player = PlayerCore.newPlayerCore
+        player = PlayerCoreManager.shared.getIdleOrCreateNew()
       } else {
         player = PlayerCore.activeOrNewForMenuAction(isAlternative: false)
       }

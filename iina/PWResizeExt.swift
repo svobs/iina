@@ -87,9 +87,9 @@ extension PlayerWindowController {
 
           log.verbose("[applyVideoGeo] JustOpenedFile, windowState: \(state)")
           let (initialLayout, windowOpenLayoutTasks) = buildLayoutTasksForFileOpen(windowState: state,
-                                                                  currentPlayback: currentPlayback,
-                                                                  currentMediaAudioStatus: currentMediaAudioStatus,
-                                                                  newVidGeo: newVidGeo)
+                                                                                   currentPlayback: currentPlayback,
+                                                                                   currentMediaAudioStatus: currentMediaAudioStatus,
+                                                                                   newVidGeo: newVidGeo)
           newLayout = initialLayout
 
           animationPipeline.submit(windowOpenLayoutTasks)
@@ -98,15 +98,19 @@ extension PlayerWindowController {
           newLayout = currentLayout
         }
 
+
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
-        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
-                                             showDefaultArt: showDefaultArt)
+        self.tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
+                                              showDefaultArt: showDefaultArt)
 
         if let doAfter {
           tasks.append(IINAAnimation.suddenTask(doAfter))
         }
 
-        animationPipeline.submit(tasks)
+        if case .notApplicable = state {
+          animationPipeline.submit(tasks)
+          tasks = []
+        }
       }
     }
   }

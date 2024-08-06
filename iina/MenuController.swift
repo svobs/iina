@@ -537,8 +537,9 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   private func updateAudioDevice() {
-    let devices = PlayerCore.active.getAudioDevices()
-    let currAudioDevice = PlayerCore.active.mpv.getString(MPVProperty.audioDevice)
+    let demoPlayer = PlayerCoreManager.shared.getOrCreateDemo()
+    let devices = demoPlayer.getAudioDevices()
+    let currAudioDevice = demoPlayer.mpv.getString(MPVProperty.audioDevice)
     audioDeviceMenu.removeAllItems()
     devices.forEach { d in
       let name = d["name"]!
@@ -738,7 +739,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   private func updateOpenMenuItems() {
-    if PlayerCore.playing.count == 0 {
+    if PlayerCoreManager.shared.getNonIdle().count == 0 {
       open.title = stringForOpen
       openAlternative.title = stringForOpen
       openURL.title = stringForOpenURL

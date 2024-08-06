@@ -53,7 +53,7 @@ class PrefCodecViewController: PreferenceViewController, PreferenceWindowEmbedda
     super.viewWillAppear()
 
     audioDevicePopUp.removeAllItems()
-    let audioDevices = PlayerCore.active.getAudioDevices()
+    let audioDevices = PlayerCoreManager.shared.getOrCreateDemo().getAudioDevices()
     var selected = false
     audioDevices.forEach { device in
       audioDevicePopUp.addItem(withTitle: "[\(device["description"]!)] \(device["name"]!)")
@@ -84,7 +84,7 @@ class PrefCodecViewController: PreferenceViewController, PreferenceWindowEmbedda
     if spdifDTSBtn.state == .on { spdif.append("dts") }
     if spdifDTSHDBtn.state == .on { spdif.append("dts-hd") }
     let spdifString = spdif.joined(separator: ",")
-    PlayerCoreManager.playerCores.forEach { $0.mpv.setString(MPVOption.Audio.audioSpdif, spdifString) }
+    PlayerCoreManager.shared.playerCores.forEach { $0.mpv.setString(MPVOption.Audio.audioSpdif, spdifString) }
   }
 
   @IBAction func hwdecAction(_ sender: AnyObject) {

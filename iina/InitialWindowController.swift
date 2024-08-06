@@ -250,7 +250,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   fileprivate func openInNewPlayer(_ url: URL) {
-    PlayerCore.newPlayerCore.openURL(url)
+    PlayerCoreManager.shared.getIdleOrCreateNew().openURL(url)
   }
 
   @objc func onTableClicked() {
@@ -458,7 +458,7 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
 class InitialWindowContentView: NSView {
 
   var player: PlayerCore {
-    return PlayerCore.newPlayerCore
+    return PlayerCoreManager.shared.getIdleOrCreateNew()
   }
 
   override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -523,7 +523,7 @@ class InitialWindowViewActionButton: NSView {
       if let windowController = window?.windowController as? InitialWindowController,
          let lastURL = windowController.lastPlaybackURL {
         Logger.log("Opening lastPlaybackURL by default for mouse click", level: .verbose)
-        PlayerCore.newPlayerCore.openURL(lastURL)
+        PlayerCoreManager.shared.getIdleOrCreateNew().openURL(lastURL)
       }
     }
   }

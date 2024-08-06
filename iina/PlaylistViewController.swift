@@ -817,7 +817,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let files = sender.targetRows.enumerated().compactMap { (_, i) in
       i < playlistItems.count ? URL(fileURLWithPath: playlistItems[i].filename) : nil
     }
-    PlayerCore.newPlayerCore.openURLs(files)
+    PlayerCoreManager.shared.getIdleOrCreateNew().openURLs(files)
   }
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {

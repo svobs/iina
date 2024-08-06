@@ -9,25 +9,51 @@
 import Foundation
 
 class PlayerCoreManager {
+  static var shared = PlayerCoreManager()
 
-  // MARK: - Static methods
+  private let lock = Lock()
+  private var playerCoreCounter = 0
 
-  static var playerCores: [PlayerCore] {
-    return PlayerCore.manager.getPlayerCores()
+  private var _playerCores: [PlayerCore] = []
+  private var _demoPlayer: PlayerCore? = nil
+
+  /// Audio-only player. Needed for listing audio devices when no player windows are open.
+  /// Should not be used for playing anything.
+  var demoPlayer: PlayerCore? {
+    var player: PlayerCore?
+    lock.withLock {
+      player = _demoPlayer
+    }
+    return player
   }
 
-  static var allPlayersShutdown: Bool {
+  weak var lastActive: PlayerCore?
+
+  // Returns a copy of the list of PlayerCores, to ensure concurrency
+  var playerCores: [PlayerCore] {
+    var coreList: [PlayerCore]? = nil
+    lock.withLock {
+      coreList = _playerCores
+    }
+    return coreList!
+  }
+
+  var allPlayersShutdown: Bool {
     for player in playerCores {
       if !player.isShutDown {
         player.log.verbose("Player has not yet shut down")
         return false
       }
     }
+    if let demoPlayer = _demoPlayer {
+      demoPlayer.log.verbose("Demo player has not yet shut down")
+      return false
+    }
     return true
   }
 
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
-  static func restoreFromPriorLaunch(playerID id: String) -> PlayerCore? {
+  func restoreFromPriorLaunch(playerID id: String) -> PlayerCore? {
     Logger.log("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
 
     guard let savedState = Preference.UIState.getPlayerSaveState(forPlayerID: id) else {
@@ -35,35 +61,17 @@ class PlayerCoreManager {
       return nil
     }
 
-    let player = PlayerCore.manager.createNewPlayerCore(withLabel: id)
+    let player = createNewPlayerCore(withLabel: id)
     savedState.restoreTo(player)
     return player
   }
 
-  // MARK: - Since instance
-
-  private let lock = Lock()
-  private var playerCoreCounter = 0
-
-  private var playerCores: [PlayerCore] = []
-
-  weak var lastActive: PlayerCore?
-
-  // Returns a copy of the list of PlayerCores, to ensure concurrency
-  func getPlayerCores() -> [PlayerCore] {
-    var coreList: [PlayerCore]? = nil
-    lock.withLock {
-      coreList = playerCores
-    }
-    return coreList!
-  }
-
   func _getOrCreateFirst() -> PlayerCore {
     var core: PlayerCore
-    if playerCores.isEmpty {
+    if _playerCores.isEmpty {
       core = _createNewPlayerCore()
     } else {
-      core = playerCores[0]
+      core = _playerCores[0]
     }
     return core
   }
@@ -79,7 +87,7 @@ class PlayerCoreManager {
   func getActiveOrCreateNew() -> PlayerCore {
     var core: PlayerCore? = nil
     lock.withLock {
-      if playerCores.isEmpty {
+      if _playerCores.isEmpty {
         core = _createNewPlayerCore()
       } else {
         if Preference.bool(for: .alwaysOpenInNewWindow) {
@@ -94,7 +102,7 @@ class PlayerCoreManager {
 
   private func _findIdlePlayerCore() -> PlayerCore? {
     var firstIdlePlayer: PlayerCore? = nil
-    for p in playerCores {
+    for p in _playerCores {
       let isPlayerIdle = p.info.isIdle && p.isStopped && !p.info.isFileLoaded
       Logger.log("Player-\(p.label): idle:\(p.info.isIdle.yn) stopped:\(p.isStopped.yn) fileLoaded:\(p.info.isFileLoaded.yn) → \(isPlayerIdle ? "IDLE" : "notIdle")")
       if firstIdlePlayer == nil && isPlayerIdle {
@@ -107,7 +115,7 @@ class PlayerCoreManager {
   func getNonIdle() -> [PlayerCore] {
     var cores: [PlayerCore]? = nil
     lock.withLock {
-      cores = playerCores.filter { !$0.info.isIdle }
+      cores = _playerCores.filter { $0.status.isAtLeast(.started) && !$0.info.isIdle }
     }
     return cores!
   }
@@ -137,18 +145,33 @@ class PlayerCoreManager {
     }
   }
 
+  func getOrCreateDemo() -> PlayerCore {
+    var player: PlayerCore!
+    lock.withLock {
+      if let _demoPlayer {
+        player = _demoPlayer
+      } else {
+        player = PlayerCore("demo", audioOnly: true)
+        player.start()
+        _demoPlayer = player
+      }
+    }
+    return player
+  }
+
   func _getActive() -> PlayerCore {
-    if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController {
+    if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController, wc.player.status.isAtLeast(.started) {
       return wc.player
     } else {
       let core: PlayerCore! = _getOrCreateFirst()
+      Logger.log("Using first PlayerCore instance, ID: \(core.label.quoted)")
       return core
     }
   }
 
   private func _playerExists(withLabel label: String) -> Bool {
     var exists = false
-    exists = playerCores.first(where: { $0.label == label }) != nil
+    exists = _playerCores.first(where: { $0.label == label }) != nil
     return exists
   }
 
@@ -170,7 +193,7 @@ class PlayerCoreManager {
     }
     Logger.log("Successfully created PlayerCore \(pc.label)")
 
-    playerCores.append(pc)
+    _playerCores.append(pc)
     return pc
   }
 
@@ -184,7 +207,7 @@ class PlayerCoreManager {
 
   func removePlayer(withLabel label: String) {
     lock.withLock {
-      playerCores.removeAll(where: { (player) in player.label == label })
+      _playerCores.removeAll(where: { (player) in player.label == label })
     }
   }
 }

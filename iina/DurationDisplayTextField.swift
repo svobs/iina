@@ -93,7 +93,7 @@ class DurationDisplayTextField: NSTextField {
     let precision = UInt(sender.tag)
     DurationDisplayTextField.precision = precision
     Preference.set(Int(precision), for: .timeDisplayPrecision)
-    PlayerCoreManager.playerCores.forEach { core in
+    PlayerCoreManager.shared.playerCores.forEach { core in
       core.refreshSyncUITimer()
     }
   }
