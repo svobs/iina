@@ -11,16 +11,16 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-  enum JustOpenedFileState {
-    case no
-    case openedManually
-    case openedViaPlaylistNavigation
+  enum WindowStateAtFileOpen {
+    case notApplicable
+    case notOpen
+    case alreadyOpen
     case restoring(playerState: PlayerSaveState)
   }
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func buildLayoutTasksForFileOpen(justOpenedFileState: JustOpenedFileState,
+  func buildLayoutTasksForFileOpen(windowState: WindowStateAtFileOpen,
                                    currentPlayback: Playback,
                                    currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -29,7 +29,7 @@ extension PlayerWindowController {
     var needsNativeFullScreen = false
     var tasks: [IINAAnimation.Task]
 
-    switch justOpenedFileState {
+    switch windowState {
     case .restoring(let priorState):
       let initialLayout: LayoutState
       if let priorLayoutSpec = priorState.layoutSpec {
@@ -57,7 +57,7 @@ extension PlayerWindowController {
                                    needsNativeFullScreen: needsNativeFullScreen)
 
 
-    case .openedViaPlaylistNavigation:
+    case .alreadyOpen:
       let currentLayout = currentLayout
       log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return [] }
@@ -80,7 +80,7 @@ extension PlayerWindowController {
       // No additional layout needed
       tasks = []
 
-    case .openedManually:
+    case .notOpen:
       log.verbose("[applyVideoGeo] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowed
 
@@ -103,10 +103,18 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid JustOpenedFileState state: \(justOpenedFileState)")
+      Logger.fatal("Invalid WindowStateAtFileOpen state: \(windowState)")
     }
 
     tasks.append(IINAAnimation.suddenTask{ [self] in
+      defer {
+        // Post notifications always
+        player.postNotification(.iinaFileLoaded)
+        player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+        /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
+        window?.postWindowIsReadyToShow()
+      }
+
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
 
@@ -145,12 +153,6 @@ extension PlayerWindowController {
           enterFullScreen()
         }
       }
-
-      // Post notifications
-      player.postNotification(.iinaFileLoaded)
-      player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
-      /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
-      window?.postWindowIsReadyToShow()
     })
 
     return tasks
