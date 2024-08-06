@@ -8,13 +8,6 @@
 
 import Foundation
 
-enum NewOpenedFileStatus {
-  case no
-  case openedManually
-  case openedViaPlaylistNavigation
-  case restoring(playerState: PlayerSaveState)
-}
-
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
 
@@ -78,7 +71,7 @@ extension PlayerWindowController {
         if newVidGeo.totalRotation != currentPlayback.thumbnails?.rotationDegrees {
           player.reloadThumbnails(forMedia: currentPlayback)
         }
-
+        
         let newOpenedFileState: NewOpenedFileStatus
         if fileJustOpened {
           if isRestoring, let priorState {
@@ -92,9 +85,9 @@ extension PlayerWindowController {
             newOpenedFileState = .openedViaPlaylistNavigation
           }
 
-          var windowOpenLayoutTasks = buildLayoutTasksForWindowOpen(newOpenedFileState: newOpenedFileState,
-                                                                    currentPlayback: currentPlayback,
-                                                                    currentMediaAudioStatus: currentMediaAudioStatus)
+          var windowOpenLayoutTasks = buildLayoutTasksForFileOpen(newOpenedFileState: newOpenedFileState,
+                                                                  currentPlayback: currentPlayback,
+                                                                  currentMediaAudioStatus: currentMediaAudioStatus)
 
           animationPipeline.submit(windowOpenLayoutTasks)
         } else {
