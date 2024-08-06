@@ -1922,7 +1922,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func _openWindow() {
     guard let window = self.window, let cv = window.contentView else { return }
-    isInitialSizeDone = false  // reset for reopen
 
     log.verbose("PlayerWindow openWindow starting")
 
@@ -2030,6 +2029,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     player.stop()
 
     guard !AppDelegate.shared.isTerminating else { return }
+    
+    isInitialSizeDone = false  // reset for reopen
     
     // stop tracking mouse event
     guard let window, let contentView = window.contentView else { return }

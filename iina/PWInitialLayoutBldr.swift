@@ -11,7 +11,7 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-  enum NewOpenedFileStatus {
+  enum JustOpenedFileState {
     case no
     case openedManually
     case openedViaPlaylistNavigation
@@ -20,7 +20,7 @@ extension PlayerWindowController {
 
   // Set window layout when either opening window for new file, reusing existing window for new file,
   // or restoring from prior launch.
-  func buildLayoutTasksForFileOpen(newOpenedFileState: NewOpenedFileStatus,
+  func buildLayoutTasksForFileOpen(justOpenedFileState: JustOpenedFileState,
                                    currentPlayback: Playback,
                                    currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -29,11 +29,11 @@ extension PlayerWindowController {
     var needsNativeFullScreen = false
     var tasks: [IINAAnimation.Task]
 
-    switch newOpenedFileState {
+    switch justOpenedFileState {
     case .restoring(let priorState):
       let initialLayout: LayoutState
       if let priorLayoutSpec = priorState.layoutSpec {
-        log.verbose("Transitioning to initial layout from prior window state")
+        log.verbose("[applyVideoGeo] Transitioning to initial layout from prior window state")
         isRestoring = true
 
         let initialLayoutSpec: LayoutSpec
@@ -46,7 +46,7 @@ extension PlayerWindowController {
         }
         initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
-        log.error("Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
+        log.error("[applyVideoGeo] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
         let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
         initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
@@ -59,7 +59,7 @@ extension PlayerWindowController {
 
     case .openedViaPlaylistNavigation:
       let currentLayout = currentLayout
-      log.verbose("Opening a new file in an already open window, mode=\(currentLayout.mode)")
+      log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return [] }
 
       var videoGeo: VideoGeometry = geo.video
@@ -81,13 +81,13 @@ extension PlayerWindowController {
       tasks = []
 
     case .openedManually:
-      log.verbose("Transitioning to initial layout from app prefs")
+      log.verbose("[applyVideoGeo] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowed
 
       if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
         let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
-        log.debug("Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+        log.debug("[applyVideoGeo] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
         if useLegacyFS {
           mode = .fullScreen
         } else {
@@ -102,8 +102,8 @@ extension PlayerWindowController {
 
       tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
-    case .no:
-      Logger.fatal("Invalid state: \(newOpenedFileState)")
+    default:
+      Logger.fatal("Invalid JustOpenedFileState state: \(justOpenedFileState)")
     }
 
     tasks.append(IINAAnimation.suddenTask{ [self] in

@@ -72,30 +72,30 @@ extension PlayerWindowController {
           player.reloadThumbnails(forMedia: currentPlayback)
         }
         
-        let newOpenedFileState: NewOpenedFileStatus
+        let state: JustOpenedFileState
         if fileJustOpened {
           if isRestoring, let priorState {
-            newOpenedFileState = .restoring(playerState: priorState)
+            state = .restoring(playerState: priorState)
             isInitialSizeDone = true
           } else if !isInitialSizeDone {
-            log.verbose("Setting isInitialSizeDone=YES")
             isInitialSizeDone = true
-            newOpenedFileState = .openedManually
+            state = .openedManually
           } else {
-            newOpenedFileState = .openedViaPlaylistNavigation
+            state = .openedViaPlaylistNavigation
           }
 
-          var windowOpenLayoutTasks = buildLayoutTasksForFileOpen(newOpenedFileState: newOpenedFileState,
+          log.verbose("[applyVideoGeo] JustOpenedFile: \(state)")
+          let windowOpenLayoutTasks = buildLayoutTasksForFileOpen(justOpenedFileState: state,
                                                                   currentPlayback: currentPlayback,
                                                                   currentMediaAudioStatus: currentMediaAudioStatus)
 
           animationPipeline.submit(windowOpenLayoutTasks)
         } else {
-          newOpenedFileState = .no
+          state = .no
         }
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
-        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newOpenedFileState: newOpenedFileState,
+        var tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, justOpenedFileState: state,
                                              showDefaultArt: showDefaultArt)
 
         if let doAfter {
@@ -109,7 +109,7 @@ extension PlayerWindowController {
 
   /// Only `applyVideoGeoTransform` should call this.
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
-                                        newOpenedFileState: NewOpenedFileStatus,
+                                        justOpenedFileState: JustOpenedFileState,
                                         showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
 
     var duration = IINAAnimation.VideoReconfigDuration
@@ -124,7 +124,7 @@ extension PlayerWindowController {
     case .windowed:
 
       let newGeo: PWinGeometry
-      switch newOpenedFileState {
+      switch justOpenedFileState {
 
       case .openedManually:
         // Just opened manually. Use a longer duration for this one, because the window starts small and will zoom into place.
@@ -135,7 +135,7 @@ extension PlayerWindowController {
 
       case .openedViaPlaylistNavigation:
         var openedManually = false
-        if case .openedManually = newOpenedFileState {
+        if case .openedManually = justOpenedFileState {
           openedManually = true
         }
         if let resizedGeo = resizeAfterFileOpen(openedManually: openedManually, newVidGeo: newVidGeo) {
@@ -157,7 +157,7 @@ extension PlayerWindowController {
         return []
       }
 
-      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(newOpenedFileState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
+      log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(justOpenedFileState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
     case .fullScreen:

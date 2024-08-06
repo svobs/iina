@@ -2318,6 +2318,13 @@ class PlayerCore: NSObject {
 
     log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
     windowController.applyVideoGeoTransform({ [self] videoGeo in
+      guard status.isNotYet(.stopping) else { return nil }
+      // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
+      let userRotation = mpv.getInt(MPVOption.Video.videoRotate)
+      // TODO: sync video-aspect-override. This does get synced from an mpv notification, but there is a slight delay
+      // TODO: sync video-crop (actually, add support for video-crop...)
+      let videoGeo = videoGeo.clone(userRotation: userRotation)
+
       if let ffMeta {
         return videoGeo.substituting(ffMeta)
       } else if currentMediaAudioStatus == .isAudio {

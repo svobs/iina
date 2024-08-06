@@ -1104,7 +1104,7 @@ class MPVController: NSObject {
   }
 
   /// Makes calls to mpv to get the latest video params, then returns them.
-  func syncVideoGeometryFromMPV() -> VideoGeometry? {
+  func getVideoGeometryFromProperties() -> VideoGeometry? {
     // If loading file, video reconfig can return 0 width and height
     guard let currentPlayback = player.info.currentPlayback else {
       log.verbose("Cannot get videoGeo from mpv: currentPlayback is nil")
@@ -1115,8 +1115,8 @@ class MPVController: NSObject {
       return nil
     }
     // Will crash if querying mpv after stop command started
-    guard !player.isStopping else {
-      log.verbose("Cannot get videoGeo: status=\(player.status)")
+    guard player.status.isAtLeast(.started), player.status.isNotYet(.stopping) else {
+      log.verbose("Cannot get videoGeo: player.status=\(player.status)")
       return nil
     }
 

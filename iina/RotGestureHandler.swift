@@ -116,6 +116,11 @@ class RotationGestureHandler {
     let fromDegrees = cgCurrentRotationDegrees
     let toRadians = degToRad(toDegrees)
 
+    guard fromDegrees != toDegrees else {
+      player.log.debug("No rotation needed; already at \(fromDegrees)°")
+      return
+    }
+
     // Animation is enabled by default for this view.
     // We only want to animate some rotations and not others, and never want to animate
     // position change. So put these in an explicitly disabled transaction block:
