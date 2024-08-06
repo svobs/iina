@@ -1115,7 +1115,7 @@ class MPVController: NSObject {
       return nil
     }
     // Will crash if querying mpv after stop command started
-    guard player.status.isAtLeast(.started), player.status.isNotYet(.stopping) else {
+    guard player.isActive else {
       log.verbose("Cannot get videoGeo: player.status=\(player.status)")
       return nil
     }

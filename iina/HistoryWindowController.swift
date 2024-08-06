@@ -465,7 +465,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   @IBAction func playAction(_ sender: AnyObject) {
     guard let firstEntry = selectedEntries.first else { return }
-    PlayerCore.active.openURL(firstEntry.url)
+    PlayerCoreManager.shared.getActiveOrCreateNew().openURL(firstEntry.url)
   }
 
   @IBAction func playInNewWindowAction(_ sender: AnyObject) {

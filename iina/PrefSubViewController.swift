@@ -129,9 +129,10 @@ class PrefSubViewController: PreferenceViewController, PreferenceWindowEmbeddabl
   }
 
   @IBAction func changeDefaultEncoding(_ sender: NSPopUpButton) {
+    guard let player = PlayerCoreManager.shared.activePlayer else { return }
     Preference.set(sender.selectedItem!.representedObject!, for: .defaultEncoding)
-    PlayerCore.active.setSubEncoding((sender.selectedItem?.representedObject as? String) ?? "auto")
-    PlayerCore.active.reloadAllSubs()
+    player.setSubEncoding((sender.selectedItem?.representedObject as? String) ?? "auto")
+    player.reloadAllSubs()
   }
 
   @IBAction func openSubHelpBtnAction(_ sender: AnyObject) {

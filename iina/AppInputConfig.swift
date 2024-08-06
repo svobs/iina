@@ -100,8 +100,9 @@ struct AppInputConfig {
 
       AppInputConfig.lastStartedVersion = requestedVersion
 
-      guard let activePlayerBindingController = PlayerCore.active.bindingController else {
-        Logger.fatal("AppInputConfig.rebuildCurrent(): no active player!")
+      let player = PlayerCoreManager.shared.activePlayer ?? PlayerCoreManager.shared.getOrCreateDemo()
+      guard let activePlayerBindingController = player.bindingController else {
+        Logger.fatal("AppInputConfig.rebuildCurrent(): player has no bindingController!")  // should never happen
       }
 
       let builder = activePlayerBindingController.makeAppInputConfigBuilder()

@@ -43,25 +43,19 @@ class PlayerCore: NSObject {
 
   /// - Important: Code referencing this property **must** be run on the main thread as getting the value of this property _may_
   ///              result in a reference the `active` property and that requires use of the main thread.
-  static var lastActive: PlayerCore {
+  static var lastActive: PlayerCore? {
     get {
-      return PlayerCoreManager.shared.lastActive ?? PlayerCoreManager.shared.getActive()
+      return PlayerCoreManager.shared.lastActivePlayer ?? PlayerCoreManager.shared.activePlayer
     }
     set {
-      PlayerCoreManager.shared.lastActive = newValue
+      PlayerCoreManager.shared.lastActivePlayer = newValue
     }
   }
 
   /// - Important: Code referencing this property **must** be run on the main thread because it references
   ///              [NSApplication.windowController`](https://developer.apple.com/documentation/appkit/nsapplication/1428723-mainwindow)
-  static var active: PlayerCore {
-    return PlayerCoreManager.shared.getActive()
-  }
-
-  static func activeOrNewForMenuAction(isAlternative: Bool) -> PlayerCore {
-    let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternative
-    let pcMan = PlayerCoreManager.shared
-    return useNew ? pcMan.getIdleOrCreateNew() : pcMan.getActive()
+  static var active: PlayerCore? {
+    return PlayerCoreManager.shared.activePlayer
   }
 
   static var mouseLocationAtLastOpen: NSPoint? = nil
@@ -145,6 +139,10 @@ class PlayerCore: NSObject {
     didSet {
       log.verbose("Updated playerStatus to \(status)")
     }
+  }
+
+  var isActive: Bool {
+    return status.isAtLeast(.started) && status.isNotYet(.stopping)
   }
 
   var isShuttingDown: Bool {
@@ -2741,7 +2739,7 @@ class PlayerCore: NSObject {
           isShowVideoPendingInMiniPlayer = true
         }
         log.verbose("Sending mpv request to cycle video track")
-        if status.isAtLeast(.started) && status.isNotYet(.stopping) {
+        if isActive {
           _ = mpv.command(.cycle, args: ["video"])
         }
       } else {
@@ -3532,8 +3530,7 @@ class NowPlayingInfoManager {
     let center = MPNowPlayingInfoCenter.default()
     var info = center.nowPlayingInfo ?? [String: Any]()
 
-    let activePlayer = PlayerCore.lastActive
-    guard !activePlayer.isStopping else { return }
+    guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else { return }
 
     if withTitle {
       if activePlayer.info.currentMediaAudioStatus == .isAudio {

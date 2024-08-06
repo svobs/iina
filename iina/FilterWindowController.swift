@@ -95,7 +95,7 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
 
   @objc
   func reloadTable() {
-    let pc = PlayerCore.lastActive
+    guard let pc = PlayerCore.lastActive else { return }
     pc.log.verbose("Reloading \(filterType) table")
     let savedFilters = self.savedFilters
     pc.mpv.queue.async { [self] in
@@ -125,7 +125,7 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   private func setFilters() {
-    PlayerCore.lastActive.mpv.setFilters(filterType, filters: filters)
+    PlayerCore.lastActive?.mpv.setFilters(filterType, filters: filters)
   }
 
   deinit {
@@ -133,13 +133,17 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func addFilter(_ filter: MPVFilter) -> Bool {
+    guard let player = PlayerCore.lastActive else {
+      Utility.showAlert("filter.no_player", sheetWindow: window)
+      return false
+    }
     if filterType == MPVProperty.vf {
-      guard PlayerCore.lastActive.addVideoFilter(filter) else {
+      guard player.addVideoFilter(filter) else {
         Utility.showAlert("filter.incorrect", sheetWindow: window)
         return false
       }
     } else {
-      guard PlayerCore.lastActive.addAudioFilter(filter) else {
+      guard player.addAudioFilter(filter) else {
         Utility.showAlert("filter.incorrect", sheetWindow: window)
         return false
       }
@@ -190,7 +194,10 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   @IBAction func removeFilterAction(_ sender: Any) {
-    let pc = PlayerCore.lastActive
+    guard let pc = PlayerCore.lastActive else {
+      Utility.showAlert("filter.no_player", sheetWindow: window)
+      return
+    }
     let selectedRows = currentFiltersTableView.selectedRowIndexes
     if !selectedRows.isEmpty {
       pc.mpv.queue.async { [self] in
@@ -225,7 +232,10 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   @IBAction func toggleSavedFilterAction(_ sender: NSButton) {
     let row = savedFiltersTableView.row(for: sender)
     let savedFilter = savedFilters[row]
-    let pc = PlayerCore.lastActive
+    guard let pc = PlayerCore.lastActive else {
+      Utility.showAlert("filter.no_player", sheetWindow: window)
+      return
+    }
     let toggleOn = sender.state == .on
     let filters = filters
 
@@ -571,7 +581,7 @@ class NewFilterSheetViewController: NSViewController, NSTableViewDelegate, NSTab
     }
     // create filter
     if filterWindow.addFilter(preset.transformer(instance)) {
-      PlayerCore.lastActive.sendOSD(.addFilter(preset.localizedName))
+      PlayerCore.lastActive?.sendOSD(.addFilter(preset.localizedName))
     }
   }
 

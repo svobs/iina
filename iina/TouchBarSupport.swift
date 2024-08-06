@@ -268,11 +268,12 @@ class TouchBarPlaySlider: NSSlider {
   var isTouching = false
   var wasPlayingBeforeTouching = false
 
-  var playerCore: PlayerCore {
+  var playerCore: PlayerCore? {
     return (self.window?.windowController as? PlayerWindowController)?.player ?? .active
   }
 
   override func touchesBegan(with event: NSEvent) {
+    guard let playerCore else { return }
     isTouching = true
     wasPlayingBeforeTouching = playerCore.info.isPlaying
     playerCore.pause()
@@ -280,6 +281,7 @@ class TouchBarPlaySlider: NSSlider {
   }
 
   override func touchesEnded(with event: NSEvent) {
+    guard let playerCore else { return }
     isTouching = false
     if (wasPlayingBeforeTouching) {
       playerCore.resume()
@@ -312,7 +314,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
     return (self.controlView as! TouchBarPlaySlider).isTouching
   }
 
-  var playerCore: PlayerCore {
+  var playerCore: PlayerCore? {
     return (self.controlView as! TouchBarPlaySlider).playerCore
   }
 
@@ -342,10 +344,10 @@ class TouchBarPlaySliderCell: NSSliderCell {
   }
 
   override func knobRect(flipped: Bool) -> NSRect {
-    let info = playerCore.info
+    let info = playerCore?.info
     let superKnob = super.knobRect(flipped: flipped)
     if isTouching {
-      if let thumbSet = info.currentPlayback?.thumbnails, thumbSet.thumbnails.count > 0 {
+      if let thumbSet = info?.currentPlayback?.thumbnails, thumbSet.thumbnails.count > 0 {
         let imageKnobWidth = knobWidthWithImage
         let barWidth = barRect(flipped: flipped).width
 
@@ -366,6 +368,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
   }
 
   override func drawKnob(_ knobRect: NSRect) {
+    guard let playerCore else { return }
     let info = playerCore.info
     guard !info.isIdle else { return }
     if isTouching, let dur = info.videoDuration?.second, let tb = info.currentPlayback?.thumbnails?.getThumbnail(forSecond: (doubleValue / 100) * dur) {
@@ -395,6 +398,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
+    guard let playerCore else { return }
     let info = playerCore.info
     guard !info.isIdle else { return }
     let barRect = self.barRect(flipped: flipped)

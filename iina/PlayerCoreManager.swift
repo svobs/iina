@@ -27,7 +27,7 @@ class PlayerCoreManager {
     return player
   }
 
-  weak var lastActive: PlayerCore?
+  weak var lastActivePlayer: PlayerCore?
 
   // Returns a copy of the list of PlayerCores, to ensure concurrency
   var playerCores: [PlayerCore] {
@@ -93,11 +93,21 @@ class PlayerCoreManager {
         if Preference.bool(for: .alwaysOpenInNewWindow) {
           core = _getIdleOrCreateNew()
         } else {
-          core = _getActive()
+          core = _activePlayer
         }
       }
     }
     return core!
+  }
+
+  /// `isAlternative` means to negate the current value of pref `.alwaysOpenInNewWindow`
+  func getActiveOrNewForMenuAction(isAlternative: Bool) -> PlayerCore {
+    let useNew = Preference.bool(for: .alwaysOpenInNewWindow) != isAlternative
+    if !useNew, let activePlayer = activePlayer {
+      return activePlayer
+    }
+    // If no active player, need to create new. Or if by pref
+    return getIdleOrCreateNew()
   }
 
   private func _findIdlePlayerCore() -> PlayerCore? {
@@ -139,9 +149,17 @@ class PlayerCoreManager {
     return core
   }
 
-  func getActive() -> PlayerCore {
+  var activePlayer: PlayerCore? {
     lock.withLock {
-      return _getActive()
+      return _activePlayer
+    }
+  }
+
+  var _activePlayer: PlayerCore? {
+    if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController, wc.player.isActive {
+      return wc.player
+    } else {
+      return nil
     }
   }
 
@@ -157,16 +175,6 @@ class PlayerCoreManager {
       }
     }
     return player
-  }
-
-  func _getActive() -> PlayerCore {
-    if let wc = NSApp.mainWindow?.windowController as? PlayerWindowController, wc.player.status.isAtLeast(.started) {
-      return wc.player
-    } else {
-      let core: PlayerCore! = _getOrCreateFirst()
-      Logger.log("Using first PlayerCore instance, ID: \(core.label.quoted)")
-      return core
-    }
   }
 
   private func _playerExists(withLabel label: String) -> Bool {

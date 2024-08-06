@@ -45,13 +45,13 @@ class ScreenshootOSDView: NSViewController {
   }
 
   override func mouseDown(with event: NSEvent) {
-    let player = PlayerCore.active
+    guard let player = PlayerCore.active else { return }
     player.log.verbose("ScreenshotOSD mouseDown: dismissing OSD")
     player.hideOSD()
   }
 
   @IBAction func deleteBtnAction(_ sender: Any) {
-    let player = PlayerCore.active
+    guard let player = PlayerCore.active else { return }
     player.log.verbose("ScreenshotOSD Delete button clicked")
     player.hideOSD()
     guard let fileURL = fileURL else { return }
@@ -59,7 +59,7 @@ class ScreenshootOSDView: NSViewController {
   }
 
   @IBAction func revealBtnAction(_ sender: Any) {
-    let player = PlayerCore.active
+    guard let player = PlayerCore.active else { return }
     player.log.verbose("ScreenshotOSD Reveal button clicked")
     player.hideOSD()
     guard let fileURL = fileURL else { return }
@@ -67,7 +67,7 @@ class ScreenshootOSDView: NSViewController {
   }
 
   @IBAction func editBtnAction(_ sender: Any) {
-    let player = PlayerCore.active
+    guard let player = PlayerCore.active else { return }
     player.log.verbose("ScreenshotOSD Edit button clicked")
     player.hideOSD()
     guard let fileURL = fileURL else { return }

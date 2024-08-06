@@ -236,6 +236,7 @@
 "alert.config.rename.title" = "Rename Input Configuration";
 "alert.config.rename.message" = "Please enter the new name for the configuration.";
 
+"alert.filter.no_player" = "Error occurred when setting filters: no active player!";
 "alert.filter.incorrect" = "Error occurred when setting filters. Please check your parameter format.";
 "alert.add_filter.title" = "New Filter";
 "alert.add_filter.message" = "Please enter a filter string in format of mpv's vf or af command.";

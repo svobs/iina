@@ -166,7 +166,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: - Data updates
 
   func updateInfo(dynamic: Bool = false) {
-    let player = PlayerCore.lastActive
+    guard let player = PlayerCore.lastActive else { return }
     guard !player.isStopping else { return }
     let controller = player.mpv!
     let info = player.info
@@ -271,9 +271,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
         : "N/A";
       self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
-      let player = PlayerCore.lastActive
-      if player.windowController.loaded && player.info.isFileLoaded {
-        if let colorspace = PlayerCore.lastActive.windowController.videoView.videoLayer.colorspace {
+      if let player = PlayerCore.lastActive, player.windowController.loaded && player.info.isFileLoaded {
+        if let colorspace = player.windowController.videoView.videoLayer.colorspace {
           let isHdr = colorspace != VideoView.SRGB
           self.vcolorspaceField.stringValue = "\(colorspace.name!) (\(isHdr ? "H" : "S")DR)"
         } else {
@@ -355,10 +354,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       }
       return cell
     case .value:
-      let player = PlayerCore.lastActive
-
       if let textField = cell.textField {
-        if !player.isStopping, let value = PlayerCore.lastActive.mpv.getString(property) {
+        if let player = PlayerCoreManager.shared.lastActivePlayer, !player.isStopping, let value = player.mpv.getString(property) {
           textField.stringValue = value
           textField.textColor = .labelColor
         } else {

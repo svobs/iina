@@ -838,11 +838,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if result == .OK {  /// OK
         Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
         if Preference.bool(for: .recordRecentFiles) {
+          let urls = panel.urls  // must call this on the main thread
           HistoryController.shared.queue.async {
-            HistoryController.shared.noteNewRecentDocumentURLs(panel.urls)
+            HistoryController.shared.noteNewRecentDocumentURLs(urls)
           }
         }
-        let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternativeAction)
+        let playerCore = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
         if playerCore.openURLs(panel.urls) == 0 {
           Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
           Utility.showAlert("nothing_to_open")
@@ -1330,7 +1331,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("Text dropped on app's Dock icon", level: .verbose)
     guard let url = pboard.string(forType: .string) else { return }
 
-    let player = PlayerCore.active
+    guard let player = PlayerCore.active else { return }
     startupState.openFileCalled = true
     startupState.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
@@ -1395,7 +1396,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     
     if parsed.scheme != "iina" {
       // try to open the URL directly
-      let player = PlayerCore.activeOrNewForMenuAction(isAlternative: false)
+      let player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       startupState.openFileCalled = true
       startupState.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
@@ -1423,16 +1424,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if let newWindowValue = queryDict["new_window"], newWindowValue == "1" {
         player = PlayerCoreManager.shared.getIdleOrCreateNew()
       } else {
-        player = PlayerCore.activeOrNewForMenuAction(isAlternative: false)
+        player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
       startupState.openFileCalled = true
       startupState.wcForOpenFile = player.windowController
 
       // enqueue
-      if let enqueueValue = queryDict["enqueue"], enqueueValue == "1", !PlayerCore.lastActive.info.playlist.isEmpty {
-        PlayerCore.lastActive.addToPlaylist(urlValue)
-        PlayerCore.lastActive.sendOSD(.addToPlaylist(1))
+      if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
+         let lastActivePlayer = PlayerCore.lastActive,
+         !lastActivePlayer.info.playlist.isEmpty {
+        lastActivePlayer.addToPlaylist(urlValue)
+        lastActivePlayer.sendOSD(.addToPlaylist(1))
       } else {
         if player.openURLString(urlValue) == 0 {
           abortWaitForPlayerStartup()
@@ -1490,7 +1493,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   @IBAction func menuSelectAudioDevice(_ sender: NSMenuItem) {
     if let name = sender.representedObject as? String {
-      PlayerCore.active.setAudioDevice(name)
+      PlayerCore.active?.setAudioDevice(name)
     }
   }
 
@@ -1678,52 +1681,63 @@ class RemoteCommandController {
 
   static func setup() {
     remoteCommand.playCommand.addTarget { _ in
-      PlayerCore.lastActive.resume()
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.resume()
       return .success
     }
     remoteCommand.pauseCommand.addTarget { _ in
-      PlayerCore.lastActive.pause()
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.pause()
       return .success
     }
     remoteCommand.togglePlayPauseCommand.addTarget { _ in
-      PlayerCore.lastActive.togglePause()
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.togglePause()
       return .success
     }
     remoteCommand.stopCommand.addTarget { _ in
-      PlayerCore.lastActive.stop()
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.stop()
       return .success
     }
     remoteCommand.nextTrackCommand.addTarget { _ in
-      PlayerCore.lastActive.navigateInPlaylist(nextMedia: true)
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.navigateInPlaylist(nextMedia: true)
       return .success
     }
     remoteCommand.previousTrackCommand.addTarget { _ in
-      PlayerCore.lastActive.navigateInPlaylist(nextMedia: false)
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.navigateInPlaylist(nextMedia: false)
       return .success
     }
     remoteCommand.changeRepeatModeCommand.addTarget { _ in
-      PlayerCore.lastActive.nextLoopMode()
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.nextLoopMode()
       return .success
     }
     remoteCommand.changeShuffleModeCommand.isEnabled = false
     // remoteCommand.changeShuffleModeCommand.addTarget {})
     remoteCommand.changePlaybackRateCommand.supportedPlaybackRates = [0.5, 1, 1.5, 2]
     remoteCommand.changePlaybackRateCommand.addTarget { event in
-      PlayerCore.lastActive.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.setSpeed(Double((event as! MPChangePlaybackRateCommandEvent).playbackRate))
       return .success
     }
     remoteCommand.skipForwardCommand.preferredIntervals = [15]
     remoteCommand.skipForwardCommand.addTarget { event in
-      PlayerCore.lastActive.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.seek(relativeSecond: (event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
       return .success
     }
     remoteCommand.skipBackwardCommand.preferredIntervals = [15]
     remoteCommand.skipBackwardCommand.addTarget { event in
-      PlayerCore.lastActive.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.seek(relativeSecond: -(event as! MPSkipIntervalCommandEvent).interval, option: .defaultValue)
       return .success
     }
     remoteCommand.changePlaybackPositionCommand.addTarget { event in
-      PlayerCore.lastActive.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)
+      guard let player = PlayerCore.lastActive else { return .commandFailed }
+      player.seek(absoluteSecond: (event as! MPChangePlaybackPositionCommandEvent).positionTime)
       return .success
     }
   }
