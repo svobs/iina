@@ -84,7 +84,10 @@ extension PlayerWindowController {
       log.verbose("[applyVideoGeo] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowed
 
-      if Preference.bool(for: .fullScreenWhenOpen) {
+      if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus == .isAudio {
+        log.debug("[applyVideoGeo] Opened media is audio: will auto-switch to music mode")
+        mode = .musicMode
+      } else if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
         let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
         log.debug("[applyVideoGeo] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
@@ -132,23 +135,24 @@ extension PlayerWindowController {
       updateTitle()
       playlistView.scrollPlaylistToCurrentItem()
 
-      if !isRestoring {
+      if case .alreadyOpen = windowState {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
             log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
           } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !isFullScreen {
-            log.debug("Current media is audio: auto-switching to music mode")
+            log.debug("Opened media is audio: auto-switching to music mode")
             player.enterMusicMode(automatically: true)
             return  // do not even try to go to full screen if already going to music mode
           } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-            log.debug("Current media is not audio: auto-switching to normal window")
+            log.debug("Opened media is not audio: auto-switching to normal window")
             player.exitMusicMode(automatically: true)
+            return  // do not even try to go to full screen if already going to windowed mode
           }
         }
 
         // Need to switch to full screen?
-        if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer && !isRestoring {
+        if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
           log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
           enterFullScreen()
         }
@@ -262,12 +266,18 @@ extension PlayerWindowController {
       videoGeo = videoGeo.substituting(ffMeta)
     }
 
-    // Always use last geometry for music mode window:
-    let musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
-
     let windowedModeGeo: PWinGeometry
+    let musicModeGeo: MusicModeGeometry
+
     if initialLayout.isFullScreen {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
+      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
+
+    } else if initialLayout.isMusicMode {
+      // TODO: fancier animation into music mode
+      windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
+      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
+
     } else {
       /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
@@ -287,6 +297,8 @@ extension PlayerWindowController {
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
       log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoGeo.videoViewAspect), windowSize=\(windowSize)")
       windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
+
+      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: videoGeo)
