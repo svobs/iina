@@ -78,7 +78,7 @@ class AppInputConfigBuilder {
    Bindings with identical keys will not be filtered or disabled here.
    */
   private func combineEnabledSectionBindings() -> [InputBinding] {
-    InputSectionStack.dq.sync {
+    InputSectionStack.lock.withLock {
       var linkedList = LinkedList<InputBinding>()
 
       var countOfUserConfSectionBindings: Int = 0

@@ -17,7 +17,7 @@ import Foundation
  */
 class InputSectionStack {
   // More than one of these is probably excessive, since there will only ever be one active player at a time making changes
-  static let dq = DispatchQueue(label: "com.collider.iina.input-bindings", qos: .userInteractive)
+  static let lock = Lock()
 
   // For storage in `sectionsEnabled`
   struct EnabledSectionMeta {
@@ -102,7 +102,7 @@ class InputSectionStack {
    See: `mp_input_define_section` in mpv source
    */
   func defineSection(_ inputSection: MPVInputSection) {
-    InputSectionStack.dq.sync {
+    InputSectionStack.lock.withLock {
       // mpv behavior is to remove a section from the enabled list if it is updated with no content
       if inputSection.keyMappingList.isEmpty && sectionsDefined[inputSection.name] != nil {
         // remove existing enabled section with same name
@@ -130,7 +130,7 @@ class InputSectionStack {
 
    */
   func enableSection(_ sectionName: String, _ flags: [String]) {
-    InputSectionStack.dq.sync {
+    InputSectionStack.lock.withLock {
       var isExclusive = false
       for flag in flags {
         switch flag {
@@ -164,7 +164,7 @@ class InputSectionStack {
    Disable the named input section. Undoes enable-section.
    */
   func disableSection(_ sectionName: String) {
-    InputSectionStack.dq.sync {
+    InputSectionStack.lock.withLock {
       disableSection_Unsafe(sectionName)
     }
   }

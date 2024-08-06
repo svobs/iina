@@ -44,7 +44,7 @@ struct AppInputConfig {
   /// This can get called a lot for menu item bindings [by MacOS], so setting onlyIfDifferent=true can possibly cut down on redundant work.
   static func replaceMappings(forSharedSectionName: String, with mappings: [KeyMapping],
                               onlyIfDifferent: Bool = false, attaching userData: NotificationData? = nil) {
-    InputSectionStack.dq.sync {
+    InputSectionStack.lock.withLock {
       guard let sharedSection = sharedSectionStack.sectionsDefined[forSharedSectionName] as? SharedInputSection else { return }
 
       let doReplace = true
