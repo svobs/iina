@@ -291,15 +291,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
-      Logger.log("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Falling back to default geometry",
-                 level: .debug)
+      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Falling back to default geometry")
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
-        Logger.log("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)", level: .verbose)
+        Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
         return savedGeo
       } else {
-        Logger.log("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))",
-                   level: .error)
+        Logger.log.error("Saved pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is invalid. Falling back to default geometry (found: \(savedGeo))")
       }
     }
     // Compute default geometry for main screen
@@ -308,11 +306,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }() {
     didSet {
       guard windowedModeGeoLastClosed.mode.isWindowed, !windowedModeGeoLastClosed.fitOption.isFullScreen else {
-        Logger.log("Will not save windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)", level: .error)
+        Logger.log.error("Will skip save of windowedModeGeoLastClosed because it is invalid: not in windowed mode! Found: \(windowedModeGeoLastClosed)")
         return
       }
       Preference.set(windowedModeGeoLastClosed.toCSV(), for: .uiLastClosedWindowedModeGeometry)
-      Logger.log("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)", level: .verbose)
+      Logger.log.verbose("Updated pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) ≔ \(windowedModeGeoLastClosed)")
     }
   }
 
@@ -321,7 +319,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   static var musicModeGeoLastClosed: MusicModeGeometry = {
     let csv = Preference.string(for: .uiLastClosedMusicModeGeometry)
     if let savedGeo = MusicModeGeometry.fromCSV(csv, Logger.log) {
-      Logger.log("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)", level: .verbose)
+      Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)")
       return savedGeo
     }
     Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Falling back to default music mode geometry",
@@ -333,7 +331,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }() {
     didSet {
       Preference.set(musicModeGeoLastClosed.toCSV(), for: .uiLastClosedMusicModeGeometry)
-      Logger.log("Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)", level: .verbose)
+      Logger.log.verbose("Updated musicModeGeoLastClosed ≔ \(musicModeGeoLastClosed)")
     }
   }
 
@@ -2031,7 +2029,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard !AppDelegate.shared.isTerminating else { return }
     
     isInitialSizeDone = false  // reset for reopen
-    
+
     // stop tracking mouse event
     guard let window, let contentView = window.contentView else { return }
     contentView.trackingAreas.forEach(contentView.removeTrackingArea)

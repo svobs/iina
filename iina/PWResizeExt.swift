@@ -178,6 +178,10 @@ extension PlayerWindowController {
       })]
 
     case .musicMode:
+      if case .notOpen = windowState {
+        log.verbose("[applyVideoGeo] Music mode already handled for opened window: \(musicModeGeo)")
+        return []
+      }
       /// Keep prev `windowFrame`. Just adjust height to fit new video aspect ratio
       /// (unless it doesn't fit in screen; see `applyMusicModeGeo`)
       log.verbose("[applyVideoGeo] Prev cached value of musicModeGeo: \(musicModeGeo)")
@@ -597,10 +601,8 @@ extension PlayerWindowController {
 
     videoView.videoLayer.enterAsynchronousMode()
 
-    if isInitialSizeDone {
-      // This is only needed to achieve "fade-in" effect when opening window:
-      updateCustomBorderBoxAndWindowOpacity()
-    }
+    // This is only needed to achieve "fade-in" effect when opening window:
+    updateCustomBorderBoxAndWindowOpacity()
 
     // Update defaults:
     Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)

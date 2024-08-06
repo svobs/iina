@@ -2338,9 +2338,11 @@ class PlayerCore: NSObject {
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
       currentPlayback.loadStatus = .loadedAndSized
-      // Need to call here to ensure file title OSD is displayed when navigating playlist
+      // Need to call here to ensure file title OSD is displayed when navigating playlist...
       refreshSyncUITimer()
       windowController.updateUI()
+      // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
+      windowController.updateCustomBorderBoxAndWindowOpacity()
     })
 
     // Launch auto-load tasks on background thread
@@ -2745,7 +2747,7 @@ class PlayerCore: NSObject {
           isShowVideoPendingInMiniPlayer = true
         }
         log.verbose("Sending mpv request to cycle video track")
-        mpv.queue.sync { [self] in
+        if status.isAtLeast(.started) && status.isNotYet(.stopping) {
           _ = mpv.command(.cycle, args: ["video"])
         }
       } else {
