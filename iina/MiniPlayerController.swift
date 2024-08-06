@@ -356,6 +356,11 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       if !showVideo && windowController.pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       }
+
+      // Need to force draw if window was restored while paused + video hidden
+      if showVideo {
+        windowController.forceDraw()
+      }
     })
 
     tasks.append(IINAAnimation.suddenTask{ [self] in
