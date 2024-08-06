@@ -22,7 +22,8 @@ extension PlayerWindowController {
   // or restoring from prior launch.
   func buildLayoutTasksForFileOpen(windowState: WindowStateAtFileOpen,
                                    currentPlayback: Playback,
-                                   currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) -> [IINAAnimation.Task] {
+                                   currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
+                                   newVidGeo: VideoGeometry) -> [IINAAnimation.Task] {
     assert(DispatchQueue.isExecutingIn(.main))
 
     var isRestoring = false
@@ -62,20 +63,15 @@ extension PlayerWindowController {
       log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(currentLayout.mode)")
       guard let window = self.window else { return [] }
 
-      var videoGeo: VideoGeometry = geo.video
-      if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: player.info.currentURL, log) {
-        videoGeo = videoGeo.substituting(ffMeta)
-      }
-
       /// `windowFrame` may be slightly off; update it
       if currentLayout.mode == .windowed {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
         PlayerWindowController.windowedModeGeoLastClosed = currentLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
-                                                                                       video: videoGeo)
+                                                                                       video: newVidGeo)
       } else if currentLayout.mode == .musicMode {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: videoGeo)
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: newVidGeo)
       }
       // No additional layout needed
       tasks = []
@@ -101,7 +97,7 @@ extension PlayerWindowController {
       // Set to default layout, but use existing aspect ratio & video size for now, because we don't have that info yet for the new video
       let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: mode, fillingInFrom: lastWindowedLayoutSpec)
       let initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
-      let newGeoSet = configureFromPrefs(initialLayout)
+      let newGeoSet = configureFromPrefs(initialLayout, newVidGeo)
 
       tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
@@ -162,7 +158,7 @@ extension PlayerWindowController {
     return tasks
   }
 
-  private func buildTransitionTasks(for initialLayout: LayoutState, _ newGeo: GeometrySet,
+  private func buildTransitionTasks(for initialLayout: LayoutState, _ newGeoSet: GeometrySet,
                                     isRestoringFromPrevLaunch: Bool, needsNativeFullScreen: Bool) -> [IINAAnimation.Task] {
 
     var tasks: [IINAAnimation.Task] = []
@@ -171,11 +167,11 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = true
 
     // Send GeometrySet object to builder so that it doesn't default to current window frame
-    log.verbose("Setting initial \(initialLayout.spec), windowedModeGeo=\(newGeo.windowed), musicModeGeo=\(newGeo.musicMode)")
+    log.verbose("Setting initial \(initialLayout.spec), windowedModeGeo=\(newGeoSet.windowed), musicModeGeo=\(newGeoSet.musicMode)")
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: initialLayout.spec, isInitialLayout: true, newGeo)
+                                                  from: currentLayout, to: initialLayout.spec, isInitialLayout: true, newGeoSet)
 
     tasks.append(IINAAnimation.suddenTask { [self] in
 
@@ -258,25 +254,18 @@ extension PlayerWindowController {
     return priorState.geoSet
   }
 
-  private func configureFromPrefs(_ initialLayout: LayoutState) -> GeometrySet {
+  private func configureFromPrefs(_ initialLayout: LayoutState, _ videoGeo: VideoGeometry) -> GeometrySet {
     // Should only be here if window is a new window or was previously closed. Copy layout from the last closed window
 
-    var videoGeo = player.videoGeo
-    if let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: player.info.currentURL, log) {
-      videoGeo = videoGeo.substituting(ffMeta)
-    }
-
     let windowedModeGeo: PWinGeometry
-    let musicModeGeo: MusicModeGeometry
+    let musicModeGeo = PlayerWindowController.musicModeGeoLastClosed.clone(video: videoGeo)
 
     if initialLayout.isFullScreen {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
-      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
 
     } else if initialLayout.isMusicMode {
       // TODO: fancier animation into music mode
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
-      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
 
     } else {
       /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
@@ -297,8 +286,6 @@ extension PlayerWindowController {
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
       log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoGeo.videoViewAspect), windowSize=\(windowSize)")
       windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
-
-      musicModeGeo = PlayerWindowController.musicModeGeoLastClosed
     }
 
     return GeometrySet(windowed: windowedModeGeo, musicMode: musicModeGeo, video: videoGeo)

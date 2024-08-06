@@ -87,7 +87,8 @@ extension PlayerWindowController {
           log.verbose("[applyVideoGeo] JustOpenedFile, windowState: \(state)")
           let windowOpenLayoutTasks = buildLayoutTasksForFileOpen(windowState: state,
                                                                   currentPlayback: currentPlayback,
-                                                                  currentMediaAudioStatus: currentMediaAudioStatus)
+                                                                  currentMediaAudioStatus: currentMediaAudioStatus,
+                                                                  newVidGeo: newVidGeo)
 
           animationPipeline.submit(windowOpenLayoutTasks)
         } else {
