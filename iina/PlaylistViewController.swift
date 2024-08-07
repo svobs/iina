@@ -165,9 +165,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     hideTotalLength()
 
     // colors
-    if #available(macOS 10.14, *) {
-      withAllTableViews { $0.backgroundColor = NSColor(named: .sidebarTableBackground)! }
-    }
+    withAllTableViews { $0.backgroundColor = NSColor(named: .sidebarTableBackground)! }
 
     // handle pending switch tab request
     if pendingSwitchRequest != nil {
@@ -185,9 +183,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
-    if #available(macOS 10.14, *) {
-      distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.systemColorSettingsDidChange))
-    }
+    distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.systemColorSettingsDidChange))
 
     // notifications
     playlistChangeObserver = NotificationCenter.default.addObserver(forName: .iinaPlaylistChanged, object: player, queue: .main) { [self] _ in
@@ -264,6 +260,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func reloadData(playlist: Bool, chapters: Bool) {
     player.log.verbose("Reloading sidebar tables: playlist=\(playlist.yn) chapters=\(chapters.yn)")
+    guard player.isActive else { return }
     if playlist {
       player.log.verbose("Reloading playlist table for \(player.info.playlist.count) entries")
       playlistTableView.reloadData()
@@ -360,11 +357,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private func updateTabActiveStatus(for btn: NSButton, isActive: Bool) {
-    if #available(macOS 10.14, *) {
-      btn.contentTintColor = isActive ? NSColor.sidebarTabTintActive : NSColor.sidebarTabTint
-    } else {
-      Utility.setBoldTitle(for: btn, isActive)
-    }
+    btn.contentTintColor = isActive ? NSColor.sidebarTabTintActive : NSColor.sidebarTabTint
   }
 
   // MARK: - NSTableViewDataSource

@@ -492,7 +492,6 @@ extension PlayerWindowController {
     self.toggleOnTop(sender)
   }
 
-  @available(macOS 10.12, *)
   @objc func menuTogglePIP(_ sender: NSMenuItem) {
     switch pipStatus {
     case .notInPIP:
@@ -528,9 +527,9 @@ extension PlayerWindowController {
     default:
       break
     }
-    return menuItem.isEnabled
+    return true
   }
-  
+
   // MARK: - Plugin
 
   @objc func reloadAllPlugins(_ sender: NSMenuItem) {

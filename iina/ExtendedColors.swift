@@ -8,7 +8,6 @@
 
 import Cocoa
 
-@available(macOS 10.13, *)
 extension NSColor.Name {
   static let aboutWindowBackground = NSColor.Name("AboutWindowBackground")
 
@@ -41,7 +40,6 @@ extension NSColor.Name {
   static let sidebarTabTintActive = NSColor.Name("SidebarTabTintActive")
 }
 
-@available(macOS 10.14, *)
 extension NSColor {
   static let sidebarTabTint: NSColor = NSColor(named: .sidebarTabTint)!
   static let sidebarTabTintActive: NSColor = NSColor(named: .sidebarTabTintActive)!

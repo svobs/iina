@@ -121,6 +121,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())
     tableHeightConstraint!.isActive = true
+    watchTableContainerView.layout()
 
     updateInfo()
     watchTableView.scrollRowToVisible(0)
@@ -167,7 +168,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   func updateInfo(dynamic: Bool = false) {
     guard let player = PlayerCore.lastActive else { return }
-    guard !player.isStopping else { return }
     let controller = player.mpv!
     let info = player.info
 
@@ -271,7 +271,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
         : "N/A";
       self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
 
-      if let player = PlayerCore.lastActive, player.windowController.loaded && player.info.isFileLoaded {
+      if let player = PlayerCore.lastActive, player.info.isFileLoaded {
         if let colorspace = player.windowController.videoView.videoLayer.colorspace {
           let isHdr = colorspace != VideoView.SRGB
           self.vcolorspaceField.stringValue = "\(colorspace.name!) (\(isHdr ? "H" : "S")DR)"

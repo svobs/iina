@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23086.1" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23086.1"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -12,7 +12,6 @@
                 <outlet property="buildDateLabel" destination="O3G-Ax-VRU" id="ExO-hI-ZRf"/>
                 <outlet property="contributorsButton" destination="ZI5-MK-cHL" id="ITp-Pd-sWy"/>
                 <outlet property="contributorsCollectionView" destination="KDi-R3-lE7" id="WHw-ob-ruR"/>
-                <outlet property="contributorsFooterImage" destination="bUk-MP-jkv" id="9oa-Gt-Sym"/>
                 <outlet property="contributorsFooterView" destination="nmC-ZN-RcQ" id="d3K-PG-wt2"/>
                 <outlet property="creditsButton" destination="XuI-3z-cJF" id="IQr-94-1fD"/>
                 <outlet property="creditsTextView" destination="Vex-sA-zx3" id="xid-ke-4Xp"/>
@@ -114,7 +113,7 @@
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y6B-pc-JRB" userLabel="BuildInfo Vertical Stack View">
                                             <rect key="frame" x="20" y="149" width="180" height="22"/>
                                             <subviews>
-                                                <textField focusRingType="none" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
+                                                <textField hidden="YES" verticalHuggingPriority="750" mirrorLayoutDirectionWhenInternationalizing="never" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="O3G-Ax-VRU" userLabel="Date">
                                                     <rect key="frame" x="-2" y="11" width="184" height="11"/>
                                                     <textFieldCell key="cell" controlSize="mini" scrollable="YES" lineBreakMode="clipping" selectable="YES" refusesFirstResponder="YES" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="Date" usesSingleLineMode="YES" id="hp8-K0-WQf">
                                                         <font key="font" metaFont="miniSystem"/>
@@ -281,10 +280,6 @@
                                                             <autoresizingMask key="autoresizingMask"/>
                                                         </scroller>
                                                     </scrollView>
-                                                    <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bUk-MP-jkv">
-                                                        <rect key="frame" x="0.0" y="62" width="400" height="60"/>
-                                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="Q2i-kp-Z0G"/>
-                                                    </imageView>
                                                     <visualEffectView appearanceType="inheritedVibrantLight" blendingMode="withinWindow" material="underWindowBackground" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="nmC-ZN-RcQ">
                                                         <rect key="frame" x="0.0" y="62" width="400" height="60"/>
                                                         <constraints>
@@ -311,7 +306,7 @@
                                                             <action selector="translatorsBtnAction:" target="-2" id="Jzp-8V-nU9"/>
                                                         </connections>
                                                     </button>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lR7-ma-7xF">
+                                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="lR7-ma-7xF">
                                                         <rect key="frame" x="-2" y="38" width="246" height="16"/>
                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="IINA localization is powered by Crowdin." id="HLj-vT-kNp">
                                                             <font key="font" metaFont="system"/>
@@ -322,9 +317,7 @@
                                                 </subviews>
                                                 <constraints>
                                                     <constraint firstItem="iaQ-kz-jCh" firstAttribute="leading" secondItem="Rtt-1M-7Kd" secondAttribute="leading" constant="4" id="365-5O-DGk"/>
-                                                    <constraint firstItem="bUk-MP-jkv" firstAttribute="bottom" secondItem="nmC-ZN-RcQ" secondAttribute="bottom" id="Ava-A0-JqP"/>
                                                     <constraint firstAttribute="trailing" secondItem="iaQ-kz-jCh" secondAttribute="trailing" constant="4" id="Foe-AW-ovM"/>
-                                                    <constraint firstItem="bUk-MP-jkv" firstAttribute="leading" secondItem="nmC-ZN-RcQ" secondAttribute="leading" id="GG2-tx-nu0"/>
                                                     <constraint firstItem="iaQ-kz-jCh" firstAttribute="top" secondItem="Rtt-1M-7Kd" secondAttribute="top" id="Tqt-1D-AOb"/>
                                                     <constraint firstAttribute="trailing" secondItem="nmC-ZN-RcQ" secondAttribute="trailing" id="ceK-j8-ptp"/>
                                                     <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="lR7-ma-7xF" secondAttribute="trailing" id="dpc-cX-9I8"/>
@@ -332,12 +325,10 @@
                                                     <constraint firstItem="lR7-ma-7xF" firstAttribute="top" secondItem="iaQ-kz-jCh" secondAttribute="bottom" constant="8" symbolic="YES" id="gUx-79-9Cr"/>
                                                     <constraint firstItem="0PM-oG-4Qs" firstAttribute="centerX" secondItem="nmC-ZN-RcQ" secondAttribute="centerX" id="h29-pz-GL1"/>
                                                     <constraint firstItem="nmC-ZN-RcQ" firstAttribute="bottom" secondItem="0PM-oG-4Qs" secondAttribute="bottom" constant="8" id="hVS-pi-lV1"/>
-                                                    <constraint firstItem="bUk-MP-jkv" firstAttribute="top" secondItem="nmC-ZN-RcQ" secondAttribute="top" id="iZ0-M4-muf"/>
                                                     <constraint firstItem="trK-iz-kG7" firstAttribute="top" secondItem="lR7-ma-7xF" secondAttribute="bottom" constant="20" id="jXS-j3-JAr"/>
                                                     <constraint firstAttribute="bottom" secondItem="trK-iz-kG7" secondAttribute="bottom" id="kwm-uu-JkJ"/>
                                                     <constraint firstItem="lR7-ma-7xF" firstAttribute="leading" secondItem="Rtt-1M-7Kd" secondAttribute="leading" id="q6A-Sn-AXA"/>
                                                     <constraint firstItem="trK-iz-kG7" firstAttribute="centerX" secondItem="Rtt-1M-7Kd" secondAttribute="centerX" id="qo9-gM-aL0"/>
-                                                    <constraint firstItem="bUk-MP-jkv" firstAttribute="trailing" secondItem="nmC-ZN-RcQ" secondAttribute="trailing" id="vLM-Uv-FeK"/>
                                                     <constraint firstItem="nmC-ZN-RcQ" firstAttribute="leading" secondItem="Rtt-1M-7Kd" secondAttribute="leading" id="xo5-ma-AoO"/>
                                                 </constraints>
                                             </view>

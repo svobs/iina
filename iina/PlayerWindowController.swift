@@ -3755,7 +3755,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
 // MARK: - Picture in Picture
 
-@available(macOS 10.12, *)
 extension PlayerWindowController: PIPViewControllerDelegate {
 
   func enterPIP(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil, then doOnSuccess: (() -> Void)? = nil) {

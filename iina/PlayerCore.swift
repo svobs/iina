@@ -45,7 +45,7 @@ class PlayerCore: NSObject {
   ///              result in a reference the `active` property and that requires use of the main thread.
   static var lastActive: PlayerCore? {
     get {
-      return PlayerCoreManager.shared.lastActivePlayer ?? PlayerCoreManager.shared.activePlayer
+      return PlayerCoreManager.shared.lastActivePlayer
     }
     set {
       PlayerCoreManager.shared.lastActivePlayer = newValue
@@ -557,14 +557,27 @@ class PlayerCore: NSObject {
     mpv.mpvQuit()
   }
 
-  func mpvHasShutdown(isMPVInitiated: Bool = false) {
+  /// Respond to the mpv core shutting down.
+  /// - Important: Normally shutdown of the mpv core occurs after IINA has sent a `quit` command to the mpv core and that
+  ///     asynchronous command completes. _However_ this can also occur when the user uses mpv's IPC interface to send a quit
+  ///     command directly to mpv. Accessing a mpv core after it has shutdown is not permitted by mpv and can trigger a crash.
+  ///     When IINA is in control of the termination sequence it is able to prevent access to the mpv core. For example, observers are
+  ///     removed before sending the `quit` command. But when shutdown is initiated by mpv the actions IINA takes before
+  ///     shutting down mpv are bypassed. This means a mpv initiated shutdown can't be made fully deterministic as there are inherit
+  ///     windows of vulnerability that can not be fully closed. IINA has no choice but to support a mpv initiated shutdown as best it
+  ///     can.
+  func mpvHasShutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
+    let isMPVInitiated = status.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
       refreshSyncUITimer()   // Shut down timer
+      // The user must have used mpv's IPC interface to send a quit command directly to mpv. Must
+      // perform the actions that were skipped when IINA's normal shutdown process was bypassed.
+      mpv.removeObservers()
     }
     uninitVideo()          // Shut down DisplayLink
     log.debug("Removing player \(label)")
@@ -1691,19 +1704,20 @@ class PlayerCore: NSObject {
   }
 
   func setAudioEq(fromGains gains: [Double]) {
-    let channelCount = mpv.getInt(MPVProperty.audioParamsChannelCount)
-    let freqList = [31.25, 62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
-    let filters = freqList.enumerated().map { (index, freq) -> MPVFilter in
-      let string = [Int](0..<channelCount).map { "c\($0) f=\(freq) w=\(freq / 1.224744871) g=\(gains[index])" }.joined(separator: "|")
-      return MPVFilter(name: "lavfi", label: "\(Constants.FilterLabel.audioEq)\(index)", paramString: "[anequalizer=\(string)]")
-    }
-    filters.forEach { _ = addAudioFilter($0) }
-    info.audioEqFilters = filters
+    let freqList = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+    let paramString = freqList.enumerated().map { (index, freq) in
+      "equalizer=f=\(freq):t=h:width=\(Double(freq) / 1.224744871):g=\(gains[index])"
+    }.joined(separator: ",")
+    let filter = MPVFilter(name: "lavfi", label: Constants.FilterLabel.audioEq, paramString: "[\(paramString)]")
+    addAudioFilter(filter)
+    info.audioEqFilter = filter
   }
 
   func removeAudioEqFilter() {
-    info.audioEqFilters?.compactMap { $0 }.forEach { _ = removeAudioFilter($0) }
-    info.audioEqFilters = nil
+    if let filter = info.audioEqFilter {
+      removeAudioFilter(filter)
+      info.audioEqFilter = nil
+    }
   }
 
   /// Add a video filter given as a `MPVFilter` object.
@@ -1882,11 +1896,13 @@ class PlayerCore: NSObject {
   /// Add an audio filter given as a `MPVFilter` object.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
+  @discardableResult
   func addAudioFilter(_ filter: MPVFilter) -> Bool { addAudioFilter(filter.stringFormat) }
 
   /// Add an audio filter given as a string.
   /// - Parameter filter: The filter to add.
   /// - Returns: `true` if the filter was successfully added, `false` otherwise.
+  @discardableResult
   func addAudioFilter(_ filter: String) -> Bool {
     log.debug("Adding audio filter \(filter)...")
     var result = true
@@ -1928,6 +1944,7 @@ class PlayerCore: NSObject {
   /// remove a filter.
   /// - Parameter filter: The filter to remove.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
+  @discardableResult
   func removeAudioFilter(_ filter: MPVFilter) -> Bool { removeAudioFilter(filter.stringFormat) }
 
   /// Remove an audio filter given as a string.
@@ -1939,6 +1956,7 @@ class PlayerCore: NSObject {
   /// methods that identify the filter to be removed based on its position in the filter list are the preferred way to remove a filter.
   /// - Parameter filter: The filter to remove.
   /// - Returns: `true` if the filter was successfully removed, `false` otherwise.
+  @discardableResult
   func removeAudioFilter(_ filter: String) -> Bool {
     Logger.log("Removing audio filter \(filter)...", subsystem: subsystem)
     let returnCode = mpv.command(.af, args: ["remove", filter], checkError: false) >= 0
@@ -2059,12 +2077,9 @@ class PlayerCore: NSObject {
   func savePlaybackPosition() {
     guard Preference.bool(for: .resumeLastPosition) else { return }
 
-    // If the player is stopped then the file has been unloaded and it is too late to save the
-    // watch later configuration.
-    if isStopped {
-      Logger.log("Player is stopped; too late to write water later config. This is ok if shutdown was initiated by mpv", level: .verbose, subsystem: subsystem)
-    } else {
-      Logger.log("Write watch later config", subsystem: subsystem)
+    // The player must be active to be able to save the watch later configuration.
+    if isActive {
+      log.debug("Write watch later config")
       mpv.command(.writeWatchLaterConfig)
     }
     saveToLastPlayedFile(info.currentURL, duration: info.videoDuration, position: info.videoPosition)
@@ -3438,20 +3453,13 @@ class PlayerCore: NSObject {
 
   /// `af`: gets up-to-date list of audio filters AND updates associated state in the process
   func getAudioFilters() -> [MPVFilter] {
-    // Clear cached filters first:
-    info.audioEqFilters = nil
     let audioFilters = mpv.getFilters(MPVProperty.af)
     for filter in audioFilters {
       Logger.log("Got mpv af, name: \(filter.name.quoted), label: \(filter.label?.quoted ?? "nil"), params: \(filter.params ?? [:])",
                  level: .verbose, subsystem: subsystem)
       guard let label = filter.label else { continue }
       if label.hasPrefix(Constants.FilterLabel.audioEq) {
-        if info.audioEqFilters == nil {
-          info.audioEqFilters = Array(repeating: nil, count: 10)
-        }
-        if let index = Int(String(label.last!)) {
-          info.audioEqFilters![index] = filter
-        }
+        info.audioEqFilter = filter
       }
     }
     return audioFilters

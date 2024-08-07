@@ -163,12 +163,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         self.themeMenu.removeItem(item)
       }
     }
-    if #available(macOS 10.14, *) {
-      removeThemeMenuItemWithTag(Preference.Theme.mediumLight.rawValue)
-      removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
-    } else {
-      removeThemeMenuItemWithTag(Preference.Theme.system.rawValue)
-    }
+    removeThemeMenuItemWithTag(Preference.Theme.mediumLight.rawValue)
+    removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
   }
 
   override func viewDidAppear() {

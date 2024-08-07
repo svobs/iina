@@ -47,7 +47,6 @@ extension RemainingRemovalTracker {
   }
 }
 
-@available(macOS 10.15, *)
 extension CollectionDifference where ChangeElement: Hashable {
   public typealias Steps = Array<CollectionDifference<ChangeElement>.ChangeStep>
 
@@ -93,7 +92,6 @@ extension CollectionDifference where ChangeElement: Hashable {
   }
 }
 
-@available(macOS 10.15, *)
 extension CollectionDifference.Change {
   var offset: Int {
     switch self {

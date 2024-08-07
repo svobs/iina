@@ -71,7 +71,6 @@ class BindingTableViewController: NSObject {
     observers = []
   }
 
-  @available(macOS 10.14, *)
   private func systemColorSettingsDidChange(notification: Notification) {
     Logger.log("Detected change to system color prefs; reloading Binding table", level: .verbose)
     self.tableView.reloadExistingRows(reselectRowsAfter: true)

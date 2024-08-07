@@ -383,6 +383,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     NSWindow.allowsAutomaticWindowTabbing = false
 
     JavascriptPlugin.loadGlobalInstances()
+
+    if RemoteCommandController.useSystemMediaControl {
+      Logger.log("Setting up MediaPlayer integration")
+      RemoteCommandController.setup()
+      NowPlayingInfoManager.updateInfo(state: .unknown)
+    }
+
     menuController.updatePluginMenu()
     menuController.refreshBuiltInMenuItemBindings()
 
@@ -446,7 +453,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
           exit(EX_USAGE)
         }
         pc.enterMusicMode()
-      } else if #available(macOS 10.12, *), commandLineStatus.enterPIP {
+      } else if commandLineStatus.enterPIP {
         Logger.log("Entering PIP as specified via command line", level: .verbose)
         pc.windowController.enterPIP()
       }
@@ -885,6 +892,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !isShowingOpenFileWindow else { return false }
 
+    if let activePlayer = PlayerCoreManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
+      return false
+    }
 
     if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
       Preference.UIState.clearSavedStateForThisLaunch()
@@ -1037,10 +1047,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("App should terminate")
 
     // Save UI state first:
-    for window in NSApp.windows {
-      if let playerWindowController = window.windowController as? PlayerWindowController {
-        PlayerSaveState.saveSynchronously(playerWindowController.player)
-      }
+    for playerWindowController in NSApplication.playerWindows {
+      PlayerSaveState.saveSynchronously(playerWindowController.player)
     }
     Preference.UIState.saveCurrentOpenWindowList()
 
@@ -1066,11 +1074,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     removeAllMenuItems(dockMenu)
     // If supported and enabled disable all remote media commands. This also removes IINA from
     // the Now Playing widget.
-    if #available(macOS 10.13, *) {
-      if RemoteCommandController.useSystemMediaControl {
-        Logger.log("Disabling remote commands")
-        RemoteCommandController.disableAllCommands()
-      }
+    if RemoteCommandController.useSystemMediaControl {
+      Logger.log("Disabling remote commands")
+      RemoteCommandController.disableAllCommands()
     }
 
     if Preference.UIState.isSaveEnabled {
@@ -1143,6 +1149,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       timer = Timer(timeInterval: terminationTimeout, target: self,
                     selector: #selector(self.shutdownDidTimeout), userInfo: nil, repeats: false)
     }
+
     RunLoop.main.add(timer, forMode: .common)
 
     // Establish an observer for a player core stopping.
@@ -1432,7 +1439,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",
-         let lastActivePlayer = PlayerCore.lastActive,
+         let lastActivePlayer = PlayerCoreManager.shared.lastActivePlayer,
          !lastActivePlayer.info.playlist.isEmpty {
         lastActivePlayer.addToPlaylist(urlValue)
         lastActivePlayer.sendOSD(.addToPlaylist(1))
@@ -1448,9 +1455,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player.mpv.setFlag(MPVOption.Window.fullscreen, true)
       } else if let pipValue = queryDict["pip"], pipValue == "1" {
         // pip
-        if #available(macOS 10.12, *) {
-          player.windowController.enterPIP()
-        }
+        player.windowController.enterPIP()
       }
 
       // mpv options
@@ -1673,7 +1678,6 @@ struct CommandLineStatus {
   }
 }
 
-@available(macOS 10.13, *)
 class RemoteCommandController {
   static let remoteCommand = MPRemoteCommandCenter.shared()
 

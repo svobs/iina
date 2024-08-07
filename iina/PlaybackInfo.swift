@@ -37,11 +37,7 @@ class PlaybackInfo {
 
   // MARK: - Playback lifecycle state
 
-  var isIdle: Bool = true {
-    didSet {
-      PlayerCore.checkStatusForSleep()
-    }
-  }
+  var isIdle: Bool = true
 
   /// Is `true` only while restore from previous launch is still in progress; `false` otherwise.
   var isRestoring = false
@@ -128,7 +124,7 @@ class PlaybackInfo {
 
   var flipFilter: MPVFilter?
   var mirrorFilter: MPVFilter?
-  var audioEqFilters: [MPVFilter?]?
+  var audioEqFilter: MPVFilter?
   var delogoFilter: MPVFilter?
 
   /// `[filter.name -> filter]`. Should be used on main thread only

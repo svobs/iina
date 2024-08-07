@@ -760,9 +760,21 @@ class MPVController: NSObject {
     return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
   }
 
-  /// Remove registered observers for IINA preferences.
+  /// Remove observers for IINA preferences and mpv properties.
+  /// - Important: Observers **must** be removed before sending a `quit` command to mpv. Accessing a mpv core after it
+  ///     has shutdown is not permitted by mpv and can trigger a crash. During shutdown mpv will emit property change events,
+  ///     thus it is critical that observers be removed, otherwise they may access the core and trigger a crash.
+  func removeObservers() {
+    // Remove observers for IINA preferences. Must not attempt to change a mpv setting in response
+    // to an IINA preference change while mpv is shutting down.
+    removeOptionObservers()
+    // Remove observers for mpv properties. Because 0 was passed for reply_userdata when registering
+    // mpv property observers all observers can be removed in one call.
+    mpv_unobserve_property(mpv, 0)
+  }
+
+  /// Remove observers for IINA preferences.
   private func removeOptionObservers() {
-    // Remove observers for IINA preferences.
     ObjcUtils.silenced {
       self.optionObservers.forEach { (k, _) in
         UserDefaults.standard.removeObserver(self, forKeyPath: k)
@@ -773,14 +785,10 @@ class MPVController: NSObject {
   /// Shutdown this mpv controller.
   func mpvQuit() {
     player.log.verbose("Quitting mpv")
-    // Remove observers for IINA preference. Must not attempt to change a mpv setting
-    // in response to an IINA preference change while mpv is shutting down.
-    removeOptionObservers()
-    // Remove observers for mpv properties. Because 0 was passed for reply_userdata when
-    // registering mpv property observers all observers can be removed in one call.
-    mpv_unobserve_property(mpv, 0)
-    // Start mpv quitting. Even though this command is being sent using the synchronous
-    // command API the quit command is special and will be executed by mpv asynchronously.
+    // Observers must be removed to avoid accessing the mpv core after it has shutdown.
+    removeObservers()
+    // Start mpv quitting. Even though this command is being sent using the synchronous command API
+    // the quit command is special and will be executed by mpv asynchronously.
     command(.quit, level: .verbose)
   }
 
@@ -1214,17 +1222,9 @@ class MPVController: NSObject {
       player.log.verbose("Got mpv '\(eventId)': \(numArgs >= 0 ? "\(args)": "numArgs=\(numArgs)")")
 
     case MPV_EVENT_SHUTDOWN:
-      let quitByMPV = !player.isShuttingDown
-      player.log.verbose("Got mpv shutdown event, quitByMPV: \(quitByMPV.yesno)")
-      if quitByMPV {
-        // This happens when the user uses mpv's IPC interface to send the quit command directly to
-        // mpv. Must not attempt to change a mpv setting in response to an IINA preference change
-        // now that mpv has shut down. This is not needed when IINA sends the quit command to mpv
-        // as in that case the observers are removed before the quit command is sent.
-        removeOptionObservers()
-      }
-      DispatchQueue.main.sync {
-        self.player.mpvHasShutdown(isMPVInitiated: quitByMPV)
+      player.log.verbose("Got mpv shutdown event")
+      DispatchQueue.main.async {
+        self.player.mpvHasShutdown()
       }
 
     case MPV_EVENT_LOG_MESSAGE:
@@ -1289,8 +1289,9 @@ class MPVController: NSObject {
       // if receive end-file when loading file, might be error
       // wait for idle
       guard let dataPtr = UnsafeMutablePointer<mpv_event_end_file>(OpaquePointer(event.pointee.data)) else { return }
-      let reason = dataPtr.pointee.reason
       let reasonString = dataPtr.pointee.reasonString
+      let reason = event!.pointee.data.load(as: mpv_end_file_reason.self)
+      // let reasonString = dataPtr.pointee.reasonString
       player.log.verbose("FileEnded, reason: \(reasonString)")
       player.fileEnded(dueToStopCommand: reason == MPV_END_FILE_REASON_STOP)
 

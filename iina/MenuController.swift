@@ -413,11 +413,7 @@ class MenuController: NSObject, NSMenuDelegate {
 
     // Window
 
-    if #available(macOS 10.12.2, *) {
-      customTouchBar.action = #selector(NSApplication.toggleTouchBarCustomizationPalette(_:))
-    } else {
-      customTouchBar.isHidden = true
-    }
+    customTouchBar.action = #selector(NSApplication.toggleTouchBarCustomizationPalette(_:))
 
     inspector.action = #selector(PlayerWindowController.menuShowInspector(_:))
     miniPlayer.action = #selector(PlayerWindowController.menuSwitchToMiniPlayer(_:))
@@ -984,6 +980,7 @@ class MenuController: NSObject, NSMenuDelegate {
       (smallerSize, true, [IINACommand.smallerWindow.rawValue], false, nil, nil),
       (fitToScreen, true, [IINACommand.fitToScreen.rawValue], false, nil, nil),
       (miniPlayer, true, [IINACommand.toggleMusicMode.rawValue], false, nil, nil),
+      (pictureInPicture, true, [IINACommand.togglePIP.rawValue], false, nil, nil),
       (cycleVideoTracks, false, ["cycle", "video"], false, nil, nil),
       (cycleAudioTracks, false, ["cycle", "audio"], false, nil, nil),
       (cycleSubtitles, false, ["cycle", "sub"], false, nil, nil),
@@ -1033,7 +1030,7 @@ class MenuController: NSObject, NSMenuDelegate {
       (decreaseTextSize, false, ["multiply", "sub-scale", "0.9"], true, 0.71...0.99, nil),
       (resetTextSize, false, ["set", "sub-scale", "1"], true, nil, nil),
       (alwaysOnTop, false, ["cycle", "ontop"], false, nil, nil),
-      (fullScreen, false, ["cycle", "fullscreen"], false, nil, nil)
+      (fullScreen, false, ["cycle", "fullscreen"], false, nil, nil),
     ]
 
     if #available(macOS 10.12, *) {

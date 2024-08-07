@@ -27,7 +27,15 @@ class PlayerCoreManager {
     return player
   }
 
-  weak var lastActivePlayer: PlayerCore?
+  weak var _lastActivePlayer: PlayerCore?
+  var lastActivePlayer: PlayerCore? {
+    get {
+      return _lastActivePlayer ?? activePlayer
+    }
+    set {
+      _lastActivePlayer = newValue
+    }
+  }
 
   // Returns a copy of the list of PlayerCores, to ensure concurrency
   var playerCores: [PlayerCore] {
