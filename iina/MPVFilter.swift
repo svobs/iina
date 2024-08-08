@@ -91,6 +91,7 @@ class MPVFilter: NSObject {
           // else print param names
         } else {
           str += "="
+          // FIXME: this is an awful kludge
           // special tweak for lavfi filters
           if name == "lavfi" {
             str += "[\(params!["graph"]!)]"
@@ -181,7 +182,37 @@ class MPVFilter: NSObject {
     self.init(name: instance.preset.name, label: nil, params: dict)
   }
 
-  // MARK: - Others
+  func lavfiParse() -> [[String: [String: String]]]? {
+    guard name == "lavfi" else { return nil }
+
+    var rawString = rawParamString ?? params?["graph"] ?? "" // KLUDGE!
+    if rawString.hasPrefix("[") && rawString.hasSuffix("]") {
+      rawString.removeLast()
+      rawString.removeFirst()
+    }
+    var arrayOfParamDicts: [[String: [String: String]]] = []
+    let outerParamStrings = rawString.split(separator: ",")
+    for paramString in outerParamStrings {
+      let keyValuesPair = paramString.split(separator: "=", maxSplits: 1)
+      var paramDict: [String: [String: String]] = [:]
+      if keyValuesPair.count == 2 {
+        let keyValuePairs = keyValuesPair[1].split(separator: ":")
+        var innerDict: [String: String] = [:]
+        for keyValueString in keyValuePairs {
+          let keyValuePair = keyValueString.split(separator: "=")
+          if keyValuePair.count == 2 {
+            innerDict[String(keyValuePair[0])] = String(keyValuePair[1])
+          }
+        }
+        paramDict[String(keyValuesPair[0])] = innerDict
+      }
+      arrayOfParamDicts.append(paramDict)
+    }
+
+    return arrayOfParamDicts
+  }
+
+  // MARK: - Misc static
 
   /** The parameter order when omitting their names. */
   static let formats: [FilterType: String] = [

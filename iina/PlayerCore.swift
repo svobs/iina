@@ -1343,6 +1343,13 @@ class PlayerCore: NSObject {
     info.audioEqFilter = filter
   }
 
+  func removeAudioEqFilter() {
+    if let filter = info.audioEqFilter {
+      removeAudioFilter(filter)
+      info.audioEqFilter = nil
+    }
+  }
+
   /// Add a video filter given as a `MPVFilter` object.
   ///
   /// This method will prompt the user to change IINA's video preferences if hardware decoding is set to `auto`.

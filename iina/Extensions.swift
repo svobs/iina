@@ -255,6 +255,14 @@ extension Double {
       return "\(rounded)"
     }
   }
+
+  func roundedTo2FractionDigits() -> Double {
+    let scaledUp = self * 1e2
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let finalVal = scaledUpRounded / 1e2
+    return finalVal
+  }
+
 }
 
 extension Comparable {
