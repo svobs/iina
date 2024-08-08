@@ -181,6 +181,7 @@ extension PlayerWindowController {
         windowedModeGeo = newWinGeo
 
         updateDefaultArtVisibility(showDefaultArt)
+        resetRotationPreview()
         updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
 
@@ -199,6 +200,15 @@ extension PlayerWindowController {
       log.error("[applyVideoGeo Apply] INVALID MODE: \(newLayout.mode)")
       return []
     }
+  }
+
+  private func resetRotationPreview() {
+    guard pipStatus == .notInPIP else { return }
+
+    // Seems that this looks better if done before updating the window frame...
+    // FIXME: this isn't perfect - a bad frame briefly appears during transition
+    log.verbose("Resetting videoView rotation")
+    rotationHandler.rotateVideoView(toDegrees: 0, animate: false)
   }
 
   /// `windowGeo` is expected to have the most up-to-date `VideoGeometry` already
@@ -535,6 +545,7 @@ extension PlayerWindowController {
       videoView.videoLayer.enterAsynchronousMode()
       hideSeekTimeAndThumbnail()
       updateDefaultArtVisibility(showDefaultArt)
+      resetRotationPreview()
     })
 
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
@@ -586,6 +597,7 @@ extension PlayerWindowController {
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
 
       updateDefaultArtVisibility(showDefaultArt)
+      resetRotationPreview()
     })
     tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
       applyMusicModeGeo(geometry)

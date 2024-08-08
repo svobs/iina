@@ -1189,13 +1189,6 @@ class PlayerCore: NSObject {
       return videoGeo.clone(userRotation: userRotation)
 
     }, then: { [self] in
-      // FIXME: regression: visible glitches in the transition! Needs improvement. Maybe try to scale while rotating
-      if windowController.pipStatus == .notInPIP {
-        // FIXME: this isn't perfect - a bad frame briefly appears during transition
-        log.verbose("Resetting videoView rotation")
-        windowController.rotationHandler.rotateVideoView(toDegrees: 0)
-      }
-
       reloadQuickSettingsView()
 
       // Thumb rotation needs updating:

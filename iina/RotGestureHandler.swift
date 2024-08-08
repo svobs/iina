@@ -112,12 +112,14 @@ class RotationGestureHandler {
   }
 
   // Side effect: sets `cgCurrentRotationDegrees` to `toDegrees` before returning
-  func rotateVideoView(toDegrees: CGFloat) {
+  func rotateVideoView(toDegrees: CGFloat, animate: Bool = true) {
     let fromDegrees = cgCurrentRotationDegrees
     let toRadians = degToRad(toDegrees)
 
     guard fromDegrees != toDegrees else {
-      player.log.verbose("No rotation needed; already at \(fromDegrees)°")
+      if player.log.isTraceEnabled {
+        player.log.trace("No rotation needed; already at \(fromDegrees)°")
+      }
       return
     }
 
@@ -132,7 +134,7 @@ class RotationGestureHandler {
     videoView.videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
     CATransaction.commit()
 
-    if IINAAnimation.isAnimationEnabled {
+    if animate {
       Logger.log("Animating rotation from \(fromDegrees)° to \(toDegrees)°")
 
       CATransaction.begin()
