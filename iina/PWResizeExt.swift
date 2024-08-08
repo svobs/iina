@@ -56,7 +56,8 @@ extension PlayerWindowController {
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitSudden { [self] in
-        guard let newVidGeo = videoTransform(geo.video) else {
+        let oldVidGeo = geo.video
+        guard let newVidGeo = videoTransform(oldVidGeo) else {
           log.verbose("[applyVideoGeo] Aborting due to transform returning nil")
           aborted = true
           return
@@ -98,10 +99,11 @@ extension PlayerWindowController {
           newLayout = currentLayout
         }
 
+        let didRotate = oldVidGeo.totalRotation != newVidGeo.totalRotation
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
         self.tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
-                                              showDefaultArt: showDefaultArt)
+                                              showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
           tasks.append(IINAAnimation.suddenTask(doAfter))
@@ -119,9 +121,11 @@ extension PlayerWindowController {
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
                                         newLayout: LayoutState,
                                         windowState: WindowStateAtFileOpen,
-                                        showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
+                                        showDefaultArt: Bool? = nil,
+                                        didRotate: Bool) -> [IINAAnimation.Task] {
 
-    var duration = IINAAnimation.VideoReconfigDuration
+    // There's no good animation for rotation (yet), so just do as little animation as possible in this case
+    var duration = didRotate ? 0.0 : IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
 
     // TODO: find place for this in tasks
