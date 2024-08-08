@@ -396,6 +396,10 @@ extension Double {
     return Double(Int(self * 1e6)) / 1e6
   }
 
+  func truncatedTo1() -> Double {
+    return Double(Int(self * 10)) / 10
+  }
+
   func truncatedTo3() -> Double {
     return Double(Int(self * 1e3)) / 1e3
   }
