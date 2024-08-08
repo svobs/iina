@@ -270,8 +270,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     presetEQs.forEach { preset in
       eqPopUpButton.menu?.addItem(withTitle: preset.name, tag: eqPresetProfileMenuItemTag, obj: preset.localizationKey)
     }
-    eqPopUpButton.selectItem(withTag: eqCustomMenuItemTag)
-    lastUsedProfileName = eqPopUpButton.selectedItem!.title
+    refreshEQPopupButtonMenu()
 
     func observe(_ name: Notification.Name, block: @escaping (Notification) -> Void) {
       observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: block))
@@ -1276,11 +1275,11 @@ extension QuickSettingViewController: NSMenuDelegate {
         userEQs[inputString] = profile
       }
     case eqDeleteMenuItemTag:
-      userEQs.removeValue(forKey: lastUsedProfileName)
-    case eqCustomMenuItemTag:
-      if let item = sender.selectedItem {
-        lastUsedProfileName = item.title
+      if !lastUsedProfileName.isEmpty {
+        userEQs.removeValue(forKey: lastUsedProfileName)
       }
+    case eqCustomMenuItemTag:
+      lastUsedProfileName = ""
     case eqPresetProfileMenuItemTag:
       guard let preset = presetEQs.first(where: { $0.localizationKey == representedObject }) else { break }
       lastUsedProfileName = preset.name
@@ -1326,11 +1325,13 @@ extension QuickSettingViewController: NSMenuDelegate {
       } else if let item = findItem(profileName, eqUserDefinedProfileMenuItemTag) {
         eqPopUpButton.select(item)
       }
+      lastUsedProfileName = profileName
       didSelect = true
     }
     if !didSelect {
       // fallback to custom item
       eqPopUpButton.selectItem(withTag: eqCustomMenuItemTag)
+      lastUsedProfileName = ""
     }
 
     eqPopUpButton.selectedItem?.state = .on
