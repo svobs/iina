@@ -266,11 +266,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       userEQs = dict
     }
 
-    eqPopUpButton.menu!.delegate = self
     presetEQs.forEach { preset in
       eqPopUpButton.menu?.addItem(withTitle: preset.name, tag: eqPresetProfileMenuItemTag, obj: preset.localizationKey)
     }
-    refreshEQPopupButtonMenu()
 
     func observe(_ name: Notification.Name, block: @escaping (Notification) -> Void) {
       observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: block))
@@ -573,30 +571,6 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     saturationResetBtn.isHidden = player.info.saturation == 0
     gammaResetBtn.isHidden = player.info.gamma == 0
     hueResetBtn.isHidden = player.info.hue == 0
-  }
-
-  private func updateAudioEqState() {
-
-    // EQ filter (if there is one) -> sliders
-    if let filter = player.info.audioEqFilter {
-      if let arrayOfParamDictDicts = filter.lavfiParse() {
-        for (paramDictDict, slider) in zip(arrayOfParamDictDicts, eqSliders) {
-          if let paramDict = paramDictDict["equalizer"], let gain = paramDict["g"] {
-            slider.doubleValue = Double(gain) ?? 0
-          } else {
-            slider.doubleValue = 0
-          }
-        }
-      } else {
-        player.log.error("Failed to parse audio EQ filter: \(filter.stringFormat.quoted)")
-      }
-    } else {  // No filter
-      eqSliders.forEach { $0.doubleValue = 0 }
-    }
-    refreshAudioEqResetButton()
-
-    // Update menu
-    refreshEQPopupButtonMenu()
   }
 
   func setupPluginTabs() {
@@ -1233,7 +1207,86 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
 }
 
-extension QuickSettingViewController: NSMenuDelegate {
+// MARK: - Audio Equalizer
+
+extension QuickSettingViewController {
+
+  func updateAudioEqState() {
+    // EQ filter (if there is one) -> sliders
+    if let filter = player.info.audioEqFilter {
+      if let arrayOfParamDictDicts = filter.lavfiParse() {
+        for (paramDictDict, slider) in zip(arrayOfParamDictDicts, eqSliders) {
+          if let paramDict = paramDictDict["equalizer"], let gain = paramDict["g"] {
+            slider.doubleValue = Double(gain) ?? 0
+          } else {
+            slider.doubleValue = 0
+          }
+        }
+      } else {
+        player.log.error("Failed to parse audio EQ filter: \(filter.stringFormat.quoted)")
+      }
+    } else {  // No filter
+      eqSliders.forEach { $0.doubleValue = 0 }
+    }
+    refreshAudioEqResetButton()
+
+    // Update menu
+    updateEQPopupMenu()
+  }
+
+  /// Do not call this. Call `updateAudioEqState` instead.
+  private func updateEQPopupMenu() {
+    guard let menu = eqPopUpButton.menu else { return }
+
+    // Rebuild items for user presets
+    var items = menu.items
+    items.removeAll { $0.tag == eqUserDefinedProfileMenuItemTag }
+    eqPopUpButton.itemArray.forEach { $0.state = .off }
+    if !userEQs.isEmpty {
+      items.append(NSMenuItem.separator())
+      userEQs.forEach { (name, eq) in
+        items.append(menu.addItem(withTitle: name, tag: eqUserDefinedProfileMenuItemTag))
+      }
+    }
+    menu.items = items
+
+    // Find & select the current preset in popup which matches the current slider values.
+    if let (profileName, profile) = findProfileFromSliders() {
+      // Select the first item which matches.
+      // Match against user presets before built-in presets. In case of exact match (though rare), the user can choose to remove it.
+      if let item = findItem(profileName, eqUserDefinedProfileMenuItemTag) {
+        eqPopUpButton.select(item)
+      } else if profile is PresetEQProfile, let item = findItem(profileName, eqPresetProfileMenuItemTag) {
+        eqPopUpButton.select(item)
+      }
+      lastUsedProfileName = profileName
+      // Gray out "manual" option. Selecting it wouldn't do anything anyway
+      setEnabledState(ofItemWithTag: eqCustomMenuItemTag, in: menu, to: false)
+    } else {
+      // Fall back to "manual" item if no match
+      setEnabledState(ofItemWithTag: eqCustomMenuItemTag, in: menu, to: true)
+      eqPopUpButton.selectItem(withTag: eqCustomMenuItemTag)
+      lastUsedProfileName = ""
+    }
+    eqPopUpButton.selectedItem?.state = .on
+
+    // Update enablement
+
+    let selectedItemTag = eqPopUpButton.selectedTag()
+
+    let enableSave = selectedItemTag == eqCustomMenuItemTag
+    setEnabledState(ofItemWithTag: eqSaveMenuItemTag, in: menu, to: enableSave)
+
+    let enableEdit = selectedItemTag == eqUserDefinedProfileMenuItemTag
+    setEnabledState(ofItemWithTag: eqRenameMenuItemTag, in: menu, to: enableEdit)
+    setEnabledState(ofItemWithTag: eqDeleteMenuItemTag, in: menu, to: enableEdit)
+  }
+
+  private func setEnabledState(ofItemWithTag tag: Int, in menu: NSMenu, to newValue: Bool) {
+    let saveItem = menu.item(withTag: tag)
+    saveItem?.isEnabled = newValue
+  }
+
   private func promptAudioEQProfileName(isNewProfile: Bool) -> String? {
     let key = isNewProfile ? "eq.new_profile" : "eq.rename"
     let nameList = eqPopUpButton.itemArray
@@ -1254,11 +1307,12 @@ extension QuickSettingViewController: NSMenuDelegate {
     return inputString
   }
   
-  /// Find Audio EQ menu item in popup menu
-  func findItem(_ name: String, _ tag: Int = eqUserDefinedProfileMenuItemTag) -> NSMenuItem? {
+  /// Find item in audio EQ popup menu which matches both name & tag
+  private func findItem(_ name: String, _ tag: Int = eqUserDefinedProfileMenuItemTag) -> NSMenuItem? {
     return eqPopUpButton.itemArray.filter{ $0.tag == tag }.first { $0.title == name }
   }
 
+  /// Is called when any item in `eqPopUpButton`'s menu is chosen by the user
   @IBAction func eqPopUpButtonAction(_ sender: NSPopUpButton) {
     let tag = sender.selectedTag()
     let name = sender.titleOfSelectedItem
@@ -1271,81 +1325,23 @@ extension QuickSettingViewController: NSMenuDelegate {
       }
     case eqRenameMenuItemTag:
       if let inputString = promptAudioEQProfileName(isNewProfile: false) {
-        let profile = userEQs.removeValue(forKey: lastUsedProfileName)
-        userEQs[inputString] = profile
+        if let profile = userEQs.removeValue(forKey: lastUsedProfileName) {
+          userEQs[inputString] = profile
+        }
       }
     case eqDeleteMenuItemTag:
-      if !lastUsedProfileName.isEmpty {
-        userEQs.removeValue(forKey: lastUsedProfileName)
-      }
+      userEQs.removeValue(forKey: lastUsedProfileName)
     case eqCustomMenuItemTag:
-      lastUsedProfileName = ""
+      break
     case eqPresetProfileMenuItemTag:
       guard let preset = presetEQs.first(where: { $0.localizationKey == representedObject }) else { break }
-      lastUsedProfileName = preset.name
       applyEQ(preset)
     default: // user defined EQ Profiles
       guard let pair = userEQs.first(where: { $0.0 == name }) else { break }
-      lastUsedProfileName = pair.0
       applyEQ(pair.1)
     }
 
     updateAudioEqState()
-  }
-
-  private func setEnabled(to newValue: Bool, ofItemWithTag tag: Int, in menu: NSMenu) {
-    let saveItem = menu.item(withTag: tag)
-    saveItem?.isEnabled = newValue
-  }
-
-  private func refreshEQPopupButtonMenu() {
-    guard let menu = eqPopUpButton.menu else { return }
-
-    // Rebuild items for user presets
-
-    var items = menu.items
-    items.removeAll { $0.tag == eqUserDefinedProfileMenuItemTag }
-    eqPopUpButton.itemArray.forEach { $0.state = .off }
-
-    if !userEQs.isEmpty {
-      items.append(NSMenuItem.separator())
-      userEQs.forEach { (name, eq) in
-        items.append(menu.addItem(withTitle: name, tag: eqUserDefinedProfileMenuItemTag))
-      }
-    }
-    menu.items = items
-
-    // Select current preset
-
-    var didSelect = false
-    // Sliders -> popup selection
-    if let (profileName, profile) = findProfileFromSliders() {
-      if profile is PresetEQProfile, let item = findItem(profileName, eqPresetProfileMenuItemTag) {
-        eqPopUpButton.select(item)
-      } else if let item = findItem(profileName, eqUserDefinedProfileMenuItemTag) {
-        eqPopUpButton.select(item)
-      }
-      lastUsedProfileName = profileName
-      didSelect = true
-    }
-    if !didSelect {
-      // fallback to custom item
-      eqPopUpButton.selectItem(withTag: eqCustomMenuItemTag)
-      lastUsedProfileName = ""
-    }
-
-    eqPopUpButton.selectedItem?.state = .on
-
-    // Update enablement
-
-    let selectedItemTag = eqPopUpButton.selectedTag()
-
-    let enableSave = selectedItemTag == eqCustomMenuItemTag
-    setEnabled(to: enableSave, ofItemWithTag: eqSaveMenuItemTag, in: menu)
-
-    let enableEdit = selectedItemTag == eqUserDefinedProfileMenuItemTag
-    setEnabled(to: enableEdit, ofItemWithTag: eqRenameMenuItemTag, in: menu)
-    setEnabled(to: enableEdit, ofItemWithTag: eqDeleteMenuItemTag, in: menu)
   }
 }
 
