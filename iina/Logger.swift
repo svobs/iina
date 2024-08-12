@@ -232,28 +232,28 @@ class Logger: NSObject {
 
   /// Global flag for all logs.
   ///
-  /// If running in DEBUG mode, this flag is ignored and logging is always enabled.
+  /// If running in DEBUG mode, this flag is ignored, and logging is always enabled.
   /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
   static private(set) var enabled: Bool = false
 
   static func updateEnablement() {
     let newValue = Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableLogging)
     if enabled && !newValue {
-      Logger.log("Logging disabled due to settings change")
+      Logger.log("Logging disabled")
       enabled = newValue
     } else if !enabled && newValue {
       enabled = newValue
-      Logger.log("Logging is now enabled due to settings change")
+      Logger.log("Logging enabled")
     }
 
     Level.preferred = Level(rawValue: Preference.integer(for: .logLevel).clamped(to: Level.trace.rawValue...Level.error.rawValue))!
   }
 
   static func isEnabled(_ level: Logger.Level) -> Bool {
-    #if !DEBUG
+#if !DEBUG
     guard enabled else { return false }
-    #endif
-    
+#endif
+
     return Logger.Level.preferred <= level
   }
 
@@ -404,10 +404,6 @@ class Logger: NSObject {
   }
 
   static func log(_ rawMessage: String, level: Level = .debug, subsystem: Subsystem = .general) {
-    #if !DEBUG
-    guard enabled else { return }
-    #endif
-
     guard isEnabled(level) else { return }
 
     let message = maskAnyPII(rawMessage)
