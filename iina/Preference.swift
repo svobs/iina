@@ -1106,7 +1106,7 @@ struct Preference {
     .controlBarAutoHideTimeout: Float(2.5),
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
-    .oscBarToolbarIconSize: 14,
+    .oscBarToolbarIconSize: 18,
     .oscBarToolbarIconSpacing: 5,  // spacing between icons is x2 this number
     .enableOSC: true,
     .showTopBarTrigger: ShowTopBarTrigger.windowHover.rawValue,
