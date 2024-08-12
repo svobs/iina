@@ -161,9 +161,9 @@
 
 "preference.key_binding_hint_1" = "To edit key bindings in current configuration file, click \"Duplicate\" button first to create a copy.";
 "preference.key_binding_hint_2" = "Double-click a row on the right side to edit the corresponding key binding.";
-"preference.show_all_bindings" = "Display %@ present in %@";
-"preference.show_all_bindings.last_player" = "player window";
-"preference.show_all_bindings.other_sources" = "all other bindings";
+"preference.show_all_bindings" = "Show %@%@";
+"preference.show_all_bindings.last_player" = "";
+"preference.show_all_bindings.other_sources" = "all other active bindings";
 
 "preference.enable_adv_settings" = "Enable advanced settings";
 
