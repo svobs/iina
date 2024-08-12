@@ -14,12 +14,12 @@ import Foundation
 /// and should not be reused for subsequent play(s).
 class Playback: CustomStringConvertible {
   var description: String {
-    return "Playback(plPos:\(playlistPos) status:\(loadStatus) path:\(path.pii.quoted))"
+    return "Playback(plPos:\(playlistPos) status:\(state) path:\(path.pii.quoted))"
   }
 
-  enum LoadStatus: Int, StatusEnum, CustomStringConvertible {
-    
-    case notYetStarted = 1       /// set before mpv is aware of it
+  /// State of the individual playack
+  enum LifecycleState: Int, StateEnum, CustomStringConvertible {
+    case notYetStarted = 1    /// set before mpv is aware of it
     case started              /// set after mpv sends `fileStarted` notification
     case loaded               /// set after mpv sends `fileLoaded` notification & IINA has processed it
     case loadedAndSized
@@ -40,23 +40,25 @@ class Playback: CustomStringConvertible {
       }
     }
 
-    func isAtLeast(_ minStatus: LoadStatus) -> Bool {
+    func isAtLeast(_ minStatus: LifecycleState) -> Bool {
       return rawValue >= minStatus.rawValue
     }
 
-    func isNotYet(_ status: LoadStatus) -> Bool {
+    func isNotYet(_ status: LifecycleState) -> Bool {
       return rawValue < status.rawValue
     }
-  }  /// `Playback.LoadStatus`
+  }  /// `Playback.LifecycleState`
 
   let url: URL
   let mpvMD5: String
 
   var playlistPos: Int
-  var loadStatus: LoadStatus {
+
+  /// Lifecycle state of this playback
+  var state: LifecycleState {
     willSet {
-      if newValue != loadStatus {
-        Logger.log("Δ Media LoadStatus: \(loadStatus) → \(newValue)")
+      if newValue != state {
+        Logger.log("Δ Playback.lifecycleState: \(state) → \(newValue)")
       }
     }
   }
@@ -72,24 +74,24 @@ class Playback: CustomStringConvertible {
   var thumbnails: SingleMediaThumbnailsLoader? = nil
 
   var isFileLoaded: Bool {
-    return loadStatus.isAtLeast(.loaded)
+    return state.isAtLeast(.loaded)
   }
 
   /// if `url` is `nil`, assumed to be `stdin`
-  init(url: URL?, playlistPos: Int = 0, loadStatus: LoadStatus = .notYetStarted) {
+  init(url: URL?, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
     let url = url ?? URL(string: "stdin")!
     self.url = url
     mpvMD5 = Utility.mpvWatchLaterMd5(url.path)
     self.playlistPos = playlistPos
-    self.loadStatus = loadStatus
+    self.state = state
   }
 
-  convenience init?(path: String, playlistPos: Int = 0, loadStatus: LoadStatus = .notYetStarted) {
+  convenience init?(path: String, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
     let url = path.contains("://") ?
     URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
     URL(fileURLWithPath: path)
     guard let url else { return nil }
-    self.init(url: url, playlistPos: playlistPos, loadStatus: loadStatus)
+    self.init(url: url, playlistPos: playlistPos, state: state)
   }
 
   static func path(for url: URL?) -> String {

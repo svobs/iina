@@ -50,7 +50,7 @@ class PlaybackInfo {
   }
 
   var isLoadedAndSized: Bool {
-    return currentPlayback?.loadStatus.isAtLeast(.loadedAndSized) ?? false
+    return currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false
   }
 
   var shouldAutoLoadFiles: Bool = false
@@ -195,7 +195,7 @@ class PlaybackInfo {
   var shouldShowDefaultArt: Bool? {
     if let currentPlayback {
       // Don't show art if currently loading
-      if currentPlayback.loadStatus.isAtLeast(.loaded) {
+      if currentPlayback.state.isAtLeast(.loaded) {
         return !isVideoTrackSelected
       }
     }

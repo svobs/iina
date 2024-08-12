@@ -338,7 +338,7 @@ struct PlayerSaveState {
             if player.log.isTraceEnabled {
               player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
             }
-            Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
+            Preference.UIState.saveLifecycleState(forPlayerID: player.label, properties: properties)
           }
         }
       }
@@ -357,7 +357,7 @@ struct PlayerSaveState {
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")
       }
-      Preference.UIState.savePlayerState(forPlayerID: player.label, properties: properties)
+      Preference.UIState.saveLifecycleState(forPlayerID: player.label, properties: properties)
       player.log.debug("Done saving player state synchronously")
     }
   }

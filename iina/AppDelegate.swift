@@ -17,15 +17,15 @@ fileprivate let NormalMenuItemTag = 0
 /** Tags for "Open File/URL in New Window" when "Always open URL" when "Open file in new windows" is off. Vice versa. */
 fileprivate let AlternativeMenuItemTag = 1
 
-class StartupState {
+class Startup {
 
-  enum OpenWindowsStatus: Int {
+  enum OpenWindowsState: Int {
     case stillEnqueuing = 1
     case doneEnqueuing
     case doneOpening
   }
 
-  var status: OpenWindowsStatus = .stillEnqueuing
+  var status: OpenWindowsState = .stillEnqueuing
 
   /**
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
@@ -48,7 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// The `AppDelegate` singleton object.
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
-  var startupState = StartupState()
+  var startup = Startup()
   var isShowingOpenFileWindow = false
 
   private var commandLineStatus = CommandLineStatus()
@@ -301,9 +301,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if Preference.bool(for: .isRestoreInProgress) {
       // Still waiting to show
-      startupState.wcsReady.insert(wc)
+      startup.wcsReady.insert(wc)
 
-      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startupState.wcsReady.count)/\(startupState.status == .doneEnqueuing ? "\(startupState.wcsToRestore.count)" : "?")", level: .verbose)
+      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.status == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
 
       showWindowsIfReady()
     } else if !window.isMiniaturized {
@@ -354,7 +354,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    startupState.shouldIgnoreOpenFile = true
+    startup.shouldIgnoreOpenFile = true
     commandLineStatus.isCommandLine = true
     commandLineStatus.filenames = iinaArgFilenames
   }
@@ -404,7 +404,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       startFromCommandLine()
     }
 
-    startupState.status = .doneEnqueuing
+    startup.status = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
   }
@@ -462,23 +462,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard startupState.status == .doneEnqueuing else { return }
-    guard startupState.wcsReady.count == startupState.wcsToRestore.count else { return }
-    guard !startupState.openFileCalled || startupState.wcForOpenFile != nil else { return }
+    guard startup.status == .doneEnqueuing else { return }
+    guard startup.wcsReady.count == startup.wcsToRestore.count else { return }
+    guard !startup.openFileCalled || startup.wcForOpenFile != nil else { return }
 
-    Logger.log("All \(startupState.wcsToRestore.count) restored \(startupState.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
+    Logger.log("All \(startup.wcsToRestore.count) restored \(startup.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
 
-    for wc in startupState.wcsToRestore {
+    for wc in startup.wcsToRestore {
       if !(wc.window?.isMiniaturized ?? false) {
         wc.showWindow(self)  // orders the window to the front
       }
     }
-    if let wcForOpenFile = startupState.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
+    if let wcForOpenFile = startup.wcForOpenFile, !(wcForOpenFile.window?.isMiniaturized ?? false) {
       wcForOpenFile.showWindow(self)  // open last, thus making frontmost
     }
 
-    let didRestoreSomething = !startupState.wcsToRestore.isEmpty
-    let didOpenSomething = didRestoreSomething || startupState.wcForOpenFile != nil
+    let didRestoreSomething = !startup.wcsToRestore.isEmpty
+    let didOpenSomething = didRestoreSomething || startup.wcForOpenFile != nil
 
     if Preference.bool(for: .isRestoreInProgress) {
       Logger.log("Done restoring windows", level: .verbose)
@@ -527,7 +527,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
-    startupState.status = .doneOpening
+    startup.status = .doneOpening
   }
 
   func applicationShouldAutomaticallyLocalizeKeyEquivalents(_ application: NSApplication) -> Bool {
@@ -785,7 +785,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
         // So just mark it as 'ready' and show with the rest when they are ready.
         wc = inspector
-        startupState.wcsReady.insert(wc)
+        startup.wcsReady.insert(wc)
       case .videoFilter:
         showVideoFilterWindow(self)
         wc = vfWindow
@@ -818,11 +818,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         wc.window?.miniaturize(self)
       } else {
         // Add to list of windows to wait for
-        startupState.wcsToRestore.append(wc)
+        startup.wcsToRestore.append(wc)
       }
     }
 
-    return !startupState.wcsToRestore.isEmpty
+    return !startup.wcsToRestore.isEmpty
   }
 
   func showWelcomeWindow() {
@@ -878,7 +878,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
-    guard startupState.status == .doneOpening else { return false }
+    guard startup.status == .doneOpening else { return false }
 
     /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     /// Another case is when the welcome window is closed prior to a new player window opening.
@@ -1287,8 +1287,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
     // if launched from command line, should ignore openFile during launch
-    if startupState.shouldIgnoreOpenFile {
-      startupState.shouldIgnoreOpenFile = false
+    if startup.shouldIgnoreOpenFile {
+      startup.shouldIgnoreOpenFile = false
       return
     }
     let urls = filePaths.map { URL(fileURLWithPath: $0) }
@@ -1301,13 +1301,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       return
     }
 
-    startupState.openFileCalled = true
+    startup.openFileCalled = true
 
     DispatchQueue.main.async { [self] in
       Logger.log("Opening \(urls.count) files")
       // open pending files
       let player = PlayerCoreManager.shared.getActiveOrCreateNew()
-      startupState.wcForOpenFile = player.windowController
+      startup.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
         abortWaitForPlayerStartup()
 
@@ -1339,16 +1339,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let url = pboard.string(forType: .string) else { return }
 
     guard let player = PlayerCore.active else { return }
-    startupState.openFileCalled = true
-    startupState.wcForOpenFile = player.windowController
+    startup.openFileCalled = true
+    startup.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
       abortWaitForPlayerStartup()
     }
   }
 
   private func abortWaitForPlayerStartup() {
-    startupState.openFileCalled = false
-    startupState.wcForOpenFile = nil
+    startup.openFileCalled = false
+    startup.wcForOpenFile = nil
     showWindowsIfReady()
   }
 
@@ -1404,8 +1404,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if parsed.scheme != "iina" {
       // try to open the URL directly
       let player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
-      startupState.openFileCalled = true
-      startupState.wcForOpenFile = player.windowController
+      startup.openFileCalled = true
+      startup.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
         abortWaitForPlayerStartup()
       }
@@ -1434,8 +1434,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         player = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: false)
       }
 
-      startupState.openFileCalled = true
-      startupState.wcForOpenFile = player.windowController
+      startup.openFileCalled = true
+      startup.wcForOpenFile = player.windowController
 
       // enqueue
       if let enqueueValue = queryDict["enqueue"], enqueueValue == "1",

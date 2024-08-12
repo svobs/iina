@@ -9,34 +9,34 @@
 import Cocoa
 import MediaPlayer
 
-/// Should always be updated in mpv DQ
-enum PlayerStatus: Int, StatusEnum {
-  case notYetStarted = 1
-
-  case started
-
-  /// Whether stopping of this player has been initiated.
-  case stopping
-
-  /// Whether mpv playback has stopped and the media has been unloaded.
-  case stopped
-
-  /// Whether shutdown of this player has been initiated.
-  case shuttingDown
-
-  /// Whether shutdown of this player has completed (mpv has shutdown).
-  case shutDown
-
-  func isAtLeast(_ minStatus: PlayerStatus) -> Bool {
-    return rawValue >= minStatus.rawValue
-  }
-
-  func isNotYet(_ status: PlayerStatus) -> Bool {
-    return rawValue < status.rawValue
-  }
-}
-
 class PlayerCore: NSObject {
+  /// Should always be updated in mpv DQ
+  enum LifecycleState: Int, StateEnum {
+    case notYetStarted = 1
+
+    case started
+
+    /// Whether stopping of this player has been initiated.
+    case stopping
+
+    /// Whether mpv playback has stopped and the media has been unloaded.
+    case stopped
+
+    /// Whether shutdown of this player has been initiated.
+    case shuttingDown
+
+    /// Whether shutdown of this player has completed (mpv has shutdown).
+    case shutDown
+
+    func isAtLeast(_ minState: LifecycleState) -> Bool {
+      return rawValue >= minState.rawValue
+    }
+
+    func isNotYet(_ state: LifecycleState) -> Bool {
+      return rawValue < state.rawValue
+    }
+  }
+
   // MARK: - Multiple instances
 
   /// TODO: make `lastActive` and `active` Optional, so creating an uncessary player randomly at startup isn't needed
@@ -135,7 +135,7 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false
 
-  var status: PlayerStatus = .notYetStarted {
+  var status: LifecycleState = .notYetStarted {
     didSet {
       log.verbose("Updated playerStatus to \(status)")
     }
@@ -517,7 +517,7 @@ class PlayerCore: NSObject {
   // unload main window video view
   private func uninitVideo() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard status.rawValue < PlayerStatus.shuttingDown.rawValue else { return }
+    guard status.rawValue < LifecycleState.shuttingDown.rawValue else { return }
     status = .shuttingDown
     log.debug("Uninit video")
     videoView.uninit()
@@ -672,7 +672,7 @@ class PlayerCore: NSObject {
   func stop() {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard status.rawValue < PlayerStatus.stopping.rawValue else {
+    guard status.rawValue < LifecycleState.stopping.rawValue else {
       log.debug("Stop called, but status is already \(status); aborting redundant stop call")
       return
     }
@@ -711,7 +711,7 @@ class PlayerCore: NSObject {
       }
       mpv.command(.stop, level: .verbose)
 
-      if status.rawValue < PlayerStatus.stopped.rawValue {
+      if status.rawValue < LifecycleState.stopped.rawValue {
         status = .stopped
       }
     }
@@ -2147,18 +2147,18 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    guard let mediaFromPath = Playback(path: path, playlistPos: playlistPos, loadStatus: .started) else {
+    guard let mediaFromPath = Playback(path: path, playlistPos: playlistPos, state: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
     if let existingMedia = info.currentPlayback, existingMedia.url == mediaFromPath.url {
-      guard existingMedia.loadStatus.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but status is unexpected; aborting (expected: 'started', found: \(existingMedia.loadStatus.rawValue))")
+      guard existingMedia.state.isNotYet(.started) else {
+        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but status is unexpected; aborting (expected: 'started', found: \(existingMedia.state.rawValue))")
         return
       }
       // update existing entry
       existingMedia.playlistPos = mediaFromPath.playlistPos
-      existingMedia.loadStatus = mediaFromPath.loadStatus
+      existingMedia.state = mediaFromPath.state
       log.verbose("FileStarted existing playbackPath=\(path.pii.quoted),  PL#=\(mediaFromPath.playlistPos)")
     } else {
       // New media, perhaps initiated by mpv
@@ -2276,8 +2276,8 @@ class PlayerCore: NSObject {
       return
     }
 
-    guard currentPlayback.loadStatus.isNotYet(.loaded) else {
-      log.warn("FileLoaded: aborting - loadStatus of \(currentPlayback.path.pii.quoted) is \(currentPlayback.loadStatus.description.quoted)")
+    guard currentPlayback.state.isNotYet(.loaded) else {
+      log.warn("FileLoaded: aborting - state of \(currentPlayback.path.pii.quoted) is \(currentPlayback.state.description.quoted)")
       return
     }
 
@@ -2303,7 +2303,7 @@ class PlayerCore: NSObject {
       /// Will complete restore when `applyVideoGeoTransform` is done
     }
     // Set this *before* reloading track selections! They will check status
-    currentPlayback.loadStatus = .loaded
+    currentPlayback.state = .loaded
 
     reloadSelectedTracks(silent: true)
     _reloadChapters()
@@ -2337,7 +2337,7 @@ class PlayerCore: NSObject {
     }, fileJustOpened: true, then: { [self] in
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
-      currentPlayback.loadStatus = .loadedAndSized
+      currentPlayback.state = .loadedAndSized
       // Need to call here to ensure file title OSD is displayed when navigating playlist...
       refreshSyncUITimer()
       windowController.updateUI()

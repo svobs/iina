@@ -122,7 +122,7 @@ class PlayerCoreManager {
     var firstIdlePlayer: PlayerCore? = nil
     for p in _playerCores {
       let isPlayerIdle = p.info.isIdle && p.isStopped && !p.info.isFileLoaded
-      Logger.log("Player-\(p.label): idle:\(p.info.isIdle.yn) stopped:\(p.isStopped.yn) fileLoaded:\(p.info.isFileLoaded.yn) → \(isPlayerIdle ? "IDLE" : "notIdle")")
+      Logger.log("Player-\(p.label): idle:\(p.info.isIdle.yn) stopped:\(p.isStopped.yn) fileLoaded:\(p.info.isFileLoaded.yn) → IDLE=\(isPlayerIdle.yesno)")
       if firstIdlePlayer == nil && isPlayerIdle {
         firstIdlePlayer = p
       }

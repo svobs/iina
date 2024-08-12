@@ -1637,7 +1637,7 @@ class MPVController: NSObject {
       guard player.windowController.loaded else { break }
       // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
       guard !player.windowController.isMagnifying else { break }
-      let isAlreadySized = player.info.currentPlayback?.loadStatus.isAtLeast(.loaded) ?? false
+      let isAlreadySized = player.info.currentPlayback?.state.isAtLeast(.loaded) ?? false
       guard isAlreadySized else { break }
 
       let cachedVideoScale: CGFloat

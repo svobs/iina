@@ -63,7 +63,7 @@ class MPVFilter: NSObject {
           // FIXME: this is an awful kludge
           // special tweak for lavfi filters
           if name == "lavfi" {
-            str += "[\(params!["graph"]!)]"
+            str += "\(params!["graph"]!)"
           } else {
             str += params!.map { "\($0)=\($1.mpvQuotedFilterValue)" } .joined(separator: ":")
           }
@@ -122,16 +122,16 @@ class MPVFilter: NSObject {
   }
 
   convenience init(lavfiName: String, label: String?, params: [String]) {
-    var ffmpegGraph = "[\(lavfiName)="
+    var ffmpegGraph = "\(lavfiName)="
     ffmpegGraph += params.joined(separator: ":")
-    ffmpegGraph += "]"
+    ffmpegGraph += ""
     self.init(name: "lavfi", label: label, paramString: ffmpegGraph)
   }
 
   convenience init(lavfiName: String, label: String?, paramDict: [String: String]) {
-    var ffmpegGraph = "[\(lavfiName)="
+    var ffmpegGraph = "\(lavfiName)="
     ffmpegGraph += paramDict.map { "\($0)=\($1)" }.joined(separator: ":")
-    ffmpegGraph += "]"
+    ffmpegGraph += ""
     self.init(name: "lavfi", label: label, paramString: ffmpegGraph)
   }
 

@@ -1,5 +1,5 @@
 //
-//  StatusEnum.swift
+//  StateEnum.swift
 //  iina
 //
 //  Created by Matt Svoboda on 7/8/24.
@@ -8,8 +8,9 @@
 
 import Foundation
 
-protocol StatusEnum {
+protocol StateEnum {
   associatedtype T
+  
   func isAtLeast(_ minStatus: T) -> Bool
 
   func isNotYet(_ status: T) -> Bool

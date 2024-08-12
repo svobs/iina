@@ -135,7 +135,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var isClosing: Bool {
-    return player.status.rawValue >= PlayerStatus.stopping.rawValue
+    return player.status.rawValue >= PlayerCore.LifecycleState.stopping.rawValue
   }
 
   var isWindowMiniaturizedDueToPip = false
@@ -3174,7 +3174,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
-    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (loadStatus=\(player.info.currentPlayback?.loadStatus.description ?? "nil"))")
+    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (state=\(player.info.currentPlayback?.state.description ?? "nil"))")
     // Update default album art visibility:
     defaultAlbumArtView.isHidden = !showDefaultArt
   }
