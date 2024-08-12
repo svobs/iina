@@ -230,6 +230,10 @@ class Logger: NSObject {
     return String(format: piiFormat, paddedInt)
   }
 
+  /// Global flag for all logs.
+  ///
+  /// If running in DEBUG mode, this flag is ignored and logging is always enabled.
+  /// If not running in DEBUG, and this flag is `false`, then all logging is disabled.
   static private(set) var enabled: Bool = false
 
   static func updateEnablement() {
@@ -423,10 +427,6 @@ class Logger: NSObject {
     }
 
     print(string, terminator: "")
-
-    #if DEBUG
-    guard enabled else { return }
-    #endif
 
     guard let data = string.data(using: .utf8) else {
       print(formatMessage("Cannot encode log string!", .error, Logger.loggerSubsystem, false))
