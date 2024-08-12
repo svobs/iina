@@ -517,11 +517,10 @@ class PlayerCore: NSObject {
   // unload main window video view
   private func uninitVideo() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard status.rawValue < LifecycleState.shuttingDown.rawValue else { return }
+    guard status.isNotYet(.shuttingDown) else { return }
     status = .shuttingDown
     log.debug("Uninit video")
     videoView.uninit()
-    status = .shutDown
   }
 
   func saveState() {
@@ -541,7 +540,7 @@ class PlayerCore: NSObject {
   ///     until mpv finishes executing the quit command and shuts down.
   func shutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard !isShuttingDown else {
+    guard status.isNotYet(.shuttingDown) else {
       log.verbose("Player is already shutting down")
       return
     }
@@ -552,7 +551,6 @@ class PlayerCore: NSObject {
     }
     log.debug("Shutting down player")
     savePlaybackPosition() // Save state to mpv watch-later (if enabled)
-    stop()
     refreshSyncUITimer()   // Shut down timer
     mpv.mpvQuit()
   }
@@ -579,8 +577,13 @@ class PlayerCore: NSObject {
       // perform the actions that were skipped when IINA's normal shutdown process was bypassed.
       mpv.removeObservers()
     }
-    uninitVideo()          // Shut down DisplayLink
-    log.debug("Removing player \(label)")
+    uninitVideo()            // Shut down DisplayLink
+
+    mpv.queue.sync { [self] in  // run in queue to avoid race condition when handling events in queue, which checks mpv!=nil
+      mpv.mpvDestroy()
+    }
+    status = .shutDown
+    log.debug("Removing player from list: \(label.quoted)")
     PlayerCoreManager.shared.removePlayer(withLabel: label)
 
     postNotification(.iinaPlayerShutdown)
@@ -672,7 +675,7 @@ class PlayerCore: NSObject {
   func stop() {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard status.rawValue < LifecycleState.stopping.rawValue else {
+    guard status.isNotYet(.stopping) else {
       log.debug("Stop called, but status is already \(status); aborting redundant stop call")
       return
     }

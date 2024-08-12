@@ -47,17 +47,18 @@ class PlayerCoreManager {
   }
 
   var allPlayersShutdown: Bool {
-    for player in playerCores {
-      if !player.isShutDown {
-        player.log.verbose("Player has not yet shut down")
+    return lock.withLock {
+      let runningLabels = _playerCores.compactMap({ $0.isShutDown ? nil : $0.label})
+      if !runningLabels.isEmpty {
+        Logger.log.verbose("Players have not yet shut down: \(runningLabels)")
         return false
       }
+      if let demoPlayer = _demoPlayer, !demoPlayer.isShutDown {
+        demoPlayer.log.verbose("Demo player has not yet shut down")
+        return false
+      }
+      return true
     }
-    if let demoPlayer = _demoPlayer {
-      demoPlayer.log.verbose("Demo player has not yet shut down")
-      return false
-    }
-    return true
   }
 
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
@@ -177,6 +178,7 @@ class PlayerCoreManager {
       if let _demoPlayer {
         player = _demoPlayer
       } else {
+        Logger.log("Creating demo player")
         player = PlayerCore("demo", audioOnly: true)
         player.start()
         _demoPlayer = player

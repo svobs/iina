@@ -744,6 +744,13 @@ class MPVController: NSObject {
     mpv_render_context_free(mpvRenderContext)
     player.log.verbose("Uninit mpv rendering: done")
     self.mpvRenderContext = nil
+  }
+
+  func mpvDestroy() {
+    player.log.verbose("Destroying mpv")
+    guard mpv != nil else {
+      fatalError("mpvUninitRendering() called but mpv handle is nil!")
+    }
     mpv_destroy(mpv)
     mpv = nil
   }

@@ -91,6 +91,7 @@ struct AppInputConfig {
     }
 
     DispatchQueue.main.async {
+      guard !AppDelegate.shared.isTerminating else { return }
 
       // Optimization: drop all but the most recent request (but not if there is an attachment to deliver)
       let hasAttachedData = (userData?.count ?? 0) > 0
