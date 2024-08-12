@@ -17,7 +17,7 @@ import Foundation
 /// data-intensive, writes to the .plist should be trivial by comparison.
 extension Preference {
   class UIState {
-    enum LaunchStatus: Int {
+    enum LaunchLifecycleState: Int {
       case none = 0
       case stillRunning = 1
       case indeterminate1 = 2
@@ -35,7 +35,7 @@ extension Preference {
       /// launch ID
       let id: Int
       /// `none` == pref entry missing
-      var status: LaunchStatus = .none
+      var lifecycleState: LaunchLifecycleState = .none
       /// Will be `nil` if the pref entry is missing
       var savedWindows: [SavedWindow]? = nil
       // each entry in the set is a pref key
@@ -46,7 +46,7 @@ extension Preference {
       }
 
       var hasAnyData: Bool {
-        return status != .none || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
+        return lifecycleState != .none || !(savedWindows?.isEmpty ?? true) || !playerKeys.isEmpty
       }
 
       var windowCount: Int {
@@ -66,21 +66,21 @@ extension Preference {
       }
 
       var description: String {
-        return "Launch(\(id) \(statusDescription) w:\(savedWindowsDescription) p:\(playerKeys))"
+        return "Launch(\(id) \(lifecycleStateDescription) w:\(savedWindowsDescription) p:\(playerKeys))"
       }
 
       var savedWindowsDescription: String {
         return savedWindows?.map{ $0.saveName.string }.description ?? "nil"
       }
 
-      var statusDescription: String {
-        switch status {
+      var lifecycleStateDescription: String {
+        switch lifecycleState {
         case .none:
-          return "noStatus"
+          return "none"
         case .done:
           return "done"
         default:
-          return "running(\(status.rawValue))"
+          return "running(\(lifecycleState.rawValue))"
         }
       }
     }
@@ -277,11 +277,11 @@ extension Preference {
       saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames,
                          forLaunchID: launchID)
       
-      if UserDefaults.standard.integer(forKey: launchName) != LaunchStatus.stillRunning.rawValue {
+      if UserDefaults.standard.integer(forKey: launchName) != LaunchLifecycleState.stillRunning.rawValue {
         // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
-        // We can easily add the missing status again.
-        Logger.log("Pref entry for \(launchName.quoted) was missing or incorrect. Setting it to \(LaunchStatus.stillRunning.rawValue)")
-        UserDefaults.standard.setValue(LaunchStatus.stillRunning.rawValue, forKey: launchName)
+        // We can easily add the missing lifecycleState again.
+        Logger.log("Pref entry for \(launchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)")
+        UserDefaults.standard.setValue(LaunchLifecycleState.stillRunning.rawValue, forKey: launchName)
       }
     }
 
@@ -404,17 +404,17 @@ extension Preference {
       Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
     }
 
-    private static func launchStatus(fromAny value: Any, launchName: String) -> LaunchStatus {
-      guard let statusInt = value as? Int else {
-        Logger.log("Failed to parse status int from pref entry! (entry: \(launchName.quoted), value: \(value))", level: .error)
+    private static func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
+      guard let lifecycleStateInt = value as? Int else {
+        Logger.log("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))", level: .error)
         return .none
       }
-      let status = LaunchStatus(rawValue: statusInt)
-      guard let status else {
+      let lifecycleState = LaunchLifecycleState(rawValue: lifecycleStateInt)
+      guard let lifecycleState else {
         Logger.log("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))", level: .error)
         return .none
       }
-      return status
+      return lifecycleState
     }
 
     private static func buildLaunchDict(cleanUpAlongTheWay isCleanUpEnabled: Bool = false) -> [Int: LaunchState] {
@@ -427,15 +427,15 @@ extension Preference {
           // Entry is type: Launch Status
           let launch = launchDict[launchID] ?? LaunchState(launchID)
           
-          launch.status = launchStatus(fromAny: value, launchName: key)
+          launch.lifecycleState = launchStatus(fromAny: value, launchName: key)
           launchDict[launchID] = launch
 
-          if isCleanUpEnabled, launch.status != LaunchStatus.done, launchID != Preference.UIState.launchID {
+          if isCleanUpEnabled, launch.lifecycleState != LaunchLifecycleState.done, launchID != Preference.UIState.launchID {
             /// Launch was not marked `done`?
             /// Maybe it is done but did not exit cleanly. Send ping to see if it is still alive
-            var newValue = LaunchStatus.indeterminate1
-            if launch.status.rawValue < LaunchStatus.done.rawValue - 1 {
-              newValue = LaunchStatus(rawValue: launch.status.rawValue + 1) ?? LaunchStatus.indeterminate2
+            var newValue = LaunchLifecycleState.indeterminate1
+            if launch.lifecycleState.rawValue < LaunchLifecycleState.done.rawValue - 1 {
+              newValue = LaunchLifecycleState(rawValue: launch.lifecycleState.rawValue + 1) ?? LaunchLifecycleState.indeterminate2
             }
             UserDefaults.standard.setValue(newValue.rawValue, forKey: key)
             countOfLaunchesToWaitOn += 1
@@ -480,7 +480,7 @@ extension Preference {
 
       if countOfLaunchesToWaitOn > 0 {
         let iffyKeys = launchDict.filter{ $0.value.id != UIState.launchID &&
-          $0.value.status != Preference.UIState.LaunchStatus.done}.keys.map{$0}
+          $0.value.lifecycleState != Preference.UIState.LaunchLifecycleState.done}.keys.map{$0}
         Logger.log("Looks like these launches may still be running: \(iffyKeys)", level: .verbose)
         Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...", level: .debug)
 
@@ -503,7 +503,7 @@ extension Preference {
       let currentBuildNumber = Int(InfoDictionary.shared.version.1)!
 
       for launch in launchesNewestToOldest {
-        guard launch.status != LaunchStatus.none else {
+        guard launch.lifecycleState != LaunchLifecycleState.none else {
           if isCleanUpEnabled {
             // Anything found here is orphaned. Clean it up.
             // Remember that we are iterating backwards, so all data should be accounted for.
@@ -566,11 +566,11 @@ extension Preference {
         }
 
         if isCleanUpEnabled {
-          // May have been waiting for past launches to report back their status so that we
-          // can clean up improperly terminated launches. Refresh status now.
+          // May have been waiting for past launches to report back their lifecycleState so that we
+          // can clean up improperly terminated launches. Refresh lifecycleState now.
           let pastLaunchName = launchName(forID: launch.id)
-          let statusInt: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
-          launch.status = launchStatus(fromAny: statusInt, launchName: pastLaunchName)
+          let lifecycleStateInt: Int = UserDefaults.standard.integer(forKey: pastLaunchName)
+          launch.lifecycleState = launchStatus(fromAny: lifecycleStateInt, launchName: pastLaunchName)
         }
       }
 
@@ -587,7 +587,7 @@ extension Preference {
     }
 
     static func collectLaunchStateForRestore() -> [LaunchState] {
-      return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.status != .stillRunning }
+      return collectLaunchState(cleanUpAlongTheWay: true).filter{ $0.lifecycleState != .stillRunning }
     }
 
     /// Consolidates all player windows (& others) from any past launches which are no longer running into the windows for this instance.
@@ -628,8 +628,8 @@ extension Preference {
           UserDefaults.standard.removeObject(forKey: windowListKey)
         }
 
-        if launch.status != .none {
-          Logger.log("Clearing saved launch status (pref key: \(launchName.quoted))")
+        if launch.lifecycleState != .none {
+          Logger.log("Clearing saved launch lifecycleState (pref key: \(launchName.quoted))")
           UserDefaults.standard.removeObject(forKey: launchName)
         }
       }

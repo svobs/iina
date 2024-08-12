@@ -137,7 +137,7 @@ class PlayerCore: NSObject {
 
   var status: LifecycleState = .notYetStarted {
     didSet {
-      log.verbose("Updated playerStatus to \(status)")
+      log.verbose("Updated lifecycleState to \(status)")
     }
   }
 
@@ -519,7 +519,6 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
     guard status.isNotYet(.shuttingDown) else { return }
     status = .shuttingDown
-    log.debug("Uninit video")
     videoView.uninit()
   }
 

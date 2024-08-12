@@ -130,12 +130,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let keyPath = keyPath, let change = change else { return }
 
     if keyPath == Preference.UIState.launchName {
-      if let newLaunchStatus = change[.newKey] as? Int {
+      if let newLaunchLifecycleState = change[.newKey] as? Int {
         guard !isTerminating else { return }
-        guard newLaunchStatus != 0 else { return }
-        Logger.log("Detected change to this instance's status pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
-        Logger.log("Changing launch status back to 'stillRunning' so the other launch will skip this instance.")
-        UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: keyPath)
+        guard newLaunchLifecycleState != 0 else { return }
+        Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
+        Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
+        UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
         NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
       }
       return
@@ -394,7 +394,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     menuController.refreshBuiltInMenuItemBindings()
 
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
-    UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.stillRunning.rawValue, forKey: Preference.UIState.launchName)
+    UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: Preference.UIState.launchName)
     UserDefaults.standard.addObserver(self, forKeyPath: Preference.UIState.launchName, options: .new, context: nil)
 
     // Restore window state *before* hooking up the listener which saves state.
@@ -1081,8 +1081,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if Preference.UIState.isSaveEnabled {
       // unlock for new launch
-      Logger.log("Updating status of \(Preference.UIState.launchName.quoted) to 'done' in prefs", level: .verbose)
-      UserDefaults.standard.setValue(Preference.UIState.LaunchStatus.done.rawValue, forKey: Preference.UIState.launchName)
+      Logger.log("Updating lifecycle state of \(Preference.UIState.launchName.quoted) to 'done' in prefs", level: .verbose)
+      UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.done.rawValue, forKey: Preference.UIState.launchName)
     }
 
     // The first priority was to shutdown any new input from the user. The second priority is to

@@ -742,7 +742,6 @@ class MPVController: NSObject {
     player.log.verbose("Uninit mpv rendering")
     mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
     mpv_render_context_free(mpvRenderContext)
-    player.log.verbose("Uninit mpv rendering: done")
     self.mpvRenderContext = nil
   }
 
