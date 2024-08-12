@@ -299,19 +299,19 @@ extension Preference {
       NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
     }
 
-    static func clearSavedStateForThisLaunch(silent: Bool = false) {
-      clearSavedState(forLaunchID: launchID, silent: silent)
+    static func clearSavedLaunchForThisLaunch(silent: Bool = false) {
+      clearSavedLaunch(launchID: launchID, silent: silent)
     }
 
-    static func clearSavedState(forLaunchName launchName: String, silent: Bool = false) {
+    static func clearSavedLaunch(withName launchName: String, silent: Bool = false) {
       guard let launchID = Preference.UIState.launchID(fromLaunchName: launchName) else {
         Logger.log("Failed to parse launchID from launchName: \(launchName.quoted)", level: .error)
         return
       }
-      clearSavedState(forLaunchID: launchID, silent: silent)
+      clearSavedLaunch(launchID: launchID, silent: silent)
     }
 
-    static func clearSavedState(forLaunchID launchID: Int, force: Bool = false, silent: Bool = false) {
+    static func clearSavedLaunch(launchID: Int, force: Bool = false, silent: Bool = false) {
       guard isSaveEnabled || force else { return }
       let launchName = Preference.UIState.launchName(forID: launchID)
 
@@ -334,7 +334,7 @@ extension Preference {
       }
     }
 
-    static func clearAllSavedLaunchState(force: Bool = false) {
+    static func clearAllSavedLaunches(force: Bool = false) {
       guard !AppDelegate.shared.isTerminating else { return }
       guard isSaveEnabled || force else {
         Logger.log("Will not clear saved UI state; UI save is disabled")
@@ -347,7 +347,7 @@ extension Preference {
       let launchIDs: [Int] = Preference.UIState.collectLaunchState(cleanUpAlongTheWay: true).compactMap{$0.id}
 
       for launchID in launchIDs {
-        clearSavedState(forLaunchID: launchID, force: force, silent: true)
+        clearSavedLaunch(launchID: launchID, force: force, silent: true)
       }
 
       NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))

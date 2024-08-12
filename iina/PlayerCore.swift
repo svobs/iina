@@ -1470,7 +1470,7 @@ class PlayerCore: NSObject {
           log.error("Failed reloading subtitles: error code \(code)")
         }
       }
-      reloadTrackInfo()
+      guard reloadTrackInfo() else { return }
       if let currentSub = info.subTracks.first(where: {$0.externalFilename == currentSubName}) {
         setTrack(currentSub.id, forType: .sub)
       }
@@ -2286,7 +2286,10 @@ class PlayerCore: NSObject {
     reloadThumbnails(forMedia: currentPlayback)
 
     checkUnsyncedWindowOptions()
-    reloadTrackInfo()
+    if !reloadTrackInfo() {
+      // TODO: can this ever happen here?! May need to terminate player if so
+      log.error("No tracks returned by mpv!")
+    }
 
     // Cache these vars to keep them constant for background tasks
     let isRestoring = info.isRestoring
@@ -2669,7 +2672,7 @@ class PlayerCore: NSObject {
     guard !isStopping else { return }
     guard info.isFileLoaded else { return }
     log.debug("Track list changed")
-    reloadTrackInfo()
+    guard reloadTrackInfo() else { return }
     reloadSelectedTracks()
     log.verbose("Posting iinaTracklistChanged vid=\(optString(info.vid)) aid=\(optString(info.aid)) sid=\(optString(info.sid))")
     postNotification(.iinaTracklistChanged)
@@ -3231,14 +3234,20 @@ class PlayerCore: NSObject {
 
   // MARK: - Getting info
 
-  func reloadTrackInfo() {
+  func reloadTrackInfo() -> Bool {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     log.trace("Reloading tracklist from mpv")
+
+    let trackCount = mpv.getInt(MPVProperty.trackListCount)
+    guard trackCount > 0 else {
+      log.verbose("No tracks returned by mpv's trackListCount; ignoring")
+      return false
+    }
+
     var audioTracks: [MPVTrack] = []
     var videoTracks: [MPVTrack] = []
     var subTracks: [MPVTrack] = []
 
-    let trackCount = mpv.getInt(MPVProperty.trackListCount)
     for index in 0..<trackCount {
       // get info for each track
       guard let trackType = mpv.getString(MPVProperty.trackListNType(index)) else { continue }
@@ -3277,6 +3286,7 @@ class PlayerCore: NSObject {
 
     info.replaceTracks(audio: audioTracks, video: videoTracks, sub: subTracks)
     log.debug("Reloaded tracklist from mpv (\(trackCount) tracks)")
+    return true
   }
 
   private func reloadSelectedTracks(silent: Bool = false) {

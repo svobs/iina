@@ -187,7 +187,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
         return
       }
       Logger.log("User chose to clear all saved window data")
-      Preference.UIState.clearAllSavedLaunchState(force: true)
+      Preference.UIState.clearAllSavedLaunches(force: true)
     }
   }
 

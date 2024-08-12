@@ -714,7 +714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if !isRestoreApproved {
       // Clear out old state. It may have been causing errors, or user wants to start new
       Logger.log("User denied restore. Clearing all saved launch state.")
-      Preference.UIState.clearAllSavedLaunchState()
+      Preference.UIState.clearAllSavedLaunches()
       Preference.set(false, for: .isRestoreInProgress)
       return false
     }
@@ -897,7 +897,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
-      Preference.UIState.clearSavedStateForThisLaunch()
+      Preference.UIState.clearSavedLaunchForThisLaunch()
       Logger.log("Last window was closed. App will quit due to configured pref", level: .verbose)
       return true
     }
@@ -1005,7 +1005,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if shouldTerminate {
       Logger.log("Clearing all state for this launch because all windows have closed!")
-      Preference.UIState.clearSavedStateForThisLaunch()
+      Preference.UIState.clearSavedLaunchForThisLaunch()
       NSApp.terminate(nil)
     }
   }
