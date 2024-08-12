@@ -583,7 +583,6 @@ class PlayerCore: NSObject {
       mpv.mpvDestroy()
     }
     status = .shutDown
-    log.debug("Removing player from list: \(label.quoted)")
     PlayerCoreManager.shared.removePlayer(withLabel: label)
 
     postNotification(.iinaPlayerShutdown)

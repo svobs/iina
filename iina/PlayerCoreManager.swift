@@ -30,10 +30,14 @@ class PlayerCoreManager {
   weak var _lastActivePlayer: PlayerCore?
   var lastActivePlayer: PlayerCore? {
     get {
-      return _lastActivePlayer ?? activePlayer
+      lock.withLock {
+        return _lastActivePlayer ?? _activePlayer
+      }
     }
     set {
-      _lastActivePlayer = newValue
+      lock.withLock {
+        _lastActivePlayer = newValue
+      }
     }
   }
 
@@ -172,6 +176,7 @@ class PlayerCoreManager {
     }
   }
 
+  /// Demo player is a redundant player which is used for app-wide things such as configuring audio devices or input bindings in prefs
   func getOrCreateDemo() -> PlayerCore {
     var player: PlayerCore!
     lock.withLock {
@@ -226,6 +231,7 @@ class PlayerCoreManager {
   func removePlayer(withLabel label: String) {
     lock.withLock {
       _playerCores.removeAll(where: { (player) in player.label == label })
+      Logger.log.debug("Removed player from app-wide list: \(label.quoted); \(_playerCores.count) remain")
     }
   }
 }
