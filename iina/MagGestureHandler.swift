@@ -60,7 +60,7 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
           // KLUDGE! AppKit does not give us the correct visibleFrame until after we have exited FS. The resulting window (as of MacOS 14.4)
           // is 6 pts too tall. For now, run another quick resize after exiting FS using the (now) correct visibleFrame
           DispatchQueue.main.async { [self] in
-            windowController.animationPipeline.submitSudden({ [self] in
+            windowController.animationPipeline.submitInstantTask({ [self] in
               windowController.resizeViewport(to: screen.visibleFrame.size, centerOnScreen: true, duration: IINAAnimation.DefaultDuration * 0.25)
             })
           }

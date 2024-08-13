@@ -174,7 +174,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   // MARK: - UI: Media Info
 
   func updateScrollingLabels() {
-    windowController.animationPipeline.submitSudden { [self] in
+    windowController.animationPipeline.submitInstantTask { [self] in
       loadIfNeeded()
       titleLabel.stepNext()
       artistAlbumLabel.stepNext()
@@ -182,7 +182,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   func resetScrollingLabels() {
-    windowController.animationPipeline.submitSudden { [self] in
+    windowController.animationPipeline.submitInstantTask { [self] in
       loadIfNeeded()
       titleLabel.reset()
       artistAlbumLabel.reset()
@@ -250,7 +250,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   @IBAction func togglePlaylist(_ sender: Any) {
-    windowController.animationPipeline.submitSudden({ [self] in
+    windowController.animationPipeline.submitInstantTask({ [self] in
       _togglePlaylist()
     })
   }
@@ -291,7 +291,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
   }
 
   @IBAction func toggleVideoView(_ sender: Any) {
-    windowController.animationPipeline.submitSudden({ [self] in
+    windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideo = !isVideoVisible
       log.verbose("Toggling videoView visibility from \((!showVideo).yn) to \(showVideo.yn)")
 
@@ -318,7 +318,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
     guard let window else { return }
     log.verbose("Applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
     var tasks: [IINAAnimation.Task] = []
-    tasks.append(IINAAnimation.suddenTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
       // Hide OSD during animation
       windowController.hideOSD(immediately: true)
@@ -363,7 +363,7 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       }
     })
 
-    tasks.append(IINAAnimation.suddenTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       windowController.isAnimatingLayoutTransition = false
     })
 

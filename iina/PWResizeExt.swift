@@ -29,7 +29,7 @@ extension PlayerWindowController {
     defer {
       if aborted, let doAfter {
         DispatchQueue.main.async { [self] in
-          animationPipeline.submitSudden(doAfter)
+          animationPipeline.submitInstantTask(doAfter)
         }
       }
     }
@@ -55,7 +55,7 @@ extension PlayerWindowController {
     }
 
     DispatchQueue.main.async { [self] in
-      animationPipeline.submitSudden { [self] in
+      animationPipeline.submitInstantTask { [self] in
         let oldVidGeo = geo.video
         guard let newVidGeo = videoTransform(oldVidGeo) else {
           log.verbose("[applyVideoGeo] Aborting due to transform returning nil")
@@ -106,7 +106,7 @@ extension PlayerWindowController {
                                               showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
-          tasks.append(IINAAnimation.suddenTask(doAfter))
+          tasks.append(.instantTask(doAfter))
         }
 
         if case .notApplicable = state {
@@ -184,7 +184,7 @@ extension PlayerWindowController {
         /// Update even if not currently in windowed mode, as it will be needed when exiting other modes
         windowedModeGeo = newWinGeo
 
-        updateDefaultArtVisibility(showDefaultArt)
+        updateDefaultArtVisibility(to: showDefaultArt)
         resetRotationPreview()
         updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
       })]
@@ -544,11 +544,11 @@ extension PlayerWindowController {
                                 showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
 
     var tasks: [IINAAnimation.Task] = []
-    tasks.append(IINAAnimation.suddenTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.videoLayer.enterAsynchronousMode()
       hideSeekTimeAndThumbnail()
-      updateDefaultArtVisibility(showDefaultArt)
+      updateDefaultArtVisibility(to: showDefaultArt)
       resetRotationPreview()
     })
 
@@ -572,7 +572,7 @@ extension PlayerWindowController {
       player.saveState()
     }))
 
-    tasks.append(IINAAnimation.suddenTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = false
       // OSD messages may have been supressed because file was not done loading. Display now if needed:
       updateUI()
@@ -597,16 +597,16 @@ extension PlayerWindowController {
                                    setFrame: Bool = true, updateCache: Bool = true,
                                    showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
 
-      updateDefaultArtVisibility(showDefaultArt)
+      updateDefaultArtVisibility(to: showDefaultArt)
       resetRotationPreview()
     })
     tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
       applyMusicModeGeo(geometry)
     }))
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = false
       updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
@@ -666,7 +666,7 @@ extension PlayerWindowController {
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
-    animationPipeline.submitSudden({ [self] in
+    animationPipeline.submitInstantTask({ [self] in
       viewportBottomOffsetFromContentViewBottomConstraint.isActive = !shouldDisableConstraint
     })
 

@@ -104,7 +104,7 @@ extension PlayerWindowController {
       Logger.fatal("Invalid WindowStateAtFileOpen state: \(windowState)")
     }
 
-    tasks.append(IINAAnimation.suddenTask{ [self] in
+    tasks.append(.instantTask{ [self] in
       defer {
         // Post notifications always
         player.postNotification(.iinaFileLoaded)
@@ -173,7 +173,7 @@ extension PlayerWindowController {
     let initialTransition = buildLayoutTransition(named: transitionName,
                                                   from: currentLayout, to: initialLayout.spec, isInitialLayout: true, newGeoSet)
 
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
 
       // For initial layout (when window is first shown), to reduce jitteriness when drawing, do all the layout
       // in a single animation block.
@@ -205,7 +205,7 @@ extension PlayerWindowController {
     })
 
     if needsNativeFullScreen {
-      tasks.append(IINAAnimation.suddenTask { [self] in
+      tasks.append(.instantTask { [self] in
         enterFullScreen()
       })
       return tasks

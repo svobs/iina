@@ -253,7 +253,7 @@ extension PlayerWindowController {
 
   /// Toggles visibility of given `sidebar`
   func toggleVisibility(of sidebarID: Preference.SidebarLocation) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       guard currentLayout.canShowSidebars else { return }
       let sidebar = currentLayout.sidebar(withID: sidebarID)
       log.verbose("Toggling visibility of sidebar: \(sidebarID) (isVisible: \(sidebar.isVisible))")
@@ -288,7 +288,7 @@ extension PlayerWindowController {
   func showSidebar(tab: Sidebar.Tab, force: Bool = false, hideIfAlreadyShown: Bool = true) {
     log.verbose("ShowSidebar for tab: \(tab.name.quoted), force: \(force), hideIfAlreadyShown: \(hideIfAlreadyShown)")
 
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       guard let destinationSidebar = getConfiguredSidebar(forTabGroup: tab.group) else { return }
 
       if destinationSidebar.visibleTab == tab {
@@ -306,7 +306,7 @@ extension PlayerWindowController {
   // Updates placements (inside or outside) of both sidebars in the UI so they match the prefs.
   // If placement of one/both affected sidebars is open, closes then reopens the affected bar(s) with the new placement.
   func updateSidebarPlacements() {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
       let leadingSidebar = oldLayout.leadingSidebar.clone(placement: Preference.enum(for: .leadingSidebarPlacement))
       let trailingSidebar = oldLayout.trailingSidebar.clone(placement: Preference.enum(for: .trailingSidebarPlacement))
@@ -325,7 +325,7 @@ extension PlayerWindowController {
   func hideAllSidebars(animate: Bool = true) {
     Logger.log("Hiding all sidebars", level: .verbose, subsystem: player.subsystem)
 
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
       let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: oldLayout.leadingSidebar.clone(visibility: .hide),
                                                trailingSidebar: oldLayout.trailingSidebar.clone(visibility: .hide))
@@ -712,7 +712,7 @@ extension PlayerWindowController {
     log.verbose("Changing to tab: \(tabName.quoted)")
 
     // Try to avoid race conditions if possible
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       let newVisibility = Sidebar.Visibility.show(tabToShow: tab)
       let layout = currentLayout
       var leadingSidebar: Sidebar? = nil
@@ -742,7 +742,7 @@ extension PlayerWindowController {
 
   // If location of tab group changed to another sidebar (in user prefs), check if it is showing, and if so, hide it & show it on the other side
   func moveTabGroup(_ tabGroup: Sidebar.TabGroup, toSidebarLocation newLocationID: Preference.SidebarLocation) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       guard let currentLocationID = getConfiguredSidebar(forTabGroup: tabGroup)?.locationID else { return }
       guard currentLocationID != newLocationID else { return }
 
@@ -1029,7 +1029,7 @@ extension PlayerWindowController {
     let hideTrailing = oldLayout.trailingSidebar.isVisible && Preference.bool(for: .hideTrailingSidebarOnClick)
 
     if hideLeading || hideTrailing {
-      animationPipeline.submitSudden { [self] in
+      animationPipeline.submitInstantTask { [self] in
         let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: hideLeading ? oldLayout.leadingSidebar.clone(visibility: .hide) : nil,
                                                  trailingSidebar: hideTrailing ? oldLayout.trailingSidebar.clone(visibility: .hide) : nil)
         buildLayoutTransition(named: "HideSidebarsOnClick", from: oldLayout, to: newLayoutSpec, totalEndingDuration: 0, thenRun: true)

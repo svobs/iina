@@ -151,7 +151,7 @@ extension PlayerWindowController {
     // - Starting animations:
 
     // 0: Set initial var or other tasks which happen before main animations
-    transition.tasks.append(IINAAnimation.suddenTask{ [self] in
+    transition.tasks.append(.instantTask{ [self] in
       doPreTransitionWork(transition)
     })
 
@@ -178,7 +178,7 @@ extension PlayerWindowController {
     // - Middle animations:
 
     // 0: Middle point: update style & constraints. Should have minimal visual changes
-    transition.tasks.append(IINAAnimation.suddenTask{ [self] in
+    transition.tasks.append(.instantTask{ [self] in
       // This also can change window styleMask
       updateHiddenViewsAndConstraints(transition)
     })
@@ -254,7 +254,7 @@ extension PlayerWindowController {
     }
 
     // After animations all finish
-    transition.tasks.append(IINAAnimation.suddenTask{ [self] in
+    transition.tasks.append(.instantTask{ [self] in
       if transition.isTogglingFullScreen {
         // For a better visual experience wait until window finishes moving
         fadeInNewViews(transition)

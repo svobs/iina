@@ -529,7 +529,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         resizeViewport()
       }
     case PK.hideWindowsWhenInactive.rawValue:
-      animationPipeline.submitSudden({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         refreshHidesOnDeactivateStatus()
       })
 
@@ -595,11 +595,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     case PK.osdPosition.rawValue:
       // If OSD is showing, it will move over as a neat animation:
-      animationPipeline.submitSudden {
+      animationPipeline.submitInstantTask {
         self.updateOSDPosition()
       }
     case PK.osdTextSize.rawValue:
-      animationPipeline.submitSudden { [self] in
+      animationPipeline.submitInstantTask { [self] in
         updateOSDTextSize()
         setOSDViews()
       }
@@ -1033,7 +1033,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     cv.configureSubtreeForCoreAnimation()
 
-    animationPipeline.submitSudden{ [self] in
+    animationPipeline.submitInstantTask{ [self] in
       if player.info.isRestoring {
         if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
           // Preemptively set window frames to prevent windows from "jumping" during restore
@@ -1061,14 +1061,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // FIXME: this is not ready for production yet! Need to fix issues with freezing video
       guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
       if !window.isOnActiveSpace && pipStatus == .notInPIP {
-        animationPipeline.submitSudden({ [self] in
+        animationPipeline.submitInstantTask({ [self] in
           log.debug("Window is no longer in active space; entering PIP")
           enterPIP(then: { [self] in
             isWindowPipDueToInactiveSpace = true
           })
         })
       } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pipStatus == .inPIP {
-        animationPipeline.submitSudden({ [self] in
+        animationPipeline.submitInstantTask({ [self] in
           log.debug("Window is in active space again; exiting PIP")
           isWindowPipDueToInactiveSpace = false
           exitPIP()
@@ -1248,7 +1248,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateTitleBarAndOSC() {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
       let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
       buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
@@ -1279,13 +1279,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             pipOption = .doNothing
           }
           // Run in queue to avert race condition with window load
-          animationPipeline.submitSudden({ [self] in
+          animationPipeline.submitInstantTask({ [self] in
             enterPIP(usePipBehavior: pipOption)
           })
         } else if isMiniaturized {
           // Not in PIP, but miniturized
           // Run in queue to avert race condition with window load
-          animationPipeline.submitSudden({ [self] in
+          animationPipeline.submitInstantTask({ [self] in
             window?.miniaturize(nil)
           })
         }
@@ -1915,7 +1915,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - Window delegate: Open / Close
 
   override func openWindow(_ sender: Any?) {
-    animationPipeline.submitSudden({ [self] in
+    animationPipeline.submitInstantTask({ [self] in
       _openWindow()
     })
   }
@@ -1999,7 +1999,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     super.showWindow(sender)
 
     DispatchQueue.main.async {  /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
-      self.animationPipeline.submitSudden({
+      self.animationPipeline.submitInstantTask({
         self.refreshKeyWindowStatus()
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         self.updateTitle()
@@ -2159,7 +2159,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if AccessibilityPreferences.motionReductionEnabled {
       animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: false)
     } else {
-      animationPipeline.submitSudden { [self] in
+      animationPipeline.submitInstantTask { [self] in
         // Kludge/workaround for race condition when exiting native FS to native windowed mode
         updateTitle()
       }
@@ -2228,7 +2228,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("EnterFullScreen called. Legacy: \(isLegacy.yn), isNativeFullScreenNow: \(isFullScreen.yn)")
 
     if isLegacy {
-      animationPipeline.submitSudden({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         animateEntryIntoFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       })
     } else if !isFullScreen {
@@ -2245,7 +2245,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if isLegacyFS {
       log.verbose("ExitFullScreen called, legacy=\(isLegacyFS.yn)")
-      animationPipeline.submitSudden({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         // If "legacy" pref was toggled while in fullscreen, still need to exit native FS
         animateExitFromFullScreen(withDuration: IINAAnimation.FullScreenTransitionDuration, isLegacy: true)
       })
@@ -2405,7 +2405,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         blackOutOtherMonitors()
       }
 
-      animationPipeline.submitSudden({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen (tkt \(ticket)): screenFrame=\(screen.frame)")
         videoView.updateDisplayLink()
         player.events.emit(.windowScreenChanged)
@@ -2506,7 +2506,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // We can get here if external calls from accessibility APIs change the window location.
     // Inserting a small delay seems to help to avoid race conditions as the window seems to need time to "settle"
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [self] in
-      animationPipeline.submitSudden({ [self] in
+      animationPipeline.submitInstantTask({ [self] in
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           // MacOS (as of 14.0 Sonoma) sometimes moves the window around when there are multiple screens
@@ -2527,7 +2527,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - Window delegate: Active status
 
   func windowDidBecomeKey(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       guard let window else { return }
       guard !isClosing else { return }
       log.verbose("Window became key: \(window.savedStateName.quoted)")
@@ -2543,7 +2543,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func windowDidResignKey(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       // keyWindow is nil: The whole app is inactive
       // keyWindow is another PlayerWindow: Switched to another video window
       let otherAppWindow = NSApp.keyWindow
@@ -2563,7 +2563,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func refreshKeyWindowStatus() {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       guard let window else { return }
       guard !isClosing else { return }
 
@@ -2611,14 +2611,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // because the key window is the active window in AppKit.
   // Fire events anyway to keep compatibility with upstream IINA.
   func windowDidBecomeMain(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       player.events.emit(.windowMainStatusChanged, data: true)
       NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: true)
     }
   }
 
   func windowDidResignMain(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       player.events.emit(.windowMainStatusChanged, data: false)
       NotificationCenter.default.post(name: .iinaPlayerWindowChanged, object: false)
     }
@@ -2632,7 +2632,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func windowDidMiniaturize(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       log.verbose("Window did miniaturize")
       isWindowMiniturized = true
       if Preference.bool(for: .togglePipByMinimizingWindow) && !isWindowMiniaturizedDueToPip {
@@ -2643,7 +2643,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func windowDidDeminiaturize(_ notification: Notification) {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       log.verbose("Window did deminiaturize")
       isWindowMiniturized = false
       if Preference.bool(for: .pauseWhenMinimized) && isPausedDueToMiniaturization {
@@ -2735,7 +2735,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }))
 
     // Not animated, but needs to wait until after fade is done
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
       // if no interrupt then hide animation
       if fadeableViewsAnimationState == .willShow {
         fadeableViewsAnimationState = .shown
@@ -3044,7 +3044,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Use `immediately: true` to exit without animation.
   /// This method can be run safely even if not in interactive mode
   func exitInteractiveMode(immediately: Bool = false, newVidGeo: VideoGeometry? = nil,  then doAfter: (() -> Void)? = nil) {
-    animationPipeline.submitSudden({ [self] in
+    animationPipeline.submitInstantTask({ [self] in
       let currentLayout = currentLayout
 
       var tasks: [IINAAnimation.Task] = []
@@ -3172,7 +3172,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - UI: Other
 
-  func updateDefaultArtVisibility(_ showDefaultArt: Bool?) {
+  func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let showDefaultArt else { return }
 
@@ -3233,7 +3233,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func exitMusicMode() {
-    animationPipeline.submitSudden { [self] in
+    animationPipeline.submitInstantTask { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = currentLayout
@@ -3920,7 +3920,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       }))
     }
 
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
       /// Must set this before calling `addVideoViewToWindow()`
       pipStatus = .notInPIP
 
@@ -3935,7 +3935,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       updateTitle()
     })
 
-    tasks.append(IINAAnimation.suddenTask { [self] in
+    tasks.append(.instantTask { [self] in
       // Similarly, we need to run a redraw here as well. We check to make sure we
       // are paused, because this causes a janky animation in either case but as
       // it's not necessary while the video is playing and significantly more

@@ -2725,10 +2725,10 @@ class PlayerCore: NSObject {
     /// This will refresh album art display.
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
     DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submitSudden { [self] in
+      windowController.animationPipeline.submitInstantTask { [self] in
         // Check status so that we don't duplicate work
         if info.isLoadedAndSized {
-          windowController.updateDefaultArtVisibility(showDefaultArt)
+          windowController.updateDefaultArtVisibility(to: showDefaultArt)
         }
 
         if isShowVideoPendingInMiniPlayer {
@@ -3004,7 +3004,7 @@ class PlayerCore: NSObject {
     let syncUITicket = syncUITicketCounter
 
     DispatchQueue.main.async { [self] in
-      windowController.animationPipeline.submitSudden { [self] in
+      windowController.animationPipeline.submitInstantTask { [self] in
         guard syncUITicket == syncUITicketCounter else {
           return
         }

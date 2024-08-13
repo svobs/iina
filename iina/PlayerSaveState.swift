@@ -323,7 +323,7 @@ struct PlayerSaveState {
 
       DispatchQueue.main.async {
         let wc = player.windowController!
-        wc.animationPipeline.submitSudden {
+        wc.animationPipeline.submitInstantTask {
           guard !wc.isAnimatingLayoutTransition else {
             /// The transition itself will call `save` when it is done. Just return
             return

@@ -71,14 +71,15 @@ class IINAAnimation {
       self.timingName = timingName
       self.runFunc = runFunc
     }
+
+    static func instantTask(_ runFunc: @escaping TaskFunc) -> Task {
+      return Task(duration: 0, timing: nil, runFunc)
+    }
+
   }
 
   struct Transaction {
     let tasks: [Task]
-  }
-
-  static func suddenTask(_ runFunc: @escaping TaskFunc) -> Task {
-    return Task(duration: 0, timing: nil, runFunc)
   }
 
   // MARK: - IINAAnimation.Pipeline
@@ -113,8 +114,8 @@ class IINAAnimation {
 
     // Convenience function. Run the task with no animation / zero duration.
     // Useful for updating constraints, etc., which cannot be animated or do not look good animated.
-    func submitSudden(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
-      submit(IINAAnimation.suddenTask(runFunc), then: doAfter)
+    func submitInstantTask(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+      submit(.instantTask(runFunc), then: doAfter)
     }
 
     /// Recursive function which enqueues each of the given `AnimationTask`s for execution, one after another.
@@ -138,7 +139,7 @@ class IINAAnimation {
 
       if let doAfter {
         newestTxID += 1
-        taskQueue.append((newestTxID, suddenTask(doAfter)))
+        taskQueue.append((newestTxID, .instantTask(doAfter)))
         enqueuedSomething = true
       }
 
