@@ -2677,7 +2677,6 @@ class PlayerCore: NSObject {
     reloadSelectedTracks()
     log.verbose("Posting iinaTracklistChanged vid=\(optString(info.vid)) aid=\(optString(info.aid)) sid=\(optString(info.sid))")
     postNotification(.iinaTracklistChanged)
-    saveState()
   }
 
   private func optString(_ num: Int?) -> String {

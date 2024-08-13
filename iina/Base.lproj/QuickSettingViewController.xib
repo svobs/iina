@@ -1782,7 +1782,7 @@
                                                                                 <size key="intercellSpacing" width="3" height="2"/>
                                                                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.080000000000000002" colorSpace="calibratedRGB"/>
                                                                                 <tableViewGridLines key="gridStyleMask" horizontal="YES"/>
-                                                                                <color key="gridColor" red="1" green="1" blue="1" alpha="0.10000000000000001" colorSpace="calibratedRGB"/>
+                                                                                <color key="gridColor" red="1" green="1" blue="1" alpha="0.050000000000000003" colorSpace="custom" customColorSpace="calibratedRGB"/>
                                                                                 <tableColumns>
                                                                                     <tableColumn identifier="IsChosen" width="16" minWidth="16" maxWidth="16" id="vbW-xz-mKZ">
                                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="right">

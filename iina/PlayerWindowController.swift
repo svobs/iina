@@ -1983,7 +1983,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     if !player.info.isRestoring {
-      PlayerSaveState.saveSynchronously(player)
       AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
     }
 
