@@ -90,7 +90,6 @@ struct PlayerSaveState {
   static fileprivate let playlistVideosCSVVersion = "1"
 
   static let saveQueue = DispatchQueue(label: "IINAPlayerSaveQueue", qos: .background)
-  static let saveLock = Lock()
 
   /// IINA general log
   static let log = Logger.log
@@ -324,14 +323,14 @@ struct PlayerSaveState {
 
       DispatchQueue.main.async {
         let wc = player.windowController!
-        guard !wc.isAnimatingLayoutTransition else {
-          /// The transition itself will call `save` when it is done. Just return
-          return
-        }
-        // Retrieve appropriate geometry values, updating to latest window frame if needed:
-        let geo = wc.buildGeoSet(from: wc.currentLayout)
-        saveQueue.async {
-          saveLock.withLock {
+        wc.animationPipeline.submitSudden {
+          guard !wc.isAnimatingLayoutTransition else {
+            /// The transition itself will call `save` when it is done. Just return
+            return
+          }
+          // Retrieve appropriate geometry values, updating to latest window frame if needed:
+          let geo = wc.buildGeoSet(from: wc.currentLayout)
+          saveQueue.async {
             guard !player.isShuttingDown else { return }
 
             let properties = generatePropDict(from: player, geo)
@@ -348,11 +347,16 @@ struct PlayerSaveState {
   static func saveSynchronously(_ player: PlayerCore) {
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
-    /// Using `saveLock` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
-    saveLock.withLock {
-      let wc = player.windowController!
+    let wc = player.windowController!
+    /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
+    saveQueue.sync {
       // Retrieve appropriate geometry values, updating to latest window frame if needed:
-      let geo = wc.buildGeoSet(from: wc.currentLayout)
+      let geo: GeometrySet
+      if wc.isAnimatingLayoutTransition {
+        geo = GeometrySet(windowed: wc.windowedModeGeo, musicMode: wc.musicModeGeo, video: player.videoGeo)
+      } else {
+        geo = wc.buildGeoSet(from: wc.currentLayout)
+      }
       let properties = generatePropDict(from: player, geo)
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")
