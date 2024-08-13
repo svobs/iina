@@ -1524,10 +1524,6 @@ class MPVController: NSObject {
       }
       player.subPosChanged(data)
 
-    case MPVOption.Equalizer.contrast:
-      player.reloadQuickSettingsView()
-      // TODO: OSD
-
     case MPVOption.Subtitles.subFont:
       player.reloadQuickSettingsView()
       // TODO: OSD
@@ -1565,6 +1561,7 @@ class MPVController: NSObject {
         break
       }
       let intData = Int(data)
+      player.log.verbose("Δ mpv prop: 'contrast' = \(intData)")
       player.info.contrast = intData
       player.sendOSD(.contrast(intData))
       player.reloadQuickSettingsView()
@@ -1575,6 +1572,7 @@ class MPVController: NSObject {
         break
       }
       let intData = Int(data)
+      player.log.verbose("Δ mpv prop: 'hue' = \(intData)")
       player.info.hue = intData
       player.sendOSD(.hue(intData))
       player.reloadQuickSettingsView()
@@ -1585,6 +1583,7 @@ class MPVController: NSObject {
         break
       }
       let intData = Int(data)
+      player.log.verbose("Δ mpv prop: 'brightness' = \(intData)")
       player.info.brightness = intData
       player.sendOSD(.brightness(intData))
       player.reloadQuickSettingsView()
@@ -1595,6 +1594,7 @@ class MPVController: NSObject {
         break
       }
       let intData = Int(data)
+      player.log.verbose("Δ mpv prop: 'gamma' = \(intData)")
       player.info.gamma = intData
       player.sendOSD(.gamma(intData))
       player.reloadQuickSettingsView()
@@ -1605,6 +1605,7 @@ class MPVController: NSObject {
         break
       }
       let intData = Int(data)
+      player.log.verbose("Δ mpv prop: 'saturation' = \(intData)")
       player.info.saturation = intData
       player.sendOSD(.saturation(intData))
       player.reloadQuickSettingsView()

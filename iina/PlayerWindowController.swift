@@ -1200,8 +1200,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       /// Make sure `defaultAlbumArtView` stays above `videoView`
       viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
       videoView.videoLayer.autoresizingMask = CAAutoresizingMask(rawValue: 0)
+      videoView.updateDisplayLink()
       // Screen may have changed. Refresh contentsScale
       videoView.refreshContentsScale()
+      player.refreshEdrMode()
     }
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
@@ -2465,6 +2467,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       videoView.updateDisplayLink()
       videoView.refreshContentsScale()
+      player.refreshEdrMode()
 
       guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
