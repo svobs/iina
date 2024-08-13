@@ -2453,6 +2453,7 @@ class PlayerCore: NSObject {
     guard !isStopping else { return }
     _ = getAudioFilters()
     saveState()
+    reloadQuickSettingsView()
     postNotification(.iinaAFChanged)
   }
 
@@ -2497,9 +2498,9 @@ class PlayerCore: NSObject {
     }
   }
 
-  func idleActiveChanged(to idleActive: Bool) {
+  func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
-    log.verbose("Got mpv 'idle-active': \(idleActive.yn) (isFileLoaded: \(isFileLoaded.yn))")
+    log.verbose("Got mpv 'idle-active' (isFileLoaded: \(isFileLoaded.yn))")
     if receivedEndFileWhileLoading && !isFileLoaded {
       log.error("Received fileEnded + 'idle-active' from mpv while loading \(info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
       errorOpeningFileAndClosePlayerWindow(url: info.currentURL)
@@ -2693,6 +2694,7 @@ class PlayerCore: NSObject {
     postNotification(.iinaVFChanged)
 
     saveState()
+    reloadQuickSettingsView()
   }
 
   func vidChanged(silent: Bool = false) {
@@ -2764,6 +2766,34 @@ class PlayerCore: NSObject {
       // Change video track to None
       log.verbose("Sending request to mpv: set video track to 0")
       setTrack(0, forType: .video, silent: true)
+    }
+  }
+
+  func windowScaleChanged() {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard windowController.loaded else { return }
+    // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
+    guard !windowController.isMagnifying else { return }
+    let isAlreadySized = info.currentPlayback?.state.isAtLeast(.loaded) ?? false
+    guard isAlreadySized else { return }
+
+    let cachedVideoScale: CGFloat
+    if windowController.currentLayout.mode == .musicMode {
+      cachedVideoScale = windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
+    } else {
+      cachedVideoScale = windowController.windowedModeGeo.mpvVideoScale()
+    }
+    let newVideoScale = mpv.getVideoScale()
+    let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
+    guard needsUpdate else {
+      log.verbose("Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed")
+      return
+    }
+
+    log.verbose("Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)")
+    DispatchQueue.main.async { [self] in
+      log.verbose("Calling setVideoScale → \(newVideoScale)x")
+      windowController.setVideoScale(newVideoScale)
     }
   }
 

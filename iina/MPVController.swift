@@ -1621,12 +1621,10 @@ class MPVController: NSObject {
     case MPVProperty.vf:
       player.log.verbose("Δ mpv prop: 'vf'")
       player.vfChanged()
-      player.reloadQuickSettingsView()
 
     case MPVProperty.af:
       player.log.verbose("Δ mpv prop: 'af'")
       player.afChanged()
-      player.reloadQuickSettingsView()
 
     case MPVOption.Video.videoAspectOverride:
       guard player.windowController.loaded, !player.isShuttingDown else { break }
@@ -1641,29 +1639,7 @@ class MPVController: NSObject {
       player.ontopChanged()
 
     case MPVOption.Window.windowScale:
-      guard player.windowController.loaded else { break }
-      // Ignore if magnifying - will mess up our animation. Will submit window-scale anyway at end of magnify
-      guard !player.windowController.isMagnifying else { break }
-      let isAlreadySized = player.info.currentPlayback?.state.isAtLeast(.loaded) ?? false
-      guard isAlreadySized else { break }
-
-      let cachedVideoScale: CGFloat
-      if player.windowController.currentLayout.mode == .musicMode {
-        cachedVideoScale = player.windowController.musicModeGeo.toPWinGeometry().mpvVideoScale()
-      } else {
-        cachedVideoScale = player.windowController.windowedModeGeo.mpvVideoScale()
-      }
-      let newVideoScale = getVideoScale()
-      let needsUpdate = abs(newVideoScale - cachedVideoScale) > 10e-10
-      if needsUpdate {
-        player.log.verbose("Δ mpv prop: 'window-scale', \(cachedVideoScale) → \(newVideoScale)")
-        DispatchQueue.main.async { [self] in
-          player.log.verbose("Calling setVideoScale → \(newVideoScale)x")
-          player.windowController.setVideoScale(newVideoScale)
-        }
-      } else {
-        player.log.verbose("Δ mpv prop: 'window-scale'; videoScale \(newVideoScale) not changed")
-      }
+      player.windowScaleChanged()
 
     case MPVProperty.mediaTitle:
       player.mediaTitleChanged()
@@ -1674,7 +1650,7 @@ class MPVController: NSObject {
         break
       }
       guard idleActive else { break }
-      player.idleActiveChanged(to: idleActive)
+      player.idleActiveChanged()
 
     case MPVProperty.inputBindings:
       do {
