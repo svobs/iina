@@ -33,6 +33,12 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     return makeSymbol("macwindow", fallbackImage: "pref_ui")
   }
 
+  static var oscToolbarButtons: [Preference.ToolBarButton] {
+    get {
+      return (Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []).compactMap(Preference.ToolBarButton.init(rawValue:))
+    }
+  }
+
   override var sectionViews: [NSView] {
     return [sectionWindowView, sectionFullScreenView, sectionAppearanceView, sectionOSCView, sectionSidebarsView, sectionOSDView,
             sectionThumbnailView, sectionPictureInPictureView, sectionAccessibilityView]
