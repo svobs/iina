@@ -1105,9 +1105,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Check if there are any players that are not shutdown. If all players are already shutdown
     // then application termination can proceed immediately. This will happen if there is only one
-    // player and shutdown was initiated by typing "q" in the player window. That sends a quit
-    // command directly to mpv causing mpv and the player to shutdown before application
-    // termination is initiated.
+    // player and shutdown was initiated by sending a quit command directly to mpv through it's IPC
+    // interface causing mpv and the player to shutdown before application termination is initiated.
     let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
     if allPlayersShutdown {
       Logger.log("All players have shut down")
@@ -1186,18 +1185,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// request has completed. If there are no other termination tasks outstanding then this method will instruct AppKit to proceed with
     /// termination.
     func proceedWithTermination() {
+      // If any player has not shut down then continue waiting.
       let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
       let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
+
       // All players have shut down.
       Logger.log("AllPlayersShutdown: \(allPlayersShutdown.yesno), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut.yesno)")
-      // If any player has not shut down then continue waiting.
       guard allPlayersShutdown && didSubtitleSvcLogOut else { return }
       // All players have shutdown. No longer logged into an online subtitles provider.
+
+      HistoryController.shared.queue.sync {
+        Logger.log.debug("Suspending History queue")
+        HistoryController.shared.queue.suspend()
+      }
+
       Logger.log("Proceeding with application termination")
       // No longer need the timer that forces termination to proceed.
       timer.invalidate()
       // No longer need the observers for players stopping and shutting down, along with the
-      // observer for logout requests completing.
+      // observer for logout requests completing and saving of playback history finishing.
       ObjcUtils.silenced {
         observers.forEach {
           NotificationCenter.default.removeObserver($0)

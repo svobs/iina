@@ -104,7 +104,8 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   }
 
   func getHistory() -> Any {
-    return HistoryController.shared.history.map {
+    let history = HistoryController.shared.history
+    return history.map {
       [
         "name": $0.name,
         "url": $0.url.absoluteString,

@@ -460,6 +460,11 @@ class PlayerCore: NSObject {
           if Preference.bool(for: .enableFileLoop) {
             mpv.setString(MPVOption.PlaybackControl.loopFile, "inf")
           }
+          
+          if Preference.bool(for: .autoRepeat) {
+            let loopMode = Preference.DefaultRepeatMode(rawValue: Preference.integer(for: .defaultRepeatMode))
+            setLoopMode(loopMode == .file ? .file : .playlist)
+          }
         }
       }
     }

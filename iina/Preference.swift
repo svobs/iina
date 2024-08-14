@@ -127,6 +127,9 @@ struct Preference {
     static let pauseWhenLeavingFullScreen = Key("pauseWhenLeavingFullScreen")
     static let pauseWhenGoesToSleep = Key("pauseWhenGoesToSleep")
 
+    static let autoRepeat = Key("autoRepeat")
+    static let defaultRepeatMode = Key("defaultRepeatMode")
+
     /** Show chapter pos in progress bar (bool) */
     static let showChapterPos = Key("showChapterPos")
 
@@ -1083,6 +1086,11 @@ struct Preference {
     }
   }
 
+  enum DefaultRepeatMode: Int {
+    case playlist = 0
+    case file
+  }
+
   // MARK: - Defaults
 
   static let defaultPreference: [Preference.Key: Any] = [
@@ -1168,8 +1176,9 @@ struct Preference {
     .playlistAutoPlayNext: true,
     .playlistShowMetadata: true,
     .playlistShowMetadataInMusicMode: true,
-
-      .usePhysicalResolution: false,
+    .usePhysicalResolution: false,
+    .autoRepeat: false,
+    .defaultRepeatMode: DefaultRepeatMode.playlist.rawValue,
     .initialWindowSizePosition: "",
     .resizeWindowScheme: ResizeWindowScheme.simpleVideoSizeMultiple.rawValue,
     .resizeWindowTiming: ResizeWindowTiming.onlyWhenOpen.rawValue,
