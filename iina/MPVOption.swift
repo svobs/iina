@@ -177,7 +177,7 @@ struct MPVOption {
     /** --save-position-on-quit */
     static let savePositionOnQuit = "save-position-on-quit"
     /** --watch-later-dir=<path> */
-    static let watchLaterDir = "watch-later-dir"
+    static let watchLaterDir = "watch-later-directory"  // FIXME: change back to "watch-later-dir" after restoring mpv upgrade
     /** --resume-playback=<yes|no> */
     static let resumePlayback = "resume-playback"
     /** --resume-playback-check-mtime=<yes|no> */
@@ -891,7 +891,7 @@ struct MPVOption {
     /** --screenshot-template=<template> */
     static let screenshotTemplate = "screenshot-template"
     /** --screenshot-dir=<path> */
-    static let screenshotDir = "screenshot-dir"
+    static let screenshotDir = "screenshot-directory" // FIXME: change back to "screenshot-dir" after restoring mpv upgrade
     /** --screenshot-jpeg-quality=<0-100> */
     static let screenshotJpegQuality = "screenshot-jpeg-quality"
     /** --screenshot-jpeg-source-chroma=<yes|no> */
