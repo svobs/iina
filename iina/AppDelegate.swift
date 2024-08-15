@@ -270,6 +270,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     observers.append(NotificationCenter.default.addObserver(forName: .windowIsReadyToShow, object: nil, queue: .main,
                                                             using: self.windowIsReadyToShow))
 
+    observers.append(NotificationCenter.default.addObserver(forName: .windowMustCancelShow, object: nil, queue: .main,
+                                                            using: self.windowMustCancelShow))
+
     // Check for legacy pref entries and migrate them to their modern equivalents.
     // Must do this before setting defaults so that checking for existing entries doesn't result in false positives
     LegacyMigration.migrateLegacyPreferences()
@@ -293,6 +296,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func windowIsReadyToShow(_ notification: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
     guard let window = notification.object as? NSWindow else { return }
     guard let wc = window.windowController else {
       Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
@@ -310,6 +315,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
       wc.showWindow(window)
     }
+  }
+
+  private func windowMustCancelShow(_ notification: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard let window = notification.object as? NSWindow else { return }
+
+    guard Preference.bool(for: .isRestoreInProgress) else { return }
+    Logger.log("Restored window cancelled: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.status == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
+
+    // No longer waiting for this window
+    startup.wcsToRestore.removeAll(where: { wc in
+      wc.window!.savedStateName == window.savedStateName
+    })
+
+    showWindowsIfReady()
   }
 
   // TODO: refactor to put this all in CommandLineStatus class

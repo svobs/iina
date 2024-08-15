@@ -3164,6 +3164,7 @@ class PlayerCore: NSObject {
 
   private func _closeWindow() {
     assert(DispatchQueue.isExecutingIn(.main))
+    window.postWindowMustCancelShow()
     log.verbose("Closing window")
     windowController.close()
     /// `windowController.close()` doesn't always fire notification (e.g., if the window is ordered out).

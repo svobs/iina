@@ -1341,6 +1341,10 @@ extension NSWindow {
   func postWindowIsReadyToShow() {
     NotificationCenter.default.post(Notification(name: .windowIsReadyToShow, object: self))
   }
+
+  func postWindowMustCancelShow() {
+    NotificationCenter.default.post(Notification(name: .windowMustCancelShow, object: self))
+  }
 }
 
 
