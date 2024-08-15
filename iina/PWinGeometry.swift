@@ -146,7 +146,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
     assert(viewportSize.width >= 0 && viewportSize.height >= 0, "Expected viewportSize width & height >= 0, found \(viewportSize)")
-    let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: video.videoViewAspect, toFillIn: viewportSize,
+    let videoViewAspect = video.videoViewAspect
+    let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: videoViewAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
     assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected videoSize width & height >= 0, found \(videoSize)")
     self.videoSize = videoSize
@@ -479,7 +480,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   ///
   /// It is the requestor's responsibility to ensure that `otherValue` is already a whole number.
   static func snap(_ value: CGFloat, to otherValue: CGFloat) -> CGFloat {
-    if abs(value - otherValue) < 2 {
+    if abs(value - otherValue) <= 2 {
       return otherValue
     } else {
       return round(value)
@@ -501,14 +502,22 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     if videoWidth <= usableViewportSize.width {  // video aspect is taller than viewport: shrink its width
       videoSize = NSSize(width: videoWidth, height: usableViewportSize.height)
     } else {  // video is wider, shrink to meet width
-      let videoHeight = snap(usableViewportSize.width / videoAspect, to: usableViewportSize.height)
       // Make sure to end up with whole numbers here! Decimal values can be interpreted differently by
       // mpv, Core Graphics, AppKit, which will cause animation glitches
+      let videoHeight = snap(usableViewportSize.width / videoAspect, to: usableViewportSize.height)
       videoSize = NSSize(width: usableViewportSize.width, height: videoHeight)
     }
 
+#if DEBUG
+    let sumViewportSize = CGSize(width: minMargins.totalWidth + videoSize.width,
+                                 height: minMargins.totalHeight + videoSize.height)
+    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
+           ((sumViewportSize.width <= viewportSize.width) && (sumViewportSize.height <= viewportSize.height)),
+           "videoSize \(videoSize) + minMargins \(minMargins) → sum: \(sumViewportSize) > viewportSize \(viewportSize)")
+
     assert((usableViewportSize.width - videoSize.width >= 0) && (usableViewportSize.height - videoSize.height >= 0),
            "videoSize \(videoSize) cannot be larger than usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
+#endif
     return videoSize
   }
 
@@ -1177,6 +1186,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       return self
     }
 
+    /// Note that rounding here can cause calculations to differ by up to 2 pixels.
+    /// The `PWinGeometry` contstructor should account for this via its `snap` method.
     let cropRectScaledToWindow = NSRect(x: round(cropRect.origin.x * scaleRatio),
                                         y: round(cropRect.origin.y * scaleRatio),
                                         width: round(cropRect.width * scaleRatio),
@@ -1197,7 +1208,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                         bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)) → newVideoSize:\(cropRectScaledToWindow), newViewportMargins:\(newViewportMargins)")
+    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)) → newVideoSize:\(cropRectScaledToWindow.size), newViewportMargins:\(newViewportMargins)")
     let newFitOption = self.fitOption == .centerInside ? .stayInside : self.fitOption
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), fitOption: \(newFitOption)")
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)

@@ -111,14 +111,21 @@ class CropSettingsViewController: CropBoxViewController {
       player.removeCrop()
       windowController.exitInteractiveMode()
     } else {
-      player.log.verbose("Submitting from interactive mode with new crop")
-      let newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
-
-      guard let newCropLabel = player.deriveCropLabel(from: newCropFilter) else {
-        player.log.error("Could not generate crop label from the newly created filter!")
-        return
-      }
       player.mpv.queue.async { [self] in
+        let newCropFilter: MPVFilter
+        if player.videoGeo.codecRotation == 0 {
+          newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
+          player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
+        } else {
+          // FIXME: account for codec rotation
+          newCropFilter = MPVFilter.crop(w: self.cropw, h: self.croph, x: self.cropx, y: self.cropy)
+          player.log.verbose("Submitting from interactive mode with new crop: (\(self.cropx), \(self.cropy)), \(self.cropw) x \(self.croph)")
+        }
+
+        guard let newCropLabel = player.deriveCropLabel(from: newCropFilter) else {
+          player.log.error("Could not generate crop label from the newly created filter!")
+          return
+        }
         let newVidGeo = player.videoGeo.clone(selectedCropLabel: newCropLabel)
         DispatchQueue.main.async { [self] in
           windowController.exitInteractiveMode(newVidGeo: newVidGeo)
