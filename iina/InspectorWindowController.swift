@@ -189,7 +189,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
           MPVProperty.containerFps: self.vfpsField,
           MPVProperty.currentVo: self.voField,
           MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
-          MPVProperty.currentAo: self.aoField,
           MPVProperty.audioParamsFormat: self.aformatField,
           MPVProperty.audioParamsChannels: self.achannelsField,
           MPVProperty.audioBitrate: self.abitrateField,
@@ -262,7 +261,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
         MPVProperty.mistimedFrameCount: self.mistimedFramesField,
         MPVProperty.displayFps: self.displayFPSField,
         MPVProperty.estimatedVfFps: self.voFPSField,
-        MPVProperty.estimatedDisplayFps: self.edispFPSField
+        MPVProperty.estimatedDisplayFps: self.edispFPSField,
+        MPVProperty.currentAo: self.aoField,
       ]
 
       for (k, v) in dynamicStrProperties {
