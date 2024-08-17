@@ -135,7 +135,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var isClosing: Bool {
-    return player.status.rawValue >= PlayerCore.LifecycleState.stopping.rawValue
+    return player.status.isAtLeast(.stopping)
   }
 
   var isWindowMiniaturizedDueToPip = false
@@ -1303,9 +1303,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Returns true if handled
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
-    if let menuItem = keyBinding.menuItem {
-      log.error("Key binding is attached to menu item: \(menuItem.title.quoted). Assuming it is disabled since it was not handled by MenuController")
-      return false
+    if let menuItem = keyBinding.menuItem, let action = menuItem.action {
+      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Call it manually")
+      NSApp.sendAction(action, to: self, from: menuItem)
+      return true
     }
 
     // Some script bindings will draw to the video area. We don't know which will, but
@@ -1375,12 +1376,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             return true
           }
 
-          // beep if cmd failed
           return handleKeyBinding(keyBinding)
         }
         return false
       }, defaultHandler: {
-        // invalid key
+        // invalid key: beep if cmd failed
         super.keyDown(with: event)
       })
   }
@@ -2530,7 +2530,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     animationPipeline.submitInstantTask { [self] in
       guard let window else { return }
       guard !isClosing else { return }
-      log.verbose("Window became key: \(window.savedStateName.quoted)")
 
       if Preference.bool(for: .pauseWhenInactive) && isPausedDueToInactive {
         log.verbose("Window is key & isPausedDueToInactive=Y. Resuming playback")
@@ -2573,7 +2572,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         customTitleBar.refreshTitle()
       }
 
-      if window.isKeyWindow {
+      let isKey = window.isKeyWindow
+      log.verbose("Window isKey: \(isKey.yn)")
+      if isKey {
         PlayerCore.lastActive = player
 
         if RemoteCommandController.useSystemMediaControl {

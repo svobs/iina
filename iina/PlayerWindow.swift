@@ -103,19 +103,24 @@ class PlayerWindow: NSWindow {
     playerWinController?.updateUI()  // Call explicitly to make sure it gets attention
 
     /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
-    /// MacOS quirk? Obscure feature? Note that this workaround does not consult `PluginInputManager` because its callback
-    /// mechanism doesn't support returning a status. Must revisit if IINA plugins ever get traction.
-    if let playerWinController, event.modifierFlags.contains(.control),
-       let keyBinding = playerWinController.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+    /// MacOS quirk? Obscure feature? A user has also demonstrated a case where `Space` is ignored. It looks like bindings which don't
+    /// use the command key are sometimes unreliable.
+    /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
+    /// before the menu.
+    if let playerWinController, !event.modifierFlags.contains(.command) {
+      // FIXME: this doesn't go through PluginInputManager because it doesn't return synchronously. Need to refactor that!
+      let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+      let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+      log.verbose("KEYDOWN (via keyEquiv): \(normalizedKeyCode.quoted)")
+      if let keyBinding = playerWinController.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+        guard !keyBinding.isIgnored else {
+          // if "ignore", just swallow the event. Do not forward; do not beep
+          log.verbose("Binding is ignored for key: \(keyCode.quoted)")
+          return true
+        }
 
-      guard !keyBinding.isIgnored else {
-        // if "ignore", just swallow the event. Do not forward; do not beep
-        self.log.verbose("Binding is ignored for key: \(keyBinding.rawKey.quoted)")
-        return true
+        return playerWinController.handleKeyBinding(keyBinding)
       }
-
-      // beep if cmd failed
-      return playerWinController.handleKeyBinding(keyBinding)
     }
     let didHandle = super.performKeyEquivalent(with: event)
     return didHandle
