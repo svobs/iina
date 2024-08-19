@@ -130,6 +130,7 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
     window?.isMovableByWindowBackground = true
 
+    appIcon.unregisterDraggedTypes()
     window?.contentView?.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
 
     mainView.wantsLayer = true
