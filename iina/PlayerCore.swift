@@ -3404,8 +3404,12 @@ class PlayerCore: NSObject {
 
   func postFileHistoryUpdateNotification() {
     guard let url = info.currentURL else { return }
-    let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
-    NotificationCenter.default.post(note)
+    // Launch async to prevent deadlock - we don't know what thread we are coming from
+    DispatchQueue.main.async {
+      guard !AppDelegate.shared.isTerminating else { return }
+      let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
+      NotificationCenter.default.post(note)
+    }
   }
 
   // MARK: - Utils

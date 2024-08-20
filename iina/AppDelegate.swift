@@ -1214,8 +1214,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard allPlayersShutdown && didSubtitleSvcLogOut else { return }
       // All players have shutdown. No longer logged into an online subtitles provider.
 
+      Logger.log.debug("Suspending History queue")
       HistoryController.shared.queue.sync {
-        Logger.log.debug("Suspending History queue")
         HistoryController.shared.queue.suspend()
       }
 

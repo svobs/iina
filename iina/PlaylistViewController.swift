@@ -192,6 +192,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
 
     fileHistoryUpdateObserver = NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
+      guard !AppDelegate.shared.isTerminating else { return }
       guard let url = note.userInfo?["url"] as? URL else {
         player.log.error("Cannot update file history: no url found in userInfo!")
         return
