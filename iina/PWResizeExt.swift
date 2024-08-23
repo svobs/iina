@@ -102,16 +102,16 @@ extension PlayerWindowController {
         let didRotate = oldVidGeo.totalRotation != newVidGeo.totalRotation
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
-        self.tasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
+        pendingVideoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
                                               showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
-          tasks.append(.instantTask(doAfter))
+          pendingVideoGeoUpdateTasks.append(.instantTask(doAfter))
         }
 
         if case .notApplicable = state {
-          animationPipeline.submit(tasks)
-          tasks = []
+          animationPipeline.submit(pendingVideoGeoUpdateTasks)
+          pendingVideoGeoUpdateTasks = []
         }
       }
     }

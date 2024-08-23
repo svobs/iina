@@ -94,6 +94,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   let animationPipeline = IINAAnimation.Pipeline()
 
+  /// Need to store this for use by `showWindow` when it is called asynchronously
+  var pendingVideoGeoUpdateTasks: [IINAAnimation.Task] = []
+
   // MARK: - Status variables
 
   var isAnimating: Bool {
@@ -1989,7 +1992,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("PlayerWindow openWindow done")
   }
 
-   var tasks: [IINAAnimation.Task] = []
   override func showWindow(_ sender: Any?) {
     guard player.status.isNotYet(.stopping) else {
       log.verbose("Aborting showWindow - player is stopping")
@@ -2006,8 +2008,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         self.window?.isExcludedFromWindowsMenu = false
         self.forceDraw()  // needed if restoring while paused
       })
-      self.animationPipeline.submit(self.tasks)
-      self.tasks = []
+      self.animationPipeline.submit(self.pendingVideoGeoUpdateTasks)
+      self.pendingVideoGeoUpdateTasks = []
     }
   }
 
