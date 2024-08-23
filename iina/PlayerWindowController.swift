@@ -2057,9 +2057,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // Update frame since it may have moved
         windowedModeGeo = windowedGeoForCurrentFrame()
       }
-      // The user may expect both to be updated
-      PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
-      PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
+
+      // CLOSE SIDEBARS for reopen
+      let currentLayout = currentLayout
+      let newLayoutSpec = currentLayout.spec.clone(leadingSidebar: currentLayout.leadingSidebar.clone(visibility: .hide),
+                                               trailingSidebar: currentLayout.trailingSidebar.clone(visibility: .hide))
+      let resetTransition = buildLayoutTransition(named: "ResetWindowOnClose", from: currentLayout, to: newLayoutSpec, totalStartingDuration: 0, totalEndingDuration: 0)
+      // Just like at window restore, do all the layout in one block
+      animationPipeline.submit(.instantTask { [self] in
+        do {
+          for task in resetTransition.tasks {
+            try task.runFunc()
+          }
+
+          // The user may expect both to be updated
+          PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
+          PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
+        } catch {
+          log.error("Failed to run reset layout tasks: \(error)")
+        }
+      })
     }
 
     if player.info.isRestoring {
