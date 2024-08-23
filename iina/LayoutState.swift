@@ -201,6 +201,11 @@ extension PlayerWindowController {
                         interactiveMode: interactiveMode ?? self.interactiveMode)
     }
 
+    func withSidebarsHidden() -> LayoutSpec {
+      return clone(leadingSidebar: leadingSidebar.clone(visibility: .hide),
+                   trailingSidebar: trailingSidebar.clone(visibility: .hide))
+    }
+
     var isInteractiveMode: Bool {
       return mode.isInteractiveMode
     }

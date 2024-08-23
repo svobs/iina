@@ -151,6 +151,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                                   minViewportMargins: viewportMargins, mode: mode)
     assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected videoSize width & height >= 0, found \(videoSize)")
     self.videoSize = videoSize
+    // FIXME: use best viewport margins
+
     self.viewportMargins = viewportMargins ?? PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                                       insideBars: insideBars, mode: mode)
     self.video = video
@@ -936,9 +938,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                        keepFullScreenDimensions: Bool = false) -> PWinGeometry {
 
     let newInsideBars = MarginQuad(top: insideTop ?? insideBars.top,
-                                    trailing: insideTrailing ?? insideBars.trailing,
-                                    bottom: insideBottom ?? insideBars.bottom,
-                                    leading: insideLeading ?? insideBars.leading)
+                                   trailing: insideTrailing ?? insideBars.trailing,
+                                   bottom: insideBottom ?? insideBars.bottom,
+                                   leading: insideLeading ?? insideBars.leading)
     // Inside bars
     let resizedInsideBarsGeo = clone(fitOption: fitOption, mode: mode, insideBars: newInsideBars, video: video)
 

@@ -2035,8 +2035,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     isInitialSizeDone = false  // reset for reopen
 
     // stop tracking mouse event
-    guard let window, let contentView = window.contentView else { return }
-    contentView.trackingAreas.forEach(contentView.removeTrackingArea)
+    if let window, let contentView = window.contentView {
+      contentView.trackingAreas.forEach(contentView.removeTrackingArea)
+    }
     playSlider.trackingAreas.forEach(playSlider.removeTrackingArea)
 
     hideOSD(immediately: true)
@@ -2058,7 +2059,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       PlayerWindowController.windowedModeGeoLastClosed = windowedModeGeo
       PlayerWindowController.musicModeGeoLastClosed = musicModeGeo
     }
-    lastWindowedLayoutSpec = LayoutSpec.defaultLayout()
 
     if player.info.isRestoring {
       log.debug("Discarding unfinished restore of window")

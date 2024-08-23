@@ -327,8 +327,7 @@ extension PlayerWindowController {
 
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
-      let newLayoutSpec = oldLayout.spec.clone(leadingSidebar: oldLayout.leadingSidebar.clone(visibility: .hide),
-                                               trailingSidebar: oldLayout.trailingSidebar.clone(visibility: .hide))
+      let newLayoutSpec = oldLayout.spec.withSidebarsHidden()
       let transition = buildLayoutTransition(named: "HideAllSidebars", from: oldLayout, to: newLayoutSpec, totalEndingDuration: 0)
 
       if animate {

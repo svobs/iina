@@ -187,7 +187,6 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   // MARK: - UI
   private func updateTableButtonVisibilities() {
     let isSelectedConfReadOnly = confTableState.isSelectedConfReadOnly
-    Logger.log("Updating editEnabledStatus to \(!isSelectedConfReadOnly)", level: .verbose)
     [deleteConfFileBtn, addBindingBtn].forEach { btn in
       btn?.isHidden = isSelectedConfReadOnly
     }

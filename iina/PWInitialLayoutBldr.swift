@@ -268,7 +268,7 @@ extension PlayerWindowController {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else {
-      /// Use `minVideoSize` at first when a new window is opened, so that when `resizeWindowAfterVideoReconfig()` is called shortly after,
+      /// Use `minVideoSize` at first when a new window is opened, so that when `applyVideoGeoTransform()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
       let viewportSize = PWinGeometry.computeMinSize(withAspect: videoGeo.videoViewAspect,
                                                      minWidth: Constants.WindowedMode.minViewportSize.width,
