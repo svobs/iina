@@ -678,25 +678,29 @@ class PlayerCore: NSObject {
   func stop() {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard status.isNotYet(.stopping) else {
-      log.debug("Stop called, but status is already \(status); aborting redundant stop call")
-      return
-    }
-    status = .stopping
-
-    // If the user immediately closes the player window it is possible the background task may still
-    // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
-    $backgroundQueueTicket.withLock { $0 += 1 }
-    $thumbnailQueueTicket.withLock { $0 += 1 }
-
-    videoView.stopDisplayLink()
-
     mpv.queue.async { [self] in
+      guard status.isNotYet(.stopping) else {
+        log.debug("Stop called, but status is already \(status); aborting redundant stop call")
+        return
+      }
+
       log.verbose("Stop called")
 
       stopWatchingSubFile()
 
+      /// call this BEFORE setting status to `.stopping`
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
+
+      status = .stopping
+
+      DispatchQueue.main.async { [self] in
+        videoView.stopDisplayLink()
+      }
+
+      // If the user immediately closes the player window it is possible the background task may still
+      // be working to load subtitles. Invalidate the ticket to get that task to abandon the work.
+      $backgroundQueueTicket.withLock { $0 += 1 }
+      $thumbnailQueueTicket.withLock { $0 += 1 }
 
       // Reset playback state
       info.videoPosition = nil
