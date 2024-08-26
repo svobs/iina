@@ -53,14 +53,13 @@ extension PlayerWindowController {
     }
 
     var needsFadeOutOldViews: Bool {
-      return !isExitingMusicMode &&
-      (isTogglingLegacyStyle || isTopBarPlacementChanging
+      return isTogglingLegacyStyle || isTopBarPlacementChanging
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.bottomBarPlacement == .insideViewport && outputLayout.bottomBarPlacement == .outsideViewport)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
       || (inputLayout.leadingSidebarToggleButton.isShowable && !outputLayout.leadingSidebarToggleButton.isShowable)
-      || (inputLayout.trailingSidebarToggleButton.isShowable && !outputLayout.trailingSidebarToggleButton.isShowable))
+      || (inputLayout.trailingSidebarToggleButton.isShowable && !outputLayout.trailingSidebarToggleButton.isShowable)
     }
 
     var needsFadeInNewViews: Bool {

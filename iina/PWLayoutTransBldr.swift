@@ -35,7 +35,7 @@ extension PlayerWindowController {
       $0 += 1
       transitionID = $0
     }
-    let transitionName = "\(transitionName)-\(transitionID)"
+    let transitionName = "#\(transitionID) \(transitionName)"
 
     // This also applies to full screen, because full screen always uses the same screen as windowed.
     // Does not apply to music mode, which can be a different screen.
