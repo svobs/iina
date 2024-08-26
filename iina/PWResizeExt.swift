@@ -10,20 +10,23 @@ import Foundation
 
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
-
-  struct VideoGeoTransformInput {
-    let playback: Playback
-    let windowState: WindowStateAtFileOpen
-    let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
-
-    let showDefaultArt: Bool
-    let doAfter: (() -> Void)?
-
-    let inputLayout: LayoutState
-    let outputLayout: LayoutState
+/*
+  /// Encapsulates all the info needed to transition the window from `inputGeo` to `outputGeo`
+  struct VideoGeoTransition {
+    /// Name of transition. For debug logging.
+    let name: String
 
     let inputGeo: VideoGeometry
     let outputGeo: VideoGeometry
+    let showDefaultArt: Bool?
+
+    let doAfter: (() -> Void)?
+
+    // Other state which affects output:
+
+    let playback: Playback
+    let windowState: WindowStateAtFileOpen
+    let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
 
     var isRotating: Bool {
       inputGeo.totalRotation != outputGeo.totalRotation
@@ -32,7 +35,7 @@ extension PlayerWindowController {
     var needsToReloadThumbnails: Bool {
       outputGeo.totalRotation != playback.thumbnails?.rotationDegrees
     }
-  }
+  }*/
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
