@@ -163,6 +163,8 @@ class ThumbnailCache {
 
     ThumbnailCacheManager.shared.needsRefresh = true
     log.debug("Finished writing to: \(path.pii.quoted)")
+
+    NotificationCenter.default.post(Notification(name: .iinaThumbnailCacheDidUpdate, object: nil, userInfo: nil))
   }
 
   /// Read thumbnail cache to file.
@@ -220,6 +222,7 @@ class ThumbnailCache {
     // try deleting corrupted cache
     do {
       try FileManager.default.removeItem(at: pathURL)
+      NotificationCenter.default.post(Notification(name: .iinaThumbnailCacheDidUpdate, object: nil, userInfo: nil))
     } catch {
       log.error("Cannot delete corrupted cache: \(pathURL.absoluteString.pii.quoted)")
     }

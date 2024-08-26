@@ -316,6 +316,7 @@ extension Notification.Name {
   static let iinaHistoryUpdated = Notification.Name("IINAHistoryUpdated")
   /// Similar to `iinaHistoryUpdated` but for a single file
   static let iinaFileHistoryDidUpdate = Notification.Name("IINAFileHistoryDidUpdate")
+  static let iinaThumbnailCacheDidUpdate = Notification.Name("IINAThumbnailCacheDidUpdate")
   static let iinaLegacyFullScreen = Notification.Name("IINALegacyFullScreen")
   static let iinaPluginChanged = Notification.Name("IINAPluginChanged")
   static let iinaPlayerStopped = Notification.Name("iinaPlayerStopped")

@@ -73,13 +73,16 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
     observers.append(NotificationCenter.default.addObserver(forName: .recentDocumentsDidChange, object: nil,
                                                             queue: .main, using: self.refreshRecentDocumentsCount(_:)))
 
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaThumbnailCacheDidUpdate, object: nil,
+                                                            queue: .main, using: self.reloadThumbnailCacheStat(_:)))
+
     let dummy = Notification(name: .recentDocumentsDidChange)
     refreshSavedLaunchSummary(dummy)
     reloadHistoryCount(dummy)
     reloadWatchLaterOptions(dummy)
     reloadWatchLaterCount(dummy)
     refreshRecentDocumentsCount(dummy)
-    reloadThumbnailCacheStat()
+    reloadThumbnailCacheStat(dummy)
   }
 
   override func viewWillDisappear() {
@@ -161,7 +164,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   // TODO: this is expensive. Add throttling
-  private func reloadThumbnailCacheStat() {
+  private func reloadThumbnailCacheStat(_ notification: Notification) {
     AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
       let cacheSize = ThumbnailCacheManager.shared.getCacheSize()
       let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: cacheSize, countStyle: .binary))B"
@@ -211,7 +214,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
       guard respond == .alertFirstButtonReturn else { return }
       try? FileManager.default.removeItem(atPath: Utility.thumbnailCacheURL.path)
       Utility.createDirIfNotExist(url: Utility.thumbnailCacheURL)
-      reloadThumbnailCacheStat()
+      reloadThumbnailCacheStat(Notification(name: .iinaThumbnailCacheDidUpdate))
     }
   }
 
