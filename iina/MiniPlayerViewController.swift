@@ -1,5 +1,5 @@
 //
-//  MiniPlayerController.swift
+//  MiniPlayerViewController.swift
 //  iina
 //
 //  Created by lhc on 30/7/2017.
@@ -8,10 +8,10 @@
 
 import Cocoa
 
-class MiniPlayerController: NSViewController, NSPopoverDelegate {
+class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   override var nibName: NSNib.Name {
-    return NSNib.Name("MiniPlayerController")
+    return NSNib.Name("MiniPlayerViewController")
   }
 
   @objc let monospacedFont: NSFont = {
@@ -403,9 +403,9 @@ class MiniPlayerController: NSViewController, NSPopoverDelegate {
       if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
         log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
         requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
-      } else if requestedSize.width > MiniPlayerController.maxWindowWidth {
-        log.verbose("WindowWillResize: constraining to max width \(MiniPlayerController.maxWindowWidth)")
-        requestedSize = NSSize(width: MiniPlayerController.maxWindowWidth, height: requestedSize.height)
+      } else if requestedSize.width > MiniPlayerViewController.maxWindowWidth {
+        log.verbose("WindowWillResize: constraining to max width \(MiniPlayerViewController.maxWindowWidth)")
+        requestedSize = NSSize(width: MiniPlayerViewController.maxWindowWidth, height: requestedSize.height)
       }
 
       let requestedWindowFrame = NSRect(origin: window.frame.origin, size: requestedSize)

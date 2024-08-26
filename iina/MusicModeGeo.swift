@@ -181,7 +181,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
       maxVideoHeight = max(maxVideoHeight, round(Constants.Distance.MusicMode.minWindowWidth / videoAspect))
       maxWidth = round(maxVideoHeight * videoAspect)
     } else {
-      maxWidth = MiniPlayerController.maxWindowWidth
+      maxWidth = MiniPlayerViewController.maxWindowWidth
     }
     maxWidth = min(maxWidth, containerFrame.width)
 
@@ -236,7 +236,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
 
     // Constrain desired width within min and max allowed, then recalculate height from new value
     newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
-    newVideoWidth = min(newVideoWidth, MiniPlayerController.maxWindowWidth)
+    newVideoWidth = min(newVideoWidth, MiniPlayerViewController.maxWindowWidth)
     newVideoWidth = min(newVideoWidth, containerFrame.width)
 
     var newVideoHeight: CGFloat = 0

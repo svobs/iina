@@ -76,11 +76,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** The playlist and chapter sidebar. */
   let playlistView = PlaylistViewController()
 
-  /// The music player panel
+  /// The music player panel.
   ///
-  /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, also the
+  /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, the
   /// playlist.
-  var miniPlayer: MiniPlayerController!
+  var miniPlayer: MiniPlayerViewController!
 
   /** The control view for interactive mode. */
   var cropSettingsView: CropBoxViewController?
@@ -300,7 +300,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Falling back to default music mode geometry",
                level: .debug)
     let defaultScreen = NSScreen.screens[0]
-    let defaultGeo = MiniPlayerController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
+    let defaultGeo = MiniPlayerViewController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
                                                                           video: VideoGeometry.defaultGeometry())
     return defaultGeo
   }() {
@@ -909,7 +909,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("PlayerWindow windowDidLoad starting")
     super.windowDidLoad()
 
-    miniPlayer = MiniPlayerController()
+    miniPlayer = MiniPlayerViewController()
     miniPlayer.windowController = self
 
     viewportView.player = player
