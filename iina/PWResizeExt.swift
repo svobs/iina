@@ -11,6 +11,29 @@ import Foundation
 /// `PlayerWindowController` geometry functions
 extension PlayerWindowController {
 
+  struct VideoGeoTransformInput {
+    let playback: Playback
+    let windowState: WindowStateAtFileOpen
+    let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
+
+    let showDefaultArt: Bool
+    let doAfter: (() -> Void)?
+
+    let inputLayout: LayoutState
+    let outputLayout: LayoutState
+
+    let inputGeo: VideoGeometry
+    let outputGeo: VideoGeometry
+
+    var isRotating: Bool {
+      inputGeo.totalRotation != outputGeo.totalRotation
+    }
+
+    var needsToReloadThumbnails: Bool {
+      outputGeo.totalRotation != playback.thumbnails?.rotationDegrees
+    }
+  }
+
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
                               fileJustOpened: Bool = false,

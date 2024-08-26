@@ -430,7 +430,7 @@ class PlayerCore: NSObject {
 
       DispatchQueue.main.async { [self] in
         if !info.isRestoring {
-          windowController.clearOSDQueue()
+          windowController.osd.clearQueuedOSDs()
         }
         windowController.openWindow(nil)
 
@@ -2741,7 +2741,7 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submitInstantTask { [self] in
         // Check status so that we don't duplicate work
-        if info.isLoadedAndSized {
+        if info.isFileLoadedAndSized {
           windowController.updateDefaultArtVisibility(to: showDefaultArt)
         }
 
@@ -3131,8 +3131,8 @@ class PlayerCore: NSObject {
 
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
-    /// Check `isLoadedAndSized` early to prevent race condition
-    let disableOSDForFileLoading: Bool = !info.isLoadedAndSized
+    /// Check `isFileLoadedAndSized` early to prevent race condition
+    let disableOSDForFileLoading: Bool = !info.isFileLoadedAndSized
     if disableOSDForFileLoading && !external {
       switch msg {
       case .fileStart, .resumeFromWatchLater:

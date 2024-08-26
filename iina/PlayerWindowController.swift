@@ -32,8 +32,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return player.videoView
   }
 
-  var loaded = false
-
   @objc let monospacedFont: NSFont = {
     let fontSize = NSFont.systemFontSize(for: .small)
     return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
@@ -112,12 +110,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var isOnTop: Bool = false
 
-  // TODO: window states: .notYetLoaded, .willOpen, .openVisible, .openHidden, .openMiniturized, .closing
-
+  // TODO: replace these vars with window state var: .notYetLoaded, .loadedButClosed, .willOpen, .openVisible, .openDragging,
+  // .openMagnifying, .openLiveResizingWidth, .openLiveResizingHeight, .openHidden, .openMiniturized, .openInFullScreen, .closing
+  var loaded = false  // TODO: -> .isAtLeast(.loadedButClosed)
   var isInitialSizeDone = false // TODO: -> willOpen
   var isWindowMiniturized = false
-
   private(set) var isWindowHidden = false
+  var isDragging: Bool = false
+  var isLiveResizingWidth: Bool? = nil
 
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
@@ -136,6 +136,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
     return isVisible || isMinimized
   }
+  var isMagnifying = false
 
   var isClosing: Bool {
     return player.status.isAtLeast(.stopping)
@@ -144,7 +145,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var isWindowMiniaturizedDueToPip = false
   var isWindowPipDueToInactiveSpace = false
 
-  var isMagnifying = false
   var denyNextWindowResize = false
   var modeToSetAfterExitingFullScreen: PlayerWindowMode? = nil
 
@@ -158,8 +158,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // - Mouse
 
   var mousePosRelatedToWindow: CGPoint?
-  var isDragging: Bool = false
-  var isLiveResizingWidth: Bool? = nil
 
   // might use another obj to handle slider?
   var isMouseInWindow: Bool = false
@@ -206,37 +204,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // - OSD
 
-  /// Whether current OSD needs user interaction to be dismissed.
-  var isShowingPersistentOSD = false
-  var osdAnimationState: UIAnimationState = .hidden
-  var hideOSDTimer: Timer?
-  var osdNextSeekIcon: NSImage? = nil
-  var osdCurrentSeekIcon: NSImage? = nil
-  var osdLastPlaybackPosition: Double? = nil
-  var osdLastPlaybackDuration: Double? = nil
-  private var osdLastDisplayedMsgTS: TimeInterval = 0
-  var osdLastDisplayedMsg: OSDMessage? = nil {
-    didSet {
-      guard osdLastDisplayedMsg != nil else { return }
-      osdLastDisplayedMsgTS = Date().timeIntervalSince1970
-    }
-  }
-  func osdDidShowLastMsgRecently() -> Bool {
-    return Date().timeIntervalSince1970 - osdLastDisplayedMsgTS < 0.25
-  }
-  // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
-  var osdContext: NSViewController? = nil {
-    didSet {
-      if let osdContext {
-        log.verbose("Updated osdContext to: \(osdContext)")
-      } else {
-        log.verbose("Updated osdContext to: nil")
-      }
-    }
-  }
-  var osdTextSizeLast: CGFloat = 0
-  let osdQueueLock = Lock()
-  var osdQueue = LinkedList<() -> Void>()
+  var osd: OSDState
 
   // - Window Layout State
 
@@ -590,9 +558,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     case PK.osdAutoHideTimeout.rawValue, PK.enableControlBarAutoHide.rawValue:
       if let newTimeout = change[.newKey] as? Double {
-        if osdAnimationState == .shown, let hideOSDTimer = hideOSDTimer, hideOSDTimer.isValid {
+        if osd.animationState == .shown, let hideOSDTimer = osd.hideOSDTimer, hideOSDTimer.isValid {
           // Reschedule timer to prevent prev long timeout from lingering
-          self.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(newTimeout), target: self,
+          osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(newTimeout), target: self,
                                                    selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
         }
       }
@@ -921,6 +889,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   init(playerCore: PlayerCore) {
     self.player = playerCore
+    self.osd = OSDState(log: playerCore.log)
     self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
                            video: VideoGeometry.defaultGeometry(playerCore.log))
@@ -2013,7 +1982,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  /// Do not use the offical `NSWindowDelegate` method. This method will be called be the global window listener.
+  /// Do not use the offical `NSWindowDelegate` method. This method will be called by the global window listener.
   func windowWillClose() {
     log.verbose("Window will close")
     defer {
@@ -2048,8 +2017,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     isWindowMiniturized = false
     player.overrideAutoMusicMode = false
 
-    /// Use `!player.info.isLoadedAndSized` to prevent saving if there was an error loading video
-    if player.info.isLoadedAndSized {
+    /// Use `!player.info.isFileLoadedAndSized` to prevent saving if there was an error loading video
+    if player.info.isFileLoadedAndSized {
       /// Prepare window for possible reuse: restore default geometry, close sidebars, etc.
       if currentLayout.mode == .musicMode {
         musicModeGeo = musicModeGeoForCurrentFrame()
@@ -2088,7 +2057,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     player.mpv.queue.async { [self] in
       player.info.currentPlayback = nil
-      clearOSDQueue()
+      osd.clearQueuedOSDs()
     }
   }
 
@@ -2333,9 +2302,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         videoView.apply(newGeometry)
 
         // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
-        if osdAnimationState == .shown {
+        if osd.animationState == .shown {
           updateOSDTextSize(from: newGeometry)
-          if player.info.isLoadedAndSized {
+          if player.info.isFileLoadedAndSized {
             setOSDViews()
           }
         }
@@ -2365,7 +2334,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       videoView.apply(newGeometry)
     }
 
-    if osdAnimationState == .shown, player.info.isLoadedAndSized {
+    if osd.animationState == .shown, player.info.isFileLoadedAndSized {
       updateOSDTextSize(from: newGeometry)
       setOSDViews()
     }
@@ -2680,13 +2649,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - UI: Show / Hide Fadeable Views
 
   func isUITimerNeeded() -> Bool {
-//    log.verbose("Checking if UITimer needed. hasPermanentOSC:\(currentLayout.hasPermanentOSC.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osdAnimationState)")
+//    log.verbose("Checking if UITimer needed. hasPermanentOSC:\(currentLayout.hasPermanentOSC.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osd.animationState)")
     if currentLayout.hasPermanentOSC {
       return true
     }
     let showingFadeableViews = fadeableViewsAnimationState == .shown || fadeableViewsAnimationState == .willShow
     let showingFadeableTopBar = fadeableTopBarAnimationState == .shown || fadeableViewsAnimationState == .willShow
-    let showingOSD = osdAnimationState == .shown || osdAnimationState == .willShow
+    let showingOSD = osd.animationState == .shown || osd.animationState == .willShow
     return showingFadeableViews || showingFadeableTopBar || showingOSD
   }
 
@@ -3352,11 +3321,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
-    if isInitialSizeDone && player.info.isLoadedAndSized {
+    if isInitialSizeDone && player.info.isFileLoadedAndSized {
       // Run all tasks in the OSD queue until it is depleted
-      osdQueueLock.withLock {
-        while !osdQueue.isEmpty {
-          if let taskFunc = osdQueue.removeFirst() {
+      osd.queueLock.withLock {
+        while !osd.queue.isEmpty {
+          if let taskFunc = osd.queue.removeFirst() {
             taskFunc()
           }
         }

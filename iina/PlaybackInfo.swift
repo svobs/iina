@@ -49,7 +49,7 @@ class PlaybackInfo {
     return currentPlayback?.isFileLoaded ?? false
   }
 
-  var isLoadedAndSized: Bool {
+  var isFileLoadedAndSized: Bool {
     return currentPlayback?.state.isAtLeast(.loadedAndSized) ?? false
   }
 

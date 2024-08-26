@@ -663,8 +663,8 @@ struct PlayerSaveState {
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
-    windowController.osdLastPlaybackPosition = info.videoPosition?.second
-    windowController.osdLastPlaybackDuration = info.videoDuration?.second
+    windowController.osd.lastPlaybackPosition = info.videoPosition?.second
+    windowController.osd.lastPlaybackDuration = info.videoDuration?.second
 
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy

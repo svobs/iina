@@ -53,7 +53,7 @@ extension PlayerWindowController {
       }
 
       let newGeoSet = configureFromRestore(priorState, initialLayout)
-      tasks = buildTransitionTasks(for: initialLayout, newGeoSet,
+      tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet,
                                    isRestoringFromPrevLaunch: isRestoring,
                                    needsNativeFullScreen: needsNativeFullScreen)
 
@@ -98,7 +98,7 @@ extension PlayerWindowController {
       initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       let newGeoSet = configureFromPrefs(initialLayout, newVidGeo)
 
-      tasks = buildTransitionTasks(for: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
+      tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
       Logger.fatal("Invalid WindowStateAtFileOpen state: \(windowState)")
@@ -158,7 +158,8 @@ extension PlayerWindowController {
     return (initialLayout, tasks)
   }
 
-  private func buildTransitionTasks(for initialLayout: LayoutState, _ newGeoSet: GeometrySet,
+  /// Generates animation tasks to adjust the window layout appropriately for a newly opened file.
+  private func buildTransitionTasks(from inputLayout: LayoutState, to outputLayout: LayoutState, _ newGeoSet: GeometrySet,
                                     isRestoringFromPrevLaunch: Bool, needsNativeFullScreen: Bool) -> [IINAAnimation.Task] {
 
     var tasks: [IINAAnimation.Task] = []
@@ -167,11 +168,11 @@ extension PlayerWindowController {
     isAnimatingLayoutTransition = true
 
     // Send GeometrySet object to builder so that it doesn't default to current window frame
-    log.verbose("Setting initial \(initialLayout.spec), windowedModeGeo=\(newGeoSet.windowed), musicModeGeo=\(newGeoSet.musicMode)")
+    log.verbose("Setting initial \(outputLayout.spec), windowedModeGeo=\(newGeoSet.windowed), musicModeGeo=\(newGeoSet.musicMode)")
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: initialLayout.spec, isInitialLayout: true, newGeoSet)
+                                                  from: currentLayout, to: outputLayout.spec, isInitialLayout: true, newGeoSet)
 
     tasks.append(.instantTask { [self] in
 
@@ -187,14 +188,14 @@ extension PlayerWindowController {
       }
 
       if !isRestoringFromPrevLaunch {
-        if initialLayout.mode == .windowed {
+        if outputLayout.mode == .windowed {
           player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
 
           // Set window opacity to 0 initially to start fade-in effect
-          updateCustomBorderBoxAndWindowOpacity(using: initialLayout, windowOpacity: 0.0)
+          updateCustomBorderBoxAndWindowOpacity(using: outputLayout, windowOpacity: 0.0)
         }
 
-        if !initialLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
+        if !outputLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
           log.verbose("Setting window OnTop=Y per app pref")
           setWindowFloatingOnTop(true)
         }
@@ -214,8 +215,8 @@ extension PlayerWindowController {
     if isRestoringFromPrevLaunch {
       /// Stored window state may not be consistent with global IINA prefs.
       /// To check this, build another `LayoutSpec` from the global prefs, then compare it to the player's.
-      let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: initialLayout.spec)
-      if initialLayout.spec.hasSamePrefsValues(as: prefsSpec) {
+      let prefsSpec = LayoutSpec.fromPreferences(fillingInFrom: outputLayout.spec)
+      if outputLayout.spec.hasSamePrefsValues(as: prefsSpec) {
         log.verbose("Saved layout is consistent with IINA global prefs")
       } else {
         // Not consistent. But we already have the correct spec, so just build a layout from it and transition to correct layout
