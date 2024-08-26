@@ -208,9 +208,9 @@ extension PlayerWindowController {
     if needToHideTopBar || outputLayout.titlebarAccessoryViewControllers == .hidden {
       // Hide all title bar accessories (if needed):
       leadingTitleBarAccessoryView.alphaValue = 0
-      fadeableViewsTopBar.remove(leadingTitleBarAccessoryView)
+      fadeableViewsInTopBar.remove(leadingTitleBarAccessoryView)
       trailingTitleBarAccessoryView.alphaValue = 0
-      fadeableViewsTopBar.remove(trailingTitleBarAccessoryView)
+      fadeableViewsInTopBar.remove(trailingTitleBarAccessoryView)
     } else {
       /// We may have gotten here in response to one of these buttons' visibility being toggled in the prefs,
       /// so we need to allow for showing/hiding these individually.
@@ -218,28 +218,28 @@ extension PlayerWindowController {
       /// So just set alpha value for now, and hide later in `updateHiddenViewsAndConstraints()`
       if outputLayout.leadingSidebarToggleButton == .hidden {
         leadingSidebarToggleButton.alphaValue = 0
-        fadeableViewsTopBar.remove(leadingSidebarToggleButton)
+        fadeableViewsInTopBar.remove(leadingSidebarToggleButton)
 
         // Match behavior for custom title bar's copy:
         if let customTitleBar {
           customTitleBar.leadingSidebarToggleButton.alphaValue = 0
-          fadeableViewsTopBar.remove(customTitleBar.leadingSidebarToggleButton)
+          fadeableViewsInTopBar.remove(customTitleBar.leadingSidebarToggleButton)
         }
       }
       if outputLayout.trailingSidebarToggleButton == .hidden {
         trailingSidebarToggleButton.alphaValue = 0
-        fadeableViewsTopBar.remove(trailingSidebarToggleButton)
+        fadeableViewsInTopBar.remove(trailingSidebarToggleButton)
 
         if let customTitleBar {
           customTitleBar.trailingSidebarToggleButton.alphaValue = 0
-          fadeableViewsTopBar.remove(customTitleBar.trailingSidebarToggleButton)
+          fadeableViewsInTopBar.remove(customTitleBar.trailingSidebarToggleButton)
         }
       }
 
       let onTopButtonVisibility = transition.outputLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
       if onTopButtonVisibility == .hidden {
         onTopButton.alphaValue = 0
-        fadeableViewsTopBar.remove(onTopButton)
+        fadeableViewsInTopBar.remove(onTopButton)
 
         if let customTitleBar {
           customTitleBar.onTopButton.alphaValue = 0

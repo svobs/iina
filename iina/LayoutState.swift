@@ -682,16 +682,16 @@ extension PlayerWindowController {
       view.alphaValue = 0
       view.isHidden = true
       fadeableViews.remove(view)
-      fadeableViewsTopBar.remove(view)
+      fadeableViewsInTopBar.remove(view)
     case .showAlways:
       view.alphaValue = 1
       view.isHidden = false
       fadeableViews.remove(view)
-      fadeableViewsTopBar.remove(view)
+      fadeableViewsInTopBar.remove(view)
     case .showFadeableTopBar:
       view.alphaValue = 1
       view.isHidden = false
-      fadeableViewsTopBar.insert(view)
+      fadeableViewsInTopBar.insert(view)
     case .showFadeableNonTopBar:
       view.alphaValue = 1
       view.isHidden = false

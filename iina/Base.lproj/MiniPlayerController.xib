@@ -34,10 +34,10 @@
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
-        <view translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerPanel View">
+        <view translatesAutoresizingMaskIntoConstraints="NO" id="98Q-Fi-3N5" userLabel="MiniPlayerView">
             <rect key="frame" x="0.0" y="0.0" width="260" height="164"/>
             <subviews>
-                <visualEffectView wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeController View">
+                <visualEffectView wantsLayer="YES" blendingMode="behindWindow" material="underWindowBackground" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="Q6R-eL-qkW" userLabel="MusicModeControlBar View">
                     <rect key="frame" x="0.0" y="92" width="260" height="72"/>
                     <subviews>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Cef-Fd-eDH" userLabel="MediaInfo View">

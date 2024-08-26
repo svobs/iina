@@ -76,6 +76,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** The playlist and chapter sidebar. */
   let playlistView = PlaylistViewController()
 
+  /// The music player panel
+  ///
+  /// This is only shown while in music mode, and will be a subview of `bottomBarView`. It contains a "mini" OSC, and if configured, also the
+  /// playlist.
   var miniPlayer: MiniPlayerController!
 
   /** The control view for interactive mode. */
@@ -118,6 +122,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   private(set) var isWindowHidden = false
   var isDragging: Bool = false
   var isLiveResizingWidth: Bool? = nil
+  var isMagnifying = false
 
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
@@ -136,7 +141,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
     return isVisible || isMinimized
   }
-  var isMagnifying = false
 
   var isClosing: Bool {
     return player.status.isAtLeast(.stopping)
@@ -193,10 +197,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // - Fadeable Views
 
-  /** Views that will show/hide when cursor moving in/out the window. */
+  /// Views that will show/hide when cursor moving in/out of the window
   var fadeableViews = Set<NSView>()
-  /** Similar to `fadeableViews`, but may fade in differently depending on configuration of top bar. */
-  var fadeableViewsTopBar = Set<NSView>()
+  /// Similar to `fadeableViews`, but may fade in differently depending on configuration of top bar.
+  var fadeableViewsInTopBar = Set<NSView>()
   var fadeableViewsAnimationState: UIAnimationState = .shown
   var fadeableTopBarAnimationState: UIAnimationState = .shown
   /** For auto hiding UI after a timeout. */
@@ -2705,7 +2709,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       if wantsTopBarVisible {  // start top bar
         fadeableTopBarAnimationState = .willShow
-        for v in fadeableViewsTopBar {
+        for v in fadeableViewsInTopBar {
           v.animator().alphaValue = 1
         }
 
@@ -2739,7 +2743,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       if wantsTopBarVisible && fadeableTopBarAnimationState == .willShow {
         fadeableTopBarAnimationState = .shown
-        for v in fadeableViewsTopBar {
+        for v in fadeableViewsInTopBar {
           v.isHidden = false
         }
 
@@ -2788,7 +2792,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       for v in fadeableViews {
         v.animator().alphaValue = 0
       }
-      for v in fadeableViewsTopBar {
+      for v in fadeableViewsInTopBar {
         v.animator().alphaValue = 0
       }
       /// Quirk 1: special handling for `trafficLightButtons`
@@ -2814,7 +2818,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       for v in fadeableViews {
         v.isHidden = true
       }
-      for v in fadeableViewsTopBar {
+      for v in fadeableViewsInTopBar {
         v.isHidden = true
       }
       /// Quirk 1: need to set `alphaValue` back to `1` so that each button's corresponding menu items still work
