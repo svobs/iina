@@ -292,11 +292,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   @IBAction func toggleVideoView(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
-      let showVideo = !isVideoVisible
-      log.verbose("Toggling videoView visibility from \((!showVideo).yn) to \(showVideo.yn)")
+      let showVideoView = !isVideoVisible
+      log.verbose("Toggling videoView visibility from \((!showVideoView).yn) to \(showVideoView.yn)")
 
       /// If showing video, call `setVideoTrackEnabled(true)`, then do animations.
-      if showVideo {
+      if showVideoView {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
@@ -316,9 +316,17 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   // TODO: develop a nice sliding animation if possible
   func applyVideoVisibility(to showVideo: Bool) {
     guard let window else { return }
-    log.verbose("Applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
     var tasks: [IINAAnimation.Task] = []
+
     tasks.append(.instantTask{ [self] in
+      log.verbose("MusicMode: applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
+
+      let currentVisibility = windowController.musicModeGeo.isVideoVisible
+      guard windowController.isInMiniPlayer, currentVisibility != showVideo else {
+        log.debug("Cancelling toggle of videoView visibility; isMiniPlayer=\(windowController.isInMiniPlayer.yn), current=\(currentVisibility.yesno), new=\(showVideo.yesno)")
+        throw IINAError.cancelAnimationTransaction
+      }
+
       windowController.isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
       // Hide OSD during animation
       windowController.hideOSD(immediately: true)

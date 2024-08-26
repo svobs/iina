@@ -162,7 +162,7 @@ class IINAAnimation {
         }
 
         guard taskTxID >= currentTxID else {
-          Logger.log("Skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
+          Logger.log.debug("Animation pipeline: skipping task with txID \(taskTxID) (next valid txID: \(currentTxID))")
           continue
         }
         currentTxID = taskTxID
@@ -191,8 +191,10 @@ class IINAAnimation {
         }
         do {
           try nextTask.runFunc()
+        } catch IINAError.cancelAnimationTransaction {
+          Logger.log.debug("Animation pipeline: task was cancelled")
         } catch {
-          Logger.log("Caught error thrown by task func: \(error)")
+          Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
         }
       }, completionHandler: {
         self.runTasks()
@@ -223,15 +225,17 @@ class IINAAnimation {
       }
       do {
         try task.runFunc()
+      } catch IINAError.cancelAnimationTransaction {
+        Logger.log.debug("Animation pipeline: async task was cancelled")
       } catch {
-        Logger.log("Caught error thrown by task func: \(error)")
+        Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
       }
     }, completionHandler: {
       if let doAfter = doAfter {
         do {
           try doAfter()
         } catch {
-          Logger.log("Caught error thrown by doAfter func: \(error)")
+          Logger.log("Animation pipeline: unexpected error thrown by doAfter func: \(error)")
         }
       }
     })
