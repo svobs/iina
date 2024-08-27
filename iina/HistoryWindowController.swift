@@ -117,6 +117,21 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       self.reloadData()
     }
 
+    NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
+      guard !AppDelegate.shared.isTerminating else { return }
+      guard let url = note.userInfo?["url"] as? URL else {
+        log.error("Cannot update file history: no url found in userInfo!")
+        return
+      }
+      log.verbose("History window got iinaFileHistoryDidUpdate; will reload watch-later for URL & possibly reload table")
+
+      backgroundQueue.async { [self] in
+        guard fileExistsMap.removeValue(forKey: url) != nil else { return }
+
+        reloadData()
+      }
+    }
+
     historySearchField.stringValue = searchString
 
     outlineView.delegate = self
