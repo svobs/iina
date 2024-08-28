@@ -581,7 +581,7 @@ extension NSMutableAttributedString {
     self.addAttributes([key: value], range: NSRange(location: 0, length: self.length))
   }
 
-  func addItalic(from font: NSFont?) {
+  func addItalic(using font: NSFont?) {
     if let italicFont = makeItalic(font) {
       self.addAttrib(NSAttributedString.Key.font, italicFont)
     }
@@ -788,7 +788,7 @@ extension NSTextField {
     }
 
     if italic {
-      attrString.addItalic(from: self.font)
+      attrString.addItalic(using: self.font)
     }
     self.attributedStringValue = attrString
   }

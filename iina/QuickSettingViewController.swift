@@ -731,7 +731,21 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       let isChosen = track == nil ? (activeId == 0) : (track!.id == activeId)
       return isChosen ? Constants.String.dot : ""
     } else if columnName == .trackName {
-      return track?.infoString ?? Constants.String.trackNone
+      if let track {
+        return track.infoString
+      } else {
+        // "<None>"
+        let noneString = Constants.String.trackNone
+        guard let cell = tableView.makeView(withIdentifier: .trackName, owner: self) as? NSTableCellView,
+              let textField = cell.textField else {
+          return noneString
+        }
+        // Make this entry italic
+        let italicDescriptor: NSFontDescriptor = textField.font!.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+        let italicFont = NSFont(descriptor: italicDescriptor, size: textField.font!.pointSize)
+
+        return NSMutableAttributedString(string: noneString, attributes: [.font: italicFont!])
+      }
     } else if columnName == .trackId {
       return track?.idString
     }

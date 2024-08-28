@@ -267,7 +267,7 @@ class CascadingMenuItemBuilder {
       item.isEnabled = false
 
       let attrString = NSMutableAttributedString(string: title)
-      attrString.addItalic(from: menu.font)
+      attrString.addItalic(using: menu.font)
       item.attributedTitle = attrString
 
       menu.addItem(item)
