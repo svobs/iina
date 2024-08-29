@@ -285,6 +285,13 @@ extension Preference {
       }
     }
 
+    static private func postSavedWindowStateDidChange() {
+      DispatchQueue.main.async { [self] in
+        guard !AppDelegate.shared.isTerminating else { return }
+        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      }
+    }
+
     static private func saveOpenWindowList(windowNamesBackToFront: [String], forLaunchID launchID: Int) {
       guard isSaveEnabled else { return }
       //      Logger.log("Saving open windows: \(windowNamesBackToFront)", level: .verbose)
@@ -295,8 +302,7 @@ extension Preference {
       guard csvOld != csv else { return }
 
       UserDefaults.standard.setValue(csv, forKey: key)
-
-      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      postSavedWindowStateDidChange()
     }
 
     static func clearSavedLaunchForThisLaunch(silent: Bool = false) {
@@ -330,7 +336,7 @@ extension Preference {
       UserDefaults.standard.removeObject(forKey: launchName)
 
       if !silent {
-        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+        postSavedWindowStateDidChange()
       }
     }
 
@@ -350,7 +356,7 @@ extension Preference {
         clearSavedLaunch(launchID: launchID, force: force, silent: true)
       }
 
-      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      postSavedWindowStateDidChange()
     }
 
     static private func getPlayerIDs(from windowAutosaveNames: [WindowAutosaveName]) -> [String] {
@@ -576,7 +582,7 @@ extension Preference {
 
       if countEntriesDeleted > 0 {
         Logger.log("Deleted \(countEntriesDeleted) pref entries")
-        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+        postSavedWindowStateDidChange()
       }
 
       let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
@@ -634,7 +640,7 @@ extension Preference {
         }
       }
 
-      NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+      postSavedWindowStateDidChange()
       return deduplicatedWindowList
     }
 

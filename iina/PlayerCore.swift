@@ -595,6 +595,7 @@ class PlayerCore: NSObject {
       // however the main dispatch queue must not be used to avoid blocking the queue as per
       // instructions from Apple.
       RunLoop.main.perform(inModes: [.common]) {
+        guard !AppDelegate.shared.isTerminating else { return }
         NSApp.terminate(nil)
       }
     }
@@ -2399,10 +2400,10 @@ class PlayerCore: NSObject {
       } else {
         /// This will get called by `noteNewRecentDocumentURL`. But if it's not called, need to call it
         /// so that welcome window is notified when `iinaLastPlayedFilePosition`, etc. are changed
-        NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+        HistoryController.shared.postNotification(Notification(name: .recentDocumentsDidChange))
       }
     }
-    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+    HistoryController.shared.postNotification(Notification(name: .iinaHistoryUpdated))
     postFileHistoryUpdateNotification()
   }
 
@@ -3405,18 +3406,16 @@ class PlayerCore: NSObject {
   // MARK: - Notifications
 
   func postNotification(_ name: Notification.Name) {
-    log.debug("Posting notification: \(name.rawValue)")
-    NotificationCenter.default.post(Notification(name: name, object: self))
+    DispatchQueue.main.async { [self] in
+      log.debug("Posting notification: \(name.rawValue)")
+      NotificationCenter.default.post(Notification(name: name, object: self))
+    }
   }
 
   func postFileHistoryUpdateNotification() {
     guard let url = info.currentURL else { return }
-    // Launch async to prevent deadlock - we don't know what thread we are coming from
-    DispatchQueue.main.async {
-      guard !AppDelegate.shared.isTerminating else { return }
-      let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
-      NotificationCenter.default.post(note)
-    }
+    let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
+    HistoryController.shared.postNotification(note)
   }
 
   // MARK: - Utils

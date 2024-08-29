@@ -192,7 +192,9 @@ class OnlineSubtitle {
         log("\(prefix)\(err.localizedDescription)", level: .error)
       }
     }.finally {
-      NotificationCenter.default.post(Notification(name: .iinaLogoutCompleted, object: self))
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(Notification(name: .iinaLogoutCompleted, object: self))
+      }
     }
   }
 

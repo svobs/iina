@@ -27,7 +27,7 @@ class HistoryController {
   }
 
   private func watchLaterDirDidChange() {
-    NotificationCenter.default.post(Notification(name: .watchLaterDirDidChange))
+    postNotification(Notification(name: .watchLaterDirDidChange))
   }
 
   func start() {
@@ -63,7 +63,7 @@ class HistoryController {
     }
 
     log.verbose("Saved history; posting iinaHistoryUpdated")
-    NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+    postNotification(Notification(name: .iinaHistoryUpdated))
   }
 
   private func readHistoryFromFile() {
@@ -95,10 +95,10 @@ class HistoryController {
     log.verbose("ReloadAll done: \(history.count) history entries & \(cachedRecentDocumentURLs.count) recentDocuments in \(sw.secElapsedString)")
     if !silent {
       log.verbose("ReloadAll: posting iinaHistoryUpdated")
-      NotificationCenter.default.post(Notification(name: .iinaHistoryUpdated))
+      postNotification(Notification(name: .iinaHistoryUpdated))
 
       log.verbose("ReloadAll: posting recentDocumentsDidChange")
-      NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+      postNotification(Notification(name: .recentDocumentsDidChange))
     }
   }
 
@@ -224,7 +224,7 @@ class HistoryController {
     }
 
     log.debug("Done restoring list of recent documents (\(newRecentDocuments.count)). Posting recentDocumentsDidChange")
-    NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+    postNotification(Notification(name: .recentDocumentsDidChange))
   }
 
   /// Save the list of recently opened files.
@@ -240,7 +240,7 @@ class HistoryController {
 
     defer {
       // Notify even for older MacOS
-      NotificationCenter.default.post(Notification(name: .recentDocumentsDidChange))
+      postNotification(Notification(name: .recentDocumentsDidChange))
     }
 
     guard #available(macOS 14, *) else { return }
@@ -258,6 +258,16 @@ class HistoryController {
       log.debug("Cleared list of recent documents")
     } else {
       log.debug("Saved list of recent documents")
+    }
+  }
+
+  func postNotification(_ notification: Notification) {
+    /// Launch async on main thread to prevent deadlock. We don't know what thread we are coming from, or
+    /// which queue the observers are waiting on. If the two are different, it looks like `NotificationCenter.default.post`
+    /// can deadlock the two threads.
+    DispatchQueue.main.async {
+      guard !AppDelegate.shared.isTerminating else { return }
+      NotificationCenter.default.post(notification)
     }
   }
 }

@@ -1317,7 +1317,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // shutdown sequence is cleaner when initiated by IINA, so we do not send the quit command
         // to mpv and instead trigger the normal app termination sequence.
         RunLoop.main.perform(inModes: [.common]) {
-          NSApp.terminate(nil)
+          if !AppDelegate.shared.isTerminating {
+            NSApp.terminate(nil)
+          }
         }
         returnValue = 0
 

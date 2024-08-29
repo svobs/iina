@@ -136,7 +136,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
         Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
         UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
-        NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+        DispatchQueue.main.async { [self] in
+          NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
+        }
       }
       return
     }
