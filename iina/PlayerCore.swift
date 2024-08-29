@@ -65,7 +65,8 @@ class PlayerCore: NSObject {
   let subsystem: Logger.Subsystem
   unowned var log: Logger.Subsystem { self.subsystem }
   var label: String
-  let audioOnly: Bool
+  let isDemoPlayer: Bool
+  var isAudioOnly: Bool { return isDemoPlayer }
 
   @Atomic var saveTicketCounter: Int = 0
   @Atomic private var thumbnailReloadTicketCounter: Int = 0
@@ -252,13 +253,13 @@ class PlayerCore: NSObject {
     abLoopA != 0 && abLoopB != 0 && mpv.getString(MPVOption.PlaybackControl.abLoopCount) != "0"
   }
 
-  init(_ label: String, audioOnly: Bool = false) {
+  init(_ label: String, isDemoPlayer: Bool = false) {
     let log = Logger.subsystem(forPlayerID: label)
     log.debug("PlayerCore \(label) init")
     self.label = label
     self.subsystem = log
     self.info = PlaybackInfo(log: log)
-    self.audioOnly = audioOnly
+    self.isDemoPlayer = isDemoPlayer
     super.init()
     self.mpv = MPVController(playerCore: self)
     self.bindingController = PlayerBindingController(playerCore: self)
@@ -478,7 +479,7 @@ class PlayerCore: NSObject {
 
     startMPV()
     loadPlugins()
-    if audioOnly {
+    if isAudioOnly {
       log.debug("Player is audio only. Will not init video")
     } else {
       initVideo()
@@ -2081,6 +2082,7 @@ class PlayerCore: NSObject {
 
   /// mpv `watch-later` + `saveToLastPlayedFile()` (above)
   func savePlaybackPosition() {
+    guard !isDemoPlayer else { return }
     guard Preference.bool(for: .resumeLastPosition) else { return }
 
     // The player must be active to be able to save the watch later configuration.

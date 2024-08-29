@@ -367,7 +367,7 @@ class MPVController: NSObject {
     }
 
     // Don't log demo player
-    if Logger.enabled && !player.audioOnly {
+    if Logger.enabled && !player.isDemoPlayer {
       let path = Logger.logDirectory.appendingPathComponent("mpv-\(player.label).log").path
       player.log.debug("Path of mpv log: \(path.quoted)")
       chkErr(setOptionString(MPVOption.ProgramBehavior.logFile, path, level: .verbose))

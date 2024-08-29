@@ -184,7 +184,7 @@ class PlayerCoreManager {
         player = _demoPlayer
       } else {
         Logger.log("Creating demo player")
-        player = PlayerCore("demo", audioOnly: true)
+        player = PlayerCore("demo", isDemoPlayer: true)
         player.start()
         _demoPlayer = player
       }
