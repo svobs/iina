@@ -3408,10 +3408,8 @@ class PlayerCore: NSObject {
   // MARK: - Notifications
 
   func postNotification(_ name: Notification.Name) {
-    DispatchQueue.main.async { [self] in
-      log.debug("Posting notification: \(name.rawValue)")
-      NotificationCenter.default.post(Notification(name: name, object: self))
-    }
+    log.debug("Posting notification: \(name.rawValue)")
+    NotificationCenter.default.post(Notification(name: name, object: self))
   }
 
   func postFileHistoryUpdateNotification() {
