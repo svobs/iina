@@ -1975,16 +1975,23 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     log.verbose("Showing PlayerWindow")
     super.showWindow(sender)
 
-    DispatchQueue.main.async {  /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
-      self.animationPipeline.submitInstantTask({
-        self.refreshKeyWindowStatus()
+    /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
+    DispatchQueue.main.async { [self] in
+      animationPipeline.submitInstantTask({ [self] in
+        refreshKeyWindowStatus()
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
-        self.updateTitle()
-        self.window?.isExcludedFromWindowsMenu = false
-        self.forceDraw()  // needed if restoring while paused
+        updateTitle()
+        window?.isExcludedFromWindowsMenu = false
+        forceDraw()  // needed if restoring while paused
       })
-      self.animationPipeline.submit(self.pendingVideoGeoUpdateTasks)
-      self.pendingVideoGeoUpdateTasks = []
+      animationPipeline.submit(pendingVideoGeoUpdateTasks)
+      pendingVideoGeoUpdateTasks = []
+      player.mpv.queue.async { [self] in
+        if player.pendingResumeWhenShowingWindow {
+          player.pendingResumeWhenShowingWindow = false
+          player.mpv.setFlag(MPVOption.PlaybackControl.pause, false)
+        }
+      }
     }
   }
 

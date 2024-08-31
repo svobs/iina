@@ -597,6 +597,14 @@ struct PlayerSaveState {
 
     log.verbose("Screens from prior launch: \(self.screens)")
 
+    if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
+      player.pendingResumeWhenShowingWindow = false
+    } else if let wasPaused = bool(for: .paused) {
+      player.pendingResumeWhenShowingWindow = !wasPaused
+    } else {
+      player.pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
+    }
+
     // TODO: map current geometry to prior screen. Deal with mismatch
 
     if let hdrEnabled = bool(for: .hdrEnabled) {

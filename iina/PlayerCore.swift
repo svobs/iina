@@ -68,6 +68,9 @@ class PlayerCore: NSObject {
   let isDemoPlayer: Bool
   var isAudioOnly: Bool { return isDemoPlayer }
 
+  // At launch, wait until all windows are open before resuming video
+  var pendingResumeWhenShowingWindow: Bool = false
+
   @Atomic var saveTicketCounter: Int = 0
   @Atomic private var thumbnailReloadTicketCounter: Int = 0
 
@@ -2243,6 +2246,7 @@ class PlayerCore: NSObject {
     mpv.command(.playlistPlayIndex, args: ["0"])
   }
 
+
   /// This function is called right after file loaded, triggered by mpv `fileLoaded` notification.
   /// We should now be able to get track info from mpv and can start rendering the video in the final size.
   func fileLoaded() {
@@ -2251,20 +2255,12 @@ class PlayerCore: NSObject {
     // note: player may be "stopped" here
     guard !isStopping else { return }
 
-    let pause: Bool
-    if let priorState = info.priorState {
-      if Preference.bool(for: .alwaysPauseMediaWhenRestoringAtLaunch) {
-        pause = true
-      } else if let wasPaused = priorState.bool(for: .paused) {
-        pause = wasPaused
-      } else {
-        pause = Preference.bool(for: .pauseWhenOpen)
-      }
-    } else {
-      pause = Preference.bool(for: .pauseWhenOpen)
+    // If restoring, playback was already paused (and will not be unpaused until window is ready to show)
+    if !info.isRestoring {
+      let pause = Preference.bool(for: .pauseWhenOpen)
+      mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
     }
-    log.verbose("FileLoaded action=\(pause ? "PAUSE" : "PLAY") path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
-    mpv.setFlag(MPVOption.PlaybackControl.pause, pause)
+    log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
     let duration = mpv.getDouble(MPVProperty.duration)
     info.videoDuration = VideoTime(duration)
