@@ -1336,7 +1336,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       let player = PlayerCoreManager.shared.getActiveOrCreateNew()
       startup.wcForOpenFile = player.windowController
       if player.openURLs(urls) == 0 {
-        abortWaitForPlayerStartup()
+        abortWaitForOpenFilePlayerStartup()
 
         Logger.log("Notifying user nothing was opened", level: .verbose)
         Utility.showAlert("nothing_to_open")
@@ -1369,11 +1369,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.openFileCalled = true
     startup.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
-      abortWaitForPlayerStartup()
+      abortWaitForOpenFilePlayerStartup()
     }
   }
 
-  private func abortWaitForPlayerStartup() {
+  private func abortWaitForOpenFilePlayerStartup() {
+    Logger.log.verbose("Aborting wait for Open File player startup")
     startup.openFileCalled = false
     startup.wcForOpenFile = nil
     showWindowsIfReady()
@@ -1434,7 +1435,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       startup.openFileCalled = true
       startup.wcForOpenFile = player.windowController
       if player.openURLString(url) == 0 {
-        abortWaitForPlayerStartup()
+        abortWaitForOpenFilePlayerStartup()
       }
       return
     }
@@ -1472,7 +1473,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         lastActivePlayer.sendOSD(.addToPlaylist(1))
       } else {
         if player.openURLString(urlValue) == 0 {
-          abortWaitForPlayerStartup()
+          abortWaitForOpenFilePlayerStartup()
         }
       }
 

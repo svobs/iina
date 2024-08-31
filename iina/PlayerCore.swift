@@ -436,6 +436,10 @@ class PlayerCore: NSObject {
         if !info.isRestoring {
           windowController.osd.clearQueuedOSDs()
         }
+
+        /// This doesn't apply to restore. That is handled in `mpvRestoreWorkItem`.
+        let pauseUntilWindowOpen = !windowController.isOpen
+
         windowController.openWindow(nil)
 
         mpv.queue.async { [self] in
@@ -445,6 +449,9 @@ class PlayerCore: NSObject {
           if info.isRestoring, let mpvRestoreWorkItem {
             mpvRestoreWorkItem()
             return
+          } else if pauseUntilWindowOpen {
+            mpv.setFlag(MPVOption.PlaybackControl.pause, true)
+            pendingResumeWhenShowingWindow = !Preference.bool(for: .pauseWhenOpen)
           }
 
           // Not restoring
