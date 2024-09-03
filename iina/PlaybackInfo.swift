@@ -330,6 +330,7 @@ class PlaybackInfo {
 
   static func getCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
+    guard url.isFileURL else { return nil }
 
     var ffMeta: FFVideoMeta? = nil
     ffMetaLock.withLock {
@@ -342,6 +343,7 @@ class PlaybackInfo {
 
   static func updateCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
     guard let url else { return nil }
+    guard url.isFileURL else { return nil }
     guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
     if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
       let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
@@ -361,6 +363,12 @@ class PlaybackInfo {
   }
 
   static func getOrReadFFVideoMeta(forURL url: URL?, _ log: Logger.Subsystem) -> FFVideoMeta? {
+    guard let url else { return nil }
+    guard url.isFileURL else {
+      log.verbose("Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)")
+      return nil
+    }
+
     var missed = false
     var ffMeta = getCachedFFVideoMeta(forURL: url)
     if ffMeta == nil {

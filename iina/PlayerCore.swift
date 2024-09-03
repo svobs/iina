@@ -2331,43 +2331,10 @@ class PlayerCore: NSObject {
     syncAbLoop()
     // Done syncing tracks
 
-    let currentMediaAudioStatus = info.currentMediaAudioStatus
-
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
-    let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentPlayback?.url, log)
-
-    log.verbose("Calling applyVideoGeoTransform with FFVideoMeta, vid=\(info.vid?.description ?? "nil")")
-    windowController.applyVideoGeoTransform({ [self] videoGeo in
-      guard status.isNotYet(.stopping) else {
-        log.verbose("[applyVideoGeoTransform] File loaded but player status is \(status); aborting")
-        return nil
-      }
-      // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
-      let userRotation = mpv.getInt(MPVOption.Video.videoRotate)
-      // TODO: sync video-aspect-override. This does get synced from an mpv notification, but there is a slight delay
-      // TODO: sync video-crop (actually, add support for video-crop...)
-      let videoGeo = videoGeo.clone(userRotation: userRotation)
-
-      if let ffMeta {
-        return videoGeo.substituting(ffMeta)
-      } else if currentMediaAudioStatus == .isAudio {
-        // Square album art
-        return VideoGeometry.albumArtGeometry(log)
-      } else {
-        return videoGeo
-      }
-
-    }, fileJustOpened: true, then: { [self] in
-      // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
-      // The OSD can have weird stretching glitches if displayed while zooming open...
-      currentPlayback.state = .loadedAndSized
-      // Need to call here to ensure file title OSD is displayed when navigating playlist...
-      refreshSyncUITimer()
-      windowController.updateUI()
-      // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-      windowController.updateCustomBorderBoxAndWindowOpacity()
-    })
+    let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: currentPlayback.url, log)
+    windowController.applyVideoGeoAtFileOpen(ffMeta, currentPlayback: currentPlayback, currentMediaAudioStatus: info.currentMediaAudioStatus)
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }
@@ -3037,7 +3004,7 @@ class PlayerCore: NSObject {
   private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
-    guard status == .started else {
+    guard status.isAtLeast(.started) else {
       log.verbose("syncUITime: not syncing")
       return
     }
