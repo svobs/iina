@@ -2747,7 +2747,8 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submitInstantTask { [self] in
         // Check status so that we don't duplicate work
-        if info.isFileLoadedAndSized {
+        if info.isFileLoadedAndSized, let showDefaultArt {
+          log.verbose("Video track changed to \(vid): calling showDefaultArt=\(showDefaultArt.yn)")
           windowController.updateDefaultArtVisibility(to: showDefaultArt)
         }
 

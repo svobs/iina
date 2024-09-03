@@ -573,14 +573,16 @@ extension PlayerWindowController {
     tasks.append(.instantTask{ [self] in
       isAnimatingLayoutTransition = true  /// try not to trigger `windowDidResize` while animating
       videoView.videoLayer.enterAsynchronousMode()
+
+      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) showDefaultArt=\(showDefaultArt?.yn ?? "nil") video=\(newGeometry)")
+      assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
+
       hideSeekTimeAndThumbnail()
       updateDefaultArtVisibility(to: showDefaultArt)
       resetRotationPreview()
     })
 
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
-      log.verbose("ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) video=\(newGeometry)")
-      assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
       // This is only needed to achieve "fade-in" effect when opening window:
       updateCustomBorderBoxAndWindowOpacity()
