@@ -2008,9 +2008,11 @@ class PlayerCore: NSObject {
 
   func setSubPos(_ pos: Int, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
-      Preference.set(pos, for: .subPos)
+      if forPrimary {
+        Preference.set(pos, for: .subPos)
+      }
       let option = forPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
-    mpv.setInt(option, pos)
+      mpv.setInt(option, pos)
     }
   }
 

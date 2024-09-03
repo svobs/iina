@@ -80,6 +80,9 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
    */
   private var pendingSwitchRequest: TabViewType?
 
+  /// is showing secondary sub if `false`
+  private var isShowingPrimarySubPanel: Bool = true
+
   weak var player: PlayerCore!
 
   weak var windowController: PlayerWindowController! {
@@ -522,34 +525,42 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     if let subBgColorString = Preference.string(for: .subBgColorString), let subBgColor = NSColor(mpvColorString: subBgColorString) {
       subTextBgColorWell.color = subBgColor
     }
-    let isPrimary = (subSegmentedControl.selectedSegment == 0)
-    let posOption = isPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
-    let currSubPos = player.mpv.getInt(posOption)
-    subPosSlider.intValue = Int32(currSubPos)
-
-    let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
-    let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
-    subScaleSlider.doubleValue = displaySubScale + (displaySubScale > 0 ? -1 : 1)
-
-    subScaleResetBtn.isHidden = displaySubScale == 1.0
-
     // controls can apply to either primary or secondary sub
-    let delayOption = isPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
-    let subDelay = player.mpv.getDouble(delayOption)
+    let isPrimary = isShowingPrimarySubPanel
 
-    subDelaySlider.doubleValue = subDelay
-    customSubDelayTextField.doubleValue = subDelay
-    subDelayResetBtn.isHidden = subDelay == 0.0
-    redraw(indicator: subDelaySliderIndicator, constraint: subDelaySliderConstraint, slider: subDelaySlider, value: "\(customSubDelayTextField.stringValue)s")
+    player.mpv.queue.async { [self] in
+      guard !player.isStopping else { return }
+      let posOption = isPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
+      let currSubPos = player.mpv.getInt(posOption)
 
-    let fontSize = player.mpv.getInt(MPVOption.Subtitles.subFontSize)
-    subTextSizePopUp.selectItem(withTitle: fontSize.description)
+      let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
+      let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
 
-    let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subBorderSize)
-    subTextBorderWidthPopUp.selectItem(at: -1)
-    subTextBorderWidthPopUp.itemArray.forEach { item in
-      if borderWidth == Double(item.title) {
-        subTextBorderWidthPopUp.select(item)
+      let delayOption = isPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
+      let subDelay = player.mpv.getDouble(delayOption)
+
+      let fontSize = player.mpv.getInt(MPVOption.Subtitles.subFontSize)
+      let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subBorderSize)
+
+      DispatchQueue.main.async { [self] in
+        subPosSlider.intValue = Int32(currSubPos)
+        subScaleSlider.doubleValue = displaySubScale + (displaySubScale > 0 ? -1 : 1)
+
+        subScaleResetBtn.isHidden = displaySubScale == 1.0
+
+        subDelaySlider.doubleValue = subDelay
+        customSubDelayTextField.doubleValue = subDelay
+        subDelayResetBtn.isHidden = subDelay == 0.0
+        redraw(indicator: subDelaySliderIndicator, constraint: subDelaySliderConstraint, slider: subDelaySlider, value: "\(customSubDelayTextField.stringValue)s")
+
+        subTextSizePopUp.selectItem(withTitle: fontSize.description)
+
+        subTextBorderWidthPopUp.selectItem(at: -1)
+        subTextBorderWidthPopUp.itemArray.forEach { item in
+          if borderWidth == Double(item.title) {
+            subTextBorderWidthPopUp.select(item)
+          }
+        }
       }
     }
   }
@@ -1130,7 +1141,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func subSegmentedControlAction(_ sender: NSSegmentedControl) {
-    updateSubTabControls()
+    isShowingPrimarySubPanel = sender.selectedSegment == 0
+    DispatchQueue.main.async { [self] in
+      updateSubTabControls()
+    }
   }
 
   @IBAction func subDelayChangedAction(_ sender: NSSlider) {
@@ -1147,13 +1161,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     subDelayResetBtn.isHidden = sliderValue == 0.0
     if let event = NSApp.currentEvent {
       if event.type == .leftMouseUp {
-        player.setSubDelay(sliderValue, forPrimary: subSegmentedControl.selectedSegment == 0)
+        player.setSubDelay(sliderValue, forPrimary: isShowingPrimarySubPanel)
       }
     }
   }
 
   @IBAction func resetSubDelayAction(_ sender: AnyObject) {
-    player.setSubDelay(0.0, forPrimary: subSegmentedControl.selectedSegment == 0)
+    player.setSubDelay(0.0, forPrimary: isShowingPrimarySubPanel)
   }
 
   @IBAction func customSubDelayEditFinishedAction(_ sender: NSTextField) {
@@ -1161,7 +1175,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       sender.stringValue = "0"
     }
     let value = sender.doubleValue
-    player.setSubDelay(value, forPrimary: subSegmentedControl.selectedSegment == 0)
+    player.setSubDelay(value, forPrimary: isShowingPrimarySubPanel)
     subDelaySlider.doubleValue = value
     redraw(indicator: subDelaySliderIndicator, constraint: subDelaySliderConstraint, slider: subDelaySlider, value: "\(sender.stringValue)s")
   }
@@ -1172,7 +1186,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   @IBAction func subPosSliderAction(_ sender: NSSlider) {
-    player.setSubPos(Int(sender.intValue), forPrimary: subSegmentedControl.selectedSegment == 0)
+    player.setSubPos(Int(sender.intValue), forPrimary: isShowingPrimarySubPanel)
   }
 
   @IBAction func subScaleSliderAction(_ sender: NSSlider) {

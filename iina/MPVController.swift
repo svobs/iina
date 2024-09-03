@@ -1514,15 +1514,15 @@ class MPVController: NSObject {
       player.reloadQuickSettingsView()
 
     case MPVOption.Subtitles.secondarySubPos:
-      fallthrough
-
-    case MPVOption.Subtitles.subPos:
       guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
         logPropertyValueError(name, property.format)
         break
       }
-      guard name == MPVOption.Subtitles.subPos else {
-        player.secondarySubPosChanged(data)
+      player.secondarySubPosChanged(data)
+
+    case MPVOption.Subtitles.subPos:
+      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+        logPropertyValueError(name, property.format)
         break
       }
       player.subPosChanged(data)
