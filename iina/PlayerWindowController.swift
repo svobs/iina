@@ -3523,9 +3523,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateNetworkState() {
+    let isNotYetLoaded = (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false)
     // Indicator should only be shown for network resources (AKA streaming media).
     // When media is not yet loaded, mpv does not indicate it is paused for cache. Assume it is.
-    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || player.info.isSeeking || (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false))
+    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || player.info.isSeeking || isNotYetLoaded)
+
+    // Hide videoView so that prev media (if any) is not seen while loading current media
+    videoView.isHidden = needShowIndicator && isNotYetLoaded
 
     if needShowIndicator {
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
