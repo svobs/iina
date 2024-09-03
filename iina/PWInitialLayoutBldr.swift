@@ -106,10 +106,13 @@ extension PlayerWindowController {
 
     tasks.append(.instantTask{ [self] in
       defer {
-        // Post notifications always
-        player.postNotification(.iinaFileLoaded)
-        player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
-        /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready.
+        // If is network resource, may not be loaded yet. If file, it will be.
+        if let currentPlayback = player.info.currentPlayback,
+           currentPlayback.state.isAtLeast(.loaded) {
+          player.postNotification(.iinaFileLoaded)
+          player.events.emit(.fileLoaded, data: currentPlayback.url.absoluteString)
+        }
+        /// This will fire a notification to `AppDelegate` which will respond by calling `showWindow` when all windows are ready. Post this always.
         window?.postWindowIsReadyToShow()
       }
 

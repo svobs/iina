@@ -1965,6 +1965,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     log.verbose("PlayerWindow openWindow done")
+    if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
+      // Need to show loading msg
+      player.mpv.queue.async { [self] in
+        log.verbose("Current playback is network resource; setting layout now")
+        applyVideoGeoAtFileOpen(currentPlayback: currentPlayback,
+                                currentMediaAudioStatus: player.info.currentMediaAudioStatus)
+      }
+    }
   }
 
   override func showWindow(_ sender: Any?) {
@@ -3515,7 +3523,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateNetworkState() {
-    let needShowIndicator = player.info.pausedForCache || player.info.isSeeking
+    // Indicator should only be shown for network resources (AKA streaming media).
+    // When media is not yet loaded, mpv does not indicate it is paused for cache. Assume it is.
+    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || player.info.isSeeking || (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false))
 
     if needShowIndicator {
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)

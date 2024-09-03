@@ -37,6 +37,62 @@ extension PlayerWindowController {
     }
   }*/
 
+  /// If current media is file, this should be called after it is done loading.
+  /// If current media is network resource, should be called immediately & show buffering msg.
+  func applyVideoGeoAtFileOpen(_ ffMeta: FFVideoMeta? = nil, currentPlayback: Playback,
+                               currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
+    log.verbose("Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil")")
+    applyVideoGeoTransform({ [self] videoGeo in
+      guard player.status.isNotYet(.stopping) else {
+        log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.status); aborting")
+        return nil
+      }
+
+      // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
+      let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
+
+      // Sync video's raw dimensions from mpv.
+      // This is especially important for streaming videos, which won't have cached ffMeta
+      let vidWidth = player.mpv.getInt(MPVProperty.width)
+      let vidHeight = player.mpv.getInt(MPVProperty.height)
+      let rawWidth: Int?
+      let rawHeight: Int?
+      if vidWidth > 0 && vidHeight > 0 {
+        rawWidth = vidWidth
+        rawHeight = vidHeight
+      } else {
+        rawWidth = nil
+        rawHeight = nil
+      }
+
+      // TODO: sync video-aspect-override. This does get synced from an mpv notification, but there is a slight delay
+      // TODO: sync video-crop (actually, add support for video-crop...)
+      let videoGeo = videoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
+                                    userRotation: userRotation)
+
+      if let ffMeta {
+        return videoGeo.substituting(ffMeta)
+      } else if currentMediaAudioStatus == .isAudio {
+        // Square album art
+        return VideoGeometry.albumArtGeometry(log)
+      } else {
+        return videoGeo
+      }
+
+    }, fileJustOpened: true, then: { [self] in
+      // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
+      // The OSD can have weird stretching glitches if displayed while zooming open...
+      if currentPlayback.state == .loaded {
+        currentPlayback.state = .loadedAndSized
+      }
+      // Need to call here to ensure file title OSD is displayed when navigating playlist...
+      player.refreshSyncUITimer()
+      updateUI()
+      // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
+      updateCustomBorderBoxAndWindowOpacity()
+    })
+  }
+
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
   func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
                               fileJustOpened: Bool = false,
@@ -66,8 +122,8 @@ extension PlayerWindowController {
       return
     }
 
-    guard currentPlayback.isFileLoaded else {
-      log.verbose("[applyVideoGeo] Aborting: file not done loading")
+    guard currentPlayback.isNetworkResource || currentPlayback.isFileLoaded else {
+      log.verbose("[applyVideoGeo] Aborting: file not done loading & is not streaming")
       aborted = true
       return
     }
