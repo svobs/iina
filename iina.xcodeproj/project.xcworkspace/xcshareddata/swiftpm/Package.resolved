@@ -1,22 +1,13 @@
 {
-  "originHash" : "93f1e2597b10b9262a94c17b5c047f840ca69a3171ece47366264ce487d5d016",
+  "originHash" : "d47d2b54d2074afccd9ca72634b96746ca680420a7d0af58b7115304c3df68e4",
   "pins" : [
     {
       "identity" : "grmustache.swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/groue/GRMustache.swift",
       "state" : {
-        "revision" : "671e2c5234e829c1f337c9d300bd6d9b21d1c42a",
-        "version" : "4.0.1"
-      }
-    },
-    {
-      "identity" : "gzipswift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/1024jp/GzipSwift",
-      "state" : {
-        "revision" : "ba0b6cb51cc6202f896e469b87d2889a46b10d1b",
-        "version" : "5.1.1"
+        "revision" : "6e9dcfb807959e19f2915be1928aeccf01babba5",
+        "version" : "4.2.0"
       }
     },
     {
@@ -33,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mxcl/PromiseKit",
       "state" : {
-        "revision" : "aea48ea1855f5d82e2dffa6027afce3aab8f3dd7",
-        "version" : "6.13.3"
+        "revision" : "8a98e31a47854d3180882c8068cc4d9381bf382d",
+        "version" : "6.22.1"
       }
     },
     {
@@ -42,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle/",
       "state" : {
-        "revision" : "87e4fcbac39912f9cdb9a9acf205cad60e1ca3bc",
-        "version" : "2.4.2"
+        "revision" : "0ef1ee0220239b3776f433314515fd849025673f",
+        "version" : "2.6.4"
       }
     }
   ],

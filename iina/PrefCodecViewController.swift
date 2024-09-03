@@ -24,10 +24,7 @@ class PrefCodecViewController: PreferenceViewController, PreferenceWindowEmbedda
   }
 
   override var sectionViews: [NSView] {
-    return [sectionVideoView,
-            sectionAudioView,
-            /*sectionReplayGainView  TODO: re-enable after upgrading mpv to 0.36 */
-    ]
+    return [sectionVideoView, sectionAudioView, sectionReplayGainView]
   }
 
   @IBOutlet var sectionVideoView: NSView!
