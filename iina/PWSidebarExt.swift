@@ -38,12 +38,12 @@ extension PlayerWindowController {
       case settings
       case playlist
 
-      func width() -> CGFloat {
+      func width(using sidebarState: SidebarMiscState) -> CGFloat {
         switch self {
         case .settings:
           return Constants.Sidebar.settingsWidth
         case .playlist:
-          return clampPlaylistWidth(CGFloat(Preference.integer(for: .playlistWidth)))
+          return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
         }
       }
 
@@ -188,23 +188,6 @@ extension PlayerWindowController {
 
     var isVisible: Bool {
       return visibleTab != nil
-    }
-
-    /// For `settings` tab group, is a hard-coded constant.
-    /// For `playlist` tab group, configured via app-wide pref.
-    /// Returns `0` if sidebar is hidden.
-    var currentWidth: CGFloat {
-      return visibleTabGroup?.width() ?? 0
-    }
-
-    /// NOTE: Is mutable if showing `playlist` tab group!
-    var insideWidth: CGFloat {
-      return placement == .insideViewport ? currentWidth : 0
-    }
-
-    /// NOTE: Is mutable if showing `playlist` tab group!
-    var outsideWidth: CGFloat {
-      return placement == .outsideViewport ? currentWidth : 0
     }
 
     var defaultTabToShow: Sidebar.Tab? {
@@ -416,11 +399,11 @@ extension PlayerWindowController {
       let sidebarWidth: CGFloat
       switch goal {
       case .show(let tabToShow):
-        sidebarWidth = tabToShow.group.width()
+        sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
         shouldShow = true
       case .hide:
         if let lastVisibleTab = leadingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width()
+          sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
           log.error("Failed to find lastVisibleTab for leadingSidebar")
           sidebarWidth = 0
@@ -439,11 +422,11 @@ extension PlayerWindowController {
       let sidebarWidth: CGFloat
       switch goal {
       case .show(let tabToShow):
-        sidebarWidth = tabToShow.group.width()
+        sidebarWidth = tabToShow.group.width(using: layout.spec.moreSidebarState)
         shouldShow = true
       case .hide:
         if let lastVisibleTab = trailingSidebar.lastVisibleTab {
-          sidebarWidth = lastVisibleTab.group.width()
+          sidebarWidth = lastVisibleTab.group.width(using: layout.spec.moreSidebarState)
         } else {
           log.error("Failed to find lastVisibleTab for trailingSidebar")
           sidebarWidth = 0
@@ -459,7 +442,7 @@ extension PlayerWindowController {
 
   /// Executed prior to opening `leadingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
-  func prepareLayoutForOpening(leadingSidebar: Sidebar, ΔWindowWidth: CGFloat) {
+  func prepareLayoutForOpening(leadingSidebar: Sidebar, parentLayout: LayoutState, ΔWindowWidth: CGFloat) {
     guard let window = window else { return }
     let tabToShow: Sidebar.Tab = leadingSidebar.visibleTab!
 
@@ -480,7 +463,7 @@ extension PlayerWindowController {
     }
 
     // - Add new:
-    let sidebarWidth = tabToShow.group.width()
+    let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
     let tabContainerView: NSView
 
     if leadingSidebar.placement == .insideViewport {
@@ -518,7 +501,7 @@ extension PlayerWindowController {
 
   /// Executed prior to opening `trailingSidebar` to the given tab.
   /// Do not call directly. Will be called by `LayoutTransition` via animation tasks.
-  func prepareLayoutForOpening(trailingSidebar: Sidebar, ΔWindowWidth: CGFloat) {
+  func prepareLayoutForOpening(trailingSidebar: Sidebar, parentLayout: LayoutState, ΔWindowWidth: CGFloat) {
     guard let window = window else { return }
     let tabToShow: Sidebar.Tab = trailingSidebar.visibleTab!
 
@@ -539,7 +522,7 @@ extension PlayerWindowController {
     }
 
     // - Add new:
-    let sidebarWidth = tabToShow.group.width()
+    let sidebarWidth = tabToShow.group.width(using: parentLayout.spec.moreSidebarState)
     let tabContainerView: NSView
 
     if trailingSidebar.placement == .insideViewport {
@@ -938,7 +921,7 @@ extension PlayerWindowController {
       let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.leading
       let viewportSize = oldGeo.viewportSize
       let newViewportWidth = viewportSize.width - playlistWidthDifference
-      let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(leading: newPlaylistWidth))
+      let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(leading: newPlaylistWidth))
 
       /// If `lockViewportToVideoSize` is `true`, it is necessary to resize the window's height to
       /// accomodate the change in video height.
@@ -951,7 +934,7 @@ extension PlayerWindowController {
         newGeo = resizedPlaylistGeo.refit()
       }
     } else {  /// `.insideViewport`: needs to refit in case window is so small that the viewport is larger than the video
-      newGeo = oldGeo.clone(insideBars: MarginQuad(leading: newPlaylistWidth)).refit()
+      newGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(leading: newPlaylistWidth)).refit()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -984,7 +967,7 @@ extension PlayerWindowController {
     if currentLayout.trailingSidebar.placement == .outsideViewport {
       let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.trailing
       let newViewportWidth = viewportSize.width - playlistWidthDifference
-      let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(trailing: newPlaylistWidth))
+      let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(trailing: newPlaylistWidth))
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: newViewportWidth / viewportSize.aspect)
@@ -993,10 +976,13 @@ extension PlayerWindowController {
         newGeo = resizedPlaylistGeo.refit()
       }
     } else {  /// `.insideViewport`
-      newGeo = oldGeo.clone(insideBars: MarginQuad(trailing: newPlaylistWidth)).refit()
+      newGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(trailing: newPlaylistWidth)).refit()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
+    // Update layout also
+    let moreSidebarState = SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: currentLayout.spec.moreSidebarState.selectedSubSegment)
+    self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
 
     updateTrailingSidebarWidth(to: newPlaylistWidth, visible: true, placement: currentLayout.trailingSidebarPlacement,
                                ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)
@@ -1010,11 +996,13 @@ extension PlayerWindowController {
     if leadingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       leadingSidebarIsResizing = false
-      log.verbose("Finished resize of leading sidebar; playlist is now \(currentLayout.leadingSidebar.currentWidth)")
+      let width = currentLayout.spec.moreSidebarState.playlistSidebarWidth
+      log.verbose("Finished resize of leading sidebar; playlist is now \(width)")
     } else if trailingSidebarIsResizing {
       // if it's a mouseup after resizing sidebar
       trailingSidebarIsResizing = false
-      log.verbose("Finished resize of trailing sidebar; playlist is now \(currentLayout.trailingSidebar.currentWidth)")
+      let width = currentLayout.spec.moreSidebarState.playlistSidebarWidth
+      log.verbose("Finished resize of trailing sidebar; playlist is now \(width)")
     }
 
     return true

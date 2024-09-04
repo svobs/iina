@@ -63,6 +63,15 @@ enum InteractiveModeState {
 }
 
 extension PlayerWindowController {
+  struct SidebarMiscState {
+    let playlistSidebarWidth: Int
+    let selectedSubSegment: Int
+
+    static func fromDefaultPrefs() -> SidebarMiscState {
+      return SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
+                              selectedSubSegment: 0)
+    }
+  }
 
   /// `LayoutSpec`: data structure containing a player window's layout configuration, and contains all the info needed to build a `LayoutState`.
   /// (`LayoutSpec` is more compact & convenient for state storage, but `LayoutState` contains extra derived data which is more useful for
@@ -93,9 +102,12 @@ extension PlayerWindowController {
     /// The mode of the interactive mode. ONLY used if `mode==.windowedInteractive || mode==.fullScreenInteractive`
     let interactiveMode: InteractiveMode?
 
+    let moreSidebarState: SidebarMiscState
+
     init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
          topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
-         enableOSC: Bool, oscPosition: Preference.OSCPosition, interactiveMode: InteractiveMode?) {
+         enableOSC: Bool, oscPosition: Preference.OSCPosition, interactiveMode: InteractiveMode?,
+         moreSidebarState: SidebarMiscState) {
 
       var mode = mode
       if (mode == .windowedInteractive || mode == .fullScreenInteractive) && interactiveMode == nil {
@@ -125,6 +137,7 @@ extension PlayerWindowController {
 
       self.isLegacyStyle = isLegacyStyle
       self.oscPosition = oscPosition
+      self.moreSidebarState = moreSidebarState
     }
 
     /// Factory method. Matches what is shown in the XIB
@@ -135,6 +148,7 @@ extension PlayerWindowController {
       let trailingSidebar = Sidebar(.trailingSidebar, tabGroups: Sidebar.TabGroup.fromPrefs(for: .trailingSidebar),
                                     placement: Preference.enum(for: .trailingSidebarPlacement),
                                     visibility: .hide)
+      let moreSidebarState = SidebarMiscState.fromDefaultPrefs()
       return LayoutSpec(leadingSidebar: leadingSidebar,
                         trailingSidebar: trailingSidebar,
                         mode: .windowed,
@@ -143,7 +157,8 @@ extension PlayerWindowController {
                         bottomBarPlacement: .insideViewport,
                         enableOSC: false,
                         oscPosition: .floating,
-                        interactiveMode: nil)
+                        interactiveMode: nil,
+                        moreSidebarState: moreSidebarState)
     }
 
     /// Factory method. Init from preferences, except for `mode` and tab params
@@ -177,7 +192,8 @@ extension PlayerWindowController {
                         bottomBarPlacement: Preference.enum(for: .bottomBarPlacement),
                         enableOSC: Preference.bool(for: .enableOSC),
                         oscPosition: Preference.enum(for: .oscPosition),
-                        interactiveMode: interactiveMode)
+                        interactiveMode: interactiveMode,
+                        moreSidebarState: oldSpec.moreSidebarState)
     }
 
     // Specify any properties to override; if nil, will use self's property values.
@@ -189,7 +205,8 @@ extension PlayerWindowController {
                enableOSC: Bool? = nil,
                oscPosition: Preference.OSCPosition? = nil,
                isLegacyStyle: Bool? = nil,
-               interactiveMode: InteractiveMode? = nil) -> LayoutSpec {
+               interactiveMode: InteractiveMode? = nil,
+               moreSidebarState: SidebarMiscState? = nil) -> LayoutSpec {
       return LayoutSpec(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
                         trailingSidebar: trailingSidebar ?? self.trailingSidebar,
                         mode: mode ?? self.mode,
@@ -198,12 +215,44 @@ extension PlayerWindowController {
                         bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                         enableOSC: enableOSC ?? self.enableOSC,
                         oscPosition: self.oscPosition,
-                        interactiveMode: interactiveMode ?? self.interactiveMode)
+                        interactiveMode: interactiveMode ?? self.interactiveMode,
+                        moreSidebarState: moreSidebarState ?? self.moreSidebarState)
     }
 
     func withSidebarsHidden() -> LayoutSpec {
       return clone(leadingSidebar: leadingSidebar.clone(visibility: .hide),
                    trailingSidebar: trailingSidebar.clone(visibility: .hide))
+    }
+
+    var insideLeadingBarWidth: CGFloat {
+      if leadingSidebar.placement == .outsideViewport {
+        return 0
+      }
+      return leadingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    }
+
+    /// NOTE: Is mutable!
+    var insideTrailingBarWidth: CGFloat {
+      if trailingSidebar.placement == .outsideViewport {
+        return 0
+      }
+      return trailingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    }
+
+    /// NOTE: Is mutable!
+    var outsideTrailingBarWidth: CGFloat {
+      if trailingSidebar.placement == .insideViewport {
+        return 0
+      }
+      return trailingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
+    }
+
+    /// NOTE: Is mutable!
+    var outsideLeadingBarWidth: CGFloat {
+      if leadingSidebar.placement == .insideViewport {
+        return 0
+      }
+      return leadingSidebar.visibleTabGroup?.width(using: moreSidebarState) ?? 0
     }
 
     var isInteractiveMode: Bool {
@@ -241,8 +290,8 @@ extension PlayerWindowController {
 
     func getWidthBetweenInsideSidebars(leadingSidebarWidth: CGFloat? = nil, trailingSidebarWidth: CGFloat? = nil, 
                                              in viewportWidth: CGFloat) -> CGFloat {
-      let lead = leadingSidebarWidth ?? leadingSidebar.insideWidth
-      let trail = trailingSidebarWidth ?? trailingSidebar.insideWidth
+      let lead = leadingSidebarWidth ?? insideLeadingBarWidth
+      let trail = trailingSidebarWidth ?? insideTrailingBarWidth
       return viewportWidth - lead - trail
     }
 
@@ -254,8 +303,8 @@ extension PlayerWindowController {
     /// Returns `(shouldCloseLeadingSidebar, shouldCloseTrailingSidebar)`, indicating which sidebars should be hidden
     /// due to lack of space in the viewport.
     func isHideSidebarNeeded(in viewportWidth: CGFloat) -> (Bool, Bool) {
-      var leadingSidebarSpace = leadingSidebar.insideWidth
-      var trailingSidebarSpace = trailingSidebar.insideWidth
+      var leadingSidebarSpace = insideLeadingBarWidth
+      var trailingSidebarSpace = insideTrailingBarWidth
       var vidConSpace = viewportWidth
 
       var shouldCloseLeadingSidebar = false
@@ -347,7 +396,7 @@ extension PlayerWindowController {
 
     /// NOTE: Is mutable!
     var outsideTrailingBarWidth: CGFloat {
-      return spec.trailingSidebar.outsideWidth
+      return spec.outsideTrailingBarWidth
     }
 
     var outsideBottomBarHeight: CGFloat {
@@ -356,7 +405,7 @@ extension PlayerWindowController {
 
     /// NOTE: Is mutable!
     var outsideLeadingBarWidth: CGFloat {
-      return spec.leadingSidebar.outsideWidth
+      return spec.outsideLeadingBarWidth
     }
 
     var outsideBars: MarginQuad {
@@ -368,12 +417,12 @@ extension PlayerWindowController {
 
     /// NOTE: Is mutable!
     var insideLeadingBarWidth: CGFloat {
-      return spec.leadingSidebar.insideWidth
+      return spec.insideLeadingBarWidth
     }
 
     /// NOTE: Is mutable!
     var insideTrailingBarWidth: CGFloat {
-      return spec.trailingSidebar.insideWidth
+      return spec.insideTrailingBarWidth
     }
 
     var insideTopBarHeight: CGFloat {

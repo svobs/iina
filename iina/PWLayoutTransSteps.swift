@@ -665,7 +665,8 @@ extension PlayerWindowController {
     // Sidebars: if (re)opening
     if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab {
       if transition.isShowingLeadingSidebar {
-        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar, ΔWindowWidth: transition.ΔWindowWidth)
+        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar, 
+                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
       } else if transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
         // Tab group is already showing, but just need to switch tab
         switchToTabInTabGroup(tab: tabToShow)
@@ -673,7 +674,8 @@ extension PlayerWindowController {
     }
     if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab {
       if transition.isShowingTrailingSidebar {
-        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar, ΔWindowWidth: transition.ΔWindowWidth)
+        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
       } else if transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
         // Tab group is already showing, but just need to switch tab
         switchToTabInTabGroup(tab: tabToShow)
