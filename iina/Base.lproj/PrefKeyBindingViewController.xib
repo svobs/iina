@@ -137,10 +137,10 @@
                                                 <rect key="frame" x="169" y="1" width="16" height="18"/>
                                                 <subviews>
                                                     <imageView identifier="isDefault" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="bcd-Sf-UF4" userLabel="Locked Image">
-                                                        <rect key="frame" x="2" y="-4.5" width="12.5" height="28"/>
+                                                        <rect key="frame" x="2" y="0.5" width="12.5" height="18"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" constant="12" id="CBQ-EE-ewG"/>
-                                                            <constraint firstAttribute="height" constant="18" id="qHE-AJ-6Nv"/>
+                                                            <constraint firstAttribute="height" constant="8" id="qHE-AJ-6Nv"/>
                                                         </constraints>
                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSLockLockedTemplate" id="nvW-Cm-Wbc" userLabel="Locked ImageCell"/>
                                                     </imageView>
@@ -435,7 +435,7 @@
                                 </connections>
                             </button>
                             <button horizontalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="ogR-hg-OWq" userLabel="Show bindings from all sources Button">
-                                <rect key="frame" x="40" y="0.0" width="121" height="20"/>
+                                <rect key="frame" x="46" y="0.0" width="121" height="20"/>
                                 <string key="toolTip">Shows the complete set of key bindings which are active in the most recent player window, in addition to the current configuration. When this is checked, the list can include key bindings which cannot be changed or can only be configured elsewhere, such as filter shortcuts, built-in menu items, and bindings set by Lua scripts.</string>
                                 <buttonCell key="cell" type="check" title="Show all other bindings" bezelStyle="regularSquare" imagePosition="left" controlSize="mini" lineBreakMode="truncatingTail" state="on" inset="2" id="ofM-Fl-e5N">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -446,7 +446,7 @@
                                 </connections>
                             </button>
                             <button toolTip="Show the raw mpv key code and command." horizontalHuggingPriority="501" translatesAutoresizingMaskIntoConstraints="NO" id="l2M-TH-eCt" userLabel="Use raw values Button">
-                                <rect key="frame" x="169" y="0.0" width="91" height="20"/>
+                                <rect key="frame" x="175" y="0.0" width="85" height="20"/>
                                 <buttonCell key="cell" type="check" title="Use raw values" bezelStyle="regularSquare" imagePosition="left" controlSize="mini" lineBreakMode="truncatingTail" inset="2" id="3RK-1k-otl">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="label" size="9"/>
