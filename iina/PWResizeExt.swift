@@ -43,8 +43,8 @@ extension PlayerWindowController {
                                currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
     log.verbose("Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil")")
     applyVideoGeoTransform({ [self] videoGeo in
-      guard player.status.isNotYet(.stopping) else {
-        log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.status); aborting")
+      guard player.state.isNotYet(.stopping) else {
+        log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.state); aborting")
         return nil
       }
 
@@ -146,7 +146,7 @@ extension PlayerWindowController {
         }
 
         guard !player.isStopping else {
-          log.verbose("[applyVideoGeo] Aborting because player is stopping (status=\(player.status))")
+          log.verbose("[applyVideoGeo] Aborting because player is stopping (status=\(player.state))")
           aborted = true
           return
         }

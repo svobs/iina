@@ -138,7 +138,7 @@ class PlayerCoreManager {
   func getNonIdle() -> [PlayerCore] {
     var cores: [PlayerCore]? = nil
     lock.withLock {
-      cores = _playerCores.filter { $0.status.isAtLeast(.started) && !$0.info.isIdle }
+      cores = _playerCores.filter { $0.state.isAtLeast(.started) && !$0.info.isIdle }
     }
     return cores!
   }

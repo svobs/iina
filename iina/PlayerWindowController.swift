@@ -143,7 +143,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var isClosing: Bool {
-    return player.status.isAtLeast(.stopping)
+    return player.state.isAtLeast(.stopping)
   }
 
   var isWindowMiniaturizedDueToPip = false
@@ -1976,7 +1976,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   override func showWindow(_ sender: Any?) {
-    guard player.status.isNotYet(.stopping) else {
+    guard player.state.isNotYet(.stopping) else {
       log.verbose("Aborting showWindow - player is stopping")
       return
     }

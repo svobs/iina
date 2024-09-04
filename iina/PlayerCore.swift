@@ -139,30 +139,30 @@ class PlayerCore: NSObject {
 
   var isUsingMpvOSD = false
 
-  var status: LifecycleState = .notYetStarted {
+  var state: LifecycleState = .notYetStarted {
     didSet {
-      log.verbose("Updated lifecycleState to \(status)")
+      log.verbose("Updated lifecycleState to \(state)")
     }
   }
 
   var isActive: Bool {
-    return status.isAtLeast(.started) && status.isNotYet(.stopping)
+    return state.isAtLeast(.started) && state.isNotYet(.stopping)
   }
 
   var isShuttingDown: Bool {
-    status.isAtLeast(.shuttingDown)
+    state.isAtLeast(.shuttingDown)
   }
 
   var isShutDown: Bool {
-    status.isAtLeast(.shutDown)
+    state.isAtLeast(.shutDown)
   }
 
   var isStopping: Bool {
-    status.isAtLeast(.stopping)
+    state.isAtLeast(.stopping)
   }
 
   var isStopped: Bool {
-    status.isAtLeast(.stopped)
+    state.isAtLeast(.stopped)
   }
 
   var isInMiniPlayer: Bool {
@@ -425,8 +425,8 @@ class PlayerCore: NSObject {
       info.hdrEnabled = Preference.bool(for: .enableHdrSupport)
 
       // Reset state flags
-      if status == .stopping || status == .stopped {
-        status = .started
+      if state == .stopping || state == .stopped {
+        state = .started
       }
 
       // Load into cache while in mpv queue first
@@ -483,7 +483,7 @@ class PlayerCore: NSObject {
 
   // Does nothing if already started
   func start() {
-    guard status == .notYetStarted else { return }
+    guard state == .notYetStarted else { return }
 
     log.verbose("Player start")
 
@@ -494,7 +494,7 @@ class PlayerCore: NSObject {
     } else {
       initVideo()
     }
-    status = .started
+    state = .started
   }
 
   private func startMPV() {
@@ -533,8 +533,8 @@ class PlayerCore: NSObject {
   // unload main window video view
   private func uninitVideo() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard status.isNotYet(.shuttingDown) else { return }
-    status = .shuttingDown
+    guard state.isNotYet(.shuttingDown) else { return }
+    state = .shuttingDown
     videoView.uninit()
   }
 
@@ -555,11 +555,11 @@ class PlayerCore: NSObject {
   ///     until mpv finishes executing the quit command and shuts down.
   func shutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard status.isNotYet(.shuttingDown) else {
+    guard state.isNotYet(.shuttingDown) else {
       log.verbose("Player is already shutting down")
       return
     }
-    guard status.isAtLeast(.started) else {
+    guard state.isAtLeast(.started) else {
       log.debug("Player was never started")
       mpvHasShutdown()
       return
@@ -581,7 +581,7 @@ class PlayerCore: NSObject {
   ///     can.
   func mpvHasShutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
-    let isMPVInitiated = status.isNotYet(.shuttingDown)
+    let isMPVInitiated = state.isNotYet(.shuttingDown)
     let suffix = isMPVInitiated ? " (initiated by mpv)" : ""
     log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
@@ -597,7 +597,7 @@ class PlayerCore: NSObject {
     mpv.queue.sync { [self] in  // run in queue to avoid race condition when handling events in queue, which checks mpv!=nil
       mpv.mpvDestroy()
     }
-    status = .shutDown
+    state = .shutDown
     PlayerCoreManager.shared.removePlayer(withLabel: label)
 
     postNotification(.iinaPlayerShutdown)
@@ -691,8 +691,8 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     mpv.queue.async { [self] in
-      guard status.isNotYet(.stopping) else {
-        log.debug("Stop called, but status is already \(status); aborting redundant stop call")
+      guard state.isNotYet(.stopping) else {
+        log.debug("Stop called, but state is already \(state); aborting redundant stop call")
         return
       }
 
@@ -700,10 +700,10 @@ class PlayerCore: NSObject {
 
       stopWatchingSubFile()
 
-      /// call this BEFORE setting status to `.stopping`
+      /// call this BEFORE setting state to `.stopping`
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
 
-      status = .stopping
+      state = .stopping
 
       DispatchQueue.main.async { [self] in
         videoView.stopDisplayLink()
@@ -733,8 +733,8 @@ class PlayerCore: NSObject {
       }
       mpv.command(.stop, level: .verbose)
 
-      if status.rawValue < LifecycleState.stopped.rawValue {
-        status = .stopped
+      if state.rawValue < LifecycleState.stopped.rawValue {
+        state = .stopped
       }
     }
   }
@@ -1167,8 +1167,8 @@ class PlayerCore: NSObject {
 
     DispatchQueue.main.async { [self] in
       if !paused {
-        if status == .stopping || status == .stopped {
-          status = .started
+        if state == .stopping || state == .stopped {
+          state = .started
         }
       }
       windowController.updatePlayButtonAndSpeedUI()
@@ -2180,7 +2180,7 @@ class PlayerCore: NSObject {
     }
     if let existingMedia = info.currentPlayback, existingMedia.url == mediaFromPath.url {
       guard existingMedia.state.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but status is unexpected; aborting (expected: 'started', found: \(existingMedia.state.rawValue))")
+        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingMedia.state.rawValue))")
         return
       }
       // update existing entry
@@ -2282,8 +2282,8 @@ class PlayerCore: NSObject {
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
     // the playlist.
-    if status == .stopping || status == .stopped {
-      status = .started
+    if state == .stopping || state == .stopped {
+      state = .started
     }
 
     guard let currentPlayback = info.currentPlayback else {
@@ -2325,7 +2325,7 @@ class PlayerCore: NSObject {
 
       /// Will complete restore when `applyVideoGeoTransform` is done
     }
-    // Set this *before* reloading track selections! They will check status
+    // Set this *before* reloading track selections! They will check state
     currentPlayback.state = .loaded
 
     reloadSelectedTracks(silent: true)
@@ -2734,7 +2734,7 @@ class PlayerCore: NSObject {
     /// Do this first, before `applyVideoVisibility`, for a nicer animation.
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submitInstantTask { [self] in
-        // Check status so that we don't duplicate work
+        // Check state so that we don't duplicate work
         if info.isFileLoadedAndSized, let showDefaultArt {
           log.verbose("Video track changed to \(vid): calling showDefaultArt=\(showDefaultArt.yn)")
           windowController.updateDefaultArtVisibility(to: showDefaultArt)
@@ -2980,7 +2980,7 @@ class PlayerCore: NSObject {
           summary += ", every \(timerConfig.interval)s"
         }
         let logMsg = logMsg.isEmpty ? logMsg : "\(logMsg)- "
-        log.verbose("\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) status:\(status)")
+        log.verbose("\(logMsg)SyncUITimer \(summary), paused:\(info.isPaused.yn) net:\(info.isNetworkResource.yn) mini:\(isInMiniPlayer.yn) touchBar:\(needsTouchBar.yn) state:\(state)")
       }
     }
 
@@ -3025,7 +3025,7 @@ class PlayerCore: NSObject {
   private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
-    guard status.isAtLeast(.started) else {
+    guard state.isAtLeast(.started) else {
       log.verbose("syncUITime: not syncing")
       return
     }

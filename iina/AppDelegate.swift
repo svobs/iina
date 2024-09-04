@@ -25,7 +25,7 @@ class Startup {
     case doneOpening
   }
 
-  var status: OpenWindowsState = .stillEnqueuing
+  var state: OpenWindowsState = .stillEnqueuing
 
   /**
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
@@ -310,7 +310,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // Still waiting to show
       startup.wcsReady.insert(wc)
 
-      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.status == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
+      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
 
       showWindowsIfReady()
     } else if !window.isMiniaturized {
@@ -324,7 +324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard let window = notification.object as? NSWindow else { return }
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    Logger.log("Restored window cancelled: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.status == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
+    Logger.log("Restored window cancelled: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
 
     // No longer waiting for this window
     startup.wcsToRestore.removeAll(where: { wc in
@@ -426,7 +426,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       startFromCommandLine()
     }
 
-    startup.status = .doneEnqueuing
+    startup.state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
   }
@@ -484,7 +484,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard startup.status == .doneEnqueuing else { return }
+    guard startup.state == .doneEnqueuing else { return }
     guard startup.wcsReady.count == startup.wcsToRestore.count else { return }
     guard !startup.openFileCalled || startup.wcForOpenFile != nil else { return }
 
@@ -549,7 +549,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
-    startup.status = .doneOpening
+    startup.state = .doneOpening
   }
 
   func applicationShouldAutomaticallyLocalizeKeyEquivalents(_ application: NSApplication) -> Bool {
@@ -900,7 +900,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
-    guard startup.status == .doneOpening else { return false }
+    guard startup.state == .doneOpening else { return false }
 
     /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
     /// Another case is when the welcome window is closed prior to a new player window opening.
