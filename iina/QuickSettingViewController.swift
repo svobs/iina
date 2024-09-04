@@ -80,8 +80,25 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
    */
   private var pendingSwitchRequest: TabViewType?
 
-  /// is showing secondary sub if `false`
-  private var isShowingPrimarySubPanel: Bool = true
+  // TODO: clean this up. It's super kludgey
+  /// is showing secondary sub if `false`.
+  private var isShowingPrimarySubPanel: Bool {
+    get {
+      guard let wc = windowController else { return true }
+      return wc.currentLayout.spec.moreSidebarState.selectedSubSegment == 0
+    }
+    set {
+      guard let wc = windowController else { return }
+      let selectedSegment = newValue ? 0 : 1  // convert from bool to segment selection
+
+      // Put inside task to protect from race
+      wc.animationPipeline.submitInstantTask{
+        let prevLayout = wc.currentLayout
+        let moreSidebarState = PlayerWindowController.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth, selectedSubSegment: selectedSegment)
+        wc.currentLayout = PlayerWindowController.LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+      }
+    }
+  }
 
   weak var player: PlayerCore!
 
@@ -541,6 +558,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subBorderSize)
 
       DispatchQueue.main.async { [self] in
+        subSegmentedControl.setSelected(true, forSegment: isPrimary ? 0 : 1)
+        
         subPosSlider.intValue = Int32(currSubPos)
         subScaleSlider.doubleValue = displaySubScale + (displaySubScale > 0 ? -1 : 1)
 

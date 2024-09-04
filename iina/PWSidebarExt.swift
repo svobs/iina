@@ -980,9 +980,12 @@ extension PlayerWindowController {
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
-    // Update layout also
-    let moreSidebarState = SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: currentLayout.spec.moreSidebarState.selectedSubSegment)
-    self.currentLayout = LayoutState.buildFrom(currentLayout.spec.clone(moreSidebarState: moreSidebarState))
+    // Update layout also. Do this inside the animation pipeline to prevent races
+    animationPipeline.submitInstantTask{ [self] in
+      let prevLayout = self.currentLayout
+      let moreSidebarState = SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment)
+      self.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+    }
 
     updateTrailingSidebarWidth(to: newPlaylistWidth, visible: true, placement: currentLayout.trailingSidebarPlacement,
                                ΔWindowWidth: newGeo.windowFrame.width - oldGeo.windowFrame.width)

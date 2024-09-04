@@ -85,7 +85,9 @@ struct PlayerSaveState {
   }
 
   static fileprivate let videoGeometryPrefStringVersion = "1"
-  static fileprivate let specPrefStringVersion = "1"
+  static fileprivate let specPrefStringVersion1 = "1"
+  /// Upgraded to "2" in v1.3
+  static fileprivate let specPrefStringVersion2 = "2"
   /// Updated to "2" in v1.2
   static fileprivate let windowGeometryPrefStringVersion = "2"
   /// Updated to "2" in v1.2
@@ -133,15 +135,14 @@ struct PlayerSaveState {
     let wc = player.windowController!
     let layout = wc.currentLayout
 
-    let buildNumber: String = InfoDictionary.shared.version.1
-    assert(Int(buildNumber) != nil, "InfoDictionary.shared.version.1 is not an int: \(buildNumber)")
+    let buildNumber: Int = info.priorStateBuildNumber
     props[PropName.buildNumber.rawValue] = buildNumber
     props[PropName.launchID.rawValue] = Preference.UIState.launchID
 
     // - Window Layout & Geometry
 
     /// `layoutSpec`
-    props[PropName.layoutSpec.rawValue] = layout.spec.toCSV()
+    props[PropName.layoutSpec.rawValue] = layout.spec.toCSV(buildNumber: buildNumber)
 
     /// `windowedModeGeo`: use supplied GeometrySet for most up-to-date window frame
     props[PropName.windowedModeGeo.rawValue] = geo.windowed.toCSV()
@@ -596,6 +597,8 @@ struct PlayerSaveState {
     let info = player.info
     info.priorState = self
     info.isRestoring = true
+
+    info.priorStateBuildNumber = int(for: .buildNumber) ?? info.priorStateBuildNumber
 
     let windowController = player.windowController!
     windowController.geo = self.geoSet
@@ -1221,22 +1224,31 @@ extension PWinGeometry {
 
 extension PlayerWindowController.LayoutSpec {
   /// `LayoutSpec` -> `String`
-  func toCSV() -> String {
+  func toCSV(buildNumber: Int) -> String {
     let leadingSidebarTab: String = self.leadingSidebar.visibleTab?.name ?? "nil"
     let trailingSidebarTab: String = self.trailingSidebar.visibleTab?.name ?? "nil"
-    return [PlayerSaveState.specPrefStringVersion,
-            leadingSidebarTab,
-            trailingSidebarTab,
-            String(self.mode.rawValue),
-            self.isLegacyStyle.yn,
-            String(self.topBarPlacement.rawValue),
-            String(self.trailingSidebarPlacement.rawValue),
-            String(self.bottomBarPlacement.rawValue),
-            String(self.leadingSidebarPlacement.rawValue),
-            self.enableOSC.yn,
-            String(self.oscPosition.rawValue),
-            String(self.interactiveMode?.rawValue ?? 0)
-    ].joined(separator: ",")
+    var csvItems = [leadingSidebarTab,
+                    trailingSidebarTab,
+                    String(self.mode.rawValue),
+                    self.isLegacyStyle.yn,
+                    String(self.topBarPlacement.rawValue),
+                    String(self.trailingSidebarPlacement.rawValue),
+                    String(self.bottomBarPlacement.rawValue),
+                    String(self.leadingSidebarPlacement.rawValue),
+                    self.enableOSC.yn,
+                    String(self.oscPosition.rawValue),
+                    String(self.interactiveMode?.rawValue ?? 0)
+    ]
+
+    if buildNumber <= 4 {
+      csvItems = [PlayerSaveState.specPrefStringVersion1] + csvItems
+    } else { // v3.0
+      csvItems = [PlayerSaveState.specPrefStringVersion2] + csvItems + [
+        String(moreSidebarState.selectedSubSegment),
+        String(moreSidebarState.playlistSidebarWidth)
+      ]
+    }
+    return csvItems.joined(separator: ",")
   }
 
   /// `String` -> `LayoutSpec`
@@ -1245,9 +1257,7 @@ extension PlayerWindowController.LayoutSpec {
       Logger.log.debug("CSV is empty; returning nil for LayoutSpec")
       return nil
     }
-    return PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
-                                    expectedVersion: PlayerSaveState.specPrefStringVersion,
-                                    targetObjName: "LayoutSpec", { errPreamble, iter in
+    let parsingFunc: (String, inout IndexingIterator<[String]>) throws -> PlayerWindowController.LayoutSpec? = { errPreamble, iter in
 
       let leadingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
       let traillingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
@@ -1295,10 +1305,34 @@ extension PlayerWindowController.LayoutSpec {
       }
       let trailingSidebar = PlayerWindowController.Sidebar(.trailingSidebar, tabGroups: trailingTabGroups, placement: trailingSidebarPlacement, visibility: trailVis)
 
-      // TODO: persist this & load back in instead!
-      let moreSidebarState = PlayerWindowController.SidebarMiscState.fromDefaultPrefs()
+      let moreSidebarState: PlayerWindowController.SidebarMiscState
+
+      if let selectedSubSegment = Int(iter.next() ?? ""), let playlistWidth = Int(iter.next() ?? "") {
+        moreSidebarState = PlayerWindowController.SidebarMiscState(playlistSidebarWidth: playlistWidth,
+                                                                   selectedSubSegment: selectedSubSegment)
+      } else {
+        // v1 of the CSV lacked this info. Fall back to default
+        moreSidebarState = PlayerWindowController.SidebarMiscState.fromDefaultPrefs()
+      }
+
       return PlayerWindowController.LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode, isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement, bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition, interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
-    })
+    }
+
+    do {
+      if let specV2 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 14,
+                                                   expectedVersion: PlayerSaveState.specPrefStringVersion2,
+                                                   targetObjName: "LayoutSpec", parsingFunc) {
+        return specV2
+      } else {
+        let specV1 = try PlayerSaveState.parseCSV(csv, expectedTokenCount: 12,
+                                                  expectedVersion: PlayerSaveState.specPrefStringVersion1,
+                                                  targetObjName: "LayoutSpec", parsingFunc)
+        return specV1
+      }
+    } catch {
+      Logger.log.error("Caught error while parsing LayoutSpec: \(error)")
+      return nil
+    }
   }
 
 }
