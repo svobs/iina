@@ -1520,8 +1520,8 @@ class PlayerCore: NSObject {
   func playlistMove(_ from: Int, to: Int) {
     mpv.queue.async { [self] in
       _playlistMove(from, to: to)
+      _reloadPlaylist()
     }
-    _reloadPlaylist()
   }
 
   func playlistMove(_ srcRows: IndexSet, to dstRow: Int) {
