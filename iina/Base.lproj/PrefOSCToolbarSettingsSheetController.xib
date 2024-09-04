@@ -19,7 +19,7 @@
             <windowStyleMask key="styleMask" closable="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="425" height="355"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <view key="contentView" wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="se5-gp-TjO" userLabel="Content View">
                 <rect key="frame" x="0.0" y="0.0" width="300" height="300"/>
                 <subviews>
@@ -40,26 +40,27 @@
                         </textFieldCell>
                     </textField>
                     <box horizontalCompressionResistancePriority="800" verticalCompressionResistancePriority="800" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="l1W-AA-5L4" userLabel="Current-Items Box">
-                        <rect key="frame" x="117" y="220" width="66" height="18"/>
+                        <rect key="frame" x="121" y="220" width="58" height="18"/>
                         <view key="contentView" id="Xci-wI-yo3" userLabel="Current-Items-Box Content View">
-                            <rect key="frame" x="4" y="5" width="58" height="10"/>
+                            <rect key="frame" x="4" y="5" width="50" height="10"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" userLabel="PrefOSCToolbarCurrentItems Stack View" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="58" height="10"/>
+                                <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" userLabel="PrefOSCToolbarCurrentItems Stack View" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
+                                    <rect key="frame" x="0.0" y="0.0" width="50" height="10"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" secondItem="63i-B1-8o0" secondAttribute="height" multiplier="5" id="vdd-wn-jVV"/>
+                                    </constraints>
                                 </stackView>
                             </subviews>
                             <constraints>
-                                <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" priority="900" id="jDI-OC-9Ay"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerY" secondItem="Xci-wI-yo3" secondAttribute="centerY" id="w45-pP-TuN"/>
                                 <constraint firstItem="63i-B1-8o0" firstAttribute="centerX" secondItem="Xci-wI-yo3" secondAttribute="centerX" id="xjD-Ua-vTC"/>
                             </constraints>
                         </view>
                         <constraints>
-                            <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="l1W-AA-5L4" secondAttribute="height" constant="-2" id="Fzu-qd-y9O"/>
+                            <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" id="Fzu-qd-y9O"/>
                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="12" id="N21-2K-asb"/>
-                            <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="l1W-AA-5L4" secondAttribute="width" constant="-2" id="XJj-zB-JbE"/>
-                            <constraint firstAttribute="width" secondItem="l1W-AA-5L4" secondAttribute="height" multiplier="5" id="b8W-Sg-Xfc"/>
+                            <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="Xci-wI-yo3" secondAttribute="width" id="XJj-zB-JbE"/>
                         </constraints>
                     </box>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Neb-Rz-hK4">
@@ -78,7 +79,7 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <stackView orientation="vertical" alignment="centerX" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="Sdu-Jk-G6t" customClass="PrefOSCToolbarAvailableItemsView" customModule="IINA" customModuleProvider="target">
+                    <stackView orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="Sdu-Jk-G6t" customClass="PrefOSCToolbarAvailableItemsView" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="50" y="60" width="200" height="86"/>
                         <constraints>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="eBC-0i-R80"/>

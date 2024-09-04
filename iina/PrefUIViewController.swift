@@ -102,6 +102,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var pipHideWindow: NSButton!
   @IBOutlet weak var pipMinimizeWindow: NSButton!
 
+  var oscToolbarStackViewHeightConstraint: NSLayoutConstraint? = nil
+
   private let observedPrefKeys: [Preference.Key] = [
     .enableAdvancedSettings,
     .showTopBarTrigger,
@@ -356,6 +358,17 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func updateOSCToolbarButtons() {
+    if let oscToolbarStackViewHeightConstraint {
+      oscToolbarStackViewHeightConstraint.isActive = false
+      self.oscToolbarStackViewHeightConstraint = nil
+    }
+    let stackViewHeight = OSCToolbarButton.buttonSize
+    let constraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: stackViewHeight)
+    constraint.isActive = true
+    oscToolbarStackViewHeightConstraint = constraint
+
+    toolbarSettingsSheetController.updateToolbarButtonHeight(to: stackViewHeight)
+
     oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
     for buttonType in PrefUIViewController.oscToolbarButtons {
       let button = OSCToolbarButton()

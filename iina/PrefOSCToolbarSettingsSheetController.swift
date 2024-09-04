@@ -27,6 +27,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
 
   @IBOutlet weak var availableItemsView: PrefOSCToolbarAvailableItemsView!
   @IBOutlet weak var currentItemsView: PrefOSCToolbarCurrentItemsView!
+  private var currentItemsViewHeightConstraint: NSLayoutConstraint? = nil
 
   override func windowDidLoad() {
     super.windowDidLoad()
@@ -42,6 +43,20 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
       itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
       availableItemsView.addView(itemViewController.view, in: .top)
     }
+
+    updateToolbarButtonHeight(to: OSCToolbarButton.buttonSize)
+  }
+
+  func updateToolbarButtonHeight(to newHeight: CGFloat) {
+    guard isWindowLoaded else { return }
+
+    if let currentItemsViewHeightConstraint {
+      currentItemsViewHeightConstraint.isActive = false
+      self.currentItemsViewHeightConstraint = nil
+    }
+    let constraint = currentItemsView.heightAnchor.constraint(equalToConstant: newHeight)
+    constraint.isActive = true
+    currentItemsViewHeightConstraint = constraint
   }
 
   func currentItemsView(_ view: PrefOSCToolbarCurrentItemsView, updatedItems items: [Preference.ToolBarButton]) {

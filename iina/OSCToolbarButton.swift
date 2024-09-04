@@ -69,6 +69,7 @@ class OSCToolbarButton: NSButton {
 
     // Bit of a kludge to make drag image origin line up in 2 different layouts:
     let buttonSize = isCurrentItem ? iconSize : buttonSize
+    
     // Image is centered in frame, and frame has 1px offset from left & bottom of box
     let dragOrigin = CGPoint(x: (buttonSize - imageSize.width) / 2 + 1, y: (buttonSize - imageSize.height) / 2 + 1)
     dragItem.draggingFrame = NSRect(origin: dragOrigin, size: imageSize)

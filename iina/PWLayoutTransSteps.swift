@@ -1296,13 +1296,12 @@ extension PlayerWindowController {
 
   // MARK: - Controller content layout
 
-  private func addControlBarViews(to containerView: NSStackView, playBtnSize: CGFloat, playBtnSpacing: CGFloat,
-                                  toolbarIconSize: CGFloat? = nil, toolbarIconSpacing: CGFloat? = nil) {
+  private func addControlBarViews(to containerView: NSStackView, playBtnSize: CGFloat, playBtnSpacing: CGFloat) {
     containerView.addView(fragPlaybackControlButtonsView, in: .leading)
     containerView.addView(fragPositionSliderView, in: .leading)
     containerView.addView(fragVolumeView, in: .leading)
 
-    let toolbarView = rebuildToolbar(iconSize: toolbarIconSize, iconPadding: toolbarIconSpacing)
+    let toolbarView = rebuildToolbar()
     containerView.addView(toolbarView, in: .leading)
 
     containerView.configureSubtreeForCoreAnimation()
@@ -1363,6 +1362,7 @@ extension PlayerWindowController {
     }
   }
 
+  /// Need explicit `iconSize` & `iconPadding` for floating OSC, which does not use pref values
   private func rebuildToolbar(iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) -> NSStackView {
     let buttonTypeRawValues = Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []
     let buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
