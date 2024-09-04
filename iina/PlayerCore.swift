@@ -1513,7 +1513,7 @@ class PlayerCore: NSObject {
   func setSubDelay(_ delay: Double, forPrimary: Bool = true) {
     mpv.queue.async { [self] in
       let option = forPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
-    mpv.setDouble(option, delay)
+      mpv.setDouble(option, delay)
     }
   }
 
@@ -2576,18 +2576,6 @@ class PlayerCore: NSObject {
     }
   }
 
-  func secondarySubDelayChanged(_ delay: Double) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    sendOSD(.secondSubDelay(delay))
-    reloadQuickSettingsView()
-  }
-
-  func secondarySubPosChanged(_ position: Double) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    sendOSD(.secondSubPos(position))
-    reloadQuickSettingsView()
-  }
-
   func sidChanged(silent: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !info.isRestoring, !isStopping else { return }
@@ -2622,27 +2610,16 @@ class PlayerCore: NSObject {
 
     log.verbose("SSID changed to \(ssid)")
     postNotification(.iinaSIDChanged)
+    saveState()
     reloadQuickSettingsView()
   }
 
-  func secondSubVisibilityChanged(_ visible: Bool) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard info.isSecondSubVisible != visible else { return }
-    info.isSecondSubVisible = visible
-    sendOSD(visible ? .secondSubVisible : .secondSubHidden)
-    postNotification(.iinaSecondSubVisibilityChanged)
-  }
-
-  func subDelayChanged(_ delay: Double) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    info.subDelay = delay
-    sendOSD(.subDelay(delay))
-    reloadQuickSettingsView()
-  }
-
-  func subPosChanged(_ position: Double) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    sendOSD(.subPos(position))
+  func subScaleChanged(_ subScale: Double) {
+    let displayValue = subScale >= 1 ? subScale : -1/subScale
+    let subScale = displayValue.clamped(to: 0.1...10).roundedTo2()
+    info.subScale = subScale
+    sendOSD(.subScale(subScale))
+    saveState()
     reloadQuickSettingsView()
   }
 
@@ -2651,7 +2628,49 @@ class PlayerCore: NSObject {
     guard info.isSubVisible != visible else { return }
     info.isSubVisible = visible
     sendOSD(visible ? .subVisible : .subHidden)
+    saveState()
     postNotification(.iinaSubVisibilityChanged)
+  }
+
+  func secondSubVisibilityChanged(_ visible: Bool) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard info.isSecondSubVisible != visible else { return }
+    info.isSecondSubVisible = visible
+    sendOSD(visible ? .secondSubVisible : .secondSubHidden)
+    saveState()
+    postNotification(.iinaSecondSubVisibilityChanged)
+  }
+
+  func subDelayChanged(_ delay: Double) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.subDelay = delay
+    sendOSD(.subDelay(delay))
+    saveState()
+    reloadQuickSettingsView()
+  }
+
+  func secondarySubDelayChanged(_ delay: Double) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.sub2Delay = delay
+    sendOSD(.secondSubDelay(delay))
+    saveState()
+    reloadQuickSettingsView()
+  }
+
+  func subPosChanged(_ position: Double) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.subPos = position
+    sendOSD(.subPos(position))
+    saveState()
+    reloadQuickSettingsView()
+  }
+
+  func secondarySubPosChanged(_ position: Double) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    info.sub2Pos = position
+    sendOSD(.secondSubPos(position))
+    saveState()
+    reloadQuickSettingsView()
   }
 
   func trackListChanged() {

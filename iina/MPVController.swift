@@ -1141,11 +1141,9 @@ class MPVController: NSObject {
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
 
-    let dwidth = getInt(MPVProperty.dwidth)
-    let dheight = getInt(MPVProperty.dheight)
-    // filter the last video-reconfig event before quit
-    if dwidth == 0 && dheight == 0 && getFlag(MPVProperty.coreIdle) {
-      player.log.verbose("Cannot get videoGeo: core idle & dheight or dwidth is 0")
+    if rawWidth == 0 && rawHeight == 0 && getFlag(MPVProperty.coreIdle) {
+      // this indicates that video load is not complete, or mpv is shutting down, or other in-between state
+      player.log.verbose("Cannot get videoGeo: core idle & mpv's video width or height is 0")
       return nil
     }
 
@@ -1156,6 +1154,9 @@ class MPVController: NSObject {
                                selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 
     player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentPlayback.path)")
+
+    let dwidth = getInt(MPVProperty.dwidth)
+    let dheight = getInt(MPVProperty.dheight)
     // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
     let videoSizeC = vidGeo.videoSizeC
     if (abs(Int(videoSizeC.width) - dwidth) > 1) || (abs(Int(videoSizeC.height) - dheight) > 1) {
@@ -1490,15 +1491,15 @@ class MPVController: NSObject {
       }
 
     case MPVOption.Subtitles.secondarySubDelay:
-      fallthrough
-
-    case MPVOption.Subtitles.subDelay:
       guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
         logPropertyValueError(name, property.format)
         break
       }
-      guard name == MPVOption.Subtitles.subDelay else {
-        player.secondarySubDelayChanged(data)
+      player.secondarySubDelayChanged(data)
+
+    case MPVOption.Subtitles.subDelay:
+      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+        logPropertyValueError(name, property.format)
         break
       }
       player.subDelayChanged(data)
@@ -1508,10 +1509,7 @@ class MPVController: NSObject {
         logPropertyValueError(MPVOption.Subtitles.subScale, property.format)
         break
       }
-      let displayValue = data >= 1 ? data : -1/data
-      let truncated = round(displayValue * 100) / 100
-      player.sendOSD(.subScale(truncated))
-      player.reloadQuickSettingsView()
+      player.subScaleChanged(data)
 
     case MPVOption.Subtitles.secondarySubPos:
       guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {

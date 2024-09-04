@@ -390,7 +390,7 @@ extension Preference {
       return PlayerSaveState(propDict, playerID: pid)
     }
 
-    static func saveLifecycleState(forPlayerID playerID: String, properties: [String: Any]) {
+    static func saveState(forPlayerID playerID: String, properties: [String: Any]) {
       guard isSaveEnabled else { return }
       guard properties[PlayerSaveState.PropName.url.rawValue] != nil else {
         // This can happen if trying to save while changing tracks, or at certain brief periods during shutdown.

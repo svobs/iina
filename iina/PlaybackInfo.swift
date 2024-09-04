@@ -151,6 +151,10 @@ class PlaybackInfo {
   // time
   var audioDelay: Double = 0
   var subDelay: Double = 0
+  var sub2Delay: Double = 0
+  var subScale: Double = 0
+  var subPos: Double = 0
+  var sub2Pos: Double = 0
 
   var abLoopStatus: LoopStatus = .cleared
 

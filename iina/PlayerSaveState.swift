@@ -33,52 +33,55 @@ struct PlayerSaveState {
     case isOnTop = "onTop"
 
     case url = "url"
-    case playPosition = "playPosition"/// `MPVOption.PlaybackControl.start`
-    case playDuration = "playDuration"/// `MPVProperty.duration`
-    case paused = "paused"            /// `MPVOption.PlaybackControl.pause`
+    case playPosition = "playPosition"  /// `MPVOption.PlaybackControl.start`
+    case playDuration = "playDuration"  /// `MPVProperty.duration`
+    case paused = "paused"              /// `MPVOption.PlaybackControl.pause`
 
-    case vid = "vid"                  /// `MPVOption.TrackSelection.vid`
-    case aid = "aid"                  /// `MPVOption.TrackSelection.aid`
-    case sid = "sid"                  /// `MPVOption.TrackSelection.sid`
-    case s2id = "sid2"                /// `MPVOption.Subtitles.secondarySid`
+    case vid = "vid"                    /// `MPVOption.TrackSelection.vid`
+    case aid = "aid"                    /// `MPVOption.TrackSelection.aid`
+    case sid = "sid"                    /// `MPVOption.TrackSelection.sid`
+    case s2id = "sid2"                  /// `MPVOption.Subtitles.secondarySid`
 
-    case hwdec = "hwdec"              /// `MPVOption.Video.hwdec`
-    case deinterlace = "deinterlace"  /// `MPVOption.Video.deinterlace`
-    case hdrEnabled = "hdrEnabled"    /// IINA setting
+    case hwdec = "hwdec"                /// `MPVOption.Video.hwdec`
+    case deinterlace = "deinterlace"    /// `MPVOption.Video.deinterlace`
+    case hdrEnabled = "hdrEnabled"      /// IINA setting
 
-    case brightness = "brightness"    /// `MPVOption.Equalizer.brightness`
-    case contrast = "contrast"        /// `MPVOption.Equalizer.contrast`
-    case saturation = "saturation"    /// `MPVOption.Equalizer.saturation`
-    case gamma = "gamma"              /// `MPVOption.Equalizer.gamma`
-    case hue = "hue"                  /// `MPVOption.Equalizer.hue`
+    case brightness = "brightness"      /// `MPVOption.Equalizer.brightness`
+    case contrast = "contrast"          /// `MPVOption.Equalizer.contrast`
+    case saturation = "saturation"      /// `MPVOption.Equalizer.saturation`
+    case gamma = "gamma"                /// `MPVOption.Equalizer.gamma`
+    case hue = "hue"                    /// `MPVOption.Equalizer.hue`
 
-    case videoFilters = "vf"          /// `MPVProperty.vf`
-    case audioFilters = "af"          /// `MPVProperty.af`
+    case videoFilters = "vf"            /// `MPVProperty.vf`
+    case audioFilters = "af"            /// `MPVProperty.af`
     case videoFiltersDisabled = "vfDisabled"/// IINA-only
 
-    case playSpeed = "playSpeed"      /// `MPVOption.PlaybackControl.speed`
-    case volume = "volume"            /// `MPVOption.Audio.volume`
-    case isMuted = "muted"            /// `MPVOption.Audio.mute`
-    case maxVolume = "maxVolume"      /// `MPVOption.Audio.volumeMax`
-    case audioDelay = "audioDelay"    /// `MPVOption.Audio.audioDelay`
-    case subDelay = "subDelay"        /// `MPVOption.Subtitles.subDelay`
-    case abLoopA = "abLoopA"          /// `MPVOption.PlaybackControl.abLoopA`
-    case abLoopB = "abLoopB"          /// `MPVOption.PlaybackControl.abLoopB`
+    case playSpeed = "playSpeed"        /// `MPVOption.PlaybackControl.speed`
+    case volume = "volume"              /// `MPVOption.Audio.volume`
+    case isMuted = "muted"              /// `MPVOption.Audio.mute`
+    case maxVolume = "maxVolume"        /// `MPVOption.Audio.volumeMax`
+    case audioDelay = "audioDelay"      /// `MPVOption.Audio.audioDelay`
+    case abLoopA = "abLoopA"            /// `MPVOption.PlaybackControl.abLoopA`
+    case abLoopB = "abLoopB"            /// `MPVOption.PlaybackControl.abLoopB`
 
     // Video geometry
-    case videoRawWidth = "vidRawW"    /// `MPVProperty.width`
-    case videoRawHeight = "vidRawH"   /// `MPVProperty.height`
-    case videoAspectLabel = "aspect"  /// Converted into `MPVOption.Video.videoAspectOverride`
-    case cropLabel = "cropLabel"      /// Converted into crop filter
-    case videoRotation = "videoRotate"/// `MPVOption.Video.videoRotate`
+    case videoRawWidth = "vidRawW"      /// `MPVProperty.width`
+    case videoRawHeight = "vidRawH"     /// `MPVProperty.height`
+    case videoAspectLabel = "aspect"    /// Converted into `MPVOption.Video.videoAspectOverride`
+    case cropLabel = "cropLabel"        /// Converted into crop filter
+    case videoRotation = "videoRotate"  /// `MPVOption.Video.videoRotate`
     case totalRotation = "totalRotation"/// `MPVProperty.videoParamsRotate`
 
-    case isSubVisible = "subVisible"  /// `MPVOption.Subtitles.subVisibility`
-    case isSub2Visible = "sub2Visible"/// `MPVOption.Subtitles.secondarySubVisibility`
-    case subScale = "subScale"        /// `MPVOption.Subtitles.subScale`
-    case subPos = "subPos"            /// `MPVOption.Subtitles.subPos`
-    case loopPlaylist = "loopPlaylist"/// `MPVOption.PlaybackControl.loopPlaylist`
-    case loopFile = "loopFile"        /// `MPVOption.PlaybackControl.loopFile`
+    case isSubVisible = "subVisible"    /// `MPVOption.Subtitles.subVisibility`
+    case isSub2Visible = "sub2Visible"  /// `MPVOption.Subtitles.secondarySubVisibility`
+    case subDelay = "subDelay"          /// `MPVOption.Subtitles.subDelay`
+    case sub2Delay = "sub2Delay"        /// `MPVOption.Subtitles.secondarySubDelay`
+    case subPos = "subPos"              /// `MPVOption.Subtitles.subPos`
+    case sub2Pos = "sub2Pos"            /// `MPVOption.Subtitles.secondarySubPos`
+    case subScale = "subScale"          /// `MPVOption.Subtitles.subScale`
+
+    case loopPlaylist = "loopPlaylist"  /// `MPVOption.PlaybackControl.loopPlaylist`
+    case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
   }
 
   static fileprivate let videoGeometryPrefStringVersion = "1"
@@ -248,9 +251,11 @@ struct PlayerSaveState {
     props[PropName.isMuted.rawValue] = info.isMuted.yn
     props[PropName.audioDelay.rawValue] = info.audioDelay.stringMaxFrac6
     props[PropName.subDelay.rawValue] = info.subDelay.stringMaxFrac6
+    props[PropName.sub2Delay.rawValue] = info.sub2Delay.stringMaxFrac6
 
-    props[PropName.subScale.rawValue] = player.mpv.getDouble(MPVOption.Subtitles.subScale).stringMaxFrac2
-    props[PropName.subPos.rawValue] = String(player.mpv.getInt(MPVOption.Subtitles.subPos))
+    props[PropName.subScale.rawValue] = player.info.subScale.stringMaxFrac2
+    props[PropName.subPos.rawValue] = player.info.subPos.stringMaxFrac2
+    props[PropName.sub2Pos.rawValue] = player.info.sub2Pos.stringMaxFrac2
 
     props[PropName.isSubVisible.rawValue] = info.isSubVisible.yn
     props[PropName.isSub2Visible.rawValue] = info.isSecondSubVisible.yn
@@ -337,7 +342,7 @@ struct PlayerSaveState {
             if player.log.isTraceEnabled {
               player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
             }
-            Preference.UIState.saveLifecycleState(forPlayerID: player.label, properties: properties)
+            Preference.UIState.saveState(forPlayerID: player.label, properties: properties)
           }
         }
       }
@@ -361,7 +366,7 @@ struct PlayerSaveState {
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")
       }
-      Preference.UIState.saveLifecycleState(forPlayerID: player.label, properties: properties)
+      Preference.UIState.saveState(forPlayerID: player.label, properties: properties)
       player.log.debug("Done saving player state synchronously")
     }
   }
@@ -756,6 +761,9 @@ struct PlayerSaveState {
     if let subDelay = double(for: .subDelay) {
       mpv.setDouble(MPVOption.Subtitles.subDelay, subDelay)
     }
+    if let sub2Delay = double(for: .sub2Delay) {
+      mpv.setDouble(MPVOption.Subtitles.secondarySubDelay, sub2Delay)
+    }
     if let isSubVisible = bool(for: .isSubVisible) {
       mpv.setFlag(MPVOption.Subtitles.subVisibility, isSubVisible)
     }
@@ -765,8 +773,11 @@ struct PlayerSaveState {
     if let subScale = double(for: .subScale) {
       mpv.setDouble(MPVOption.Subtitles.subScale, subScale)
     }
-    if let subPos = int(for: .subPos) {
-      mpv.setInt(MPVOption.Subtitles.subPos, subPos)
+    if let subPos = double(for: .subPos) {
+      mpv.setDouble(MPVOption.Subtitles.subPos, subPos)
+    }
+    if let sub2Pos = double(for: .sub2Pos) {
+      mpv.setDouble(MPVOption.Subtitles.secondarySubPos, sub2Pos)
     }
     if let loopPlaylist = string(for: .loopPlaylist) {
       mpv.setString(MPVOption.PlaybackControl.loopPlaylist, loopPlaylist)

@@ -530,14 +530,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
     player.mpv.queue.async { [self] in
       guard !player.isStopping else { return }
-      let posOption = isPrimary ? MPVOption.Subtitles.subPos : MPVOption.Subtitles.secondarySubPos
-      let currSubPos = player.mpv.getInt(posOption)
 
-      let currSubScale = player.mpv.getDouble(MPVOption.Subtitles.subScale).clamped(to: 0.1...10)
+      let currSubScale = player.info.subScale
       let displaySubScale = Utility.toDisplaySubScale(fromRealSubScale: currSubScale)
 
-      let delayOption = isPrimary ? MPVOption.Subtitles.subDelay : MPVOption.Subtitles.secondarySubDelay
-      let subDelay = player.mpv.getDouble(delayOption)
+      let currSubPos = isPrimary ? player.info.subPos : player.info.sub2Pos
+      let subDelay = isPrimary ? player.info.subDelay : player.info.sub2Delay
 
       let fontSize = player.mpv.getInt(MPVOption.Subtitles.subFontSize)
       let borderWidth = player.mpv.getDouble(MPVOption.Subtitles.subBorderSize)
