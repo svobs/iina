@@ -60,26 +60,43 @@ class OSCToolbarButton: NSButton {
 
   static func buildDragItem(from toolbarButton: NSButton, pasteboardWriter: NSPasteboardWriting,
                             buttonType: Preference.ToolBarButton, isCurrentItem: Bool) -> NSDraggingItem? {
+    let iconSize = iconSize
+
     // seems to be the only reliable way to get image size
     guard let imgReps = toolbarButton.image?.representations else { return nil }
     guard !imgReps.isEmpty else { return nil }
-    let imageSize = imgReps[0].size
+    let origImageSize = imgReps[0].size
+    // Need to scale image manually, accounting for aspect ratio
+    let dragImageSize: NSSize
+    if origImageSize.width > origImageSize.height {  // aspect ratio is landscape
+      let dragImageHeight = origImageSize.height / origImageSize.width * iconSize
+      dragImageSize = NSSize(width: iconSize, height: dragImageHeight)
+    } else {  // aspect ratio is portrait or square
+      let dragImageWidth = origImageSize.width / origImageSize.height * iconSize
+      dragImageSize = NSSize(width: dragImageWidth, height: iconSize)
+    }
+
+    // Image is centered in frame, and frame has 1px offset from left & bottom of box
+    let dragOrigin: CGPoint
+    if isCurrentItem {
+      dragOrigin = CGPoint(x: (toolbarButton.frame.width - dragImageSize.width) / 2, y: (toolbarButton.frame.height - dragImageSize.height) / 2)
+    } else {
+      // Bit of a kludge to make drag image origin line up in 2 different layouts:
+      let buttonSize = buttonSize
+      dragOrigin = CGPoint(x: (buttonSize - dragImageSize.width) / 2 + 1, y: (buttonSize - dragImageSize.height) / 2 + 1)
+    }
 
     let dragItem = NSDraggingItem(pasteboardWriter: pasteboardWriter)
+    dragItem.draggingFrame = NSRect(origin: dragOrigin, size: dragImageSize)
 
-    // Bit of a kludge to make drag image origin line up in 2 different layouts:
-    let buttonSize = isCurrentItem ? iconSize : buttonSize
-    
-    // Image is centered in frame, and frame has 1px offset from left & bottom of box
-    let dragOrigin = CGPoint(x: (buttonSize - imageSize.width) / 2 + 1, y: (buttonSize - imageSize.height) / 2 + 1)
-    dragItem.draggingFrame = NSRect(origin: dragOrigin, size: imageSize)
     let debugSrcLabel = isCurrentItem ? "CurrentItemsView" : "AvailableItemsView"
-    Logger.log("Dragging from \(debugSrcLabel): \(dragItem.draggingFrame) (imageSize: \(imageSize))", level: .verbose)
+    Logger.log.verbose("Dragging from \(debugSrcLabel): \(dragItem.draggingFrame) (dragImageSize: \(dragImageSize))")
+
     dragItem.imageComponentsProvider = {
       let imageComponent = NSDraggingImageComponent(key: .icon)
       let image = buttonType.image().tinted(.textColor)
       imageComponent.contents = image
-      imageComponent.frame = NSRect(origin: .zero, size: imageSize)
+      imageComponent.frame = NSRect(origin: .zero, size: dragImageSize)
       return [imageComponent]
     }
 
