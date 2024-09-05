@@ -358,11 +358,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func updateOSCToolbarButtons() {
-    if let oscToolbarStackViewHeightConstraint {
-      oscToolbarStackViewHeightConstraint.isActive = false
-      self.oscToolbarStackViewHeightConstraint = nil
-    }
     let stackViewHeight = OSCToolbarButton.buttonSize
+    Logger.log.verbose("Updating OSC toolbar preview height to \(stackViewHeight)")
+    oscToolbarStackViewHeightConstraint?.isActive = false
+    oscToolbarStackViewHeightConstraint = nil
     let constraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: stackViewHeight)
     constraint.isActive = true
     oscToolbarStackViewHeightConstraint = constraint

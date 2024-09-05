@@ -17,6 +17,7 @@ class ToolbarSettingsSheetWindow: NSWindow {
   override var canBecomeKey: Bool { return true }
 }
 
+/// This is the sheet window which pops up from the `Preferences` window's `UI` tab when the `Customize` button is clicked.
 class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarCurrentItemsViewDelegate {
   override var windowNibName: NSNib.Name {
     return NSNib.Name("PrefOSCToolbarSettingsSheetController")
@@ -35,32 +36,42 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     currentItemsView.currentItemsViewDelegate = self
     currentItemsView.initItems(fromItems: PrefUIViewController.oscToolbarButtons)
 
-    let allButtonTypes: [Preference.ToolBarButton] = [.settings, .playlist, .pip, .fullScreen, .musicMode, .subTrack, .screenshot]
-    for type in allButtonTypes {
-      let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: type)
-      itemViewController.availableItemsView = availableItemsView
-      itemViewControllers.append(itemViewController)
-      itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
-      availableItemsView.addView(itemViewController.view, in: .top)
-    }
-
     updateToolbarButtonHeight(to: OSCToolbarButton.buttonSize)
   }
 
   func updateToolbarButtonHeight(to newHeight: CGFloat) {
     guard isWindowLoaded else { return }
 
-    if let currentItemsViewHeightConstraint {
-      currentItemsViewHeightConstraint.isActive = false
-      self.currentItemsViewHeightConstraint = nil
-    }
+    Logger.log.verbose("Updating toolbar preview window's currentItemsHeight to \(newHeight)")
+    self.currentItemsViewHeightConstraint?.isActive = false
+    self.currentItemsViewHeightConstraint = nil
     let constraint = currentItemsView.heightAnchor.constraint(equalToConstant: newHeight)
     constraint.isActive = true
     currentItemsViewHeightConstraint = constraint
+
+    // Refresh current items view using updated sizes
+    currentItemsView.initItems()
+    rebuildAvailableItemsView()
   }
 
   func currentItemsView(_ view: PrefOSCToolbarCurrentItemsView, updatedItems items: [Preference.ToolBarButton]) {
     currentButtonTypes = items
+  }
+
+  private func rebuildAvailableItemsView() {
+    // Remove any stuff which was already present
+    itemViewControllers = []
+    for subview in availableItemsView.views {
+      availableItemsView.removeView(subview)
+    }
+
+    for buttonType in Preference.ToolBarButton.allButtonTypes {
+      let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: buttonType)
+      itemViewController.availableItemsView = availableItemsView
+      itemViewControllers.append(itemViewController)
+      itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
+      availableItemsView.addView(itemViewController.view, in: .top)
+    }
   }
 
   @IBAction func okButtonAction(_ sender: Any) {
@@ -131,14 +142,19 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
   private var items: [Preference.ToolBarButton] = []
 
-  private let placeholderView: NSView = {
-    let view = NSView()
-    view.translatesAutoresizingMaskIntoConstraints = false
-    return view
-  }()
+  private var placeholderView: NSView = NSView()
   private var dragDestIndex: Int = 0
 
-  func initItems(fromItems items: [Preference.ToolBarButton]) {
+  static func buildPlaceholderView() -> NSView {
+    let view = NSView()
+    view.translatesAutoresizingMaskIntoConstraints = false
+    let sideLength = OSCToolbarButton.iconSize
+    Utility.quickConstraints(["H:[v(\(sideLength))]", "V:[v(\(sideLength))]"], ["v": view])
+    return view
+  }
+
+  func initItems(fromItems items: [Preference.ToolBarButton]? = nil) {
+    let items = items ?? self.items
     self.items = items
     views.forEach { self.removeView($0) }
     for buttonType in items {
@@ -148,6 +164,9 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
     let btnPad = CGFloat(Preference.float(for: .oscBarToolbarIconSpacing))
     self.spacing = 2 * btnPad
     self.edgeInsets = .init(top: btnPad, left: btnPad, bottom: btnPad, right: btnPad)
+
+    // Rebuild placeholderView - size could have changed
+    placeholderView = PrefOSCToolbarCurrentItemsView.buildPlaceholderView()
   }
 
   private func updateItems() {
@@ -169,8 +188,6 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
       // remove the dragged view and insert a placeholder at its position.
       let index = views.firstIndex(of: itemBeingDragged)!
       removeView(itemBeingDragged)
-      let sideLength = OSCToolbarButton.iconSize
-      Utility.quickConstraints(["H:[v(\(sideLength))]", "V:[v(\(sideLength))]"], ["v": placeholderView])
       insertView(placeholderView, at: index, in: .trailing)
     }
   }

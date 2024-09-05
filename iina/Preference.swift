@@ -1040,6 +1040,9 @@ struct Preference {
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
 
+    static let allButtonTypes: [Preference.ToolBarButton] = [
+      .settings, .playlist, .pip, .fullScreen, .musicMode, .subTrack, .screenshot
+    ]
   }
 
   enum HistoryGroupBy: Int, InitializingFromKey {
