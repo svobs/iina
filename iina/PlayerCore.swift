@@ -2489,7 +2489,8 @@ class PlayerCore: NSObject {
 
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
-    log.verbose("Got mpv 'idle-active' (isFileLoaded: \(isFileLoaded.yn))")
+    log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn), playerState=\(state))")
+    guard !isStopping else { return }
     if receivedEndFileWhileLoading && !isFileLoaded {
       log.error("Received fileEnded + 'idle-active' from mpv while loading \(info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
       errorOpeningFileAndClosePlayerWindow(url: info.currentURL)

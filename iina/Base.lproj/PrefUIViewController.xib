@@ -1232,8 +1232,8 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-727"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
-            <rect key="frame" x="0.0" y="0.0" width="487" height="662"/>
+        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="538" height="672"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
                     <rect key="frame" x="-2" y="622" width="124" height="32"/>
@@ -1244,7 +1244,7 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4SE-r9-OnD" userLabel="Bars-&amp;-OSC Vertical Stack View">
-                    <rect key="frame" x="120" y="184" width="360" height="470"/>
+                    <rect key="frame" x="120" y="184" width="806" height="470"/>
                     <subviews>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="HbB-K7-G5g" userLabel="Player-Window-Preview-Container View">
                             <rect key="frame" x="0.0" y="194" width="360" height="276"/>
@@ -1459,7 +1459,7 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ghu-dQ-5L0" userLabel="ToolbarItems HStack View">
-                            <rect key="frame" x="20" y="18" width="189" height="20"/>
+                            <rect key="frame" x="20" y="18" width="418" height="20"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q8D-b2-H0y" userLabel="Toolbar items:">
                                     <rect key="frame" x="-2" y="3" width="90" height="16"/>
@@ -1469,8 +1469,14 @@ For smoothest results, also enable custom full screen.</string>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
+                                <customView horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="lJi-np-Zwh" userLabel="HSpacer View">
+                                    <rect key="frame" x="94" y="5" width="221" height="1"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="1" id="5Vi-Pn-ogv"/>
+                                    </constraints>
+                                </customView>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gVR-so-xgt">
-                                    <rect key="frame" x="87" y="-7" width="109" height="32"/>
+                                    <rect key="frame" x="316" y="-7" width="109" height="32"/>
                                     <buttonCell key="cell" type="push" title="Customize…" bezelStyle="rounded" alignment="center" borderStyle="border" inset="2" id="1nM-AX-Ozm">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -1484,43 +1490,65 @@ For smoothest results, also enable custom full screen.</string>
                             <visibilityPriorities>
                                 <integer value="1000"/>
                                 <integer value="1000"/>
+                                <integer value="1000"/>
+                            </visibilityPriorities>
+                            <customSpacing>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                                <real value="3.4028234663852886e+38"/>
+                            </customSpacing>
+                        </stackView>
+                        <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ko1-vg-GVu" userLabel="ToolbarPreview HStack View">
+                            <rect key="frame" x="388" y="0.0" width="418" height="10"/>
+                            <subviews>
+                                <box horizontalCompressionResistancePriority="250" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="omS-tS-OVJ" userLabel="Toolbar-Preview Box">
+                                    <rect key="frame" x="-3" y="-4" width="56" height="16"/>
+                                    <view key="contentView" id="pBh-nz-cS5" userLabel="Toolbar-Preview-Box View">
+                                        <rect key="frame" x="4" y="5" width="48" height="8"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <subviews>
+                                            <stackView wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="1000" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="8jY-9m-q4O" userLabel="Toolbar-Preview Stack View">
+                                                <rect key="frame" x="4" y="0.0" width="40" height="8"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="8" id="mKe-A0-QKf"/>
+                                                    <constraint firstAttribute="width" secondItem="8jY-9m-q4O" secondAttribute="height" multiplier="5" id="yOv-Se-feH"/>
+                                                </constraints>
+                                            </stackView>
+                                        </subviews>
+                                        <constraints>
+                                            <constraint firstItem="8jY-9m-q4O" firstAttribute="height" relation="lessThanOrEqual" secondItem="pBh-nz-cS5" secondAttribute="height" id="6Vn-gT-SNa"/>
+                                            <constraint firstItem="8jY-9m-q4O" firstAttribute="height" secondItem="pBh-nz-cS5" secondAttribute="height" priority="900" id="Haz-qd-M9f"/>
+                                            <constraint firstItem="8jY-9m-q4O" firstAttribute="centerX" secondItem="pBh-nz-cS5" secondAttribute="centerX" id="KRF-hx-szG"/>
+                                            <constraint firstItem="8jY-9m-q4O" firstAttribute="centerY" secondItem="pBh-nz-cS5" secondAttribute="centerY" id="lJg-4P-wHP"/>
+                                        </constraints>
+                                    </view>
+                                    <constraints>
+                                        <constraint firstAttribute="width" secondItem="omS-tS-OVJ" secondAttribute="height" multiplier="5" id="llT-zn-9Nf"/>
+                                    </constraints>
+                                </box>
+                                <customView horizontalHuggingPriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="S1O-SY-h00" userLabel="HSpacer View">
+                                    <rect key="frame" x="58" y="9" width="360" height="1"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="1" id="o38-zp-hn3"/>
+                                    </constraints>
+                                </customView>
+                            </subviews>
+                            <visibilityPriorities>
+                                <integer value="1000"/>
+                                <integer value="1000"/>
                             </visibilityPriorities>
                             <customSpacing>
                                 <real value="3.4028234663852886e+38"/>
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="omS-tS-OVJ" userLabel="Toolbar-Preview Box">
-                            <rect key="frame" x="17" y="-4" width="56" height="16"/>
-                            <view key="contentView" id="pBh-nz-cS5" userLabel="Toolbar-Preview-Box View">
-                                <rect key="frame" x="4" y="5" width="48" height="8"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <subviews>
-                                    <stackView wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="1000" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="8jY-9m-q4O" userLabel="Toolbar-Preview Stack View">
-                                        <rect key="frame" x="4" y="0.0" width="40" height="8"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="8" id="mKe-A0-QKf"/>
-                                            <constraint firstAttribute="width" secondItem="8jY-9m-q4O" secondAttribute="height" multiplier="5" id="yOv-Se-feH"/>
-                                        </constraints>
-                                    </stackView>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="8jY-9m-q4O" firstAttribute="height" relation="lessThanOrEqual" secondItem="pBh-nz-cS5" secondAttribute="height" id="6Vn-gT-SNa"/>
-                                    <constraint firstItem="8jY-9m-q4O" firstAttribute="height" secondItem="pBh-nz-cS5" secondAttribute="height" priority="900" id="Haz-qd-M9f"/>
-                                    <constraint firstItem="8jY-9m-q4O" firstAttribute="centerX" secondItem="pBh-nz-cS5" secondAttribute="centerX" id="KRF-hx-szG"/>
-                                    <constraint firstItem="8jY-9m-q4O" firstAttribute="centerY" secondItem="pBh-nz-cS5" secondAttribute="centerY" id="lJg-4P-wHP"/>
-                                </constraints>
-                            </view>
-                            <constraints>
-                                <constraint firstAttribute="width" secondItem="omS-tS-OVJ" secondAttribute="height" multiplier="5" id="llT-zn-9Nf"/>
-                            </constraints>
-                        </box>
                     </subviews>
                     <constraints>
                         <constraint firstItem="PrI-KL-aZn" firstAttribute="leading" secondItem="mJq-OS-xid" secondAttribute="leading" constant="20" id="5tT-06-ukJ"/>
-                        <constraint firstItem="omS-tS-OVJ" firstAttribute="leading" secondItem="ghu-dQ-5L0" secondAttribute="leading" id="An9-bU-Sfy"/>
                         <constraint firstItem="GbG-nw-ict" firstAttribute="trailing" secondItem="HbB-K7-G5g" secondAttribute="trailing" id="BDZ-k0-Ofy"/>
+                        <constraint firstItem="Ko1-vg-GVu" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="q8D-b2-H0y" secondAttribute="leading" id="Ch9-6u-MYr"/>
                         <constraint firstItem="BTX-tO-uhL" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" constant="20" id="MoA-n7-O4e"/>
+                        <constraint firstItem="gVR-so-xgt" firstAttribute="trailing" secondItem="omS-tS-OVJ" secondAttribute="trailing" priority="900" id="N9H-Ac-JXl"/>
                         <constraint firstItem="3vi-Iu-deL" firstAttribute="trailing" secondItem="HbB-K7-G5g" secondAttribute="trailing" id="QDQ-8o-oKd"/>
                         <constraint firstItem="bVg-yv-fOx" firstAttribute="leading" secondItem="HbB-K7-G5g" secondAttribute="leading" id="bHH-mu-TP3"/>
                         <constraint firstItem="KXy-D0-Irg" firstAttribute="leading" secondItem="BTX-tO-uhL" secondAttribute="leading" id="d0r-hr-Kxw"/>
@@ -1577,7 +1605,7 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="SyB-0R-TLF" userLabel="Arrow-Button-Action Popup">
-                    <rect key="frame" x="313" y="152" width="171" height="25"/>
+                    <rect key="frame" x="292" y="152" width="171" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Speed" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="TWq-Xb-8Ee" id="8Ke-vJ-gp6" userLabel="Arrow-Button-Action Popup Button Cell">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="menu"/>
@@ -1622,9 +1650,9 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <box horizontalHuggingPriority="249" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
-                    <rect key="frame" x="117" y="4" width="366" height="68"/>
+                    <rect key="frame" x="117" y="4" width="812" height="68"/>
                     <view key="contentView" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="4" y="5" width="358" height="60"/>
+                        <rect key="frame" x="4" y="5" width="804" height="60"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
@@ -1701,7 +1729,6 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="4XH-GU-VhV" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="gjB-It-iFS" secondAttribute="leading" constant="120" id="A6A-Wt-sRz"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="bVg-yv-fOx" secondAttribute="leading" id="AsH-9x-l2e"/>
                 <constraint firstItem="rft-T0-lds" firstAttribute="top" secondItem="OMM-mG-Uts" secondAttribute="bottom" constant="8" id="GKq-oC-uGE"/>
-                <constraint firstItem="SyB-0R-TLF" firstAttribute="trailing" secondItem="4SE-r9-OnD" secondAttribute="trailing" id="GU1-q9-XKH"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="top" secondItem="rft-T0-lds" secondAttribute="bottom" constant="16" id="HLQ-xF-5Qa"/>
                 <constraint firstItem="4SE-r9-OnD" firstAttribute="top" secondItem="4XH-GU-VhV" secondAttribute="top" id="Hc6-fh-jM2"/>
                 <constraint firstItem="IvI-R5-Sdu" firstAttribute="height" secondItem="6ml-Xj-nVX" secondAttribute="height" id="NQF-dV-lTJ"/>
@@ -1715,7 +1742,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="rft-T0-lds" firstAttribute="leading" secondItem="OMM-mG-Uts" secondAttribute="leading" id="Rkx-mT-jHK"/>
                 <constraint firstItem="4XH-GU-VhV" firstAttribute="top" secondItem="gjB-It-iFS" secondAttribute="top" constant="8" id="SUP-it-bME"/>
                 <constraint firstItem="OMM-mG-Uts" firstAttribute="height" secondItem="nDu-Yq-tPI" secondAttribute="height" id="TCG-3o-gTV"/>
-                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="4SE-r9-OnD" secondAttribute="trailing" id="YVV-Zk-8Iw"/>
+                <constraint firstAttribute="trailing" secondItem="4SE-r9-OnD" secondAttribute="trailing" id="YVV-Zk-8Iw"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="OMM-mG-Uts" secondAttribute="trailing" id="Yxo-AW-upP"/>
                 <constraint firstItem="vC3-U1-cHH" firstAttribute="centerY" secondItem="2Fc-2d-hIJ" secondAttribute="centerY" id="ZIt-uS-S1A"/>
                 <constraint firstAttribute="bottom" secondItem="0eU-xI-byi" secondAttribute="bottom" constant="8" id="dsz-0o-3UL"/>
@@ -1730,7 +1757,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="0eU-xI-byi" firstAttribute="top" secondItem="6ml-Xj-nVX" secondAttribute="bottom" constant="6" id="wjF-MV-3US"/>
                 <constraint firstItem="OMM-mG-Uts" firstAttribute="top" secondItem="SyB-0R-TLF" secondAttribute="bottom" constant="8" id="xNr-ni-zgT"/>
                 <constraint firstItem="SyB-0R-TLF" firstAttribute="top" secondItem="4SE-r9-OnD" secondAttribute="bottom" constant="8" id="yON-8w-Srg"/>
-                <constraint firstItem="SyB-0R-TLF" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HgG-px-UUt" secondAttribute="trailing" constant="8" id="z4E-Tj-yG1"/>
+                <constraint firstItem="SyB-0R-TLF" firstAttribute="leading" secondItem="HgG-px-UUt" secondAttribute="trailing" constant="8" id="z4E-Tj-yG1"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" id="zS7-aO-rrc"/>
             </constraints>
             <point key="canvasLocation" x="-26" y="29"/>

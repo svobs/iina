@@ -164,7 +164,7 @@ protocol PrefOSCToolbarCurrentItemsViewDelegate {
 
 class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
-  var currentItemsViewDelegate: PrefOSCToolbarCurrentItemsViewDelegate?
+  var currentItemsViewDelegate: PrefOSCToolbarCurrentItemsViewDelegate!
 
   var itemBeingDragged: PrefOSCToolbarCurrentItem?
 
@@ -173,10 +173,10 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
   private var placeholderView: NSView = NSView()
   private var dragDestIndex: Int = 0
 
-  static func buildPlaceholderView() -> NSView {
+  func buildPlaceholderView() -> NSView {
     let view = NSView()
     view.translatesAutoresizingMaskIntoConstraints = false
-    let sideLength = OSCToolbarButton.iconSize
+    let sideLength = currentItemsViewDelegate.previewIconSize
     Utility.quickConstraints(["H:[v(\(sideLength))]", "V:[v(\(sideLength))]"], ["v": view])
     return view
   }
@@ -199,7 +199,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
     self.edgeInsets = .init(top: iconPadding, left: iconPadding, bottom: iconPadding, right: iconPadding)
 
     // Rebuild placeholderView - size could have changed
-    placeholderView = PrefOSCToolbarCurrentItemsView.buildPlaceholderView()
+    placeholderView = buildPlaceholderView()
   }
 
   private func updateItems() {
@@ -234,7 +234,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
   func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     if operation == [] || operation == .delete {
-      let sideLength = OSCToolbarButton.iconSize
+      let sideLength = currentItemsViewDelegate.previewIconSize
       // Do "poof" animation on item remove
       NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: sideLength, height: sideLength), completionHandler: {
         self.updateItems()
@@ -285,9 +285,9 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
     // get the expected drag destination position and index
     let pos = convert(sender.draggingLocation, from: nil)
-    let phWidth = OSCToolbarButton.iconSize
-    let phHeight = phWidth
-    var index = views.count - Int(floor((frame.width - pos.x) / OSCToolbarButton.buttonSize)) - 1
+    let buttonSize = OSCToolbarButton.buttonSize(iconSize: currentItemsViewDelegate.previewIconSize,
+                                                 iconPadding: currentItemsViewDelegate.previewIconPadding)
+    var index = views.count - Int(floor((frame.width - pos.x) / buttonSize)) - 1
     if index < 0 { index = 0 }
     dragDestIndex = index
 

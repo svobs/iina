@@ -115,6 +115,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     .settingsTabGroupLocation,
     .playlistTabGroupLocation,
     .controlBarToolbarButtons,
+    .oscBarHeight,
     .oscBarToolbarIconSize,
     .oscBarToolbarIconSpacing,
     .useLegacyWindowedMode,
@@ -220,6 +221,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     case PK.settingsTabGroupLocation.rawValue, PK.playlistTabGroupLocation.rawValue:
       refreshSidebarSection()
     case PK.controlBarToolbarButtons.rawValue,
+      PK.oscBarHeight.rawValue,
       PK.oscBarToolbarIconSize.rawValue,
       PK.oscBarToolbarIconSpacing.rawValue:
 
