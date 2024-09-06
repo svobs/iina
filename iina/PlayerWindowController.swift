@@ -735,6 +735,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragToolbarView: NSStackView? = nil
   @IBOutlet weak var fragVolumeView: NSView!
   @IBOutlet var fragPositionSliderView: NSView!
+  /// See `playbackButtonsSquareWidthConstraint` & `playbackButtonsHorizontalPaddingConstraint` for sizing
   @IBOutlet weak var fragPlaybackControlButtonsView: NSView!
 
   @IBOutlet weak var speedLabel: NSTextField!

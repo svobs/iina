@@ -10,7 +10,20 @@ import Foundation
 
 /// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
 fileprivate var oscBarPlaybackIconSize: CGFloat {
-  CGFloat(Preference.integer(for: .oscBarPlaybackIconSize)).clamped(to: 8...OSCToolbarButton.oscBarHeight)
+  let maxHeight: CGFloat
+  let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
+  switch oscPosition {
+  case .floating:
+    return oscFloatingPlayBtnsSize
+  case .top:
+    // Play button is very tall. Reduce max size so it doesn't touch edges or icons above
+    maxHeight = OSCToolbarButton.oscBarHeight - 4
+  case .bottom:
+    maxHeight = OSCToolbarButton.oscBarHeight - 2
+  }
+
+  return CGFloat(Preference.integer(for: .oscBarPlaybackIconSize)).clamped(to: 8...maxHeight)
+
 }
 /// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
 fileprivate var oscBarPlaybackIconSpacing: CGFloat {
@@ -1294,6 +1307,7 @@ extension PlayerWindowController {
 
   // MARK: - Controller content layout
 
+  /// For `bottom` and `top` OSC only - not `floating`
   private func addControlBarViews(to containerView: NSStackView, playBtnSize: CGFloat, playBtnSpacing: CGFloat) {
     containerView.addView(fragPlaybackControlButtonsView, in: .leading)
     containerView.addView(fragPositionSliderView, in: .leading)
