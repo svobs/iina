@@ -15,7 +15,9 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   }
 
   var availableItemsView: PrefOSCToolbarAvailableItemsView?
-  var buttonType: Preference.ToolBarButton
+  let buttonType: Preference.ToolBarButton
+  let iconSize: CGFloat
+  let iconPadding: CGFloat
 
   @IBOutlet weak var toolbarButton: OSCToolbarButton!
   @IBOutlet weak var descriptionLabel: NSTextField!
@@ -25,8 +27,10 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   @IBOutlet weak var buttonTopToBoxTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var buttonBottomToBoxBottomConstraint: NSLayoutConstraint!
 
-  init(buttonType: Preference.ToolBarButton) {
+  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconPadding: CGFloat) {
     self.buttonType = buttonType
+    self.iconSize = iconSize
+    self.iconPadding = iconPadding
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -37,7 +41,7 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    toolbarButton.setStyle(buttonType: buttonType)
+    toolbarButton.setStyle(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding)
     // Add 1 for box border
     buttonLeadingToBoxLeadingConstraint.constant = toolbarButton.iconPadding + 1
     buttonTopToBoxTopConstraint.constant = toolbarButton.iconPadding + 1
@@ -64,7 +68,10 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func mouseDown(with event: NSEvent) {
     guard let availableItemsView = availableItemsView else { return }
 
-    guard let dragItem = OSCToolbarButton.buildDragItem(from: toolbarButton, pasteboardWriter: self, buttonType: buttonType, isCurrentItem: false) else { return }
+    let dragItem = OSCToolbarButton.buildDragItem(from: toolbarButton, pasteboardWriter: self, buttonType: buttonType,
+                                                  iconSize: iconSize, iconPadding: iconPadding,
+                                                  isCurrentItem: false)
+    guard let dragItem else { return }
     view.beginDraggingSession(with: [dragItem], event: event, source: availableItemsView)
   }
 

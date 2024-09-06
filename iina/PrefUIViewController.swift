@@ -362,11 +362,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Logger.log.verbose("Updating OSC toolbar preview height to \(stackViewHeight)")
     oscToolbarStackViewHeightConstraint?.isActive = false
     oscToolbarStackViewHeightConstraint = nil
-    let constraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: stackViewHeight)
-    constraint.isActive = true
-    oscToolbarStackViewHeightConstraint = constraint
 
-    toolbarSettingsSheetController.updateToolbarButtonHeight(to: stackViewHeight)
+    toolbarSettingsSheetController.updateToolbarButtonHeight()
 
     oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
     for buttonType in PrefUIViewController.oscToolbarButtons {
@@ -380,6 +377,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // But don't gray it out
       (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     }
+
+    // Wait until AFTER everything else is done before [re-]adding height constraint
+    let constraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: stackViewHeight)
+    constraint.isActive = true
+    oscToolbarStackViewHeightConstraint = constraint
   }
 
   @IBAction func updateWindowResizeScheme(_ sender: AnyObject) {

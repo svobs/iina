@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -25,20 +25,20 @@
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="URy-iX-J9X" userLabel="Toolbar-Item Box">
                     <rect key="frame" x="-3" y="-4" width="338" height="24"/>
                     <view key="contentView" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0YW-az-h4Z" userLabel="Toolbar-Item-Box Content View">
-                        <rect key="frame" x="4" y="5" width="49" height="31"/>
+                        <rect key="frame" x="4" y="5" width="330" height="16"/>
                         <subviews>
                             <button focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="K6f-VH-I1k" userLabel="ToolbarButton" customClass="OSCToolbarButton" customModule="IINA" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="15" width="16" height="16"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" secondItem="K6f-VH-I1k" secondAttribute="height" multiplier="1:1" id="tXR-d6-mce"/>
-                                </constraints>
+                                <rect key="frame" x="0.0" y="0.0" width="16" height="16"/>
                                 <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" imagePosition="only" alignment="center" enabled="NO" refusesFirstResponder="YES" state="on" focusRingType="none" imageScaling="proportionallyUpOrDown" inset="2" id="fsj-YE-OB7">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="K6f-VH-I1k" secondAttribute="height" multiplier="1:1" id="tXR-d6-mce"/>
+                                </constraints>
                             </button>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="STZ-wb-l3E">
-                                <rect key="frame" x="14" y="8" width="37" height="16"/>
+                            <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="STZ-wb-l3E">
+                                <rect key="frame" x="14" y="-7" width="309" height="16"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="ebp-YW-3qF">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -49,7 +49,6 @@
                         <constraints>
                             <constraint firstItem="STZ-wb-l3E" firstAttribute="leading" secondItem="K6f-VH-I1k" secondAttribute="trailing" identifier="buttonTrailingConstraint" id="I14-lQ-yq6"/>
                             <constraint firstItem="K6f-VH-I1k" firstAttribute="leading" secondItem="0YW-az-h4Z" secondAttribute="leading" identifier="buttonLeadingConstraint" id="g0L-Sc-Dy6"/>
-                            <constraint firstAttribute="trailing" secondItem="STZ-wb-l3E" secondAttribute="trailing" identifier="labelTrailingConstraint" id="i3Y-et-dO9"/>
                             <constraint firstItem="STZ-wb-l3E" firstAttribute="centerY" secondItem="K6f-VH-I1k" secondAttribute="centerY" identifier="labelCenterY-Constraint" id="rRO-PM-Xjz"/>
                         </constraints>
                     </view>
@@ -57,6 +56,7 @@
                         <constraint firstItem="K6f-VH-I1k" firstAttribute="top" secondItem="URy-iX-J9X" secondAttribute="top" constant="1" identifier="buttonTopToBoxTopConstraint" id="Seh-Lq-2Ha"/>
                         <constraint firstAttribute="bottom" secondItem="K6f-VH-I1k" secondAttribute="bottom" constant="1" identifier="buttonBottomToBoxBottomConstraint" id="liX-rj-LuJ"/>
                         <constraint firstItem="K6f-VH-I1k" firstAttribute="leading" secondItem="URy-iX-J9X" secondAttribute="leading" constant="1" identifier="buttonLeadingToBoxLeadingConstraint" id="lvb-BV-nHc"/>
+                        <constraint firstItem="STZ-wb-l3E" firstAttribute="trailing" secondItem="URy-iX-J9X" secondAttribute="trailing" constant="-10" id="obt-cx-TfA"/>
                     </constraints>
                 </box>
             </subviews>

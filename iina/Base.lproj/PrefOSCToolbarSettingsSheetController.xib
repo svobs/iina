@@ -40,13 +40,13 @@
                         </textFieldCell>
                     </textField>
                     <box horizontalCompressionResistancePriority="800" verticalCompressionResistancePriority="800" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="l1W-AA-5L4" userLabel="Current-Items Box">
-                        <rect key="frame" x="121" y="220" width="58" height="18"/>
+                        <rect key="frame" x="131" y="224" width="38" height="14"/>
                         <view key="contentView" id="Xci-wI-yo3" userLabel="Current-Items-Box Content View">
-                            <rect key="frame" x="4" y="5" width="50" height="10"/>
+                            <rect key="frame" x="4" y="5" width="30" height="6"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <stackView orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="749" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="63i-B1-8o0" userLabel="PrefOSCToolbarCurrentItems Stack View" customClass="PrefOSCToolbarCurrentItemsView" customModule="IINA" customModuleProvider="target">
-                                    <rect key="frame" x="0.0" y="0.0" width="50" height="10"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="30" height="6"/>
                                     <constraints>
                                         <constraint firstAttribute="width" secondItem="63i-B1-8o0" secondAttribute="height" multiplier="5" id="vdd-wn-jVV"/>
                                     </constraints>
@@ -59,12 +59,12 @@
                         </view>
                         <constraints>
                             <constraint firstItem="63i-B1-8o0" firstAttribute="height" secondItem="Xci-wI-yo3" secondAttribute="height" id="Fzu-qd-y9O"/>
-                            <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="12" id="N21-2K-asb"/>
+                            <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="8" id="N21-2K-asb"/>
                             <constraint firstItem="63i-B1-8o0" firstAttribute="width" secondItem="Xci-wI-yo3" secondAttribute="width" id="XJj-zB-JbE"/>
                         </constraints>
                     </box>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Neb-Rz-hK4">
-                        <rect key="frame" x="18" y="188" width="99" height="16"/>
+                        <rect key="frame" x="18" y="192" width="99" height="16"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Available Items:" id="DeE-Yj-Q4D">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -72,15 +72,15 @@
                         </textFieldCell>
                     </textField>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BJG-7U-eKu">
-                        <rect key="frame" x="18" y="156" width="239" height="28"/>
+                        <rect key="frame" x="18" y="160" width="239" height="28"/>
                         <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Drag an item and drop it to the box above to add it." id="VCG-VX-E3M">
                             <font key="font" metaFont="smallSystem"/>
                             <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <stackView orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" translatesAutoresizingMaskIntoConstraints="NO" id="Sdu-Jk-G6t" customClass="PrefOSCToolbarAvailableItemsView" customModule="IINA" customModuleProvider="target">
-                        <rect key="frame" x="50" y="60" width="200" height="86"/>
+                    <stackView orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="249.99998474121094" horizontalHuggingPriority="100" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Sdu-Jk-G6t" customClass="PrefOSCToolbarAvailableItemsView" customModule="IINA" customModuleProvider="target">
+                        <rect key="frame" x="50" y="60" width="200" height="90"/>
                         <constraints>
                             <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="eBC-0i-R80"/>
                         </constraints>

@@ -19,7 +19,7 @@ class OSCToolbarButton: NSButton {
 
   func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) {
     let iconSize = iconSize ?? OSCToolbarButton.iconSize
-    let iconPadding = iconPadding ?? max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
+    let iconPadding = iconPadding ?? OSCToolbarButton.iconPadding
     OSCToolbarButton.setStyle(of: self, buttonType: buttonType, iconSize: iconSize)
     self.iconSize = iconSize
     self.iconPadding = iconPadding
@@ -29,8 +29,16 @@ class OSCToolbarButton: NSButton {
     return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...oscBarHeight)
   }
 
+  static var iconPadding: CGFloat {
+    return max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
+  }
+
   static var buttonSize: CGFloat {
-    return iconSize + max(0, 2 * CGFloat(Preference.integer(for: .oscBarToolbarIconSpacing)))
+    return iconSize + max(0, 2 * iconPadding)
+  }
+
+  static func buttonSize(iconSize: CGFloat, iconPadding: CGFloat) -> CGFloat {
+    return iconSize + max(0, 2 * iconPadding)
   }
 
   // TODO: put this outside this class. Maybe in a new class "OSCToolbar"
@@ -59,8 +67,8 @@ class OSCToolbarButton: NSButton {
   }
 
   static func buildDragItem(from toolbarButton: NSButton, pasteboardWriter: NSPasteboardWriting,
-                            buttonType: Preference.ToolBarButton, isCurrentItem: Bool) -> NSDraggingItem? {
-    let iconSize = iconSize
+                            buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconPadding: CGFloat,
+                            isCurrentItem: Bool) -> NSDraggingItem? {
 
     // seems to be the only reliable way to get image size
     guard let imgReps = toolbarButton.image?.representations else { return nil }
@@ -82,7 +90,7 @@ class OSCToolbarButton: NSButton {
       dragOrigin = CGPoint(x: (toolbarButton.frame.width - dragImageSize.width) / 2, y: (toolbarButton.frame.height - dragImageSize.height) / 2)
     } else {
       // Bit of a kludge to make drag image origin line up in 2 different layouts:
-      let buttonSize = buttonSize
+      let buttonSize = OSCToolbarButton.buttonSize(iconSize: iconSize, iconPadding: iconPadding)
       dragOrigin = CGPoint(x: (buttonSize - dragImageSize.width) / 2 + 1, y: (buttonSize - dragImageSize.height) / 2 + 1)
     }
 

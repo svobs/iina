@@ -17,6 +17,12 @@ class ToolbarSettingsSheetWindow: NSWindow {
   override var canBecomeKey: Bool { return true }
 }
 
+// Seems that currentItemsView can't go any smaller without getting buggy...
+fileprivate let minDisplayedIconSize: CGFloat = 16.0
+
+/// Prevent icons from getting so large that they don't all fit on screen
+fileprivate let maxDisplayedIconSize: CGFloat = 40.0
+
 /// This is the sheet window which pops up from the `Preferences` window's `UI` tab when the `Customize` button is clicked.
 class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarCurrentItemsViewDelegate {
   override var windowNibName: NSNib.Name {
@@ -30,28 +36,39 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
   @IBOutlet weak var currentItemsView: PrefOSCToolbarCurrentItemsView!
   private var currentItemsViewHeightConstraint: NSLayoutConstraint? = nil
 
+  var previewIconSize: CGFloat {
+    OSCToolbarButton.iconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
+  }
+
+  var previewIconPadding: CGFloat {
+    4  // currentItemsView workaround
+  }
+
   override func windowDidLoad() {
     super.windowDidLoad()
     currentItemsView.registerForDraggedTypes([.iinaOSCAvailableToolbarButtonType, .iinaOSCCurrentToolbarButtonType])
     currentItemsView.currentItemsViewDelegate = self
     currentItemsView.initItems(fromItems: PrefUIViewController.oscToolbarButtons)
 
-    updateToolbarButtonHeight(to: OSCToolbarButton.buttonSize)
+    updateToolbarButtonHeight()
   }
 
-  func updateToolbarButtonHeight(to newHeight: CGFloat) {
+  func updateToolbarButtonHeight() {
     guard isWindowLoaded else { return }
+
+    let newHeight = OSCToolbarButton.buttonSize(iconSize: previewIconSize, iconPadding: previewIconPadding)
 
     Logger.log.verbose("Updating toolbar preview window's currentItemsHeight to \(newHeight)")
     self.currentItemsViewHeightConstraint?.isActive = false
     self.currentItemsViewHeightConstraint = nil
-    let constraint = currentItemsView.heightAnchor.constraint(equalToConstant: newHeight)
-    constraint.isActive = true
-    currentItemsViewHeightConstraint = constraint
 
     // Refresh current items view using updated sizes
     currentItemsView.initItems()
     rebuildAvailableItemsView()
+
+    let constraint = currentItemsView.heightAnchor.constraint(equalToConstant: newHeight)
+    constraint.isActive = true
+    currentItemsViewHeightConstraint = constraint
   }
 
   func currentItemsView(_ view: PrefOSCToolbarCurrentItemsView, updatedItems items: [Preference.ToolBarButton]) {
@@ -65,8 +82,12 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
       availableItemsView.removeView(subview)
     }
 
+    let iconSize = previewIconSize
+    let iconPadding = previewIconPadding
+
     for buttonType in Preference.ToolBarButton.allButtonTypes {
-      let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: buttonType)
+      let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: buttonType,
+                                                                        iconSize: iconSize, iconPadding: iconPadding)
       itemViewController.availableItemsView = availableItemsView
       itemViewControllers.append(itemViewController)
       itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -94,12 +115,13 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
   var currentItemsView: PrefOSCToolbarCurrentItemsView
   var buttonType: Preference.ToolBarButton
 
-  init(buttonType: Preference.ToolBarButton, superView: PrefOSCToolbarCurrentItemsView) {
+  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil,
+       superView: PrefOSCToolbarCurrentItemsView) {
     self.buttonType = buttonType
     self.currentItemsView = superView
     super.init(frame: .zero)
 
-    setStyle(buttonType: buttonType)
+    setStyle(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding)
   }
 
   required init?(coder: NSCoder) {
@@ -118,7 +140,10 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
   }
 
   override func mouseDown(with event: NSEvent) {
-    guard let dragItem = OSCToolbarButton.buildDragItem(from: self, pasteboardWriter: self, buttonType: buttonType, isCurrentItem: true) else { return }
+    let dragItem = OSCToolbarButton.buildDragItem(from: self, pasteboardWriter: self, buttonType: buttonType,
+                                                  iconSize: iconSize, iconPadding: iconPadding,
+                                                  isCurrentItem: true)
+    guard let dragItem else { return }
 
     currentItemsView.itemBeingDragged = self
     beginDraggingSession(with: [dragItem], event: event, source: currentItemsView)
@@ -131,6 +156,9 @@ protocol PrefOSCToolbarCurrentItemsViewDelegate {
 
   func currentItemsView(_ view: PrefOSCToolbarCurrentItemsView, updatedItems items: [Preference.ToolBarButton])
 
+  var previewIconSize: CGFloat { get }
+
+  var previewIconPadding: CGFloat { get }
 }
 
 
@@ -156,14 +184,19 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
   func initItems(fromItems items: [Preference.ToolBarButton]? = nil) {
     let items = items ?? self.items
     self.items = items
+
+    // Remove all item views
     views.forEach { self.removeView($0) }
+
+    // Now repopulate with rebuilt items
+    let iconSize = currentItemsViewDelegate!.previewIconSize
+    let iconPadding = currentItemsViewDelegate!.previewIconPadding
     for buttonType in items {
-      let button = PrefOSCToolbarCurrentItem(buttonType: buttonType, superView: self)
+      let button = PrefOSCToolbarCurrentItem(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding, superView: self)
       self.addView(button, in: .trailing)
     }
-    let btnPad = CGFloat(Preference.float(for: .oscBarToolbarIconSpacing))
-    self.spacing = 2 * btnPad
-    self.edgeInsets = .init(top: btnPad, left: btnPad, bottom: btnPad, right: btnPad)
+    self.spacing = 2 * iconPadding
+    self.edgeInsets = .init(top: iconPadding, left: iconPadding, bottom: iconPadding, right: iconPadding)
 
     // Rebuild placeholderView - size could have changed
     placeholderView = PrefOSCToolbarCurrentItemsView.buildPlaceholderView()
@@ -262,7 +295,6 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
     if views.contains(placeholderView) {
       removeView(placeholderView)
     }
-    Utility.quickConstraints(["H:[v(\(phWidth))]", "V:[v(\(phHeight))]"], ["v": placeholderView])
     insertView(placeholderView, at: index, in: .trailing)
     // animate frames
     NSAnimationContext.runAnimationGroup({ context in
