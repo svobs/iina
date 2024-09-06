@@ -13,6 +13,9 @@ class OSCToolbarButton: NSButton {
   var iconSize: CGFloat = 0
   var iconPadding: CGFloat = 0
 
+  static let floatingToolbarIconSize: CGFloat = 14
+  static let floatingToolbarIconPadding: CGFloat = 5
+
   var buttonSize: CGFloat {
     return self.iconSize + (2 * self.iconPadding)
   }
@@ -26,11 +29,27 @@ class OSCToolbarButton: NSButton {
   }
 
   static var iconSize: CGFloat {
-    return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...oscBarHeight)
+    let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
+    switch oscPosition {
+    case .floating:
+      return floatingToolbarIconSize
+    case .bottom:
+      return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...oscBarHeight)
+    case .top:
+      // Min 1 pixel margin at top & bottom. Don't touch icons above
+      let maxHeight = oscBarHeight - 2
+      return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...maxHeight)
+    }
   }
 
   static var iconPadding: CGFloat {
-    return max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
+    let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
+    switch oscPosition {
+    case .floating:
+      return floatingToolbarIconPadding
+    case .bottom, .top:
+      return max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
+    }
   }
 
   static var buttonSize: CGFloat {

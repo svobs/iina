@@ -19,8 +19,6 @@ fileprivate var oscBarPlaybackIconSpacing: CGFloat {
 
 fileprivate let oscFloatingPlayBtnsSize: CGFloat = 24
 fileprivate let oscFloatingPlayBtnsHPad: CGFloat = 24
-fileprivate let oscFloatingToolbarButtonIconSize: CGFloat = 14
-fileprivate let oscFloatingToolbarButtonIconPadding: CGFloat = 5
 
 // TODO: reimplement OSC title bar feature
 fileprivate let oscTitleBarPlayBtnsSize: CGFloat = 18
@@ -492,7 +490,7 @@ extension PlayerWindowController {
       case .floating:
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -2)
 
-        let toolbarView = rebuildToolbar(iconSize: oscFloatingToolbarButtonIconSize, iconPadding: oscFloatingToolbarButtonIconPadding)
+        let toolbarView = rebuildToolbar()
         oscFloatingUpperView.addView(toolbarView, in: .trailing)
         oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
@@ -1362,16 +1360,16 @@ extension PlayerWindowController {
     }
   }
 
-  /// Need explicit `iconSize` & `iconPadding` for floating OSC, which does not use pref values
-  private func rebuildToolbar(iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) -> NSStackView {
+  /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
+  private func rebuildToolbar() -> NSStackView {
     let buttonTypeRawValues = Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []
     let buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
-    log.verbose("Adding buttons to OSC toolbar: \(buttonTypes)")
+    log.verbose("Setting buttons in OSC toolbar: \(buttonTypes)")
 
     var toolButtons: [OSCToolbarButton] = []
     for buttonType in buttonTypes {
       let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding)
+      button.setStyle(buttonType: buttonType)
       button.action = #selector(self.toolBarButtonAction(_:))
       toolButtons.append(button)
     }
@@ -1387,16 +1385,15 @@ extension PlayerWindowController {
     }
     fragToolbarView = toolbarView
 
-    // FIXME: this causes a crash due to conflicting constraints. Need to rewrite layout for toolbar button spacing!
     // It's not possible to control the icon padding from inside the buttons in all cases.
     // Instead we can get the same effect with a little more work, by controlling the stack view:
-    //    if !toolButtons.isEmpty {
-    //      let button = toolButtons[0]
-    //      toolbarView.spacing = 2 * button.iconPadding
-    //      toolbarView.edgeInsets = .init(top: button.iconPadding, left: button.iconPadding,
-    //                                     bottom: button.iconPadding, right: button.iconPadding)
-    //      Logger.log("Toolbar spacing: \(toolbarView.spacing), edgeInsets: \(toolbarView.edgeInsets)", level: .verbose, subsystem: player.subsystem)
-    //    }
+    if !toolButtons.isEmpty {
+      let button = toolButtons[0]
+      toolbarView.spacing = 2 * button.iconPadding
+      toolbarView.edgeInsets = .init(top: button.iconPadding, left: button.iconPadding,
+                                     bottom: button.iconPadding, right: button.iconPadding)
+      Logger.log("Toolbar spacing: \(toolbarView.spacing), edgeInsets: \(toolbarView.edgeInsets)", level: .verbose, subsystem: player.subsystem)
+    }
     return toolbarView
   }
 
