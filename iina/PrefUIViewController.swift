@@ -72,8 +72,14 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
 
-  @IBOutlet var leadingSidebarBox: NSBox!
-  @IBOutlet var trailingSidebarBox: NSBox!
+  @IBOutlet weak var leftSidebarLabel: NSTextField!
+  @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
+  @IBOutlet weak var leftSidebarShowToggleButton: NSButton!
+  @IBOutlet weak var leftSidebarClickToCloseButton: NSButton!
+  @IBOutlet weak var rightSidebarLabel: NSTextField!
+  @IBOutlet weak var rightSidebarPlacement: NSSegmentedControl!
+  @IBOutlet weak var rightSidebarShowToggleButton: NSButton!
+  @IBOutlet weak var rightSidebarClickToCloseButton: NSButton!
 
   @IBOutlet weak var resizeWindowWhenOpeningFileCheckbox: NSButton!
   @IBOutlet weak var resizeWindowTimingPopUpButton: NSPopUpButton!
@@ -243,8 +249,16 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let tabGroup2: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
     let isUsingLeadingSidebar = tabGroup1 == .leadingSidebar || tabGroup2 == .leadingSidebar
     let isUsingTrailingSidebar = tabGroup1 == .trailingSidebar || tabGroup2 == .trailingSidebar
-    setSubViews(of: leadingSidebarBox, enabled: isUsingLeadingSidebar)
-    setSubViews(of: trailingSidebarBox, enabled: isUsingTrailingSidebar)
+
+    leftSidebarLabel.textColor = isUsingLeadingSidebar ? .controlTextColor : .disabledControlTextColor
+    leftSidebarPlacement.isEnabled = isUsingLeadingSidebar
+    leftSidebarShowToggleButton.isEnabled = isUsingLeadingSidebar
+    leftSidebarClickToCloseButton.isEnabled = isUsingLeadingSidebar
+
+    rightSidebarLabel.textColor = isUsingTrailingSidebar ? .controlTextColor : .disabledControlTextColor
+    rightSidebarPlacement.isEnabled = isUsingTrailingSidebar
+    rightSidebarShowToggleButton.isEnabled = isUsingTrailingSidebar
+    rightSidebarClickToCloseButton.isEnabled = isUsingTrailingSidebar
   }
 
   private func refreshTitleBarAndOSCSection(animate: Bool = true) {
@@ -542,10 +556,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     windowPosCheckBox.state = isUsingMpvPos ? .on : .off
     mpvWindowSizeCollapseView.setCollapsed(!isUsingMpvSize, animated: true)
     mpvWindowPositionCollapseView.setCollapsed(!isUsingMpvPos, animated: true)
-  }
-
-  private func setSubViews(of view: NSBox, enabled: Bool) {
-    view.contentView?.subviews.forEach { ($0 as? NSControl)?.isEnabled = enabled }
   }
 
   @IBAction func disableAnimationsHelpAction(_ sender: Any) {
