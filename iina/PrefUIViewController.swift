@@ -68,6 +68,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
   @IBOutlet weak var oscSnapToCenterCheckboxContainerView: NSView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
+  @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
   @IBOutlet weak var hideFadeableViewsOutsideWindowCheckBox: NSButton!
 
@@ -262,6 +263,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       context.allowsImplicitAnimation = animate ? !AccessibilityPreferences.motionReductionEnabled : false
       context.timingFunction = CAMediaTimingFunction(name: .linear)
 
+      autoHideAfterCheckBox.isEnabled = hasOverlay
       oscAutoHideTimeoutTextField.isEnabled = hasOverlay
       hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
       windowPreviewImageView.image = ib.updateWindowPreviewImage()
