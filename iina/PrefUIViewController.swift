@@ -45,6 +45,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
 
+  @IBOutlet weak var toolIconSizeSlider: NSSlider!
+  @IBOutlet weak var toolIconSpacingSlider: NSSlider!
+  @IBOutlet weak var playIconSizeSlider: NSSlider!
+  @IBOutlet weak var playIconSpacingSlider: NSSlider!
+
   @IBOutlet weak var aspectPresetsTokenField: AspectTokenField!
   @IBOutlet weak var cropPresetsTokenField: AspectTokenField!
 
@@ -122,9 +127,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     .settingsTabGroupLocation,
     .playlistTabGroupLocation,
     .controlBarToolbarButtons,
+
     .oscBarHeight,
+    .oscBarPlaybackIconSize,
+    .oscBarPlaybackIconSpacing,
     .oscBarToolbarIconSize,
     .oscBarToolbarIconSpacing,
+
     .useLegacyWindowedMode,
     .aspectRatioPanelPresets,
     .cropPanelPresets,
@@ -556,6 +565,40 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     windowPosCheckBox.state = isUsingMpvPos ? .on : .off
     mpvWindowSizeCollapseView.setCollapsed(!isUsingMpvSize, animated: true)
     mpvWindowPositionCollapseView.setCollapsed(!isUsingMpvPos, animated: true)
+
+    let geo = ControlBarGeometry()
+    toolIconSizeSlider.intValue = Int32(geo.toolIconSizeTicks)
+    toolIconSpacingSlider.intValue = Int32(geo.toolIconSpacingTicks)
+    playIconSizeSlider.intValue = Int32(geo.playIconSizeTicks)
+    playIconSpacingSlider.intValue = Int32(geo.playIconSpacingTicks)
+  }
+
+  @IBAction func toolIconSizeAction(_ sender: NSSlider) {
+    let ticks = Int(sender.intValue)
+    let geo = ControlBarGeometry(toolIconSizeTicks: ticks)
+    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(geo.toolIconSize)")
+    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
+  }
+
+  @IBAction func toolIconSpacingAction(_ sender: NSSlider) {
+    let ticks = Int(sender.intValue)
+    let geo = ControlBarGeometry(toolIconSpacingTicks: ticks)
+    Logger.log.verbose("Updating oscBarToolbarIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
+    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
+  }
+
+  @IBAction func playIconSizeAction(_ sender: NSSlider) {
+    let ticks = Int(sender.intValue)
+    let geo = ControlBarGeometry(playIconSizeTicks: ticks)
+    Logger.log.verbose("Updating oscBarPlaybackIconSize: \(ticks) ticks, \(geo.playIconSize)")
+    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
+  }
+
+  @IBAction func playIconSpacingAction(_ sender: NSSlider) {
+    let ticks = Int(sender.intValue)
+    let geo = ControlBarGeometry(playIconSpacingTicks: ticks)
+    Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
+    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
   }
 
   @IBAction func disableAnimationsHelpAction(_ sender: Any) {

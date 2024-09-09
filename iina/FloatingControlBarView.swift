@@ -86,7 +86,7 @@ class FloatingControlBarView: NSVisualEffectView {
       return
     }
 
-    let geometry = FloatingControllerGeometry(windowLayout: layout, viewportSize: viewportSize)
+    let geometry = FloatingControlBarGeometry(windowLayout: layout, viewportSize: viewportSize)
     let availableWidth = geometry.availableWidth
     let centerX = geometry.minCenterX + ((availableWidth - geometry.barWidth) * ratioH)
     let originY = geometry.minOriginY + (ratioV * (geometry.maxOriginY - geometry.minOriginY))
@@ -97,7 +97,7 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   /// Converts the relative offsets of `xConst` and `yConst` into ratios into available space in the range [0...1]
-  private func updateRatios(xConst: CGFloat, yConst: CGFloat, _ geometry: FloatingControllerGeometry) {
+  private func updateRatios(xConst: CGFloat, yConst: CGFloat, _ geometry: FloatingControlBarGeometry) {
     guard let playerWindowController else { return }
     let minCenterX = geometry.minCenterX
 
@@ -150,7 +150,7 @@ class FloatingControlBarView: NSVisualEffectView {
     guard isDragging else { return }
 
     let currentLocInViewport = viewportView.convert(event.locationInWindow, from: nil)
-    let geometry = FloatingControllerGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
+    let geometry = FloatingControlBarGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
 
     let xxx = currentLocInViewport.x - mousePosRelatedToView.x
 
@@ -179,7 +179,7 @@ class FloatingControlBarView: NSVisualEffectView {
     isDragging = false
     guard let playerWindowController, let viewportView = playerWindowController.viewportView else { return }
 
-    let geometry = FloatingControllerGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
+    let geometry = FloatingControlBarGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
 
     if event.clickCount == 2 {
       let (xConst, yConst) = geometry.calculateConstraintConstants(centerX: geometry.centerX, originY: frame.origin.y)
@@ -196,7 +196,7 @@ class FloatingControlBarView: NSVisualEffectView {
 
   // MARK: - Coordinates in Viewport
 
-  struct FloatingControllerGeometry {
+  struct FloatingControlBarGeometry {
     let windowLayout: PlayerWindowController.LayoutState
     let viewportSize: CGSize
 
