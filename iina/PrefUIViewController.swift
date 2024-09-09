@@ -72,6 +72,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var windowPreviewImageView: NSImageView!
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
   @IBOutlet weak var oscSnapToCenterCheckboxContainerView: NSView!
+  @IBOutlet weak var oscHeightStackView: NSStackView!
+  @IBOutlet weak var playbackButtonsStackView: NSStackView!
+  @IBOutlet weak var toolbarButtonsStackView: NSStackView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
@@ -192,29 +195,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     updateThumbnailCacheStat()
   }
 
-  private func updateThumbnailCacheStat() {
-    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
-      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
-      DispatchQueue.main.async { [self] in
-        currentThumbCacheSizeTextField.stringValue = newString
-      }
-    }
-  }
-
-  private func updateAspectControlsFromPrefs() {
-    let newAspects = Preference.string(for: .aspectRatioPanelPresets) ?? ""
-    aspectPresetsTokenField.commaSeparatedValues = newAspects
-    let defaultAspects = Preference.defaultPreference[.aspectRatioPanelPresets] as? String
-    resetAspectPresetsButton.isHidden = (defaultAspects == newAspects)
-  }
-
-  private func updateCropControlsFromPrefs() {
-    let newCropPresets = Preference.string(for: .cropPanelPresets) ?? ""
-    cropPresetsTokenField.commaSeparatedValues = newCropPresets
-    let defaultCropPresets = Preference.defaultPreference[.cropPanelPresets] as? String
-    resetCropPresetsButton.isHidden = defaultCropPresets == newCropPresets
-  }
-
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let _ = change else { return }
 
@@ -236,8 +216,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       updateGeometryUI()
     case PK.settingsTabGroupLocation.rawValue, PK.playlistTabGroupLocation.rawValue:
       refreshSidebarSection()
+    case PK.oscBarHeight.rawValue:
+      updateControlBarGeometry()
     case PK.controlBarToolbarButtons.rawValue,
-      PK.oscBarHeight.rawValue,
+      PK.oscBarPlaybackIconSize.rawValue,
+      PK.oscBarPlaybackIconSpacing.rawValue,
       PK.oscBarToolbarIconSize.rawValue,
       PK.oscBarToolbarIconSpacing.rawValue:
 
@@ -252,6 +235,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       break
     }
   }
+
+  // MARK: - Sidebars
 
   private func refreshSidebarSection() {
     let tabGroup1: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
@@ -269,6 +254,48 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     rightSidebarShowToggleButton.isEnabled = isUsingTrailingSidebar
     rightSidebarClickToCloseButton.isEnabled = isUsingTrailingSidebar
   }
+
+  @IBAction func saveAspectPresets(_ sender: AspectTokenField) {
+    let csv = sender.commaSeparatedValues
+    if Preference.string(for: .aspectRatioPanelPresets) != csv {
+      Logger.log("Saving \(Preference.Key.aspectRatioPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
+      Preference.set(csv, for: .aspectRatioPanelPresets)
+    }
+  }
+
+  @IBAction func saveCropPresets(_ sender: AspectTokenField) {
+    let csv = sender.commaSeparatedValues
+    if Preference.string(for: .cropPanelPresets) != csv {
+      Logger.log("Saving \(Preference.Key.cropPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
+      Preference.set(csv, for: .cropPanelPresets)
+    }
+  }
+
+  @IBAction func resetAspectPresets(_ sender: NSButton) {
+    let defaultValue = Preference.defaultPreference[.aspectRatioPanelPresets]
+    Preference.set(defaultValue, for: .aspectRatioPanelPresets)
+  }
+
+  @IBAction func resetCropPresets(_ sender: NSButton) {
+    let defaultValue = Preference.defaultPreference[.cropPanelPresets]
+    Preference.set(defaultValue, for: .cropPanelPresets)
+  }
+
+  private func updateAspectControlsFromPrefs() {
+    let newAspects = Preference.string(for: .aspectRatioPanelPresets) ?? ""
+    aspectPresetsTokenField.commaSeparatedValues = newAspects
+    let defaultAspects = Preference.defaultPreference[.aspectRatioPanelPresets] as? String
+    resetAspectPresetsButton.isHidden = (defaultAspects == newAspects)
+  }
+
+  private func updateCropControlsFromPrefs() {
+    let newCropPresets = Preference.string(for: .cropPanelPresets) ?? ""
+    cropPresetsTokenField.commaSeparatedValues = newCropPresets
+    let defaultCropPresets = Preference.defaultPreference[.cropPanelPresets] as? String
+    resetCropPresetsButton.isHidden = defaultCropPresets == newCropPresets
+  }
+
+  // MARK: - Title Bar & OSC
 
   private func refreshTitleBarAndOSCSection(animate: Bool = true) {
     let ib = PlayerWindowPreviewImageBuilder(self.view)
@@ -302,6 +329,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         viewHidePairs.append((oscBottomPlacementContainerView, !oscIsBottom))
       }
 
+      let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
+
+      let hasBarOSC = oscIsBottom || oscIsTop
+      viewHidePairs.append((oscHeightStackView, !hasBarOSC))
+      viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
+      viewHidePairs.append((toolbarButtonsStackView, !hasBarOSC))
+
       let hasTopBar = ib.hasTopBar
       if topBarPositionContainerView.isHidden != !hasTopBar {
         viewHidePairs.append((topBarPositionContainerView, !hasTopBar))
@@ -332,45 +366,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         for (view, shouldHide) in viewHidePairs {
           view.animator().isHidden = shouldHide
         }
-      }, completionHandler: {
       })
     })
-  }
-
-  @IBAction func saveAspectPresets(_ sender: AspectTokenField) {
-    let csv = sender.commaSeparatedValues
-    if Preference.string(for: .aspectRatioPanelPresets) != csv {
-      Logger.log("Saving \(Preference.Key.aspectRatioPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
-      Preference.set(csv, for: .aspectRatioPanelPresets)
-    }
-  }
-
-  @IBAction func saveCropPresets(_ sender: AspectTokenField) {
-    let csv = sender.commaSeparatedValues
-    if Preference.string(for: .cropPanelPresets) != csv {
-      Logger.log("Saving \(Preference.Key.cropPanelPresets.rawValue): \"\(csv)\"", level: .verbose)
-      Preference.set(csv, for: .cropPanelPresets)
-    }
-  }
-
-  @IBAction func resetAspectPresets(_ sender: NSButton) {
-    let defaultValue = Preference.defaultPreference[.aspectRatioPanelPresets]
-    Preference.set(defaultValue, for: .aspectRatioPanelPresets)
-  }
-
-  @IBAction func resetCropPresets(_ sender: NSButton) {
-    let defaultValue = Preference.defaultPreference[.cropPanelPresets]
-    Preference.set(defaultValue, for: .cropPanelPresets)
-  }
-
-  @IBAction func setupPipBehaviorRelatedControls(_ sender: NSButton) {
-    Preference.set(sender.tag, for: .windowBehaviorWhenPip)
-  }
-
-  private func updatePipBehaviorRelatedControls() {
-    let pipBehaviorOption = Preference.enum(for: .windowBehaviorWhenPip) as Preference.WindowBehaviorWhenPip
-    ([pipDoNothing, pipHideWindow, pipMinimizeWindow] as [NSButton])
-      .first { $0.tag == pipBehaviorOption.rawValue }?.state = .on
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {
@@ -382,6 +379,17 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let array = newItems.map { $0.rawValue }
       Preference.set(array, for: .controlBarToolbarButtons)
     }
+  }
+
+  private func updateControlBarGeometry() {
+    let geo = ControlBarGeometry(toolIconSizeTicks: toolIconSizeSlider.integerValue,
+                                 toolIconSpacingTicks: toolIconSpacingSlider.integerValue,
+                                 playIconSizeTicks: playIconSizeSlider.integerValue,
+                                 playIconSpacingTicks: playIconSpacingSlider.integerValue)
+    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
+    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
+    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
+    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
   }
 
   private func updateOSCToolbarButtons() {
@@ -410,6 +418,48 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     constraint.isActive = true
     oscToolbarStackViewHeightConstraint = constraint
   }
+
+  @IBAction func toolIconSizeAction(_ sender: NSSlider) {
+    let ticks = sender.integerValue
+    let geo = ControlBarGeometry(toolIconSizeTicks: ticks)
+    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(geo.toolIconSize)")
+    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
+  }
+
+  @IBAction func toolIconSpacingAction(_ sender: NSSlider) {
+    let ticks = sender.integerValue
+    let geo = ControlBarGeometry(toolIconSpacingTicks: ticks)
+    Logger.log.verbose("Updating oscBarToolbarIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
+    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
+  }
+
+  @IBAction func playIconSizeAction(_ sender: NSSlider) {
+    let ticks = sender.integerValue
+    let geo = ControlBarGeometry(playIconSizeTicks: ticks)
+    Logger.log.verbose("Updating oscBarPlaybackIconSize: \(ticks) ticks, \(geo.playIconSize)")
+    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
+  }
+
+  @IBAction func playIconSpacingAction(_ sender: NSSlider) {
+    let ticks = sender.integerValue
+    let geo = ControlBarGeometry(playIconSpacingTicks: ticks)
+    Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
+    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
+  }
+
+  // MARK: - PiP
+
+  @IBAction func setupPipBehaviorRelatedControls(_ sender: NSButton) {
+    Preference.set(sender.tag, for: .windowBehaviorWhenPip)
+  }
+
+  private func updatePipBehaviorRelatedControls() {
+    let pipBehaviorOption = Preference.enum(for: .windowBehaviorWhenPip) as Preference.WindowBehaviorWhenPip
+    ([pipDoNothing, pipHideWindow, pipMinimizeWindow] as [NSButton])
+      .first { $0.tag == pipBehaviorOption.rawValue }?.state = .on
+  }
+
+  // MARK: - Window Geometry
 
   @IBAction func updateWindowResizeScheme(_ sender: AnyObject) {
     guard let scheme = Preference.ResizeWindowScheme(rawValue: sender.tag) else {
@@ -573,38 +623,24 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     playIconSpacingSlider.intValue = Int32(geo.playIconSpacingTicks)
   }
 
-  @IBAction func toolIconSizeAction(_ sender: NSSlider) {
-    let ticks = Int(sender.intValue)
-    let geo = ControlBarGeometry(toolIconSizeTicks: ticks)
-    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(geo.toolIconSize)")
-    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
-  }
-
-  @IBAction func toolIconSpacingAction(_ sender: NSSlider) {
-    let ticks = Int(sender.intValue)
-    let geo = ControlBarGeometry(toolIconSpacingTicks: ticks)
-    Logger.log.verbose("Updating oscBarToolbarIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
-    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
-  }
-
-  @IBAction func playIconSizeAction(_ sender: NSSlider) {
-    let ticks = Int(sender.intValue)
-    let geo = ControlBarGeometry(playIconSizeTicks: ticks)
-    Logger.log.verbose("Updating oscBarPlaybackIconSize: \(ticks) ticks, \(geo.playIconSize)")
-    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
-  }
-
-  @IBAction func playIconSpacingAction(_ sender: NSSlider) {
-    let ticks = Int(sender.intValue)
-    let geo = ControlBarGeometry(playIconSpacingTicks: ticks)
-    Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
-    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
-  }
+  // MARK: - Other
 
   @IBAction func disableAnimationsHelpAction(_ sender: Any) {
     NSWorkspace.shared.open(URL(string: AppData.disableAnimationsHelpLink)!)
   }
+
+  private func updateThumbnailCacheStat() {
+    AppDelegate.shared.preferenceWindowController.indexingQueue.async { [self] in
+      let newString = "\(FloatingPointByteCountFormatter.string(fromByteCount: ThumbnailCacheManager.shared.getCacheSize(), countStyle: .binary))B"
+      DispatchQueue.main.async { [self] in
+        currentThumbCacheSizeTextField.stringValue = newString
+      }
+    }
+  }
+
 }
+
+// MARK: - Transformers
 
 @objc(IntEqualsZeroTransformer) class IntEqualsZeroTransformer: ValueTransformer {
 
