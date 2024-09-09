@@ -58,14 +58,14 @@ struct ControlBarGeometry {
       playIconSpacing = ControlBarGeometry.floatingPlayBtnsHPad
     case .top:
       // Play button is very tall. Reduce max size so it doesn't touch edges or icons above
-      let maxPlayBtnHeight = OSCToolbarButton.oscBarHeight - 4
+      let maxPlayBtnHeight = barHeight - 4
 
       toolbarIconSize = desiredToolIconSize.clamped(to: ControlBarGeometry.minToolBtnHeight...barHeight)
       toolbarIconSpacing = max(0, desiredToolbarIconSpacing)
       playIconSize = desiredPlayIconSize.clamped(to: ControlBarGeometry.minPlayBtnHeight...maxPlayBtnHeight)
       playIconSpacing = max(0, desiredPlayIconSpacing)
     case .bottom:
-      let maxPlayBtnHeight = OSCToolbarButton.oscBarHeight - 2
+      let maxPlayBtnHeight = barHeight - 2
 
       toolbarIconSize = desiredToolIconSize.clamped(to: ControlBarGeometry.minToolBtnHeight...barHeight)
       toolbarIconSpacing = max(0, desiredToolbarIconSpacing)

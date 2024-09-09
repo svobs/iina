@@ -118,6 +118,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var pipMinimizeWindow: NSButton!
 
   var oscToolbarStackViewHeightConstraint: NSLayoutConstraint? = nil
+  var oscToolbarStackViewWidthConstraint: NSLayoutConstraint? = nil
 
   private let observedPrefKeys: [Preference.Key] = [
     .enableAdvancedSettings,
@@ -174,7 +175,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     oscToolbarStackView.wantsLayer = true
 
-    refreshSidebarSection()
+    updateSidebarSection()
     refreshTitleBarAndOSCSection(animate: false)
     updateOSCToolbarButtons()
     updateGeometryUI()
@@ -215,9 +216,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       refreshTitleBarAndOSCSection()
       updateGeometryUI()
     case PK.settingsTabGroupLocation.rawValue, PK.playlistTabGroupLocation.rawValue:
-      refreshSidebarSection()
+      updateSidebarSection()
     case PK.oscBarHeight.rawValue:
-      updateControlBarGeometry()
+      updateControlBarGeometryFromSliders()
     case PK.controlBarToolbarButtons.rawValue,
       PK.oscBarPlaybackIconSize.rawValue,
       PK.oscBarPlaybackIconSpacing.rawValue,
@@ -238,7 +239,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   // MARK: - Sidebars
 
-  private func refreshSidebarSection() {
+  private func updateSidebarSection() {
     let tabGroup1: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
     let tabGroup2: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
     let isUsingLeadingSidebar = tabGroup1 == .leadingSidebar || tabGroup2 == .leadingSidebar
@@ -381,42 +382,66 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
-  private func updateControlBarGeometry() {
-    let geo = ControlBarGeometry(toolIconSizeTicks: toolIconSizeSlider.integerValue,
-                                 toolIconSpacingTicks: toolIconSpacingSlider.integerValue,
-                                 playIconSizeTicks: playIconSizeSlider.integerValue,
-                                 playIconSpacingTicks: playIconSpacingSlider.integerValue)
+  private func updateControlBarGeometryFromSliders() {
+    let geo = buildControlBarGeometryFromSliders()
     Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
     Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
     Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
     Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
   }
 
+  private func buildControlBarGeometryFromSliders(barHeight: CGFloat? = nil) -> ControlBarGeometry {
+    return ControlBarGeometry(barHeight: barHeight,
+                              toolIconSizeTicks: toolIconSizeSlider.integerValue,
+                              toolIconSpacingTicks: toolIconSpacingSlider.integerValue,
+                              playIconSizeTicks: playIconSizeSlider.integerValue,
+                              playIconSpacingTicks: playIconSpacingSlider.integerValue)
+  }
+
   private func updateOSCToolbarButtons() {
-    let stackViewHeight = OSCToolbarButton.buttonSize
-    Logger.log.verbose("Updating OSC toolbar preview height to \(stackViewHeight)")
+    let actualGeo = ControlBarGeometry()
+    let toolIconSizeTicks = actualGeo.toolIconSizeTicks
+    let toolIconSpacingTicks = actualGeo.toolIconSpacingTicks
+    let playIconSizeTicks = actualGeo.playIconSizeTicks
+    let playIconSpacingTicks = actualGeo.playIconSpacingTicks
+
+    let previewBarHeight = min(36.0, CGFloat(Preference.integer(for: .oscBarHeight)))
+    let geo = ControlBarGeometry(barHeight: previewBarHeight, 
+                                 toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
+                                 playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
+    Logger.log.verbose("Updating OSC toolbar preview height to \(geo.barHeight)")
     oscToolbarStackViewHeightConstraint?.isActive = false
     oscToolbarStackViewHeightConstraint = nil
+    oscToolbarStackViewWidthConstraint?.isActive = false
+    oscToolbarStackViewWidthConstraint = nil
 
     toolbarSettingsSheetController.updateToolbarButtonHeight()
 
     oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
-    for buttonType in PrefUIViewController.oscToolbarButtons {
+    let toolbarButtons = PrefUIViewController.oscToolbarButtons
+    let totalIconWidth = geo.toolIconSize * CGFloat(toolbarButtons.count)
+    // Include spacing on sides:
+    let totalSpacing: CGFloat = (geo.toolIconSpacing * 2) * CGFloat(toolbarButtons.count)
+    oscToolbarStackView.spacing = 2 * geo.toolIconSpacing
+    let totalWidth: CGFloat = totalIconWidth + totalSpacing
+    for buttonType in toolbarButtons {
       let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType)
-      oscToolbarStackView.addView(button, in: .trailing)
-      oscToolbarStackView.spacing = 2 * button.iconPadding
-      oscToolbarStackView.edgeInsets = .init(top: button.iconPadding, left: button.iconPadding, bottom: button.iconPadding, right: button.iconPadding)
-      // Button is actually disabled so that its mouseDown goes to its superview instead
+      button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconPadding: geo.toolIconSpacing)
+      oscToolbarStackView.addView(button, in: .center)
       button.isEnabled = false
       // But don't gray it out
       (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     }
 
     // Wait until AFTER everything else is done before [re-]adding height constraint
-    let constraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: stackViewHeight)
-    constraint.isActive = true
-    oscToolbarStackViewHeightConstraint = constraint
+    // Include top & bottom box offsets
+    let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: geo.barHeight)
+    hConstraint.isActive = true
+    oscToolbarStackViewHeightConstraint = hConstraint
+
+    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: totalWidth)
+    wConstraint.isActive = true
+    oscToolbarStackViewWidthConstraint = wConstraint
   }
 
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
