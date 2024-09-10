@@ -10,8 +10,7 @@ import Foundation
 
 fileprivate let iconSizeBaseMultiplier: CGFloat = 0.5
 fileprivate let playIconSpacingMinScaleMultiplier: CGFloat = 0.1
-fileprivate let tickCount: CGFloat = 4
-fileprivate let ratioPerTick: CGFloat = 1 / tickCount
+fileprivate let maxTicks: CGFloat = 4
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 2.0
 
 fileprivate let minToolBtnHeight: CGFloat = 8
@@ -33,7 +32,8 @@ struct ControlBarGeometry {
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     // First establish bar height
     let desiredBarHeight = barHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
-    let barHeight = max(Constants.Distance.minOSCBarHeight, desiredBarHeight)
+    let barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
+    self.barHeight = barHeight
 
     let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
                                                           barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSize))
@@ -44,40 +44,21 @@ struct ControlBarGeometry {
     let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
                                                                 barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
 
-    let toolbarIconSize: CGFloat
-    let toolbarIconSpacing: CGFloat
-    let playIconSize: CGFloat
-    let playIconSpacing: CGFloat
-
     let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
-    switch oscPosition {
-    case .floating:
-      toolbarIconSize = floatingToolbarIconSize
-      toolbarIconSpacing = floatingToolbarIconSpacing
-      playIconSize = floatingPlayBtnsSize
-      playIconSpacing = floatingPlayBtnsHPad
-    case .top:
-      // Play button is very tall. Reduce max size so it doesn't touch edges or icons above
-      let maxPlayBtnHeight = barHeight - 4
+    if oscPosition == .floating {
+      self.toolIconSize = floatingToolbarIconSize
+      self.toolIconSpacing = floatingToolbarIconSpacing
+      self.playIconSize = floatingPlayBtnsSize
+      self.playIconSpacing = floatingPlayBtnsHPad
+    } else {
+      // Reduce max button size so they don't touch edges or (if .top) icons above
+      let maxBtnHeight = barHeight - (oscPosition == .top ? 4 : 2)
 
-      toolbarIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...barHeight)
-      toolbarIconSpacing = max(0, desiredToolbarIconSpacing)
-      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxPlayBtnHeight)
-      playIconSpacing = max(0, desiredPlayIconSpacing)
-    case .bottom:
-      let maxPlayBtnHeight = barHeight - 2
-
-      toolbarIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...barHeight)
-      toolbarIconSpacing = max(0, desiredToolbarIconSpacing)
-      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxPlayBtnHeight)
-      playIconSpacing = max(0, desiredPlayIconSpacing)
+      self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
+      self.toolIconSpacing = max(0, desiredToolbarIconSpacing)
+      self.playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
+      self.playIconSpacing = max(0, desiredPlayIconSpacing)
     }
-
-    self.barHeight = barHeight
-    self.toolIconSize = toolbarIconSize
-    self.toolIconSpacing = toolbarIconSpacing
-    self.playIconSize = playIconSize
-    self.playIconSpacing = playIconSpacing
   }
 
   private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
@@ -86,41 +67,41 @@ struct ControlBarGeometry {
     let baseHeight = barHeight * iconSizeBaseMultiplier
     let adjustableHeight = barHeight - baseHeight
 
-    return baseHeight + (adjustableHeight * (CGFloat(ticks) * ratioPerTick))
+    return baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
   }
 
   var playIconSizeTicks: Int {
     let baseHeight = barHeight * iconSizeBaseMultiplier
     let adjustableHeight = barHeight - baseHeight
-    let ticks = (playIconSize - baseHeight) / adjustableHeight * tickCount
+    let ticks = (playIconSize - baseHeight) / adjustableHeight * maxTicks
     return Int(round(ticks))
   }
 
   var toolIconSizeTicks: Int {
     let baseHeight = barHeight * iconSizeBaseMultiplier
     let adjustableHeight = barHeight - baseHeight
-    let ticks = (toolIconSize - baseHeight) / adjustableHeight * tickCount
+    let ticks = (toolIconSize - baseHeight) / adjustableHeight * maxTicks
     return Int(round(ticks))
   }
 
   private static func toolIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    return barHeight * CGFloat(ticks) * ratioPerTick / toolSpacingScaleMultiplier
+    return barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
   }
 
   var toolIconSpacingTicks: Int {
-    return Int(round(toolIconSpacing * toolSpacingScaleMultiplier / barHeight * tickCount))
+    return Int(round(toolIconSpacing * toolSpacingScaleMultiplier / barHeight * maxTicks))
   }
 
   private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    return barHeight * ((CGFloat(ticks) * ratioPerTick) + playIconSpacingMinScaleMultiplier)
+    return barHeight * ((CGFloat(ticks) / maxTicks) + playIconSpacingMinScaleMultiplier)
   }
 
   var playIconSpacingTicks: Int {
-    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * tickCount
+    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks
     return Int(round(ticksDouble))
   }
 

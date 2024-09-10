@@ -230,6 +230,10 @@ struct Constants {
     static let windowControllerMinInitialDragThreshold: CGFloat = 4.0
 
     static let minOSCBarHeight: CGFloat = 24
+    static let maxOSCBarHeight: CGFloat = 200
+
+    // matches spacing as of MacOS Sonoma (14.0)
+    static let titleBarIconSpacingH: CGFloat = 6
 
     struct Thumbnail {
       static let minHeight: CGFloat = 24

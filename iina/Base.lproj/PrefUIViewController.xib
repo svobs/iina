@@ -56,7 +56,7 @@
                 <outlet property="toolIconSpacingSlider" destination="B1C-hb-rqp" id="OwV-3B-aVd"/>
                 <outlet property="toolbarButtonsStackView" destination="6w3-c5-7MT" id="ktg-4e-Rhr"/>
                 <outlet property="topBarPositionContainerView" destination="SbE-ox-wl1" id="QpJ-BV-qcB"/>
-                <outlet property="unparsedGeometryabel" destination="LA6-rp-Ub0" id="GpL-lC-mtG"/>
+                <outlet property="unparsedGeometryLabel" destination="LA6-rp-Ub0" id="GpL-lC-mtG"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
                 <outlet property="windowPosBox" destination="Mye-uz-WUr" id="lyj-Yi-EMu"/>
                 <outlet property="windowPosCheckBox" destination="tLm-Qr-UNX" id="HuG-yg-gl6"/>
@@ -1456,8 +1456,8 @@ For smoothest results, also enable custom full screen.</string>
                                     </constraints>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="43s-eH-8ms" userLabel="OSC-Height Text Field Cell">
                                         <numberFormatter key="formatter" formatterBehavior="default10_4" usesGroupingSeparator="NO" lenient="YES" formatWidth="-1" groupingSize="0" minimumIntegerDigits="1" maximumIntegerDigits="42" id="e2m-pr-W7O">
-                                            <real key="minimum" value="8"/>
-                                            <real key="maximum" value="200"/>
+                                            <real key="minimum" value="0.0"/>
+                                            <real key="maximum" value="10000"/>
                                         </numberFormatter>
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

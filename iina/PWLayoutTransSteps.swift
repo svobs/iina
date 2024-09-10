@@ -477,7 +477,7 @@ extension PlayerWindowController {
 
       switch outputLayout.oscPosition {
       case .top:
-        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition)")
+        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscBarPlaybackIconSize) playIconSpacing=\(oscBarPlaybackIconSpacing))")
         currentControlBar = controlBarTop
 
         addControlBarViews(to: oscTopMainView, playBtnSize: oscBarPlaybackIconSize, playBtnSpacing: oscBarPlaybackIconSpacing)
@@ -487,7 +487,7 @@ extension PlayerWindowController {
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -timeLabelOffset)
 
       case .bottom:
-        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition)")
+        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscBarPlaybackIconSize) playIconSpacing=\(oscBarPlaybackIconSpacing))")
         currentControlBar = bottomBarView
 
         if !bottomBarView.subviews.contains(oscBottomMainView) {
@@ -1405,7 +1405,7 @@ extension PlayerWindowController {
       let button = toolButtons[0]
       toolbarView.spacing = 2 * button.iconSpacing
       toolbarView.edgeInsets = .init(top: button.iconSpacing, left: button.iconSpacing,
-                                     bottom: button.iconSpacing, right: button.iconSpacing)
+                                     bottom: button.iconSpacing, right: button.iconSpacing + Constants.Distance.titleBarIconSpacingH)
       Logger.log("Toolbar spacing: \(toolbarView.spacing), edgeInsets: \(toolbarView.edgeInsets)", level: .verbose, subsystem: player.subsystem)
     }
     return toolbarView

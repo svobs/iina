@@ -91,7 +91,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBOutlet weak var resizeWindowWhenOpeningFileCheckbox: NSButton!
   @IBOutlet weak var resizeWindowTimingPopUpButton: NSPopUpButton!
-  @IBOutlet weak var unparsedGeometryabel: NSTextField!
+  @IBOutlet weak var unparsedGeometryLabel: NSTextField!
   @IBOutlet weak var mpvWindowSizeCollapseView: CollapseView!
   @IBOutlet weak var mpvWindowPositionCollapseView: CollapseView!
   @IBOutlet weak var windowSizeCheckBox: NSButton!
@@ -143,6 +143,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     .cropPanelPresets,
   ]
 
+  var disableObserversForOSC = false
+
   override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 
@@ -177,7 +179,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     updateSidebarSection()
     refreshTitleBarAndOSCSection(animate: false)
-    updateOSCToolbarButtons(from: ControlBarGeometry())
+    updateOSCToolbarButtons()
     updateGeometryUI()
     updatePipBehaviorRelatedControls()
 
@@ -224,8 +226,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.oscBarToolbarIconSize.rawValue,
       PK.oscBarToolbarIconSpacing.rawValue:
 
-      let actualGeo = buildControlBarGeometryFromSliders()
-      updateOSCToolbarButtons(from: actualGeo)
+      guard !disableObserversForOSC else { return }
+      updateOSCToolbarButtons()
     case #keyPath(view.effectiveAppearance):
       if Preference.enum(for: .themeMaterial) == Preference.Theme.system {
         // Refresh image in case dark mode changed
@@ -382,7 +384,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
-  private func updateOSCToolbarButtons(from actualGeo: ControlBarGeometry) {
+  private func updateOSCToolbarButtons() {
+    let actualGeo = ControlBarGeometry()
     let toolIconSizeTicks = actualGeo.toolIconSizeTicks
     let toolIconSpacingTicks = actualGeo.toolIconSpacingTicks
     let playIconSizeTicks = actualGeo.playIconSizeTicks
@@ -406,11 +409,11 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
     oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
     let toolbarButtons = PrefUIViewController.oscToolbarButtons
-    let totalIconWidth = geo.toolIconSize * CGFloat(toolbarButtons.count)
-    // Include spacing on sides:
-    let totalSpacing: CGFloat = 2 * geo.toolIconSpacing * CGFloat(toolbarButtons.count)
     oscToolbarStackView.spacing = 2 * geo.toolIconSpacing
-    let totalWidth: CGFloat = totalIconWidth + totalSpacing
+    // Include spacing on sides:
+    let totalIconSpacing: CGFloat = 2 * geo.toolIconSpacing * CGFloat(toolbarButtons.count + 1)
+    let totalIconWidth = geo.toolIconSize * CGFloat(toolbarButtons.count)
+    let totalWidth: CGFloat = totalIconWidth + totalIconSpacing
     for buttonType in toolbarButtons {
       let button = OSCToolbarButton()
       button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconSpacing: geo.toolIconSpacing)
@@ -419,7 +422,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // But don't gray it out
       (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     }
-    Logger.log.verbose("Updating OSC toolbar preview width=\(totalWidth), height=\(geo.barHeight)")
+    Logger.log.verbose("Updating OSC toolbar preview (width=\(totalWidth) height=\(geo.barHeight))")
 
     // Wait until AFTER everything else is done before [re-]adding height constraint
     // Include top & bottom box offsets
@@ -433,23 +436,22 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func oscBarHeightAction(_ sender: NSTextField) {
-    let barHeight = sender.doubleValue
+    let oldGeo = ControlBarGeometry()
 
-    let geo = buildControlBarGeometryFromSliders(barHeight: barHeight)
+    let geo = ControlBarGeometry(barHeight: sender.doubleValue,
+                                 toolIconSizeTicks: oldGeo.toolIconSizeTicks, toolIconSpacingTicks: oldGeo.toolIconSpacingTicks,
+                                 playIconSizeTicks: oldGeo.playIconSizeTicks, playIconSpacingTicks: oldGeo.playIconSpacingTicks)
     Logger.log.verbose("New OSC geometry from barHeight=\(geo.barHeight): toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing) playIconSize=\(geo.playIconSize) playIconSpacing=\(geo.playIconSpacing)")
+    disableObserversForOSC = true
     Preference.set(geo.barHeight, for: .oscBarHeight)
     Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
     Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
     Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
     Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
-  }
-
-  private func buildControlBarGeometryFromSliders(barHeight: CGFloat? = nil) -> ControlBarGeometry {
-    return ControlBarGeometry(barHeight: barHeight,
-                              toolIconSizeTicks: toolIconSizeSlider.integerValue,
-                              toolIconSpacingTicks: toolIconSpacingSlider.integerValue,
-                              playIconSizeTicks: playIconSizeSlider.integerValue,
-                              playIconSpacingTicks: playIconSpacingSlider.integerValue)
+    DispatchQueue.main.async { [self] in
+      disableObserversForOSC = false
+      updateOSCToolbarButtons()
+    }
   }
 
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
@@ -606,7 +608,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let geometryString = Preference.string(for: .initialWindowSizePosition) ?? ""
       if let geometry = MPVGeometryDef.parse(geometryString) {
         Logger.log("Parsed \(Preference.quoted(.initialWindowSizePosition))=\(geometryString.quoted) ➤ \(geometry)")
-        unparsedGeometryabel.stringValue = "\"\(geometryString)\""
+        unparsedGeometryLabel.stringValue = "\"\(geometryString)\""
         // size
         if let h = geometry.h {
           isUsingMpvSize = true
@@ -637,10 +639,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         if !geometryString.isEmpty {
           Logger.log("Failed to parse string \(geometryString.quoted) from \(Preference.quoted(.initialWindowSizePosition)) pref", level: .error)
         }
-        unparsedGeometryabel.stringValue = ""
+        unparsedGeometryLabel.stringValue = ""
       }
     }
-    unparsedGeometryabel.isHidden = !(Preference.isAdvancedEnabled && isMpvGeometryEnabled)
+    unparsedGeometryLabel.isHidden = !(Preference.isAdvancedEnabled && isMpvGeometryEnabled)
     spacer0.isHidden = !isMpvGeometryEnabled
     mpvWindowSizeCollapseView.isHidden = !isMpvGeometryEnabled
     mpvWindowPositionCollapseView.isHidden = !isMpvGeometryEnabled
