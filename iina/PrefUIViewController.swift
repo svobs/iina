@@ -16,6 +16,7 @@ fileprivate let SideLeftTag = 0
 fileprivate let SideRightTag = 1
 fileprivate let SideTopTag = 0
 fileprivate let SideBottomTag = 1
+fileprivate let maxToolbarPreviewBarHeight = 34.0
 
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
@@ -30,12 +31,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   var preferenceTabImage: NSImage {
     return makeSymbol("macwindow", fallbackImage: "pref_ui")
-  }
-
-  static var oscToolbarButtons: [Preference.ToolBarButton] {
-    get {
-      return (Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []).compactMap(Preference.ToolBarButton.init(rawValue:))
-    }
   }
 
   override var sectionViews: [NSView] {
@@ -182,17 +177,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     hConstraint.isActive = true
     oscToolbarStackViewHeightConstraint = hConstraint
 
-    let toolbarButtons = PrefUIViewController.oscToolbarButtons
-    let totalIconSpacing: CGFloat = 2 * geo.toolIconSpacing * CGFloat(toolbarButtons.count + 1)
-    let totalIconWidth = geo.toolIconSize * CGFloat(toolbarButtons.count)
-    let totalWidth: CGFloat = totalIconWidth + totalIconSpacing
-    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: totalWidth)
+    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: geo.totalToolbarWidth)
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
 
     updateSidebarSection()
     refreshTitleBarAndOSCSection(animate: false)
-    updateOSCToolbarButtons()
+    updateOSCToolbarPreview()
     updateGeometryUI()
     updatePipBehaviorRelatedControls()
 
@@ -240,7 +231,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.oscBarToolbarIconSpacing.rawValue:
 
       guard !disableObserversForOSC else { return }
-      updateOSCToolbarButtons()
+      updateOSCToolbarPreview()
     case #keyPath(view.effectiveAppearance):
       if Preference.enum(for: .themeMaterial) == Preference.Theme.system {
         // Refresh image in case dark mode changed
@@ -387,8 +378,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {
-    toolbarSettingsSheetController.currentItemsView?.initItems(fromItems: PrefUIViewController.oscToolbarButtons)
-    toolbarSettingsSheetController.currentButtonTypes = PrefUIViewController.oscToolbarButtons
+    toolbarSettingsSheetController.currentItemsView?.initItems(fromItems: ControlBarGeometry.oscToolbarItems)
+    toolbarSettingsSheetController.currentButtonTypes = ControlBarGeometry.oscToolbarItems
     view.window?.beginSheet(toolbarSettingsSheetController.window!) { response in
       guard response == .OK else { return }
       let newItems = self.toolbarSettingsSheetController.currentButtonTypes
@@ -397,7 +388,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     }
   }
 
-  private func updateOSCToolbarButtons() {
+  private func updateOSCToolbarPreview() {
     let actualGeo = ControlBarGeometry.current
     Logger.log.verbose("New OSC geometry from barHeight=\(actualGeo.barHeight): toolIconSize=\(actualGeo.toolIconSize), toolIconSpacing=\(actualGeo.toolIconSpacing) playIconSize=\(actualGeo.playIconSize) playIconSpacing=\(actualGeo.playIconSpacing)")
     let toolIconSizeTicks = actualGeo.toolIconSizeTicks
@@ -405,7 +396,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSizeTicks = actualGeo.playIconSizeTicks
     let playIconSpacingTicks = actualGeo.playIconSpacingTicks
 
-    let previewBarHeight = min(36.0, actualGeo.barHeight)
+    let previewBarHeight = min(maxToolbarPreviewBarHeight, actualGeo.barHeight)
     let geo = ControlBarGeometry(barHeight: previewBarHeight,
                                  toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                  playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
@@ -415,27 +406,38 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       Logger.log.trace("OSC geometry preview: barHeight=\(geo.barHeight) toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing) playIconSize=\(geo.playIconSize) playIconSpacing=\(geo.playIconSpacing)")
     }
 
-    toolbarSettingsSheetController.updateToolbarButtonHeight()
+    NSAnimationContext.runAnimationGroup({context in
+      context.timingFunction = CAMediaTimingFunction(name: .linear)
 
-    oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
-    oscToolbarStackView.spacing = 2 * geo.toolIconSpacing
-    // Include spacing on sides:
-    let toolbarButtons = PrefUIViewController.oscToolbarButtons
-    let totalIconSpacing: CGFloat = 2 * geo.toolIconSpacing * CGFloat(toolbarButtons.count + 1)
-    let totalIconWidth = geo.toolIconSize * CGFloat(toolbarButtons.count)
-    let totalWidth: CGFloat = totalIconWidth + totalIconSpacing
-    for buttonType in toolbarButtons {
-      let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconSpacing: geo.toolIconSpacing)
-      oscToolbarStackView.addView(button, in: .center)
-      button.isEnabled = false
-      // But don't gray it out
-      (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
-    }
-    Logger.log.verbose("Updating OSC toolbar preview (width=\(totalWidth) height=\(geo.barHeight))")
+      // Prevent constraint violations by lowering these briefly...
+      oscToolbarStackViewHeightConstraint?.priority = .defaultHigh
+      oscToolbarStackViewWidthConstraint?.priority = .defaultHigh
 
-    oscToolbarStackViewHeightConstraint?.animateToConstant(geo.barHeight)
-    oscToolbarStackViewWidthConstraint?.animateToConstant(totalWidth)
+      oscToolbarStackView.views.forEach { oscToolbarStackView.removeView($0) }
+      oscToolbarStackView.spacing = 2 * geo.toolIconSpacing
+      // Include spacing on sides:
+      let toolbarButtons = geo.toolbarItems
+      for buttonType in toolbarButtons {
+        let button = OSCToolbarButton()
+        button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconSpacing: geo.toolIconSpacing)
+        oscToolbarStackView.addView(button, in: .center)
+        button.isEnabled = false
+        // But don't gray it out
+        (button.cell! as! NSButtonCell).imageDimsWhenDisabled = false
+      }
+
+      let totalToolbarWidth = geo.totalToolbarWidth
+      Logger.log.verbose("Updating OSC toolbar preview (width=\(totalToolbarWidth) height=\(geo.barHeight))")
+
+      oscToolbarStackViewHeightConstraint?.animateToConstant(geo.barHeight)
+      oscToolbarStackViewWidthConstraint?.animateToConstant(totalToolbarWidth)
+
+      // Update sheet preview also (both available items & current items)
+      toolbarSettingsSheetController.updateToolbarButtonHeight()
+
+      oscToolbarStackViewHeightConstraint?.priority = .required
+      oscToolbarStackViewWidthConstraint?.priority = .required
+    })
   }
 
   @IBAction func oscBarHeightAction(_ sender: NSTextField) {
@@ -453,7 +455,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
     Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
     disableObserversForOSC = false
-    updateOSCToolbarButtons()
+    updateOSCToolbarPreview()
   }
 
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {

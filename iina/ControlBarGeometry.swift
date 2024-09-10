@@ -38,6 +38,8 @@ struct ControlBarGeometry {
   /// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
   let playIconSpacing: CGFloat
 
+  let toolbarItems: [Preference.ToolBarButton]
+
   init(barHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
@@ -70,6 +72,8 @@ struct ControlBarGeometry {
       self.playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
       self.playIconSpacing = max(0, desiredPlayIconSpacing)
     }
+
+    self.toolbarItems = ControlBarGeometry.oscToolbarItems
   }
 
   private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
@@ -120,4 +124,15 @@ struct ControlBarGeometry {
     return iconSize + max(0, 2 * iconSpacing)
   }
 
+  static var oscToolbarItems: [Preference.ToolBarButton] {
+    get {
+      return (Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []).compactMap(Preference.ToolBarButton.init(rawValue:))
+    }
+  }
+
+  var totalToolbarWidth: CGFloat {
+    let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
+    let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)
+    return totalIconWidth + totalIconSpacing
+  }
 }

@@ -48,7 +48,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     super.windowDidLoad()
     currentItemsView.registerForDraggedTypes([.iinaOSCAvailableToolbarButtonType, .iinaOSCCurrentToolbarButtonType])
     currentItemsView.currentItemsViewDelegate = self
-    currentItemsView.initItems(fromItems: PrefUIViewController.oscToolbarButtons)
+    currentItemsView.initItems(fromItems: ControlBarGeometry.current.toolbarItems)
 
     updateToolbarButtonHeight()
   }
