@@ -362,10 +362,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       // Need this to get proper slide effect
       oscBottomPlacementContainerView.superview?.layoutSubtreeIfNeeded()
     }, completionHandler: { [self] in
-      oscAutoHideTimeoutTextField.isEnabled = hasOverlay
-      hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-      windowPreviewImageView.image = ib.updateWindowPreviewImage()
-
       NSAnimationContext.runAnimationGroup({context in
         context.duration = animate ? AccessibilityPreferences.adjustedDuration(IINAAnimation.DefaultDuration) : 0
         context.allowsImplicitAnimation = animate ? !AccessibilityPreferences.motionReductionEnabled : false
@@ -373,8 +369,21 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         for (view, shouldHide) in viewHidePairs {
           view.animator().isHidden = shouldHide
         }
+        oscAutoHideTimeoutTextField.isEnabled = hasOverlay
+        hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
+        windowPreviewImageView.image = ib.updateWindowPreviewImage()
+
+        updateOSCToolbarPreview()
       })
     })
+  }
+
+  @IBAction func oscPositionAction(_ sender: NSPopUpButton) {
+    guard let oscPosition = Preference.OSCPosition(rawValue: sender.selectedTag()) else { return }
+    let newGeo = ControlBarGeometry(oscPosition: oscPosition)
+    // need to update this immediately because it is referenced by player windows for icon sizes, spacing
+    ControlBarGeometry.current = newGeo
+    Preference.set(oscPosition.rawValue, for: .oscPosition)
   }
 
   @IBAction func customizeOSCToolbarAction(_ sender: Any) {
@@ -461,7 +470,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(toolIconSizeTicks: ticks)
-    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(geo.toolIconSize)")
+    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(Preference.float(for: .oscBarToolbarIconSize)) -> \(geo.toolIconSize)")
     ControlBarGeometry.current = geo
     Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
   }

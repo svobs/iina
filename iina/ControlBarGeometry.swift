@@ -26,6 +26,8 @@ fileprivate let floatingPlayIconSpacing: CGFloat = 24
 struct ControlBarGeometry {
   static var current = ControlBarGeometry()
 
+  let position: Preference.OSCPosition
+
   /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
   
@@ -40,7 +42,7 @@ struct ControlBarGeometry {
 
   let toolbarItems: [Preference.ToolBarButton]
 
-  init(barHeight: CGFloat? = nil,
+  init(oscPosition: Preference.OSCPosition? = nil, barHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
     // First establish bar height
@@ -57,7 +59,8 @@ struct ControlBarGeometry {
     let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
                                                                 barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
 
-    let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
+    let oscPosition = oscPosition ?? Preference.enum(for: .oscPosition)
+    self.position = oscPosition
     if oscPosition == .floating {
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing

@@ -1345,14 +1345,14 @@ extension PlayerWindowController {
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
   private func rebuildToolbar() -> NSStackView {
-    let buttonTypeRawValues = Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []
-    let buttonTypes = buttonTypeRawValues.compactMap(Preference.ToolBarButton.init(rawValue:))
+    let geo = ControlBarGeometry.current
+    let buttonTypes = geo.toolbarItems
     log.verbose("Setting buttons in OSC toolbar: \(buttonTypes)")
 
     var toolButtons: [OSCToolbarButton] = []
     for buttonType in buttonTypes {
       let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType)
+      button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconSpacing: geo.toolIconSpacing)
       button.action = #selector(self.toolBarButtonAction(_:))
       toolButtons.append(button)
     }

@@ -1838,12 +1838,13 @@ For smoothest results, also enable custom full screen.</string>
                         </menu>
                     </popUpButtonCell>
                     <connections>
+                        <action selector="oscPositionAction:" target="-2" id="fpw-If-tPO"/>
+                        <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="86d-Tj-kpi"/>
                         <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableOSC" previousBinding="86d-Tj-kpi" id="NdC-Ae-VxJ">
                             <dictionary key="options">
                                 <string key="NSValueTransformerName">NSNegateBoolean</string>
                             </dictionary>
                         </binding>
-                        <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableOSC" id="86d-Tj-kpi"/>
                         <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.oscPosition" id="CEs-HC-aAO"/>
                     </connections>
                 </popUpButton>
@@ -2673,7 +2674,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="v1D-IJ-G5S" id="82f-7F-ibj">
                                             <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eh8-tf-wHU">
-                                                <rect key="frame" x="237" y="80" width="35" height="16"/>
+                                                <rect key="frame" x="227" y="80" width="35" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Left:" id="8Oi-ew-3cu">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2683,7 +2684,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="P5j-t5-Vfj" id="2f6-h6-Ebf">
                                             <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6mM-VC-jd0">
-                                                <rect key="frame" x="349" y="80" width="43" height="16"/>
+                                                <rect key="frame" x="339" y="80" width="43" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Right:" id="Msi-a9-5mJ">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2703,7 +2704,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="v1D-IJ-G5S" id="pof-3l-MZg">
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="KIu-aG-mHw" userLabel="Leading-Sidebar-Placement Segmented Control">
-                                                <rect key="frame" x="203" y="48" width="102" height="24"/>
+                                                <rect key="frame" x="193" y="48" width="102" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="sME-na-jHH">
                                                     <font key="font" metaFont="smallSystem"/>
                                                     <segments>
@@ -2718,7 +2719,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="P5j-t5-Vfj" id="M9Y-f4-Dhk">
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="9fG-Qe-ZAx" userLabel="Trailing-Sidebar-Placement Segmented Control">
-                                                <rect key="frame" x="319" y="48" width="102" height="24"/>
+                                                <rect key="frame" x="309" y="48" width="102" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="0MZ-00-6fG">
                                                     <font key="font" metaFont="smallSystem"/>
                                                     <segments>
@@ -2743,7 +2744,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="v1D-IJ-G5S" id="gbw-KM-aIZ">
                                             <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="H5W-Uo-D64" userLabel="Show open/close button in title bar">
-                                                <rect key="frame" x="245" y="27" width="18" height="18"/>
+                                                <rect key="frame" x="235" y="27" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="HRJ-kL-GUh" userLabel="Show open/close button in title bar">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2755,7 +2756,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="P5j-t5-Vfj" id="nvZ-ol-2GY">
                                             <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="esN-qM-PXI" userLabel="Show open/close button in title bar">
-                                                <rect key="frame" x="361" y="27" width="18" height="18"/>
+                                                <rect key="frame" x="351" y="27" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9lH-Oi-1Xp" userLabel="Show open/close button in title bar">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2777,7 +2778,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="rik-aD-Ulq" column="v1D-IJ-G5S" id="yOm-Rn-fKz">
                                             <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="ogu-q9-cqE" userLabel="Close when video area is clicked">
-                                                <rect key="frame" x="245" y="3" width="18" height="18"/>
+                                                <rect key="frame" x="235" y="3" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Da2-Ew-ibb">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2789,7 +2790,7 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                         <gridCell row="rik-aD-Ulq" column="P5j-t5-Vfj" id="Jh9-cO-9si">
                                             <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="zke-Iv-K9m" userLabel="Close when video area is clicked">
-                                                <rect key="frame" x="361" y="3" width="18" height="18"/>
+                                                <rect key="frame" x="351" y="3" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="icA-2b-l8k">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
