@@ -383,7 +383,8 @@ extension PlayerWindowController {
         return Constants.InteractiveMode.outsideBottomBarHeight
       }
       if enableOSC && oscPosition == .bottom {
-        return OSCToolbarButton.oscBarHeight
+        // FIXME: store this instead!
+        return ControlBarGeometry.current.barHeight
       }
       return 0
     }
@@ -605,7 +606,7 @@ extension PlayerWindowController {
 
           let visibility: Visibility = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
           outputLayout.topBarView = visibility
-          outputLayout.topOSCHeight = OSCToolbarButton.oscBarHeight
+          outputLayout.topOSCHeight = ControlBarGeometry.current.barHeight
         case .bottom:
           outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
         }

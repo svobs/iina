@@ -13,61 +13,21 @@ class OSCToolbarButton: NSButton {
   var iconSize: CGFloat = 0
   var iconSpacing: CGFloat = 0
 
-  static let floatingToolbarIconSize: CGFloat = 14
-  static let floatingToolbarIconSpacing: CGFloat = 5
-
   var buttonSize: CGFloat {
     return self.iconSize + (2 * self.iconSpacing)
   }
 
   func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
-    let iconSize = iconSize ?? OSCToolbarButton.iconSize
-    let iconSpacing = iconSpacing ?? OSCToolbarButton.iconSpacing
+    let currentGeo = ControlBarGeometry.current
+    let iconSize = iconSize ?? currentGeo.toolIconSize
+    let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
     OSCToolbarButton.setStyle(of: self, buttonType: buttonType, iconSize: iconSize)
     self.iconSize = iconSize
     self.iconSpacing = iconSpacing
   }
 
-  static var iconSize: CGFloat {
-    let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
-    switch oscPosition {
-    case .floating:
-      return floatingToolbarIconSize
-    case .bottom:
-      return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...oscBarHeight)
-    case .top:
-      // Min 1 pixel margin at top & bottom. Don't touch icons above
-      let maxHeight = oscBarHeight - 2
-      return CGFloat(Preference.float(for: .oscBarToolbarIconSize)).clamped(to: 8...maxHeight)
-    }
-  }
-
-  static var iconSpacing: CGFloat {
-    let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
-    switch oscPosition {
-    case .floating:
-      return floatingToolbarIconSpacing
-    case .bottom, .top:
-      return max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
-    }
-  }
-
-  static var buttonSize: CGFloat {
-    return iconSize + max(0, 2 * iconSpacing)
-  }
-
-  static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {
-    return iconSize + max(0, 2 * iconSpacing)
-  }
-
-  // TODO: put this outside this class. Maybe in a new class "OSCToolbar"
-  /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
-  static var oscBarHeight: CGFloat {
-    return max(Constants.Distance.minOSCBarHeight, CGFloat(Preference.integer(for: .oscBarHeight)))
-  }
-
   static func setStyle(of toolbarButton: NSButton, buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil) {
-    let iconSize = iconSize ?? OSCToolbarButton.iconSize
+    let iconSize = iconSize ?? ControlBarGeometry.current.toolIconSize
 
     toolbarButton.translatesAutoresizingMaskIntoConstraints = false
     toolbarButton.bezelStyle = .regularSquare
@@ -85,7 +45,7 @@ class OSCToolbarButton: NSButton {
     heightConstraint.isActive = true
   }
 
-  static func buildDragItem(from toolbarButton: NSButton, pasteboardWriter: NSPasteboardWriting,
+  static func buildDragItem(from toolbarButton: OSCToolbarButton, pasteboardWriter: NSPasteboardWriting,
                             buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconSpacing: CGFloat,
                             isCurrentItem: Bool) -> NSDraggingItem? {
 
@@ -109,7 +69,7 @@ class OSCToolbarButton: NSButton {
       dragOrigin = CGPoint(x: (toolbarButton.frame.width - dragImageSize.width) / 2, y: (toolbarButton.frame.height - dragImageSize.height) / 2)
     } else {
       // Bit of a kludge to make drag image origin line up in 2 different layouts:
-      let buttonSize = OSCToolbarButton.buttonSize(iconSize: iconSize, iconSpacing: iconSpacing)
+      let buttonSize = toolbarButton.buttonSize
       dragOrigin = CGPoint(x: (buttonSize - dragImageSize.width) / 2 + 1, y: (buttonSize - dragImageSize.height) / 2 + 1)
     }
 

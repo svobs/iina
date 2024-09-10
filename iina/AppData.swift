@@ -241,7 +241,6 @@ struct Constants {
       static let extraOffsetY: CGFloat = 15
     }
 
-    // TODO: move this outside Distance
     struct MusicMode {
       static let oscHeight: CGFloat = 72
       static let minWindowWidth: CGFloat = Constants.WindowedMode.minViewportSize.width

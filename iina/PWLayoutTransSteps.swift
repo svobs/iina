@@ -8,37 +8,6 @@
 
 import Foundation
 
-/// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
-fileprivate var oscBarPlaybackIconSize: CGFloat {
-  let maxHeight: CGFloat
-  let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
-  switch oscPosition {
-  case .floating:
-    return oscFloatingPlayBtnsSize
-  case .top:
-    // Play button is very tall. Reduce max size so it doesn't touch edges or icons above
-    maxHeight = OSCToolbarButton.oscBarHeight - 4
-  case .bottom:
-    maxHeight = OSCToolbarButton.oscBarHeight - 2
-  }
-
-  return CGFloat(Preference.integer(for: .oscBarPlaybackIconSize)).clamped(to: 8...maxHeight)
-
-}
-/// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
-fileprivate var oscBarPlaybackIconSpacing: CGFloat {
-  max(0, CGFloat(Preference.integer(for: .oscBarPlaybackIconSpacing)))
-}
-
-fileprivate let oscFloatingPlayBtnsSize: CGFloat = 24
-fileprivate let oscFloatingPlayBtnsHPad: CGFloat = 24
-
-// TODO: reimplement OSC title bar feature
-fileprivate let oscTitleBarPlayBtnsSize: CGFloat = 18
-fileprivate let oscTitleBarPlayBtnsHPad: CGFloat = 6
-fileprivate let oscTitleBarToolbarButtonIconSize: CGFloat = 14
-fileprivate let oscTitleBarToolbarButtonIconSpacing: CGFloat = 5
-
 fileprivate extension NSStackView.VisibilityPriority {
   static let detachEarly = NSStackView.VisibilityPriority(rawValue: 950)
   static let detachEarlier = NSStackView.VisibilityPriority(rawValue: 900)
@@ -474,20 +443,20 @@ extension PlayerWindowController {
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
+      let oscGeo = ControlBarGeometry.current
+      log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing))")
 
       switch outputLayout.oscPosition {
       case .top:
-        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscBarPlaybackIconSize) playIconSpacing=\(oscBarPlaybackIconSpacing))")
         currentControlBar = controlBarTop
 
-        addControlBarViews(to: oscTopMainView, playBtnSize: oscBarPlaybackIconSize, playBtnSpacing: oscBarPlaybackIconSpacing)
+        addControlBarViews(to: oscTopMainView, playBtnSize: oscGeo.playIconSize, playBtnSpacing: oscGeo.playIconSpacing)
 
         // Subtract height of slider bar (4), then divide by 2 to get total bottom space, then subtract time label height to get total margin
-        let timeLabelOffset = max(0, (((OSCToolbarButton.oscBarHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4)
+        let timeLabelOffset = max(0, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4)
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -timeLabelOffset)
 
       case .bottom:
-        log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscBarPlaybackIconSize) playIconSpacing=\(oscBarPlaybackIconSpacing))")
         currentControlBar = bottomBarView
 
         if !bottomBarView.subviews.contains(oscBottomMainView) {
@@ -495,9 +464,9 @@ extension PlayerWindowController {
           oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 8, trailing: 8)
         }
 
-        addControlBarViews(to: oscBottomMainView, playBtnSize: oscBarPlaybackIconSize, playBtnSpacing: oscBarPlaybackIconSpacing)
+        addControlBarViews(to: oscBottomMainView, playBtnSize: oscGeo.playIconSize, playBtnSpacing: oscGeo.playIconSpacing)
 
-        let timeLabelOffset = max(-1, (((OSCToolbarButton.oscBarHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4 - 2)
+        let timeLabelOffset = max(-1, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4 - 2)
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.topAnchor.constraint(equalTo: timePositionHoverLabel.superview!.topAnchor, constant: timeLabelOffset)
 
       case .floating:
@@ -507,8 +476,8 @@ extension PlayerWindowController {
         oscFloatingUpperView.addView(toolbarView, in: .trailing)
         oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
-        playbackButtonsSquareWidthConstraint.animateToConstant(oscFloatingPlayBtnsSize)
-        playbackButtonsHorizontalPaddingConstraint.animateToConstant(oscFloatingPlayBtnsHPad)
+        playbackButtonsSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
+        playbackButtonsHorizontalPaddingConstraint.animateToConstant(oscGeo.playIconSpacing)
       }
 
       let timeLabelFontSize: CGFloat
@@ -517,7 +486,7 @@ extension PlayerWindowController {
         timeLabelFontSize = NSFont.smallSystemFontSize
         knobHeight = Constants.Distance.floatingOSCPlaySliderKnobHeight
       } else {
-        let barHeight = OSCToolbarButton.oscBarHeight
+        let barHeight = oscGeo.barHeight
 
         // Expand slider bounds to entire bar so it's easier to hover and/or click on it
         playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)

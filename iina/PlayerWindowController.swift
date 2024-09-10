@@ -2538,7 +2538,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowDidBecomeKey(_ notification: Notification) {
     animationPipeline.submitInstantTask { [self] in
-      guard let window else { return }
       guard !isClosing else { return }
 
       if Preference.bool(for: .pauseWhenInactive) && isPausedDueToInactive {

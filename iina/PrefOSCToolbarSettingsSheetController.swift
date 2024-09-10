@@ -37,7 +37,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
   private var currentItemsViewHeightConstraint: NSLayoutConstraint? = nil
 
   var previewIconSize: CGFloat {
-    OSCToolbarButton.iconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
+    ControlBarGeometry.current.toolIconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
   }
 
   var previewIconSpacing: CGFloat {
@@ -56,7 +56,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
   func updateToolbarButtonHeight() {
     guard isWindowLoaded else { return }
 
-    let newHeight = OSCToolbarButton.buttonSize(iconSize: previewIconSize, iconSpacing: previewIconSpacing)
+    let newHeight = ControlBarGeometry.buttonSize(iconSize: previewIconSize, iconSpacing: previewIconSpacing)
 
     Logger.log.verbose("Updating toolbar preview window's currentItemsHeight to \(newHeight)")
     self.currentItemsViewHeightConstraint?.isActive = false
@@ -285,8 +285,8 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
     // get the expected drag destination position and index
     let pos = convert(sender.draggingLocation, from: nil)
-    let buttonSize = OSCToolbarButton.buttonSize(iconSize: currentItemsViewDelegate.previewIconSize,
-                                                 iconSpacing: currentItemsViewDelegate.previewIconSpacing)
+    let buttonSize = ControlBarGeometry.buttonSize(iconSize: currentItemsViewDelegate.previewIconSize,
+                                                   iconSpacing: currentItemsViewDelegate.previewIconSpacing)
     var index = views.count - Int(floor((frame.width - pos.x) / buttonSize)) - 1
     if index < 0 { index = 0 }
     dragDestIndex = index

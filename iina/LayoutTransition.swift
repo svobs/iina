@@ -92,7 +92,8 @@ extension PlayerWindowController {
       || (inputLayout.spec.isLegacyStyle != outputLayout.spec.isLegacyStyle)
       || (inputLayout.mode != outputLayout.mode)
       || (inputLayout.topBarHeight != outputLayout.topBarHeight)
-      || (inputLayout.bottomBarHeight != outputLayout.bottomBarHeight)
+      || (inputGeometry.insideBars.bottom != outputGeometry.insideBars.bottom)
+      || (inputGeometry.outsideBars.bottom != outputGeometry.outsideBars.bottom)
       || (inputLayout.enableOSC != outputLayout.enableOSC)
       || (inputLayout.enableOSC && (inputLayout.oscPosition != outputLayout.oscPosition))
     }

@@ -15,16 +15,27 @@ fileprivate let toolSpacingScaleMultiplier: CGFloat = 2.0
 
 fileprivate let minToolBtnHeight: CGFloat = 8
 fileprivate let minPlayBtnHeight: CGFloat = 8
+
 fileprivate let floatingToolbarIconSize: CGFloat = 14
 fileprivate let floatingToolbarIconSpacing: CGFloat = 5
-fileprivate let floatingPlayBtnsSize: CGFloat = 24
-fileprivate let floatingPlayBtnsHPad: CGFloat = 24
+fileprivate let floatingPlayIconSize: CGFloat = 24
+fileprivate let floatingPlayIconSpacing: CGFloat = 24
+
+// TODO: reimplement OSC title bar feature
 
 struct ControlBarGeometry {
+  static var current = ControlBarGeometry()
+
+  /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
+  
   let toolIconSize: CGFloat
   let toolIconSpacing: CGFloat
+
+  /// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
   let playIconSize: CGFloat
+
+  /// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
   let playIconSpacing: CGFloat
 
   init(barHeight: CGFloat? = nil,
@@ -48,8 +59,8 @@ struct ControlBarGeometry {
     if oscPosition == .floating {
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
-      self.playIconSize = floatingPlayBtnsSize
-      self.playIconSpacing = floatingPlayBtnsHPad
+      self.playIconSize = floatingPlayIconSize
+      self.playIconSpacing = floatingPlayIconSpacing
     } else {
       // Reduce max button size so they don't touch edges or (if .top) icons above
       let maxBtnHeight = barHeight - (oscPosition == .top ? 4 : 2)
@@ -103,6 +114,10 @@ struct ControlBarGeometry {
   var playIconSpacingTicks: Int {
     let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks
     return Int(round(ticksDouble))
+  }
+
+  static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {
+    return iconSize + max(0, 2 * iconSpacing)
   }
 
 }
