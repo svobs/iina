@@ -11,21 +11,21 @@ import Foundation
 // Not elegant. Just a place to stick common code so that it won't be duplicated
 class OSCToolbarButton: NSButton {
   var iconSize: CGFloat = 0
-  var iconPadding: CGFloat = 0
+  var iconSpacing: CGFloat = 0
 
   static let floatingToolbarIconSize: CGFloat = 14
-  static let floatingToolbarIconPadding: CGFloat = 5
+  static let floatingToolbarIconSpacing: CGFloat = 5
 
   var buttonSize: CGFloat {
-    return self.iconSize + (2 * self.iconPadding)
+    return self.iconSize + (2 * self.iconSpacing)
   }
 
-  func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil) {
+  func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
     let iconSize = iconSize ?? OSCToolbarButton.iconSize
-    let iconPadding = iconPadding ?? OSCToolbarButton.iconPadding
+    let iconSpacing = iconSpacing ?? OSCToolbarButton.iconSpacing
     OSCToolbarButton.setStyle(of: self, buttonType: buttonType, iconSize: iconSize)
     self.iconSize = iconSize
-    self.iconPadding = iconPadding
+    self.iconSpacing = iconSpacing
   }
 
   static var iconSize: CGFloat {
@@ -42,22 +42,22 @@ class OSCToolbarButton: NSButton {
     }
   }
 
-  static var iconPadding: CGFloat {
+  static var iconSpacing: CGFloat {
     let oscPosition: Preference.OSCPosition = Preference.enum(for: .oscPosition)
     switch oscPosition {
     case .floating:
-      return floatingToolbarIconPadding
+      return floatingToolbarIconSpacing
     case .bottom, .top:
       return max(0, CGFloat(Preference.float(for: .oscBarToolbarIconSpacing)))
     }
   }
 
   static var buttonSize: CGFloat {
-    return iconSize + max(0, 2 * iconPadding)
+    return iconSize + max(0, 2 * iconSpacing)
   }
 
-  static func buttonSize(iconSize: CGFloat, iconPadding: CGFloat) -> CGFloat {
-    return iconSize + max(0, 2 * iconPadding)
+  static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {
+    return iconSize + max(0, 2 * iconSpacing)
   }
 
   // TODO: put this outside this class. Maybe in a new class "OSCToolbar"
@@ -86,7 +86,7 @@ class OSCToolbarButton: NSButton {
   }
 
   static func buildDragItem(from toolbarButton: NSButton, pasteboardWriter: NSPasteboardWriting,
-                            buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconPadding: CGFloat,
+                            buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconSpacing: CGFloat,
                             isCurrentItem: Bool) -> NSDraggingItem? {
 
     // seems to be the only reliable way to get image size
@@ -109,7 +109,7 @@ class OSCToolbarButton: NSButton {
       dragOrigin = CGPoint(x: (toolbarButton.frame.width - dragImageSize.width) / 2, y: (toolbarButton.frame.height - dragImageSize.height) / 2)
     } else {
       // Bit of a kludge to make drag image origin line up in 2 different layouts:
-      let buttonSize = OSCToolbarButton.buttonSize(iconSize: iconSize, iconPadding: iconPadding)
+      let buttonSize = OSCToolbarButton.buttonSize(iconSize: iconSize, iconSpacing: iconSpacing)
       dragOrigin = CGPoint(x: (buttonSize - dragImageSize.width) / 2 + 1, y: (buttonSize - dragImageSize.height) / 2 + 1)
     }
 

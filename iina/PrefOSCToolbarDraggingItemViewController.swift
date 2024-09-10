@@ -17,7 +17,7 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   var availableItemsView: PrefOSCToolbarAvailableItemsView?
   let buttonType: Preference.ToolBarButton
   let iconSize: CGFloat
-  let iconPadding: CGFloat
+  let iconSpacing: CGFloat
 
   @IBOutlet weak var toolbarButton: OSCToolbarButton!
   @IBOutlet weak var descriptionLabel: NSTextField!
@@ -27,10 +27,10 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   @IBOutlet weak var buttonTopToBoxTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var buttonBottomToBoxBottomConstraint: NSLayoutConstraint!
 
-  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconPadding: CGFloat) {
+  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconSpacing: CGFloat) {
     self.buttonType = buttonType
     self.iconSize = iconSize
-    self.iconPadding = iconPadding
+    self.iconSpacing = iconSpacing
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -41,12 +41,12 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    toolbarButton.setStyle(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding)
+    toolbarButton.setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
     // Add 1 for box border
-    buttonLeadingToBoxLeadingConstraint.constant = toolbarButton.iconPadding + 1
-    buttonTopToBoxTopConstraint.constant = toolbarButton.iconPadding + 1
-    buttonBottomToBoxBottomConstraint.constant = toolbarButton.iconPadding + 1
-    buttonTrailingConstraint.constant = toolbarButton.iconPadding
+    buttonLeadingToBoxLeadingConstraint.constant = toolbarButton.iconSpacing + 1
+    buttonTopToBoxTopConstraint.constant = toolbarButton.iconSpacing + 1
+    buttonBottomToBoxBottomConstraint.constant = toolbarButton.iconSpacing + 1
+    buttonTrailingConstraint.constant = toolbarButton.iconSpacing
     // Button is actually disabled so that its mouseDown goes to its superview instead. But don't gray it out.
     (toolbarButton.cell! as! NSButtonCell).imageDimsWhenDisabled = false
     toolbarButton.superview?.layoutSubtreeIfNeeded()
@@ -69,7 +69,7 @@ class PrefOSCToolbarDraggingItemViewController: NSViewController, NSPasteboardWr
     guard let availableItemsView = availableItemsView else { return }
 
     let dragItem = OSCToolbarButton.buildDragItem(from: toolbarButton, pasteboardWriter: self, buttonType: buttonType,
-                                                  iconSize: iconSize, iconPadding: iconPadding,
+                                                  iconSize: iconSize, iconSpacing: iconSpacing,
                                                   isCurrentItem: false)
     guard let dragItem else { return }
     view.beginDraggingSession(with: [dragItem], event: event, source: availableItemsView)

@@ -37,7 +37,7 @@ fileprivate let oscFloatingPlayBtnsHPad: CGFloat = 24
 fileprivate let oscTitleBarPlayBtnsSize: CGFloat = 18
 fileprivate let oscTitleBarPlayBtnsHPad: CGFloat = 6
 fileprivate let oscTitleBarToolbarButtonIconSize: CGFloat = 14
-fileprivate let oscTitleBarToolbarButtonIconPadding: CGFloat = 5
+fileprivate let oscTitleBarToolbarButtonIconSpacing: CGFloat = 5
 
 fileprivate extension NSStackView.VisibilityPriority {
   static let detachEarly = NSStackView.VisibilityPriority(rawValue: 950)
@@ -1403,9 +1403,9 @@ extension PlayerWindowController {
     // Instead we can get the same effect with a little more work, by controlling the stack view:
     if !toolButtons.isEmpty {
       let button = toolButtons[0]
-      toolbarView.spacing = 2 * button.iconPadding
-      toolbarView.edgeInsets = .init(top: button.iconPadding, left: button.iconPadding,
-                                     bottom: button.iconPadding, right: button.iconPadding)
+      toolbarView.spacing = 2 * button.iconSpacing
+      toolbarView.edgeInsets = .init(top: button.iconSpacing, left: button.iconSpacing,
+                                     bottom: button.iconSpacing, right: button.iconSpacing)
       Logger.log("Toolbar spacing: \(toolbarView.spacing), edgeInsets: \(toolbarView.edgeInsets)", level: .verbose, subsystem: player.subsystem)
     }
     return toolbarView

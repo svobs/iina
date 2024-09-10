@@ -40,7 +40,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     OSCToolbarButton.iconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
   }
 
-  var previewIconPadding: CGFloat {
+  var previewIconSpacing: CGFloat {
     4  // currentItemsView workaround
   }
 
@@ -56,7 +56,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
   func updateToolbarButtonHeight() {
     guard isWindowLoaded else { return }
 
-    let newHeight = OSCToolbarButton.buttonSize(iconSize: previewIconSize, iconPadding: previewIconPadding)
+    let newHeight = OSCToolbarButton.buttonSize(iconSize: previewIconSize, iconSpacing: previewIconSpacing)
 
     Logger.log.verbose("Updating toolbar preview window's currentItemsHeight to \(newHeight)")
     self.currentItemsViewHeightConstraint?.isActive = false
@@ -83,11 +83,11 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     }
 
     let iconSize = previewIconSize
-    let iconPadding = previewIconPadding
+    let iconSpacing = previewIconSpacing
 
     for buttonType in Preference.ToolBarButton.allButtonTypes {
       let itemViewController = PrefOSCToolbarDraggingItemViewController(buttonType: buttonType,
-                                                                        iconSize: iconSize, iconPadding: iconPadding)
+                                                                        iconSize: iconSize, iconSpacing: iconSpacing)
       itemViewController.availableItemsView = availableItemsView
       itemViewControllers.append(itemViewController)
       itemViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -115,13 +115,13 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
   var currentItemsView: PrefOSCToolbarCurrentItemsView
   var buttonType: Preference.ToolBarButton
 
-  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconPadding: CGFloat? = nil,
+  init(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil,
        superView: PrefOSCToolbarCurrentItemsView) {
     self.buttonType = buttonType
     self.currentItemsView = superView
     super.init(frame: .zero)
 
-    setStyle(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding)
+    setStyle(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing)
   }
 
   required init?(coder: NSCoder) {
@@ -141,7 +141,7 @@ class PrefOSCToolbarCurrentItem: OSCToolbarButton, NSPasteboardWriting {
 
   override func mouseDown(with event: NSEvent) {
     let dragItem = OSCToolbarButton.buildDragItem(from: self, pasteboardWriter: self, buttonType: buttonType,
-                                                  iconSize: iconSize, iconPadding: iconPadding,
+                                                  iconSize: iconSize, iconSpacing: iconSpacing,
                                                   isCurrentItem: true)
     guard let dragItem else { return }
 
@@ -158,7 +158,7 @@ protocol PrefOSCToolbarCurrentItemsViewDelegate {
 
   var previewIconSize: CGFloat { get }
 
-  var previewIconPadding: CGFloat { get }
+  var previewIconSpacing: CGFloat { get }
 }
 
 
@@ -190,13 +190,13 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
     // Now repopulate with rebuilt items
     let iconSize = currentItemsViewDelegate!.previewIconSize
-    let iconPadding = currentItemsViewDelegate!.previewIconPadding
+    let iconSpacing = currentItemsViewDelegate!.previewIconSpacing
     for buttonType in items {
-      let button = PrefOSCToolbarCurrentItem(buttonType: buttonType, iconSize: iconSize, iconPadding: iconPadding, superView: self)
+      let button = PrefOSCToolbarCurrentItem(buttonType: buttonType, iconSize: iconSize, iconSpacing: iconSpacing, superView: self)
       self.addView(button, in: .trailing)
     }
-    self.spacing = 2 * iconPadding
-    self.edgeInsets = .init(top: iconPadding, left: iconPadding, bottom: iconPadding, right: iconPadding)
+    self.spacing = 2 * iconSpacing
+    self.edgeInsets = .init(top: iconSpacing, left: iconSpacing, bottom: iconSpacing, right: iconSpacing)
 
     // Rebuild placeholderView - size could have changed
     placeholderView = buildPlaceholderView()
@@ -286,7 +286,7 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
     // get the expected drag destination position and index
     let pos = convert(sender.draggingLocation, from: nil)
     let buttonSize = OSCToolbarButton.buttonSize(iconSize: currentItemsViewDelegate.previewIconSize,
-                                                 iconPadding: currentItemsViewDelegate.previewIconPadding)
+                                                 iconSpacing: currentItemsViewDelegate.previewIconSpacing)
     var index = views.count - Int(floor((frame.width - pos.x) / buttonSize)) - 1
     if index < 0 { index = 0 }
     dragDestIndex = index
