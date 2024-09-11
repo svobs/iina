@@ -2795,7 +2795,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     // Don't hide UI when auto hide control bar is disabled
-    guard Preference.bool(for: .enableControlBarAutoHide) else { return false }
+    guard Preference.bool(for: .enableControlBarAutoHide) || Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) else { return false }
 
     var tasks: [IINAAnimation.Task] = []
 
@@ -2857,6 +2857,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func resetFadeTimer() {
     // If timer exists, destroy first
     destroyFadeTimer()
+
+    // The fade timer is only used if auto-hide is enabled
+    guard Preference.bool(for: .enableControlBarAutoHide) else { return }
 
     // Create new timer.
     // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
