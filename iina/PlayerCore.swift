@@ -723,7 +723,7 @@ class PlayerCore: NSObject {
 
       // Do not send a stop command to mpv if it is already stopped. This happens when quitting is
       // initiated directly through mpv.
-      guard !isStopped else { return }
+      guard state.isNotYet(.stopped) else { return }
       log.debug("Stopping playback")
 
       // Do not enqueue after window is closed (and info.currentPlayback is nil)
@@ -2490,11 +2490,11 @@ class PlayerCore: NSObject {
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
     log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn), playerState=\(state))")
-    guard !isStopping else { return }
     if receivedEndFileWhileLoading && !isFileLoaded {
       log.error("Received fileEnded + 'idle-active' from mpv while loading \(info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
       errorOpeningFileAndClosePlayerWindow(url: info.currentURL)
-    } else if isFileLoaded {
+    } else if isFileLoaded || state.isAtLeast(.stopping) {
+      // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
     }
     info.isIdle = true
@@ -3167,6 +3167,11 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// Closes the window & ensures its state is properly updated.
+  ///
+  /// After closing the window, calls `AppDelegate.shared.windowWillClose` explicitly (AppKit should always call
+  /// it via` NotificationCenter`, but this will dispel all doubt).
+  /// This function can safely be called more than once without danger of side effects.
   private func _closeWindow() {
     assert(DispatchQueue.isExecutingIn(.main))
     window.postWindowMustCancelShow()
