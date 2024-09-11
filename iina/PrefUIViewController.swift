@@ -408,8 +408,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     view.window?.beginSheet(toolbarSettingsSheetController.window!) { response in
       guard response == .OK else { return }
       let newItems = self.toolbarSettingsSheetController.currentButtonTypes
-      let array = newItems.map { $0.rawValue }
-      Preference.set(array, for: .controlBarToolbarButtons)
+      let intArray = newItems.map { $0.rawValue }
+      let toolbarItems = intArray.compactMap(Preference.ToolBarButton.init(rawValue:))
+      ControlBarGeometry.current = ControlBarGeometry(toolbarItems: toolbarItems)
+      Preference.set(intArray, for: .controlBarToolbarButtons)
     }
   }
 

@@ -42,9 +42,12 @@ struct ControlBarGeometry {
 
   let toolbarItems: [Preference.ToolBarButton]
 
-  init(oscPosition: Preference.OSCPosition? = nil, barHeight: CGFloat? = nil,
+  init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
+       barHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
+    self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
+
     // First establish bar height
     let desiredBarHeight = barHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
     let barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
@@ -75,8 +78,6 @@ struct ControlBarGeometry {
       self.playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
       self.playIconSpacing = max(0, desiredPlayIconSpacing)
     }
-
-    self.toolbarItems = ControlBarGeometry.oscToolbarItems
   }
 
   private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
