@@ -16,6 +16,8 @@
                 <outlet property="leftSidebarClickToCloseButton" destination="ogu-q9-cqE" id="GzV-MN-iTl"/>
                 <outlet property="leftSidebarLabel" destination="eh8-tf-wHU" id="125-il-GtB"/>
                 <outlet property="leftSidebarPlacement" destination="KIu-aG-mHw" id="hOM-59-8dV"/>
+                <outlet property="leftSidebarPlaylistTabsRadioButton" destination="1ob-qE-AIw" id="7Kc-bB-FSW"/>
+                <outlet property="leftSidebarSettingsTabsRadioButton" destination="jag-I5-s6l" id="GRU-cE-2LV"/>
                 <outlet property="leftSidebarShowToggleButton" destination="H5W-Uo-D64" id="xG8-pg-dSK"/>
                 <outlet property="mpvGeometryRadioButton" destination="VqS-1r-k2A" id="V6d-3D-LCy"/>
                 <outlet property="mpvWindowPositionCollapseView" destination="5zT-kW-YFh" id="EaP-nE-are"/>
@@ -38,6 +40,8 @@
                 <outlet property="rightSidebarClickToCloseButton" destination="zke-Iv-K9m" id="e0X-5j-h7d"/>
                 <outlet property="rightSidebarLabel" destination="6mM-VC-jd0" id="QYF-r9-WVG"/>
                 <outlet property="rightSidebarPlacement" destination="9fG-Qe-ZAx" id="ivW-uj-TBW"/>
+                <outlet property="rightSidebarPlaylistTabsRadioButton" destination="CMD-AK-icM" id="wkx-2d-XcP"/>
+                <outlet property="rightSidebarSettingsTabsRadioButton" destination="0aS-2P-buo" id="NSO-iY-Vwo"/>
                 <outlet property="rightSidebarShowToggleButton" destination="esN-qM-PXI" id="Bpy-Z7-0bx"/>
                 <outlet property="sectionAccessibilityView" destination="k9o-rY-z6u" id="p0I-TR-Sv6"/>
                 <outlet property="sectionAppearanceView" destination="M9c-Ak-HmK" id="96r-w6-H5K"/>
@@ -1246,7 +1250,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-727"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="576" height="886"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -2039,7 +2043,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="SyB-0R-TLF" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="HgG-px-UUt" secondAttribute="trailing" constant="8" id="z4E-Tj-yG1"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" id="zS7-aO-rrc"/>
             </constraints>
-            <point key="canvasLocation" x="-25" y="132"/>
+            <point key="canvasLocation" x="18" y="134"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="500" height="279"/>
@@ -2526,135 +2530,35 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-19" y="742"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="605" height="319"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="571" height="312"/>
             <subviews>
                 <textField identifier="SectionTitleSidebars" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="E6K-jW-Lzn">
-                    <rect key="frame" x="-2" y="295" width="124" height="16"/>
+                    <rect key="frame" x="-2" y="288" width="66" height="16"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="16" id="VMK-jQ-Ujf"/>
+                    </constraints>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Sidebars:" id="b6k-dZ-1ha">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="750" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
-                    <rect key="frame" x="120" y="8" width="477" height="304"/>
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
+                    <rect key="frame" x="120" y="8" width="435" height="300"/>
                     <subviews>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="IpK-KE-Mg5" userLabel="Settings-Tab-Group-Location HStack View">
-                            <rect key="frame" x="0.0" y="284" width="477" height="20"/>
-                            <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="RnR-6d-fTg">
-                                    <rect key="frame" x="-2" y="3" width="175" height="16"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" constant="16" id="S2R-Qx-GBL"/>
-                                    </constraints>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video, Audio, Subtitles tabs:" id="VXP-Zt-uFm">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                                <popUpButton verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="ouj-w5-wOb" userLabel="Settings-TabGroup-Location Popup">
-                                    <rect key="frame" x="176" y="-4" width="121" height="25"/>
-                                    <popUpButtonCell key="cell" type="push" title="Right Sidebar" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="2" imageScaling="proportionallyDown" inset="2" selectedItem="aPu-6W-J0k" id="Agc-Ke-rmA" userLabel="Settings-TabGroup-Location-Popup Button Cell">
-                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
-                                        <menu key="menu" id="Q0n-vb-3jX">
-                                            <items>
-                                                <menuItem title="Left Sidebar" tag="1" id="FUe-3l-a34"/>
-                                                <menuItem title="Right Sidebar" state="on" tag="2" id="aPu-6W-J0k"/>
-                                            </items>
-                                        </menu>
-                                    </popUpButtonCell>
-                                    <connections>
-                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.settingsTabGroupLocation" id="ea0-NA-7RP"/>
-                                    </connections>
-                                </popUpButton>
-                                <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="eyn-fV-ZNr" userLabel="Spacer">
-                                    <rect key="frame" x="301" y="0.0" width="176" height="6"/>
-                                </customView>
-                            </subviews>
-                            <constraints>
-                                <constraint firstItem="ouj-w5-wOb" firstAttribute="height" secondItem="IpK-KE-Mg5" secondAttribute="height" id="DaP-oV-AQM"/>
-                            </constraints>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                        </stackView>
-                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="K6p-Ub-Maa" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="280" width="477" height="0.0"/>
-                            <constraints>
-                                <constraint firstAttribute="height" id="P6J-ea-txK"/>
-                            </constraints>
-                        </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hfk-Oc-uMW" userLabel="Playlist-Tab-Group-Location HStack View">
-                            <rect key="frame" x="0.0" y="256" width="477" height="20"/>
-                            <subviews>
-                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="oaX-Ob-hdd">
-                                    <rect key="frame" x="-2" y="0.0" width="175" height="19"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Playlist &amp; Chapters tabs:" id="pMe-bn-hX9">
-                                        <font key="font" metaFont="system"/>
-                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                    </textFieldCell>
-                                </textField>
-                                <popUpButton verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Olt-EL-hAU" userLabel="Playlist-TabGroup-Location Popup">
-                                    <rect key="frame" x="176" y="-4" width="121" height="25"/>
-                                    <popUpButtonCell key="cell" type="push" title="Right Sidebar" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="2" imageScaling="proportionallyDown" inset="2" selectedItem="eNu-Mk-CaV" id="ggh-4G-4tP" userLabel="Playlist-TabGroup-Location Popup Button Cell">
-                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
-                                        <menu key="menu" id="Xxc-Lh-R1a">
-                                            <items>
-                                                <menuItem title="Left Sidebar" tag="1" id="nOi-KO-CpK"/>
-                                                <menuItem title="Right Sidebar" state="on" tag="2" id="eNu-Mk-CaV"/>
-                                            </items>
-                                        </menu>
-                                    </popUpButtonCell>
-                                    <connections>
-                                        <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.playlistTabGroupLocation" id="H0B-Nn-vcq"/>
-                                    </connections>
-                                </popUpButton>
-                                <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="rvG-rs-6cl" userLabel="Spacer">
-                                    <rect key="frame" x="301" y="0.0" width="176" height="6"/>
-                                </customView>
-                            </subviews>
-                            <constraints>
-                                <constraint firstItem="Olt-EL-hAU" firstAttribute="height" secondItem="hfk-Oc-uMW" secondAttribute="height" id="GzI-CU-WBm"/>
-                            </constraints>
-                            <visibilityPriorities>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                                <integer value="1000"/>
-                            </visibilityPriorities>
-                            <customSpacing>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                                <real value="3.4028234663852886e+38"/>
-                            </customSpacing>
-                        </stackView>
-                        <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="WTr-fg-eDy" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="248" width="477" height="4"/>
-                            <constraints>
-                                <constraint firstAttribute="height" constant="4" id="vwG-Ka-I1c"/>
-                            </constraints>
-                        </customView>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="501" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
-                            <rect key="frame" x="0.0" y="144" width="477" height="100"/>
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
+                            <rect key="frame" x="0.0" y="144" width="435" height="156"/>
                             <subviews>
                                 <gridView xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="0.0" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
-                                    <rect key="frame" x="0.0" y="0.0" width="419" height="100"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="427" height="156"/>
                                     <rows>
                                         <gridRow yPlacement="center" height="24" bottomPadding="4" id="hjW-b6-71D" userLabel="Row 0 - SidebarID"/>
-                                        <gridRow yPlacement="center" height="24" id="Mi2-xO-LqY"/>
-                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="PUY-2y-GX1"/>
-                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="rik-aD-Ulq"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="Mi2-xO-LqY" userLabel="Row 1 - Settings-TabGroup"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" bottomPadding="8" id="PUY-2y-GX1" userLabel="Row 2 - Playlist-TabGroup"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="rik-aD-Ulq" userLabel="Row 3 - Placement"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="xL6-zv-twO" userLabel="Row 4 - Open-Close-Button"/>
+                                        <gridRow yPlacement="center" rowAlignment="none" height="24" id="lbI-Sg-f3d" userLabel="Row 5 - Close-When-Clicked"/>
                                     </rows>
                                     <columns>
                                         <gridColumn xPlacement="leading" id="Pgq-7f-mYz" userLabel="Column 0 - Name"/>
@@ -2663,8 +2567,8 @@ For smoothest results, also enable custom full screen.</string>
                                     </columns>
                                     <gridCells>
                                         <gridCell row="hjW-b6-71D" column="Pgq-7f-mYz" id="NoI-f5-36O">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="og0-0i-0wu" userLabel="Blank Text Field">
-                                                <rect key="frame" x="-2" y="80" width="104" height="16"/>
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="og0-0i-0wu" userLabel="Blank Text Field">
+                                                <rect key="frame" x="-2" y="136" width="219" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="XsQ-RU-5sT">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2673,9 +2577,9 @@ For smoothest results, also enable custom full screen.</string>
                                             </textField>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="v1D-IJ-G5S" id="82f-7F-ibj">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eh8-tf-wHU">
-                                                <rect key="frame" x="227" y="80" width="35" height="16"/>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Left:" id="8Oi-ew-3cu">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eh8-tf-wHU">
+                                                <rect key="frame" x="231" y="136" width="83" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Left Sidebar" id="8Oi-ew-3cu">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2683,9 +2587,9 @@ For smoothest results, also enable custom full screen.</string>
                                             </textField>
                                         </gridCell>
                                         <gridCell row="hjW-b6-71D" column="P5j-t5-Vfj" id="2f6-h6-Ebf">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6mM-VC-jd0">
-                                                <rect key="frame" x="339" y="80" width="43" height="16"/>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Right:" id="Msi-a9-5mJ">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6mM-VC-jd0">
+                                                <rect key="frame" x="332" y="136" width="92" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Right Sidebar" id="Msi-a9-5mJ">
                                                     <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2693,18 +2597,89 @@ For smoothest results, also enable custom full screen.</string>
                                             </textField>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="Pgq-7f-mYz" id="YWU-Xf-Jfh">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hz5-Bh-Bzv">
-                                                <rect key="frame" x="-2" y="53" width="113" height="14"/>
-                                                <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Placement vs. video:" id="zDV-q2-wOg">
-                                                    <font key="font" metaFont="smallSystem"/>
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="RnR-6d-fTg">
+                                                <rect key="frame" x="-2" y="108" width="219" height="16"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="16" id="S2R-Qx-GBL"/>
+                                                </constraints>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video, Audio, Subtitles location:" id="VXP-Zt-uFm">
+                                                    <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                 </textFieldCell>
                                             </textField>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="v1D-IJ-G5S" id="pof-3l-MZg">
+                                            <button key="contentView" tag="1" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jag-I5-s6l" userLabel="SettingsTabGroup-LeftSidebar Radio Button">
+                                                <rect key="frame" x="263" y="107" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="7RJ-g3-TV2">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="settingsSidebarTabGroupAction:" target="-2" id="I2B-eZ-hIU"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="Mi2-xO-LqY" column="P5j-t5-Vfj" id="M9Y-f4-Dhk">
+                                            <button key="contentView" tag="2" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0aS-2P-buo" userLabel="SettingsTabGroup-RightSidebar Radio Button">
+                                                <rect key="frame" x="369" y="107" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="QcH-dA-2Cl">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="settingsSidebarTabGroupAction:" target="-2" id="Mlb-9M-V5K"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="PUY-2y-GX1" column="Pgq-7f-mYz" id="ye5-UH-jwa">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="oaX-Ob-hdd">
+                                                <rect key="frame" x="-2" y="84" width="219" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Playlist &amp; Chapters location:" id="pMe-bn-hX9">
+                                                    <font key="font" metaFont="system"/>
+                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                </textFieldCell>
+                                            </textField>
+                                        </gridCell>
+                                        <gridCell row="PUY-2y-GX1" column="v1D-IJ-G5S" id="gbw-KM-aIZ">
+                                            <button key="contentView" tag="1" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1ob-qE-AIw" userLabel="PlaylistTabGroup-LeftSidebar Radio Button">
+                                                <rect key="frame" x="263" y="83" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="IOP-fU-S8C">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="playlistSidebarTabGroupAction:" target="-2" id="0mN-US-bTe"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="PUY-2y-GX1" column="P5j-t5-Vfj" id="nvZ-ol-2GY">
+                                            <button key="contentView" tag="2" horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CMD-AK-icM" userLabel="PlaylistTabGroup-RightSidebar Radio Button">
+                                                <rect key="frame" x="369" y="83" width="18" height="18"/>
+                                                <buttonCell key="cell" type="radio" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="DRL-3A-B8J">
+                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                    <font key="font" metaFont="system"/>
+                                                </buttonCell>
+                                                <connections>
+                                                    <action selector="playlistSidebarTabGroupAction:" target="-2" id="Cqi-QE-aYT"/>
+                                                </connections>
+                                            </button>
+                                        </gridCell>
+                                        <gridCell row="rik-aD-Ulq" column="Pgq-7f-mYz" id="9me-Jf-toM">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hz5-Bh-Bzv">
+                                                <rect key="frame" x="-2" y="52" width="219" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Placement vs. video:" id="zDV-q2-wOg">
+                                                    <font key="font" metaFont="system"/>
+                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                </textFieldCell>
+                                            </textField>
+                                        </gridCell>
+                                        <gridCell row="rik-aD-Ulq" column="v1D-IJ-G5S" id="yOm-Rn-fKz">
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="KIu-aG-mHw" userLabel="Leading-Sidebar-Placement Segmented Control">
-                                                <rect key="frame" x="193" y="48" width="102" height="24"/>
+                                                <rect key="frame" x="221" y="48" width="102" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="sME-na-jHH">
                                                     <font key="font" metaFont="smallSystem"/>
                                                     <segments>
@@ -2717,9 +2692,9 @@ For smoothest results, also enable custom full screen.</string>
                                                 </connections>
                                             </segmentedControl>
                                         </gridCell>
-                                        <gridCell row="Mi2-xO-LqY" column="P5j-t5-Vfj" id="M9Y-f4-Dhk">
+                                        <gridCell row="rik-aD-Ulq" column="P5j-t5-Vfj" id="Jh9-cO-9si">
                                             <segmentedControl key="contentView" horizontalHuggingPriority="500" verticalHuggingPriority="750" horizontalCompressionResistancePriority="800" translatesAutoresizingMaskIntoConstraints="NO" id="9fG-Qe-ZAx" userLabel="Trailing-Sidebar-Placement Segmented Control">
-                                                <rect key="frame" x="309" y="48" width="102" height="24"/>
+                                                <rect key="frame" x="327" y="48" width="102" height="24"/>
                                                 <segmentedCell key="cell" borderStyle="border" alignment="left" segmentDistribution="fill" style="rounded" trackingMode="selectOne" id="0MZ-00-6fG">
                                                     <font key="font" metaFont="smallSystem"/>
                                                     <segments>
@@ -2732,19 +2707,19 @@ For smoothest results, also enable custom full screen.</string>
                                                 </connections>
                                             </segmentedControl>
                                         </gridCell>
-                                        <gridCell row="PUY-2y-GX1" column="Pgq-7f-mYz" id="ye5-UH-jwa">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="77C-d6-Apy">
-                                                <rect key="frame" x="-2" y="29" width="191" height="14"/>
-                                                <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Show open/close button in title bar:" id="CHA-WL-xUh">
-                                                    <font key="font" metaFont="smallSystem"/>
+                                        <gridCell row="xL6-zv-twO" column="Pgq-7f-mYz" id="b1z-LD-mKm">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="77C-d6-Apy">
+                                                <rect key="frame" x="-2" y="28" width="219" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Show open/close button in title bar:" id="CHA-WL-xUh">
+                                                    <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                 </textFieldCell>
                                             </textField>
                                         </gridCell>
-                                        <gridCell row="PUY-2y-GX1" column="v1D-IJ-G5S" id="gbw-KM-aIZ">
-                                            <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="H5W-Uo-D64" userLabel="Show open/close button in title bar">
-                                                <rect key="frame" x="235" y="27" width="18" height="18"/>
+                                        <gridCell row="xL6-zv-twO" column="v1D-IJ-G5S" id="uLC-YG-T6v">
+                                            <button key="contentView" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="H5W-Uo-D64" userLabel="Show open/close button in title bar">
+                                                <rect key="frame" x="263" y="27" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="HRJ-kL-GUh" userLabel="Show open/close button in title bar">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2754,9 +2729,9 @@ For smoothest results, also enable custom full screen.</string>
                                                 </connections>
                                             </button>
                                         </gridCell>
-                                        <gridCell row="PUY-2y-GX1" column="P5j-t5-Vfj" id="nvZ-ol-2GY">
-                                            <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="esN-qM-PXI" userLabel="Show open/close button in title bar">
-                                                <rect key="frame" x="351" y="27" width="18" height="18"/>
+                                        <gridCell row="xL6-zv-twO" column="P5j-t5-Vfj" id="c1j-g2-DiC">
+                                            <button key="contentView" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="esN-qM-PXI" userLabel="Show open/close button in title bar">
+                                                <rect key="frame" x="369" y="27" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="9lH-Oi-1Xp" userLabel="Show open/close button in title bar">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2766,19 +2741,19 @@ For smoothest results, also enable custom full screen.</string>
                                                 </connections>
                                             </button>
                                         </gridCell>
-                                        <gridCell row="rik-aD-Ulq" column="Pgq-7f-mYz" id="9me-Jf-toM">
-                                            <textField key="contentView" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2n9-fl-OfF">
-                                                <rect key="frame" x="-2" y="5" width="178" height="14"/>
-                                                <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Close when video area is clicked:" id="vvr-S0-lRT">
-                                                    <font key="font" metaFont="smallSystem"/>
+                                        <gridCell row="lbI-Sg-f3d" column="Pgq-7f-mYz" id="fEk-G2-tVl">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2n9-fl-OfF">
+                                                <rect key="frame" x="-2" y="4" width="219" height="16"/>
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Close when video area is clicked:" id="vvr-S0-lRT">
+                                                    <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                 </textFieldCell>
                                             </textField>
                                         </gridCell>
-                                        <gridCell row="rik-aD-Ulq" column="v1D-IJ-G5S" id="yOm-Rn-fKz">
-                                            <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="ogu-q9-cqE" userLabel="Close when video area is clicked">
-                                                <rect key="frame" x="235" y="3" width="18" height="18"/>
+                                        <gridCell row="lbI-Sg-f3d" column="v1D-IJ-G5S" id="m0f-BD-yFk">
+                                            <button key="contentView" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ogu-q9-cqE" userLabel="Close when video area is clicked">
+                                                <rect key="frame" x="263" y="3" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Da2-Ew-ibb">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2788,9 +2763,9 @@ For smoothest results, also enable custom full screen.</string>
                                                 </connections>
                                             </button>
                                         </gridCell>
-                                        <gridCell row="rik-aD-Ulq" column="P5j-t5-Vfj" id="Jh9-cO-9si">
-                                            <button key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="zke-Iv-K9m" userLabel="Close when video area is clicked">
-                                                <rect key="frame" x="351" y="3" width="18" height="18"/>
+                                        <gridCell row="lbI-Sg-f3d" column="P5j-t5-Vfj" id="qOE-sR-uXa">
+                                            <button key="contentView" horizontalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zke-Iv-K9m" userLabel="Close when video area is clicked">
+                                                <rect key="frame" x="369" y="3" width="18" height="18"/>
                                                 <buttonCell key="cell" type="check" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="icA-2b-l8k">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -2802,8 +2777,8 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                     </gridCells>
                                 </gridView>
-                                <customView horizontalHuggingPriority="251" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="b07-lv-H8K" userLabel="Flexible Spacer">
-                                    <rect key="frame" x="427" y="100" width="50" height="0.0"/>
+                                <customView horizontalHuggingPriority="249" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="b07-lv-H8K" userLabel="Flexible Spacer">
+                                    <rect key="frame" x="435" y="156" width="0.0" height="0.0"/>
                                     <constraints>
                                         <constraint firstAttribute="height" id="djs-uV-BZ7"/>
                                     </constraints>
@@ -2826,13 +2801,13 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </stackView>
                         <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="ZwL-8x-3OV" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="136" width="477" height="4"/>
+                            <rect key="frame" x="0.0" y="136" width="435" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="lTw-9z-dz8"/>
                             </constraints>
                         </customView>
-                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HJz-q0-z9s">
-                            <rect key="frame" x="-2" y="116" width="481" height="16"/>
+                        <textField focusRingType="none" horizontalHuggingPriority="760" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HJz-q0-z9s">
+                            <rect key="frame" x="-2" y="116" width="144" height="16"/>
                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video settings presets:" id="Dd6-YT-Bhp">
                                 <font key="font" metaFont="system"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2840,7 +2815,7 @@ For smoothest results, also enable custom full screen.</string>
                             </textFieldCell>
                         </textField>
                         <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="749" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xuk-tu-yGo" userLabel="Video-Settings-Sidebar HStack View">
-                            <rect key="frame" x="0.0" y="0.0" width="477" height="112"/>
+                            <rect key="frame" x="0.0" y="0.0" width="435" height="112"/>
                             <subviews>
                                 <box identifier="VideoSettingsSidebar-Box" horizontalHuggingPriority="750" verticalHuggingPriority="750" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="gkn-iF-oiJ" userLabel="Video-Settings-Sidebar Box">
                                     <rect key="frame" x="-3" y="-4" width="390" height="118"/>
@@ -2976,8 +2951,8 @@ For smoothest results, also enable custom full screen.</string>
                                     </view>
                                     <font key="titleFont" metaFont="system"/>
                                 </box>
-                                <customView horizontalHuggingPriority="1" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="lX5-rN-e6d" userLabel="Spacer">
-                                    <rect key="frame" x="392" y="62" width="85" height="50"/>
+                                <customView horizontalHuggingPriority="249" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="lX5-rN-e6d" userLabel="Spacer">
+                                    <rect key="frame" x="392" y="62" width="43" height="50"/>
                                 </customView>
                             </subviews>
                             <visibilityPriorities>
@@ -2990,15 +2965,7 @@ For smoothest results, also enable custom full screen.</string>
                             </customSpacing>
                         </stackView>
                     </subviews>
-                    <constraints>
-                        <constraint firstItem="ouj-w5-wOb" firstAttribute="leading" secondItem="Olt-EL-hAU" secondAttribute="leading" id="30R-8I-FIt"/>
-                        <constraint firstItem="ouj-w5-wOb" firstAttribute="trailing" secondItem="Olt-EL-hAU" secondAttribute="trailing" id="BVQ-LS-irF"/>
-                    </constraints>
                     <visibilityPriorities>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
@@ -3009,17 +2976,13 @@ For smoothest results, also enable custom full screen.</string>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
                     </customSpacing>
                 </stackView>
             </subviews>
             <constraints>
-                <constraint firstAttribute="trailing" secondItem="kog-j2-kGH" secondAttribute="trailing" constant="8" id="Dl0-GF-pDe"/>
-                <constraint firstItem="kog-j2-kGH" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="E4C-ar-MSF"/>
-                <constraint firstItem="E6K-jW-Lzn" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="Imb-YN-akQ"/>
+                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="kog-j2-kGH" secondAttribute="trailing" constant="8" id="Dl0-GF-pDe"/>
+                <constraint firstItem="E6K-jW-Lzn" firstAttribute="trailing" relation="lessThanOrEqual" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="Imb-YN-akQ"/>
+                <constraint firstItem="eh8-tf-wHU" firstAttribute="firstBaseline" secondItem="E6K-jW-Lzn" secondAttribute="firstBaseline" id="PKg-IN-WSc"/>
                 <constraint firstAttribute="bottom" secondItem="kog-j2-kGH" secondAttribute="bottom" constant="8" id="T5x-i2-gUA"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" id="Tj4-o9-IqL"/>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>

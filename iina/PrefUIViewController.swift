@@ -77,6 +77,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBOutlet weak var leftSidebarLabel: NSTextField!
   @IBOutlet weak var leftSidebarPlacement: NSSegmentedControl!
+  @IBOutlet weak var leftSidebarSettingsTabsRadioButton: NSButton!
+  @IBOutlet weak var rightSidebarSettingsTabsRadioButton: NSButton!
+  @IBOutlet weak var leftSidebarPlaylistTabsRadioButton: NSButton!
+  @IBOutlet weak var rightSidebarPlaylistTabsRadioButton: NSButton!
   @IBOutlet weak var leftSidebarShowToggleButton: NSButton!
   @IBOutlet weak var leftSidebarClickToCloseButton: NSButton!
   @IBOutlet weak var rightSidebarLabel: NSTextField!
@@ -246,20 +250,32 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   // MARK: - Sidebars
 
   private func updateSidebarSection() {
-    let tabGroup1: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
-    let tabGroup2: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
-    let isUsingLeadingSidebar = tabGroup1 == .leadingSidebar || tabGroup2 == .leadingSidebar
-    let isUsingTrailingSidebar = tabGroup1 == .trailingSidebar || tabGroup2 == .trailingSidebar
+    let settingsTabGroup: Preference.SidebarLocation = Preference.enum(for: .settingsTabGroupLocation)
+    let playlistTabGroup: Preference.SidebarLocation = Preference.enum(for: .playlistTabGroupLocation)
+    let isUsingLeadingSidebar = settingsTabGroup == .leadingSidebar || playlistTabGroup == .leadingSidebar
+    let isUsingTrailingSidebar = settingsTabGroup == .trailingSidebar || playlistTabGroup == .trailingSidebar
 
-    leftSidebarLabel.textColor = isUsingLeadingSidebar ? .controlTextColor : .disabledControlTextColor
+    leftSidebarSettingsTabsRadioButton.state = (settingsTabGroup == .leadingSidebar) ? .on : .off
+    rightSidebarSettingsTabsRadioButton.state = (settingsTabGroup == .trailingSidebar) ? .on : .off
+
+    leftSidebarPlaylistTabsRadioButton.state = (playlistTabGroup == .leadingSidebar) ? .on : .off
+    rightSidebarPlaylistTabsRadioButton.state = (playlistTabGroup == .trailingSidebar) ? .on : .off
+
     leftSidebarPlacement.isEnabled = isUsingLeadingSidebar
     leftSidebarShowToggleButton.isEnabled = isUsingLeadingSidebar
     leftSidebarClickToCloseButton.isEnabled = isUsingLeadingSidebar
 
-    rightSidebarLabel.textColor = isUsingTrailingSidebar ? .controlTextColor : .disabledControlTextColor
     rightSidebarPlacement.isEnabled = isUsingTrailingSidebar
     rightSidebarShowToggleButton.isEnabled = isUsingTrailingSidebar
     rightSidebarClickToCloseButton.isEnabled = isUsingTrailingSidebar
+  }
+
+  @IBAction func settingsSidebarTabGroupAction(_ sender: NSButton) {
+    Preference.set(sender.tag, for: .settingsTabGroupLocation)
+  }
+
+  @IBAction func playlistSidebarTabGroupAction(_ sender: NSButton) {
+    Preference.set(sender.tag, for: .playlistTabGroupLocation)
   }
 
   @IBAction func saveAspectPresets(_ sender: AspectTokenField) {
