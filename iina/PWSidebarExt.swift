@@ -938,7 +938,7 @@ extension PlayerWindowController {
       let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.leading
       let viewportSize = oldGeo.viewportSize
       let newViewportWidth = viewportSize.width - playlistWidthDifference
-      let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(leading: newPlaylistWidth))
+      let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(leading: newPlaylistWidth))
 
       /// If `lockViewportToVideoSize` is `true`, it is necessary to resize the window's height to
       /// accomodate the change in video height.
@@ -951,7 +951,7 @@ extension PlayerWindowController {
         newGeo = resizedPlaylistGeo.refit()
       }
     } else {  /// `.insideViewport`: needs to refit in case window is so small that the viewport is larger than the video
-      newGeo = oldGeo.clone(insideBars: MarginQuad(leading: newPlaylistWidth)).refit()
+      newGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(leading: newPlaylistWidth)).refit()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
@@ -984,7 +984,7 @@ extension PlayerWindowController {
     if currentLayout.trailingSidebar.placement == .outsideViewport {
       let playlistWidthDifference = newPlaylistWidth - oldGeo.outsideBars.trailing
       let newViewportWidth = viewportSize.width - playlistWidthDifference
-      let resizedPlaylistGeo = oldGeo.clone(outsideBars: MarginQuad(trailing: newPlaylistWidth))
+      let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(trailing: newPlaylistWidth))
 
       if Preference.bool(for: .lockViewportToVideoSize) {
         let desiredViewportSize = NSSize(width: newViewportWidth, height: newViewportWidth / viewportSize.aspect)
@@ -993,7 +993,7 @@ extension PlayerWindowController {
         newGeo = resizedPlaylistGeo.refit()
       }
     } else {  /// `.insideViewport`
-      newGeo = oldGeo.clone(insideBars: MarginQuad(trailing: newPlaylistWidth)).refit()
+      newGeo = oldGeo.clone(insideBars: oldGeo.insideBars.clone(trailing: newPlaylistWidth)).refit()
     }
 
     Preference.set(Int(newPlaylistWidth), for: .playlistWidth)
