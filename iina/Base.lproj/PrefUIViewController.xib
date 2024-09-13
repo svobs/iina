@@ -1924,7 +1924,7 @@ For smoothest results, also enable custom full screen.</string>
                 <box title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="0eU-xI-byi" userLabel="Hide-Inside-Video-Controls Box">
                     <rect key="frame" x="117" y="4" width="454" height="70"/>
                     <view key="contentView" translatesAutoresizingMaskIntoConstraints="NO" id="s79-ch-C1D" userLabel="Hide-Inside-Video-Controls Box View">
-                        <rect key="frame" x="4" y="5" width="282" height="62"/>
+                        <rect key="frame" x="4" y="5" width="254" height="62"/>
                         <subviews>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IvI-R5-Sdu">
                                 <rect key="frame" x="14" y="34" width="120" height="18"/>
@@ -1966,7 +1966,7 @@ For smoothest results, also enable custom full screen.</string>
                                 </textFieldCell>
                             </textField>
                             <button horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="kw0-f3-qrz">
-                                <rect key="frame" x="14" y="10" width="252" height="18"/>
+                                <rect key="frame" x="14" y="10" width="224" height="18"/>
                                 <buttonCell key="cell" type="check" title="Hide when cursor leaves window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ZJL-Jz-cNh">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -2541,13 +2541,13 @@ For smoothest results, also enable custom full screen.</string>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
+                <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kog-j2-kGH" userLabel="RightColumn VStack View">
                     <rect key="frame" x="120" y="8" width="435" height="308"/>
                     <subviews>
-                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="500" verticalStackHuggingPriority="500" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
+                        <stackView clipsToBounds="YES" distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zxv-zZ-q8V" userLabel="HStack View">
                             <rect key="frame" x="0.0" y="148" width="435" height="160"/>
                             <subviews>
-                                <gridView xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="0.0" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
+                                <gridView horizontalCompressionResistancePriority="500" xPlacement="center" yPlacement="bottom" rowAlignment="firstBaseline" rowSpacing="0.0" columnSpacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="gHl-nV-4jw" userLabel="SidebarConfigs Grid View">
                                     <rect key="frame" x="0.0" y="0.0" width="427" height="160"/>
                                     <rows>
                                         <gridRow yPlacement="center" height="24" bottomPadding="4" id="hjW-b6-71D" userLabel="Row 0 - SidebarID"/>
@@ -2594,12 +2594,12 @@ For smoothest results, also enable custom full screen.</string>
                                             </textField>
                                         </gridCell>
                                         <gridCell row="Mi2-xO-LqY" column="Pgq-7f-mYz" id="YWU-Xf-Jfh">
-                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="RnR-6d-fTg">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="RnR-6d-fTg">
                                                 <rect key="frame" x="-2" y="112" width="219" height="16"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="16" id="S2R-Qx-GBL"/>
                                                 </constraints>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video, Audio, Subtitles location:" id="VXP-Zt-uFm">
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Location of Video, Audio, Subtitles:" id="VXP-Zt-uFm">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2631,9 +2631,9 @@ For smoothest results, also enable custom full screen.</string>
                                             </button>
                                         </gridCell>
                                         <gridCell row="PUY-2y-GX1" column="Pgq-7f-mYz" id="ye5-UH-jwa">
-                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="oaX-Ob-hdd">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="oaX-Ob-hdd">
                                                 <rect key="frame" x="-2" y="88" width="219" height="16"/>
-                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Playlist &amp; Chapters location:" id="pMe-bn-hX9">
+                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Location of Playlist &amp; Chapters:" id="pMe-bn-hX9">
                                                     <font key="font" metaFont="system"/>
                                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -2665,7 +2665,7 @@ For smoothest results, also enable custom full screen.</string>
                                             </button>
                                         </gridCell>
                                         <gridCell row="rik-aD-Ulq" column="Pgq-7f-mYz" id="9me-Jf-toM">
-                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hz5-Bh-Bzv">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="hz5-Bh-Bzv">
                                                 <rect key="frame" x="-2" y="52" width="219" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Placement vs. video:" id="zDV-q2-wOg">
                                                     <font key="font" metaFont="system"/>
@@ -2705,7 +2705,7 @@ For smoothest results, also enable custom full screen.</string>
                                             </segmentedControl>
                                         </gridCell>
                                         <gridCell row="xL6-zv-twO" column="Pgq-7f-mYz" id="b1z-LD-mKm">
-                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="77C-d6-Apy">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="77C-d6-Apy">
                                                 <rect key="frame" x="-2" y="28" width="219" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Show open/close button in title bar:" id="CHA-WL-xUh">
                                                     <font key="font" metaFont="system"/>
@@ -2739,7 +2739,7 @@ For smoothest results, also enable custom full screen.</string>
                                             </button>
                                         </gridCell>
                                         <gridCell row="lbI-Sg-f3d" column="Pgq-7f-mYz" id="fEk-G2-tVl">
-                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2n9-fl-OfF">
+                                            <textField key="contentView" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="2n9-fl-OfF">
                                                 <rect key="frame" x="-2" y="4" width="219" height="16"/>
                                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Close when video area is clicked:" id="vvr-S0-lRT">
                                                     <font key="font" metaFont="system"/>
@@ -2774,11 +2774,8 @@ For smoothest results, also enable custom full screen.</string>
                                         </gridCell>
                                     </gridCells>
                                 </gridView>
-                                <customView horizontalHuggingPriority="249" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="b07-lv-H8K" userLabel="Flexible Spacer">
-                                    <rect key="frame" x="435" y="160" width="0.0" height="0.0"/>
-                                    <constraints>
-                                        <constraint firstAttribute="height" id="djs-uV-BZ7"/>
-                                    </constraints>
+                                <customView horizontalHuggingPriority="501" verticalHuggingPriority="501" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="b07-lv-H8K" userLabel="Flexible Spacer">
+                                    <rect key="frame" x="435" y="0.0" width="0.0" height="160"/>
                                 </customView>
                             </subviews>
                             <visibilityPriorities>
@@ -2804,7 +2801,7 @@ For smoothest results, also enable custom full screen.</string>
                             </constraints>
                         </customView>
                         <textField focusRingType="none" horizontalHuggingPriority="760" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HJz-q0-z9s">
-                            <rect key="frame" x="-2" y="116" width="144" height="16"/>
+                            <rect key="frame" x="-2" y="116" width="439" height="16"/>
                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Video settings presets:" id="Dd6-YT-Bhp">
                                 <font key="font" metaFont="system"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
