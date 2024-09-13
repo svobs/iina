@@ -1568,16 +1568,17 @@ class PlayerCore: NSObject {
   /// Adds all the media in `pathList` to the current playlist.
   /// This checks whether the currently playing item is in the list, so that it may end up in the middle of the playlist.
   /// Also note that each item in `pathList` may be either a file path or a
-  /// network URl.
-  private func restorePlaylist(itemPathList: [String]) {
+  /// network URL.
+  func _addToPlaylist(pathListIncludingCurrent pathList: [String]) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
     _reloadPlaylist(silent: true)
 
     var addedCurrentItem = false
 
-    log.debug("Restoring \(itemPathList.count) files to playlist")
-    for path in itemPathList {
+    log.debug("Auto-adding \(pathList.count) files into playlist")
+    for path in pathList {
+      guard !isStopping else { return }
       if path == info.currentURL?.path {
         addedCurrentItem = true
       } else if addedCurrentItem {
@@ -1588,7 +1589,7 @@ class PlayerCore: NSObject {
         _addToPlaylist(path)
         let err = mpv.command(.playlistMove, args: ["\(count)", "\(current)"], checkError: false)
         if err != 0 {
-          log.error("Error \(err) when restoring files to playlist")
+          log.error("Error \(err) when auto-adding files into playlist")
           if err == MPV_ERROR_COMMAND.rawValue {
             return
           }
@@ -2228,7 +2229,8 @@ class PlayerCore: NSObject {
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
     if info.isRestoring, let priorState = info.priorState,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
-      restorePlaylist(itemPathList: playlistPathList)
+      // FIXME: what about network URLs?
+      _addToPlaylist(pathListIncludingCurrent: playlistPathList)
 
       /// Launches background task which scans video files and collects video size metadata using ffmpeg
       PlayerCore.backgroundQueue.async { [self] in
