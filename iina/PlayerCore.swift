@@ -3047,11 +3047,6 @@ class PlayerCore: NSObject {
     } else {
       info.videoPosition = VideoTime(mpv.getDouble(MPVProperty.timePos))
     }
-    if Preference.bool(for: .showLocalFileCacheTime) {
-      info.demuxerCacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
-    } else {
-      info.demuxerCacheTime = nil
-    }
 
     log.debug("CACHE TIME: \(mpv.getInt(MPVProperty.demuxerCacheTime))")
     info.constrainVideoPosition()
@@ -3060,8 +3055,12 @@ class PlayerCore: NSObject {
       info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
       info.cacheUsed = ((mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any])?["fw-bytes"] as? Int) ?? 0
       info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
-      info.cacheTime = mpv.getInt(MPVProperty.demuxerCacheTime)
+      info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
       info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
+    } else if Preference.bool(for: .showLocalFileCacheTime) {
+      info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
+    } else {
+      info.cacheTime = 0
     }
 
     // Ensure user can resume playback by periodically saving

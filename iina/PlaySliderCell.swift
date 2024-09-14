@@ -99,20 +99,10 @@ class PlaySliderCell: NSSliderCell {
     let slider = self.controlView as! NSSlider
 
     /// The position of the knob, rounded for cleaner drawing
-    let knobPos : CGFloat = round(knobRect(flipped: flipped).origin.x);
+    let knobPos: CGFloat = round(knobRect(flipped: flipped).origin.x);
 
     /// How far progressed the current video is, used for drawing the bar background
-    var progress : CGFloat = 0;
-
-    if info.isNetworkResource,
-      info.cacheTime != 0,
-      let duration = info.videoDuration,
-      duration.second != 0 {
-      let pos = Double(info.cacheTime) / Double(duration.second) * 100
-      progress = round(rect.width * CGFloat(pos / (slider.maxValue - slider.minValue))) + 2;
-    } else {
-      progress = knobPos;
-    }
+    let progress = knobPos;
 
     NSGraphicsContext.saveGraphicsState()
     let barRect: NSRect
@@ -136,15 +126,17 @@ class PlaySliderCell: NSSliderCell {
     path.fill()
     NSGraphicsContext.restoreGraphicsState()
 
-    if let demuxerCacheTime = info.demuxerCacheTime,
-       let duration = info.videoDuration, duration.second != 0 {
+    // Draw future cache amount:
+    let cacheTime = info.cacheTime
+    if cacheTime != 0, 
+        let duration = info.videoDuration, duration.second != 0 {
 
       NSGraphicsContext.saveGraphicsState()
 
       let path = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
 
-      let pos = Double(demuxerCacheTime) / Double(duration.second) * 100
-      let cacheWidth = round(rect.width * CGFloat(pos / (slider.maxValue - slider.minValue))) + 2;
+      let cachePos = Double(cacheTime) / Double(duration.second) * 100
+      let cacheWidth = round(rect.width * CGFloat(cachePos / (slider.maxValue - slider.minValue))) + 2;
 
       // draw left
       let cacheRect : NSRect = NSMakeRect(progress, barRect.origin.y, cacheWidth, barRect.height)

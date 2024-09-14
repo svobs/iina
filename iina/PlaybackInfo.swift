@@ -163,8 +163,6 @@ class PlaybackInfo {
   var playSpeed: Double = 1.0
   var videoPosition: VideoTime?
   var videoDuration: VideoTime?
-  /// mpv's `demuxer-cache-time`: Approximate time of video buffered in the demuxer, in seconds
-  var demuxerCacheTime: Double?
 
   var playlist: [MPVPlaylistItem] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
@@ -322,7 +320,8 @@ class PlaybackInfo {
   var pausedForCache: Bool = false
   var cacheUsed: Int = 0
   var cacheSpeed: Int = 0
-  var cacheTime: Int = 0
+  /// mpv's `demuxer-cache-time`: Approximate timestamp of video buffered in the demuxer, in seconds
+  var cacheTime: Double = 0
   var bufferingState: Int = 0
 
   // The cache is read by the main thread and updated by a background thread therefore all use
