@@ -3048,7 +3048,6 @@ class PlayerCore: NSObject {
       info.videoPosition = VideoTime(mpv.getDouble(MPVProperty.timePos))
     }
 
-    log.debug("CACHE TIME: \(mpv.getInt(MPVProperty.demuxerCacheTime))")
     info.constrainVideoPosition()
     if isNetworkStream {
       // Update cache info

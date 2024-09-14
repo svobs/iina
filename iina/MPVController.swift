@@ -1470,6 +1470,7 @@ class MPVController: NSObject {
         logPropertyValueError(MPVOption.Audio.audioDelay, property.format)
         break
       }
+      player.log.verbose("Δ mpv prop: `audio-delay` = \(data)")
       player.info.audioDelay = data
       player.sendOSD(.audioDelay(data))
       player.reloadQuickSettingsView()
@@ -1495,6 +1496,8 @@ class MPVController: NSObject {
         logPropertyValueError(name, property.format)
         break
       }
+      player.log.verbose("Δ mpv prop: `secondary-sub-delay` = \(data)")
+
       player.secondarySubDelayChanged(data)
 
     case MPVOption.Subtitles.subDelay:
@@ -1502,6 +1505,7 @@ class MPVController: NSObject {
         logPropertyValueError(name, property.format)
         break
       }
+      player.log.verbose("Δ mpv prop: `sub-delay` = \(data)")
       player.subDelayChanged(data)
 
     case MPVOption.Subtitles.subScale:
