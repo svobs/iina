@@ -163,6 +163,8 @@ class PlaybackInfo {
   var playSpeed: Double = 1.0
   var videoPosition: VideoTime?
   var videoDuration: VideoTime?
+  /// mpv's `demuxer-cache-time`: Approximate time of video buffered in the demuxer, in seconds
+  var demuxerCacheTime: Double?
 
   var playlist: [MPVPlaylistItem] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`

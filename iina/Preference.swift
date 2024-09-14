@@ -182,6 +182,9 @@ struct Preference {
     /** Timeout for auto hiding control bar (float) */
     static let controlBarAutoHideTimeout = Key("controlBarAutoHideTimeout")
 
+    /// If true, highlight the part of the playback slider to the right of the knob
+    /// which has already been loaded into the demuxer cache
+    static let showLocalFileCacheTime = Key("showLocalFileCacheTime")
 
     /** Whether auto hiding control bar is enabled. (bool)*/
     static let enableControlBarAutoHide = Key("enableControlBarAutoHide")
@@ -1115,6 +1118,7 @@ struct Preference {
     .controlBarPositionVertical: Float(0.1),
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
+    .showLocalFileCacheTime: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolbarIconSize: 18,

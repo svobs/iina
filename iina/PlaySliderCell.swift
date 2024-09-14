@@ -31,6 +31,7 @@ class PlaySliderCell: NSSliderCell {
   private var knobColor = NSColor(named: .mainSliderKnob)!
   private var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
   private var barColorLeft = NSColor(named: .mainSliderBarLeft)!
+  private var barColorPreCache = NSColor(named: .mainSliderBarPreCache)!
   private var barColorRight = NSColor(named: .mainSliderBarRight)!
   private var chapterStrokeColor = NSColor(named: .mainSliderBarChapterStroke)!
 
@@ -134,6 +135,25 @@ class PlaySliderCell: NSSliderCell {
     barColorLeft.setFill()
     path.fill()
     NSGraphicsContext.restoreGraphicsState()
+
+    if let demuxerCacheTime = info.demuxerCacheTime,
+       let duration = info.videoDuration, duration.second != 0 {
+
+      NSGraphicsContext.saveGraphicsState()
+
+      let path = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
+
+      let pos = Double(demuxerCacheTime) / Double(duration.second) * 100
+      let cacheWidth = round(rect.width * CGFloat(pos / (slider.maxValue - slider.minValue))) + 2;
+
+      // draw left
+      let cacheRect : NSRect = NSMakeRect(progress, barRect.origin.y, cacheWidth, barRect.height)
+      NSBezierPath(rect: cacheRect).addClip();
+
+      barColorPreCache.setFill()
+      path.fill()
+      NSGraphicsContext.restoreGraphicsState()
+    }
 
     // draw right
     NSGraphicsContext.saveGraphicsState()
