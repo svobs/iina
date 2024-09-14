@@ -522,9 +522,9 @@
                                                             <rect key="frame" x="20" y="357" width="320" height="42"/>
                                                             <subviews>
                                                                 <slider horizontalHuggingPriority="1" verticalHuggingPriority="700" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="UWh-M9-5Nw" userLabel="SpeedSlider Horizontal Tick Slider">
-                                                                    <rect key="frame" x="-2" y="10" width="240" height="20"/>
+                                                                    <rect key="frame" x="-2" y="10" width="247" height="20"/>
                                                                     <constraints>
-                                                                        <constraint firstAttribute="width" constant="236" id="oce-0K-3Eq"/>
+                                                                        <constraint firstAttribute="width" constant="243" id="oce-0K-3Eq"/>
                                                                     </constraints>
                                                                     <sliderCell key="cell" controlSize="small" continuous="YES" refusesFirstResponder="YES" alignment="left" maxValue="24" doubleValue="8" tickMarkPosition="below" numberOfTickMarks="25" sliderType="linear" id="qxp-Lt-D6o"/>
                                                                     <connections>
@@ -559,7 +559,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Njq-za-TIf" userLabel="4xLabel Text Field">
-                                                                    <rect key="frame" x="148" y="0.0" width="19" height="11"/>
+                                                                    <rect key="frame" x="153" y="0.0" width="19" height="11"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="4x" id="PLX-gY-e0h">
                                                                         <font key="font" metaFont="label" size="9"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -567,7 +567,7 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mjX-Jf-925" userLabel="16xLabel Text Field">
-                                                                    <rect key="frame" x="218" y="0.0" width="20" height="11"/>
+                                                                    <rect key="frame" x="225" y="0.0" width="20" height="11"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="16x" id="p63-Nx-yJZ">
                                                                         <font key="font" metaFont="label" size="9"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -575,10 +575,10 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="100" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sIs-a1-rGR" userLabel="SpeedEdit Text Field">
-                                                                    <rect key="frame" x="244" y="8" width="65" height="24"/>
+                                                                    <rect key="frame" x="251" y="8" width="58" height="24"/>
                                                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" usesSingleLineMode="YES" bezelStyle="round" id="Mav-NA-RfN" userLabel="SpeedEdit Text Field Cell">
                                                                         <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="55S-dl-9lV">
-                                                                            <real key="minimum" value="0.01"/>
+                                                                            <real key="minimum" value="0.001"/>
                                                                         </numberFormatter>
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1030,7 +1030,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
                                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="oVx-Sp-Lhl" userLabel="AudioTab Clip View">
                                             <rect key="frame" x="0.0" y="0.0" width="360" height="827"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="NZU-RD-Dm3" userLabel="AudioTab Flipped View" customClass="FlippedView" customModule="IINA" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="308" width="360" height="519"/>
@@ -1056,7 +1056,7 @@
                                                                     <rect key="frame" x="0.0" y="412" width="360" height="75"/>
                                                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="vgF-KN-yHf" userLabel="AudioTrackTable Clip View">
                                                                         <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <tableView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="FLg-2m-Zaq" userLabel="AudioTrackTable Table View">
                                                                                 <rect key="frame" x="0.0" y="0.0" width="360" height="75"/>

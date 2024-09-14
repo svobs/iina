@@ -404,6 +404,10 @@ extension Double {
     return Double(Int(self * 1e3)) / 1e3
   }
 
+  func truncatedTo5() -> Double {
+    return Double(Int(self * 1e5)) / 1e5
+  }
+
   func roundedTo2() -> Double {
     let scaledUp = self * 1e2
     let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
@@ -457,6 +461,15 @@ fileprivate let fmtDecimalMaxFractionDigits3Truncated: NumberFormatter = {
   fmt.numberStyle = .decimal
   fmt.usesGroupingSeparator = false
   fmt.maximumFractionDigits = 3
+  fmt.roundingMode = .floor
+  return fmt
+}()
+
+fileprivate let fmtDecimalMaxFractionDigits5Truncated: NumberFormatter = {
+  let fmt = NumberFormatter()
+  fmt.numberStyle = .decimal
+  fmt.usesGroupingSeparator = false
+  fmt.maximumFractionDigits = 5
   fmt.roundingMode = .floor
   return fmt
 }()
@@ -519,6 +532,11 @@ extension FloatingPoint {
   /// Formats as String, truncating the number to 3 digits after the decimal, and omitting any trailing zeroes
   var stringTrunc3f: String {
     return fmtDecimalMaxFractionDigits3Truncated.string(for: self)!
+  }
+
+  /// Formats as String, truncating the number to 5 digits after the decimal, and omitting any trailing zeroes
+  var stringTrunc5f: String {
+    return fmtDecimalMaxFractionDigits5Truncated.string(for: self)!
   }
 
   /// Formats as String, rounding the number to 2 digits after the decimal
