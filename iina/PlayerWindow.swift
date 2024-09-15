@@ -74,6 +74,16 @@ class PlayerWindow: NSWindow {
     }
   }
 
+  override func keyUp(with event: NSEvent) {
+    if let responder = firstResponder, let textView = responder as? NSTextView {
+      let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
+      if keySequence == "ENTER" || keySequence == "TAB" {
+        self.endEditing(for: textView)
+        return
+      }
+    }
+  }
+
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     if let playerWinController, playerWinController.isInInteractiveMode, let cropController = playerWinController.cropSettingsView {
       let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
