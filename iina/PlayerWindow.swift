@@ -75,6 +75,8 @@ class PlayerWindow: NSWindow {
   }
 
   override func keyUp(with event: NSEvent) {
+    // The user expects certain keys to end editing of text fields. But all the other controls in the sidebar refuse first responder
+    // status, so we cannot rely on the key-view-loop to end editing. Need to do this explicitly.
     if let responder = firstResponder, let textView = responder as? NSTextView {
       let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
       if keySequence == "ENTER" || keySequence == "TAB" {

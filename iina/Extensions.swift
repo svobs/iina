@@ -392,10 +392,6 @@ extension Double {
     return abs(self - other) <= threshold
   }
 
-  func truncatedTo6() -> Double {
-    return Double(Int(self * 1e6)) / 1e6
-  }
-
   func truncatedTo1() -> Double {
     return Double(Int(self * 10)) / 10
   }
@@ -406,6 +402,17 @@ extension Double {
 
   func truncatedTo5() -> Double {
     return Double(Int(self * 1e5)) / 1e5
+  }
+
+  func truncatedTo6() -> Double {
+    return Double(Int(self * 1e6)) / 1e6
+  }
+
+  func roundedTo1() -> Double {
+    let scaledUp = self * 1e1
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let finalVal = scaledUpRounded / 1e1
+    return finalVal
   }
 
   func roundedTo2() -> Double {
@@ -419,6 +426,13 @@ extension Double {
     let scaledUp = self * 1e3
     let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
     let finalVal = scaledUpRounded / 1e3
+    return finalVal
+  }
+
+  func roundedTo5() -> Double {
+    let scaledUp = self * 1e5
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let finalVal = scaledUpRounded / 1e5
     return finalVal
   }
 }
@@ -470,6 +484,15 @@ fileprivate let fmtDecimalMaxFractionDigits5Truncated: NumberFormatter = {
   fmt.numberStyle = .decimal
   fmt.usesGroupingSeparator = false
   fmt.maximumFractionDigits = 5
+  fmt.roundingMode = .floor
+  return fmt
+}()
+
+fileprivate let fmtDecimalMaxFractionDigits6Truncated: NumberFormatter = {
+  let fmt = NumberFormatter()
+  fmt.numberStyle = .decimal
+  fmt.usesGroupingSeparator = false
+  fmt.maximumFractionDigits = 6
   fmt.roundingMode = .floor
   return fmt
 }()
@@ -537,6 +560,11 @@ extension FloatingPoint {
   /// Formats as String, truncating the number to 5 digits after the decimal, and omitting any trailing zeroes
   var stringTrunc5f: String {
     return fmtDecimalMaxFractionDigits5Truncated.string(for: self)!
+  }
+
+  /// Formats as String, truncating the number to 6 digits after the decimal, and omitting any trailing zeroes
+  var stringTrunc6f: String {
+    return fmtDecimalMaxFractionDigits6Truncated.string(for: self)!
   }
 
   /// Formats as String, rounding the number to 2 digits after the decimal

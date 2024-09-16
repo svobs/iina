@@ -1138,7 +1138,7 @@ class PlayerCore: NSObject {
   /// If `forceResume` is `true`, then always resume if paused; if `false`, never resume if paused;
   /// if `nil`, then resume if paused based on pref setting.
   func setSpeed(_ speed: Double, forceResume: Bool? = nil) {
-    let speedTrunc = speed.truncatedTo3()
+    let speedTrunc = speed.truncatedTo6()
     info.playSpeed = speedTrunc  // set preemptively to keep UI in sync
     mpv.queue.async { [self] in
       log.verbose("Setting speed to \(speedTrunc)")
