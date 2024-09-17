@@ -417,7 +417,7 @@ extension Double {
 
   func roundedTo2() -> Double {
     let scaledUp = self * 1e2
-    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let scaledUpRounded = scaledUp.rounded(.up)
     let finalVal = scaledUpRounded / 1e2
     return finalVal
   }
@@ -434,6 +434,16 @@ extension Double {
     let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
     let finalVal = scaledUpRounded / 1e5
     return finalVal
+  }
+
+  /// Formats this number as a decimal string, using default locale.
+  ///
+  /// This should be used in most places where decimal numbers need to be printed.
+  var string: String {
+    /// Output up to 15 digits after the decimal. This should be good enough for almost all cases, but can be increased in the future.
+    /// (It's not clear what the maximum allowable value for `NumberFormatter.maximumFractionDigits` actually is. Trying to use
+    /// `NSIntegerMax` seems to result in `maximumFractionDigits` being silently set to `6` instead.)
+    return fmtDecimalMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
   }
 }
 
@@ -515,6 +525,18 @@ fileprivate let fmtDecimalMaxFractionDigits6: NumberFormatter = {
   return fmt
 }()
 
+/// Applies to `Double`, `CGFloat`, ...
+fileprivate let fmtDecimalMaxFractionDigits15: NumberFormatter = {
+  let fmt = NumberFormatter()
+  fmt.numberStyle = .decimal
+  fmt.usesGroupingSeparator = true
+  fmt.maximumSignificantDigits = 15
+  fmt.minimumFractionDigits = 0
+  fmt.maximumFractionDigits = 15
+  fmt.usesSignificantDigits = false
+  return fmt
+}()
+
 // Formats a decimal number but will omit trailing zeroes, and will not use commas or other formatting for large numbers
 fileprivate let fmtDecimalOmitTrailingZeroes: NumberFormatter = {
   let fmt = NumberFormatter()
@@ -535,7 +557,6 @@ extension CGSize: CustomStringConvertible {
   }
 }
 
-/// Applies to `Double`, `CGFloat`, ...
 extension FloatingPoint {
   func clamped(to range: Range<Self>) -> Self {
     if self < range.lowerBound {
