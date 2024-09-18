@@ -129,13 +129,13 @@ class PlaySliderCell: NSSliderCell {
     // Draw future cache amount:
     let cacheTime = info.cacheTime
     if cacheTime != 0, 
-        let duration = info.videoDuration, duration.second != 0 {
+        let durationSec = info.playbackDurationSec, durationSec != 0 {
 
       NSGraphicsContext.saveGraphicsState()
 
       let path = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
 
-      let cachePos = Double(cacheTime) / Double(duration.second) * 100
+      let cachePos = Double(cacheTime) / Double(durationSec) * 100
       let cacheWidth = round(rect.width * CGFloat(cachePos / (slider.maxValue - slider.minValue))) + 2;
 
       // draw left
@@ -156,7 +156,7 @@ class PlaySliderCell: NSSliderCell {
     NSGraphicsContext.restoreGraphicsState()
 
     // draw chapters
-    if drawChapters, let totalSec = info.videoDuration?.second {
+    if drawChapters, let totalSec = info.playbackDurationSec {
       let isRetina = controlView?.window?.screen?.backingScaleFactor ?? 1.0 > 1.0
       let scaleFactor = controlView?.window?.screen?.screenScaleFactor ?? 1
       let lineWidth = round(1 + 1 / (isRetina ? (scaleFactor * 0.5) : scaleFactor))

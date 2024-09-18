@@ -392,6 +392,10 @@ extension Double {
     return abs(self - other) <= threshold
   }
 
+  func isBetweenInclusive(_ lowerBound: Double, and upperBound: Double) -> Bool {
+    return self >= lowerBound && self <= upperBound
+  }
+
   func truncatedTo1() -> Double {
     return Double(Int(self * 10)) / 10
   }

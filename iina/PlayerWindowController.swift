@@ -1158,9 +1158,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// - Parameter percent: Position in the video as a percentage of the duration.
   /// - Returns: The position in the video the given percentage represents.
   private func percentToSeconds(_ percent: Double) -> Double {
-    if let duration = player.info.videoDuration?.second {
+    if let duration = player.info.playbackDurationSec {
       return duration * percent / 100
-    } else if let position = player.info.videoPosition?.second {
+    } else if let position = player.info.playbackPositionSec {
       return position * percent / 100
     } else {
       return 0
@@ -3149,7 +3149,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isCoveredByOSD = !osdVisualEffectView.isHidden && isMouseEvent(event, inAnyOf: [osdVisualEffectView])
     let isCoveredBySidebar = isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView])
     let isMouseInPlaySlider = isMouseEvent(event, inAnyOf: [playSlider])
-    guard isMouseInPlaySlider, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.videoDuration else {
+    guard isMouseInPlaySlider, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.playbackDurationSec else {
       hideSeekTimeAndThumbnail()
       return
     }
@@ -3162,9 +3162,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     timePositionHoverLabelHorizontalCenterConstraint.constant = mousePosX
 
     let playbackPositionPercentage = max(0, Double((mousePosX - 3) / (playSlider.frame.width - 6)))
-    let previewTime = duration * playbackPositionPercentage
-    if timePositionHoverLabel.stringValue != previewTime.stringRepresentation {
-      timePositionHoverLabel.stringValue = previewTime.stringRepresentation
+    let previewTimeSec = duration * playbackPositionPercentage
+    let stringRepresentation = VideoTime.string(from: previewTimeSec)
+    if timePositionHoverLabel.stringValue != stringRepresentation {
+      timePositionHoverLabel.stringValue = stringRepresentation
     }
     timePositionHoverLabel.isHidden = false
 
@@ -3178,7 +3179,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       thumbnailPeekView.isHidden = true
       return
     }
-    thumbnailPeekView.displayThumbnail(forTime: previewTime, originalPosX: originalPosX, player, currentLayout,
+    thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: originalPosX, player, currentLayout,
                                        currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
                                        isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
   }
@@ -3381,13 +3382,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded, player.info.isFileLoaded || player.info.isRestoring else { return }
     // The mpv documentation for the duration property indicates mpv is not always able to determine
     // the video duration in which case the property is not available.
-    guard let duration = player.info.videoDuration, let pos = player.info.videoPosition else { return }
+    guard let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec else { return }
 
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
     setOSDViews()
 
     // Update playback position slider in OSC:
-    let percentage = (pos.second / duration.second) * 100
+    let percentage = (pos / duration) * 100
     [leftLabel, rightLabel].forEach { $0.updateText(with: duration, given: pos) }
     playSlider.updateTo(percentage: percentage)
 
@@ -3487,9 +3488,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// - Parameter seconds: Position in the video as seconds from start.
   /// - Returns: The percent of the video the given position represents.
   private func secondsToPercent(_ seconds: Double) -> Double {
-    if let duration = player.info.videoDuration?.second {
+    if let duration = player.info.playbackDurationSec {
       return duration == 0 ? 0 : seconds / duration * 100
-    } else if let position = player.info.videoPosition?.second {
+    } else if let position = player.info.playbackPositionSec {
       return position == 0 ? 0 : seconds / position * 100
     } else {
       return 0
@@ -3706,11 +3707,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     timePositionHoverLabelHorizontalCenterConstraint.constant = sender.knobPointPosition() - playSlider.frame.origin.x
 
     // update text of time label
-    let seekTime = player.info.videoDuration! * percentage * 0.01
+    let seekTimeSec = player.info.playbackDurationSec! * percentage * 0.01
+    let seekTimeString = VideoTime.string(from: seekTimeSec)
     if log.isTraceEnabled {
-      log.trace("PlaySliderDidChange: setting slider position time label to \(seekTime.stringRepresentation.quoted)")
+      log.trace("PlaySliderDidChange: setting slider position time label to \(seekTimeString.quoted)")
     }
-    timePositionHoverLabel.stringValue = seekTime.stringRepresentation
+    timePositionHoverLabel.stringValue = seekTimeString
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

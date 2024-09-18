@@ -308,9 +308,9 @@ fileprivate class StatusAPI: JavascriptAPI, CoreSubAPIExportable {
     case "idle":
       return player!.info.isIdle
     case "position":
-      return player!.info.videoPosition?.second ?? NSNull()
+      return player!.info.playbackPositionSec ?? NSNull()
     case "duration":
-      return player!.info.videoDuration?.second ?? NSNull()
+      return player!.info.playbackDurationSec ?? NSNull()
     case "speed":
       return player!.info.playSpeed
     case "videoWidth":

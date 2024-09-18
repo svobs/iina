@@ -159,16 +159,20 @@ class PlaybackInfo {
   var abLoopStatus: LoopStatus = .cleared
 
   var playSpeed: Double = 1.0
-  var videoPosition: VideoTime?
-  var videoDuration: VideoTime?
+  var playbackPositionSec: Double?
+  var playbackDurationSec: Double?
 
   var playlist: [MPVPlaylistItem] = []
   var playlistPlayingPos: Int = -1  /// `MPVProperty.playlistPlayingPos`
 
   func constrainVideoPosition() {
-    guard let duration = videoDuration, let position = videoPosition else { return }
-    if position.second < 0 { videoPosition = VideoTime.zero }
-    if position.second > duration.second { videoPosition = duration }
+    guard let playbackDurationSec, let playbackPositionSec else { return }
+    if playbackPositionSec < 0.0 {
+      self.playbackPositionSec = 0.0
+    }
+    if playbackPositionSec > playbackDurationSec { 
+      self.playbackPositionSec = playbackDurationSec
+    }
   }
 
   /** Selected track IDs. Use these (instead of `isSelected` of a track) to check if selected */

@@ -27,6 +27,11 @@ struct VideoTime {
     (Int(second) % 3600) % 60
   }
 
+  static func string(from seconds: Double?, precision: UInt = 0) -> String {
+    guard let seconds else { return Constants.String.videoTimePlaceholder }
+    return VideoTime(seconds).stringRepresentationWithPrecision(precision)
+  }
+
   var stringRepresentation: String {
     stringRepresentationWithPrecision(0)
   }

@@ -91,12 +91,12 @@ class ThumbnailPeekView: NSView {
     }
   }
 
-  func displayThumbnail(forTime previewTime: VideoTime, originalPosX: CGFloat, _ player: PlayerCore,
+  func displayThumbnail(forTime previewTimeSec: Double, originalPosX: CGFloat, _ player: PlayerCore,
                         _ currentLayout: PlayerWindowController.LayoutState, currentControlBar: NSView,
                         _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
 
     guard let thumbnails = player.info.currentPlayback?.thumbnails,
-          let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTime.second) else {
+          let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTimeSec) else {
       isHidden = true
       return
     }

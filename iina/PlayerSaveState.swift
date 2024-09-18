@@ -206,11 +206,11 @@ struct PlayerSaveState {
       props[PropName.playlistPaths.rawValue] = playlistPaths
     }
 
-    if let videoPosition = info.videoPosition?.second {
-      props[PropName.playPosition.rawValue] = videoPosition.stringMaxFrac6
+    if let playbackPositionSec = info.playbackPositionSec {
+      props[PropName.playPosition.rawValue] = playbackPositionSec.stringMaxFrac6
     }
-    if let videoDuration = info.videoDuration?.second {
-      props[PropName.playDuration.rawValue] = videoDuration.stringMaxFrac6
+    if let playbackDurationSec = info.playbackDurationSec {
+      props[PropName.playDuration.rawValue] = playbackDurationSec.stringMaxFrac6
     }
     props[PropName.paused.rawValue] = info.isPaused.yn
 
@@ -620,11 +620,11 @@ struct PlayerSaveState {
     }
 
     // Set these here so that play position slider can be restored to prev position when the window is opened - not after
-    if let videoPosition = double(for: .playPosition) {
-      info.videoPosition = VideoTime(videoPosition)
+    if let playbackPositionSec = double(for: .playPosition) {
+      info.playbackPositionSec = playbackPositionSec
     }
-    if let videoDuration = double(for: .playDuration) {
-      info.videoDuration = VideoTime(videoDuration)
+    if let playbackDurationSec = double(for: .playDuration) {
+      info.playbackDurationSec = playbackDurationSec
     }
     if let paused = bool(for: .paused) {
       info.isPaused = paused
@@ -679,8 +679,8 @@ struct PlayerSaveState {
     }
 
     // Prevent "seek" OSD from appearing unncessarily after loading finishes
-    windowController.osd.lastPlaybackPosition = info.videoPosition?.second
-    windowController.osd.lastPlaybackDuration = info.videoDuration?.second
+    windowController.osd.lastPlaybackPosition = info.playbackPositionSec
+    windowController.osd.lastPlaybackDuration = info.playbackDurationSec
 
     // IINA restore supercedes mpv watch-later.
     // Need to delete the watch-later file before mpv loads it or else things get very buggy
@@ -706,9 +706,9 @@ struct PlayerSaveState {
     let mpv: MPVController = player.mpv
     let log = player.log
 
-    if let videoPosition = string(for: .playPosition) {
-      log.verbose("Restoring playback position: \(videoPosition)")
-      mpv.setString(MPVOption.PlaybackControl.start, videoPosition)
+    if let playbackPositionSec = string(for: .playPosition) {
+      log.verbose("Restoring playback position: \(playbackPositionSec)")
+      mpv.setString(MPVOption.PlaybackControl.start, playbackPositionSec)
     }
 
     // Better to always pause when starting, because there may be a slight delay before it can be enforced later

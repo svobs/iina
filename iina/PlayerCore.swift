@@ -715,8 +715,8 @@ class PlayerCore: NSObject {
       $thumbnailQueueTicket.withLock { $0 += 1 }
 
       // Reset playback state
-      info.videoPosition = nil
-      info.videoDuration = nil
+      info.playbackPositionSec = nil
+      info.playbackDurationSec = nil
       info.playlist = []
 
       info.$matchedSubs.withLock { $0.removeAll() }
@@ -767,7 +767,7 @@ class PlayerCore: NSObject {
       // mpv will play next file automatically when seek to EOF.
       // We clamp to a Range to ensure that we don't try to seek to 100%.
       // however, it still won't work for videos with large keyframe interval.
-      if let duration = info.videoDuration?.second,
+      if let duration = info.playbackDurationSec,
          duration > 0 {
         percent = percent.clamped(to: 0..<100)
       }
@@ -1173,8 +1173,8 @@ class PlayerCore: NSObject {
       }
       windowController.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
-      let osdMsg: OSDMessage = paused ? .pause(videoPosition: info.videoPosition, videoDuration: info.videoDuration) :
-        .resume(videoPosition: info.videoPosition, videoDuration: info.videoDuration)
+      let osdMsg: OSDMessage = paused ? .pause(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec) :
+        .resume(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec)
       sendOSD(osdMsg)
       saveState()  // record the pause state
       if paused {
@@ -2073,7 +2073,7 @@ class PlayerCore: NSObject {
     }
   }
 
-  private func saveToLastPlayedFile(_ url: URL?, duration: VideoTime?, position: VideoTime?) {
+  private func saveToLastPlayedFile(_ url: URL?, duration: Double?, position: Double?) {
     guard Preference.bool(for: .resumeLastPosition) else { return }
     guard let url else {
       log.warn("Cannot save iinaLastPlayedFilePath or iinaLastPlayedFilePosition: url is nil!")
@@ -2083,8 +2083,8 @@ class PlayerCore: NSObject {
     Preference.set(url, for: .iinaLastPlayedFilePath)
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    info.setCachedVideoDurationAndProgress(url.path, (duration: duration?.second, progress: position?.second))
-    if let position = info.videoPosition?.second {
+    info.setCachedVideoDurationAndProgress(url.path, (duration: duration, progress: position))
+    if let position = info.playbackPositionSec {
       Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
       Preference.set(position, for: .iinaLastPlayedFilePosition)
     } else {
@@ -2103,7 +2103,7 @@ class PlayerCore: NSObject {
       log.debug("Write watch later config")
       mpv.command(.writeWatchLaterConfig)
     }
-    saveToLastPlayedFile(info.currentURL, duration: info.videoDuration, position: info.videoPosition)
+    saveToLastPlayedFile(info.currentURL, duration: info.playbackDurationSec, position: info.playbackPositionSec)
 
     guard !isShuttingDown else { return }
 
@@ -2274,12 +2274,12 @@ class PlayerCore: NSObject {
     log.verbose("FileLoaded path=\(info.currentPlayback?.path.pii.quoted ?? "nil")")
 
     let duration = mpv.getDouble(MPVProperty.duration)
-    info.videoDuration = VideoTime(duration)
+    info.playbackDurationSec = duration
     if let filename = mpv.getString(MPVProperty.path) {
       info.setCachedVideoDuration(filename, duration)
     }
     let position = mpv.getDouble(MPVProperty.timePos)
-    info.videoPosition = VideoTime(position)
+    info.playbackPositionSec = position
 
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in
@@ -2353,21 +2353,21 @@ class PlayerCore: NSObject {
     // History thread: update history given new playback URL
     if let url = info.currentURL {
       HistoryController.shared.queue.async { [self] in
-        fileLoaded_historyQueueWork(for: url, mediaDuration: info.videoDuration ?? .zero)
+        fileLoaded_historyQueueWork(for: url, durationSec: info.playbackDurationSec ?? 0.0)
       }
     }
   }
 
   // History task via history queue
-  private func fileLoaded_historyQueueWork(for url: URL, mediaDuration: VideoTime) {
+  private func fileLoaded_historyQueueWork(for url: URL, durationSec: Double) {
     assert(DispatchQueue.isExecutingIn(HistoryController.shared.queue))
 
     // 1. Update main history list
-    HistoryController.shared.add(url, duration: mediaDuration.second)
+    HistoryController.shared.add(url, duration: durationSec)
 
     // 2. IINA's [ancient] "resume last playback" feature
     // Add this now, or else welcome window will fall out of sync with history list
-    saveToLastPlayedFile(url, duration: mediaDuration, position: info.videoPosition)
+    saveToLastPlayedFile(url, duration: durationSec, position: info.playbackPositionSec)
 
     if Preference.bool(for: .recordRecentFiles) {
       // 3. Workaround for File > Recent Documents getting cleared when it shouldn't
@@ -2528,7 +2528,7 @@ class PlayerCore: NSObject {
       videoView.displayActive()
     }
 
-    sendOSD(.seek(videoPosition: info.videoPosition, videoDuration: info.videoDuration))
+    sendOSD(.seek(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec))
   }
 
   func ontopChanged() {
@@ -2809,7 +2809,7 @@ class PlayerCore: NSObject {
   private func autoSearchOnlineSub() {
     if Preference.bool(for: .autoSearchOnlineSub) &&
       !info.isNetworkResource && info.subTracks.isEmpty &&
-      (info.videoDuration?.second ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
+      (info.playbackDurationSec ?? 0.0) >= Preference.double(for: .autoSearchThreshold) * 60 {
       windowController.menuFindOnlineSub(.dummy)
     }
   }
@@ -3033,29 +3033,30 @@ class PlayerCore: NSObject {
 
     let isNetworkStream = info.isNetworkResource
     if isNetworkStream {
-      info.videoDuration = VideoTime(mpv.getDouble(MPVProperty.duration))
+      info.playbackDurationSec = mpv.getDouble(MPVProperty.duration)
     }
     // When the end of a video file is reached mpv does not update the value of the property
     // time-pos, leaving it reflecting the position of the last frame of the video. This is
     // especially noticeable if the onscreen controller time labels are configured to show
     // milliseconds. Adjust the position if the end of the file has been reached.
     let eofReached = mpv.getFlag(MPVProperty.eofReached)
-    if eofReached, let duration = info.videoDuration {
-      info.videoPosition = duration
+    let playbackPositionSec: Double
+    if eofReached, let duration = info.playbackDurationSec {
+      playbackPositionSec = duration
     } else {
-      info.videoPosition = VideoTime(mpv.getDouble(MPVProperty.timePos))
+      playbackPositionSec = mpv.getDouble(MPVProperty.timePos)
     }
+    info.playbackPositionSec = playbackPositionSec
 
     info.constrainVideoPosition()
     if isNetworkStream {
       // Update cache info
       info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
       if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
-        let videoPos = info.videoPosition!.second
         if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
           for seekableRange in seekableRanges {
             if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
-              if videoPos >= rangeStart && videoPos <= rangeEnd {
+              if playbackPositionSec >= rangeStart && playbackPositionSec <= rangeEnd {
                 // TODO: display these regions in the bar
 //                Logger.log("SEEKABLE! YAY")
               }
@@ -3623,8 +3624,8 @@ class NowPlayingInfoManager {
       }
     }
 
-    let duration = activePlayer.info.videoDuration?.second ?? 0
-    let time = activePlayer.info.videoPosition?.second ?? 0
+    let duration = activePlayer.info.playbackDurationSec ?? 0
+    let time = activePlayer.info.playbackPositionSec ?? 0
     let speed = activePlayer.info.playSpeed
 
     info[MPMediaItemPropertyPlaybackDuration] = duration

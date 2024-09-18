@@ -91,15 +91,15 @@ extension PlayerWindowController {
 
     if let newMessage {
       message = newMessage
-    } else if osd.animationState == .shown, let duration = player.info.videoDuration, let pos = player.info.videoPosition {
+    } else if osd.animationState == .shown, let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec {
       // If the OSD is visible and is showing playback position, keep its displayed time up to date:
       switch osd.lastDisplayedMsg {
       case .pause:
-        message = .pause(videoPosition: pos, videoDuration: duration)
+        message = .pause(playbackPositionSec: pos, playbackDurationSec: duration)
       case .resume:
-        message = .resume(videoPosition: pos, videoDuration: duration)
+        message = .resume(playbackPositionSec: pos, playbackDurationSec: duration)
       case .seek(_, _):
-        message = .seek(videoPosition: pos, videoDuration: duration)
+        message = .seek(playbackPositionSec: pos, playbackDurationSec: duration)
       default:
         message = nil
       }
@@ -153,8 +153,8 @@ extension PlayerWindowController {
 
       // data for mustache redering
       let osdData: [String: String] = [
-        "duration": player.info.videoDuration?.stringRepresentation ?? Constants.String.videoTimePlaceholder,
-        "position": player.info.videoPosition?.stringRepresentation ?? Constants.String.videoTimePlaceholder,
+        "duration": VideoTime.string(from: player.info.playbackDurationSec),
+        "position": VideoTime.string(from: player.info.playbackPositionSec),
         "currChapter": (player.mpv.getInt(MPVProperty.chapter) + 1).description,
         "chapterCount": player.info.chapters.count.description
       ]
@@ -288,8 +288,8 @@ extension PlayerWindowController {
         if case .frameStep = osd.lastDisplayedMsg { return }
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
-      player.updatePlaybackTimeInfo()  // need to call this to update info.videoPosition, info.videoDuration
-      guard compareAndSetIfNewPlaybackTime(position: player.info.videoPosition?.second, duration: player.info.videoDuration?.second) else {
+      player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
+      guard compareAndSetIfNewPlaybackTime(position: player.info.playbackPositionSec, duration: player.info.playbackDurationSec) else {
         // Is redundant msg; discard
         return
       }
@@ -299,9 +299,9 @@ extension PlayerWindowController {
         if case .frameStep = osd.lastDisplayedMsg { return }
         if case .frameStepBack = osd.lastDisplayedMsg { return }
       }
-      player.updatePlaybackTimeInfo()  // need to call this to update info.videoPosition, info.videoDuration
-      osd.lastPlaybackPosition = player.info.videoPosition?.second
-      osd.lastPlaybackDuration = player.info.videoDuration?.second
+      player.updatePlaybackTimeInfo()  // need to call this to update info.playbackPositionSec, info.playbackDurationSec
+      osd.lastPlaybackPosition = player.info.playbackPositionSec
+      osd.lastPlaybackDuration = player.info.playbackDurationSec
     case .crop(let newCropLabel):
       if newCropLabel == AppData.noneCropIdentifier && !isInInteractiveMode && player.info.videoFiltersDisabled[Constants.FilterLabel.crop] != nil {
         log.verbose("Ignoring request to show OSD crop 'None': looks like user starting to edit an existing crop")
