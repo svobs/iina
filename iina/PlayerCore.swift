@@ -1127,7 +1127,7 @@ class PlayerCore: NSObject {
     mpv.setInt(name, index)
     reloadSelectedTracks(silent: silent)
   }
-
+  
   func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {
     mpv.queue.async { [self] in
       _setTrack(index, forType: forType, silent: silent)
