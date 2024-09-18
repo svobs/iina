@@ -231,7 +231,7 @@ enum OSDMessage {
         )
       }
 
-      let delayString = abs(value).stringMaxFrac6
+      let delayString = abs(value).string
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %@s Later"),
@@ -248,7 +248,7 @@ enum OSDMessage {
           .withProgress(0.5))
       }
 
-      let delayString = abs(value).stringMaxFrac6
+      let delayString = abs(value).string
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %@s Later"),
@@ -271,7 +271,7 @@ enum OSDMessage {
                 .withProgress(0.5))
       }
 
-      let delayString = abs(value).stringMaxFrac6
+      let delayString = abs(value).string
       let str: String
       if value > 0.0 {
         str = String(format: NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %@s Later"),
