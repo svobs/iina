@@ -1127,7 +1127,7 @@ class PlayerCore: NSObject {
     mpv.setInt(name, index)
     reloadSelectedTracks(silent: silent)
   }
-  
+
   func setTrack(_ index: Int, forType: MPVTrack.TrackType, silent: Bool = false) {
     mpv.queue.async { [self] in
       _setTrack(index, forType: forType, silent: silent)
@@ -2187,10 +2187,10 @@ class PlayerCore: NSObject {
       // update existing entry
       existingMedia.playlistPos = mediaFromPath.playlistPos
       existingMedia.state = mediaFromPath.state
-      log.verbose("FileStarted existing playbackPath=\(path.pii.quoted),  PL#=\(mediaFromPath.playlistPos)")
+      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(mediaFromPath.playlistPos)")
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted new playbackPath=\(path.pii.quoted), PL#=\(mediaFromPath.playlistPos)")
+      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(mediaFromPath.playlistPos)")
       info.currentPlayback = mediaFromPath
     }
 
@@ -2522,7 +2522,6 @@ class PlayerCore: NSObject {
   func seeking() {
     log.trace("Seeking")
     DispatchQueue.main.async { [self] in
-      info.isSeeking = true
       // When playback is paused the display link may be shutdown in order to not waste energy.
       // It must be running when seeking to avoid slowdowns caused by mpv waiting for IINA to call
       // mpv_render_report_swap.
@@ -2549,7 +2548,6 @@ class PlayerCore: NSObject {
     log.debug("Playback restarted")
 
     info.isIdle = false
-    info.isSeeking = false
 
     DispatchQueue.main.async { [self] in
       windowController.updateUI()
@@ -3052,7 +3050,23 @@ class PlayerCore: NSObject {
     if isNetworkStream {
       // Update cache info
       info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
-      info.cacheUsed = ((mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any])?["fw-bytes"] as? Int) ?? 0
+      if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
+        let videoPos = info.videoPosition!.second
+        if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
+          for seekableRange in seekableRanges {
+            if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
+              if videoPos >= rangeStart && videoPos <= rangeEnd {
+                // TODO: display these regions in the bar
+//                Logger.log("SEEKABLE! YAY")
+              }
+            }
+          }
+
+        }
+        if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
+          info.cacheUsed = cacheUsed
+        }
+      }
       info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
       info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
       info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)

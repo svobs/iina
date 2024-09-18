@@ -35,11 +35,12 @@ extension PlayerWindowController {
     }
     // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
     var context: NSViewController? = nil {
-      didSet {
-        if let context {
-          log.verbose("Updated osd.context to: \(context)")
+      willSet {
+        guard newValue != context else { return }
+        if let newValue {
+          log.verbose("Updating osd.context to: \(newValue)")
         } else {
-          log.verbose("Updated osd.context to: nil")
+          log.verbose("Updating osd.context to: nil")
         }
       }
     }
@@ -414,7 +415,9 @@ extension PlayerWindowController {
   func hideOSD(immediately: Bool = false, refreshSyncUITimer: Bool = true) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
-    log.verbose("Hiding OSD")
+    if osd.animationState != .hidden {
+      log.verbose("Hiding OSD")
+    }
     osd.animationState = .willHide
     osd.isShowingPersistentOSD = false
     osd.context = nil

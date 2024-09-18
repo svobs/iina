@@ -3517,7 +3517,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if player.info.isNetworkResource {
       bufferIndicatorView.isHidden = false
-      bufferSpin.startAnimation(nil)
+      bufferSpin.startAnimation(self)
       bufferProgressLabel.stringValue = NSLocalizedString("main.opening_stream", comment:"Opening stream…")
       bufferDetailLabel.stringValue = ""
     } else {
@@ -3529,19 +3529,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isNotYetLoaded = (player.info.currentPlayback?.state.isNotYet(.loaded) ?? false)
     // Indicator should only be shown for network resources (AKA streaming media).
     // When media is not yet loaded, mpv does not indicate it is paused for cache. Assume it is.
-    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || player.info.isSeeking || isNotYetLoaded)
+    let needShowIndicator = player.info.isNetworkResource && (player.info.pausedForCache || isNotYetLoaded)
 
     // Hide videoView so that prev media (if any) is not seen while loading current media
     videoView.isHidden = needShowIndicator && isNotYetLoaded
 
     if needShowIndicator {
+      // FIXME: cacheUsed always returns 0
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
       let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheSpeed)
       let bufferingState = player.info.bufferingState
       bufferIndicatorView.isHidden = false
       bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %d%%"), bufferingState)
       bufferDetailLabel.stringValue = "\(usedStr)B (\(speedStr)/s)"
+      if !isNotYetLoaded && player.info.cacheSpeed == 0 {
+        bufferSpin.stopAnimation(self)
+      } else {
+        bufferSpin.startAnimation(self)
+      }
     } else {
+      bufferSpin.stopAnimation(self)
       bufferIndicatorView.isHidden = true
     }
   }

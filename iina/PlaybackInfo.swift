@@ -58,8 +58,6 @@ class PlaybackInfo {
   var shouldAutoLoadFiles: Bool = false
   var isMatchingSubtitles = false
 
-  var isSeeking: Bool = false
-
   // -- PERSISTENT PROPERTIES BEGIN --
 
   var isPaused: Bool = false {

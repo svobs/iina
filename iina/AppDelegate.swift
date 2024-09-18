@@ -1331,7 +1331,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.openFileCalled = true
 
     DispatchQueue.main.async { [self] in
-      Logger.log("Opening \(urls.count) files")
+      Logger.log.debug("Opening URLs (count: \(urls.count))")
       // open pending files
       let player = PlayerCoreManager.shared.getActiveOrCreateNew()
       startup.wcForOpenFile = player.windowController

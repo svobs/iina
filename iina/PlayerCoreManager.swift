@@ -146,9 +146,10 @@ class PlayerCoreManager {
   private func _getIdleOrCreateNew() -> PlayerCore {
     var core: PlayerCore
     if let idleCore = _findIdlePlayerCore() {
-      Logger.log("Found idle player: #\(idleCore.label)")
+      Logger.log.debug("Found idle player: #\(idleCore.label)")
       core = idleCore
     } else {
+      Logger.log.debug("No idle player found. Will create new")
       core = _createNewPlayerCore()
     }
     return core
