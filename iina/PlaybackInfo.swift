@@ -377,6 +377,10 @@ class PlaybackInfo {
       log.verbose("Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)")
       return nil
     }
+    guard Utility.playableFileExt.contains(url.absoluteString.lowercasedPathExtension) else {
+      log.verbose("Skipping ffMeta check; not a playable file URL: \(url.absoluteString.pii.quoted)")
+      return nil
+    }
 
     var missed = false
     var ffMeta = getCachedFFVideoMeta(forURL: url)
