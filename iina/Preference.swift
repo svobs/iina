@@ -143,7 +143,9 @@ struct Preference {
 
     static let playlistAutoAdd = Key("playlistAutoAdd")
     static let playlistAutoPlayNext = Key("playlistAutoPlayNext")
+    /// "Show artist and track name for audio files when available"
     static let playlistShowMetadata = Key("playlistShowMetadata")
+    /// Same as `playlistShowMetadata` but "only in music mode"
     static let playlistShowMetadataInMusicMode = Key("playlistShowMetadataInMusicMode")
 
     // MARK: - Keys: UI

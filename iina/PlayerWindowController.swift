@@ -472,9 +472,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         doubleClickAction = Preference.MouseClickAction(rawValue: newValue)!
       }
     case PK.playlistShowMetadata.rawValue, PK.playlistShowMetadataInMusicMode.rawValue, PK.shortenFileGroupsInPlaylist.rawValue:
-      if player.isPlaylistVisible {
-        player.windowController.playlistView.playlistTableView.reloadData()
-      }
+      // Reload now, even if not visible. Don't nitpick.
+      player.windowController.playlistView.playlistTableView.reloadData()
     case PK.autoSwitchToMusicMode.rawValue:
       player.overrideAutoMusicMode = false
 

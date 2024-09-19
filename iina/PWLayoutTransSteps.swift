@@ -1026,6 +1026,12 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isTogglingMusicMode, Preference.bool(for: .playlistShowMetadataInMusicMode) {
+      /// Need to toggle music metadata due to music mode switch.
+      /// Do this even if playlist is not visible now, because it will not be be reloaded when toggled.
+      playlistView.reloadPlaylistRows()
+    }
+
     refreshHidesOnDeactivateStatus()
 
     if !transition.isInitialLayout {

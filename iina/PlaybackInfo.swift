@@ -451,6 +451,12 @@ class PlaybackInfo {
     }
   }
 
+  func getCachedMetadata(forFilename filename: String) -> (artist: String, title: String)? {
+    guard let metadata = getCachedMetadata(filename) else { return nil }
+    guard let artist = metadata.artist, let title = metadata.title else { return nil }
+    return (artist, title)
+  }
+
   func setCachedMetadata(_ file: String, _ value: (title: String?, album: String?, artist: String?)) {
     infoLock.withLock {
       cachedMetadata[file] = value
