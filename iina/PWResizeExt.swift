@@ -122,8 +122,8 @@ extension PlayerWindowController {
       return
     }
 
-    guard currentPlayback.isNetworkResource || currentPlayback.isFileLoaded else {
-      log.verbose("[applyVideoGeo] Aborting: file not done loading & is not streaming")
+    guard currentPlayback.state.isAtLeast(.loaded) else {
+      log.verbose("[applyVideoGeo] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource)")
       aborted = true
       return
     }

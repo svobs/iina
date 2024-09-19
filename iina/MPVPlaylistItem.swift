@@ -10,7 +10,7 @@ import Foundation
 
 class MPVPlaylistItem {
 
-  /** Actually this is the path. Use `filename` to conform mpv API's naming. */
+  /** Actually this is the URL path. Using `filename` to conform mpv API's naming. */
   var filename: String
 
   /** Title or the real filename */

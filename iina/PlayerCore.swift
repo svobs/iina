@@ -1575,10 +1575,9 @@ class PlayerCore: NSObject {
 
     var addedCurrentItem = false
 
-    log.debug("Auto-adding \(pathList.count) files into playlist")
     for path in pathList {
       guard !isStopping else { return }
-      if path == info.currentURL?.path {
+      if path == info.currentPlayback?.path {
         addedCurrentItem = true
       } else if addedCurrentItem {
         _addToPlaylist(path)
@@ -2228,7 +2227,7 @@ class PlayerCore: NSObject {
     // Cannot restore playlist until after fileStarted event & mpv has a position for current item
     if info.isRestoring, let priorState = info.priorState,
        let playlistPathList = priorState.properties[PlayerSaveState.PropName.playlistPaths.rawValue] as? [String] {
-      // FIXME: what about network URLs?
+      log.debug("Restoring \(playlistPathList.count) items into playlist")
       _addToPlaylist(pathListIncludingCurrent: playlistPathList)
 
       /// Launches background task which scans video files and collects video size metadata using ffmpeg
@@ -3543,6 +3542,14 @@ class PlayerCore: NSObject {
    It may take some time to run this method, so it should be used in background.
    */
   func refreshCachedVideoInfo(forVideoPath path: String) {
+    guard let url = Playback.url(fromPath: path) else {
+      log.debug("[refreshCachedVideoInfo] Could not create URL from path, skipping: \(path.pii.quoted)")
+      return
+    }
+    guard url.isFileURL else {
+      log.verbose("[refreshCachedVideoInfo] Not a file; skipping: \(path.pii.quoted)")
+      return
+    }
     guard let dict = FFmpegController.probeVideoInfo(forFile: path) else { return }
     let progress = Utility.playbackProgressFromWatchLater(path.md5)
     self.info.setCachedVideoDurationAndProgress(path, (

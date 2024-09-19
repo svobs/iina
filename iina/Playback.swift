@@ -87,9 +87,7 @@ class Playback: CustomStringConvertible {
   }
 
   convenience init?(path: String, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
-    let url = path.contains("://") ?
-    URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path) :
-    URL(fileURLWithPath: path)
+    let url = Playback.url(fromPath: path)
     guard let url else { return nil }
     self.init(url: url, playlistPos: playlistPos, state: state)
   }
@@ -100,6 +98,14 @@ class Playback: CustomStringConvertible {
       return "-"
     } else {
       return url.isFileURL ? url.path : url.absoluteString
+    }
+  }
+
+  static func url(fromPath path: String) -> URL? {
+    if path.contains("://") {
+      return URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path)
+    } else {
+      return URL(fileURLWithPath: path)
     }
   }
 }
