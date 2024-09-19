@@ -1567,8 +1567,7 @@ class PlayerCore: NSObject {
 
   /// Adds all the media in `pathList` to the current playlist.
   /// This checks whether the currently playing item is in the list, so that it may end up in the middle of the playlist.
-  /// Also note that each item in `pathList` may be either a file path or a
-  /// network URL.
+  /// Also note that each item in `pathList` may be either a file path or a network URL.
   func _addToPlaylist(pathListIncludingCurrent pathList: [String]) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
@@ -2331,6 +2330,7 @@ class PlayerCore: NSObject {
     currentPlayback.state = .loaded
 
     reloadSelectedTracks(silent: true)
+    _reloadPlaylist()  // Need to do this when opening a playlist!
     _reloadChapters()
     syncAbLoop()
     // Done syncing tracks
@@ -2491,10 +2491,12 @@ class PlayerCore: NSObject {
 
   func idleActiveChanged() {
     let isFileLoaded = info.isFileLoaded
-    log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn), playerState=\(state))")
-    if receivedEndFileWhileLoading && !isFileLoaded {
-      log.error("Received fileEnded + 'idle-active' from mpv while loading \(info.currentURL?.path.pii.quoted ?? "nil"). Will display alert to user and close window")
-      errorOpeningFileAndClosePlayerWindow(url: info.currentURL)
+    let eofWhileLoading = receivedEndFileWhileLoading
+    log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state))")
+    /// Make sure to check that `info.currentPlayback != nil` before outputting error
+    if eofWhileLoading, let playback = info.currentPlayback, playback.isFileLoaded {
+      log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window")
+      errorOpeningFileAndClosePlayerWindow(url: playback.url)
     } else if isFileLoaded || state.isAtLeast(.stopping) {
       // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
