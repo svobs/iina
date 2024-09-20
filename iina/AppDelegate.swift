@@ -27,6 +27,8 @@ class Startup {
 
   var state: OpenWindowsState = .stillEnqueuing
 
+  var restoreTimer: Timer? = nil
+
   /**
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
    Mainly used to distinguish normal launches from others triggered by drag-and-dropping files.
@@ -48,6 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// The `AppDelegate` singleton object.
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
+  // MARK: Properties
   var startup = Startup()
   var isShowingOpenFileWindow = false
 
@@ -66,13 +69,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     .resumeLastPosition,
 //    .hideWindowsWhenInactive, // TODO: #1, see below
   ]
-
-  /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
-  ///
-  /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
-  /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
-  /// the provider is slow to respond to the logout request.
-  private let terminationTimeout: TimeInterval = 10
 
   // Windows
 
@@ -112,19 +108,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return PreferenceWindowController(viewControllers: list)
   }()
 
-  // MARK: Other components
-
   // Need to store these somewhere which isn't only inside a struct.
   // Swift doesn't seem to count them as strong references
   private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
   private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
 
   /// Whether the shutdown sequence timed out.
-  private var timedOut = false
+  private var shutdownTimedOut = false
 
   @IBOutlet var menuController: MenuController!
 
   @IBOutlet weak var dockMenu: NSMenu!
+
+  deinit {
+    ObjcUtils.silenced {
+      for key in self.observedPrefKeys {
+        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
+      }
+    }
+  }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let change = change else { return }
@@ -175,7 +177,84 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  // MARK: - FFmpeg version parsing
+
+  /// Extracts the major version number from the given FFmpeg encoded version number.
+  ///
+  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MAJOR`.
+  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
+  /// - Returns: The major version number
+  private static func avVersionMajor(_ version: UInt32) -> UInt32 {
+    version >> 16
+  }
+
+  /// Extracts the minor version number from the given FFmpeg encoded version number.
+  ///
+  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MINOR`.
+  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
+  /// - Returns: The minor version number
+  private static func avVersionMinor(_ version: UInt32) -> UInt32 {
+    (version & 0x00FF00) >> 8
+  }
+
+  /// Extracts the micro version number from the given FFmpeg encoded version number.
+  ///
+  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MICRO`.
+  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
+  /// - Returns: The micro version number
+  private static func avVersionMicro(_ version: UInt32) -> UInt32 {
+    version & 0xFF
+  }
+
+  /// Forms a string representation from the given FFmpeg encoded version number.
+  ///
+  /// FFmpeg returns the version number of its libraries encoded into an unsigned integer. The FFmpeg source
+  /// `libavutil/version.h` describes FFmpeg's versioning scheme and provides C macros for operating on encoded
+  /// version numbers. Since the macros can't be used in Swift code we've had to code equivalent functions in Swift.
+  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
+  /// - Returns: A string containing the version number.
+  private static func versionAsString(_ version: UInt32) -> String {
+    let major = AppDelegate.avVersionMajor(version)
+    let minor = AppDelegate.avVersionMinor(version)
+    let micro = AppDelegate.avVersionMicro(version)
+    return "\(major).\(minor).\(micro)"
+  }
+
   // MARK: - Logs
+
+  private func logAllAppDetails() {
+    // Start the log file by logging the version of IINA producing the log file.
+    Logger.log(InfoDictionary.shared.printableBuildInfo)
+
+    // The copyright is used in the Finder "Get Info" window which is a narrow window so the
+    // copyright consists of multiple lines.
+    let copyright = InfoDictionary.shared.copyright
+    copyright.enumerateLines { line, _ in
+      Logger.log(line)
+    }
+
+    logDependencyDetails()
+    logBuildDetails()
+    logPlatformDetails()
+  }
+
+  /// Useful to know the versions of significant dependencies that are being used so log that
+  /// information as well when it can be obtained.
+
+  /// The version of mpv is not logged at this point because mpv does not provide a static
+  /// method that returns the version. To obtain version related information you must
+  /// construct a mpv object, which has side effects. So the mpv version is logged in
+  /// applicationDidFinishLaunching to preserve the existing order of initialization.
+  private func logDependencyDetails() {
+    Logger.log("FFmpeg \(String(cString: av_version_info()))")
+    // FFmpeg libraries and their versions in alphabetical order.
+    let libraries: [(name: String, version: UInt32)] = [("libavcodec", avcodec_version()), ("libavformat", avformat_version()), ("libavutil", avutil_version()), ("libswscale", swscale_version())]
+    for library in libraries {
+      // The version of FFmpeg libraries is encoded into an unsigned integer in a proprietary
+      // format which needs to be decoded into a string for display.
+      Logger.log("  \(library.name) \(AppDelegate.versionAsString(library.version))")
+    }
+  }
 
   /// Log details about when and from what sources IINA was built.
   ///
@@ -221,41 +300,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return Preference.bool(for: .receiveBetaUpdate) ? AppData.appcastBetaLink : AppData.appcastLink
   }
 
-  // MARK: - App Delegate
+  // MARK: - Startup
 
   func applicationWillFinishLaunching(_ notification: Notification) {
     // Must setup preferences before logging so log level is set correctly.
     registerUserDefaultValues()
 
     Logger.initLogging()
-    // Start the log file by logging the version of IINA producing the log file.
-    Logger.log(InfoDictionary.shared.printableBuildInfo)
-
-    // The copyright is used in the Finder "Get Info" window which is a narrow window so the
-    // copyright consists of multiple lines.
-    let copyright = InfoDictionary.shared.copyright
-    copyright.enumerateLines { line, _ in
-      Logger.log(line)
-    }
-
-    // Useful to know the versions of significant dependencies that are being used so log that
-    // information as well when it can be obtained.
-
-    // The version of mpv is not logged at this point because mpv does not provide a static
-    // method that returns the version. To obtain version related information you must
-    // construct a mpv object, which has side effects. So the mpv version is logged in
-    // applicationDidFinishLaunching to preserve the existing order of initialization.
-
-    Logger.log("FFmpeg \(String(cString: av_version_info()))")
-    // FFmpeg libraries and their versions in alphabetical order.
-    let libraries: [(name: String, version: UInt32)] = [("libavcodec", avcodec_version()), ("libavformat", avformat_version()), ("libavutil", avutil_version()), ("libswscale", swscale_version())]
-    for library in libraries {
-      // The version of FFmpeg libraries is encoded into an unsigned integer in a proprietary
-      // format which needs to be decoded into a string for display.
-      Logger.log("  \(library.name) \(AppDelegate.versionAsString(library.version))")
-    }
-    logBuildDetails()
-    logPlatformDetails()
+    logAllAppDetails()
 
     Logger.log("App will launch. LaunchID: \(Preference.UIState.launchID)")
 
@@ -297,98 +349,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  private func windowIsReadyToShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-
-    guard let window = notification.object as? NSWindow else { return }
-    guard let wc = window.windowController else {
-      log.error("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!")
-      return
-    }
-
-    if Preference.bool(for: .isRestoreInProgress) {
-      // Still waiting to show
-      startup.wcsReady.insert(wc)
-
-      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
-
-      showWindowsIfReady()
-    } else if !window.isMiniaturized {
-      log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
-      wc.showWindow(window)
-    }
-  }
-
-  private func windowMustCancelShow(_ notification: Notification) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let window = notification.object as? NSWindow else { return }
-    let log = Logger.Subsystem.restore
-
-    guard Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
-
-    // No longer waiting for this window
-    startup.wcsToRestore.removeAll(where: { wc in
-      wc.window!.savedStateName == window.savedStateName
-    })
-
-    showWindowsIfReady()
-  }
-
-  // TODO: refactor to put this all in CommandLineStatus class
-  private func parseCommandLine(_ args: ArraySlice<String>) {
-    var iinaArgs: [String] = []
-    var iinaArgFilenames: [String] = []
-    var dropNextArg = false
-
-    Logger.log("Command-line arguments \("\(args)".pii)")
-    for arg in args {
-      if dropNextArg {
-        dropNextArg = false
-        continue
-      }
-      if arg.first == "-" {
-        let indexAfterDash = arg.index(after: arg.startIndex)
-        if indexAfterDash == arg.endIndex {
-          // single '-'
-          commandLineStatus.isStdin = true
-        } else if arg[indexAfterDash] == "-" {
-          // args starting with --
-          iinaArgs.append(arg)
-        } else {
-          // args starting with -
-          dropNextArg = true
-        }
-      } else {
-        // assume args starting with nothing is a filename
-        iinaArgFilenames.append(arg)
-      }
-    }
-
-    commandLineStatus.parseArguments(iinaArgs)
-    Logger.log("Filenames from args: \(iinaArgFilenames)")
-    Logger.log("Derived mpv properties from args: \(commandLineStatus.mpvArguments)")
-
-    print(InfoDictionary.shared.printableBuildInfo)
-
-    guard !iinaArgFilenames.isEmpty || commandLineStatus.isStdin else {
-      print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
-      print("Please ignore this message if you are running in a debug environment.")
-      return
-    }
-
-    startup.shouldIgnoreOpenFile = true
-    commandLineStatus.isCommandLine = true
-    commandLineStatus.filenames = iinaArgFilenames
-  }
-
-  deinit {
-    ObjcUtils.silenced {
-      for key in self.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
+  private func registerUserDefaultValues() {
+    UserDefaults.standard.register(defaults: [String: Any](uniqueKeysWithValues: Preference.defaultPreference.map { ($0.0.rawValue, $0.1) }))
   }
 
   func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -431,57 +393,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.state = .doneEnqueuing
     // Callbacks may have already fired before getting here. Check again to make sure we don't "drop the ball":
     showWindowsIfReady()
-  }
-
-  private func startFromCommandLine() {
-    var lastPlayerCore: PlayerCore? = nil
-    let getNewPlayerCore = { [self] () -> PlayerCore in
-      let pc = PlayerCoreManager.shared.getIdleOrCreateNew()
-      commandLineStatus.applyMPVArguments(to: pc)
-      lastPlayerCore = pc
-      return pc
-    }
-    if commandLineStatus.isStdin {
-      getNewPlayerCore().openURLString("-")
-    } else {
-      let validFileURLs: [URL] = commandLineStatus.filenames.compactMap { filename in
-        if Regex.url.matches(filename) {
-          return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
-        } else {
-          return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
-        }
-      }
-      guard !validFileURLs.isEmpty else {
-        Logger.log("No valid file URLs provided via command line! Nothing to do", level: .error)
-        return
-      }
-
-      if commandLineStatus.openSeparateWindows {
-        validFileURLs.forEach { url in
-          getNewPlayerCore().openURL(url)
-        }
-      } else {
-        getNewPlayerCore().openURLs(validFileURLs)
-      }
-    }
-
-    if let pc = lastPlayerCore {
-      if commandLineStatus.enterMusicMode {
-        Logger.log("Entering music mode as specified via command line", level: .verbose)
-        if commandLineStatus.enterPIP {
-          // PiP is not supported in music mode. Combining these options is not permitted and is
-          // rejected by iina-cli. The IINA executable must have been invoked directly with
-          // arguments.
-          Logger.log("Cannot specify both --music-mode and --pip", level: .error)
-          // Command line usage error.
-          exit(EX_USAGE)
-        }
-        pc.enterMusicMode()
-      } else if commandLineStatus.enterPIP {
-        Logger.log("Entering PIP as specified via command line", level: .verbose)
-        pc.windowController.enterPIP()
-      }
-    }
   }
 
   private func showWindowsIfReady() {
@@ -555,25 +466,213 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.state = .doneOpening
   }
 
-  func applicationShouldAutomaticallyLocalizeKeyEquivalents(_ application: NSApplication) -> Bool {
-    // Do not re-map keyboard shortcuts based on keyboard position in different locales
-    return false
+  @objc
+  func restoreDidTimeout() {
+    assert(DispatchQueue.isExecutingIn(.main))
   }
 
-  func applicationDidBecomeActive(_ notfication: Notification) {
-    // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
-    // Make sure to add them again if they are missing:
-    for player in PlayerCoreManager.shared.playerCores {
-      if player.windowController.loaded && !player.isShutDown {
-        player.windowController.updateTitle()
+  /// Returns `true` if any windows were restored; `false` otherwise.
+  @discardableResult
+  private func restoreWindowsFromPreviousLaunch() -> Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
+
+    guard Preference.UIState.isRestoreEnabled else {
+      log.debug("Restore is disabled. Wll not restore windows")
+      return false
+    }
+
+    if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
+      log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
+      Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
+      return false
+    }
+
+    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectLaunchStateForRestore()
+    log.verbose("Found \(pastLaunches.count) past launches to restore")
+    if pastLaunches.isEmpty {
+      return false
+    }
+
+    let stopwatch = Utility.Stopwatch()
+
+    let isRestoreApproved: Bool // false means delete restored state
+    if Preference.bool(for: .isRestoreInProgress) {
+      // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
+      // Let user decide whether to try again or delete saved state.
+      log.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
+      isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
+    } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
+      log.verbose("Prompting user whether to restore app state, per pref")
+      isRestoreApproved = Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
+    } else {
+      isRestoreApproved = true
+    }
+
+    if !isRestoreApproved {
+      // Clear out old state. It may have been causing errors, or user wants to start new
+      log.debug("User denied restore. Clearing all saved launch state.")
+      Preference.UIState.clearAllSavedLaunches()
+      Preference.set(false, for: .isRestoreInProgress)
+      return false
+    }
+
+    // If too much time has passed (in particular if user took a long time to respond to confirmation dialog), consider the data stale.
+    // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
+    // Users who are quick with their user interface device probably know what they are doing and will be impatient.
+    let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
+    let savedWindowsBackToFront = Preference.UIState.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
+
+    guard !savedWindowsBackToFront.isEmpty else {
+      log.debug("Will not restore windows: stored window list empty")
+      return false
+    }
+
+    if savedWindowsBackToFront.count == 1 {
+      let onlyWindow = savedWindowsBackToFront[0].saveName
+
+      if onlyWindow == WindowAutosaveName.inspector {
+        // Do not restore this on its own
+        log.verbose("Will not restore windows: only open window was Inspector")
+        return false
       }
+
+      let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
+      if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
+          || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
+          || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
+        log.verbose("Will not restore windows: the only open window was identical to launch action (\(action))")
+        // Skip the prompts below because they are just unnecessary nagging
+        return false
+      }
+    }
+
+    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
+    Preference.set(true, for: .isRestoreInProgress)
+
+    // Add timeout for restoring windows
+    startup.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
+                                                target: self, selector: #selector(self.restoreDidTimeout), userInfo: nil, repeats: false)
+
+    // Show windows one by one, starting at back and iterating to front:
+    for savedWindow in savedWindowsBackToFront {
+      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
+
+      let wc: NSWindowController
+      switch savedWindow.saveName {
+      case .playbackHistory:
+        showHistoryWindow(self)
+        wc = historyWindow
+      case .welcome:
+        showWelcomeWindow()
+        wc = initialWindow
+      case .preferences:
+        showPreferencesWindow(self)
+        wc = preferenceWindowController
+      case .about:
+        showAboutWindow(self)
+        wc = aboutWindow
+      case .openFile:
+        // TODO: persist isAlternativeAction too
+        showOpenFileWindow(isAlternativeAction: true)
+        // No windowController for Open File window; will have to show it immediately
+        // TODO: show with others
+        continue
+      case .openURL:
+        // TODO: persist isAlternativeAction too
+        showOpenURLWindow(isAlternativeAction: true)
+        wc = openURLWindow
+      case .inspector:
+        // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
+        // So just mark it as 'ready' and show with the rest when they are ready.
+        wc = inspector
+        startup.wcsReady.insert(wc)
+      case .videoFilter:
+        showVideoFilterWindow(self)
+        wc = vfWindow
+      case .audioFilter:
+        showAudioFilterWindow(self)
+        wc = afWindow
+      case .logViewer:
+        showLogWindow(self)
+        wc = logWindow
+      case .playerWindow(let id):
+        guard let player = PlayerCoreManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
+        wc = player.windowController
+      case .newFilter, .editFilter, .saveFilter:
+        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
+        continue
+      default:
+        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
+        continue
+      }
+
+      // Rebuild window maps as we go:
+      if savedWindow.isMinimized {
+        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
+      } else {
+        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
+      }
+
+      if savedWindow.isMinimized {
+        // Don't need to wait for wc
+        wc.window?.miniaturize(self)
+      } else {
+        // Add to list of windows to wait for
+        startup.wcsToRestore.append(wc)
+      }
+    }
+
+    return !startup.wcsToRestore.isEmpty
+  }
+
+  private func abortWaitForOpenFilePlayerStartup() {
+    Logger.log.verbose("Aborting wait for Open File player startup")
+    startup.openFileCalled = false
+    startup.wcForOpenFile = nil
+    showWindowsIfReady()
+  }
+
+  // MARK: - Window notifications
+
+  private func windowIsReadyToShow(_ notification: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
+
+    guard let window = notification.object as? NSWindow else { return }
+    guard let wc = window.windowController else {
+      log.error("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!")
+      return
+    }
+
+    if Preference.bool(for: .isRestoreInProgress) {
+      // Still waiting to show
+      startup.wcsReady.insert(wc)
+
+      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
+
+      showWindowsIfReady()
+    } else if !window.isMiniaturized {
+      log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
+      wc.showWindow(window)
     }
   }
 
-  func applicationWillResignActive(_ notfication: Notification) {
-  }
+  private func windowMustCancelShow(_ notification: Notification) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard let window = notification.object as? NSWindow else { return }
+    let log = Logger.Subsystem.restore
 
-  // MARK: - Opening/restoring windows
+    guard Preference.bool(for: .isRestoreInProgress) else { return }
+    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
+
+    // No longer waiting for this window
+    startup.wcsToRestore.removeAll(where: { wc in
+      wc.window!.savedStateName == window.savedStateName
+    })
+
+    showWindowsIfReady()
+  }
 
   /// The notification provides no way to actually know which sheet is being added.
   /// So prior to opening the sheet, the caller must manually add it using `Preference.UIState.addOpenSheet`.
@@ -683,256 +782,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  private func doLaunchOrReopenAction() {
-    let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
-    Logger.log("Doing actionAfterLaunch: \(action)", level: .verbose)
-
-    switch action {
-    case .welcomeWindow:
-      showWelcomeWindow()
-    case .openPanel:
-      showOpenFileWindow(isAlternativeAction: true)
-    case .historyWindow:
-      showHistoryWindow(self)
-    case .none:
-      break
-    }
-  }
-
-  /// Returns `true` if any windows were restored; `false` otherwise.
-  @discardableResult
-  private func restoreWindowsFromPreviousLaunch() -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-
-    guard Preference.UIState.isRestoreEnabled else {
-      log.debug("Restore is disabled. Wll not restore windows")
-      return false
-    }
-
-    if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
-      log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
-      Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
-      return false
-    }
-
-    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectLaunchStateForRestore()
-    log.verbose("Found \(pastLaunches.count) past launches to restore")
-    if pastLaunches.isEmpty {
-      return false
-    }
-
-    let stopwatch = Utility.Stopwatch()
-
-    let isRestoreApproved: Bool // false means delete restored state
-    if Preference.bool(for: .isRestoreInProgress) {
-      // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
-      // Let user decide whether to try again or delete saved state.
-      log.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
-      isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
-    } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      log.verbose("Prompting user whether to restore app state, per pref")
-      isRestoreApproved = Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
-    } else {
-      isRestoreApproved = true
-    }
-
-    if !isRestoreApproved {
-      // Clear out old state. It may have been causing errors, or user wants to start new
-      log.debug("User denied restore. Clearing all saved launch state.")
-      Preference.UIState.clearAllSavedLaunches()
-      Preference.set(false, for: .isRestoreInProgress)
-      return false
-    }
-
-    // If too much time has passed (in particular if user took a long time to respond to confirmation dialog), consider the data stale.
-    // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
-    // Users who are quick with their user interface device probably know what they are doing and will be impatient.
-    let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
-    let savedWindowsBackToFront = Preference.UIState.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
-
-    guard !savedWindowsBackToFront.isEmpty else {
-      log.debug("Will not restore windows: stored window list empty")
-      return false
-    }
-
-    if savedWindowsBackToFront.count == 1 {
-      let onlyWindow = savedWindowsBackToFront[0].saveName
-
-      if onlyWindow == WindowAutosaveName.inspector {
-        // Do not restore this on its own
-        log.verbose("Will not restore windows: only open window was Inspector")
-        return false
-      }
-
-      let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
-      if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
-          || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
-          || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        log.verbose("Will not restore windows: the only open window was identical to launch action (\(action))")
-        // Skip the prompts below because they are just unnecessary nagging
-        return false
-      }
-    }
-
-    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
-    Preference.set(true, for: .isRestoreInProgress)
-
-    // FIXME: add timeout for restoring windows
-
-    // Show windows one by one, starting at back and iterating to front:
-    for savedWindow in savedWindowsBackToFront {
-      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
-
-      let wc: NSWindowController
-      switch savedWindow.saveName {
-      case .playbackHistory:
-        showHistoryWindow(self)
-        wc = historyWindow
-      case .welcome:
-        showWelcomeWindow()
-        wc = initialWindow
-      case .preferences:
-        showPreferencesWindow(self)
-        wc = preferenceWindowController
-      case .about:
-        showAboutWindow(self)
-        wc = aboutWindow
-      case .openFile:
-        // TODO: persist isAlternativeAction too
-        showOpenFileWindow(isAlternativeAction: true)
-        // No windowController for Open File window; will have to show it immediately
-        // TODO: show with others
-        continue
-      case .openURL:
-        // TODO: persist isAlternativeAction too
-        showOpenURLWindow(isAlternativeAction: true)
-        wc = openURLWindow
-      case .inspector:
-        // Do not show Inspector window. It doesn't support being drawn in the background, but it loads very quickly.
-        // So just mark it as 'ready' and show with the rest when they are ready.
-        wc = inspector
-        startup.wcsReady.insert(wc)
-      case .videoFilter:
-        showVideoFilterWindow(self)
-        wc = vfWindow
-      case .audioFilter:
-        showAudioFilterWindow(self)
-        wc = afWindow
-      case .logViewer:
-        showLogWindow(self)
-        wc = logWindow
-      case .playerWindow(let id):
-        guard let player = PlayerCoreManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
-        wc = player.windowController
-      case .newFilter, .editFilter, .saveFilter:
-        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
-        continue
-      default:
-        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
-        continue
-      }
-
-      // Rebuild window maps as we go:
-      if savedWindow.isMinimized {
-        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
-      } else {
-        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
-      }
-
-      if savedWindow.isMinimized {
-        // Don't need to wait for wc
-        wc.window?.miniaturize(self)
-      } else {
-        // Add to list of windows to wait for
-        startup.wcsToRestore.append(wc)
-      }
-    }
-
-    return !startup.wcsToRestore.isEmpty
-  }
-
-  func showWelcomeWindow() {
-    Logger.log("Showing WelcomeWindow", level: .verbose)
-    initialWindow.openWindow(self)
-  }
-
-  func showOpenFileWindow(isAlternativeAction: Bool) {
-    Logger.log("Showing OpenFileWindow (isAlternativeAction: \(isAlternativeAction))", level: .verbose)
-    isShowingOpenFileWindow = true
-    let panel = NSOpenPanel()
-    panel.setFrameAutosaveName(WindowAutosaveName.openFile.string)
-    panel.title = NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File")
-    panel.canCreateDirectories = false
-    panel.canChooseFiles = true
-    panel.canChooseDirectories = true
-    panel.allowsMultipleSelection = true
-
-    panel.begin(completionHandler: { [self] result in
-      if result == .OK {  /// OK
-        Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
-        if Preference.bool(for: .recordRecentFiles) {
-          let urls = panel.urls  // must call this on the main thread
-          HistoryController.shared.queue.async {
-            HistoryController.shared.noteNewRecentDocumentURLs(urls)
-          }
-        }
-        let playerCore = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
-        if playerCore.openURLs(panel.urls) == 0 {
-          Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
-          Utility.showAlert("nothing_to_open")
-        }
-      } else {  /// Cancel
-        Logger.log("OpenFile: user cancelled", level: .verbose)
-      }
-      // AppKit does not consider a panel to be a window, so it won't fire this. Must call ourselves:
-      windowWillClose(panel)
-      isShowingOpenFileWindow = false
-    })
-  }
-
-  func showOpenURLWindow(isAlternativeAction: Bool) {
-    Logger.log("Showing OpenURLWindow, isAltAction=\(isAlternativeAction.yn)", level: .verbose)
-    openURLWindow.isAlternativeAction = isAlternativeAction
-    openURLWindow.openWindow(self)
-  }
-
-  func showInspectorWindow() {
-    Logger.log("Showing Inspector window", level: .verbose)
-    inspector.openWindow(self)
-  }
-
-  func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard !isTerminating else { return false }
-    guard startup.state == .doneOpening else { return false }
-
-    /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
-    /// Another case is when the welcome window is closed prior to a new player window opening.
-    /// For these reasons we must keep a list of windows which meet our definition of "open", which
-    /// may not match Apple's definition which is more closely tied to `window.isVisible`.
-    guard Preference.UIState.windowsOpen.isEmpty else {
-      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are still in open list: \(Preference.UIState.windowsOpen)", level: .verbose)
-      return false
-    }
-
-    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
-    guard !isShowingOpenFileWindow else { return false }
-
-    if let activePlayer = PlayerCoreManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
-      return false
-    }
-
-    if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
-      Preference.UIState.clearSavedLaunchForThisLaunch()
-      Logger.log("Last window was closed. App will quit due to configured pref", level: .verbose)
-      return true
-    }
-
-    Logger.log("Last window was closed. Will do configured action", level: .verbose)
-    doActionWhenLastWindowWillClose()
-    return false
-  }
+  // MARK: - Window Close
 
   private func windowWillClose(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
@@ -978,6 +828,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     } else if window.isOnlyOpenWindow {
       doActionWhenLastWindowWillClose()
     }
+  }
+
+  func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard !isTerminating else { return false }
+    guard startup.state == .doneOpening else { return false }
+
+    /// Certain events (like when PIP is enabled) can result in this being called when it shouldn't.
+    /// Another case is when the welcome window is closed prior to a new player window opening.
+    /// For these reasons we must keep a list of windows which meet our definition of "open", which
+    /// may not match Apple's definition which is more closely tied to `window.isVisible`.
+    guard Preference.UIState.windowsOpen.isEmpty else {
+      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are still in open list: \(Preference.UIState.windowsOpen)", level: .verbose)
+      return false
+    }
+
+    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
+    guard !isShowingOpenFileWindow else { return false }
+
+    if let activePlayer = PlayerCoreManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
+      return false
+    }
+
+    if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
+      Preference.UIState.clearSavedLaunchForThisLaunch()
+      Logger.log("Last window was closed. App will quit due to configured pref", level: .verbose)
+      return true
+    }
+
+    Logger.log("Last window was closed. Will do configured action", level: .verbose)
+    doActionWhenLastWindowWillClose()
+    return false
   }
 
   private func doActionWhenLastWindowWillClose() {
@@ -1037,11 +919,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  // MARK: Application termination
+  // MARK: - Application termination
 
   @objc
   func shutdownDidTimeout() {
-    timedOut = true
+    shutdownTimedOut = true
     if !PlayerCoreManager.shared.allPlayersShutdown {
       Logger.log("Timed out waiting for players to stop and shut down", level: .warning)
       // For debugging list players that have not terminated.
@@ -1120,7 +1002,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // request taking too long does not represent an error in the shutdown code, whereas the
       // intention of the overall termination timeout is to recover from some sort of hold up in the
       // shutdown sequence that should not occur.
-      OnlineSubtitle.logout(timeout: terminationTimeout - 1)
+      OnlineSubtitle.logout(timeout: Constants.TimeInterval.appTerminationTimeout - 1)
     }
 
     // Close all windows. When a player window is closed it will send a stop command to mpv to stop
@@ -1166,13 +1048,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // investigated.
     var timer: Timer
     if #available(macOS 10.12, *) {
-      timer = Timer(timeInterval: terminationTimeout, repeats: false) { _ in
+      timer = Timer(timeInterval: Constants.TimeInterval.appTerminationTimeout, repeats: false) { _ in
         // Once macOS 10.11 is no longer supported the contents of the method can be inlined in this
         // closure.
         self.shutdownDidTimeout()
       }
     } else {
-      timer = Timer(timeInterval: terminationTimeout, target: self,
+      timer = Timer(timeInterval: Constants.TimeInterval.appTerminationTimeout, target: self,
                     selector: #selector(self.shutdownDidTimeout), userInfo: nil, repeats: false)
     }
 
@@ -1182,7 +1064,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     var observers: [NSObjectProtocol] = []
 
     observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerStopped, object: nil, queue: .main) { note in
-      guard !self.timedOut else {
+      guard !self.shutdownTimedOut else {
         // The player has stopped after IINA already timed out, gave up waiting for players to
         // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
         // queued tasks during application termination even after AppKit has called
@@ -1242,7 +1124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Establish an observer for a player core shutting down.
     observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerShutdown, object: nil, queue: .main) { _ in
-      guard !self.timedOut else {
+      guard !self.shutdownTimedOut else {
         // The player has shutdown after IINA already timed out, gave up waiting for players to
         // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
         // queued tasks during application termination even after AppKit has called
@@ -1261,7 +1143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     // Establish an observer for logging out of the online subtitle provider.
     observers.append(NotificationCenter.default.addObserver(forName: .iinaLogoutCompleted, object: nil, queue: .main) { _ in
-      guard !self.timedOut else {
+      guard !self.shutdownTimedOut else {
         // The request to log out of the online subtitles provider has completed after IINA already
         // timed out, gave up waiting for players to shutdown, and told Cocoa to proceed with
         // termination. This should not occur as the logout request uses a timeout that is shorter
@@ -1294,17 +1176,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return .terminateLater
   }
 
-  func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
-    // Once termination starts subsystems such as mpv are being shutdown. Accessing mpv
-    // once it has been instructed to shutdown can trigger a crash. MUST NOT permit
-    // reopening once termination has started.
-    guard !isTerminating else { return false }
-    guard !hasVisibleWindows && !isShowingOpenFileWindow else { return true }
-    Logger.log("Handle reopen")
-    doLaunchOrReopenAction()
-    return true
-  }
-
   func applicationWillTerminate(_ notification: Notification) {
     Logger.log("App will terminate")
     Logger.closeLogFiles()
@@ -1316,10 +1187,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// Remove all menu items in the given menu and any submenus.
+  ///
+  /// This method recursively descends through the entire tree of menu items removing all items.
+  /// - Parameter menu: Menu to remove items from
+  private func removeAllMenuItems(_ menu: NSMenu) {
+    for item in menu.items {
+      if item.hasSubmenu {
+        removeAllMenuItems(item.submenu!)
+      }
+      menu.removeItem(item)
+    }
+  }
+
+  // MARK: - Open file(s)
+
   func application(_ sender: NSApplication, openFiles filePaths: [String]) {
     Logger.log("application(openFiles:) called with: \(filePaths.map{$0.pii})")
     // if launched from command line, should ignore openFile during launch
-    if startup.shouldIgnoreOpenFile {
+    if startup.state.rawValue < Startup.OpenWindowsState.doneOpening.rawValue, startup.shouldIgnoreOpenFile {
       startup.shouldIgnoreOpenFile = false
       return
     }
@@ -1349,24 +1235,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  /// Method to opt-in to secure restorable state.
-  ///
-  /// From the `Restorable State` section of the [AppKit Release Notes for macOS 14](https://developer.apple.com/documentation/macos-release-notes/appkit-release-notes-for-macos-14#Restorable-State):
-  ///
-  /// Secure coding is automatically enabled for restorable state for applications linked on the macOS 14.0 SDK. Applications that
-  /// target prior versions of macOS should implement `NSApplicationDelegate.applicationSupportsSecureRestorableState()`
-  /// to return`true` so it’s enabled on all supported OS versions.
-  ///
-  /// This is about conformance to [NSSecureCoding](https://developer.apple.com/documentation/foundation/nssecurecoding)
-  /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
-  /// reporting secure coding is not enabled for restorable state.
-  @available(macOS 12.0, *)
-  @MainActor func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
-
   // MARK: - Accept dropped string and URL on Dock icon
 
   @objc
-  func droppedText(_ pboard: NSPasteboard, userData:String, error: NSErrorPointer) {
+  func droppedText(_ pboard: NSPasteboard, userData: String, error: NSErrorPointer) {
     Logger.log("Text dropped on app's Dock icon", level: .verbose)
     guard let url = pboard.string(forType: .string) else { return }
 
@@ -1375,32 +1247,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.wcForOpenFile = player.windowController
     if player.openURLString(url) == 0 {
       abortWaitForOpenFilePlayerStartup()
-    }
-  }
-
-  private func abortWaitForOpenFilePlayerStartup() {
-    Logger.log.verbose("Aborting wait for Open File player startup")
-    startup.openFileCalled = false
-    startup.wcForOpenFile = nil
-    showWindowsIfReady()
-  }
-
-  // MARK: - Dock menu
-
-  func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
-    return dockMenu
-  }
-
-  /// Remove all menu items in the given menu and any submenus.
-  ///
-  /// This method recursively descends through the entire tree of menu items removing all items.
-  /// - Parameter menu: Menu to remove items from
-  private func removeAllMenuItems(_ menu: NSMenu) {
-    for item in menu.items {
-      if item.hasSubmenu {
-        removeAllMenuItems(item.submenu!)
-      }
-      menu.removeItem(item)
     }
   }
 
@@ -1505,7 +1351,76 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  // MARK: - Menu actions
+  // MARK: - App Reopen
+
+  func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+    // Once termination starts subsystems such as mpv are being shutdown. Accessing mpv
+    // once it has been instructed to shutdown can trigger a crash. MUST NOT permit
+    // reopening once termination has started.
+    guard !isTerminating else { return false }
+    guard !hasVisibleWindows && !isShowingOpenFileWindow else { return true }
+    Logger.log("Handle reopen")
+    doLaunchOrReopenAction()
+    return true
+  }
+
+  private func doLaunchOrReopenAction() {
+    let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
+    Logger.log("Doing actionAfterLaunch: \(action)", level: .verbose)
+
+    switch action {
+    case .welcomeWindow:
+      showWelcomeWindow()
+    case .openPanel:
+      showOpenFileWindow(isAlternativeAction: true)
+    case .historyWindow:
+      showHistoryWindow(self)
+    case .none:
+      break
+    }
+  }
+
+  // MARK: - NSApplicationDelegate (other APIs)
+
+  func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+    return dockMenu
+  }
+
+  func applicationShouldAutomaticallyLocalizeKeyEquivalents(_ application: NSApplication) -> Bool {
+    // Do not re-map keyboard shortcuts based on keyboard position in different locales
+    return false
+  }
+
+  /// Method to opt-in to secure restorable state.
+  ///
+  /// From the `Restorable State` section of the [AppKit Release Notes for macOS 14](https://developer.apple.com/documentation/macos-release-notes/appkit-release-notes-for-macos-14#Restorable-State):
+  ///
+  /// Secure coding is automatically enabled for restorable state for applications linked on the macOS 14.0 SDK. Applications that
+  /// target prior versions of macOS should implement `NSApplicationDelegate.applicationSupportsSecureRestorableState()`
+  /// to return`true` so it’s enabled on all supported OS versions.
+  ///
+  /// This is about conformance to [NSSecureCoding](https://developer.apple.com/documentation/foundation/nssecurecoding)
+  /// which protects against object substitution attacks. If an application does not implement this method then a warning will be emitted
+  /// reporting secure coding is not enabled for restorable state.
+  @available(macOS 12.0, *)
+  @MainActor func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+    return true
+  }
+
+  func applicationDidBecomeActive(_ notfication: Notification) {
+    // When using custom window style, sometimes AppKit will remove their entries from the Window menu (e.g. when hiding the app).
+    // Make sure to add them again if they are missing:
+    for player in PlayerCoreManager.shared.playerCores {
+      if player.windowController.loaded && !player.isShutDown {
+        player.windowController.updateTitle()
+      }
+    }
+  }
+
+  func applicationWillResignActive(_ notfication: Notification) {
+  }
+
+  // MARK: - Menu IBActions
 
   @IBAction func openFile(_ sender: AnyObject) {
     Logger.log("Menu - Open File")
@@ -1581,51 +1496,56 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     NSWorkspace.shared.open(URL(string: AppData.websiteLink)!)
   }
 
-  private func registerUserDefaultValues() {
-    UserDefaults.standard.register(defaults: [String: Any](uniqueKeysWithValues: Preference.defaultPreference.map { ($0.0.rawValue, $0.1) }))
+  // MARK: - Other window open methods
+
+  func showWelcomeWindow() {
+    Logger.log("Showing WelcomeWindow", level: .verbose)
+    initialWindow.openWindow(self)
   }
 
-  // MARK: - FFmpeg version parsing
+  func showOpenFileWindow(isAlternativeAction: Bool) {
+    Logger.log("Showing OpenFileWindow (isAlternativeAction: \(isAlternativeAction))", level: .verbose)
+    isShowingOpenFileWindow = true
+    let panel = NSOpenPanel()
+    panel.setFrameAutosaveName(WindowAutosaveName.openFile.string)
+    panel.title = NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File")
+    panel.canCreateDirectories = false
+    panel.canChooseFiles = true
+    panel.canChooseDirectories = true
+    panel.allowsMultipleSelection = true
 
-  /// Extracts the major version number from the given FFmpeg encoded version number.
-  ///
-  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MAJOR`.
-  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
-  /// - Returns: The major version number
-  private static func avVersionMajor(_ version: UInt32) -> UInt32 {
-    version >> 16
+    panel.begin(completionHandler: { [self] result in
+      if result == .OK {  /// OK
+        Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
+        if Preference.bool(for: .recordRecentFiles) {
+          let urls = panel.urls  // must call this on the main thread
+          HistoryController.shared.queue.async {
+            HistoryController.shared.noteNewRecentDocumentURLs(urls)
+          }
+        }
+        let playerCore = PlayerCoreManager.shared.getActiveOrNewForMenuAction(isAlternative: isAlternativeAction)
+        if playerCore.openURLs(panel.urls) == 0 {
+          Logger.log("OpenFile: notifying user there is nothing to open", level: .verbose)
+          Utility.showAlert("nothing_to_open")
+        }
+      } else {  /// Cancel
+        Logger.log("OpenFile: user cancelled", level: .verbose)
+      }
+      // AppKit does not consider a panel to be a window, so it won't fire this. Must call ourselves:
+      windowWillClose(panel)
+      isShowingOpenFileWindow = false
+    })
   }
 
-  /// Extracts the minor version number from the given FFmpeg encoded version number.
-  ///
-  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MINOR`.
-  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
-  /// - Returns: The minor version number
-  private static func avVersionMinor(_ version: UInt32) -> UInt32 {
-    (version & 0x00FF00) >> 8
+  func showOpenURLWindow(isAlternativeAction: Bool) {
+    Logger.log("Showing OpenURLWindow, isAltAction=\(isAlternativeAction.yn)", level: .verbose)
+    openURLWindow.isAlternativeAction = isAlternativeAction
+    openURLWindow.openWindow(self)
   }
 
-  /// Extracts the micro version number from the given FFmpeg encoded version number.
-  ///
-  /// This is a Swift implementation of the FFmpeg macro `AV_VERSION_MICRO`.
-  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
-  /// - Returns: The micro version number
-  private static func avVersionMicro(_ version: UInt32) -> UInt32 {
-    version & 0xFF
-  }
-
-  /// Forms a string representation from the given FFmpeg encoded version number.
-  ///
-  /// FFmpeg returns the version number of its libraries encoded into an unsigned integer. The FFmpeg source
-  /// `libavutil/version.h` describes FFmpeg's versioning scheme and provides C macros for operating on encoded
-  /// version numbers. Since the macros can't be used in Swift code we've had to code equivalent functions in Swift.
-  /// - Parameter version: Encoded version number in FFmpeg proprietary format.
-  /// - Returns: A string containing the version number.
-  private static func versionAsString(_ version: UInt32) -> String {
-    let major = AppDelegate.avVersionMajor(version)
-    let minor = AppDelegate.avVersionMinor(version)
-    let micro = AppDelegate.avVersionMicro(version)
-    return "\(major).\(minor).\(micro)"
+  func showInspectorWindow() {
+    Logger.log("Showing Inspector window", level: .verbose)
+    inspector.openWindow(self)
   }
 
   // MARK: - Recent Documents
@@ -1641,6 +1561,104 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     HistoryController.shared.clearRecentDocuments(sender)
   }
 
+  // MARK: - Command Line
+  // TODO: refactor to put this all in CommandLineStatus class
+  private func parseCommandLine(_ args: ArraySlice<String>) {
+    var iinaArgs: [String] = []
+    var iinaArgFilenames: [String] = []
+    var dropNextArg = false
+
+    Logger.log("Command-line arguments \("\(args)".pii)")
+    for arg in args {
+      if dropNextArg {
+        dropNextArg = false
+        continue
+      }
+      if arg.first == "-" {
+        let indexAfterDash = arg.index(after: arg.startIndex)
+        if indexAfterDash == arg.endIndex {
+          // single '-'
+          commandLineStatus.isStdin = true
+        } else if arg[indexAfterDash] == "-" {
+          // args starting with --
+          iinaArgs.append(arg)
+        } else {
+          // args starting with -
+          dropNextArg = true
+        }
+      } else {
+        // assume args starting with nothing is a filename
+        iinaArgFilenames.append(arg)
+      }
+    }
+
+    commandLineStatus.parseArguments(iinaArgs)
+    Logger.log("Filenames from args: \(iinaArgFilenames)")
+    Logger.log("Derived mpv properties from args: \(commandLineStatus.mpvArguments)")
+
+    print(InfoDictionary.shared.printableBuildInfo)
+
+    guard !iinaArgFilenames.isEmpty || commandLineStatus.isStdin else {
+      print("This binary is not intended for being used as a command line tool. Please use the bundled iina-cli.")
+      print("Please ignore this message if you are running in a debug environment.")
+      return
+    }
+
+    startup.shouldIgnoreOpenFile = true
+    commandLineStatus.isCommandLine = true
+    commandLineStatus.filenames = iinaArgFilenames
+  }
+
+  private func startFromCommandLine() {
+    var lastPlayerCore: PlayerCore? = nil
+    let getNewPlayerCore = { [self] () -> PlayerCore in
+      let pc = PlayerCoreManager.shared.getIdleOrCreateNew()
+      commandLineStatus.applyMPVArguments(to: pc)
+      lastPlayerCore = pc
+      return pc
+    }
+    if commandLineStatus.isStdin {
+      getNewPlayerCore().openURLString("-")
+    } else {
+      let validFileURLs: [URL] = commandLineStatus.filenames.compactMap { filename in
+        if Regex.url.matches(filename) {
+          return URL(string: filename.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? filename)
+        } else {
+          return FileManager.default.fileExists(atPath: filename) ? URL(fileURLWithPath: filename) : nil
+        }
+      }
+      guard !validFileURLs.isEmpty else {
+        Logger.log("No valid file URLs provided via command line! Nothing to do", level: .error)
+        return
+      }
+
+      if commandLineStatus.openSeparateWindows {
+        validFileURLs.forEach { url in
+          getNewPlayerCore().openURL(url)
+        }
+      } else {
+        getNewPlayerCore().openURLs(validFileURLs)
+      }
+    }
+
+    if let pc = lastPlayerCore {
+      if commandLineStatus.enterMusicMode {
+        Logger.log("Entering music mode as specified via command line", level: .verbose)
+        if commandLineStatus.enterPIP {
+          // PiP is not supported in music mode. Combining these options is not permitted and is
+          // rejected by iina-cli. The IINA executable must have been invoked directly with
+          // arguments.
+          Logger.log("Cannot specify both --music-mode and --pip", level: .error)
+          // Command line usage error.
+          exit(EX_USAGE)
+        }
+        pc.enterMusicMode()
+      } else if commandLineStatus.enterPIP {
+        Logger.log("Entering PIP as specified via command line", level: .verbose)
+        pc.windowController.enterPIP()
+      }
+    }
+  }
 }
 
 

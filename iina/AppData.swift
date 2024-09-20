@@ -185,8 +185,17 @@ struct Constants {
     static let infinite = VideoTime(999, 0, 0)
   }
   struct TimeInterval {
-    static let historyTableCompleteFileStatusReload = 600.0
     static let pastLaunchResponseTimeout = 1.0
+    static let restoreWindowsTimeout = 2.0
+
+    static let historyTableCompleteFileStatusReload = 600.0
+
+    /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
+    ///
+    /// Ten seconds was chosen to provide plenty of time for termination and yet not be long enough that users start thinking they will
+    /// need to force quit IINA. As termination may involve logging out of an online subtitles provider it can take a while to complete if
+    /// the provider is slow to respond to the logout request.
+    static let appTerminationTimeout = 10.0
   }
   struct FilterLabel {
     static let crop = "iina_crop"
