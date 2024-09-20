@@ -44,10 +44,10 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   private var currentFilter: MPVFilter?
   private var currentSavedFilter: SavedFilter?
 
-  init(filterType: String, autosaveName: String) {
+  init(filterType: String, _ autosaveName: WindowAutosaveName) {
     self.filterType = filterType
     super.init(window: nil)
-    self.windowFrameAutosaveName = autosaveName
+    self.windowFrameAutosaveName = autosaveName.string
     Logger.log("Init \(windowFrameAutosaveName)", level: .verbose)
   }
 

@@ -165,7 +165,24 @@ class PreferenceWindowController: IINAWindowController {
 
   private var observers: [NSObjectProtocol] = []
 
-  init(viewControllers: [NSViewController & PreferenceWindowEmbeddable]) {
+  init() {
+    var viewControllers: [NSViewController & PreferenceWindowEmbeddable] = [
+      PrefGeneralViewController(),
+      PrefUIViewController(),
+      PrefDataViewController(),
+      PrefCodecViewController(),
+      PrefSubViewController(),
+      PrefNetworkViewController(),
+      PrefControlViewController(),
+      PrefKeyBindingViewController(),
+      PrefAdvancedViewController(),
+      // PrefPluginViewController(),
+      PrefUtilsViewController(),
+    ]
+
+    if IINA_ENABLE_PLUGIN_SYSTEM {
+      viewControllers.insert(PrefPluginViewController(), at: 8)
+    }
     self.viewControllers = viewControllers
     super.init(window: nil)
     self.windowFrameAutosaveName = WindowAutosaveName.preferences.string

@@ -54,6 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   var startup = Startup()
   var isShowingOpenFileWindow = false
 
+  // TODO: roll this into Startup class
   private var commandLineStatus = CommandLineStatus()
 
   private(set) var isTerminating = false
@@ -72,41 +73,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // Windows
 
-  lazy var initialWindow: InitialWindowController = InitialWindowController()
-  lazy var openURLWindow: OpenURLWindowController = OpenURLWindowController()
-  lazy var aboutWindow: AboutWindowController = AboutWindowController()
-  lazy var fontPicker: FontPickerWindowController = FontPickerWindowController()
-  lazy var inspector: InspectorWindowController = InspectorWindowController()
-  lazy var historyWindow: HistoryWindowController = HistoryWindowController()
-  lazy var guideWindow: GuideWindowController = GuideWindowController()
-  lazy var logWindow: LogWindowController = LogWindowController()
+  lazy var initialWindow = InitialWindowController()
+  lazy var openURLWindow = OpenURLWindowController()
+  lazy var aboutWindow = AboutWindowController()
+  lazy var fontPicker = FontPickerWindowController()
+  lazy var inspector = InspectorWindowController()
+  lazy var historyWindow = HistoryWindowController()
+  lazy var guideWindow = GuideWindowController()
+  lazy var logWindow = LogWindowController()
 
-  lazy var vfWindow: FilterWindowController = FilterWindowController(filterType: MPVProperty.vf,
-                                                                     autosaveName: WindowAutosaveName.videoFilter.string)
+  lazy var vfWindow = FilterWindowController(filterType: MPVProperty.vf, .videoFilter)
+  lazy var afWindow = FilterWindowController(filterType: MPVProperty.af, .audioFilter)
 
-  lazy var afWindow: FilterWindowController = FilterWindowController(filterType: MPVProperty.af,
-                                                                     autosaveName: WindowAutosaveName.audioFilter.string)
-
-  lazy var preferenceWindowController: PreferenceWindowController = {
-    var list: [NSViewController & PreferenceWindowEmbeddable] = [
-      PrefGeneralViewController(),
-      PrefUIViewController(),
-      PrefDataViewController(),
-      PrefCodecViewController(),
-      PrefSubViewController(),
-      PrefNetworkViewController(),
-      PrefControlViewController(),
-      PrefKeyBindingViewController(),
-      PrefAdvancedViewController(),
-      // PrefPluginViewController(),
-      PrefUtilsViewController(),
-    ]
-
-    if IINA_ENABLE_PLUGIN_SYSTEM {
-      list.insert(PrefPluginViewController(), at: 8)
-    }
-    return PreferenceWindowController(viewControllers: list)
-  }()
+  lazy var preferenceWindowController = PreferenceWindowController()
 
   // Need to store these somewhere which isn't only inside a struct.
   // Swift doesn't seem to count them as strong references
