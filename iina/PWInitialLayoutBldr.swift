@@ -26,7 +26,7 @@ extension PlayerWindowController {
         "notOpen"
       case .alreadyOpen:
         "alreadyOpen"
-      case .restoring(let playerState):
+      case .restoring:
         "restoring"
       }
     }

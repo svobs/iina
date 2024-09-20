@@ -195,9 +195,9 @@ class MPVController: NSObject {
   /// hardware decoding support on this Mac. This is not comprehensive. This method only covers the recent codecs whose support
   /// for hardware decoding varies among Macs. This merely reduces the dependence upon the FFmpeg fallback to software decoding
   /// feature in some cases.
-  private func adjustCodecWhiteList() {
+  private func adjustCodecWhiteList(userOptions: [[String]]) {
     // Allow the user to override this behavior.
-    guard !userOptionsContains(MPVOption.Video.hwdecCodecs) else {
+    guard !isPresent(MPVOption.Video.hwdecCodecs, in: userOptions) else {
       log.debug("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         will not adjust white list
@@ -265,14 +265,14 @@ class MPVController: NSObject {
   ///
   /// The workaround removes VP9 from the value of the mpv [hwdec-codecs](https://mpv.io/manual/master/#options-hwdec-codecs) option,
   /// the list of codecs eligible for hardware acceleration.
-  private func applyHardwareAccelerationWorkaround() {
+  private func applyHardwareAccelerationWorkaround(userOptions: [[String]]) {
     // The problem is not reproducible under Apple Silicon.
     guard !runningOnAppleSilicon() else {
       log.debug("Running on Apple Silicon, not applying FFmpeg 9599 workaround")
       return
     }
     // Allow the user to override this behavior.
-    guard !userOptionsContains(MPVOption.Video.hwdecCodecs) else {
+    guard !isPresent(MPVOption.Video.hwdecCodecs, in: userOptions) else {
       log.debug("""
         Option \(MPVOption.Video.hwdecCodecs) has been set in advanced settings, \
         not applying FFmpeg 9599 workaround
@@ -342,6 +342,20 @@ class MPVController: NSObject {
     // Create a new mpv instance and an associated client API handle to control the mpv instance.
     mpv = mpv_create()
 
+    let userOptions: [[String]]
+    if Preference.bool(for: .enableAdvancedSettings) {
+      if let opts = Preference.value(for: .userOptions) as? [[String]] {
+        userOptions = opts
+      } else {
+        userOptions = []
+        DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+          Utility.showAlert("extra_option.cannot_read")
+        }
+      }
+    } else {
+      userOptions = []
+    }
+
     // User default settings
 
     if !player.info.isRestoring {
@@ -381,6 +395,11 @@ class MPVController: NSObject {
       }
       let screenshotPath = Preference.string(for: .screenshotFolder)!
       return NSString(string: screenshotPath).expandingTildeInPath
+    }
+
+    if !isPresent(MPVOption.PlaybackControl.hrSeek, in: userOptions) {
+      // Use exact seeks by default
+      mpv_set_option_string(mpv, MPVOption.PlaybackControl.hrSeek, yes_str)
     }
 
     setUserOption(PK.screenshotSaveToFile, type: .other, forName: MPVOption.Screenshot.screenshotDir,
@@ -437,7 +456,7 @@ class MPVController: NSObject {
 
     setUserOption(PK.replayGain, type: .other, forName: MPVOption.Audio.replaygain) { key in
       let value = Preference.integer(for: key)
-      return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? "no"
+      return Preference.ReplayGainOption(rawValue: value)?.mpvString ?? no_str
     }
     setUserOption(PK.replayGainPreamp, type: .float, forName: MPVOption.Audio.replaygainPreamp)
     setUserOption(PK.replayGainClip, type: .bool, forName: MPVOption.Audio.replaygainClip)
@@ -445,7 +464,7 @@ class MPVController: NSObject {
 
     // - Sub
 
-    chkErr(setOptionString(MPVOption.Subtitles.subAuto, "no", level: .verbose))
+    chkErr(setOptionString(MPVOption.Subtitles.subAuto, no_str, level: .verbose))
     chkErr(setOptionalOptionString(MPVOption.Subtitles.subCodepage,
                                    Preference.string(for: .defaultEncoding), level: .verbose))
     player.info.subEncoding = Preference.string(for: .defaultEncoding)
@@ -453,7 +472,7 @@ class MPVController: NSObject {
     let subOverrideHandler: OptionObserverInfo.Transformer = { key in
       let v = Preference.bool(for: .ignoreAssStyles)
       let level: Preference.SubOverrideLevel = Preference.enum(for: .subOverrideLevel)
-      return v ? level.string : "yes"
+      return v ? level.string : yes_str
     }
 
     setUserOption(PK.ignoreAssStyles, type: .other, forName: MPVOption.Subtitles.subAssOverride,
@@ -511,7 +530,7 @@ class MPVController: NSObject {
 
     setUserOption(PK.enableCache, type: .other, forName: MPVOption.Cache.cache,
                   level: .verbose) { key in
-      return Preference.bool(for: key) ? nil : "no"
+      return Preference.bool(for: key) ? nil : no_str
     }
 
     setUserOption(PK.defaultCacheSize, type: .other, forName: MPVOption.Demuxer.demuxerMaxBytes,
@@ -560,23 +579,20 @@ class MPVController: NSObject {
     }
 
     // Set user defined options.
-    if Preference.bool(for: .enableAdvancedSettings) {
-      if let userOptions = Preference.value(for: .userOptions) as? [[String]] {
-        if !userOptions.isEmpty {
-          log.debug("Setting \(userOptions.count) user configured mpv option values")
-          userOptions.forEach { op in
-            let status = setOptionString(op[0], op[1])
-            if status < 0 {
-              let errorString = String(cString: mpv_error_string(status))
-              DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
-                Utility.showAlert("extra_option.error", arguments: [op[0], op[1], status, errorString])
-              }
-            }
-          }
+    if !userOptions.isEmpty {
+      log.debug("Setting \(userOptions.count) user configured mpv option values")
+      for op in userOptions {
+        guard op.count == 2 else {
+          log.error("Invalid user option, skipping: \(op)")
+          continue
         }
-      } else {
-        DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
-          Utility.showAlert("extra_option.cannot_read")
+
+        let status = setOptionString(op[0], op[1])
+        if status < 0 {
+          let errorString = String(cString: mpv_error_string(status))
+          DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers
+            Utility.showAlert("extra_option.error", arguments: [op[0], op[1], status, errorString])
+          }
         }
       }
     }
@@ -610,7 +626,7 @@ class MPVController: NSObject {
     // The option watch-later-options is not available until after the mpv instance is initialized.
     // Workaround for mpv issue #14417, watch-later-options missing secondary subtitle delay and sid.
     // Allow the user to override this workaround by setting this mpv option in advanced settings.
-    if !userOptionsContains(MPVOption.WatchLater.watchLaterOptions),
+    if !isPresent(MPVOption.WatchLater.watchLaterOptions, in: userOptions),
        var watchLaterOptions = getString(MPVOption.WatchLater.watchLaterOptions) {
 
       // In mpv 0.38.0 the default value for the watch-later-options property contains the options
@@ -641,8 +657,8 @@ class MPVController: NSObject {
     }
 
     // Must be called after mpv_initialize which sets the default value for hwdec-codecs.
-    adjustCodecWhiteList()
-    applyHardwareAccelerationWorkaround()
+    adjustCodecWhiteList(userOptions: userOptions)
+    applyHardwareAccelerationWorkaround(userOptions: userOptions)
 
     // Set options that can be override by user's config. mpv will log user config when initialize,
     // so we put them here.
@@ -1898,10 +1914,8 @@ class MPVController: NSObject {
 /// Searches the list of user configured `mpv` options and returns `true` if the given option is present.
 /// - Parameter option: Option to look for.
 /// - Returns: `true` if the `mpv` option is found, `false` otherwise.
-private func userOptionsContains(_ option: String) -> Bool {
-  guard Preference.bool(for: .enableAdvancedSettings),
-        let userOptions = Preference.value(for: .userOptions) as? [[String]] else { return false }
-  return userOptions.contains { $0[0] == option }
+private func isPresent(_ option: String, in userOptions: [[String]]) -> Bool {
+  return userOptions.contains { $0.count >= 1 && $0[0] == option }
 }
 
 fileprivate func mpvGetOpenGLFunc(_ ctx: UnsafeMutableRawPointer?, _ name: UnsafePointer<Int8>?) -> UnsafeMutableRawPointer? {
