@@ -17,6 +17,8 @@ import Foundation
 /// data-intensive, writes to the .plist should be trivial by comparison.
 extension Preference {
   class UIState {
+    static let log = Logger.Subsystem.restore
+
     enum LaunchLifecycleState: Int {
       case none = 0
       case stillRunning = 1
@@ -221,7 +223,7 @@ extension Preference {
     static private func getSavedOpenWindowsBackToFront(forLaunchID launchID: Int) -> [SavedWindow] {
       let key = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
       let windowList = parseSavedOpenWindowsBackToFront(fromPrefValue: UserDefaults.standard.string(forKey: key))
-      Logger.log("Loaded list of open windows for launchID \(launchID): \(windowList.map{$0.saveName.string})", level: .verbose)
+      log.verbose("Loaded list of open windows for launchID \(launchID): \(windowList.map{$0.saveName.string})")
       return windowList
     }
 
@@ -264,14 +266,13 @@ extension Preference {
           openWindowsSet.remove(windName)
         }
         // Add missing windows to end of list (front):
-        Logger.log("Assuming windows are still opening; appending to saved open windows list: \(openWindowsSet)", level: .verbose)
+        log.verbose("Assuming windows are still opening; appending to saved open windows list: \(openWindowsSet)")
         for windName in openWindowsSet {
           openWindowNames.append(windName)
         }
       }
-      if Logger.isTraceEnabled {
-        Logger.log("Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)",
-                   level: .trace)
+      if log.isTraceEnabled {
+        log.trace("Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)")
       }
       let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
       saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames,
@@ -280,7 +281,7 @@ extension Preference {
       if UserDefaults.standard.integer(forKey: launchName) != LaunchLifecycleState.stillRunning.rawValue {
         // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
         // We can easily add the missing lifecycleState again.
-        Logger.log("Pref entry for \(launchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)")
+        log.debug("Pref entry for \(launchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)")
         UserDefaults.standard.setValue(LaunchLifecycleState.stillRunning.rawValue, forKey: launchName)
       }
     }
@@ -294,7 +295,7 @@ extension Preference {
 
     static private func saveOpenWindowList(windowNamesBackToFront: [String], forLaunchID launchID: Int) {
       guard isSaveEnabled else { return }
-      //      Logger.log("Saving open windows: \(windowNamesBackToFront)", level: .verbose)
+      //      log.verbose("Saving open windows: \(windowNamesBackToFront)")
       let csv = windowNamesBackToFront.map{ $0 }.joined(separator: ",")
       let key = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
 
@@ -311,7 +312,7 @@ extension Preference {
 
     static func clearSavedLaunch(withName launchName: String, silent: Bool = false) {
       guard let launchID = Preference.UIState.launchID(fromLaunchName: launchName) else {
-        Logger.log("Failed to parse launchID from launchName: \(launchName.quoted)", level: .error)
+        log.error("Failed to parse launchID from launchName: \(launchName.quoted)")
         return
       }
       clearSavedLaunch(launchID: launchID, silent: silent)
@@ -329,10 +330,10 @@ extension Preference {
       }
 
       let windowListKey = Preference.UIState.makeOpenWindowListKey(forLaunchID: launchID)
-      Logger.log("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
+      log.debug("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
       UserDefaults.standard.removeObject(forKey: windowListKey)
 
-      Logger.log("Clearing saved launch (pref key: \(launchName.quoted))")
+      log.debug("Clearing saved launch (pref key: \(launchName.quoted))")
       UserDefaults.standard.removeObject(forKey: launchName)
 
       if !silent {
@@ -343,11 +344,11 @@ extension Preference {
     static func clearAllSavedLaunches(force: Bool = false) {
       guard !AppDelegate.shared.isTerminating else { return }
       guard isSaveEnabled || force else {
-        Logger.log("Will not clear saved UI state; UI save is disabled")
+        log.debug("Will not clear saved UI state; UI save is disabled")
         return
       }
       let launchCount = launchID - 1
-      Logger.log("Clearing all saved window states from prefs (launchCount: \(launchCount), isSavedEnabled=\(isSaveEnabled.yn) force=\(force))", level: .debug)
+      log.debug("Clearing all saved window states from prefs (launchCount: \(launchCount), isSavedEnabled=\(isSaveEnabled.yn) force=\(force))")
 
       /// `collectLaunchState()` will give lingering launches a chance to deny being removed
       let launchIDs: [Int] = Preference.UIState.collectLaunchState(cleanUpAlongTheWay: true).compactMap{$0.id}
@@ -380,11 +381,11 @@ extension Preference {
     static func getPlayerSaveState(forPlayerKey key: String) -> PlayerSaveState? {
       guard isRestoreEnabled else { return nil }
       guard let propDict = UserDefaults.standard.dictionary(forKey: key) else {
-        Logger.log("Could not find stored UI state for \(key.quoted)", level: .error)
+        log.error("Could not find stored UI state for \(key.quoted)")
         return nil
       }
       guard let pid = playerID(fromPlayerWindowKey: key) else {
-        Logger.log("Bad player key: \(key.quoted)", level: .error)
+        log.error("Bad player key: \(key.quoted)")
         return nil
       }
       return PlayerSaveState(propDict, playerID: pid)
@@ -396,7 +397,7 @@ extension Preference {
         // This can happen if trying to save while changing tracks, or at certain brief periods during shutdown.
         // Do not save without a URL! The window cannot be restored.
         // Just assume there was already a good save made not too far back.
-        Logger.log("Skipping save for player \(playerID): it has no URL", level: .debug)
+        log.debug("Skipping save for player \(playerID): it has no URL")
         return
       }
       let key = WindowAutosaveName.playerWindow(id: playerID).string
@@ -407,17 +408,17 @@ extension Preference {
       guard isSaveEnabled || force else { return }
       let key = WindowAutosaveName.playerWindow(id: playerID).string
       UserDefaults.standard.removeObject(forKey: key)
-      Logger.log("Removed stored UI state for player \(key.quoted)", level: .verbose)
+      log.verbose("Removed stored UI state for player \(key.quoted)")
     }
 
     private static func launchStatus(fromAny value: Any, launchName: String) -> LaunchLifecycleState {
       guard let lifecycleStateInt = value as? Int else {
-        Logger.log("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))", level: .error)
+        log.error("Failed to parse lifecycleState int from pref entry! (entry: \(launchName.quoted), value: \(value))")
         return .none
       }
       let lifecycleState = LaunchLifecycleState(rawValue: lifecycleStateInt)
       guard let lifecycleState else {
-        Logger.log("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))", level: .error)
+        log.error("Status int from pref entry is invalid! (entry: \(launchName.quoted), value: \(value))")
         return .none
       }
       return lifecycleState
@@ -468,9 +469,9 @@ extension Preference {
             // Now migrate legacy key
             let newKey = makeOpenWindowListKey(forLaunchID: launch.id)
             UserDefaults.standard.setValue(value, forKey: newKey)
-            Logger.log("Copied legacy pref entry: \(key.quoted) → \(newKey)", level: .warning)
+            log.warn("Copied legacy pref entry: \(key.quoted) → \(newKey)")
             UserDefaults.standard.removeObject(forKey: key)
-            Logger.log("Deleted legacy pref entry: \(key.quoted)", level: .warning)
+            log.warn("Deleted legacy pref entry: \(key.quoted)")
           }
 
         } else if let launchID = launchID(fromOpenWindowListKey: key) {
@@ -487,8 +488,8 @@ extension Preference {
       if countOfLaunchesToWaitOn > 0 {
         let iffyKeys = launchDict.filter{ $0.value.id != UIState.launchID &&
           $0.value.lifecycleState != Preference.UIState.LaunchLifecycleState.done}.keys.map{$0}
-        Logger.log("Looks like these launches may still be running: \(iffyKeys)", level: .verbose)
-        Logger.log("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...", level: .debug)
+        log.verbose("Looks like these launches may still be running: \(iffyKeys)")
+        log.debug("Waiting 1s to see if \(countOfLaunchesToWaitOn) past launches are still running...")
 
         Thread.sleep(forTimeInterval: 1)
       }
@@ -516,14 +517,14 @@ extension Preference {
 
             if launch.savedWindows != nil {
               let key = makeOpenWindowListKey(forLaunchID: launch.id)
-              Logger.log("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))", level: .warning)
+              log.warn("Deleting orphaned pref entry \(key.quoted) (value=\(launch.savedWindowsDescription))")
               UserDefaults.standard.removeObject(forKey: key)
               countEntriesDeleted += 1
             }
 
             for playerKey in launch.playerKeys {
               guard let savedState = Preference.UIState.getPlayerSaveState(forPlayerKey: playerKey) else {
-                Logger.log("Skipping delete of pref key \(playerKey.quoted): could not parse as PlayerSavedState!", level: .error)
+                log.error("Skipping delete of pref key \(playerKey.quoted): could not parse as PlayerSavedState!")
                 continue
               }
               /// May want to reuse this data for different purposes in future versions. Do not blindly delete!
@@ -531,14 +532,13 @@ extension Preference {
               ///  was not present until the 1.2 release (buildNum 3), so assume previous release if not present.
               let buildNumber = savedState.int(for: .buildNumber) ?? 0
               guard buildNumber <= currentBuildNumber else {
-                Logger.log("Skipping delete of pref key \(playerKey.quoted): its buildNumber (\(buildNumber)) > currentBuildNumber (\(currentBuildNumber))", level: .verbose)
+                log.verbose("Skipping delete of pref key \(playerKey.quoted): its buildNumber (\(buildNumber)) > currentBuildNumber (\(currentBuildNumber))")
                 continue
               }
 
               if Logger.isEnabled(.warning) {
                 let path = Playback.path(for: savedState.url(for: .url))
-                Logger.log("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)",
-                           level: .warning)
+                log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)")
               }
               UserDefaults.standard.removeObject(forKey: playerKey)
               countEntriesDeleted += 1
@@ -550,20 +550,20 @@ extension Preference {
 
         // Old player windows may have been associated with newer launches. Update our data structure to match
         if let savedWindows = launch.savedWindows {
-          Logger.log("\(launch.name) has saved windows: \(launch.savedWindowsDescription)", level: .verbose)
+          log.verbose("\(launch.name) has saved windows: \(launch.savedWindowsDescription)")
           for savedWindow in savedWindows {
             let playerLaunchID = savedWindow.saveName.playerWindowLaunchID
             if let playerLaunchID, playerLaunchID != launch.id {
               if playerLaunchID > launch.id {
                 // Should only happen if someone messed up the .plist file
-                Logger.log("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!", level: .error)
+                log.error("Suspicious data found! Saved launch (\(launch.id)) contains a player window from a newer launch (\(playerLaunchID))!")
               }
 
               // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
               if let prevLaunch = launchDict[playerLaunchID],
                  let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
-                if Logger.isTraceEnabled {
-                  Logger.log("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)", level: .trace)
+                if log.isTraceEnabled {
+                  log.trace("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)")
                 }
                 launch.playerKeys.insert(playerKeyFromPrev)
               }
@@ -581,13 +581,13 @@ extension Preference {
       }
 
       if countEntriesDeleted > 0 {
-        Logger.log("Deleted \(countEntriesDeleted) pref entries")
+        log.debug("Deleted \(countEntriesDeleted) pref entries")
         postSavedWindowStateDidChange()
       }
 
       let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
-      if Logger.isVerboseEnabled {
-        Logger.log("Found saved launches (current=\(launchID)): \(culledLaunches)", level: .verbose)
+      if log.isVerboseEnabled {
+        log.verbose("Found saved launches (current=\(launchID)): \(culledLaunches)")
       }
       return culledLaunches
     }
@@ -613,7 +613,7 @@ extension Preference {
               deduplicatedWindowList.append(savedWindow)
               nameSet.insert(savedWindow.saveName.string)
             } else {
-              Logger.log("Skipping duplicate open window: \(savedWindow.saveName.string.quoted)", level: .verbose)
+              log.verbose("Skipping duplicate open window: \(savedWindow.saveName.string.quoted)")
             }
           }
         }
@@ -621,7 +621,7 @@ extension Preference {
 
       // First save under new window list:
       let finalWindowStringList = deduplicatedWindowList.map({$0.saveString})
-      Logger.log("Consolidating windows from \(launchesNewestToOldest.count) past launches to current launch (\(launchID)): \(deduplicatedWindowList.map({$0.saveName.string}))", level: .verbose)
+      log.verbose("Consolidating windows from \(launchesNewestToOldest.count) past launches to current launch (\(launchID)): \(deduplicatedWindowList.map({$0.saveName.string}))")
       saveOpenWindowList(windowNamesBackToFront: finalWindowStringList, forLaunchID: launchID)
 
       // Now remove entries for old launches (keeping player state entries)
@@ -630,12 +630,12 @@ extension Preference {
 
         if launch.savedWindows != nil {
           let windowListKey = Preference.UIState.makeOpenWindowListKey(forLaunchID: launch.id)
-          Logger.log("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
+          log.debug("Clearing saved list of open windows (pref key: \(windowListKey.quoted))")
           UserDefaults.standard.removeObject(forKey: windowListKey)
         }
 
         if launch.lifecycleState != .none {
-          Logger.log("Clearing saved launch lifecycleState (pref key: \(launchName.quoted))")
+          log.debug("Clearing saved launch lifecycleState (pref key: \(launchName.quoted))")
           UserDefaults.standard.removeObject(forKey: launchName)
         }
       }

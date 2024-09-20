@@ -168,7 +168,7 @@ extension PlayerWindowController {
             state = .alreadyOpen
           }
 
-          log.verbose("[applyVideoGeo] JustOpenedFile, windowState: \(state)")
+          log.verbose("[applyVideoGeo] JustOpenedFile, windowState=\(state)")
           let (initialLayout, windowOpenLayoutTasks) = buildLayoutTasksForFileOpen(windowState: state,
                                                                                    currentPlayback: currentPlayback,
                                                                                    currentMediaAudioStatus: currentMediaAudioStatus,

@@ -214,7 +214,6 @@ extension PlayerCore {
         return loadedSubtitle
       } else if loadedFileCount == 1 {
         // loaded one file
-        info.shouldAutoLoadFiles = true
         return true
       } else {
         // add multiple files to playlist

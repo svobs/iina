@@ -11,11 +11,25 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-  enum WindowStateAtFileOpen {
+  enum WindowStateAtFileOpen: CustomStringConvertible {
     case notApplicable
     case notOpen
     case alreadyOpen
     case restoring(playerState: PlayerSaveState)
+
+    /// Need to specify this so that `playerState` is not included...
+    var description: String {
+      switch self {
+      case .notApplicable:
+        "notApplicable"
+      case .notOpen:
+        "notOpen"
+      case .alreadyOpen:
+        "alreadyOpen"
+      case .restoring(let playerState):
+        "restoring"
+      }
+    }
   }
 
   // Set window layout when either opening window for new file, reusing existing window for new file,

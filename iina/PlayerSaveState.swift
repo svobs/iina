@@ -11,7 +11,7 @@ import Foundation
 fileprivate let embeddedSeparator: Character = "|"
 
 // Data structure for saving to prefs / restoring from prefs the UI state of a single player window
-struct PlayerSaveState {
+struct PlayerSaveState: CustomStringConvertible {
   enum PropName: String {
     case buildNumber = "buildNum"       // Added in v1.2
     case launchID = "launchID"
@@ -24,7 +24,7 @@ struct PlayerSaveState {
 
     case intendedViewportSize = "intendedViewportSize"
     case layoutSpec = "layoutSpec"
-    case videoGeo = "videoGeo"
+    case videoGeo = "videoGeo"  // Added in v1.2
     case windowedModeGeo = "windowedModeGeo"
     case musicModeGeo = "musicModeGeo"
     case screens = "screens"
@@ -64,7 +64,7 @@ struct PlayerSaveState {
     case abLoopA = "abLoopA"            /// `MPVOption.PlaybackControl.abLoopA`
     case abLoopB = "abLoopB"            /// `MPVOption.PlaybackControl.abLoopB`
 
-    // Video geometry
+    /// Deprecated props, last used in v1.2.2 (replaced by single prop: `.videoGeo`)
     case videoRawWidth = "vidRawW"      /// `MPVProperty.width`
     case videoRawHeight = "vidRawH"     /// `MPVProperty.height`
     case videoAspectLabel = "aspect"    /// Converted into `MPVOption.Video.videoAspectOverride`
@@ -125,6 +125,45 @@ struct PlayerSaveState {
     self.screens = (props[PropName.screens.rawValue] as? [String] ?? []).compactMap({ScreenMeta.from($0)})
   }
 
+  var description: String {
+    guard let urlString = string(for: .url), let url = URL(string: urlString) else {
+      return "PlayerSaveState(url=<ERROR>)"
+    }
+
+    let urlPath: String
+    if #available(macOS 13.0, *) {
+      urlPath = url.path(percentEncoded: false)
+    } else {
+      urlPath = url.path
+    }
+
+    let filteredProps = properties.filter({ prop in
+      switch prop.key {
+      case PropName.url.rawValue,
+        // these are too long and contain PII
+        PropName.playlistPaths.rawValue,
+        PropName.playlistVideos.rawValue,
+        PropName.playlistSubtitles.rawValue,
+        PropName.matchedSubtitles.rawValue:
+        return false
+      default:
+        return true
+      }
+    })
+
+    let propsString = filteredProps.compactMap{ (key, valRaw) in
+      let valToPrint: String
+      if let valStr = valRaw as? String {
+        valToPrint = valStr.quoted
+      } else {
+        valToPrint = "\(valRaw)"
+      }
+      return "\(key.quoted): \(valToPrint)"
+    }.joined(separator: ", ")
+
+    return "PlayerSaveState(url=\(urlPath.pii.quoted) props=[\(propsString)])"
+  }
+
   // MARK: - Save State / Serialize to prefs strings
 
   /// Generates a Dictionary of properties for storage into a Preference entry
@@ -152,14 +191,6 @@ struct PlayerSaveState {
 
     /// `videoGeo`: use supplied GeometrySet for most up-to-date data (avoiding complex logic to derive it)
     props[PropName.videoGeo.rawValue] = geo.video.toCSV()
-
-    // TODO: stop saving these in v1.3
-    props[PropName.videoRawWidth.rawValue] = String(geo.video.rawWidth)
-    props[PropName.videoRawHeight.rawValue] = String(geo.video.rawHeight)
-    props[PropName.videoAspectLabel.rawValue] = geo.video.selectedAspectLabel
-    props[PropName.cropLabel.rawValue] = geo.video.selectedCropLabel
-    props[PropName.totalRotation.rawValue] = String(geo.video.totalRotation)
-    props[PropName.videoRotation.rawValue] = String(geo.video.userRotation)
 
     let screenMetaCSVList: [String] = wc.cachedScreens.values.map{$0.toCSV()}
     props[PropName.screens.rawValue] = screenMetaCSVList
@@ -570,29 +601,8 @@ struct PlayerSaveState {
     let playback = Playback(url: url)
 
     if Logger.isEnabled(.verbose) {
-      let urlPath: String
-      if #available(macOS 13.0, *) {
-        urlPath = url.path(percentEncoded: false)
-      } else {
-        urlPath = url.path
-      }
-
-      let filteredProps = properties.filter({
-        switch $0.key {
-        case PropName.url.rawValue,
-          // these are too long and contain PII
-          PropName.playlistPaths.rawValue,
-          PropName.playlistVideos.rawValue,
-          PropName.playlistSubtitles.rawValue,
-          PropName.matchedSubtitles.rawValue:
-          return false
-        default:
-          return true
-        }
-      })
-
-      // log properties but not playlist paths (not very useful, takes up space, is private info)
-      log.verbose("Restoring player state from prior launch. URL: \(urlPath.pii.quoted) Properties: \(filteredProps)")
+      // Log properties
+      log.verbose("Restoring from prior launch: \(self)")
     }
     let info = player.info
     info.priorState = self

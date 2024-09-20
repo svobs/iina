@@ -98,9 +98,14 @@ class Logger: NSObject {
 
     static let general = Subsystem(rawValue: "iina")
     static let input = Logger.Subsystem(rawValue: "input")
+    static let restore = Logger.Subsystem(rawValue: "restore")
 
     var isTraceEnabled: Bool {
       return Logger.isTraceEnabled
+    }
+
+    var isVerboseEnabled: Bool {
+      return Logger.isVerboseEnabled
     }
 
     required init(rawValue: String) {
@@ -138,7 +143,7 @@ class Logger: NSObject {
     }
   }
 
-  @Atomic static var subsystems: [Subsystem] = [.general]
+  @Atomic static var subsystems: [Subsystem] = [.general, .input, .restore]
 
   /// Default log
   static let log = Subsystem.general

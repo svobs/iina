@@ -87,6 +87,11 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   func loadThumbnails() {
     assert(DispatchQueue.isExecutingIn(PlayerCore.thumbnailQueue))
 
+    guard FileManager.default.fileExists(atPath: mediaFilePath) else {
+      log.debug("Aborting thumbnails load. File does not exist: \(mediaFilePath.pii.quoted)")
+      return
+    }
+
     let cacheName = mediaFilePathMD5
     if ThumbnailCache.fileIsCached(forName: cacheName, forVideo: mediaFilePath, forWidth: thumbnailWidth) {
       log.debug("Found matching thumbnail cache \(cacheName.quoted), width: \(thumbnailWidth)px for media \(mediaFilePath.pii.quoted)")

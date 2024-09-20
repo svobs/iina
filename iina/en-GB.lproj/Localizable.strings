@@ -32,7 +32,7 @@
 "initial.bug_report" = "Report via <a href=\"https://github.com/iina/iina/issues\">GitHub issues</a>.";
 
 // Inspector Window
-"inspector.error" = "Error";
+"inspector.error" = "error";
 
 // PlayerWindowController.swift
 "main.buffering_indicator" = "Buffering… %d%%";

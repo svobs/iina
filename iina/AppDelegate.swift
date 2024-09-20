@@ -299,10 +299,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   private func windowIsReadyToShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
 
     guard let window = notification.object as? NSWindow else { return }
     guard let wc = window.windowController else {
-      Logger.log("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!", level: .error)
+      log.error("Restored window is ready, but no windowController for window: \(window.savedStateName.quoted)!")
       return
     }
 
@@ -310,11 +311,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // Still waiting to show
       startup.wcsReady.insert(wc)
 
-      Logger.log("Restored window is ready: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
+      log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
 
       showWindowsIfReady()
     } else if !window.isMiniaturized {
-      Logger.log("OpenWindow: showing window \(window.savedStateName.quoted)", level: .verbose)
+      log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
       wc.showWindow(window)
     }
   }
@@ -322,9 +323,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private func windowMustCancelShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let window = notification.object as? NSWindow else { return }
+    let log = Logger.Subsystem.restore
 
     guard Preference.bool(for: .isRestoreInProgress) else { return }
-    Logger.log("Restored window cancelled: \(window.savedStateName.quoted), progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")", level: .verbose)
+    log.verbose("Restored window cancelled: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
 
     // No longer waiting for this window
     startup.wcsToRestore.removeAll(where: { wc in
@@ -487,8 +489,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     guard startup.state == .doneEnqueuing else { return }
     guard startup.wcsReady.count == startup.wcsToRestore.count else { return }
     guard !startup.openFileCalled || startup.wcForOpenFile != nil else { return }
+    let log = Logger.Subsystem.restore
 
-    Logger.log("All \(startup.wcsToRestore.count) restored \(startup.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all", level: .verbose)
+    log.verbose("All \(startup.wcsToRestore.count) restored \(startup.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
 
     for wc in startup.wcsToRestore {
       if !(wc.window?.isMiniaturized ?? false) {
@@ -503,7 +506,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let didOpenSomething = didRestoreSomething || startup.wcForOpenFile != nil
 
     if Preference.bool(for: .isRestoreInProgress) {
-      Logger.log("Done restoring windows", level: .verbose)
+      log.verbose("Done restoring windows")
       Preference.set(false, for: .isRestoreInProgress)
     }
 
@@ -700,20 +703,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
 
     guard Preference.UIState.isRestoreEnabled else {
-      Logger.log("Restore is disabled. Wll not restore windows")
+      log.debug("Restore is disabled. Wll not restore windows")
       return false
     }
 
     if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
-      Logger.log("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
+      log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
       Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
       return false
     }
 
     let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectLaunchStateForRestore()
-    Logger.log("Found \(pastLaunches.count) past launches to restore", level: .verbose)
+    log.verbose("Found \(pastLaunches.count) past launches to restore")
     if pastLaunches.isEmpty {
       return false
     }
@@ -724,10 +728,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if Preference.bool(for: .isRestoreInProgress) {
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
-      Logger.log("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
+      log.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
       isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
     } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      Logger.log("Prompting user whether to restore app state, per pref", level: .verbose)
+      log.verbose("Prompting user whether to restore app state, per pref")
       isRestoreApproved = Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
     } else {
       isRestoreApproved = true
@@ -735,7 +739,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if !isRestoreApproved {
       // Clear out old state. It may have been causing errors, or user wants to start new
-      Logger.log("User denied restore. Clearing all saved launch state.")
+      log.debug("User denied restore. Clearing all saved launch state.")
       Preference.UIState.clearAllSavedLaunches()
       Preference.set(false, for: .isRestoreInProgress)
       return false
@@ -748,7 +752,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let savedWindowsBackToFront = Preference.UIState.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
-      Logger.log("Will not restore windows: stored window list empty")
+      log.debug("Will not restore windows: stored window list empty")
       return false
     }
 
@@ -757,7 +761,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       if onlyWindow == WindowAutosaveName.inspector {
         // Do not restore this on its own
-        Logger.log("Will not restore windows: only open window was Inspector", level: .verbose)
+        log.verbose("Will not restore windows: only open window was Inspector")
         return false
       }
 
@@ -765,19 +769,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
           || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
           || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        Logger.log("Will not restore windows: the only open window was identical to launch action (\(action))",
-                   level: .verbose)
+        log.verbose("Will not restore windows: the only open window was identical to launch action (\(action))")
         // Skip the prompts below because they are just unnecessary nagging
         return false
       }
     }
 
-    Logger.log("Starting restore of \(savedWindowsBackToFront.count) windows", level: .verbose)
+    log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
+
+    // FIXME: add timeout for restoring windows
 
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
-      Logger.log("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")", level: .verbose)
+      log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
 
       let wc: NSWindowController
       switch savedWindow.saveName {
@@ -821,10 +826,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         guard let player = PlayerCoreManager.shared.restoreFromPriorLaunch(playerID: id) else { continue }
         wc = player.windowController
       case .newFilter, .editFilter, .saveFilter:
-        Logger.log("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping", level: .debug)
+        log.debug("Restoring sheet window \(savedWindow.saveString) is not yet implemented; skipping")
         continue
       default:
-        Logger.log("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)", level: .error)
+        log.error("Cannot restore unrecognized autosave enum: \(savedWindow.saveName)")
         continue
       }
 
