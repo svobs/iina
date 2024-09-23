@@ -152,6 +152,29 @@ class Utility {
     }
   }
 
+  /// `key` == localization key
+  static func buildThreeButtonAskPanel(_ key: String, msgArgs: [String], alertStyle: NSAlert.Style? = nil) -> NSAlert {
+    let panel = NSAlert()
+    let titleKey = "alert.\(key).title"
+    let messageKey = "alert.\(key).message"
+    let titleFormat = NSLocalizedString(titleKey, comment: titleKey)
+    let messageFormat = NSLocalizedString(messageKey, comment: messageKey)
+    panel.messageText = String(format: titleFormat)
+    panel.informativeText = String(format: messageFormat, arguments: msgArgs)
+    if let alertStyle {
+      panel.alertStyle = alertStyle
+    }
+
+    let okBtnTitle = NSLocalizedString("alert.\(key).ok", comment: "OK")
+    panel.addButton(withTitle: okBtnTitle)
+    let middleBtnTitle = NSLocalizedString("alert.\(key).middle", comment: "Middle")
+    panel.addButton(withTitle: middleBtnTitle)
+    let cancelBtnTitle = NSLocalizedString("alert.\(key).cancel", comment: "Cancel")
+    panel.addButton(withTitle: cancelBtnTitle)
+
+    return panel
+  }
+
   /**
    Pop up an open panel.
    - Parameters:

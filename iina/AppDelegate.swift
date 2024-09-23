@@ -28,6 +28,7 @@ class Startup {
   var state: OpenWindowsState = .stillEnqueuing
 
   var restoreTimer: Timer? = nil
+  var restoreTimeoutAlertPanel: NSAlert? = nil
 
   /**
    Becomes true once `application(_:openFile:)`, `handleURLEvent()` or `droppedText()` is called.
@@ -450,6 +451,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
     startup.state = .doneOpening
+    /// Make sure to do this *after* `startup.state = .doneOpening`:
+    dismissTimeoutAlertPanel()
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
@@ -631,33 +634,74 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     log.debug("Restore timed out. Progress: \(namesReady.count)/\(startup.wcsToRestore.count). Stalled: \(namesStalled)")
-    log.debug("Prompting user whether to discard and continue, or quit")
+    log.debug("Prompting user whether to discard them & continue, or quit")
 
     let countFailed = "\(wcsStalled.count)"
     let countTotal = "\(startup.wcsToRestore.count)"
     let namesStalledString = namesStalled.joined(separator: "\n")
     let msgArgs = [countFailed, countTotal, namesStalledString]
-    let choseToContinue: Bool = Utility.quickAskPanel("restore_timeout", messageArgs: msgArgs, alertStyle: .critical,
-                                                      useCustomButtons: true)
+    let askPanel = Utility.buildThreeButtonAskPanel("restore_timeout", msgArgs: msgArgs, alertStyle: .critical)
+    startup.restoreTimeoutAlertPanel = askPanel
+    let userResponse = askPanel.runModal()  // this will block for an indeterminate time
 
-    if choseToContinue {
-      log.debug("User responded with choice to continue & discard stalled windows")
+    switch userResponse {
+    case .alertFirstButtonReturn:
+      log.debug("User chose button 1: keep waiting")
+      guard startup.state != .doneOpening else {
+        log.debug("Looks like windows finished opening - no need to restart restore timer")
+        return
+      }
+      restartRestoreTimer()
+
+    case .alertSecondButtonReturn:
+      log.debug("User chose button 2: discard stalled windows & continue with partial restore")
+      startup.restoreTimeoutAlertPanel = nil  // Clear this (no longer needed)
+      guard startup.state != .doneOpening else {
+        log.debug("Looks like windows finished opening - no need to close anything")
+        return
+      }
       for wcStalled in wcsStalled {
-        log.verbose("Telling window to close: \(wcStalled.window!.savedStateName)")
+        guard !startup.wcsReady.contains(wcStalled) else {
+          log.verbose("Window has become ready; skipping close: \(wcStalled.window!.savedStateName)")
+          continue
+        }
+        log.verbose("Telling stalled window to close: \(wcStalled.window!.savedStateName)")
         if let pWin = wcStalled as? PlayerWindowController {
+          /// This will guarantee `windowMustCancelShow` notification is sent
           pWin.player.closeWindow()
         } else {
           wcStalled.close()
+          // explicitly call this, as the line above may fail
+          wcStalled.window?.postWindowMustCancelShow()
         }
       }
-    } else {
-      log.debug("User responded with choice to quit")
+
+    case .alertThirdButtonReturn:
+      log.debug("User chose button 3: quit")
       NSApp.terminate(nil)
+
+    default:
+      log.fatalError("User responded to Restore Timeout alert with unrecognized choice!")
     }
+  }
+
+  private func dismissTimeoutAlertPanel() {
+    guard let restoreTimeoutAlertPanel = startup.restoreTimeoutAlertPanel else { return }
+
+    /// Dismiss the prompt (if any). It seems we can't just call `close` on its `window` object, because the
+    /// responder chain is left unusable. Instead, click its default button after setting `startup.state`.
+    let keepWaitingBtn = restoreTimeoutAlertPanel.buttons[0]
+    keepWaitingBtn.performClick(self)
+    startup.restoreTimeoutAlertPanel = nil
+
+    /// This may restart the timer if not in the correct state, so account for that.
   }
 
   private func restartRestoreTimer() {
     startup.restoreTimer?.invalidate()
+
+    dismissTimeoutAlertPanel()
+
     startup.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
                                                 target: self, selector: #selector(self.restoreTimedOut), userInfo: nil, repeats: false)
   }

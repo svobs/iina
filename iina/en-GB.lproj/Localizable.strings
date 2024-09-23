@@ -247,8 +247,8 @@
 "alert.restore_confirm.cancel" = "No, Discard";
 "alert.restore_timeout.title" = "Error Restoring Windows";
 "alert.restore_timeout.message" = "%@ of %@ windows are taking too long to load:\n\n%@\n\nDiscard their saved state and continue?";
-"alert.restore_timeout" = "Cannot open file or stream:\n%@";
-"alert.restore_timeout.ok" = "Yes, Discard";
+"alert.restore_timeout.ok" = "Keep Waiting";
+"alert.restore_timeout.middle" = "Yes, Discard";
 "alert.restore_timeout.cancel" = "No, Quit";
 
 "alert.clear_saved_windows_while_enabled" = "Cannot clear while save is enabled.\nPlease first uncheck \"Save & restore open windows between launches\".";
