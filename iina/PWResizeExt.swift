@@ -123,7 +123,7 @@ extension PlayerWindowController {
     }
 
     guard currentPlayback.state.isAtLeast(.loaded) else {
-      log.verbose("[applyVideoGeo] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource)")
+      log.verbose("[applyVideoGeo] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource.yn)")
       aborted = true
       return
     }
@@ -133,7 +133,7 @@ extension PlayerWindowController {
       player.info.priorState = nil
       player.info.isRestoring = false
 
-      log.debug("Done with restore")
+      log.debug("[applyVideoGeo] Done with restore")
     }
 
     DispatchQueue.main.async { [self] in
@@ -168,11 +168,12 @@ extension PlayerWindowController {
             state = .alreadyOpen
           }
 
-          log.verbose("[applyVideoGeo] JustOpenedFile, windowState=\(state)")
+          log.verbose("[applyVideoGeo] JustOpenedFile, windowState=\(state), showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
           let (initialLayout, windowOpenLayoutTasks) = buildLayoutTasksForFileOpen(windowState: state,
                                                                                    currentPlayback: currentPlayback,
                                                                                    currentMediaAudioStatus: currentMediaAudioStatus,
-                                                                                   newVidGeo: newVidGeo)
+                                                                                   newVidGeo: newVidGeo,
+                                                                                   showDefaultArt: showDefaultArt)
           newLayout = initialLayout
 
           animationPipeline.submit(windowOpenLayoutTasks)

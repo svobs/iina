@@ -37,7 +37,8 @@ extension PlayerWindowController {
   func buildLayoutTasksForFileOpen(windowState: WindowStateAtFileOpen,
                                    currentPlayback: Playback,
                                    currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
-                                   newVidGeo: VideoGeometry) -> (LayoutState, [IINAAnimation.Task]) {
+                                   newVidGeo: VideoGeometry,
+                                   showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     var isRestoring = false
@@ -132,6 +133,11 @@ extension PlayerWindowController {
 
       player.refreshSyncUITimer()
       player.touchBarSupport.setupTouchBarUI()
+
+      if let showDefaultArt {
+        // May need to set this while restoring a network audio stream
+        updateDefaultArtVisibility(to: showDefaultArt)
+      }
 
       /// This check is after `reloadSelectedTracks` which will ensure that `info.aid` will have been updated with the
       /// current audio track selection, or `0` if none selected.
