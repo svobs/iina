@@ -408,10 +408,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Preference.set(false, for: .isRestoreInProgress)
     }
 
+    startup.state = .doneOpening
+
     if !commandLineStatus.isCommandLine && !didOpenSomething {
       // Fall back to default action:
       doLaunchOrReopenAction()
     }
+
+    /// Make sure to do this *after* `startup.state = .doneOpening`:
+    dismissTimeoutAlertPanel()
 
     Logger.log("Adding window observers")
 
@@ -450,9 +455,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
     NSApplication.shared.servicesProvider = self
-    startup.state = .doneOpening
-    /// Make sure to do this *after* `startup.state = .doneOpening`:
-    dismissTimeoutAlertPanel()
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
@@ -1455,6 +1457,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   private func doLaunchOrReopenAction() {
+    guard startup.state == .doneOpening else {
+      Logger.log.verbose("Still starting up; skipping actionAfterLaunch")
+      return
+    }
+
     let action: Preference.ActionAfterLaunch = Preference.enum(for: .actionAfterLaunch)
     Logger.log("Doing actionAfterLaunch: \(action)", level: .verbose)
 
