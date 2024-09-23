@@ -13,6 +13,14 @@ struct FFVideoMeta {
   let streamRotation: Int
 }
 
+struct MediaMeta {
+  let duration: Double?
+  let progress: Double?
+  let title: String?
+  let album: String?
+  let artist: String?
+}
+
 /// Singleton for all app meta.
 ///
 /// But currently separates meta categories into different lists.
@@ -25,55 +33,56 @@ class MediaMetaCache {
 
   // The cache is read by the main thread and updated by a background thread therefore all use
   // must be through the class methods that properly coordinate thread access.
-  private var cachedMediaDurationAndProgress: [String: (duration: Double?, progress: Double?)] = [:]
-  private var cachedNameMeta: [String: (title: String?, album: String?, artist: String?)] = [:]
+  private var cachedMeta: [String: MediaMeta] = [:]
 
   func calculateTotalDuration(_ urlPaths: [String]) -> Double {
     metaLock.withLock {
-      return urlPaths.compactMap { cachedMediaDurationAndProgress[$0]?.duration }
+      return urlPaths.compactMap { cachedMeta[$0]?.duration }
         .reduce(0, +)
     }
   }
 
-  func getCachedMediaDurationAndProgress(_ urlPath: String) -> (duration: Double?, progress: Double?)? {
+  func getCachedMeta(forMediaPath urlPath: String) -> MediaMeta? {
     metaLock.withLock {
-      return cachedMediaDurationAndProgress[urlPath]
+      return cachedMeta[urlPath]
     }
   }
 
   func setCachedMediaDuration(_ urlPath: String, _ duration: Double) {
     guard duration > 0.0 else { return }
     metaLock.withLock {
-      var meta = cachedMediaDurationAndProgress[urlPath] ?? (duration: nil, progress: nil)
-      meta.duration = duration
-      cachedMediaDurationAndProgress[urlPath] = meta
+      if let meta = cachedMeta[urlPath] {
+        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: meta.progress, title: meta.title, album: meta.album, artist: meta.artist)
+      } else {
+        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: nil, title: nil, album: nil, artist: nil)
+      }
     }
   }
 
-  func setCachedMediaDurationAndProgress(_ urlPath: String, _ value: (duration: Double?, progress: Double?)) {
+  func setCachedMediaDurationAndProgress(_ urlPath: String, duration: Double?, progress: Double?) {
     metaLock.withLock {
-      return cachedMediaDurationAndProgress[urlPath] = value
+      if let meta = cachedMeta[urlPath] {
+        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: progress, title: meta.title, album: meta.album, artist: meta.artist)
+      } else {
+        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: progress, title: nil, album: nil, artist: nil)
+      }
     }
   }
 
   // MARK: - Artist, title meta
 
-  private func getCachedNameMeta(_ urlPath: String) -> (title: String?, album: String?, artist: String?)? {
+  @discardableResult
+  func setCachedTitle(forMediaPath urlPath: String, to title: String?) -> MediaMeta? {
     metaLock.withLock {
-      cachedNameMeta[urlPath]
-    }
-  }
-
-  /// Both `artist` & `title` must be present, or `nil` is returned
-  func getCachedNameMeta(forMediaPath urlPath: String) -> (artist: String, title: String)? {
-    guard let metadata = getCachedNameMeta(urlPath) else { return nil }
-    guard let artist = metadata.artist, let title = metadata.title else { return nil }
-    return (artist, title)
-  }
-
-  func setCachedNameMeta(forMediaPath urlPath: String, to value: (title: String?, album: String?, artist: String?)) {
-    metaLock.withLock {
-      cachedNameMeta[urlPath] = value
+      if let meta = cachedMeta[urlPath] {
+        let newMeta = MediaMeta(duration: meta.duration, progress: meta.progress, title: title ?? meta.title, album: meta.album, artist: meta.artist)
+        cachedMeta[urlPath] = newMeta
+        return newMeta
+      } else {
+        let newMeta = MediaMeta(duration: nil, progress: nil, title: title, album: nil, artist: nil)
+        cachedMeta[urlPath] = newMeta
+        return newMeta
+      }
     }
   }
 
@@ -82,36 +91,48 @@ class MediaMetaCache {
    It may take some time to run this method, so it should be used in background.
    Note: This only works for file paths (not network streams)!
    */
-  func reloadCachedNameMeta(forMediaPath urlPath: String) {
+  @discardableResult
+  func reloadCachedMeta(forMediaPath urlPath: String, mpvTitle: String? = nil) -> MediaMeta? {
     guard let url = Playback.url(fromPath: urlPath) else {
-      Logger.log.debug("[updateCachedMeta] Could not create URL from path, skipping: \(urlPath.pii.quoted)")
-      return
+      Logger.log.debug("[reloadCachedMeta] Could not create URL from path, skipping: \(urlPath.pii.quoted)")
+      return nil
     }
-    guard url.isFileURL else {
-      Logger.log.verbose("[updateCachedMeta] Not a file; skipping: \(urlPath.pii.quoted)")
-      return
-    }
-    guard let dict = FFmpegController.probeVideoInfo(forFile: urlPath) else { return }
-    let progress = Utility.playbackProgressFromWatchLater(urlPath.md5)
-    MediaMetaCache.shared.setCachedMediaDurationAndProgress(urlPath, (
-      duration: dict["@iina_duration"] as? Double,
-      progress: progress?.second
-    ))
-    var result: (title: String?, album: String?, artist: String?)
-    dict.forEach { (k, v) in
-      guard let key = k as? String else { return }
-      switch key.lowercased() {
-      case "title":
-        result.title = v as? String
-      case "album":
-        result.album = v as? String
-      case "artist":
-        result.artist = v as? String
-      default:
-        break
+
+    var result: (duration: Double?, progress: Double?, title: String?, album: String?, artist: String?)
+
+    if url.isFileURL, let dict = FFmpegController.probeVideoInfo(forFile: urlPath) {
+      let progress = Utility.playbackProgressFromWatchLater(urlPath.md5)
+      result.duration = dict["@iina_duration"] as? Double
+      result.progress = progress?.second
+
+      dict.forEach { (k, v) in
+        guard let key = k as? String else { return }
+        switch key.lowercased() {
+        case "title":
+          result.title = v as? String
+        case "album":
+          result.album = v as? String
+        case "artist":
+          result.artist = v as? String
+        default:
+          break
+        }
       }
     }
-    setCachedNameMeta(forMediaPath: urlPath, to: result)
+
+    // Favor mpv title
+    if let mpvTitle {
+      result.title = mpvTitle
+    }
+
+    let meta = MediaMeta(duration: result.duration, progress: result.progress,
+                         title: result.title, album: result.album, artist: result.artist)
+
+    Logger.log.debug("[reloadCachedMeta] Reloaded URL: \(urlPath.pii.quoted) = \(meta)")
+    metaLock.withLock {
+      cachedMeta[urlPath] = meta
+    }
+    return meta
   }
 
 

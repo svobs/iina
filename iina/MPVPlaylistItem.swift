@@ -19,15 +19,14 @@ class MPVPlaylistItem {
   }
 
   // Too inefficient and infrequently used. Just set to false for now so it doesn't break JavascriptAPI
-  var isCurrent: Bool { return false }
-  var isPlaying: Bool { return false }
-  var isNetworkResource: Bool
+  var isCurrent: Bool { false }
+  var isPlaying: Bool { false }
+  var isNetworkResource: Bool { Regex.url.matches(filename) }
 
   var title: String?
 
   init(filename: String, title: String?) {
     self.filename = filename
     self.title = title
-    self.isNetworkResource = Regex.url.matches(filename)
   }
 }

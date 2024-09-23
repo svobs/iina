@@ -616,9 +616,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let playlistItems = player.info.playlist
       if rowIndex >= 0, rowIndex < playlistItems.count {
         let item = playlistItems[rowIndex]
-        MediaMetaCache.shared.reloadCachedNameMeta(forMediaPath: item.filename)
+        MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename)
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cached = MediaMetaCache.shared.getCachedMediaDurationAndProgress(item.filename),
+        if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename),
            let duration = cached.duration, duration > 0 {
           // if FFmpeg got the duration successfully
           self.refreshTotalLength()
@@ -701,9 +701,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   // Playlist Table: Track Name column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int,
-                                          fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
+                                            fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
     let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
-    let displayName = (wantsTitleMeta ? item.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
+    let cachedMeta = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename)
+    let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
+    let artist = wantsTitleMeta ? cachedMeta?.artist : nil
 
     let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
     let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
@@ -714,18 +716,29 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
        prefix.count >= prefixMinLength,
        displayName.count > displayNameMinLength {
       cellView.setPrefix(prefix, textColor: prefixTextColor)
+      cellView.setAdditionalInfo(nil)
       cellView.setTitle(String(displayName[displayName.index(displayName.startIndex, offsetBy: prefix.count)...]), textColor: textColor)
     } else {
       cellView.setPrefix(nil, textColor: prefixTextColor)
-      cellView.setAdditionalInfo(nil)
+      cellView.setAdditionalInfo(artist, textColor: textColor)
       cellView.setTitle(displayName, textColor: textColor)
     }
 
     // playback progress and duration
     cellView.durationLabel.font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
-    cellView.durationLabel.stringValue = ""
-    /// Default progress to none, because `playbackProgressView` takes a long time to load
-    cellView.playbackProgressView.isHidden = true
+    if let duration = cachedMeta?.duration {
+      let durationString = VideoTime(duration).stringRepresentation
+      let durationTextColor = isPlaying ? isPlayingTextColor : .secondaryLabelColor
+      cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: durationTextColor)
+    } else {
+      cellView.durationLabel.stringValue = ""
+    }
+    if let progress = cachedMeta?.progress, let duration = cachedMeta?.duration {
+      cellView.playbackProgressView.percentage = progress / duration
+      cellView.playbackProgressView.isHidden = false
+    } else {
+      cellView.playbackProgressView.isHidden = true
+    }
 
     // sub button
     if !player.info.isMatchingSubtitles,
@@ -737,49 +750,33 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     // not sure why this line exists, but let's keep it for now
     cellView.subBtn.image?.isTemplate = true
 
-    if wantsTitleMeta, let (artist, title) = MediaMetaCache.shared.getCachedNameMeta(forMediaPath: item.filename) {
-      cellView.setTitle(title, textColor: textColor)
-      cellView.setAdditionalInfo(artist, textColor: textColor)
-    }
-
     // FIXME: refactor to streamline load flow + improve appearance during load
     PlayerCore.playlistQueue.async { [self] in
-      loadMeta(forItem: item, rowIndex: rowIndex, isPlaying: isPlaying, cellView)
+      loadMeta(forItem: item, rowIndex: rowIndex, isPlaying: isPlaying, wantsTitleMeta: wantsTitleMeta, cellView)
     }
   }
 
   private func loadMeta(forItem item: MPVPlaylistItem, rowIndex: Int,
-                        isPlaying: Bool, _ cellView: PlaylistTrackCellView) {
+                        isPlaying: Bool, wantsTitleMeta: Bool, _ cellView: PlaylistTrackCellView) {
+    let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-    if let cached = MediaMetaCache.shared.getCachedMediaDurationAndProgress(item.filename),
-       let duration = cached.duration {  // if it's cached
+    if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename) {
+      if mpvTitle != cached.title {
+        MediaMetaCache.shared.setCachedTitle(forMediaPath: item.filename, to: mpvTitle)
 
-      if duration > 0 {  // if FFmpeg got the duration successfully
         DispatchQueue.main.async { [self] in
-          let durationString = VideoTime(duration).stringRepresentation
-          cellView.durationLabel.setFormattedText(stringValue: durationString, textColor: isPlaying ? isPlayingTextColor : .secondaryLabelColor)
-          if let progress = cached.progress {
-            cellView.playbackProgressView.percentage = progress / duration
-            cellView.playbackProgressView.isHidden = false
-          } else {
-            cellView.playbackProgressView.isHidden = true
-          }
-          if isPlaying {
-            cellView.needsDisplay = true
-            cellView.needsLayout = true
-          }
+          reloadPlaylistRow(rowIndex)
         }
-        self.refreshTotalLength()
       }
+
+      refreshTotalLength()
     } else {
       // get related data and schedule a reload
       if Preference.bool(for: .prefetchPlaylistVideoDuration) {
-        MediaMetaCache.shared.reloadCachedNameMeta(forMediaPath: item.filename)
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cached = MediaMetaCache.shared.getCachedMediaDurationAndProgress(item.filename),
-           let duration = cached.duration, duration > 0 {
+        if MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename, mpvTitle: mpvTitle) != nil {
           // if FFmpeg got the duration successfully
-          self.refreshTotalLength()
+          refreshTotalLength()
           DispatchQueue.main.async { [self] in
             reloadPlaylistRow(rowIndex)
           }

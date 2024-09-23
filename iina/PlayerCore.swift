@@ -2081,7 +2081,7 @@ class PlayerCore: NSObject {
     Preference.set(url, for: .iinaLastPlayedFilePath)
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url.path, (duration: duration, progress: position))
+    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url.path, duration: duration, progress: position)
     if let position = info.playbackPositionSec {
       Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
       Preference.set(position, for: .iinaLastPlayedFilePosition)
