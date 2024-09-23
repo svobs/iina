@@ -2493,7 +2493,7 @@ class PlayerCore: NSObject {
     let eofWhileLoading = receivedEndFileWhileLoading
     log.verbose("Got mpv 'idle-active' (isFileLoaded=\(isFileLoaded.yn) eofLoading=\(eofWhileLoading.yn) playerState=\(state))")
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
-    if eofWhileLoading, let playback = info.currentPlayback, playback.isFileLoaded {
+    if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
       log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window")
       errorOpeningFileAndClosePlayerWindow(url: playback.url)
     } else if isFileLoaded || state.isAtLeast(.stopping) {
@@ -3172,8 +3172,6 @@ class PlayerCore: NSObject {
 
   func errorOpeningFileAndClosePlayerWindow(url: URL? = nil) {
     DispatchQueue.main.async { [self] in
-      stop()
-
       if let path = url?.path {
         Utility.showAlert("error_open_name", arguments: [path.quoted])
       } else {
@@ -3197,6 +3195,7 @@ class PlayerCore: NSObject {
   /// This function can safely be called more than once without danger of side effects.
   private func _closeWindow() {
     assert(DispatchQueue.isExecutingIn(.main))
+    stop()
     window.postWindowMustCancelShow()
     log.verbose("Closing window")
     windowController.close()

@@ -1282,6 +1282,7 @@ class MPVController: NSObject {
 
     case MPV_EVENT_START_FILE:
       guard let path = getString(MPVProperty.path) else {
+        // this can happen when file fails to load
         player.log.error("FileStarted: no path!")
         break
       }

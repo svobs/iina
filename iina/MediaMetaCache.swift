@@ -42,6 +42,7 @@ class MediaMetaCache {
   }
 
   func setCachedMediaDuration(_ urlPath: String, _ duration: Double) {
+    guard duration > 0.0 else { return }
     metaLock.withLock {
       var meta = cachedMediaDurationAndProgress[urlPath] ?? (duration: nil, progress: nil)
       meta.duration = duration

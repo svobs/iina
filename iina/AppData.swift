@@ -176,10 +176,7 @@ struct Constants {
   }
   struct SizeLimit {
     static let maxCachedVideoSizes: Int = 100000
-    static let hideSubtitles = NSLocalizedString("menu.sub_hide", comment: "Hide Subtitles")
-    static let showSubtitles = NSLocalizedString("menu.sub_show", comment: "Show Subtitles")
-    static let hideSecondSubtitles = NSLocalizedString("menu.sub_second_hide", comment: "Hide Second Subtitles")
-    static let showSecondSubtitles = NSLocalizedString("menu.sub_second_show", comment: "Show Second Subtitles")
+    static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
   }
   struct Time {
     static let infinite = VideoTime(999, 0, 0)
@@ -187,7 +184,7 @@ struct Constants {
   struct TimeInterval {
     static let pastLaunchResponseTimeout = 1.0
     /// How long since the last window finished restoring
-    static let restoreWindowsTimeout = 2.0
+    static let restoreWindowsTimeout = 4.0
 
     static let historyTableCompleteFileStatusReload = 600.0
 

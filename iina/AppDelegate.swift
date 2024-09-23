@@ -452,13 +452,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     startup.state = .doneOpening
   }
 
-  @objc
-  func restoreTimedOut() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    let log = Logger.Subsystem.restore
-    log.debug("Restore timed out. Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
-  }
-
   /// Returns `true` if any windows were restored; `false` otherwise.
   @discardableResult
   private func restoreWindowsFromPreviousLaunch() -> Bool {
@@ -608,6 +601,59 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     return !startup.wcsToRestore.isEmpty
+  }
+
+  @objc
+  func restoreTimedOut() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
+    guard startup.state == .doneEnqueuing else {
+      log.error("Restore timed out but state is \(startup.state)")
+      return
+    }
+
+    let namesReady = startup.wcsReady.compactMap{$0.window?.savedStateName}
+    let wcsStalled: [NSWindowController] = startup.wcsToRestore.filter{ !namesReady.contains($0.window!.savedStateName) }
+    var namesStalled: [String] = []
+    for (index, wc) in wcsStalled.enumerated() {
+      let winID = wc.window!.savedStateName
+      let str: String
+      if index > Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
+        break
+      } else if index == Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
+        str = "…"
+      } else if let path = (wc as? PlayerWindowController)?.player.info.currentPlayback?.path {
+        str = "\(index+1). \(path.quoted)  [id: \(winID.quoted)]"
+      } else {
+        str = "\(index+1). \(winID)"
+      }
+      namesStalled.append(str)
+    }
+
+    log.debug("Restore timed out. Progress: \(namesReady.count)/\(startup.wcsToRestore.count). Stalled: \(namesStalled)")
+    log.debug("Prompting user whether to discard and continue, or quit")
+
+    let countFailed = "\(wcsStalled.count)"
+    let countTotal = "\(startup.wcsToRestore.count)"
+    let namesStalledString = namesStalled.joined(separator: "\n")
+    let msgArgs = [countFailed, countTotal, namesStalledString]
+    let choseToContinue: Bool = Utility.quickAskPanel("restore_timeout", messageArgs: msgArgs, alertStyle: .critical,
+                                                      useCustomButtons: true)
+
+    if choseToContinue {
+      log.debug("User responded with choice to continue & discard stalled windows")
+      for wcStalled in wcsStalled {
+        log.verbose("Telling window to close: \(wcStalled.window!.savedStateName)")
+        if let pWin = wcStalled as? PlayerWindowController {
+          pWin.player.closeWindow()
+        } else {
+          wcStalled.close()
+        }
+      }
+    } else {
+      log.debug("User responded with choice to quit")
+      NSApp.terminate(nil)
+    }
   }
 
   private func restartRestoreTimer() {
