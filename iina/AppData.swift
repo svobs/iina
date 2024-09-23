@@ -186,6 +186,7 @@ struct Constants {
   }
   struct TimeInterval {
     static let pastLaunchResponseTimeout = 1.0
+    /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 2.0
 
     static let historyTableCompleteFileStatusReload = 600.0

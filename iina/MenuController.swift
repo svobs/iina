@@ -441,7 +441,7 @@ class MenuController: NSObject, NSMenuDelegate {
     playlistMenu.removeAllItems()
     guard let player = PlayerCore.active else { return }
     for (index, item) in player.info.playlist.enumerated() {
-      playlistMenu.addItem(withTitle: item.filenameForDisplay, action: #selector(PlayerWindowController.menuPlaylistItem(_:)),
+      playlistMenu.addItem(withTitle: item.displayName, action: #selector(PlayerWindowController.menuPlaylistItem(_:)),
                            tag: index, obj: nil, stateOn: item.isCurrent)
     }
   }

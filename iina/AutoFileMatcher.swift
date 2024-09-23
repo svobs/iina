@@ -78,8 +78,8 @@ class AutoFileMatcher {
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
-      if PlaybackInfo.getCachedFFVideoMeta(forURL: fileInfo.url) == nil {
-        if PlaybackInfo.updateCachedFFVideoMeta(forURL: fileInfo.url) != nil {
+      if MediaMetaCache.shared.getCachedVideoMeta(forURL: fileInfo.url) == nil {
+        if MediaMetaCache.shared.reloadCachedVideoMeta(forURL: fileInfo.url) != nil {
           updateCount += 1
         }
       }

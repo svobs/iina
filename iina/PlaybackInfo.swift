@@ -8,13 +8,6 @@
 
 import Foundation
 
-struct FFVideoMeta {
-  let width: Int
-  let height: Int
-  /// Should match mpv's `video-params/rotate`
-  let streamRotation: Int
-}
-
 /// Current state of player's mpv core. Reused between playbacks. For a single playback, see class `Playback`.
 class PlaybackInfo {
   unowned var log: Logger.Subsystem
@@ -83,10 +76,7 @@ class PlaybackInfo {
   }
 
   var isNetworkResource: Bool {
-    if let currentPlayback {
-      return currentPlayback.isNetworkResource
-    }
-    return false
+    return currentPlayback?.isNetworkResource ?? false
   }
   var mpvMd5: String? {
     return currentPlayback?.mpvMD5
@@ -199,6 +189,9 @@ class PlaybackInfo {
     return false
   }
 
+  var isSubVisible = true
+  var isSecondSubVisible = true
+
   /// If it return `nil`, it means do not change visibility from existing value
   var shouldShowDefaultArt: Bool? {
     if let currentPlayback {
@@ -210,8 +203,7 @@ class PlaybackInfo {
     return nil
   }
 
-  var isSubVisible = true
-  var isSecondSubVisible = true
+  // -- PERSISTENT PROPERTIES END --
 
   enum CurrentMediaAudioStatus {
     case unknown
@@ -236,7 +228,7 @@ class PlaybackInfo {
     return .notAudio
   }
 
-  // -- PERSISTENT PROPERTIES END --
+  private let infoLock = Lock()
 
   var chapter = 0
   var chapters: [MPVChapter] = []
@@ -246,11 +238,13 @@ class PlaybackInfo {
   var subTracks: [MPVTrack] = []
 
   var selectedSub: MPVTrack? {
-    let selected = infoLock.withLock { subTracks.filter { $0.id == sid } }
-    if selected.count > 0 {
-      return selected[0]
+    infoLock.withLock {
+      let selected = infoLock.withLock { subTracks.filter { $0.id == sid } }
+      if selected.count > 0 {
+        return selected[0]
+      }
+      return nil
     }
-    return nil
   }
 
   func findExternalSubTrack(withURL url: URL) -> MPVTrack? {
@@ -285,25 +279,27 @@ class PlaybackInfo {
   }
 
   func currentTrack(_ type: MPVTrack.TrackType) -> MPVTrack? {
-    let id: Int?, list: [MPVTrack]
-    switch type {
-    case .video:
-      id = vid
-      list = videoTracks
-    case .audio:
-      id = aid
-      list = audioTracks
-    case .sub:
-      id = sid
-      list = subTracks
-    case .secondSub:
-      id = secondSid
-      list = subTracks
-    }
-    if let id = id {
-      return list.first { $0.id == id }
-    } else {
-      return nil
+    infoLock.withLock {
+      let id: Int?, list: [MPVTrack]
+      switch type {
+      case .video:
+        id = vid
+        list = videoTracks
+      case .audio:
+        id = aid
+        list = audioTracks
+      case .sub:
+        id = sid
+        list = subTracks
+      case .secondSub:
+        id = secondSid
+        list = subTracks
+      }
+      if let id = id {
+        return list.first { $0.id == id }
+      } else {
+        return nil
+      }
     }
   }
 
@@ -326,142 +322,16 @@ class PlaybackInfo {
   var cacheTime: Double = 0
   var bufferingState: Int = 0
 
-  // The cache is read by the main thread and updated by a background thread therefore all use
-  // must be through the class methods that properly coordinate thread access.
-  private var cachedVideoDurationAndProgress: [String: (duration: Double?, progress: Double?)] = [:]
-  private var cachedMetadata: [String: (title: String?, album: String?, artist: String?)] = [:]
-
-  private let infoLock = Lock()
-
-  // TODO: move into its own class
-  private static let ffMetaLock = Lock()
-  private static var cachedFFMeta: [URL: FFVideoMeta] = [:]
-
-  static func getCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
-    guard let url else { return nil }
-    guard url.isFileURL else { return nil }
-
-    var ffMeta: FFVideoMeta? = nil
-    ffMetaLock.withLock {
-      if let cachedMeta = cachedFFMeta[url] {
-        ffMeta = cachedMeta
-      }
-    }
-    return ffMeta
-  }
-
-  static func updateCachedFFVideoMeta(forURL url: URL?) -> FFVideoMeta? {
-    guard let url else { return nil }
-    guard url.isFileURL else { return nil }
-    guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
-    if let sizeArray = FFmpegController.readVideoSize(forFile: url.path) {
-      let ffMeta = FFVideoMeta(width: Int(sizeArray[0]), height: Int(sizeArray[1]), streamRotation: Int(sizeArray[2]))
-      ffMetaLock.withLock {
-        // Don't let this get too big
-        if cachedFFMeta.count > Constants.SizeLimit.maxCachedVideoSizes {
-          Logger.log("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...", level: .debug)
-          cachedFFMeta.removeAll()
-        }
-        cachedFFMeta[url] = ffMeta
-      }
-      return ffMeta
-    } else {
-      Logger.log("Failed to read video size for file \(url.path.pii.quoted)", level: .error)
-    }
-    return nil
-  }
-
-  static func getOrReadFFVideoMeta(forURL url: URL?, _ log: Logger.Subsystem) -> FFVideoMeta? {
-    guard let url else { return nil }
-    guard url.isFileURL else {
-      log.verbose("Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)")
-      return nil
-    }
-    guard Utility.playableFileExt.contains(url.absoluteString.lowercasedPathExtension) else {
-      log.verbose("Skipping ffMeta check; not a playable file URL: \(url.absoluteString.pii.quoted)")
-      return nil
-    }
-
-    var missed = false
-    var ffMeta = getCachedFFVideoMeta(forURL: url)
-    if ffMeta == nil {
-      missed = true
-      ffMeta = updateCachedFFVideoMeta(forURL: url)
-    }
-    let path = Playback.path(for: url)
-
-    guard let ffMeta else {
-      log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")
-      return nil
-    }
-    log.debug("Found ffMeta via \(missed ? "ffmpeg" : "cache"): \(ffMeta), for \(path.pii.quoted)")
-    return ffMeta
-  }
-
-  // end TODO
-
   func calculateTotalDuration() -> Double? {
-    infoLock.withLock {
-      let playlist: [MPVPlaylistItem] = playlist
-
-      var totalDuration: Double? = 0
-      for p in playlist {
-        if let duration = cachedVideoDurationAndProgress[p.filename]?.duration {
-          totalDuration! += duration > 0 ? duration : 0
-        } else {
-          // Cache is missing an entry, can't provide a total.
-          return nil
-        }
-      }
-      return totalDuration
-    }
+    let playlist: [MPVPlaylistItem] = playlist
+    let urlPaths = playlist.map { $0.filename }
+    return MediaMetaCache.shared.calculateTotalDuration(urlPaths)
   }
 
   func calculateTotalDuration(_ indexes: IndexSet) -> Double {
-    infoLock.withLock {
-      let playlist = playlist
-      return indexes
-        .compactMap { $0 >= playlist.count ? nil : (cachedVideoDurationAndProgress[playlist[$0].filename]?.duration) }
-        .compactMap { $0 > 0 ? $0 : 0 }
-        .reduce(0, +)
-    }
+    let playlist: [MPVPlaylistItem] = playlist
+    let urlPaths = indexes.compactMap{ $0 < playlist.count ? playlist[$0].filename : nil }
+    return MediaMetaCache.shared.calculateTotalDuration(urlPaths)
   }
-
-  func getCachedVideoDurationAndProgress(_ file: String) -> (duration: Double?, progress: Double?)? {
-    infoLock.withLock {
-      cachedVideoDurationAndProgress[file]
-    }
-  }
-
-  func setCachedVideoDuration(_ file: String, _ duration: Double) {
-    infoLock.withLock {
-      cachedVideoDurationAndProgress[file]?.duration = duration
-    }
-  }
-
-  func setCachedVideoDurationAndProgress(_ file: String, _ value: (duration: Double?, progress: Double?)) {
-    infoLock.withLock {
-      cachedVideoDurationAndProgress[file] = value
-    }
-  }
-
-  func getCachedMetadata(_ file: String) -> (title: String?, album: String?, artist: String?)? {
-    infoLock.withLock {
-      cachedMetadata[file]
-    }
-  }
-
-  func getCachedMetadata(forFilename filename: String) -> (artist: String, title: String)? {
-    guard let metadata = getCachedMetadata(filename) else { return nil }
-    guard let artist = metadata.artist, let title = metadata.title else { return nil }
-    return (artist, title)
-  }
-
-  func setCachedMetadata(_ file: String, _ value: (title: String?, album: String?, artist: String?)) {
-    infoLock.withLock {
-      cachedMetadata[file] = value
-    }
-  }
-
   
 }

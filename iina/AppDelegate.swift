@@ -51,18 +51,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 
   // MARK: Properties
-  var startup = Startup()
-  var isShowingOpenFileWindow = false
 
-  // TODO: roll this into Startup class
-  private var commandLineStatus = CommandLineStatus()
-
-  private(set) var isTerminating = false
-
-  private var lastClosedWindowName: String = ""
-
-  private var observers: [NSObjectProtocol] = []
-  var observedPrefKeys: [Preference.Key] = [
+  private var observedPrefKeys: [Preference.Key] = [
     .logLevel,
     .enableLogging,
     .enableAdvancedSettings,
@@ -70,8 +60,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     .resumeLastPosition,
 //    .hideWindowsWhenInactive, // TODO: #1, see below
   ]
+  private var observers: [NSObjectProtocol] = []
 
-  // Windows
+  @IBOutlet var menuController: MenuController!
+
+  @IBOutlet weak var dockMenu: NSMenu!
+
+  // Need to store these somewhere which isn't only inside a struct.
+  // Swift doesn't seem to count them as strong references
+  private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
+  private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
+
+  // MARK: Window controllers
 
   lazy var initialWindow = InitialWindowController()
   lazy var openURLWindow = OpenURLWindowController()
@@ -87,17 +87,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   lazy var preferenceWindowController = PreferenceWindowController()
 
-  // Need to store these somewhere which isn't only inside a struct.
-  // Swift doesn't seem to count them as strong references
-  private let bindingTableStateManger: BindingTableStateManager = BindingTableState.manager
-  private let confTableStateManager: ConfTableStateManager = ConfTableState.manager
+  // MARK: State
+
+  var startup = Startup()
+  // TODO: roll this into Startup class
+  private var commandLineStatus = CommandLineStatus()
+
+  private var lastClosedWindowName: String = ""
+  var isShowingOpenFileWindow = false
 
   /// Whether the shutdown sequence timed out.
   private var shutdownTimedOut = false
 
-  @IBOutlet var menuController: MenuController!
-
-  @IBOutlet weak var dockMenu: NSMenu!
+  private(set) var isTerminating = false
 
   deinit {
     ObjcUtils.silenced {
@@ -134,7 +136,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     case PK.enableCmdN.rawValue:
       menuController.refreshCmdNStatus()
       menuController.refreshBuiltInMenuItemBindings()
-      break
 
     case PK.resumeLastPosition.rawValue:
       HistoryController.shared.queue.async {
@@ -272,7 +273,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.log("On a \(model) with an \(cpu) processor")
   }
 
-  // MARK: - SPUUpdaterDelegate
+  // MARK: - Auto update
+
   @IBOutlet var updaterController: SPUStandardUpdaterController!
 
   func feedURLString(for updater: SPUUpdater) -> String? {
@@ -377,11 +379,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   private func showWindowsIfReady() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard startup.state == .doneEnqueuing else { return }
-    guard startup.wcsReady.count == startup.wcsToRestore.count else { return }
+    guard startup.wcsReady.count == startup.wcsToRestore.count else {
+      restartRestoreTimer()
+      return
+    }
+    // TODO: change this for multi-window open
     guard !startup.openFileCalled || startup.wcForOpenFile != nil else { return }
     let log = Logger.Subsystem.restore
 
     log.verbose("All \(startup.wcsToRestore.count) restored \(startup.wcForOpenFile == nil ? "" : "& 1 new ")windows ready. Showing all")
+    startup.restoreTimer?.invalidate()
 
     for wc in startup.wcsToRestore {
       if !(wc.window?.isMiniaturized ?? false) {
@@ -446,8 +453,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   @objc
-  func restoreDidTimeout() {
+  func restoreTimedOut() {
     assert(DispatchQueue.isExecutingIn(.main))
+    let log = Logger.Subsystem.restore
+    log.debug("Restore timed out. Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
   }
 
   /// Returns `true` if any windows were restored; `false` otherwise.
@@ -529,10 +538,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     log.verbose("Starting restore of \(savedWindowsBackToFront.count) windows")
     Preference.set(true, for: .isRestoreInProgress)
 
-    // Add timeout for restoring windows
-    startup.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
-                                                target: self, selector: #selector(self.restoreDidTimeout), userInfo: nil, repeats: false)
-
     // Show windows one by one, starting at back and iterating to front:
     for savedWindow in savedWindowsBackToFront {
       log.verbose("Starting restore of window: \(savedWindow.saveName)\(savedWindow.isMinimized ? " (minimized)" : "")")
@@ -605,6 +610,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return !startup.wcsToRestore.isEmpty
   }
 
+  private func restartRestoreTimer() {
+    startup.restoreTimer?.invalidate()
+    startup.restoreTimer = Timer.scheduledTimer(timeInterval: TimeInterval(Constants.TimeInterval.restoreWindowsTimeout),
+                                                target: self, selector: #selector(self.restoreTimedOut), userInfo: nil, repeats: false)
+  }
+
   private func abortWaitForOpenFilePlayerStartup() {
     Logger.log.verbose("Aborting wait for Open File player startup")
     startup.openFileCalled = false
@@ -614,6 +625,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Window notifications
 
+  /// Window is done loading and is ready to show.
   private func windowIsReadyToShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
@@ -625,11 +637,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if Preference.bool(for: .isRestoreInProgress) {
-      // Still waiting to show
       startup.wcsReady.insert(wc)
 
       log.verbose("Restored window is ready: \(window.savedStateName.quoted). Progress: \(startup.wcsReady.count)/\(startup.state == .doneEnqueuing ? "\(startup.wcsToRestore.count)" : "?")")
 
+      // Show all windows if ready
       showWindowsIfReady()
     } else if !window.isMiniaturized {
       log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
@@ -637,6 +649,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// Window failed to load. Stop waiting for it
   private func windowMustCancelShow(_ notification: Notification) {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let window = notification.object as? NSWindow else { return }
@@ -653,6 +666,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     showWindowsIfReady()
   }
 
+  /// Sheet window is opening. Track it like a regular window.
+  ///
   /// The notification provides no way to actually know which sheet is being added.
   /// So prior to opening the sheet, the caller must manually add it using `Preference.UIState.addOpenSheet`.
   private func windowWillBeginSheet(_ notification: Notification) {
@@ -674,6 +689,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// Sheet window did close
   private func windowDidEndSheet(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     let activeWindowName = window.savedStateName
@@ -698,7 +714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
-  // Saves an ordered list of current open windows (if configured) each time *any* window becomes the main window.
+  /// Saves an ordered list of current open windows (if configured) each time *any* window becomes the main window.
   private func windowDidBecomeMain(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     // Assume new main window is the active window. AppKit does not provide an API to notify when a window is opened,
@@ -729,6 +745,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// A window was minimized. Need to update lists of tracked windows.
   func windowDidMiniaturize(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     let savedStateName = window.savedStateName
@@ -745,6 +762,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// A window was un-minimized. Update state of tracked windows.
   private func windowDidDeminiaturize(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     let savedStateName = window.savedStateName
@@ -809,6 +827,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
   }
 
+  /// Question mark
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     assert(DispatchQueue.isExecutingIn(.main))
     guard !isTerminating else { return false }
@@ -900,6 +919,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Application termination
 
+  // TODO: put all shutdown stuff in separate file. It's huge
   @objc
   func shutdownDidTimeout() {
     shutdownTimedOut = true
@@ -1155,17 +1175,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     return .terminateLater
   }
 
-  func applicationWillTerminate(_ notification: Notification) {
-    Logger.log("App will terminate")
-    Logger.closeLogFiles()
-
-    ObjcUtils.silenced {
-      self.observers.forEach {
-        NotificationCenter.default.removeObserver($0)
-      }
-    }
-  }
-
   /// Remove all menu items in the given menu and any submenus.
   ///
   /// This method recursively descends through the entire tree of menu items removing all items.
@@ -1176,6 +1185,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         removeAllMenuItems(item.submenu!)
       }
       menu.removeItem(item)
+    }
+  }
+
+  func applicationWillTerminate(_ notification: Notification) {
+    Logger.log("App will terminate")
+    Logger.closeLogFiles()
+
+    ObjcUtils.silenced {
+      self.observers.forEach {
+        NotificationCenter.default.removeObserver($0)
+      }
     }
   }
 
@@ -1332,6 +1352,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - App Reopen
 
+  /// Called when user clicks the dock icon of the already-running application.
   func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
     // Once termination starts subsystems such as mpv are being shutdown. Accessing mpv
     // once it has been instructed to shutdown can trigger a crash. MUST NOT permit

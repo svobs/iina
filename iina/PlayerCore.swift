@@ -430,7 +430,7 @@ class PlayerCore: NSObject {
       }
 
       // Load into cache while in mpv queue first
-      _ = PlaybackInfo.getOrReadFFVideoMeta(forURL: info.currentURL, log)
+      MediaMetaCache.shared.ensureVideoMetaIsCached(forURL: info.currentURL, log)
 
       DispatchQueue.main.async { [self] in
         if !info.isRestoring {
@@ -2081,7 +2081,7 @@ class PlayerCore: NSObject {
     Preference.set(url, for: .iinaLastPlayedFilePath)
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    info.setCachedVideoDurationAndProgress(url.path, (duration: duration, progress: position))
+    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url.path, (duration: duration, progress: position))
     if let position = info.playbackPositionSec {
       Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
       Preference.set(position, for: .iinaLastPlayedFilePosition)
@@ -2274,7 +2274,7 @@ class PlayerCore: NSObject {
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
     if let filename = mpv.getString(MPVProperty.path) {
-      info.setCachedVideoDuration(filename, duration)
+      MediaMetaCache.shared.setCachedMediaDuration(filename, duration)
     }
     let position = mpv.getDouble(MPVProperty.timePos)
     info.playbackPositionSec = position
@@ -2336,7 +2336,7 @@ class PlayerCore: NSObject {
 
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
-    let ffMeta = PlaybackInfo.getOrReadFFVideoMeta(forURL: currentPlayback.url, log)
+    let ffMeta = MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
     windowController.applyVideoGeoAtFileOpen(ffMeta, currentPlayback: currentPlayback, currentMediaAudioStatus: info.currentMediaAudioStatus)
 
     // Launch auto-load tasks on background thread
@@ -3535,42 +3535,6 @@ class PlayerCore: NSObject {
       }
     }
     return audioFilters
-  }
-
-  /**
-   Get video duration, playback progress, and metadata, then save it to info.
-   It may take some time to run this method, so it should be used in background.
-   */
-  func refreshCachedVideoInfo(forVideoPath path: String) {
-    guard let url = Playback.url(fromPath: path) else {
-      log.debug("[refreshCachedVideoInfo] Could not create URL from path, skipping: \(path.pii.quoted)")
-      return
-    }
-    guard url.isFileURL else {
-      log.verbose("[refreshCachedVideoInfo] Not a file; skipping: \(path.pii.quoted)")
-      return
-    }
-    guard let dict = FFmpegController.probeVideoInfo(forFile: path) else { return }
-    let progress = Utility.playbackProgressFromWatchLater(path.md5)
-    self.info.setCachedVideoDurationAndProgress(path, (
-      duration: dict["@iina_duration"] as? Double,
-      progress: progress?.second
-    ))
-    var result: (title: String?, album: String?, artist: String?)
-    dict.forEach { (k, v) in
-      guard let key = k as? String else { return }
-      switch key.lowercased() {
-      case "title":
-        result.title = v as? String
-      case "album":
-        result.album = v as? String
-      case "artist":
-        result.artist = v as? String
-      default:
-        break
-      }
-    }
-    self.info.setCachedMetadata(path, result)
   }
 
   static func checkStatusForSleep() {
