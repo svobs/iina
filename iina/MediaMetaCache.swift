@@ -38,46 +38,45 @@ class MediaMetaCache {
   static let shared = MediaMetaCache()
 
   private let metaLock = Lock()
-  private var cachedMeta: [String: MediaMeta] = [:]
+  private var cachedMeta: [URL: MediaMeta] = [:]
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
 
-  func calculateTotalDuration(_ urlPaths: [String]) -> Double {
+  func calculateTotalDuration(_ urls: [URL]) -> Double {
     metaLock.withLock {
-      return urlPaths.compactMap { cachedMeta[$0]?.duration }
-        .reduce(0, +)
+      return urls.compactMap { cachedMeta[$0]?.duration }.reduce(0, +)
     }
   }
 
-  func getCachedMeta(forMediaPath urlPath: String) -> MediaMeta? {
+  func getCachedMeta(forMediaPath url: URL) -> MediaMeta? {
     metaLock.withLock {
-      return cachedMeta[urlPath]
+      return cachedMeta[url]
     }
   }
 
-  func setCachedMediaDuration(_ urlPath: String, _ duration: Double) {
+  func setCachedMediaDuration(_ url: URL, _ duration: Double) {
     guard duration > 0.0 else { return }
     metaLock.withLock {
-      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
-      cachedMeta[urlPath] = oldMeta.clone(duration: duration)
+      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
+      cachedMeta[url] = oldMeta.clone(duration: duration)
     }
   }
 
-  func setCachedMediaDurationAndProgress(_ urlPath: String, duration: Double?, progress: Double?) {
+  func setCachedMediaDurationAndProgress(_ url: URL, duration: Double?, progress: Double?) {
     metaLock.withLock {
-      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
-      cachedMeta[urlPath] = oldMeta.clone(duration: duration, progress: progress)
+      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
+      cachedMeta[url] = oldMeta.clone(duration: duration, progress: progress)
     }
   }
 
   // MARK: - Artist, title meta
 
   @discardableResult
-  func setCachedTitle(forMediaPath urlPath: String, to title: String?) -> MediaMeta? {
+  func setCachedTitle(forMediaPath url: URL, to title: String?) -> MediaMeta? {
     metaLock.withLock {
-      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
+      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
       let newMeta = oldMeta.clone(title: title)
-      cachedMeta[urlPath] = newMeta
+      cachedMeta[url] = newMeta
       return newMeta
     }
   }
@@ -88,16 +87,11 @@ class MediaMetaCache {
    Note: This only works for file paths (not network streams)!
    */
   @discardableResult
-  func reloadCachedMeta(forMediaPath urlPath: String, mpvTitle: String? = nil) -> MediaMeta? {
-    guard let url = Playback.url(fromPath: urlPath) else {
-      Logger.log.debug("[reloadCachedMeta] Could not create URL from path, skipping: \(urlPath.pii.quoted)")
-      return nil
-    }
-
+  func reloadCachedMeta(forMediaPath url: URL, mpvTitle: String? = nil) -> MediaMeta? {
     var result: (duration: Double?, progress: Double?, title: String?, album: String?, artist: String?)
 
-    if url.isFileURL, let dict = FFmpegController.probeVideoInfo(forFile: urlPath) {
-      let progress = Utility.playbackProgressFromWatchLater(urlPath.md5)
+    if url.isFileURL, let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
+      let progress = Utility.playbackProgressFromWatchLater(url.path.md5)
       result.duration = dict["@iina_duration"] as? Double
       result.progress = progress?.second
 
@@ -123,10 +117,10 @@ class MediaMetaCache {
 
     let meta = MediaMeta(duration: result.duration, progress: result.progress,
                          title: result.title, album: result.album, artist: result.artist)
-    Logger.log.debug("[reloadCachedMeta] Reloaded URL: \(urlPath.pii.quoted) = \(meta)")
+    Logger.log.debug("[reloadCachedMeta] Reloaded URL: \(url.path.pii.quoted) = \(meta)")
 
     metaLock.withLock {
-      cachedMeta[urlPath] = meta
+      cachedMeta[url] = meta
     }
     return meta
   }
@@ -195,7 +189,7 @@ class MediaMetaCache {
       missed = true
       ffMeta = reloadCachedVideoMeta(forURL: url)
     }
-    let path = Playback.path(for: url)
+    let path = Playback.path(from: url)
 
     guard let ffMeta else {
       log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")

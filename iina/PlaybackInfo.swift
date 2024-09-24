@@ -324,14 +324,14 @@ class PlaybackInfo {
 
   func calculateTotalDuration() -> Double? {
     let playlist: [MPVPlaylistItem] = playlist
-    let urlPaths = playlist.map { $0.filename }
-    return MediaMetaCache.shared.calculateTotalDuration(urlPaths)
+    let urls = playlist.map { $0.url }
+    return MediaMetaCache.shared.calculateTotalDuration(urls)
   }
 
   func calculateTotalDuration(_ indexes: IndexSet) -> Double {
     let playlist: [MPVPlaylistItem] = playlist
-    let urlPaths = indexes.compactMap{ $0 < playlist.count ? playlist[$0].filename : nil }
-    return MediaMetaCache.shared.calculateTotalDuration(urlPaths)
+    let urls = indexes.compactMap{ $0 < playlist.count ? playlist[$0].url : nil }
+    return MediaMetaCache.shared.calculateTotalDuration(urls)
   }
   
 }

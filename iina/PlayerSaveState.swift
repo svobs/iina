@@ -232,7 +232,7 @@ struct PlayerSaveState: CustomStringConvertible {
     }
 
     let playlist = info.playlist
-    let playlistPaths: [String] = playlist.compactMap{ $0.filename }
+    let playlistPaths: [String] = playlist.compactMap{ Playback.path(from: $0.url) }
     if !playlistPaths.isEmpty {
       props[PropName.playlistPaths.rawValue] = playlistPaths
     }

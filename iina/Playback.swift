@@ -64,7 +64,7 @@ class Playback: CustomStringConvertible {
   }
 
   var path: String {
-    return Playback.path(for: url)
+    return Playback.path(from: url)
   }
 
   var isNetworkResource: Bool {
@@ -92,7 +92,7 @@ class Playback: CustomStringConvertible {
     self.init(url: url, playlistPos: playlistPos, state: state)
   }
 
-  static func path(for url: URL?) -> String {
+  static func path(from url: URL?) -> String {
     let url = url ?? URL(string: "stdin")!
     if url.absoluteString == "stdin" {
       return "-"

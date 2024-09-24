@@ -192,10 +192,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         return
       }
       guard url.isFileURL else { return }
-      let filePath = url.path
       let playlist = player.info.playlist
       for (index, item) in playlist.enumerated() {
-        if item.filename == filePath {
+        if item.url == url {
           reloadPlaylistRow(index, reloadCache: true)
         }
       }
@@ -379,7 +378,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   func copyToPasteboard(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) {
     do {
       let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
-      let filePaths = rowIndexes.map { player.info.playlist[$0].filename }
+      let filePaths = rowIndexes.map { player.info.playlist[$0].url.path }
       pboard.declareTypes([.iinaPlaylistItem, .nsFilenames], owner: tableView)
       pboard.setData(indexesData, forType: .iinaPlaylistItem)
       pboard.setPropertyList(filePaths, forType: .nsFilenames)
@@ -568,7 +567,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard let vc = subPopover.contentViewController as? SubPopoverViewController else { return }
     let playlist = player.info.playlist
     guard row < playlist.count else { return }
-    vc.filePath = playlist[row].filename
+    vc.filePath = playlist[row].url.path
     vc.tableView.reloadData()
     subPopover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
   }
@@ -610,9 +609,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let playlistItems = player.info.playlist
       if rowIndex >= 0, rowIndex < playlistItems.count {
         let item = playlistItems[rowIndex]
-        MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename)
+        MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.url)
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename),
+        if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.url),
            let duration = cached.duration, duration > 0 {
           // if FFmpeg got the duration successfully
           refreshTotalLength()
@@ -700,7 +699,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int,
                                             fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
     let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
-    let cachedMeta = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename)
+    let cachedMeta = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.url)
     let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
     let artist = wantsTitleMeta ? cachedMeta?.artist : nil
 
@@ -711,7 +710,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Title, artist, prefix
     if Preference.bool(for: .shortenFileGroupsInPlaylist),
-       let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
+       let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.url.path })?.prefix,
        !prefix.isEmpty,
        prefix.count <= displayName.count,  // check whether prefix length > displayName length
        prefix.count >= prefixMinLength,
@@ -743,7 +742,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // sub button
     if !player.info.isMatchingSubtitles,
-       let matchedSubs = player.info.getMatchedSubs(item.filename), !matchedSubs.isEmpty {
+       let matchedSubs = player.info.getMatchedSubs(item.url.path), !matchedSubs.isEmpty {
       cellView.setDisplaySubButton(true)
     } else {
       cellView.setDisplaySubButton(false)
@@ -760,12 +759,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         // Cached entry exists. Is it up-to-date?
         if cachedMeta.title != mpvTitle {
           rowMetaChanged = true
-          MediaMetaCache.shared.setCachedTitle(forMediaPath: item.filename, to: mpvTitle)
+          MediaMetaCache.shared.setCachedTitle(forMediaPath: item.url, to: mpvTitle)
         }
       } else if Preference.bool(for: .prefetchPlaylistVideoDuration) {
         // FIXME: add pref to disable fetch of network data
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename, mpvTitle: mpvTitle) {
+        if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.url, mpvTitle: mpvTitle) {
           rowMetaChanged = true
 
           if cachedMeta.duration ?? 0 > 0 {
@@ -816,7 +815,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     let urlList: [URL] = sender.targetRows.compactMap{ playlistRowIndex in
       guard playlistRowIndex < playlistItems.count else { return nil }
-      return Playback.url(fromPath: playlistItems[playlistRowIndex].filename)
+      return playlistItems[playlistRowIndex].url
     }
     PlayerCoreManager.shared.getIdleOrCreateNew().openURLs(urlList)
   }
@@ -834,7 +833,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     for index in sender.targetRows {
       guard index < playlistItems.count else { continue }
       guard !playlistItems[index].isNetworkResource else { continue }
-      let url = URL(fileURLWithPath: playlistItems[index].filename)
+      let url = playlistItems[index].url
       do {
         Logger.log("Trashing row \(index): \(url.standardizedFileURL)", subsystem: player.subsystem)
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
@@ -858,7 +857,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     for index in rows {
       guard index < playlistItems.count else { continue }
       if !playlistItems[index].isNetworkResource {
-        urls.append(URL(fileURLWithPath: playlistItems[index].filename))
+        urls.append(playlistItems[index].url)
       }
     }
 
@@ -879,8 +878,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard let index = sender.targetRows.first else { return }
     let playlistItems = player.info.playlist
     guard index < playlistItems.count else { return }
-    let filename = playlistItems[index].filename
-    let fileURL = URL(fileURLWithPath: filename).deletingLastPathComponent()
+    let filename = Playback.path(from: playlistItems[index].url)
+    let fileURL = playlistItems[index].url.deletingLastPathComponent()
     Utility.quickMultipleOpenPanel(title: NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File"), dir: fileURL, canChooseDir: true) { subURLs in
       for subURL in subURLs {
         guard Utility.supportedFileExt[.sub]!.contains(subURL.pathExtension.lowercased()) else { return }
@@ -894,7 +893,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let playlistItems = player.info.playlist
     for index in sender.targetRows {
       guard index < playlistItems.count else { continue }
-      let filename = playlistItems[index].filename
+      let filename = Playback.path(from: playlistItems[index].url)
       player.info.$matchedSubs.withLock { $0[filename]?.removeAll() }
       self.reloadPlaylistRows(sender.targetRows)
     }
@@ -906,8 +905,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       guard i < playlistItems.count else { continue }
 
       let info = playlistItems[i]
-      if info.isNetworkResource, let url = URL(string: info.filename) {
-        NSWorkspace.shared.open(url)
+      if info.isNetworkResource {
+        NSWorkspace.shared.open(info.url)
       }
     }
   }
@@ -917,7 +916,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let urls = sender.targetRows.compactMap { i -> String? in
       guard i < playlistItems.count else { return nil }
       let info = playlistItems[i]
-      return info.isNetworkResource ? info.filename : nil
+      return info.isNetworkResource ? info.url.absoluteString : nil
     }
     NSPasteboard.general.clearContents()
     NSPasteboard.general.writeObjects([urls.joined(separator: "\n") as NSString])
@@ -933,10 +932,9 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let isSingleItem = rows.count == 1
 
     if !rows.isEmpty {
-      let firstURL = playlistItems[rows.first!]
-      let matchedSubCount = player.info.getMatchedSubs(firstURL.filename)?.count ?? 0
-      let title: String = isSingleItem ?
-        firstURL.displayName :
+      let firstItem = playlistItems[rows.first!]
+      let matchedSubCount = player.info.getMatchedSubs(Playback.path(from: firstItem.url))?.count ?? 0
+      let title: String = isSingleItem ? firstItem.displayName :
         String(format: NSLocalizedString("pl_menu.title_multi", comment: "%d Items"), rows.count)
 
       menu.addItem(withTitle: title)
@@ -1165,7 +1163,7 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
   @IBAction func wrongSubBtnAction(_ sender: AnyObject) {
     player.info.$matchedSubs.withLock { $0[filePath]?.removeAll() }
     tableView.reloadData()
-    if let row = player.info.playlist.firstIndex(where: { $0.filename == filePath }) {
+    if let row = player.info.playlist.firstIndex(where: { Playback.path(from: $0.url) == filePath }) {
       playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
     }
   }

@@ -10,23 +10,24 @@ import Foundation
 
 class MPVPlaylistItem {
 
-  /** Actually this is the URL path. Using `filename` to conform mpv API's naming. */
-  var filename: String
+  /** Equivalent to `Playback.url(fromPath: mpvFilename)` */
+  var url: URL
 
   /** Title or the real filename */
   var displayName: String {
-    return isNetworkResource ? filename : NSString(string: filename).lastPathComponent
+    let urlPath = Playback.path(from: url)
+    return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
   // Too inefficient and infrequently used. Just set to false for now so it doesn't break JavascriptAPI
   var isCurrent: Bool { false }
   var isPlaying: Bool { false }
-  var isNetworkResource: Bool { Regex.url.matches(filename) }
+  var isNetworkResource: Bool { !url.isFileURL }
 
   var title: String?
 
-  init(filename: String, title: String?) {
-    self.filename = filename
+  init(url: URL, title: String?) {
+    self.url = url
     self.title = title
   }
 }

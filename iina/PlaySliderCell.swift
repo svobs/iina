@@ -30,7 +30,7 @@ class PlaySliderCell: NSSliderCell {
 
   private var knobColor = NSColor(named: .mainSliderKnob)!
   private var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
-  private var barColorLeft = NSColor(named: .mainSliderBarLeft)!
+  private var barColorLeft = NSColor.controlAccentColor
   private var barColorPreCache = NSColor(named: .mainSliderBarPreCache)!
   private var barColorRight = NSColor(named: .mainSliderBarRight)!
   private var chapterStrokeColor = NSColor(named: .mainSliderBarChapterStroke)!

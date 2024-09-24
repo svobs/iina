@@ -320,7 +320,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(for: $0).pii.quoted})")
+    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(from: $0).pii.quoted})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
 
@@ -2081,7 +2081,7 @@ class PlayerCore: NSObject {
     Preference.set(url, for: .iinaLastPlayedFilePath)
     // Write to cache directly (rather than calling `refreshCachedVideoProgress`).
     // If user only closed the window but didn't quit the app, this can make sure playlist displays the correct progress.
-    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url.path, duration: duration, progress: position)
+    MediaMetaCache.shared.setCachedMediaDurationAndProgress(url, duration: duration, progress: position)
     if let position = info.playbackPositionSec {
       Logger.log("Saving iinaLastPlayedFilePosition: \(position) sec", level: .verbose, subsystem: subsystem)
       Preference.set(position, for: .iinaLastPlayedFilePosition)
@@ -2273,8 +2273,12 @@ class PlayerCore: NSObject {
 
     let duration = mpv.getDouble(MPVProperty.duration)
     info.playbackDurationSec = duration
-    if let filename = mpv.getString(MPVProperty.path) {
-      MediaMetaCache.shared.setCachedMediaDuration(filename, duration)
+    if let path = mpv.getString(MPVProperty.path) {
+      if let url = Playback.url(fromPath: path) {
+        MediaMetaCache.shared.setCachedMediaDuration(url, duration)
+      } else {
+        log.error("Could not create URL for path, skipping: \(path)")
+      }
     }
     let position = mpv.getDouble(MPVProperty.timePos)
     info.playbackPositionSec = position
@@ -3381,8 +3385,10 @@ class PlayerCore: NSObject {
     let playlistCount = mpv.getInt(MPVProperty.playlistCount)
     log.verbose("Reloaded playlist will have \(playlistCount) items")
     for index in 0..<playlistCount {
-      let playlistItem = MPVPlaylistItem(filename: mpv.getString(MPVProperty.playlistNFilename(index))!,
-                                         title: mpv.getString(MPVProperty.playlistNTitle(index)))
+      let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
+      let url = Playback.url(fromPath: urlPath)!
+      let title = mpv.getString(MPVProperty.playlistNTitle(index))
+      let playlistItem = MPVPlaylistItem(url: url, title: title)
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist

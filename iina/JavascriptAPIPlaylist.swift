@@ -37,7 +37,7 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
 
     return player!.info.playlist.map {
       [
-        "filename": $0.filename,
+        "filename": Playback.path(from: $0.url),
         "title": $0.title ?? NSNull(),
         "isPlaying": $0.isPlaying,
         "isCurrent": $0.isCurrent

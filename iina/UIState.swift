@@ -537,7 +537,7 @@ extension Preference {
               }
 
               if Logger.isEnabled(.warning) {
-                let path = Playback.path(for: savedState.url(for: .url))
+                let path = Playback.path(from: savedState.url(for: .url))
                 log.warn("Deleting orphaned pref entry: \(playerKey.quoted) with path \(path.quoted)")
               }
               UserDefaults.standard.removeObject(forKey: playerKey)
