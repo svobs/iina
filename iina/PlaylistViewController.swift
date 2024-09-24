@@ -99,25 +99,27 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     switch keyPath {
     case #keyPath(view.effectiveAppearance):
+      /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
       if cachedEffectiveAppearanceName == view.effectiveAppearance.name.rawValue {
         return
       }
       cachedEffectiveAppearanceName = view.effectiveAppearance.name.rawValue
-      // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
-      view.effectiveAppearance.applyAppearanceFor {
-        setCustomColors()
-      }
-      reloadData(playlist: true, chapters: true)
+      updateTableColors()
     default:
       return
     }
   }
+  
 
-  fileprivate func setCustomColors() {
-    if #available(macOS 10.14, *) {
-      isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
-      isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
+  fileprivate func updateTableColors() {
+    // Need to use this closure for dark/light mode toggling to get picked up while running (not sure why...)
+    view.effectiveAppearance.applyAppearanceFor {
+      if #available(macOS 10.14, *) {
+        isPlayingTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingTextBlendFraction, of: .textColor)!
+        isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
+      }
     }
+    reloadData(playlist: true, chapters: true)
   }
 
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
@@ -221,8 +223,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @objc func systemColorSettingsDidChange(notification: Notification) {
-    Logger.log("Detected change system color prefs; reloading tables", level: .verbose)
-    reloadData(playlist: true, chapters: true)
+    Logger.log("Detected change to user accent color pref reloading tables", level: .verbose)
+    updateTableColors()
   }
 
   override func viewDidAppear() {
@@ -613,7 +615,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename),
            let duration = cached.duration, duration > 0 {
           // if FFmpeg got the duration successfully
-          self.refreshTotalLength()
+          refreshTotalLength()
           DispatchQueue.main.async { [self] in
             reloadPlaylistRow(rowIndex)
           }
@@ -632,12 +634,11 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
     guard let identifier = tableColumn?.identifier else { return nil }
-    let info = player.info
     let v = tableView.makeView(withIdentifier: identifier, owner: self) as! NSTableCellView
 
-    // Playlist table
-    if tableView == playlistTableView {
-      let playlistItems = info.playlist
+    if tableView == playlistTableView {  // Playlist table
+
+      let playlistItems = player.info.playlist
       guard row < playlistItems.count else { return nil }
       let item = playlistItems[row]
 
@@ -645,53 +646,57 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       // use cached value
       let isPlaying = self.lastNowPlayingIndex == row
 
-      if identifier == .isChosen {
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ?
-            Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
+      switch identifier {
+      case .isChosen:
+        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ? Constants.String.blackLeftPointingTriangle : Constants.String.blackRightPointingTriangle
         // ▶︎ Is Playing icon
-        if let textField = v.textField {
-          let text = isPlaying ? pointer : ""
-          textField.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
-        }
-      } else if identifier == .trackName {
+        let text = isPlaying ? pointer : ""
+        v.textField?.setFormattedText(stringValue: text, textColor: isPlayingTextColor)
+      case .trackName:
         let cellView = v as! PlaylistTrackCellView
         updateCellForTrackNameColumn(cellView, rowIndex: row, fromPlaylistItem: item, isPlaying: isPlaying)
+      default:
+        Logger.fatal("Unknown identifier in Playlist table: \(identifier)")
       }
+      return v
 
-    // Chapters table
-    } else if tableView == chapterTableView {
-      let chapters = info.chapters
+    } else if tableView == chapterTableView {  // Chapters table
+
+      let chapters = player.info.chapters
       guard row < chapters.count else { return nil }
       let chapter = chapters[row]
 
       // next chapter time
       let nextChapterTime = chapters[at: row+1]?.time ?? .infinite
-      // construct view
-      let isCurrentChapter = info.chapter == row
+      let isCurrentChapter = player.info.chapter == row
       let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
 
-      if identifier == .isChosen {
+      switch identifier {
+      case .isChosen:
         // left column
-        let pointer = view.userInterfaceLayoutDirection == .rightToLeft ?
+        let pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
         Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
-        v.setTitle(isCurrentChapter ? pointer : "", textColor: textColor)
-      } else if identifier == .trackName {
+        if isCurrentChapter {
+          v.setTitle("", textColor: textColor)
+        } else {
+          v.setTitle(pointerGlyph, textColor: textColor)
+        }
+      case .trackName:
         // right column
         let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
         v.setTitle(titleString, textColor: textColor)
         let cellView = v as! ChapterTableCellView
         cellView.durationTextField.setText("\(chapter.time.stringRepresentation) → \(nextChapterTime.stringRepresentation)", textColor: textColor)
-      } else {
-        return nil
+      default:
+        Logger.fatal("Unknown identifier in Chapters table: \(identifier)")
       }
-    } else {
-      return nil
+      return v
     }
 
-    return v
+    return nil
   }
 
-  // Playlist Table: Track Name column cell
+  /// Playlist Table: `Track Name` column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int,
                                             fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
     let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
@@ -699,10 +704,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
     let artist = wantsTitleMeta ? cachedMeta?.artist : nil
 
+    player.log.verbose("Building row \(rowIndex) of playlist: \(displayName.quoted)")
+
     let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
     let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
+
+    // Title, artist, prefix
     if Preference.bool(for: .shortenFileGroupsInPlaylist),
-        let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
+       let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.filename })?.prefix,
        !prefix.isEmpty,
        prefix.count <= displayName.count,  // check whether prefix length > displayName length
        prefix.count >= prefixMinLength,
@@ -742,38 +751,38 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     // not sure why this line exists, but let's keep it for now
     cellView.subBtn.image?.isTemplate = true
 
-    // FIXME: refactor to streamline load flow + improve appearance during load
+    // FIXME: refactor to streamline flow of loading. Do not do it here
     PlayerCore.playlistQueue.async { [self] in
-      loadMeta(forItem: item, rowIndex: rowIndex, isPlaying: isPlaying, wantsTitleMeta: wantsTitleMeta, cellView)
-    }
-  }
+      let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-  private func loadMeta(forItem item: MPVPlaylistItem, rowIndex: Int,
-                        isPlaying: Bool, wantsTitleMeta: Bool, _ cellView: PlaylistTrackCellView) {
-    let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
+      var rowMetaChanged = false
+      if let cachedMeta {
+        // Cached entry exists. Is it up-to-date?
+        if cachedMeta.title != mpvTitle {
+          rowMetaChanged = true
+          MediaMetaCache.shared.setCachedTitle(forMediaPath: item.filename, to: mpvTitle)
+        }
+      } else if Preference.bool(for: .prefetchPlaylistVideoDuration) {
+        // FIXME: add pref to disable fetch of network data
+        // Only schedule a reload if data was obtained and cached to avoid looping
+        if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename, mpvTitle: mpvTitle) {
+          rowMetaChanged = true
 
-    if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.filename) {
-      if mpvTitle != cached.title {
-        MediaMetaCache.shared.setCachedTitle(forMediaPath: item.filename, to: mpvTitle)
+          if cachedMeta.duration ?? 0 > 0 {
+            // if FFmpeg got the duration successfully
+            refreshTotalLength()
+          }
+        }
+      }
 
+      if rowMetaChanged {
         DispatchQueue.main.async { [self] in
+          /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
+          player.log.verbose("Reloading row \(rowIndex) of playlist")
           reloadPlaylistRow(rowIndex)
         }
       }
 
-      refreshTotalLength()
-    } else {
-      // get related data and schedule a reload
-      if Preference.bool(for: .prefetchPlaylistVideoDuration) {
-        // Only schedule a reload if data was obtained and cached to avoid looping
-        if MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.filename, mpvTitle: mpvTitle) != nil {
-          // if FFmpeg got the duration successfully
-          refreshTotalLength()
-          DispatchQueue.main.async { [self] in
-            reloadPlaylistRow(rowIndex)
-          }
-        }
-      }
     }
   }
 

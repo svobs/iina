@@ -303,7 +303,8 @@ struct UnitActionFormat {
 }
 
 extension Notification.Name {
-  // User changed System Settings > Appearance > Accent Color. Must handle via DistributedNotificationCenter
+  /// User changed System Settings > Appearance > Accent Color (`controlAccentColor`.
+  /// Must handle via DistributedNotificationCenter.
   static let appleColorPreferencesChangedNotification = Notification.Name("AppleColorPreferencesChangedNotification")
 
   static let iinaPlayerWindowChanged = Notification.Name("IINAPlayerWindowChanged")
