@@ -132,7 +132,7 @@ extension Preference {
       return "\(Constants.String.iinaLaunchPrefix)\(launchID)"
     }
 
-    /// Example input=`"PWin-1032m0"` → output=`"1032m0"`
+    /// Example input=`"PWin-1032c0"` → output=`"1032c0"`
     static func playerID(fromPlayerWindowKey key: String) -> String? {
       if key.starts(with: WindowAutosaveName.playerWindowPrefix) {
         let splitted = key.split(separator: "-")
@@ -143,7 +143,7 @@ extension Preference {
       return nil
     }
 
-    /// Example input=`"PWin-1032m0"` → output=`"1032"`
+    /// Example input=`"PWin-1032c0"` → output=`"1032"`
     static func launchID(fromPlayerWindowKey key: String) -> Int? {
       if let pid = playerID(fromPlayerWindowKey: key) {
         return WindowAutosaveName.playerWindowLaunchID(from: pid)
