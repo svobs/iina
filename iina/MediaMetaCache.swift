@@ -6,6 +6,7 @@
 //  Copyright © 2024 lhc. All rights reserved.
 //
 
+// TODO: consider merging this with MediaMeta
 struct FFVideoMeta {
   let width: Int
   let height: Int
@@ -14,11 +15,19 @@ struct FFVideoMeta {
 }
 
 struct MediaMeta {
+  static let empty: MediaMeta = .init(duration: nil, progress: nil, title: nil, album: nil, artist: nil)
+
   let duration: Double?
   let progress: Double?
   let title: String?
   let album: String?
   let artist: String?
+
+  func clone(duration: Double? = nil, progress: Double? = nil,
+             title: String? = nil, album: String? = nil, artist: String? = nil) -> MediaMeta {
+    return MediaMeta(duration: duration ?? self.duration, progress: progress ?? self.progress,
+                     title: title ?? self.title, album: album ?? self.album, artist: artist ?? self.artist)
+  }
 }
 
 /// Singleton for all app meta.
@@ -29,11 +38,9 @@ class MediaMetaCache {
   static let shared = MediaMetaCache()
 
   private let metaLock = Lock()
+  private var cachedMeta: [String: MediaMeta] = [:]
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
-  // The cache is read by the main thread and updated by a background thread therefore all use
-  // must be through the class methods that properly coordinate thread access.
-  private var cachedMeta: [String: MediaMeta] = [:]
 
   func calculateTotalDuration(_ urlPaths: [String]) -> Double {
     metaLock.withLock {
@@ -51,21 +58,15 @@ class MediaMetaCache {
   func setCachedMediaDuration(_ urlPath: String, _ duration: Double) {
     guard duration > 0.0 else { return }
     metaLock.withLock {
-      if let meta = cachedMeta[urlPath] {
-        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: meta.progress, title: meta.title, album: meta.album, artist: meta.artist)
-      } else {
-        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: nil, title: nil, album: nil, artist: nil)
-      }
+      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
+      cachedMeta[urlPath] = oldMeta.clone(duration: duration)
     }
   }
 
   func setCachedMediaDurationAndProgress(_ urlPath: String, duration: Double?, progress: Double?) {
     metaLock.withLock {
-      if let meta = cachedMeta[urlPath] {
-        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: progress, title: meta.title, album: meta.album, artist: meta.artist)
-      } else {
-        cachedMeta[urlPath] = MediaMeta(duration: duration, progress: progress, title: nil, album: nil, artist: nil)
-      }
+      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
+      cachedMeta[urlPath] = oldMeta.clone(duration: duration, progress: progress)
     }
   }
 
@@ -74,15 +75,10 @@ class MediaMetaCache {
   @discardableResult
   func setCachedTitle(forMediaPath urlPath: String, to title: String?) -> MediaMeta? {
     metaLock.withLock {
-      if let meta = cachedMeta[urlPath] {
-        let newMeta = MediaMeta(duration: meta.duration, progress: meta.progress, title: title ?? meta.title, album: meta.album, artist: meta.artist)
-        cachedMeta[urlPath] = newMeta
-        return newMeta
-      } else {
-        let newMeta = MediaMeta(duration: nil, progress: nil, title: title, album: nil, artist: nil)
-        cachedMeta[urlPath] = newMeta
-        return newMeta
-      }
+      let oldMeta = cachedMeta[urlPath] ?? MediaMeta.empty
+      let newMeta = oldMeta.clone(title: title)
+      cachedMeta[urlPath] = newMeta
+      return newMeta
     }
   }
 
@@ -127,8 +123,8 @@ class MediaMetaCache {
 
     let meta = MediaMeta(duration: result.duration, progress: result.progress,
                          title: result.title, album: result.album, artist: result.artist)
-
     Logger.log.debug("[reloadCachedMeta] Reloaded URL: \(urlPath.pii.quoted) = \(meta)")
+
     metaLock.withLock {
       cachedMeta[urlPath] = meta
     }

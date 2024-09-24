@@ -21,38 +21,7 @@ fileprivate let isPlayingPrefixTextBlendFraction: CGFloat = 0.4
 
 class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate, SidebarTabGroupViewController, NSMenuItemValidation {
 
-  override var nibName: NSNib.Name {
-    return NSNib.Name("PlaylistViewController")
-  }
-
-  func getTopOfTabsConstraint() -> NSLayoutConstraint? {
-    return self.buttonTopConstraint
-  }
-  func getHeightOfTabsConstraint() -> NSLayoutConstraint? {
-    return self.tabHeightConstraint
-  }
-
-  weak var windowController: PlayerWindowController! {
-    didSet {
-      self.player = windowController.player
-    }
-  }
-
-  private var draggedRowInfo: (Int, IndexSet)? = nil
-
-  weak var player: PlayerCore!
-
-  /** Similar to the one in `QuickSettingViewController`.
-   Since IBOutlet is `nil` when the view is not loaded at first time,
-   use this variable to cache which tab it need to switch to when the
-   view is ready. The value will be handled after loaded.
-   */
-  private var pendingSwitchRequest: TabViewType?
-
-  var playlistChangeObserver: NSObjectProtocol?
-  var fileHistoryUpdateObserver: NSObjectProtocol?
-
-  /** Enum for tab switching */
+  /// Enum for tab switching in `PlaylistViewController`
   enum TabViewType: String {
     case playlist
     case chapters
@@ -70,6 +39,22 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   var currentTab: TabViewType = .playlist
+
+  /** Similar to the one in `QuickSettingViewController`.
+   Since IBOutlet is `nil` when the view is not loaded at first time,
+   use this variable to cache which tab it need to switch to when the
+   view is ready. The value will be handled after loaded.
+   */
+  private var pendingSwitchRequest: TabViewType?
+
+  weak var player: PlayerCore!
+  weak var windowController: PlayerWindowController! {
+    didSet {
+      self.player = windowController.player
+    }
+  }
+
+  private var draggedRowInfo: (Int, IndexSet)? = nil
 
   @IBOutlet weak var playlistTableView: NSTableView!
   @IBOutlet weak var chapterTableView: NSTableView!
@@ -91,13 +76,23 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   @Atomic private var playlistTotalLength: Double? = nil
   private var lastNowPlayingIndex: Int = -1
 
-  private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
-  internal var observedPrefKeys: [Preference.Key] = [
-  ]
+  private var downshift: CGFloat = 0
+  private var tabHeight: CGFloat = 0
 
   fileprivate var isPlayingTextColor: NSColor = .textColor
   fileprivate var isPlayingPrefixTextColor: NSColor = .secondaryLabelColor
   fileprivate var cachedEffectiveAppearanceName: String? = nil
+
+  override var nibName: NSNib.Name {
+    return NSNib.Name("PlaylistViewController")
+  }
+
+  private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
+  internal var observedPrefKeys: [Preference.Key] = [
+  ]
+
+  var playlistChangeObserver: NSObjectProtocol?
+  var fileHistoryUpdateObserver: NSObjectProtocol?
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath else { return }
@@ -124,9 +119,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       isPlayingPrefixTextColor = NSColor.controlAccentColor.blended(withFraction: isPlayingPrefixTextBlendFraction, of: .textColor)!
     }
   }
-
-  private var downshift: CGFloat = 0
-  private var tabHeight: CGFloat = 0
 
   func setVerticalConstraints(downshift: CGFloat, tabHeight: CGFloat) {
     if self.downshift != downshift || self.tabHeight != tabHeight {
@@ -229,7 +221,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @objc func systemColorSettingsDidChange(notification: Notification) {
-    Logger.log("Detected change system color prefs; reloading tabls", level: .verbose)
+    Logger.log("Detected change system color prefs; reloading tables", level: .verbose)
     reloadData(playlist: true, chapters: true)
   }
 
