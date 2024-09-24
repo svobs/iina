@@ -1420,9 +1420,10 @@ class PlayerCore: NSObject {
 
   func loadExternalVideoFile(_ url: URL) {
     mpv.queue.async { [self] in
-      let code = mpv.command(.videoAdd, args: [url.path], checkError: false)
+      let urlPath = Playback.path(from: url)
+      let code = mpv.command(.videoAdd, args: [urlPath], checkError: false)
       if code < 0 {
-        log.error("Unsupported video: \(url.path)")
+        log.error("Unsupported video: \(urlPath)")
         DispatchQueue.main.async {
           Utility.showAlert("unsupported_audio")
         }
@@ -1432,9 +1433,10 @@ class PlayerCore: NSObject {
 
   func loadExternalAudioFile(_ url: URL) {
     mpv.queue.async { [self] in
-      let code = mpv.command(.audioAdd, args: [url.path], checkError: false)
+      let urlPath = Playback.path(from: url)
+      let code = mpv.command(.audioAdd, args: [urlPath], checkError: false)
       if code < 0 {
-        log.error("Unsupported audio: \(url.path)")
+        log.error("Unsupported audio: \(urlPath)")
         DispatchQueue.main.async {
           Utility.showAlert("unsupported_audio")
         }
@@ -1467,9 +1469,10 @@ class PlayerCore: NSObject {
       /// ```<select>  Select the subtitle immediately (default).
       ///    <auto>    Don't select the subtitle. (Or in some special situations, let the default stream
       ///              selection mechanism decide.)```
-      let code = mpv.command(.subAdd, args: [url.path, "auto"], checkError: false)
+      let urlPath = Playback.path(from: url)
+      let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
       if code < 0 {
-        log.error("Failed to load sub (probably unsupported format): \(url.path)")
+        log.error("Failed to load sub (probably unsupported format): \(urlPath)")
         // if another modal panel is shown, popping up an alert now will cause some infinite loop.
         if delay {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
@@ -1614,8 +1617,8 @@ class PlayerCore: NSObject {
   func _addToPlaylist(urls: any Collection<URL>, silent: Bool = false) {
     _reloadPlaylist(silent: true)  // get up-to-date list first
     for url in urls {
-      let path = url.isFileURL ? url.path : url.absoluteString
-      _addToPlaylist(path)
+      let urlPath = Playback.path(from: url)
+      _addToPlaylist(urlPath)
     }
 
     _reloadPlaylist(silent: silent)
@@ -1641,9 +1644,9 @@ class PlayerCore: NSObject {
     }
   }
 
-  func _addToPlaylist(_ path: String) {
-    log.debug("Appending to mpv playlist: \(path.pii.quoted)")
-    mpv.command(.loadfile, args: [path, "append"])
+  func _addToPlaylist(_ urlPath: String) {
+    log.debug("Appending to mpv playlist: \(urlPath.pii.quoted)")
+    mpv.command(.loadfile, args: [urlPath, "append"])
   }
 
   func playlistRemove(_ index: Int) {
@@ -2236,9 +2239,8 @@ class PlayerCore: NSObject {
       }
     }
 
-    let url = info.currentURL
-    let message = info.isNetworkResource ? url?.absoluteString : url?.lastPathComponent
-    sendOSD(.fileStart(message ?? "-", ""))
+    let displayName = info.currentPlayback?.displayName ?? "-"
+    sendOSD(.fileStart(displayName, ""))
 
     events.emit(.fileStarted)
   }
@@ -2862,11 +2864,11 @@ class PlayerCore: NSObject {
   private func stopWatchingSubFile() {
     guard let subFileMonitor else { return }
 
-    log.verbose("Stopping FS watch of sub file \(subFileMonitor.url.path.pii.quoted)")
+    log.verbose("Stopping FS watch of sub file \(Playback.path(from: subFileMonitor.url).pii.quoted)")
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
   }
-
+  
   /**
    Checks unsynchronized window options, such as those set via mpv before window loaded.
 

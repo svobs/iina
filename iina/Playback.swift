@@ -77,6 +77,10 @@ class Playback: CustomStringConvertible {
     return state.isAtLeast(.loaded)
   }
 
+  var displayName: String {
+    return Playback.displayName(from: url)
+  }
+
   /// if `url` is `nil`, assumed to be `stdin`
   init(url: URL?, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
     let url = url ?? URL(string: "stdin")!
@@ -92,6 +96,7 @@ class Playback: CustomStringConvertible {
     self.init(url: url, playlistPos: playlistPos, state: state)
   }
 
+  /// Do not use `url.path` for an unknown URL. Use this instead. It will handle both files and network URLs.
   static func path(from url: URL?) -> String {
     let url = url ?? URL(string: "stdin")!
     if url.absoluteString == "stdin" {
@@ -99,6 +104,13 @@ class Playback: CustomStringConvertible {
     } else {
       return url.isFileURL ? url.path : url.absoluteString
     }
+  }
+
+  static func displayName(from url: URL?) -> String {
+    guard let url else { return "-" }
+    let urlPath = Playback.path(from: url)
+    let isNetworkResource = !url.isFileURL
+    return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
   static func url(fromPath path: String) -> URL? {

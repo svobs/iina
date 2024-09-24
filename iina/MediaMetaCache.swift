@@ -23,6 +23,15 @@ struct MediaMeta {
   let album: String?
   let artist: String?
 
+  init(duration: Double?, progress: Double?, title: String?, album: String?, artist: String?) {
+    self.duration = duration
+    self.progress = progress
+    // Sometimes newlines end up in the metadata (and on Windows these also include "\r" as well). Strip them for better visibility:
+    self.title = title?.replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: " ")
+    self.album = album
+    self.artist = artist
+  }
+
   func clone(duration: Double? = nil, progress: Double? = nil,
              title: String? = nil, album: String? = nil, artist: String? = nil) -> MediaMeta {
     return MediaMeta(duration: duration ?? self.duration, progress: progress ?? self.progress,
@@ -117,7 +126,7 @@ class MediaMetaCache {
 
     let meta = MediaMeta(duration: result.duration, progress: result.progress,
                          title: result.title, album: result.album, artist: result.artist)
-    Logger.log.debug("[reloadCachedMeta] Reloaded URL: \(url.path.pii.quoted) = \(meta)")
+    Logger.log.verbose("[reloadCachedMeta] Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(meta)")
 
     metaLock.withLock {
       cachedMeta[url] = meta

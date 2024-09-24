@@ -14,10 +14,7 @@ class MPVPlaylistItem {
   var url: URL
 
   /** Title or the real filename */
-  var displayName: String {
-    let urlPath = Playback.path(from: url)
-    return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
-  }
+  var displayName: String { Playback.displayName(from: url) }
 
   var isNetworkResource: Bool { !url.isFileURL }
 
