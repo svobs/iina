@@ -3387,8 +3387,7 @@ class PlayerCore: NSObject {
     for index in 0..<playlistCount {
       let urlPath = mpv.getString(MPVProperty.playlistNFilename(index))!
       let url = Playback.url(fromPath: urlPath)!
-      let title = mpv.getString(MPVProperty.playlistNTitle(index))
-      let playlistItem = MPVPlaylistItem(url: url, title: title)
+      let playlistItem = MPVPlaylistItem(url: url)
       newPlaylist.append(playlistItem)
     }
     info.playlist = newPlaylist

@@ -71,6 +71,10 @@ class PlaybackInfo {
     }
   }
 
+  var nowPlayingIndex: Int {
+    return currentPlayback?.playlistPos ?? -1
+  }
+
   var currentURL: URL? {
     return currentPlayback?.url
   }

@@ -19,15 +19,9 @@ class MPVPlaylistItem {
     return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
-  // Too inefficient and infrequently used. Just set to false for now so it doesn't break JavascriptAPI
-  var isCurrent: Bool { false }
-  var isPlaying: Bool { false }
   var isNetworkResource: Bool { !url.isFileURL }
 
-  var title: String?
-
-  init(url: URL, title: String?) {
+  init(url: URL) {
     self.url = url
-    self.title = title
   }
 }

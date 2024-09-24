@@ -440,9 +440,10 @@ class MenuController: NSObject, NSMenuDelegate {
   private func updatePlaylist() {
     playlistMenu.removeAllItems()
     guard let player = PlayerCore.active else { return }
+    let nowPlayingIndex = player.info.nowPlayingIndex
     for (index, item) in player.info.playlist.enumerated() {
       playlistMenu.addItem(withTitle: item.displayName, action: #selector(PlayerWindowController.menuPlaylistItem(_:)),
-                           tag: index, obj: nil, stateOn: item.isCurrent)
+                           tag: index, obj: nil, stateOn: index == nowPlayingIndex)
     }
   }
 
