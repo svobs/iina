@@ -704,7 +704,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
     let artist = wantsTitleMeta ? cachedMeta?.artist : nil
 
-    player.log.verbose("Building row \(rowIndex) of playlist: \(displayName.quoted)")
+//    player.log.verbose("Building row \(rowIndex) of playlist: \(displayName.quoted)")
 
     let textColor = isPlaying ? isPlayingTextColor : .controlTextColor
     let prefixTextColor = isPlaying ? isPlayingPrefixTextColor : .secondaryLabelColor
@@ -778,7 +778,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       if rowMetaChanged {
         DispatchQueue.main.async { [self] in
           /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
-          player.log.verbose("Reloading row \(rowIndex) of playlist")
+//          player.log.verbose("Reloading row \(rowIndex) of playlist")
           reloadPlaylistRow(rowIndex)
         }
       }
@@ -813,10 +813,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   @IBAction func contextMenuPlayInNewWindow(_ sender: ContextMenuItem) {
     let playlistItems = player.info.playlist
-    let files = sender.targetRows.enumerated().compactMap { (_, i) in
-      i < playlistItems.count ? URL(fileURLWithPath: playlistItems[i].filename) : nil
+
+    let urlList: [URL] = sender.targetRows.compactMap{ playlistRowIndex in
+      guard playlistRowIndex < playlistItems.count else { return nil }
+      return Playback.url(fromPath: playlistItems[playlistRowIndex].filename)
     }
-    PlayerCoreManager.shared.getIdleOrCreateNew().openURLs(files)
+    PlayerCoreManager.shared.getIdleOrCreateNew().openURLs(urlList)
   }
 
   @IBAction func contextMenuRemove(_ sender: ContextMenuItem) {
