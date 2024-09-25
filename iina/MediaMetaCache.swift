@@ -57,7 +57,7 @@ class MediaMetaCache {
     }
   }
 
-  func getCachedMeta(forMediaPath url: URL) -> MediaMeta? {
+  func getCachedMeta(for url: URL) -> MediaMeta? {
     metaLock.withLock {
       return cachedMeta[url]
     }
@@ -96,36 +96,44 @@ class MediaMetaCache {
    Note: This only works for file paths (not network streams)!
    */
   @discardableResult
-  func reloadCachedMeta(forMediaPath url: URL, mpvTitle: String? = nil) -> MediaMeta? {
-    var result: (duration: Double?, progress: Double?, title: String?, album: String?, artist: String?)
+  func reloadCachedMeta(for url: URL, mpvTitle: String? = nil) -> MediaMeta? {
+    
+    var progress: Double? = nil
+    var duration: Double? = nil
 
-    if url.isFileURL, let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
-      let progress = Utility.playbackProgressFromWatchLater(url.path.md5)
-      result.duration = dict["@iina_duration"] as? Double
-      result.progress = progress?.second
+    var title: String? = nil
+    var album: String? = nil
+    var artist: String? = nil
 
-      dict.forEach { (k, v) in
-        guard let key = k as? String else { return }
-        switch key.lowercased() {
-        case "title":
-          result.title = v as? String
-        case "album":
-          result.album = v as? String
-        case "artist":
-          result.artist = v as? String
-        default:
-          break
+    if url.isFileURL {
+      progress = Utility.playbackProgressFromWatchLater(url.path.md5)
+
+      if let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
+
+        duration = dict["@iina_duration"] as? Double
+
+        dict.forEach { (k, v) in
+          guard let key = k as? String else { return }
+          switch key.lowercased() {
+          case "title":
+            title = v as? String
+          case "album":
+            album = v as? String
+          case "artist":
+            artist = v as? String
+          default:
+            break
+          }
         }
       }
     }
 
     // Favor mpv title
     if let mpvTitle {
-      result.title = mpvTitle
+      title = mpvTitle
     }
 
-    let meta = MediaMeta(duration: result.duration, progress: result.progress,
-                         title: result.title, album: result.album, artist: result.artist)
+    let meta = MediaMeta(duration: duration, progress: progress, title: title, album: album, artist: artist)
     Logger.log.verbose("[reloadCachedMeta] Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(meta)")
 
     metaLock.withLock {

@@ -90,8 +90,8 @@ class Playback: CustomStringConvertible {
     self.state = state
   }
 
-  convenience init?(path: String, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
-    let url = Playback.url(fromPath: path)
+  convenience init?(urlPath: String, playlistPos: Int = 0, state: LifecycleState = .notYetStarted) {
+    let url = Playback.url(fromPath: urlPath)
     guard let url else { return nil }
     self.init(url: url, playlistPos: playlistPos, state: state)
   }
@@ -106,6 +106,7 @@ class Playback: CustomStringConvertible {
     }
   }
 
+  /// Returns the name of this resource as it should be displayed in the UI. Does not account for its `title` or other metadata.
   static func displayName(from url: URL?) -> String {
     guard let url else { return "-" }
     let urlPath = Playback.path(from: url)
@@ -113,11 +114,16 @@ class Playback: CustomStringConvertible {
     return isNetworkResource ? urlPath : NSString(string: urlPath).lastPathComponent
   }
 
-  static func url(fromPath path: String) -> URL? {
-    if path.contains("://") {
-      return URL(string: path.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? path)
+  /// Converts `urlPath` from what mpv calls `filename` in its APIs.
+  ///
+  /// This is a string which follows one of the following formats:
+  /// 1. If a file resource, a file path in slash notation
+  /// 2. If a network resource, a URL string in protocol://domain/resource/etc notation
+  static func url(fromPath urlPath: String) -> URL? {
+    if urlPath.contains("://") {
+      return URL(string: urlPath.addingPercentEncoding(withAllowedCharacters: .urlAllowed) ?? urlPath)
     } else {
-      return URL(fileURLWithPath: path)
+      return URL(fileURLWithPath: urlPath)
     }
   }
 }

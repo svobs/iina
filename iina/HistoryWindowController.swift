@@ -379,7 +379,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       if tableColumn?.identifier == .time {
         return getTimeString(from: entry)
       } else if tableColumn?.identifier == .progress {
-        return entry.duration.stringRepresentation
+        return VideoTime.string(from: entry.duration)
       }
     }
     return item
@@ -402,9 +402,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
         // Do not animate! Causes unneeded slowdown
         progressView.indicator.usesThreadedAnimation = false
         if let progress = entry.mpvProgress {
-          progressView.textField?.stringValue = progress.stringRepresentation
+          progressView.textField?.stringValue = VideoTime.string(from: progress)
           progressView.indicator.isHidden = false
-          progressView.indicator.doubleValue = (progress / entry.duration) ?? 0
+          progressView.indicator.doubleValue = progress / entry.duration
         } else {
           progressView.textField?.stringValue = ""
           progressView.indicator.isHidden = true

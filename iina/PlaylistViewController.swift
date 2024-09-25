@@ -609,9 +609,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let playlistItems = player.info.playlist
       if rowIndex >= 0, rowIndex < playlistItems.count {
         let item = playlistItems[rowIndex]
-        MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.url)
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cached = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.url),
+        if let cached = MediaMetaCache.shared.reloadCachedMeta(for: item.url),
            let duration = cached.duration, duration > 0 {
           // if FFmpeg got the duration successfully
           refreshTotalLength()
@@ -699,7 +698,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int,
                                             fromPlaylistItem item: MPVPlaylistItem, isPlaying: Bool) {
     let wantsTitleMeta = Preference.bool(for: .playlistShowMetadata) && (Preference.bool(for: .playlistShowMetadataInMusicMode) ? player.isInMiniPlayer : true)
-    let cachedMeta = MediaMetaCache.shared.getCachedMeta(forMediaPath: item.url)
+    let cachedMeta = MediaMetaCache.shared.getCachedMeta(for: item.url)
     let displayName = (wantsTitleMeta ? cachedMeta?.title : nil) ?? NSString(string: item.displayName).deletingPathExtension
     let artist = wantsTitleMeta ? cachedMeta?.artist : nil
 
@@ -710,7 +709,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     // Title, artist, prefix
     if Preference.bool(for: .shortenFileGroupsInPlaylist),
-       let prefix = player.info.currentVideosInfo.first(where: { $0.path == item.url.path })?.prefix,
+       let prefix = player.info.currentVideosInfo.first(where: { $0.url == item.url })?.prefix,
        !prefix.isEmpty,
        prefix.count <= displayName.count,  // check whether prefix length > displayName length
        prefix.count >= prefixMinLength,
@@ -764,7 +763,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       } else if Preference.bool(for: .prefetchPlaylistVideoDuration) {
         // FIXME: add pref to disable fetch of network data
         // Only schedule a reload if data was obtained and cached to avoid looping
-        if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(forMediaPath: item.url, mpvTitle: mpvTitle) {
+        if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(for: item.url, mpvTitle: mpvTitle) {
           rowMetaChanged = true
 
           if cachedMeta.duration ?? 0 > 0 {

@@ -2176,7 +2176,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    guard let mediaFromPath = Playback(path: path, playlistPos: playlistPos, state: .started) else {
+    guard let mediaFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
@@ -2868,7 +2868,7 @@ class PlayerCore: NSObject {
     subFileMonitor.stopMonitoring()
     self.subFileMonitor = nil
   }
-  
+
   /**
    Checks unsynchronized window options, such as those set via mpv before window loaded.
 

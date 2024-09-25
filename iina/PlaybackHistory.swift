@@ -30,8 +30,8 @@ class PlaybackHistory: NSObject, NSSecureCoding {
   let played: Bool
   let addedDate: Date
 
-  let duration: VideoTime
-  var mpvProgress: VideoTime?
+  let duration: Double
+  var mpvProgress: Double?
 
   required init?(coder aDecoder: NSCoder) {
     guard
@@ -51,7 +51,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
     self.mpvMd5 = md5 as String
     self.played = played
     self.addedDate = date as Date
-    self.duration = VideoTime(duration)
+    self.duration = duration
 
     self.mpvProgress = nil
   }
@@ -62,7 +62,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
     self.mpvMd5 = Utility.mpvWatchLaterMd5(url.path)
     self.played = true
     self.addedDate = Date()
-    self.duration = VideoTime(duration)
+    self.duration = duration
   }
 
   // This is a long-running operation. Load this asynchronously
@@ -79,7 +79,7 @@ class PlaybackHistory: NSObject, NSSecureCoding {
     aCoder.encode(mpvMd5, forKey: KeyMpvMd5)
     aCoder.encode(played, forKey: KeyPlayed)
     aCoder.encode(addedDate, forKey: KeyAddedDate)
-    aCoder.encode(duration.second, forKey: KeyDuration)
+    aCoder.encode(duration, forKey: KeyDuration)
   }
 
 }

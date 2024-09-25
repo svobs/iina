@@ -559,7 +559,8 @@ class Utility {
     return filename.md5
   }
 
-  static func playbackProgressFromWatchLater(_ mpvMd5: String) -> VideoTime? {
+  /// Returns saved playback progress (in seconds) or `nil` if not found in `watch-later` data.
+  static func playbackProgressFromWatchLater(_ mpvMd5: String) -> Double? {
     // No point in loading/showing this if it's not used
     guard Preference.bool(for: .resumeLastPosition) else { return nil }
 
@@ -569,7 +570,7 @@ class Utility {
       firstLine.hasPrefix("start="),
       let progressString = firstLine.components(separatedBy: "=").last,
       let progress = Double(progressString) {
-      return VideoTime(progress)
+      return progress
     } else {
       return nil
     }
