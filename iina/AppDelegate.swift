@@ -628,7 +628,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       } else if index == Constants.SizeLimit.maxWindowNamesInRestoreTimeoutAlert {
         str = "…"
       } else if let path = (wc as? PlayerWindowController)?.player.info.currentPlayback?.path {
-        str = "\(index+1). \(path.quoted)  [id: \(winID.quoted)]"
+        str = "\(index+1). \(path.quoted)  [\(winID)]"
       } else {
         str = "\(index+1). \(winID)"
       }
