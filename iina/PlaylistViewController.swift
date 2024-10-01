@@ -675,7 +675,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   /// Playlist Table: `Track Name` column cell
   private func updateCellForTrackNameColumn(_ cellView: PlaylistTrackCellView, rowIndex: Int, isPlaying: Bool) {
-    guard let (playlistItem, cachedMeta) = reloadCache(forRowIndex: rowIndex) else {
+    // FIXME: refactor to streamline flow of loading. Do not do it here
+    guard let (playlistItem, cachedMeta) = reloadCache(forRowIndex: rowIndex, isPlaying: isPlaying) else {
       player.log.error("No playlist item found for rowIndex \(rowIndex). Skipping cell update")
       return
     }
@@ -730,17 +731,16 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     }
     // not sure why this line exists, but let's keep it for now
     cellView.subBtn.image?.isTemplate = true
-
-    // FIXME: refactor to streamline flow of loading. Do not do it here
   }
 
   @discardableResult
-  func reloadCache(forRowIndex rowIndex: Int) -> (MPVPlaylistItem, MediaMeta?)? {
+  func reloadCache(forRowIndex rowIndex: Int, isPlaying: Bool = false) -> (MPVPlaylistItem, MediaMeta?)? {
     guard rowIndex >= 0 else { return nil }
     let playlistItems = player.info.playlist
     guard rowIndex < playlistItems.count else { return nil }
     let playlistItem = playlistItems[rowIndex]
     let url = playlistItem.url
+    let isPlaying = false
 
     let existingCachedMeta = MediaMetaCache.shared.getCachedMeta(for: url)
 
@@ -748,27 +748,20 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     player.mpv.queue.async { [self] in
       let mpvTitle = player.isStopping ? nil : player.mpv.getString(MPVProperty.playlistNTitle(rowIndex))
 
-      PlayerCore.playlistQueue.async { [self] in
-        var rowMetaChanged = false
-        
-        if let existingCachedMeta {
-          // Cached entry exists. Is it up-to-date?
-          if existingCachedMeta.title != mpvTitle {
-            rowMetaChanged = true
-            MediaMetaCache.shared.setCachedTitle(forMediaPath: url, to: mpvTitle)
-          }
-        } else if Preference.bool(for: .prefetchPlaylistVideoDuration) {
-          if let cachedMeta = MediaMetaCache.shared.reloadCachedMeta(for: url, mpvTitle: mpvTitle) {
-            rowMetaChanged = true
+//      let mpvMeta: (String, String, String)? = isPlaying ? player.getMusicMetadata() : nil
 
-            if cachedMeta.duration ?? 0 > 0 {
-              // if FFmpeg got the duration successfully
-              refreshTotalLength()
-            }
+      PlayerCore.playlistQueue.async { [self] in
+        if isPlaying || Preference.bool(for: .prefetchPlaylistVideoDuration) {
+          let cachedMeta = MediaMetaCache.shared.updateCache(for: url, mpvTitle: mpvTitle)
+
+          if cachedMeta?.duration ?? 0 > 0 {
+            // if FFmpeg got the duration successfully
+            refreshTotalLength()
           }
         }
 
-        if rowMetaChanged {
+
+        if existingCachedMeta == nil {  // FIXME: better change detection
           DispatchQueue.main.async { [self] in
             /// This should trigger a call to `updateCellForTrackNameColumn` to rebuild the row
             reloadPlaylistRow(rowIndex)

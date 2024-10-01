@@ -80,24 +80,15 @@ class MediaMetaCache {
 
   // MARK: - Artist, title meta
 
-  @discardableResult
-  func setCachedTitle(forMediaPath url: URL, to title: String?) -> MediaMeta? {
-    metaLock.withLock {
-      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
-      let newMeta = oldMeta.clone(title: title)
-      cachedMeta[url] = newMeta
-      return newMeta
-    }
-  }
-
   /**
    Fetch video duration, playback progress, and name metadata, then save it to cache.
    It may take some time to run this method, so it should be used in background.
    Note: This only works for file paths (not network streams)!
    */
   @discardableResult
-  func reloadCachedMeta(for url: URL, mpvTitle: String? = nil) -> MediaMeta? {
-    
+  func updateCache(for url: URL, reloadFromWatchLater: Bool = true, reloadFromFFmpeg: Bool = true,
+                   mpvTitle: String? = nil, mpvAlbum: String? = nil, mpvArtist: String? = nil) -> MediaMeta? {
+
     var progress: Double? = nil
     var duration: Double? = nil
 
@@ -106,9 +97,11 @@ class MediaMetaCache {
     var artist: String? = nil
 
     if url.isFileURL {
-      progress = Utility.playbackProgressFromWatchLater(url.path.md5)
+      if reloadFromWatchLater {
+        progress = Utility.playbackProgressFromWatchLater(url.path.md5)
+      }
 
-      if let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
+      if reloadFromFFmpeg, let dict = FFmpegController.probeVideoInfo(forFile: url.path) {
 
         duration = dict["@iina_duration"] as? Double
 
@@ -128,18 +121,25 @@ class MediaMetaCache {
       }
     }
 
-    // Favor mpv title
+    // Favor mpv properties
     if let mpvTitle {
       title = mpvTitle
     }
-
-    let meta = MediaMeta(duration: duration, progress: progress, title: title, album: album, artist: artist)
-    Logger.log.verbose("[reloadCachedMeta] Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(meta)")
-
-    metaLock.withLock {
-      cachedMeta[url] = meta
+    if let mpvAlbum {
+      album = mpvAlbum
     }
-    return meta
+    if let mpvArtist {
+      artist = mpvArtist
+    }
+
+    return metaLock.withLock {
+      let oldMeta = cachedMeta[url] ?? MediaMeta.empty
+      let newMeta = oldMeta.clone(duration: duration, progress: progress,
+                                  title: title, album: album, artist: artist)
+      cachedMeta[url] = newMeta
+      Logger.log.verbose("[reloadCachedMeta] Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
+      return newMeta
+    }
   }
 
 

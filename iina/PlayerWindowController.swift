@@ -2881,56 +2881,67 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @objc
   func updateTitle() {
-    guard let window else { return }
+    player.mpv.queue.async { [self] in
+      _updateTitle()
+    }
+  }
+
+  private func _updateTitle() {
     guard let currentPlayback = player.info.currentPlayback else {
       log.verbose("Cannot update window title: currentPlayback is nil")
       return
     }
 
-    let title: String
-    if isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
-      let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
-      title = mediaTitle
-      window.title = title
-      miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
-    } else if player.info.isNetworkResource {
-      title = player.getMediaTitle()
-      window.title = title
-    } else {
-      window.representedURL = player.info.currentURL
-      // Workaround for issue #3543, IINA crashes reporting:
-      // NSInvalidArgumentException [NSNextStepFrame _displayName]: unrecognized selector
-      // When running on an M1 under Big Sur and using legacy full screen.
-      //
-      // Changes in Big Sur broke the legacy full screen feature. The PlayerWindowController method
-      // legacyAnimateToFullscreen had to be changed to get this feature working again. Under Big
-      // Sur that method now calls "window.styleMask.remove(.titled)". Removing titled from the
-      // style mask causes the AppKit method NSWindow.setTitleWithRepresentedFilename to trigger the
-      // exception listed above. This appears to be a defect in the Cocoa framework. The window's
-      // title can still be set directly without triggering the exception. The problem seems to be
-      // isolated to the setTitleWithRepresentedFilename method, possibly only when running on an
-      // Apple Silicon based Mac. Based on the Apple documentation setTitleWithRepresentedFilename
-      // appears to be a convenience method. As a workaround for the issue directly set the window
-      // title.
-      //
-      // This problem has been reported to Apple as:
-      // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
-      // Feedback number FB9789129
-      title = currentPlayback.url.lastPathComponent
-      window.setTitleWithRepresentedFilename(currentPlayback.url.path)
-    }
+    guard player.state.isNotYet(.stopping) else { return }
+    let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
 
-    /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
-    /// Oddly, there are 2 separate functions for adding and changing the item, but `addWindowsItem` has no effect if called more than once,
-    /// while `changeWindowsItem` needs to be called if `addWindowsItem` was already called. To be safe, just call both.
-    NSApplication.shared.addWindowsItem(window, title: title, filename: false)
-    NSApplication.shared.changeWindowsItem(window, title: title, filename: false)
+    DispatchQueue.main.async { [self] in
+      guard let window else { return }
+      let title: String
+      if isInMiniPlayer {
+        miniPlayer.loadIfNeeded()
+        title = mediaTitle
+        window.title = title
+        miniPlayer.updateTitle(mediaTitle: mediaTitle, mediaAlbum: mediaAlbum, mediaArtist: mediaArtist)
+      } else if player.info.isNetworkResource {
+        title = player.getMediaTitle()
+        window.title = title
+      } else {
+        window.representedURL = player.info.currentURL
+        // Workaround for issue #3543, IINA crashes reporting:
+        // NSInvalidArgumentException [NSNextStepFrame _displayName]: unrecognized selector
+        // When running on an M1 under Big Sur and using legacy full screen.
+        //
+        // Changes in Big Sur broke the legacy full screen feature. The PlayerWindowController method
+        // legacyAnimateToFullscreen had to be changed to get this feature working again. Under Big
+        // Sur that method now calls "window.styleMask.remove(.titled)". Removing titled from the
+        // style mask causes the AppKit method NSWindow.setTitleWithRepresentedFilename to trigger the
+        // exception listed above. This appears to be a defect in the Cocoa framework. The window's
+        // title can still be set directly without triggering the exception. The problem seems to be
+        // isolated to the setTitleWithRepresentedFilename method, possibly only when running on an
+        // Apple Silicon based Mac. Based on the Apple documentation setTitleWithRepresentedFilename
+        // appears to be a convenience method. As a workaround for the issue directly set the window
+        // title.
+        //
+        // This problem has been reported to Apple as:
+        // "setTitleWithRepresentedFilename throws NSInvalidArgumentException: NSNextStepFrame _displayName"
+        // Feedback number FB9789129
+        title = currentPlayback.url.lastPathComponent
+        window.setTitleWithRepresentedFilename(currentPlayback.url.path)
+      }
 
-    if log.isTraceEnabled {
-      log.trace("Updating window title to: \(title.pii.quoted)")
-    }
-    customTitleBar?.refreshTitle()
+      /// This call is needed when using custom window style, otherwise the window won't get added to the Window menu or the Dock.
+      /// Oddly, there are 2 separate functions for adding and changing the item, but `addWindowsItem` has no effect if called more than once,
+      /// while `changeWindowsItem` needs to be called if `addWindowsItem` was already called. To be safe, just call both.
+      NSApplication.shared.addWindowsItem(window, title: title, filename: false)
+      NSApplication.shared.changeWindowsItem(window, title: title, filename: false)
+
+      if log.isTraceEnabled {
+        log.trace("Updating window title to: \(title.pii.quoted)")
+      }
+      customTitleBar?.refreshTitle()
+    }  // end DispatchQueue.main work item
+
   }
 
   // MARK: - UI: Interactive mode

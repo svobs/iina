@@ -3448,9 +3448,13 @@ class PlayerCore: NSObject {
   // MARK: - Utils
 
   func getMediaTitle(withExtension: Bool = true) -> String {
-    let mediaTitle = mpv.getString(MPVProperty.mediaTitle)
-    let mediaPath = withExtension ? info.currentURL?.path : info.currentURL?.deletingPathExtension().path
-    return mediaTitle ?? mediaPath ?? ""
+    if let mediaTitle = mpv.getString(MPVProperty.mediaTitle) {
+      return mediaTitle
+    }
+    if let url = info.currentURL {
+      return withExtension ? url.path : url.deletingPathExtension().path
+    }
+    return ""
   }
 
   func getMusicMetadata() -> (title: String, album: String, artist: String) {
