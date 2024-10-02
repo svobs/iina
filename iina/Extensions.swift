@@ -878,6 +878,28 @@ extension NSTextField {
 
 }
 
+extension CGContext {
+  /// Decorator for state
+  func withNewCGState<T>(_ closure: () throws -> T) rethrows -> T {
+    saveGState()
+    defer {
+      restoreGState()
+    }
+    return try closure()
+  }
+
+  func drawRoundedRect(_ rect: NSRect, cornerRadius: CGFloat, fillColor: CGColor) {
+    setFillColor(fillColor)
+    // Clip its corners to round it:
+    beginPath()
+    addPath(CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
+    closePath()
+    clip()
+    fill([rect])
+  }
+}
+
+
 extension CGImage {
   /// Returns this image's data in PNG format, suitable for writing to a `.png` file on disk
   var pngData: Data? {
@@ -1031,7 +1053,7 @@ extension NSImage {
       cgContext.concatenate(rotateContext)
       cgContext.draw(currentImage, in: imgRect)
     }
-    return drawImageInBitmapImageContext(width: Int(rotatedImgFrame.size.width), height: Int(rotatedImgFrame.size.height), drawingCalls: drawingCalls)!
+    return NSImage.buildBitmapImage(width: Int(rotatedImgFrame.size.width), height: Int(rotatedImgFrame.size.height), drawingCalls: drawingCalls)!
   }
 
   private func degToRad(_ degrees: CGFloat) -> CGFloat {
@@ -1074,14 +1096,15 @@ extension NSImage {
     let drawingCalls: (CGContext) -> Void = { cgContext in
       cgContext.draw(currentImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
     }
-    return drawImageInBitmapImageContext(width: Int(newWidth), height: Int(newHeight), drawingCalls: drawingCalls)!
+    return NSImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: drawingCalls)!
   }
 
-  /// This code is copied from `PlayerWindowPreviewImageBuilder`.
+  /// Builds a bitmap image efficiently using CoreGraphics APIs.
+  /// 
   /// If it's found useful for any more situations, should put in its own class
-  private func drawImageInBitmapImageContext(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> NSImage? {
+  static func buildBitmapImage(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> NSImage? {
 
-    guard let compositeImageRep = makeNewImgRep(width: width, height: height) else {
+    guard let compositeImageRep = NSImage.makeNewImgRep(width: width, height: height) else {
       Logger.log("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!", level: .error)
       return nil
     }
@@ -1109,7 +1132,7 @@ extension NSImage {
   }
 
   /// Creates RGB image with alpha channel
-  private func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
+  private static func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
     return NSBitmapImageRep(
       bitmapDataPlanes: nil,
       pixelsWide: width,

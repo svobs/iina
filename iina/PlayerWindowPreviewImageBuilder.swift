@@ -28,27 +28,6 @@ fileprivate let nativeWindowRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleF
 fileprivate let widgetRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleFactor)
 fileprivate let desktopInset: Int = Int(0.5 * Double(scaleFactor))
 
-fileprivate extension CGContext {
-  // Decorator for state
-  func withNewCGState<T>(_ closure: () throws -> T) rethrows -> T {
-    saveGState()
-    defer {
-      restoreGState()
-    }
-    return try closure()
-  }
-
-  func drawRoundedRect(_ rect: NSRect, cornerRadius: CGFloat, fillColor: CGColor) {
-    setFillColor(fillColor)
-    // Clip its corners to round it:
-    beginPath()
-    addPath(CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
-    closePath()
-    clip()
-    fill([rect])
-  }
-}
-
 class PlayerWindowPreviewImageBuilder {
   static var cgImageCache: [String: CGImage] = [:]
 
@@ -335,8 +314,7 @@ class PlayerWindowPreviewImageBuilder {
       }
     }  // drawingCalls
 
-    let previewImage = drawImageInBitmapImageContext(width: outputImgWidth, height: outputImgHeight, drawingCalls: drawingCalls)
-
+    let previewImage = NSImage.buildBitmapImage(width: outputImgWidth, height: outputImgHeight, drawingCalls: drawingCalls)
     return previewImage
   }
 
@@ -409,49 +387,4 @@ class PlayerWindowPreviewImageBuilder {
     cgContext.setAlpha(1)
   }
 
-  private func drawImageInBitmapImageContext(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> NSImage? {
-
-    guard let compositeImageRep = makeNewImgRep(width: width, height: height) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!", level: .error)
-      return nil
-    }
-
-    guard let context = NSGraphicsContext(bitmapImageRep: compositeImageRep) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSGraphicsContext!", level: .error)
-      return nil
-    }
-
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = context
-    let cgContext = context.cgContext
-
-    appearance.applyAppearanceFor {
-      drawingCalls(cgContext)
-    }
-
-    defer {
-      NSGraphicsContext.restoreGraphicsState()
-    }
-
-    let outputImage = NSImage(size: CGSize(width: width, height: height))
-    // Create the CGImage from the contents of the bitmap context.
-    outputImage.addRepresentation(compositeImageRep)
-
-    return outputImage
-  }
-
-  /// Creates RGB image with alpha channel
-  private func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
-    return NSBitmapImageRep(
-      bitmapDataPlanes: nil,
-      pixelsWide: width,
-      pixelsHigh: height,
-      bitsPerSample: 8,
-      samplesPerPixel: 4,
-      hasAlpha: true,
-      isPlanar: false,
-      colorSpaceName: NSColorSpaceName.calibratedRGB,
-      bytesPerRow: 0,
-      bitsPerPixel: 0)
-  }
 }
