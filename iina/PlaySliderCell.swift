@@ -31,6 +31,7 @@ class PlaySliderCell: NSSliderCell {
   private var knobColor = NSColor(named: .mainSliderKnob)!
   private var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
   private var barColorLeft = NSColor.controlAccentColor
+  private var barColorLeftGlow = NSColor.controlAccentColor
   private var barColorPreCache = NSColor(named: .mainSliderBarPreCache)!
   private var barColorRight = NSColor(named: .mainSliderBarRight)!
   private var chapterStrokeColor = NSColor(named: .mainSliderBarChapterStroke)!
@@ -47,6 +48,7 @@ class PlaySliderCell: NSSliderCell {
     default:
       barColorLeft = NSColor.controlAccentColor
     }
+    barColorLeftGlow = barColorLeft.withAlphaComponent(0.5)
     controlView?.needsDisplay = true
   }
 
@@ -63,24 +65,27 @@ class PlaySliderCell: NSSliderCell {
                           knobRect.origin.y + 0.5 * (knobRect.height - knobHeight),
                           knobRect.width,
                           knobHeight)
+    let path = NSBezierPath(roundedRect: rect, xRadius: knobRadius, yRadius: knobRadius)
+    let fillColor = isHighlighted ? knobActiveColor : knobColor
+
     let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
+    let shColor: NSColor = .shadowColor
 
     if isLightTheme {
       NSGraphicsContext.saveGraphicsState()
       let shadow = NSShadow()
       shadow.shadowBlurRadius = 1
-      shadow.shadowColor = .shadowColor
+      shadow.shadowColor = shColor
       shadow.shadowOffset = NSSize(width: 0, height: -0.5)
       shadow.set()
     }
 
-    let path = NSBezierPath(roundedRect: rect, xRadius: knobRadius, yRadius: knobRadius)
-    (isHighlighted ? knobActiveColor : knobColor).setFill()
+    fillColor.setFill()
     path.fill()
 
     if isLightTheme {
       path.lineWidth = 0.4
-      NSColor.shadowColor.setStroke()
+      shColor.setStroke()
       path.stroke()
       NSGraphicsContext.restoreGraphicsState()
     }
@@ -141,17 +146,39 @@ class PlaySliderCell: NSSliderCell {
       fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
     }
 
+
+    let leftBarRect = NSRect(x: barRect.origin.x,
+                             y: barRect.origin.y,
+                             width: progress,
+                             height: barRect.height)
+
+    let rightBarRect = NSRect(x: barRect.origin.x + progress,
+                              y: barRect.origin.y,
+                              width: barRect.width - progress,
+                              height: barRect.height)
+
+    // Draw LEFT (the "finished" section of the progress bar)
     drawGraphic {
-      // Draw left (the "finished" section of the progress bar)
-      let leftBarRect = NSRect(x: barRect.origin.x,
-                               y: barRect.origin.y,
-                               width: progress,
-                               height: barRect.height)
       NSBezierPath(rect: leftBarRect).addClip();
 
       barColorLeft.setFill()
       fullPath.fill()
     }
+
+    /* FIXME: 
+    // Draw LEFT glow
+    drawGraphic {
+      let leftBarGlowRect = NSRect(x: barRect.origin.x,
+                               y: barRect.origin.y - 4,
+                               width: progress,
+                               height: barRect.height + 4 + 4)
+      let leftBarGlowPath = NSBezierPath(rect: leftBarGlowRect)
+      leftBarGlowPath.append(NSBezierPath(rect: leftBarRect).reversed)
+
+      barColorLeftGlow.setFill()
+      leftBarGlowRect.fill()
+    }
+     */
 
     // Draw cached sections (if applicable), drawing over the unfinished span:
     // FIXME: draw *all* cached sections
@@ -172,19 +199,15 @@ class PlaySliderCell: NSSliderCell {
     }
 
 
-    // draw right (the "unfinished" section of the progress bar)
+    // Draw RIGHT (the "unfinished" section of the progress bar)
     drawGraphic {
-      let rightBarRect = NSRect(x: barRect.origin.x + progress,
-                                y: barRect.origin.y,
-                                width: barRect.width - progress,
-                                height: barRect.height)
       let rightPath = NSBezierPath(rect: rightBarRect)
       rightPath.addClip();
       barColorRight.setFill()
       fullPath.fill()
     }
-    
-    // draw chapters
+
+    // Draw chapters (if configured)
     if drawChapters, durationSec > 0, chapters.count > 1 {
       drawGraphic {
         let isRetina = controlView?.window?.screen?.backingScaleFactor ?? 1.0 > 1.0
@@ -193,7 +216,7 @@ class PlaySliderCell: NSSliderCell {
 
         chapterStrokeColor.setStroke()
         for chapter in chapters[1...] {
-          let chapPos = CGFloat(chapter.startTime) / durationSec * barRect.width
+          let chapPos = chapter.startTime / durationSec * barRect.width
           let linePath = NSBezierPath()
           linePath.lineWidth = lineWidth
           linePath.move(to: NSPoint(x: chapPos, y: barRect.origin.y))

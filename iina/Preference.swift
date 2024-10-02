@@ -1043,7 +1043,7 @@ struct Preference {
       }
     }
 
-    func description() -> String {
+    var keyString: String {
       let key: String
       switch self {
       case .settings: key = "settings"
@@ -1054,6 +1054,12 @@ struct Preference {
       case .subTrack: key = "sub_track"
       case .screenshot: key = "screenshot"
       }
+
+      return key
+    }
+
+    func description() -> String {
+      let key: String = self.keyString
       return NSLocalizedString("osc_toolbar.\(key)", comment: key)
     }
 

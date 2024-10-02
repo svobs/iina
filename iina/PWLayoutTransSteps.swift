@@ -450,7 +450,7 @@ extension PlayerWindowController {
       case .top:
         currentControlBar = controlBarTop
 
-        addControlBarViews(to: oscTopMainView, playBtnSize: oscGeo.playIconSize, playBtnSpacing: oscGeo.playIconSpacing)
+        addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
         // Subtract height of slider bar (4), then divide by 2 to get total bottom space, then subtract time label height to get total margin
         let timeLabelOffset = max(0, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4)
@@ -464,7 +464,7 @@ extension PlayerWindowController {
           oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 8, trailing: 8)
         }
 
-        addControlBarViews(to: oscBottomMainView, playBtnSize: oscGeo.playIconSize, playBtnSpacing: oscGeo.playIconSpacing)
+        addControlBarViews(to: oscBottomMainView, oscGeo, transition)
 
         let timeLabelOffset = max(-1, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4 - 2)
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.topAnchor.constraint(equalTo: timePositionHoverLabel.superview!.topAnchor, constant: timeLabelOffset)
@@ -472,7 +472,7 @@ extension PlayerWindowController {
       case .floating:
         timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -2)
 
-        let toolbarView = rebuildToolbar()
+        let toolbarView = rebuildToolbar(transition)
         oscFloatingUpperView.addView(toolbarView, in: .trailing)
         oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
@@ -1287,12 +1287,12 @@ extension PlayerWindowController {
   // MARK: - Controller content layout
 
   /// For `bottom` and `top` OSC only - not `floating`
-  private func addControlBarViews(to containerView: NSStackView, playBtnSize: CGFloat, playBtnSpacing: CGFloat) {
+  private func addControlBarViews(to containerView: NSStackView, _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
     containerView.addView(fragPlaybackControlButtonsView, in: .leading)
     containerView.addView(fragPositionSliderView, in: .leading)
     containerView.addView(fragVolumeView, in: .leading)
 
-    let toolbarView = rebuildToolbar()
+    let toolbarView = rebuildToolbar(transition)
     containerView.addView(toolbarView, in: .leading)
 
     containerView.configureSubtreeForCoreAnimation()
@@ -1302,9 +1302,9 @@ extension PlayerWindowController {
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
-    playbackButtonsSquareWidthConstraint.animateToConstant(playBtnSize)
+    playbackButtonsSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
 
-    var spacing = playBtnSpacing
+    var spacing = oscGeo.playIconSpacing
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     if arrowButtonAction == .seek {
       spacing *= 0.5
@@ -1334,11 +1334,8 @@ extension PlayerWindowController {
         rightImage = #imageLiteral(resourceName: "speed")
       }
     }
-    let imageScaling: NSImageScaling = arrowBtnAction == .seek ? .scaleProportionallyDown : .scaleProportionallyUpOrDown
     leftArrowButton.image = leftImage
     rightArrowButton.image = rightImage
-    leftArrowButton.imageScaling = imageScaling
-    rightArrowButton.imageScaling = imageScaling
 
     if isInMiniPlayer {
       miniPlayer.loadIfNeeded()
@@ -1348,16 +1345,14 @@ extension PlayerWindowController {
       let spacing: CGFloat = arrowBtnAction == .seek ? 12 : 16
       miniPlayer.leftArrowToPlayButtonSpaceConstraint.animateToConstant(spacing)
       miniPlayer.playButtonToRightArrowSpaceConstraint.animateToConstant(spacing)
-      miniPlayer.leftArrowButton.imageScaling = imageScaling
-      miniPlayer.rightArrowButton.imageScaling = imageScaling
     }
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  private func rebuildToolbar() -> NSStackView {
+  private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView {
     let geo = ControlBarGeometry.current
     let buttonTypes = geo.toolbarItems
-    log.verbose("Setting buttons in OSC toolbar: \(buttonTypes)")
+    log.verbose("[\(transition.name)] Setting OSC toolbarItems to: [\(buttonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
     var toolButtons: [OSCToolbarButton] = []
     for buttonType in buttonTypes {
@@ -1385,7 +1380,7 @@ extension PlayerWindowController {
       toolbarView.spacing = 2 * button.iconSpacing
       toolbarView.edgeInsets = .init(top: button.iconSpacing, left: button.iconSpacing,
                                      bottom: button.iconSpacing, right: button.iconSpacing + Constants.Distance.titleBarIconSpacingH)
-      Logger.log("Toolbar spacing: \(toolbarView.spacing), edgeInsets: \(toolbarView.edgeInsets)", level: .verbose, subsystem: player.subsystem)
+      log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     }
     return toolbarView
   }
