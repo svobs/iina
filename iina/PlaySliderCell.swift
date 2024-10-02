@@ -39,6 +39,17 @@ class PlaySliderCell: NSSliderCell {
 
   var isPausedBeforeSeeking = false
 
+  func updateColorsFromPrefs() {
+    let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
+    switch userSetting {
+    case .gray:
+      barColorLeft = NSColor(named: .mainSliderBarLeft)!
+    default:
+      barColorLeft = NSColor.controlAccentColor
+    }
+    controlView?.needsDisplay = true
+  }
+
   override func awakeFromNib() {
     minValue = 0
     maxValue = 100
@@ -109,50 +120,62 @@ class PlaySliderCell: NSSliderCell {
     if #available(macOS 11, *) {
       barRect = rect
     } else {
-      barRect = NSMakeRect(rect.origin.x, rect.origin.y + 1, rect.width, rect.height - 2)
+      barRect = NSRect(x: rect.origin.x,
+                       y: rect.origin.y + 1,
+                       width: rect.width,
+                       height: rect.height - 2)
     }
-    let path = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
-
-    // draw left
-    let pathLeftRect : NSRect = NSMakeRect(barRect.origin.x, barRect.origin.y, progress, barRect.height)
-    NSBezierPath(rect: pathLeftRect).addClip();
+    let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
 
     if controlView!.window!.effectiveAppearance.isDark {
-      // Clip 1px around the knob
-      path.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
+      // Clip where the knob will be, including 1px from left & right of the knob
+      fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
     }
 
+    // draw left (the "finished" section of the progress bar)
+    let leftBarRect = NSRect(x: barRect.origin.x,
+                             y: barRect.origin.y,
+                             width: progress,
+                             height: barRect.height)
+    NSBezierPath(rect: leftBarRect).addClip();
+
     barColorLeft.setFill()
-    path.fill()
+    fullPath.fill()
     NSGraphicsContext.restoreGraphicsState()
 
-    // Draw future cache amount:
+    // Draw cached sections (if applicable), drawing over the unfinished span:
+    // FIXME: draw *all* cached sections
     let cacheTime = info.cacheTime
-    if cacheTime != 0, 
+    if cacheTime != 0,
         let durationSec = info.playbackDurationSec, durationSec != 0 {
 
       NSGraphicsContext.saveGraphicsState()
 
-      let path = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
-
       let cachePos = Double(cacheTime) / Double(durationSec) * 100
       let cacheWidth = round(rect.width * CGFloat(cachePos / (slider.maxValue - slider.minValue))) + 2;
 
-      // draw left
-      let cacheRect : NSRect = NSMakeRect(progress, barRect.origin.y, cacheWidth, barRect.height)
+      // draw cache
+      let cacheRect = NSRect(x: barRect.origin.x + progress,
+                             y: barRect.origin.y,
+                             width: cacheWidth,
+                             height: barRect.height)
       NSBezierPath(rect: cacheRect).addClip();
 
       barColorPreCache.setFill()
-      path.fill()
+      fullPath.fill()
       NSGraphicsContext.restoreGraphicsState()
     }
 
-    // draw right
+
+    // draw right (the "unfinished" section of the progress bar)
     NSGraphicsContext.saveGraphicsState()
-    let pathRight = NSMakeRect(barRect.origin.x + progress, barRect.origin.y, barRect.width - progress, barRect.height)
-    NSBezierPath(rect: pathRight).setClip()
+    let rightBarRect = NSRect(x: barRect.origin.x + progress,
+                              y: barRect.origin.y,
+                              width: barRect.width - progress,
+                              height: barRect.height)
+    let rightPath = NSBezierPath(rect: rightBarRect)
     barColorRight.setFill()
-    path.fill()
+    fullPath.fill()
     NSGraphicsContext.restoreGraphicsState()
 
     // draw chapters
@@ -177,6 +200,7 @@ class PlaySliderCell: NSSliderCell {
       NSGraphicsContext.restoreGraphicsState()
     }
   }
+
 
   // MARK:- Tracking the Mouse
 

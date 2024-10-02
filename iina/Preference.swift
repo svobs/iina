@@ -159,6 +159,7 @@ struct Preference {
     static let enableOSC = Key("enableOSC")
     static let oscPosition = Key("oscPosition")
     static let hideFadeableViewsWhenOutsideWindow = Key("hideFadeableViewsWhenOutsideWindow")
+    static let playSliderBarLeftColor = Key("playSliderBarLeftColor")
 
     // The following apply only to "bar"-type OSCs (i.e. not floating or title bar):
     static let oscBarHeight = Key("oscBarHeight")
@@ -186,7 +187,7 @@ struct Preference {
 
     /// If true, highlight the part of the playback slider to the right of the knob
     /// which has already been loaded into the demuxer cache
-    static let showLocalFileCacheTime = Key("showLocalFileCacheTime")
+    static let showCachedRangesInSlider = Key("showCachedRangesInSlider")
 
     /** Whether auto hiding control bar is enabled. (bool)*/
     static let enableControlBarAutoHide = Key("enableControlBarAutoHide")
@@ -672,6 +673,17 @@ struct Preference {
     }
   }
 
+  enum SliderBarLeftColor: Int, InitializingFromKey {
+    case controlAccentColor = 1
+    case gray = 2
+
+    static var defaultValue = SliderBarLeftColor.controlAccentColor
+
+    init?(key: Key) {
+      self.init(rawValue: Preference.integer(for: key))
+    }
+  }
+
   enum SeekOption: Int, InitializingFromKey {
     case relative = 0
     case exact
@@ -1120,7 +1132,7 @@ struct Preference {
     .controlBarPositionVertical: Float(0.1),
     .controlBarStickToCenter: true,
     .controlBarAutoHideTimeout: Float(2.5),
-    .showLocalFileCacheTime: true,
+    .showCachedRangesInSlider: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
     .oscBarToolbarIconSize: 18,
@@ -1134,6 +1146,7 @@ struct Preference {
     .oscBarPlaybackIconSpacing: 16,
     .oscPosition: OSCPosition.floating.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,
+    .playSliderBarLeftColor: SliderBarLeftColor.defaultValue.rawValue,
     .playlistWidth: 270,
     .settingsTabGroupLocation: SidebarLocation.leadingSidebar.rawValue,
     .playlistTabGroupLocation: SidebarLocation.trailingSidebar.rawValue,

@@ -524,10 +524,14 @@ extension PlayerWindowController {
       if outputLayout.isMusicMode {
         miniPlayer.loadIfNeeded()
         currentControlBar = miniPlayer.musicModeControlBarView
-        updateArrowButtonImages()
       } else {
         currentControlBar = nil
       }
+    }
+
+    if currentControlBar != nil {
+      updateArrowButtonImages()
+      playSlider.customCell.updateColorsFromPrefs()
     }
 
     // Sidebars: finish closing (if closing)

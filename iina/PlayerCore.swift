@@ -3078,7 +3078,7 @@ class PlayerCore: NSObject {
       info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
       info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
       info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
-    } else if Preference.bool(for: .showLocalFileCacheTime) {
+    } else if Preference.bool(for: .showCachedRangesInSlider) {
       info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
     } else {
       info.cacheTime = 0

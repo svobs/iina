@@ -405,6 +405,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     .thumbnailBorderStyle,
     .showChapterPos,
     .arrowButtonAction,
+    .playSliderBarLeftColor,
     .blackOutMonitor,
     .useLegacyFullScreen,
     .displayTimeAndBatteryInFullScreen,
@@ -530,7 +531,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if let newValue = change[.newKey] as? Int {
         horizontalScrollAction = Preference.ScrollAction(rawValue: newValue)!
       }
-    case PK.arrowButtonAction.rawValue:
+    case PK.arrowButtonAction.rawValue, PK.playSliderBarLeftColor.rawValue:
       updateTitleBarAndOSC()
     case PK.blackOutMonitor.rawValue:
       if let newValue = change[.newKey] as? Bool {
