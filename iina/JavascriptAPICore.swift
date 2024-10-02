@@ -91,7 +91,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   func reloadChapters() -> [[String: Any]] {
     player!.reloadChapters()
     return player!.info.chapters.map{
-      ["title": $0.title, "start": $0.time.second]
+      ["title": $0.startTime, "start": $0.startTime]
     }
   }
 

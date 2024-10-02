@@ -69,7 +69,6 @@ struct VideoTime {
 
   init(_ second: Double) {
     self.second = second
-
   }
 
   init(_ hour: Int, _ minute: Int, _ second: Double) {
@@ -79,6 +78,11 @@ struct VideoTime {
   /** whether self in [min, max) */
   func between(_ min: VideoTime, _ max: VideoTime) -> Bool {
     return self >= min && self < max
+  }
+
+  /** whether self in [min, max) */
+  func between(_ min: Double, _ max: Double) -> Bool {
+    return self >= VideoTime(min) && self < VideoTime(max)
   }
 
 }

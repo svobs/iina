@@ -644,7 +644,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       let chapter = chapters[row]
 
       // next chapter time
-      let nextChapterTime = chapters[at: row+1]?.time ?? .infinite
+      let nextChapterTime = chapters[at: row+1]?.startTime ?? Double.infinity
       let isCurrentChapter = player.info.chapter == row
       let textColor = isCurrentChapter ? isPlayingTextColor : .controlTextColor
 
@@ -663,7 +663,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
         v.setTitle(titleString, textColor: textColor)
         let cellView = v as! ChapterTableCellView
-        cellView.durationTextField.setText("\(chapter.time.stringRepresentation) → \(nextChapterTime.stringRepresentation)", textColor: textColor)
+        let durationText = "\(VideoTime.string(from: chapter.startTime)) → \(VideoTime.string(from: nextChapterTime))"
+        cellView.durationTextField.setText(durationText, textColor: textColor)
       default:
         Logger.fatal("Unknown identifier in Chapters table: \(identifier)")
       }

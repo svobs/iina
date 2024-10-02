@@ -1716,7 +1716,7 @@ class PlayerCore: NSObject {
     }
     let chapter = chapters[pos]
     mpv.queue.async { [self] in
-      mpv.command(.seek, args: ["\(chapter.time.second)", "absolute"])
+      mpv.command(.seek, args: ["\(chapter.startTime)", "absolute"])
       _resume()
     }
     return chapter

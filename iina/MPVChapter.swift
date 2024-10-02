@@ -19,6 +19,10 @@ class MPVChapter {
   var startTime: Double
   var index: Int
 
+  var startTimeString: String {
+    return VideoTime.string(from: startTime)
+  }
+
   init(title: String?, startTime: Double, index: Int) {
     self.privTitle = title
     self.startTime = startTime
