@@ -104,10 +104,21 @@ class PlaySliderCell: NSSliderCell {
     return NSMakeRect(pos, rect.origin.y, knobWidth, height)
   }
 
+  private func drawGraphic(_ drawFunc: () -> Void) {
+    NSGraphicsContext.saveGraphicsState()
+
+    drawFunc()
+
+    NSGraphicsContext.restoreGraphicsState()
+  }
+
   override func drawBar(inside rect: NSRect, flipped: Bool) {
-    let info = playerCore.info
+    let chapters = playerCore.info.chapters
+    let durationSec = (playerCore.info.playbackDurationSec ?? 0.0)
+    let cacheTime = playerCore.info.cacheTime
 
     let slider = self.controlView as! NSSlider
+    let sliderValueTotal = slider.maxValue - slider.minValue
 
     /// The position of the knob, rounded for cleaner drawing
     let knobPos: CGFloat = round(knobRect(flipped: flipped).origin.x);
@@ -115,7 +126,6 @@ class PlaySliderCell: NSSliderCell {
     /// How far progressed the current video is, used for drawing the bar background
     let progress = knobPos;
 
-    NSGraphicsContext.saveGraphicsState()
     let barRect: NSRect
     if #available(macOS 11, *) {
       barRect = rect
@@ -126,70 +136,64 @@ class PlaySliderCell: NSSliderCell {
                        height: rect.height - 2)
     }
     let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
-
     if controlView!.window!.effectiveAppearance.isDark {
       // Clip where the knob will be, including 1px from left & right of the knob
       fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
     }
 
-    // draw left (the "finished" section of the progress bar)
-    let leftBarRect = NSRect(x: barRect.origin.x,
-                             y: barRect.origin.y,
-                             width: progress,
-                             height: barRect.height)
-    NSBezierPath(rect: leftBarRect).addClip();
+    drawGraphic {
+      // Draw left (the "finished" section of the progress bar)
+      let leftBarRect = NSRect(x: barRect.origin.x,
+                               y: barRect.origin.y,
+                               width: progress,
+                               height: barRect.height)
+      NSBezierPath(rect: leftBarRect).addClip();
 
-    barColorLeft.setFill()
-    fullPath.fill()
-    NSGraphicsContext.restoreGraphicsState()
+      barColorLeft.setFill()
+      fullPath.fill()
+    }
 
     // Draw cached sections (if applicable), drawing over the unfinished span:
     // FIXME: draw *all* cached sections
-    let cacheTime = info.cacheTime
-    if cacheTime != 0,
-        let durationSec = info.playbackDurationSec, durationSec != 0 {
+    if cacheTime > 0, durationSec > 0 {
+      drawGraphic {
+        let cachePercentage = cacheTime / durationSec * 100
+        let cacheWidth = round(rect.width * CGFloat(cachePercentage / (sliderValueTotal))) + 2;
 
-      NSGraphicsContext.saveGraphicsState()
+        let cacheRect = NSRect(x: barRect.origin.x,
+                               y: barRect.origin.y,
+                               width: cacheWidth,
+                               height: barRect.height)
+        NSBezierPath(rect: cacheRect).addClip();
 
-      let cachePercentage = Double(cacheTime) / Double(durationSec) * 100
-      let cacheWidth = round(rect.width * CGFloat(cachePercentage / (slider.maxValue - slider.minValue))) + 2;
-
-      // draw cache
-      let cacheRect = NSRect(x: barRect.origin.x,
-                             y: barRect.origin.y,
-                             width: cacheWidth,
-                             height: barRect.height)
-      NSBezierPath(rect: cacheRect).addClip();
-
-      barColorPreCache.setFill()
-      fullPath.fill()
-      NSGraphicsContext.restoreGraphicsState()
+        barColorPreCache.setFill()
+        fullPath.fill()
+      }
     }
 
 
     // draw right (the "unfinished" section of the progress bar)
-    NSGraphicsContext.saveGraphicsState()
-    let rightBarRect = NSRect(x: barRect.origin.x + progress,
-                              y: barRect.origin.y,
-                              width: barRect.width - progress,
-                              height: barRect.height)
-    let rightPath = NSBezierPath(rect: rightBarRect)
-    barColorRight.setFill()
-    fullPath.fill()
-    NSGraphicsContext.restoreGraphicsState()
-
+    drawGraphic {
+      let rightBarRect = NSRect(x: barRect.origin.x + progress,
+                                y: barRect.origin.y,
+                                width: barRect.width - progress,
+                                height: barRect.height)
+      let rightPath = NSBezierPath(rect: rightBarRect)
+      rightPath.addClip();
+      barColorRight.setFill()
+      fullPath.fill()
+    }
+    
     // draw chapters
-    if drawChapters, let totalSec = info.playbackDurationSec {
-      let isRetina = controlView?.window?.screen?.backingScaleFactor ?? 1.0 > 1.0
-      let scaleFactor = controlView?.window?.screen?.screenScaleFactor ?? 1
-      let lineWidth = round(1 + 1 / (isRetina ? (scaleFactor * 0.5) : scaleFactor))
+    if drawChapters, durationSec > 0, chapters.count > 1 {
+      drawGraphic {
+        let isRetina = controlView?.window?.screen?.backingScaleFactor ?? 1.0 > 1.0
+        let scaleFactor = controlView?.window?.screen?.screenScaleFactor ?? 1
+        let lineWidth = round(1 + 1 / (isRetina ? (scaleFactor * 0.5) : scaleFactor))
 
-      NSGraphicsContext.saveGraphicsState()
-      chapterStrokeColor.setStroke()
-      let chapters = info.chapters
-      if chapters.count > 1 {
-        for chapt in chapters[1...] {
-          let chapPos = CGFloat(chapt.time.second) / CGFloat(totalSec) * barRect.width
+        chapterStrokeColor.setStroke()
+        for chapter in chapters[1...] {
+          let chapPos = CGFloat(chapter.startTime) / durationSec * barRect.width
           let linePath = NSBezierPath()
           linePath.lineWidth = lineWidth
           linePath.move(to: NSPoint(x: chapPos, y: barRect.origin.y))
@@ -197,7 +201,6 @@ class PlaySliderCell: NSSliderCell {
           linePath.stroke()
         }
       }
-      NSGraphicsContext.restoreGraphicsState()
     }
   }
 

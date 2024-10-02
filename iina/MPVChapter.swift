@@ -16,12 +16,12 @@ class MPVChapter {
       return privTitle ?? "\(Constants.String.chapter) \(index)"
     }
   }
-  var time: VideoTime
+  var startTime: Double
   var index: Int
 
   init(title: String?, startTime: Double, index: Int) {
     self.privTitle = title
-    self.time = VideoTime(startTime)
+    self.startTime = startTime
     self.index = index
   }
 
