@@ -3033,7 +3033,7 @@ class PlayerCore: NSObject {
   private var lastSaveTime = Date().timeIntervalSince1970
 
   func updatePlaybackTimeInfo() {
-    guard state.isAtLeast(.started) else {
+    guard state.isAtLeast(.started), state.isNotYet(.stopping) else {
       log.verbose("syncUITime: not syncing")
       return
     }

@@ -151,11 +151,11 @@ class PlaySliderCell: NSSliderCell {
 
       NSGraphicsContext.saveGraphicsState()
 
-      let cachePos = Double(cacheTime) / Double(durationSec) * 100
-      let cacheWidth = round(rect.width * CGFloat(cachePos / (slider.maxValue - slider.minValue))) + 2;
+      let cachePercentage = Double(cacheTime) / Double(durationSec) * 100
+      let cacheWidth = round(rect.width * CGFloat(cachePercentage / (slider.maxValue - slider.minValue))) + 2;
 
       // draw cache
-      let cacheRect = NSRect(x: barRect.origin.x + progress,
+      let cacheRect = NSRect(x: barRect.origin.x,
                              y: barRect.origin.y,
                              width: cacheWidth,
                              height: barRect.height)
