@@ -1,5 +1,5 @@
 //
-//  PlayerWindowPreviewImageBuilder.swift
+//  PWinPreviewImageBuilder.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2023-03-01.
@@ -28,7 +28,7 @@ fileprivate let nativeWindowRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleF
 fileprivate let widgetRoundedCornerRadius = CGFloat(10.0) * CGFloat(scaleFactor)
 fileprivate let desktopInset: Int = Int(0.5 * Double(scaleFactor))
 
-class PlayerWindowPreviewImageBuilder {
+class PWinPreviewImageBuilder {
   static var cgImageCache: [String: CGImage] = [:]
 
   let isLegacyWindow = Preference.bool(for: .useLegacyWindowedMode)
@@ -63,7 +63,7 @@ class PlayerWindowPreviewImageBuilder {
 //    NSColor(red: 0x68 / 255, green: 0x67 / 255, blue: 0xAF / 255, alpha: 1.0)  // "blue violet"
   }()
 
-  func updateWindowPreviewImage() -> NSImage? {
+  func buildPWinPreviewImage() -> NSImage? {
     guard let videoViewImg = loadCGImage(named: "preview-videoview"),
           let titleBarButtonsImg = loadCGImage(named: "preview-titlebar-buttons") else {
       Logger.log("Cannot generate window preview image: failed to load asset(s)", level: .error)
@@ -323,7 +323,7 @@ class PlayerWindowPreviewImageBuilder {
   }
 
   private func loadCGImage(named name: String) -> CGImage? {
-    if let cachedImage = PlayerWindowPreviewImageBuilder.cgImageCache[name] {
+    if let cachedImage = PWinPreviewImageBuilder.cgImageCache[name] {
       return cachedImage
     }
     guard let image = NSImage(named: name) else {
@@ -334,7 +334,7 @@ class PlayerWindowPreviewImageBuilder {
       Logger.log("DrawImage: Failed to get CGImage for \(name.quoted)!", level: .error)
       return nil
     }
-    PlayerWindowPreviewImageBuilder.cgImageCache[name] = cgImage
+    PWinPreviewImageBuilder.cgImageCache[name] = cgImage
     return cgImage
   }
 

@@ -239,8 +239,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     case #keyPath(view.effectiveAppearance):
       if Preference.enum(for: .themeMaterial) == Preference.Theme.system {
         // Refresh image in case dark mode changed
-        let ib = PlayerWindowPreviewImageBuilder(self.view)
-        windowPreviewImageView.image = ib.updateWindowPreviewImage()
+        let ib = PWinPreviewImageBuilder(self.view)
+        windowPreviewImageView.image = ib.buildPWinPreviewImage()
       }
     default:
       break
@@ -321,7 +321,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   // MARK: - Title Bar & OSC
 
   private func refreshTitleBarAndOSCSection(animate: Bool = true) {
-    let ib = PlayerWindowPreviewImageBuilder(self.view)
+    let ib = PWinPreviewImageBuilder(self.view)
 
     let titleBarIsOverlay = ib.hasTitleBar && ib.topBarPlacement == .insideViewport
     let oscIsOverlay = ib.oscEnabled && (ib.oscPosition == .floating ||
@@ -339,7 +339,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       autoHideAfterCheckBox.isEnabled = hasOverlay
       oscAutoHideTimeoutTextField.isEnabled = hasOverlay
       hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-      windowPreviewImageView.image = ib.updateWindowPreviewImage()
+      windowPreviewImageView.image = ib.buildPWinPreviewImage()
 
       let oscIsFloating = ib.oscEnabled && ib.oscPosition == .floating
 
@@ -387,7 +387,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
         }
         oscAutoHideTimeoutTextField.isEnabled = hasOverlay
         hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
-        windowPreviewImageView.image = ib.updateWindowPreviewImage()
+        windowPreviewImageView.image = ib.buildPWinPreviewImage()
 
         updateOSCToolbarPreview()
       })

@@ -561,13 +561,13 @@ fileprivate let fmtDecimalOmitTrailingZeroes: NumberFormatter = {
   return fmt
 }()
 
-extension CGRect: CustomStringConvertible {
+extension CGRect: @retroactive CustomStringConvertible {
   public var description: String {
     return "(\(origin.x.strMin), \(origin.y.strMin), \(size.width.strMin) x \(size.height.strMin))"
   }
 }
 
-extension CGSize: CustomStringConvertible {
+extension CGSize: @retroactive CustomStringConvertible {
   public var description: String {
     return "(\(width.strMin) x \(height.strMin))"
   }
@@ -1077,7 +1077,11 @@ extension NSImage {
     if Logger.isTraceEnabled {
       Logger.log("Cropping image size \(size) using cropRect \(cropRect)", level: .verbose)
     }
-    let croppedImage = self.cgImage!.cropping(to: cropRect)!
+    guard let currentImage = self.cgImage else {
+      Logger.log("Failed to crop image: could not get cgImage", level: .error)
+      return self
+    }
+    let croppedImage = currentImage.cropping(to: cropRect)!
     return NSImage(cgImage: croppedImage, size: cropSize)
   }
 
@@ -1092,15 +1096,21 @@ extension NSImage {
 
     // Use raw CoreGraphics calls instead of their NS equivalents. They are > 10x faster, and only downside is that the image's
     // dimensions must be integer values instead of decimals.
-    let currentImage = self.cgImage!
-    let drawingCalls: (CGContext) -> Void = { cgContext in
-      cgContext.draw(currentImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+    guard let currentImage = self.cgImage else {
+      Logger.log("Failed to resize image: could not get cgImage", level: .error)
+      return self
     }
-    return NSImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: drawingCalls)!
+
+    let newImage = NSImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: { cgContext in
+      cgContext.draw(currentImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+    })
+
+    guard let newImage else { return self }
+    return newImage
   }
 
   /// Builds a bitmap image efficiently using CoreGraphics APIs.
-  /// 
+  ///
   /// If it's found useful for any more situations, should put in its own class
   static func buildBitmapImage(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> NSImage? {
 
