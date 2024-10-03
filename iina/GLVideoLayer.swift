@@ -69,6 +69,7 @@ class GLVideoLayer: CAOpenGLLayer {
     cglContext = GLVideoLayer.createContext(cglPixelFormat)
     asychronousModeLock = Lock()
     super.init()
+    autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
   }
 
   override init(layer: Any) {
@@ -78,6 +79,7 @@ class GLVideoLayer: CAOpenGLLayer {
     self.videoView = previousLayer.videoView
     self.asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
+    autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
   }
 
   required init?(coder aDecoder: NSCoder) {

@@ -140,6 +140,10 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return videoSizeRaw
   }
 
+  var videoAspectC: Double {
+    return videoSizeC.mpvAspect
+  }
+
   var cropFilter: MPVFilter? {
     return buildCropFilter(from: selectedCropLabel)
   }

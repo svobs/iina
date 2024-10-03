@@ -378,13 +378,10 @@ class PWinPreviewImageBuilder {
   }
 
   private func draw(image cgImage: CGImage, in cgContext: CGContext,
-                    withAlpha alpha: CGFloat = 1,
                     x: Int, y: Int, width widthOverride: Int? = nil, height heightOverride: Int? = nil) {
     let width = widthOverride ?? cgImage.width
     let height = heightOverride ?? cgImage.height
-    cgContext.setAlpha(alpha)
     cgContext.draw(cgImage, in: CGRect(x: x, y: y, width: width, height: height))
-    cgContext.setAlpha(1)
   }
 
 }

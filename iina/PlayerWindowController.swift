@@ -1176,7 +1176,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
       /// Make sure `defaultAlbumArtView` stays above `videoView`
       viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
-      videoView.videoLayer.autoresizingMask = CAAutoresizingMask(rawValue: 0)
       videoView.updateDisplayLink()
       // Screen may have changed. Refresh contentsScale
       videoView.refreshContentsScale()
@@ -3851,7 +3850,8 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       // Remove these. They screw up PIP drag
       videoView.apply(nil)
       pipVideo.view = videoView
-      videoView.videoLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+      // Remove remaining constraints. The PiP superview will manage videoView's layout.
+      videoView.removeConstraints(videoView.constraints)
       pip.playing = player.info.isPlaying
       pip.title = window.title
       

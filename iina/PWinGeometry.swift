@@ -1188,12 +1188,30 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       return self
     }
 
-    /// Note that rounding here can cause calculations to differ by up to 2 pixels.
-    /// The `PWinGeometry` contstructor should account for this via its `snap` method.
-    let cropRectScaledToWindow = NSRect(x: round(cropRect.origin.x * scaleRatio),
-                                        y: round(cropRect.origin.y * scaleRatio),
-                                        width: round(cropRect.width * scaleRatio),
-                                        height: round(cropRect.height * scaleRatio))
+    /// We have `croppedVideoViewSize` which is most consistent with `PWinGeometry` constructor.
+    /// Now need to find x & y offsets to determine how much margin to add to each of the 4 sides.
+    var cropRectScaledToWindow = NSRect(x: cropRect.origin.x * scaleRatio,
+                                        y: cropRect.origin.y * scaleRatio,
+                                        width: cropRect.width * scaleRatio,
+                                        height: cropRect.height * scaleRatio)
+
+    // This will use .mpvAspect - need to be consistent with rounding!
+    let croppedVideoAspect = newVidGeo.videoAspectC
+    let croppedVideoViewSize = PWinGeometry.computeVideoSize(withAspectRatio: croppedVideoAspect,
+                                                             toFillIn: cropRectScaledToWindow.size,
+                                                             minViewportMargins: .zero, mode: mode)
+
+
+    /// Note that size of `cropRectScaledToWindow` can differ from `croppedVideoViewSize` due to being rounded
+    /// less. This can cause a validation error in the sanity checks.
+    /// Account for this by computing the difference between the values and redistributing it.
+    let excessWidth = croppedVideoViewSize.width - cropRectScaledToWindow.width
+    let excessHeight = croppedVideoViewSize.height - cropRectScaledToWindow.height
+    // These are the final numbers: round them:
+    cropRectScaledToWindow = NSRect(x: round(cropRectScaledToWindow.origin.x + (excessWidth * 0.5)),
+                                    y: round(cropRectScaledToWindow.origin.y + (excessHeight * 0.5)),
+                                    width: round(cropRectScaledToWindow.width + excessWidth),
+                                    height: round(cropRectScaledToWindow.height + excessHeight))
 
     if cropRectScaledToWindow.origin.x > videoSize.width || cropRectScaledToWindow.origin.y > videoSize.height {
       log.error("[geo] Cannot crop video: the cropBox is completely outside the video! CropBoxScaled: \(cropRectScaledToWindow), videoSize: \(videoSize)")
@@ -1201,16 +1219,17 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
     // Collapse the viewable video without changing the window size. Do this by expanding the margins
-    let bottomHeightOutsideCropBox = round(cropRectScaledToWindow.origin.y)
+    let bottomHeightOutsideCropBox = cropRectScaledToWindow.origin.y
     let topHeightOutsideCropBox = max(0, videoSize.height - cropRectScaledToWindow.height - bottomHeightOutsideCropBox)    // cannot be < 0
-    let leadingWidthOutsideCropBox = round(cropRectScaledToWindow.origin.x)
+    let leadingWidthOutsideCropBox = cropRectScaledToWindow.origin.x
     let trailingWidthOutsideCropBox = max(0, videoSize.width - cropRectScaledToWindow.width - leadingWidthOutsideCropBox)  // cannot be < 0
+
     let newViewportMargins = MarginQuad(top: viewportMargins.top + topHeightOutsideCropBox,
                                         trailing: viewportMargins.trailing + trailingWidthOutsideCropBox,
                                         bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)) → newVideoSize:\(cropRectScaledToWindow.size), newViewportMargins:\(newViewportMargins)")
+    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)) → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let newFitOption = self.fitOption == .centerInside ? .stayInside : self.fitOption
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), fitOption: \(newFitOption)")
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)
