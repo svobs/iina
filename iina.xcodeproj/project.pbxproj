@@ -346,7 +346,7 @@
 		D1AE04CE2A9317CD00F58860 /* PWLayoutTransBldr.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
-		D1B787DB29AF883800DABC9C /* PWinPreviewImgBldr.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBldr.swift */; };
+		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
 		D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
@@ -1827,7 +1827,7 @@
 		D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransBldr.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
-		D1B787DA29AF883800DABC9C /* PWinPreviewImgBldr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBldr.swift; sourceTree = "<group>"; };
+		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
 		D1C8976D2C871CAC00394EE4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
@@ -2296,7 +2296,7 @@
 				D1FF157A2A7FAE9100C0CE86 /* UIState.swift */,
 				519872FE26879B9B00F84BCC /* AccessibilityPreferences.swift */,
 				D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */,
-				D1B787DA29AF883800DABC9C /* PWinPreviewImgBldr.swift */,
+				D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */,
 			);
 			name = Preference;
 			sourceTree = "<group>";
@@ -3426,7 +3426,7 @@
 				84F7258F1D486185000DEF1B /* MPVProperty.swift in Sources */,
 				E35306FC214813B7008FE492 /* JavascriptPluginInstance.swift in Sources */,
 				84A0BA971D2FA1CE00BC8DA1 /* PlayerCore.swift in Sources */,
-				D1B787DB29AF883800DABC9C /* PWinPreviewImgBldr.swift in Sources */,
+				D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */,
 				84D377671D737F58007F7396 /* MPVChapter.swift in Sources */,
 				3412DB8E2C2FC64C00BBC142 /* Equalizations.swift in Sources */,
 				84A886E61E24F3BD008755BB /* OnlineSubtitle.swift in Sources */,

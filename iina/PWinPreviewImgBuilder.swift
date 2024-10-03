@@ -367,7 +367,8 @@ class PWinPreviewImageBuilder {
     return iconWidth
   }
 
-  private func drawIcon(_ iconImage: NSImage, in cgContext: CGContext, originX: CGFloat, originY: CGFloat, width: CGFloat, height: CGFloat) {
+  private func drawIcon(_ iconImage: NSImage, in cgContext: CGContext,
+                        originX: CGFloat, originY: CGFloat, width: CGFloat, height: CGFloat) {
     // Note: this doesn't support alpha
     let tintedImage: NSImage = iconImage.tinted(iconColor)
     guard let cgImage = tintedImage.cgImage else {
