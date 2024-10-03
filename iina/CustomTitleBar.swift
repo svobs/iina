@@ -23,10 +23,8 @@ class CustomTitleBarViewController: NSViewController {
   var leadingSidebarToggleButton: NSButton!
 
   // Center
-  var centerTitleBarView: NSStackView!
   var documentIconButton: NSButton!
   var titleText: NSTextView!
-  var titleTextWidthConstraint: NSLayoutConstraint!
 
   // Trailing side
   var trailingTitleBarView: NSStackView!
@@ -36,7 +34,6 @@ class CustomTitleBarViewController: NSViewController {
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
     view = NSView()
-    view.translatesAutoresizingMaskIntoConstraints = false
 
     // - Leading views
 
@@ -68,10 +65,6 @@ class CustomTitleBarViewController: NSViewController {
       btn.setContentCompressionResistancePriority(.required, for: .horizontal)
       btn.setContentCompressionResistancePriority(.required, for: .vertical)
     }
-    view.addSubview(leadingStackView)
-    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-    leadingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    leadingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     leadingTitleBarView = leadingStackView
 
     if leadingStackView.trackingAreas.count <= 1 && trafficLightButtons.count == 3 {
@@ -87,40 +80,23 @@ class CustomTitleBarViewController: NSViewController {
     // See https://github.com/indragiek/INAppStoreWindow/blob/master/INAppStoreWindow/INAppStoreWindow.m
     windowController.window!.representedURL = windowController.player.info.currentURL
 
-    titleText = TitleTextView()
-    titleText.isEditable = false
-    titleText.isSelectable = false
-    titleText.isFieldEditor = false
-    titleText.backgroundColor = .clear
-    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-    pStyle.lineBreakMode = .byTruncatingMiddle
-    titleText.defaultParagraphStyle = pStyle
-    titleText.alignment = .center
-    titleText.heightAnchor.constraint(equalToConstant: 16).isActive = true
-    titleText.setContentHuggingPriority(.required, for: .horizontal)
-
     if #available(macOS 11.0, *) {
       documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
       let suffix = windowController.player.info.currentURL?.pathExtension ?? ""
       documentIconButton.image = NSImage.documentIcon(forSuffix: suffix, height: documentIconButton.frame.height)
     }
-    centerTitleBarView = NSStackView(views: [titleText])
-    centerTitleBarView.translatesAutoresizingMaskIntoConstraints = false
-    centerTitleBarView.wantsLayer = true
-    centerTitleBarView.layer?.backgroundColor = .clear
-    centerTitleBarView.orientation = .horizontal
-    centerTitleBarView.detachesHiddenViews = true
-    centerTitleBarView.alignment = .centerY
-    centerTitleBarView.spacing = 4
 
-    view.addSubview(centerTitleBarView)
-    centerTitleBarView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-    centerTitleBarView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-    centerTitleBarView.setHuggingPriority(.defaultLow, for: .horizontal)  // 250
-    centerTitleBarView.setHuggingPriority(.defaultHigh, for: .vertical)
-    let c0 = centerTitleBarView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-    c0.priority = .defaultHigh
-    c0.isActive = true
+    let titleText = TitleTextView()
+    titleText.isEditable = false
+    titleText.isSelectable = false
+    titleText.isFieldEditor = false
+    titleText.wantsLayer = true
+    titleText.backgroundColor = .clear
+    let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+    pStyle.lineBreakMode = .byTruncatingMiddle
+    titleText.defaultParagraphStyle = pStyle
+    titleText.alignment = .center
+    self.titleText = titleText
 
     // - Trailing views
 
@@ -141,22 +117,34 @@ class CustomTitleBarViewController: NSViewController {
     trailingStackView.edgeInsets = NSEdgeInsets(top: 0, left: iconSpacingH, bottom: 0, right: iconSpacingH)
     trailingStackView.distribution = .fill
     trailingStackView.setHuggingPriority(.required, for: .horizontal)  // 1000
+    trailingTitleBarView = trailingStackView
+
+
+    // - Add constraints
+
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    view.addSubview(leadingStackView)
+    leadingStackView.translatesAutoresizingMaskIntoConstraints = false
+    leadingStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+    leadingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+    leadingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+
+    view.addSubview(titleText)
+    titleText.translatesAutoresizingMaskIntoConstraints = false
+    titleText.heightAnchor.constraint(equalToConstant: 16).isActive = true
+    titleText.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
 
     view.addSubview(trailingStackView)
+    trailingStackView.translatesAutoresizingMaskIntoConstraints = false
     trailingStackView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
     trailingStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
     trailingStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-    trailingStackView.setHuggingPriority(.defaultHigh, for: .horizontal)
-    trailingTitleBarView = trailingStackView
 
-    // make it expand to fill all available space
-    centerTitleBarView.leadingAnchor.constraint(equalTo: leadingTitleBarView.trailingAnchor).isActive = true
-//    let c1 = centerTitleBarView.leadingAnchor.constraint(lessThanOrEqualTo: leadingTitleBarView.trailingAnchor)
-//    c1.priority = .defaultHigh
-//    c1.isActive = true
-    trailingTitleBarView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor).isActive = true
-
-    view.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+    // make titleText expand to fill all available space
+    titleText.leadingAnchor.constraint(equalTo: leadingTitleBarView.trailingAnchor).isActive = true
+    trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor).isActive = true
 
     view.configureSubtreeForCoreAnimation()
   }

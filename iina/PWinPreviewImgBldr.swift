@@ -209,7 +209,7 @@ class PWinPreviewImageBuilder {
 
         if oscPosition == .floating {
           // Draw floating OSC panel
-          cgContext.withNewCGState {
+          cgContext.withNestedGState {
             cgContext.drawRoundedRect(oscRect, cornerRadius: widgetRoundedCornerRadius * 0.5, fillColor: oscPanelColor)
           }
 
@@ -274,7 +274,7 @@ class PWinPreviewImageBuilder {
             let pillHeight = iconHeight * 0.55
             let pillOriginY = iconGroupCenterY - (pillHeight / 2)
             let pillRect = NSRect(x: Int(nextIconMinX), y: Int(pillOriginY), width: Int(pillWidth), height: Int(pillHeight))
-            cgContext.withNewCGState {
+            cgContext.withNestedGState {
               cgContext.drawRoundedRect(pillRect, cornerRadius: min(pillHeight * 0.5, widgetRoundedCornerRadius * 0.5), fillColor: iconColor.cgColor)
             }
           }

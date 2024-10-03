@@ -140,6 +140,7 @@ class PlaySliderCell: NSSliderCell {
                        width: rect.width,
                        height: rect.height - 2)
     }
+
     let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
     if controlView!.window!.effectiveAppearance.isDark {
       // Clip where the knob will be, including 1px from left & right of the knob

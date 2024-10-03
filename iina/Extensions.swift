@@ -879,8 +879,8 @@ extension NSTextField {
 }
 
 extension CGContext {
-  /// Decorator for state
-  func withNewCGState<T>(_ closure: () throws -> T) rethrows -> T {
+  /// Decorator which encloses `closure` with `saveGState` at start and `restoreGState` at end
+  func withNestedGState<T>(_ closure: () throws -> T) rethrows -> T {
     saveGState()
     defer {
       restoreGState()
@@ -1124,15 +1124,7 @@ extension NSImage {
       return nil
     }
 
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = context
-    let cgContext = context.cgContext
-
-    drawingCalls(cgContext)
-
-    defer {
-      NSGraphicsContext.restoreGraphicsState()
-    }
+    drawingCalls(context.cgContext)
 
     let outputImage = NSImage(size: CGSize(width: width, height: height))
     // Create the CGImage from the contents of the bitmap context.
