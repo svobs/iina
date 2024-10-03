@@ -143,7 +143,7 @@ class VideoView: NSView {
   }
 
   private func rebuildConstraints(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0,
-                                  aspect: CGFloat,
+                                  aspectMultiplier: CGFloat,
                                   eqIsActive: Bool = true, eqPriority: NSLayoutConstraint.Priority,
                                   centerIsActive: Bool = true, centerPriority: NSLayoutConstraint.Priority,
                                   aspectIsActive: Bool = true, aspectPriority: NSLayoutConstraint.Priority) {
@@ -157,20 +157,26 @@ class VideoView: NSView {
 
     var newCenterX: NSLayoutConstraint
     var newCenterY: NSLayoutConstraint
+    let newAspect: NSLayoutConstraint
     if let existing {
-      existing.aspectRatio.isActive = false
       newCenterX = existing.centerX
       newCenterY = existing.centerY
+      if existing.aspectRatio.isActive != aspectIsActive || aspectMultiplier != existing.aspectRatio.multiplier {
+        existing.aspectRatio.isActive = false
+        newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
+      } else {
+        newAspect = existing.aspectRatio
+      }
       player.log.verbose("Replacing existing aspect constraint for videoView")
     } else {
       newCenterX = centerXAnchor.constraint(equalTo: superview.centerXAnchor)
       newCenterY = centerYAnchor.constraint(equalTo: superview.centerYAnchor)
+      newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
       player.log.verbose("Adding new aspect constraint for videoView")
     }
-    let newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspect, constant: 0)
-    newAspect.priority = aspectPriority
     newCenterX.priority = centerPriority
     newCenterY.priority = centerPriority
+    newAspect.priority = aspectPriority
 
     let newConstraints = VideoViewConstraints(
       eqOffsetTop: addOrUpdate(existing?.eqOffsetTop, .top, .equal, top, eqPriority),
@@ -199,10 +205,11 @@ class VideoView: NSView {
     log.verbose("Constraining videoView for fixed offsets=\(margins), aspect=\(videoAspect)")
 
     // Use only EQ. Remove all other constraints
-    rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading, aspect: videoAspect,
+    rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
+                       aspectMultiplier: videoAspect,
                        eqIsActive: true, eqPriority: NSLayoutConstraint.Priority(499),
                        centerIsActive: true, centerPriority: .defaultLow,
-                       aspectIsActive: videoAspect > 0.0, aspectPriority: NSLayoutConstraint.Priority(1000))
+                       aspectIsActive: videoAspect > 0.0, aspectPriority: NSLayoutConstraint.Priority(501))
   }
 
   func apply(_ geometry: PWinGeometry?) {
