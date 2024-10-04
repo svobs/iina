@@ -477,26 +477,6 @@ extension PlayerWindowController {
         oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
       }
 
-      let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-      let arrowBtnsSideLength: CGFloat
-      if arrowBtnFunction == .seek {
-        // By default the "seek" icons are as tall as the Play icon.
-        // This looks too big for a secondary button. Reduce it in size a bit.
-        arrowBtnsSideLength = oscGeo.playIconSize * 0.75
-      } else {
-        arrowBtnsSideLength = oscGeo.playIconSize
-      }
-      arrowBtnsSquareWidthConstraint.animateToConstant(arrowBtnsSideLength)
-
-      playBtnSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
-
-      var spacing = oscGeo.playIconSpacing
-      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-      if arrowButtonAction == .seek {
-        spacing *= 0.5
-      }
-      playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
-
       let timeLabelFontSize: CGFloat
       let knobHeight: CGFloat
       if outputLayout.oscPosition == .floating {
@@ -526,6 +506,27 @@ extension PlayerWindowController {
       timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
 
       updateArrowButtonImages()
+      volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
+
+      let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+      let arrowBtnsSideLength: CGFloat
+      if arrowBtnFunction == .seek {
+        // By default the "seek" icons are as tall as the Play icon.
+        // This looks too big for a secondary button. Reduce it in size a bit.
+        arrowBtnsSideLength = oscGeo.playIconSize * 0.75
+      } else {
+        arrowBtnsSideLength = oscGeo.playIconSize
+      }
+      arrowBtnsSquareWidthConstraint.animateToConstant(arrowBtnsSideLength)
+
+      playBtnSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
+
+      var spacing = oscGeo.playIconSpacing
+      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+      if arrowButtonAction == .seek {
+        spacing *= 0.5
+      }
+      playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
 
       if outputLayout.oscPosition == .top {
         speedLabelVerticalConstraint.isActive = false
@@ -1394,7 +1395,7 @@ extension PlayerWindowController {
       let button = toolButtons[0]
       toolbarView.spacing = 2 * button.iconSpacing
       toolbarView.edgeInsets = .init(top: button.iconSpacing, left: button.iconSpacing,
-                                     bottom: button.iconSpacing, right: button.iconSpacing + Constants.Distance.titleBarIconSpacingH)
+                                     bottom: button.iconSpacing, right: Constants.Distance.titleBarIconSpacingH)
       log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     }
     return toolbarView

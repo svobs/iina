@@ -20,6 +20,7 @@ fileprivate let floatingToolbarIconSize: CGFloat = 14
 fileprivate let floatingToolbarIconSpacing: CGFloat = 5
 fileprivate let floatingPlayIconSize: CGFloat = 24
 fileprivate let floatingPlayIconSpacing: CGFloat = 24
+fileprivate let floatingVolumeIconSize: CGFloat = 18
 
 // TODO: reimplement OSC title bar feature
 
@@ -41,6 +42,14 @@ struct ControlBarGeometry {
   let playIconSpacing: CGFloat
 
   let toolbarItems: [Preference.ToolBarButton]
+
+  var volumeIconSize: CGFloat {
+    if position == .floating {
+      return floatingVolumeIconSize
+    } else {
+      return playIconSize
+    }
+  }
 
   init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
        barHeight: CGFloat? = nil,

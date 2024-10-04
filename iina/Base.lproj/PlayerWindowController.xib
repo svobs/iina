@@ -112,6 +112,7 @@
                 <outlet property="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" destination="0m3-Bq-3N0" id="k7t-qz-rG9"/>
                 <outlet property="viewportTrailingOffsetFromTrailingSidebarTrailingConstraint" destination="PAj-s6-32e" id="UEo-Zg-pJq"/>
                 <outlet property="viewportView" destination="3nL-Ky-Hfa" id="6AP-iX-kPv"/>
+                <outlet property="volumeIconSizeConstraint" destination="vBo-ma-Dnu" id="mLQ-9E-lcQ"/>
                 <outlet property="volumeSlider" destination="SAG-kc-FAt" id="zM0-Gg-vfy"/>
                 <outlet property="window" destination="F0z-JX-Cv5" id="gIp-Ho-8D9"/>
             </connections>
@@ -704,13 +705,13 @@
             <subviews>
                 <button identifier="Volume-Mute-Button" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2py-h1-0km">
                     <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
-                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="volume" imagePosition="only" alignment="center" alternateImage="mute" refusesFirstResponder="YES" imageScaling="proportionallyDown" inset="2" id="XXj-HK-hXa">
+                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="volume" imagePosition="only" alignment="center" alternateImage="mute" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" id="XXj-HK-hXa">
                         <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                     <constraints>
                         <constraint firstAttribute="width" secondItem="2py-h1-0km" secondAttribute="height" multiplier="1:1" id="8xW-mi-Khh"/>
-                        <constraint firstAttribute="width" priority="900" constant="24" identifier="VolumeIconSizeConstraint" id="vBo-ma-Dnu"/>
+                        <constraint firstAttribute="width" priority="900" constant="24" identifier="volumeIconSizeConstraint" id="vBo-ma-Dnu"/>
                     </constraints>
                     <connections>
                         <action selector="muteButtonAction:" target="-2" id="wUf-9f-uHT"/>

@@ -664,6 +664,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
   @IBOutlet weak var timePositionHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
+  @IBOutlet weak var volumeIconSizeConstraint: NSLayoutConstraint!
   @IBOutlet weak var speedLabelVerticalConstraint: NSLayoutConstraint!
 
   // - Outlets: Views

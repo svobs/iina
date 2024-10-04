@@ -182,6 +182,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     oscToolbarStackViewHeightConstraint = hConstraint
 
     let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: geo.totalToolbarWidth)
+    wConstraint.priority = .defaultHigh  // avoid conflicting constraints
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
 
