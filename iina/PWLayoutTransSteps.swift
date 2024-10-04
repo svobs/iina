@@ -475,10 +475,27 @@ extension PlayerWindowController {
         let toolbarView = rebuildToolbar(transition)
         oscFloatingUpperView.addView(toolbarView, in: .trailing)
         oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
-
-        playbackButtonsSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
-        playbackButtonsHorizontalPaddingConstraint.animateToConstant(oscGeo.playIconSpacing)
       }
+
+      let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+      let arrowBtnsSideLength: CGFloat
+      if arrowBtnFunction == .seek {
+        // By default the "seek" icons are as tall as the Play icon.
+        // This looks too big for a secondary button. Reduce it in size a bit.
+        arrowBtnsSideLength = oscGeo.playIconSize * 0.75
+      } else {
+        arrowBtnsSideLength = oscGeo.playIconSize
+      }
+      arrowBtnsSquareWidthConstraint.animateToConstant(arrowBtnsSideLength)
+
+      playBtnSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
+
+      var spacing = oscGeo.playIconSpacing
+      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+      if arrowButtonAction == .seek {
+        spacing *= 0.5
+      }
+      playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
 
       let timeLabelFontSize: CGFloat
       let knobHeight: CGFloat
@@ -1302,14 +1319,12 @@ extension PlayerWindowController {
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
-    playbackButtonsSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
-
     var spacing = oscGeo.playIconSpacing
     let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     if arrowButtonAction == .seek {
       spacing *= 0.5
     }
-    playbackButtonsHorizontalPaddingConstraint.animateToConstant(spacing)
+    playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
   }
 
   private func updateArrowButtonImages() {

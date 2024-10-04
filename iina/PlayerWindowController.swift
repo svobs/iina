@@ -651,12 +651,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var osdLeadingMarginConstraint: NSLayoutConstraint!
   @IBOutlet weak var osdBottomMarginConstraint: NSLayoutConstraint!
 
-  // Sets the size of the spacer view in the top overlay which reserves space for a title bar:
+  /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
   @IBOutlet weak var titleBarHeightConstraint: NSLayoutConstraint!
-  /// Size of each side of the 3 square playback buttons ⏪⏯️⏩ (`leftArrowButton`, Play/Pause, `rightArrowButton`):
-  @IBOutlet weak var playbackButtonsSquareWidthConstraint: NSLayoutConstraint!
+  /// Size of each side of the (square) `playButton`
+  @IBOutlet weak var playBtnSquareWidthConstraint: NSLayoutConstraint!
+  /// Size of each side of square buttons `leftArrowButton` & `rightArrowButton`
+  @IBOutlet weak var arrowBtnsSquareWidthConstraint: NSLayoutConstraint!
   /// Space added to the left and right of *each* of the 3 square playback buttons:
-  @IBOutlet weak var playbackButtonsHorizontalPaddingConstraint: NSLayoutConstraint!
+  @IBOutlet weak var playbackBtnsHorizontalPaddingConstraint: NSLayoutConstraint!
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
@@ -735,7 +737,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragToolbarView: NSStackView? = nil
   @IBOutlet weak var fragVolumeView: NSView!
   @IBOutlet var fragPositionSliderView: NSView!
-  /// See `playbackButtonsSquareWidthConstraint` & `playbackButtonsHorizontalPaddingConstraint` for sizing
+  /// See `playBtnSquareWidthConstraint`, `playbackBtnsHorizontalPaddingConstraint`, &
+  /// `playbackBtnsHorizontalPaddingConstraint` for sizing
   @IBOutlet weak var fragPlaybackControlButtonsView: NSView!
 
   @IBOutlet weak var speedLabel: NSTextField!
@@ -2381,6 +2384,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     videoView.refreshContentsScale()
     // Do not allow MacOS to change the window size when changing screen
     denyNextWindowResize = true
+  }
+
+  func windowDidChangeOcclusionState(_ notification: Notification) {
+    log.verbose("WindowDidChangeOcclusionState received")
+    forceDraw()
+  }
+
+  func windowDidChangeScreenProfile(_ notification: Notification) {
+    log.verbose("WindowDidChangeScreenProfile received")
+    videoView.refreshEdrMode()
   }
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
