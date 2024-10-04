@@ -206,6 +206,8 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 
   func draw(forced: Bool = false) {
+    assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInitiated,
+           "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     do {
       guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
       defer { videoView.player.mpv.unlockOpenGLContext() }

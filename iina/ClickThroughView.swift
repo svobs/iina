@@ -19,3 +19,9 @@ class ClickThroughStackView: NSStackView {
     return Preference.bool(for: .videoViewAcceptsFirstMouse)
   }
 }
+
+class ClickThroughTextField: NSTextField {
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    return Preference.bool(for: .videoViewAcceptsFirstMouse)
+  }
+}

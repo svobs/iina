@@ -8,7 +8,7 @@
 
 import Foundation
 
-class DurationDisplayTextField: NSTextField {
+class DurationDisplayTextField: ClickThroughTextField {
   enum DisplayMode {
     case current
     case duration // displays the duration of the movie

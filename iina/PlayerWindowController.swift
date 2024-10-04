@@ -934,6 +934,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     window.initialFirstResponder = nil
 
+    // size
+    window.minSize = AppData.minVideoSize
+
+    // need to deal with control bar, so we handle it manually
+    window.isMovableByWindowBackground  = false
+
     viewportView.clipsToBounds = true
     topBarView.clipsToBounds = true
     bottomBarView.clipsToBounds = true
@@ -953,11 +959,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     leftLabel.mode = .current
     rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
-    // size
-    window.minSize = AppData.minVideoSize
-
-    // need to deal with control bar, so we handle it manually
-    window.isMovableByWindowBackground  = false
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    timePositionHoverLabel.nextResponder = playSlider
 
     // Titlebar accessories
 
@@ -2389,6 +2392,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
     log.verbose("WindowDidChangeOcclusionState received")
+    assert(DispatchQueue.isExecutingIn(.main))
     forceDraw()
   }
 
