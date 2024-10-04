@@ -236,7 +236,6 @@ class PlaySliderCell: NSSliderCell {
     let result = super.startTracking(at: startPoint, in: controlView)
     if result {
       playerCore.pause()
-      playerCore.windowController.hideSeekTimeAndThumbnail()
     }
     return result
   }
@@ -246,5 +245,11 @@ class PlaySliderCell: NSSliderCell {
       playerCore.resume()
     }
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
+  }
+
+  override func continueTracking(last lastPoint: NSPoint, current currentPoint: NSPoint, in controlView: NSView) -> Bool {
+    let pointInWindow = controlView.convert(currentPoint, to: nil)
+    playerCore.windowController.refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
+    return super.continueTracking(last: lastPoint, current: currentPoint, in: controlView)
   }
 }

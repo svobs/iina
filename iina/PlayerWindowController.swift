@@ -1412,8 +1412,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func isMouseEvent(_ event: NSEvent, inAnyOf views: [NSView?]) -> Bool {
+    return isPoint(event.locationInWindow, inAnyOf: views)
+  }
+
+  func isPoint(_ pointInWindow: NSPoint, inAnyOf views: [NSView?]) -> Bool {
     return views.filter { $0 != nil }.reduce(false, { (result, view) in
-      return result || view!.isMousePoint(view!.convert(event.locationInWindow, from: nil), in: view!.bounds)
+      return result || view!.isMousePoint(view!.convert(pointInWindow, from: nil), in: view!.bounds)
     })
   }
 
@@ -1803,7 +1807,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       showFadeableViews(duration: 0)
     case .playSlider:
       if controlBarFloating.isDragging { return }
-      refreshSeekTimeAndThumbnail(from: event)
+      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseEntered(with: event)
     }
@@ -1828,7 +1832,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         resetFadeTimer()
       }
     case .playSlider:
-      refreshSeekTimeAndThumbnail(from: event)
+      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseExited(with: event)
     }
@@ -1860,7 +1864,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     }
 
-    refreshSeekTimeAndThumbnail(from: event)
+    refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
 
     if isMouseInWindow {
       let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
@@ -3162,21 +3166,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - UI: Thumbnail Preview
 
   /// Display time label & thumbnail when mouse over slider
-  private func refreshSeekTimeAndThumbnail(from event: NSEvent) {
+  private func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
     thumbDisplayTicketCounter += 1
     let currentTicket = thumbDisplayTicketCounter
 
     DispatchQueue.main.async { [self] in
       guard currentTicket == thumbDisplayTicketCounter else { return }
-      refreshSeekTimeAndThumbnailInternal(from: event)
+      refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
     }
   }
 
-  private func refreshSeekTimeAndThumbnailInternal(from event: NSEvent) {
+  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
     guard !currentLayout.isInteractiveMode else { return }
-    let isCoveredByOSD = !osdVisualEffectView.isHidden && isMouseEvent(event, inAnyOf: [osdVisualEffectView])
-    let isCoveredBySidebar = isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView])
-    let isMouseInPlaySlider = isMouseEvent(event, inAnyOf: [playSlider])
+    let isCoveredByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
+    let isCoveredBySidebar = isPoint(pointInWindow, inAnyOf: [leadingSidebarView, trailingSidebarView])
+    let isMouseInPlaySlider = isPoint(pointInWindow, inAnyOf: [playSlider])
     guard isMouseInPlaySlider, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.playbackDurationSec else {
       hideSeekTimeAndThumbnail()
       return
@@ -3184,8 +3188,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // - 1. Time Hover Label
 
-    let originalPosX = event.locationInWindow.x
-    let mousePosX = playSlider.convert(event.locationInWindow, from: nil).x
+    let mousePosX = playSlider.convert(pointInWindow, from: nil).x
 
     timePositionHoverLabelHorizontalCenterConstraint.constant = mousePosX
 
@@ -3207,7 +3210,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       thumbnailPeekView.isHidden = true
       return
     }
-    thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: originalPosX, player, currentLayout,
+    thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
                                        currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
                                        isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
   }
