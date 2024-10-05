@@ -33,12 +33,16 @@ final class PlaySliderLoopKnob: NSView {
 
   // MARK:- Private Properties
 
-  private var cell: PlaySliderCell!
+  private unowned var cell: PlaySliderCell!
 
   private var isDragging: Bool = false
 
-  private let knobHeight: CGFloat
-  
+  private var knobHeight: CGFloat {
+    guard let cell else { return 0 }
+    // We want loop knobs to be shorter than the primary knob.
+    return round(cell.knobHeight * PlaySliderLoopKnob.knobHeightAdjustment)
+  }
+
   /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
   ///
   /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
@@ -86,8 +90,6 @@ final class PlaySliderLoopKnob: NSView {
   init(slider: PlaySlider, toolTip: String) {
     self.slider = slider
     self.cell = slider.customCell
-    // We want loop knobs to be shorter than the primary knob.
-    knobHeight = round(cell.knobHeight * PlaySliderLoopKnob.knobHeightAdjustment)
     // The frame is calculated and set once the superclass is initialized.
     super.init(frame: NSZeroRect)
     self.toolTip = toolTip
@@ -130,6 +132,7 @@ final class PlaySliderLoopKnob: NSView {
   override func draw(_ dirtyRect: NSRect) {
     guard !isHiddenOrHasHiddenAncestor else { return }
     let rect = knobRect()
+    let knobHeight = knobHeight
     // The frame is taller than the drawn knob. Adjust the y coordinate accordingly.
     let adjustedY = rect.origin.y + (rect.height - knobHeight) / 2
     let drawing: NSRect
@@ -142,6 +145,14 @@ final class PlaySliderLoopKnob: NSView {
     let path = NSBezierPath(roundedRect: drawing, xRadius: cell.knobRadius, yRadius: cell.knobRadius)
     knobColor().setFill()
     path.fill()
+  }
+
+  private func drawGraphic(_ drawFunc: () -> Void) {
+    NSGraphicsContext.saveGraphicsState()
+
+    drawFunc()
+
+    NSGraphicsContext.restoreGraphicsState()
   }
 
   private func knobRect() -> NSRect {

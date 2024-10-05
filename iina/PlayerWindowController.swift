@@ -1772,6 +1772,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .seek:
       let seekAmount = (isMouse ? AppData.seekAmountMapMouse : AppData.seekAmountMap)[relativeSeekAmount] * delta
       player.seek(relativeSecond: seekAmount, option: useExactSeek)
+      // TODO: refreshSeekTimeAndThumbnail()
       isInScrollWheelSeek = true
     case .volume:
       // don't use precised delta for mouse

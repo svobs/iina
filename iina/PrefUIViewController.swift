@@ -69,7 +69,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var oscSnapToCenterCheckboxContainerView: NSView!
   @IBOutlet weak var oscHeightStackView: NSStackView!
   @IBOutlet weak var playbackButtonsStackView: NSStackView!
-  @IBOutlet weak var toolbarButtonsStackView: NSStackView!
+  @IBOutlet weak var toolbarSectionVStackView: NSStackView!
+  @IBOutlet weak var toolbarIconDimensionsHStackView: NSStackView!
   @IBOutlet weak var oscToolbarStackView: NSStackView!
   @IBOutlet weak var autoHideAfterCheckBox: NSButton!
   @IBOutlet weak var oscAutoHideTimeoutTextField: NSTextField!
@@ -356,9 +357,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let oscIsTop = ib.oscEnabled && ib.oscPosition == .top
 
       let hasBarOSC = oscIsBottom || oscIsTop
+      viewHidePairs.append((toolbarSectionVStackView, !ib.oscEnabled))
       viewHidePairs.append((oscHeightStackView, !hasBarOSC))
       viewHidePairs.append((playbackButtonsStackView, !hasBarOSC))
-      viewHidePairs.append((toolbarButtonsStackView, !hasBarOSC))
+      viewHidePairs.append((toolbarIconDimensionsHStackView, !hasBarOSC))
 
       let hasTopBar = ib.hasTopBar
       if topBarPositionContainerView.isHidden != !hasTopBar {
