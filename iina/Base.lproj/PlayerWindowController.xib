@@ -19,9 +19,6 @@
                 <outlet property="arrowBtnsSquareWidthConstraint" destination="2Or-DS-VM6" id="XIg-ub-3ai"/>
                 <outlet property="backButtonBox" destination="6vJ-s6-gdD" id="CK1-B8-Kga"/>
                 <outlet property="backButtonVE" destination="NWr-qI-ocU" id="qqc-Fd-kAb"/>
-                <outlet property="bottomBarLeadingSpaceConstraint" destination="Wkx-hm-sJ4" id="EyE-ox-wzo"/>
-                <outlet property="bottomBarTrailingSpaceConstraint" destination="3qV-vK-qlg" id="Gpt-6V-BMV"/>
-                <outlet property="bottomBarView" destination="DFb-1L-U9o" id="U9w-bH-8zM"/>
                 <outlet property="bufferDetailLabel" destination="hlZ-5D-Wag" id="3Ld-2C-wGO"/>
                 <outlet property="bufferIndicatorView" destination="oX4-0N-but" id="fXY-gn-jfQ"/>
                 <outlet property="bufferProgressLabel" destination="2gH-wF-EpI" id="23t-nJ-ksf"/>
@@ -96,8 +93,6 @@
                 <outlet property="trailingTitleBarAccessoryView" destination="maF-Zr-K8w" id="H6b-g2-qRx"/>
                 <outlet property="trailingTitleBarLeadingSpaceConstraint" destination="c8g-qm-Vdc" id="m15-JQ-OEe"/>
                 <outlet property="trailingTitleBarTrailingSpaceConstraint" destination="Tf8-XK-IVw" id="cwJ-tX-keD"/>
-                <outlet property="viewportBottomOffsetFromBottomBarBottomConstraint" destination="ayn-Wv-3NJ" id="LXY-f9-Zrt"/>
-                <outlet property="viewportBottomOffsetFromBottomBarTopConstraint" destination="68T-mq-A30" id="dZZ-Lb-2wM"/>
                 <outlet property="viewportBottomOffsetFromContentViewBottomConstraint" destination="4gm-o8-h98" id="GyQ-e0-oLf"/>
                 <outlet property="viewportLeadingOffsetFromContentViewLeadingConstraint" destination="vZs-ut-z4j" id="E4F-6L-B6v"/>
                 <outlet property="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" destination="PMP-ks-GY2" id="SCL-aE-ECP"/>
@@ -297,9 +292,6 @@
                             <outlet property="xConstraint" destination="9z2-rX-b7C" id="y3R-d7-oTm"/>
                             <outlet property="yConstraint" destination="cRP-R4-zYY" id="kxT-61-1SZ"/>
                         </connections>
-                    </visualEffectView>
-                    <visualEffectView identifier="BottomBarView" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="DFb-1L-U9o" userLabel="BottomBar View">
-                        <rect key="frame" x="0.0" y="0.0" width="640" height="0.0"/>
                     </visualEffectView>
                     <visualEffectView identifier="Leading-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
@@ -623,9 +615,7 @@
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="viewportTrailingOffsetFromTrailingSidebarLeadingConstraint" id="0m3-Bq-3N0"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="g0O-v5-RQj" secondAttribute="bottom" constant="8" identifier="vidContainerBtm_GE_osdBtm_Constraint" id="0pt-vB-Ycm"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="bottom" constant="-28" identifier="TopOfViewport-BottomOfTopBar-Constraint" id="1Ut-pz-GFg"/>
-                    <constraint firstItem="DFb-1L-U9o" firstAttribute="trailing" secondItem="epo-S6-QVB" secondAttribute="leading" identifier="bottomBarTrailingSpaceConstraint" id="3qV-vK-qlg"/>
                     <constraint firstAttribute="bottom" secondItem="3nL-Ky-Hfa" secondAttribute="bottom" identifier="viewportlViewBottom-ContentViewBottom-Constraint" id="4gm-o8-h98"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="DFb-1L-U9o" secondAttribute="top" identifier="viewportBottom-BottomBarTop-Constraint" id="68T-mq-A30"/>
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="top" secondItem="xqX-4W-gdw" secondAttribute="top" priority="900" constant="-0.5" id="9bg-Sf-jRQ"/>
                     <constraint firstItem="OiF-pA-8Sd" firstAttribute="centerX" secondItem="3nL-Ky-Hfa" secondAttribute="leading" priority="249" constant="330" identifier="floatingOSC-CenterX-Constraint" id="9z2-rX-b7C"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
@@ -643,10 +633,8 @@
                     <constraint firstItem="IeW-QK-xIO" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" id="SKO-g6-ryJ"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" identifier="viewportLeadingOffsetFromLeadingSidebarTrailingConstraint" id="Uue-Qa-4ao"/>
                     <constraint firstItem="Nrz-jZ-Luf" firstAttribute="top" secondItem="3nL-Ky-Hfa" secondAttribute="top" id="Vtd-0f-x7p"/>
-                    <constraint firstItem="DFb-1L-U9o" firstAttribute="leading" secondItem="XBs-34-TIm" secondAttribute="trailing" identifier="bottomBarLeadingSpaceConstraint" id="Wkx-hm-sJ4"/>
                     <constraint firstItem="oX4-0N-but" firstAttribute="centerY" secondItem="3nL-Ky-Hfa" secondAttribute="centerY" id="XlV-7n-jPb"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" identifier="viewportlViewTop-ContentViewTop-Constraint" id="Zqm-9J-g9b"/>
-                    <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="DFb-1L-U9o" secondAttribute="bottom" identifier="viewportBottom-BottomBarBottom-Constraint" id="ayn-Wv-3NJ"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="bottom" secondItem="OiF-pA-8Sd" secondAttribute="bottom" priority="750" constant="60" identifier="ControlBarFloating_Y-Constraint" id="cRP-R4-zYY"/>
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="88M-Ln-4mc" secondAttribute="trailing" priority="250" constant="4" identifier="osdLeadingToMiniPlayerButtonsTrailingConstraint" id="eTB-OD-mwZ"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="bottom" secondItem="XBs-34-TIm" secondAttribute="bottom" id="f5L-Kv-wdv"/>

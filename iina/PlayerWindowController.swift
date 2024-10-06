@@ -603,19 +603,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTopOffsetFromTopBarTopConstraint: NSLayoutConstraint!
   @IBOutlet weak var viewportTopOffsetFromContentViewTopConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or left of screen:
+  // Needs to be changed to align with either sidepanel or leading edge of window:
   @IBOutlet weak var topBarLeadingSpaceConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or right of screen:
+  // Needs to be changed to align with either sidepanel or trailing edge of window:
   @IBOutlet weak var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Bottom OSC constraints
-  @IBOutlet weak var viewportBottomOffsetFromBottomBarTopConstraint: NSLayoutConstraint!
-  @IBOutlet weak var viewportBottomOffsetFromBottomBarBottomConstraint: NSLayoutConstraint!
-  @IBOutlet var viewportBottomOffsetFromContentViewBottomConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or left of screen:
-  @IBOutlet weak var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!
-  // Needs to be changed to align with either sidepanel or right of screen:
-  @IBOutlet weak var bottomBarTrailingSpaceConstraint: NSLayoutConstraint!
+  @IBOutlet weak var viewportBottomOffsetFromContentViewBottomConstraint: NSLayoutConstraint!
+  var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
+  var viewportBtmOffsetFromBtmOfBottomBarConstraint: NSLayoutConstraint!
+  // Needs to be changed to align with either sidepanel or leading edge of window:
+  var bottomBarLeadingSpaceConstraint: NSLayoutConstraint!
+  // Needs to be changed to align with either sidepanel or trailing edge of window:
+  var bottomBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Leading sidebar constraints
   @IBOutlet weak var viewportLeadingOffsetFromContentViewLeadingConstraint: NSLayoutConstraint!
@@ -703,7 +703,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
-  @IBOutlet weak var bottomBarView: NSView!
+  var bottomBarView: NSView! = NSVisualEffectView()
   /// Top border of `bottomBarView`.
   var bottomBarTopBorder = NSBox()
 
@@ -922,7 +922,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     loaded = true
 
     guard let window = window else { return }
-    guard let cv = window.contentView else { return }
+    guard let contentView = window.contentView else { return }
 
     /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
     /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems
@@ -945,7 +945,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
     /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
     /// notch and the preference `allowVideoToOverlapCameraHousing` is false.
-    cv.wantsLayer = true
+    contentView.wantsLayer = true
     // Need this to be black also, for sidebar animations
     viewportView.wantsLayer = true
     setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
@@ -972,8 +972,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // gesture recognizers
     rotationHandler.windowController = self
     magnificationHandler.windowController = self
-    cv.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
-    cv.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
+    contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
+    contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 
     // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
     // screen mode once overlaying views are fully hidden (issue #3844). After applying this
@@ -985,7 +985,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       view.wantsLayer = true
       view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
       view.layer?.opacity = 0.01
-      cv.addSubview(view)
+      contentView.addSubview(view)
     }
 
     initDefaultAlbumArtView()
@@ -1004,24 +1004,46 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Bottom bar init
 
-    //  viewportBottomOffsetFromBottomBarTopConstraint.animateToConstant(bottomBarHeight)
-    //  viewportBottomOffsetFromBottomBarBottomConstraint.animateToConstant(0)
-    //  bottomBarLeadingSpaceConstraint
-    //  bottomBarTrailingSpaceConstraint
-
+    contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
+    if let bottomBarView = bottomBarView as? NSVisualEffectView {
+      bottomBarView.blendingMode = .withinWindow
+      bottomBarView.material = .sidebar
+      bottomBarView.state = .active
+    }
+    bottomBarView.identifier = .init("bottomBarView")  // helps with debug logging
+    bottomBarView.isHidden = true
+    bottomBarView.translatesAutoresizingMaskIntoConstraints = false
 
+    viewportBtmOffsetFromTopOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.topAnchor, constant: 0)
+    viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
+    viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromTopOfBottomBarConstraint")
+
+    viewportBtmOffsetFromBtmOfBottomBarConstraint =  viewportView.bottomAnchor
+      .constraint(equalTo: bottomBarView.bottomAnchor, constant: 0)
+    viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
+    viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromBtmOfBottomBarConstraint")
+
+    bottomBarLeadingSpaceConstraint = bottomBarView.leadingAnchor.constraint(equalTo: leadingSidebarView.trailingAnchor, constant: 0)
+    bottomBarLeadingSpaceConstraint.isActive = true
+    bottomBarLeadingSpaceConstraint.identifier = .init("bottomBarLeadingSpaceConstraint")
+
+    bottomBarTrailingSpaceConstraint = bottomBarView.trailingAnchor.constraint(equalTo: trailingSidebarView.leadingAnchor, constant: 0)
+    bottomBarTrailingSpaceConstraint.isActive = true
+    bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
+
+    oscBottomMainView.identifier = .init("oscBottomMainView")  // helps with debug logging
     oscBottomMainView.spacing = 4
-    oscBottomMainView.identifier = .init("OSDBottomMainView")
     oscBottomMainView.orientation = .horizontal
     oscBottomMainView.alignment = .centerY
     oscBottomMainView.distribution = .gravityAreas
     oscBottomMainView.translatesAutoresizingMaskIntoConstraints = false
 
+    bottomBarTopBorder.identifier = .init("bottomBarTopBorder")  // helps with debug logging
     bottomBarTopBorder.boxType = .custom
     bottomBarTopBorder.titlePosition = .noTitle
     bottomBarTopBorder.borderWidth = 0
-    bottomBarTopBorder.fillColor = NSColor(named: .titleBarBorder)!
+    bottomBarTopBorder.fillColor = NSColor.separatorColor
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
@@ -1045,7 +1067,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
     fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
 
-    cv.configureSubtreeForCoreAnimation()
+    contentView.configureSubtreeForCoreAnimation()
 
     animationPipeline.submitInstantTask{ [self] in
       if player.info.isRestoring {

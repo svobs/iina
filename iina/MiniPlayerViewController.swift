@@ -82,7 +82,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   var currentDisplayedPlaylistHeight: CGFloat {
     // most reliable first-hand source for this is a constraint:
-    let bottomBarHeight = -windowController.viewportBottomOffsetFromBottomBarBottomConstraint.constant
+    let bottomBarHeight = -windowController.viewportBtmOffsetFromBtmOfBottomBarConstraint.constant
     return bottomBarHeight - Constants.Distance.MusicMode.oscHeight
   }
 

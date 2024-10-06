@@ -1164,12 +1164,12 @@ extension PlayerWindowController {
 
     switch bottomBarPlacement {
     case .insideViewport:
-      viewportBottomOffsetFromBottomBarTopConstraint.animateToConstant(bottomBarHeight)
-      viewportBottomOffsetFromBottomBarBottomConstraint.animateToConstant(0)
+      viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(bottomBarHeight)
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(0)
       viewportBottomOffsetFromContentViewBottomConstraint.animateToConstant(0)
     case .outsideViewport:
-      viewportBottomOffsetFromBottomBarTopConstraint.animateToConstant(0)
-      viewportBottomOffsetFromBottomBarBottomConstraint.animateToConstant(-bottomBarHeight)
+      viewportBtmOffsetFromTopOfBottomBarConstraint.animateToConstant(0)
+      viewportBtmOffsetFromBtmOfBottomBarConstraint.animateToConstant(-bottomBarHeight)
       viewportBottomOffsetFromContentViewBottomConstraint.animateToConstant(bottomBarHeight)
     }
   }
