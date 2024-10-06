@@ -320,7 +320,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     guard !urls.isEmpty else { return 0 }
-    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(from: $0).pii.quoted})")
+    log.debug("OpenURLs (autoLoadPL=\(shouldAutoLoadPlaylist.yn)): \(urls.map{Playback.path(from: $0).pii})")
     // Reset:
     info.shouldAutoLoadFiles = shouldAutoLoadPlaylist
 
@@ -2176,24 +2176,27 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
 
-    guard let mediaFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
+    guard let playbackFromPath = Playback(urlPath: path, playlistPos: playlistPos, state: .started) else {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
-    if let existingMedia = info.currentPlayback, existingMedia.url == mediaFromPath.url {
-      guard existingMedia.state.isNotYet(.started) else {
-        log.warn("FileStarted: found existing playback for \(existingMedia.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingMedia.state.rawValue))")
+    if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
+      guard existingPlayback.state.isNotYet(.started) else {
+        log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingPlayback.state.rawValue))")
         return
       }
       // update existing entry
-      existingMedia.playlistPos = mediaFromPath.playlistPos
-      existingMedia.state = mediaFromPath.state
-      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(mediaFromPath.playlistPos)")
+      existingPlayback.playlistPos = playbackFromPath.playlistPos
+      existingPlayback.state = playbackFromPath.state
+      log.verbose("FileStarted: existing playbackPath=\(path.pii.quoted),  PL#=\(playbackFromPath.playlistPos)")
     } else {
       // New media, perhaps initiated by mpv
-      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(mediaFromPath.playlistPos)")
-      info.currentPlayback = mediaFromPath
+      log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(playbackFromPath.playlistPos)")
+      info.currentPlayback = playbackFromPath
     }
+//    if let parentPlaylist = mpv.getString(MPVProperty.playlist) {
+//      info.currentPlayback!.parentPlaylist = parentPlaylist
+//    }
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()

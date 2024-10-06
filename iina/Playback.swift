@@ -54,6 +54,8 @@ class Playback: CustomStringConvertible {
 
   var playlistPos: Int
 
+  var parentPlaylist: String = ""
+
   /// Lifecycle state of this playback
   var state: LifecycleState {
     willSet {

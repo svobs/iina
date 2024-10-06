@@ -195,8 +195,9 @@ class MediaMetaCache {
       log.verbose("Skipping ffMeta check; not a file URL: \(url.absoluteString.pii.quoted)")
       return nil
     }
-    guard Utility.playableFileExt.contains(url.absoluteString.lowercasedPathExtension) else {
-      log.verbose("Skipping ffMeta check; not a playable file URL: \(url.absoluteString.pii.quoted)")
+    let path = Playback.path(from: url)
+    guard Utility.playableFileExt.contains(path.lowercasedPathExtension) else {
+      log.verbose("Skipping ffMeta check; not a playable file: \(path.pii.quoted)")
       return nil
     }
 
@@ -206,7 +207,6 @@ class MediaMetaCache {
       missed = true
       ffMeta = reloadCachedVideoMeta(forURL: url)
     }
-    let path = Playback.path(from: url)
 
     guard let ffMeta else {
       log.error("Unable to find ffMeta from either cache or ffmpeg for \(path.pii.quoted)")

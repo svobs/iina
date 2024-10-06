@@ -152,7 +152,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected videoSize width & height >= 0, found \(videoSize)")
     self.videoSize = videoSize
     // FIXME: use best viewport margins
-
+    // FIXME: this is 1 too many sometimes during sidebar resize! Bad calculation!
     self.viewportMargins = viewportMargins ?? PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
                                                                                       insideBars: insideBars, mode: mode)
     self.video = video
@@ -523,6 +523,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return videoSize
   }
 
+  // FIXME: this is not always correct! Also, clean up so it's less confusing
   static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: MarginQuad, mode: PlayerWindowMode) -> MarginQuad {
     guard viewportSize.width > 0 && viewportSize.height > 0 else {
       return MarginQuad.zero

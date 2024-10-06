@@ -117,7 +117,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -294,7 +294,7 @@
                             <outlet property="yConstraint" destination="cRP-R4-zYY" id="kxT-61-1SZ"/>
                         </connections>
                     </visualEffectView>
-                    <visualEffectView identifier="Leading-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
+                    <visualEffectView identifier="Leading-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
                         <subviews>
                             <box identifier="LeadingSidebaTrailingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="b0r-Lt-vGM" userLabel="Leading-Sidebar-Trailing-Border Box">
@@ -315,7 +315,7 @@
                             <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
                         </shadow>
                     </visualEffectView>
-                    <visualEffectView identifier="Trailing-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="epo-S6-QVB" userLabel="Trailing-Sidebar View">
+                    <visualEffectView identifier="Trailing-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="epo-S6-QVB" userLabel="Trailing-Sidebar View">
                         <rect key="frame" x="640" y="0.0" width="360" height="400"/>
                         <subviews>
                             <box identifier="TrailingSidebarLeadingBorder" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="exJ-CB-MoS" userLabel="Trailing-Sidebar-Leading-Border Box">
@@ -358,7 +358,7 @@
                             <outlet property="imageView" destination="HHm-A9-jIP" id="KtN-I3-vJb"/>
                         </connections>
                     </customView>
-                    <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="popover" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
+                    <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
                         <rect key="frame" x="8" y="303" width="169" height="61"/>
                         <subviews>
                             <stackView wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="902" verticalStackHuggingPriority="902" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="irz-R1-ajt" userLabel="OSD Horizontal Stack View">

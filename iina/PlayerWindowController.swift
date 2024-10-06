@@ -1050,15 +1050,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
     bottomBarTopBorder.borderColor = NSColor.clear
 
-    // Do not make visual effects views opaque when window is not in focus
-    for view in [osdVisualEffectView, controlBarFloating,
-                 leadingSidebarView, trailingSidebarView, pipOverlayView, bufferIndicatorView] {
-      view?.state = .active
-    }
-    if let view = bottomBarView as? NSVisualEffectView {
-      view.state = .active
-    }
-
     bufferIndicatorView.roundCorners()
     additionalInfoView.roundCorners()
     osdVisualEffectView.roundCorners()
@@ -3662,7 +3653,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func forceDraw() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
-      log.verbose("Will not force video redraw: no video track selected")
+      log.verbose("Skipping force video redraw: no video track selected")
       return
     }
     guard loaded, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
