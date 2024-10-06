@@ -50,7 +50,6 @@
                 <outlet property="leftLabel" destination="NBD-MV-OuG" id="7xb-a1-6NR"/>
                 <outlet property="muteButton" destination="2py-h1-0km" id="baB-6t-gO7"/>
                 <outlet property="onTopButton" destination="Ztc-Kn-fxI" id="xCA-hX-VpW"/>
-                <outlet property="oscBottomMainView" destination="Qmi-hb-0aM" id="PM5-Ic-nvt"/>
                 <outlet property="oscFloatingLowerView" destination="hb6-oe-rHm" id="ZKe-zm-evE"/>
                 <outlet property="oscFloatingPlayButtonsContainerView" destination="hDm-KI-3o4" id="ITm-fa-cWL"/>
                 <outlet property="oscFloatingUpperView" destination="Unr-Y6-JoM" id="URb-3v-Gzc"/>
@@ -125,7 +124,7 @@
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
-            <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="Window-Content View">
+            <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
@@ -311,16 +310,9 @@
                                 <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                             </box>
-                            <stackView identifier="OSC-Bottom-HStack-View" wantsLayer="YES" orientation="horizontal" alignment="centerY" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qmi-hb-0aM" userLabel="OSC-Bottom HStack View" customClass="ClickThroughStackView" customModule="IINA" customModuleProvider="target">
-                                <rect key="frame" x="4" y="0.0" width="636" height="0.0"/>
-                            </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="bottom" secondItem="Qmi-hb-0aM" secondAttribute="bottom" id="84H-65-Ego"/>
-                            <constraint firstItem="Qmi-hb-0aM" firstAttribute="top" secondItem="DFb-1L-U9o" secondAttribute="top" id="ANy-8g-kkb"/>
-                            <constraint firstAttribute="trailing" secondItem="Qmi-hb-0aM" secondAttribute="trailing" identifier="bottomBarTrailingSpaceConstraint" id="bOW-iG-HNY"/>
                             <constraint firstAttribute="trailing" secondItem="EJf-SX-YpP" secondAttribute="trailing" id="bX4-9Y-drG"/>
-                            <constraint firstItem="Qmi-hb-0aM" firstAttribute="leading" secondItem="DFb-1L-U9o" secondAttribute="leading" constant="4" id="c3E-rA-tSH"/>
                             <constraint firstItem="EJf-SX-YpP" firstAttribute="top" secondItem="DFb-1L-U9o" secondAttribute="top" identifier="BottomBarTopBorderBoxTop-BottomBarTop-Constraint" id="mgb-5J-8vn"/>
                             <constraint firstItem="EJf-SX-YpP" firstAttribute="leading" secondItem="DFb-1L-U9o" secondAttribute="leading" id="xG0-cE-du2"/>
                         </constraints>

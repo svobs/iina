@@ -236,7 +236,9 @@ extension PlayerWindowController {
     if transition.isTogglingFullScreen {
       /// Need to use `.withinWindow` during animation or else panel tint can change in odd ways
       topBarView.blendingMode = .withinWindow
-      bottomBarView.blendingMode = .withinWindow
+      if let bottomBarView = bottomBarView as? NSVisualEffectView {
+        bottomBarView.blendingMode = .withinWindow
+      }
       leadingSidebarView.blendingMode = .withinWindow
       trailingSidebarView.blendingMode = .withinWindow
     }
@@ -460,7 +462,7 @@ extension PlayerWindowController {
         currentControlBar = bottomBarView
 
         if !bottomBarView.subviews.contains(oscBottomMainView) {
-          bottomBarView.addSubview(oscBottomMainView)
+          bottomBarView.addSubview(oscBottomMainView, positioned: .below, relativeTo: bottomBarTopBorder)
           oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 8, trailing: 8)
         }
 
@@ -567,7 +569,7 @@ extension PlayerWindowController {
     if transition.isEnteringMusicMode {
       // Entering music mode
       oscBottomMainView.removeFromSuperview()
-      bottomBarView.addSubview(miniPlayer.view, positioned: .above, relativeTo: bottomBarTopBorder)
+      bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
       miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
       let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
@@ -1469,11 +1471,13 @@ extension PlayerWindowController {
       topBarView.blendingMode = .behindWindow
     }
 
-    // Full screen + "behindWindow" doesn't blend properly and looks ugly
-    if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
-      bottomBarView.blendingMode = .withinWindow
-    } else {
-      bottomBarView.blendingMode = .behindWindow
+    if let bottomBarView = bottomBarView as? NSVisualEffectView {
+      // Full screen + "behindWindow" doesn't blend properly and looks ugly
+      if outputLayout.bottomBarPlacement == .insideViewport || outputLayout.isFullScreen {
+        bottomBarView.blendingMode = .withinWindow
+      } else {
+        bottomBarView.blendingMode = .behindWindow
+      }
     }
 
     updateSidebarBlendingMode(.leadingSidebar, layout: outputLayout)

@@ -703,7 +703,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
-  @IBOutlet weak var bottomBarView: NSVisualEffectView!
+  @IBOutlet weak var bottomBarView: NSView!
   /// Top border of `bottomBarView`.
   @IBOutlet weak var bottomBarTopBorder: NSBox!
 
@@ -732,7 +732,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var oscFloatingPlayButtonsContainerView: NSStackView!
   @IBOutlet weak var oscFloatingUpperView: NSStackView!
   @IBOutlet weak var oscFloatingLowerView: NSStackView!
-  @IBOutlet var oscBottomMainView: NSStackView!
+  let oscBottomMainView = NSStackView()
   @IBOutlet weak var oscTopMainView: NSStackView!
 
   var fragToolbarView: NSStackView? = nil
@@ -1001,10 +1001,20 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     osdAccessoryProgress.usesThreadedAnimation = false
     topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
 
+    oscBottomMainView.spacing = 4
+    oscBottomMainView.identifier = .init("OSDBottomMainView")
+    oscBottomMainView.orientation = .horizontal
+    oscBottomMainView.alignment = .centerY
+    oscBottomMainView.distribution = .gravityAreas
+    oscBottomMainView.translatesAutoresizingMaskIntoConstraints = false
+
     // Do not make visual effects views opaque when window is not in focus
-    for view in [topBarView, osdVisualEffectView, bottomBarView, controlBarFloating,
+    for view in [topBarView, osdVisualEffectView, controlBarFloating,
                  leadingSidebarView, trailingSidebarView, pipOverlayView, bufferIndicatorView] {
       view?.state = .active
+    }
+    if let view = bottomBarView as? NSVisualEffectView {
+      view.state = .active
     }
 
     bufferIndicatorView.roundCorners()
@@ -1886,7 +1896,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // assumes mouse is in window
   private func isMouseInTopBarArea(_ event: NSEvent) -> Bool {
-    if isMouseEvent(event, inAnyOf: [bottomBarView]) {
+    if !currentLayout.topBarView.isShowable {
+      // e.g. music mode
       return false
     }
     guard let window = window, let contentView = window.contentView else { return false }
