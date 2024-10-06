@@ -401,7 +401,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     let didRestoreSomething = !startup.wcsToRestore.isEmpty
-    let didOpenSomething = didRestoreSomething || startup.wcForOpenFile != nil
 
     if Preference.bool(for: .isRestoreInProgress) {
       log.verbose("Done restoring windows")
@@ -410,6 +409,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     startup.state = .doneOpening
 
+    let didOpenSomething = didRestoreSomething || startup.wcForOpenFile != nil
     if !commandLineStatus.isCommandLine && !didOpenSomething {
       // Fall back to default action:
       doLaunchOrReopenAction()
@@ -907,14 +907,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       player.windowController.windowWillClose()
       // Player window was closed; need to remove some additional state
       player.clearSavedState()
+    }
 
-      // Check whether this is the last player closed; show welcome or history window if configured.
-      // Other windows like Settings may be open, and user shouldn't need to close them all to get back the welcome window.
-      if player.isOnlyOpenPlayer {
-        player.log.verbose("Window was last player window open: \(window.savedStateName.quoted)")
-        doActionWhenLastWindowWillClose()
-      }
-    } else if window.isOnlyOpenWindow {
+    if window.isOnlyOpenWindow {
       doActionWhenLastWindowWillClose()
     }
   }
@@ -933,9 +928,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are still in open list: \(Preference.UIState.windowsOpen)", level: .verbose)
       return false
     }
-
-    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
-    guard !isShowingOpenFileWindow else { return false }
 
     if let activePlayer = PlayerCoreManager.shared.activePlayer, activePlayer.windowController.isWindowHidden {
       return false
@@ -1450,7 +1442,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // once it has been instructed to shutdown can trigger a crash. MUST NOT permit
     // reopening once termination has started.
     guard !isTerminating else { return false }
+    guard startup.state == .doneOpening else { return false }
+    // OpenFile is an NSPanel, which AppKit considers not to be a window. Need to account for this ourselves.
     guard !hasVisibleWindows && !isShowingOpenFileWindow else { return true }
+
     Logger.log("Handle reopen")
     doLaunchOrReopenAction()
     return true
@@ -1601,7 +1596,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   }
 
   func showOpenFileWindow(isAlternativeAction: Bool) {
-    Logger.log("Showing OpenFileWindow (isAlternativeAction: \(isAlternativeAction))", level: .verbose)
+    Logger.log.verbose("Showing OpenFileWindow (isAlternativeAction: \(isAlternativeAction))")
+    guard !isShowingOpenFileWindow else {
+      // Do not allow more than one open file window at a time
+      Logger.log.debug("Ignoring request to show OpenFileWindow: already showing one")
+      return
+    }
     isShowingOpenFileWindow = true
     let panel = NSOpenPanel()
     panel.setFrameAutosaveName(WindowAutosaveName.openFile.string)

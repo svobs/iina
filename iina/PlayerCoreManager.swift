@@ -65,6 +65,15 @@ class PlayerCoreManager {
     }
   }
 
+  var hasOpenPlayer: Bool {
+    for player in playerCores {
+      if player.windowController.isOpen {
+        return true
+      }
+    }
+    return false
+  }
+
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
   func restoreFromPriorLaunch(playerID id: String) -> PlayerCore? {
     Preference.UIState.log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")

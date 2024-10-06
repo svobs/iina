@@ -969,6 +969,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // video view
 
+    // FIXME 1: stick to individual side of screen
+    // FIXME 2: fix open window with multiple players bug
+    // FIXME 3: parent playlist
+    // FIXME 4: play bar drawing
+
     // gesture recognizers
     rotationHandler.windowController = self
     magnificationHandler.windowController = self
