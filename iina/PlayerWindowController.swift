@@ -705,7 +705,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
   @IBOutlet weak var bottomBarView: NSView!
   /// Top border of `bottomBarView`.
-  @IBOutlet weak var bottomBarTopBorder: NSBox!
+  var bottomBarTopBorder = NSBox()
 
   @IBOutlet weak var timePositionHoverLabel: NSTextField!
   @IBOutlet weak var thumbnailPeekView: ThumbnailPeekView!
@@ -941,8 +941,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     window.isMovableByWindowBackground  = false
 
     viewportView.clipsToBounds = true
-    topBarView.clipsToBounds = true
-    bottomBarView.clipsToBounds = true
 
     /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
     /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
@@ -999,7 +997,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
+
+    // Top bar: other init
+    topBarView.clipsToBounds = true
     topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
+
+    // Bottom bar init
+
+    //  viewportBottomOffsetFromBottomBarTopConstraint.animateToConstant(bottomBarHeight)
+    //  viewportBottomOffsetFromBottomBarBottomConstraint.animateToConstant(0)
+    //  bottomBarLeadingSpaceConstraint
+    //  bottomBarTrailingSpaceConstraint
+
+    bottomBarView.clipsToBounds = true
 
     oscBottomMainView.spacing = 4
     oscBottomMainView.identifier = .init("OSDBottomMainView")
@@ -1007,6 +1017,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     oscBottomMainView.alignment = .centerY
     oscBottomMainView.distribution = .gravityAreas
     oscBottomMainView.translatesAutoresizingMaskIntoConstraints = false
+
+    bottomBarTopBorder.boxType = .custom
+    bottomBarTopBorder.titlePosition = .noTitle
+    bottomBarTopBorder.borderWidth = 0
+    bottomBarTopBorder.fillColor = NSColor(named: .titleBarBorder)!
+    bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
+    bottomBarView.addSubview(bottomBarTopBorder)
+    bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+    bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    bottomBarTopBorder.borderColor = NSColor.clear
 
     // Do not make visual effects views opaque when window is not in focus
     for view in [topBarView, osdVisualEffectView, controlBarFloating,

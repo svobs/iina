@@ -514,7 +514,14 @@ extension PlayerWindowController {
       return enableOSC && oscPosition == .top
     }
 
+    var hasBottomOSC: Bool {
+      return enableOSC && oscPosition == .bottom
+    }
+
     var hasPermanentOSC: Bool {
+      if isMusicMode {
+        return true
+      }
       return enableOSC && ((oscPosition == .top && topBarPlacement == .outsideViewport) ||
                            (oscPosition == .bottom && bottomBarPlacement == .outsideViewport))
     }

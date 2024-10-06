@@ -20,7 +20,6 @@
                 <outlet property="backButtonBox" destination="6vJ-s6-gdD" id="CK1-B8-Kga"/>
                 <outlet property="backButtonVE" destination="NWr-qI-ocU" id="qqc-Fd-kAb"/>
                 <outlet property="bottomBarLeadingSpaceConstraint" destination="Wkx-hm-sJ4" id="EyE-ox-wzo"/>
-                <outlet property="bottomBarTopBorder" destination="EJf-SX-YpP" id="uSo-fv-Kdy"/>
                 <outlet property="bottomBarTrailingSpaceConstraint" destination="3qV-vK-qlg" id="Gpt-6V-BMV"/>
                 <outlet property="bottomBarView" destination="DFb-1L-U9o" id="U9w-bH-8zM"/>
                 <outlet property="bufferDetailLabel" destination="hlZ-5D-Wag" id="3Ld-2C-wGO"/>
@@ -122,7 +121,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -301,21 +300,6 @@
                     </visualEffectView>
                     <visualEffectView identifier="BottomBarView" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="DFb-1L-U9o" userLabel="BottomBar View">
                         <rect key="frame" x="0.0" y="0.0" width="640" height="0.0"/>
-                        <subviews>
-                            <box identifier="BottomBarTopBorderBox" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="EJf-SX-YpP" userLabel="BottomBar-Top-Border Box">
-                                <rect key="frame" x="0.0" y="-1" width="640" height="1"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="1" id="iul-EY-vfA"/>
-                                </constraints>
-                                <color key="borderColor" red="0.48627450979999998" green="0.48627450979999998" blue="0.48627450979999998" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
-                            </box>
-                        </subviews>
-                        <constraints>
-                            <constraint firstAttribute="trailing" secondItem="EJf-SX-YpP" secondAttribute="trailing" id="bX4-9Y-drG"/>
-                            <constraint firstItem="EJf-SX-YpP" firstAttribute="top" secondItem="DFb-1L-U9o" secondAttribute="top" identifier="BottomBarTopBorderBoxTop-BottomBarTop-Constraint" id="mgb-5J-8vn"/>
-                            <constraint firstItem="EJf-SX-YpP" firstAttribute="leading" secondItem="DFb-1L-U9o" secondAttribute="leading" id="xG0-cE-du2"/>
-                        </constraints>
                     </visualEffectView>
                     <visualEffectView identifier="Leading-Sidebar-View" wantsLayer="YES" blendingMode="withinWindow" material="sidebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="XBs-34-TIm" userLabel="Leading-Sidebar View">
                         <rect key="frame" x="-360" y="0.0" width="360" height="400"/>
@@ -468,13 +452,13 @@
                                     <constraint firstItem="fDY-vk-Ylv" firstAttribute="top" secondItem="pgt-r3-Vbf" secondAttribute="top" id="xOA-fC-WYr"/>
                                 </constraints>
                             </customView>
-                            <box identifier="TopBarBottomBorder" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="line" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="iA3-pt-6Jm" userLabel="TopBar-BottomBorder Box">
+                            <box identifier="TopBarBottomBorder" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="none" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="iA3-pt-6Jm" userLabel="TopBar-BottomBorder Box">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="1"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="1" id="YtK-mf-czn"/>
                                 </constraints>
-                                <color key="borderColor" red="0.48627450980392156" green="0.48627450980392156" blue="0.48627450980392156" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                <color key="fillColor" name="quaternaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
+                                <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                             </box>
                         </subviews>
                         <constraints>

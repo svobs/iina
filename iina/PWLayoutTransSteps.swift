@@ -540,16 +540,21 @@ extension PlayerWindowController {
         speedLabelVerticalConstraint.isActive = true
       }
 
-    } else { // No OSC
-      if outputLayout.isMusicMode {
-        miniPlayer.loadIfNeeded()
-        currentControlBar = miniPlayer.musicModeControlBarView
-      } else {
-        currentControlBar = nil
-      }
+    } else if outputLayout.isMusicMode {
+      // Music mode always has a control bar
+
+      miniPlayer.loadIfNeeded()
+      currentControlBar = miniPlayer.musicModeControlBarView
+    } else {  // No OSC & not music mode
+
+      currentControlBar = nil
     }
 
-    if currentControlBar != nil {
+    if currentControlBar == nil {
+      if transition.inputLayout.hasTopOSC {
+        oscBottomMainView.removeFromSuperview()
+      }
+    } else {
       updateArrowButtonImages()
       playSlider.customCell.updateColorsFromPrefs()
     }
@@ -568,7 +573,6 @@ extension PlayerWindowController {
 
     if transition.isEnteringMusicMode {
       // Entering music mode
-      oscBottomMainView.removeFromSuperview()
       bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
       miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
