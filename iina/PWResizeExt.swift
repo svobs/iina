@@ -211,6 +211,7 @@ extension PlayerWindowController {
     var duration = didRotate ? 0.0 : IINAAnimation.VideoReconfigDuration
     var timing = CAMediaTimingFunctionName.easeInEaseOut
 
+    /// See also: `doPIPEntry`
     // TODO: find place for this in tasks
     pip.aspectRatio = newVidGeo.videoSizeCAR
 

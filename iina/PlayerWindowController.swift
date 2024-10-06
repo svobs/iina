@@ -3891,9 +3891,9 @@ extension PlayerWindowController: PIPViewControllerDelegate {
       pip.presentAsPicture(inPicture: pipVideo)
       showOrHidePipOverlayView()
 
-      let videoSize = player.videoGeo.videoSizeRaw
-      log.verbose("Setting PiP aspect to \(videoSize.mpvAspect)")
-      pip.aspectRatio = videoSize
+      let aspectRatioSize = player.videoGeo.videoSizeCAR
+      log.verbose("Setting PiP aspect to \(aspectRatioSize.aspect)")
+      pip.aspectRatio = aspectRatioSize
     }
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {
