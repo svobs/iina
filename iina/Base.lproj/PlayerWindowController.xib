@@ -4,6 +4,7 @@
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="Image references" minToolsVersion="12.0"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -597,7 +598,7 @@
                             <rect key="frame" x="1" y="1" width="638" height="398"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         </view>
-                        <color key="borderColor" red="0.59999999999999998" green="0.59999999999999998" blue="0.59999999999999998" alpha="0.45000000000000001" colorSpace="custom" customColorSpace="calibratedRGB"/>
+                        <color key="borderColor" name="CustomWindowBorder"/>
                     </box>
                     <box identifier="customWindowBorderTopHighlightBox" wantsLayer="YES" boxType="custom" borderType="line" title="CustomWindowBorderTopHighlight Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="IeW-QK-xIO" userLabel="CustomWindowBorderTopHighlight Box" customClass="CustomWindowBorderBox" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="400" width="640" height="1"/>
@@ -608,7 +609,7 @@
                         <constraints>
                             <constraint firstAttribute="height" constant="1" id="rFV-5d-f7U"/>
                         </constraints>
-                        <color key="borderColor" red="0.59999999999999998" green="0.59999999999999998" blue="0.59999999999999998" alpha="0.25" colorSpace="custom" customColorSpace="calibratedRGB"/>
+                        <color key="borderColor" name="CustomWindowBorderHighlight"/>
                     </box>
                 </subviews>
                 <constraints>
@@ -621,7 +622,7 @@
                     <constraint firstItem="g0O-v5-RQj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="XBs-34-TIm" secondAttribute="trailing" constant="8" id="Agb-na-g88"/>
                     <constraint firstItem="88M-Ln-4mc" firstAttribute="top" secondItem="se5-gp-TjO" secondAttribute="top" constant="4" id="C4g-bz-uwS"/>
                     <constraint firstItem="3nL-Ky-Hfa" firstAttribute="top" secondItem="TRx-2V-Gr3" secondAttribute="top" identifier="TopOfViewport-TopOfTopBar-Constraint" id="Drc-3Y-nhs"/>
-                    <constraint firstAttribute="trailing" secondItem="xqX-4W-gdw" secondAttribute="trailing" constant="-0.40000000000000002" id="EF0-Zz-Ceg"/>
+                    <constraint firstItem="xqX-4W-gdw" firstAttribute="trailing" secondItem="se5-gp-TjO" secondAttribute="trailing" constant="0.40000000000000002" id="EF0-Zz-Ceg"/>
                     <constraint firstItem="xqX-4W-gdw" firstAttribute="leading" secondItem="se5-gp-TjO" secondAttribute="leading" constant="-0.5" id="HGd-2V-bmg"/>
                     <constraint firstAttribute="trailing" secondItem="IeW-QK-xIO" secondAttribute="trailing" id="Ilg-8i-F21"/>
                     <constraint firstItem="epo-S6-QVB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qbi-jx-9pO" secondAttribute="trailing" constant="8" id="Ja8-8A-W6L"/>
@@ -1014,5 +1015,11 @@
         <image name="speedl" width="24" height="24"/>
         <image name="volume" width="16" height="14"/>
         <image name="▶️" width="128" height="128"/>
+        <namedColor name="CustomWindowBorder">
+            <color red="1" green="1" blue="1" alpha="0.45000000000000001" colorSpace="custom" customColorSpace="displayP3"/>
+        </namedColor>
+        <namedColor name="CustomWindowBorderHighlight">
+            <color red="1" green="1" blue="1" alpha="0.25" colorSpace="custom" customColorSpace="displayP3"/>
+        </namedColor>
     </resources>
 </document>

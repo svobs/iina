@@ -24,6 +24,9 @@ extension NSColor.Name {
 
   static let titleBarBorder = NSColor.Name("TitleBarBorder")
 
+  static let customWindowBorder = NSColor.Name("CustomWindowBorder")
+  static let customWindowBorderHighlight = NSColor.Name("CustomWindowBorderHighlight")
+
   static let initialWindowActionButtonBackground = NSColor.Name("InitialWindowActionButtonBackground")
   static let initialWindowActionButtonBackgroundHover = NSColor.Name("InitialWindowActionButtonBackgroundHover")
   static let initialWindowActionButtonBackgroundPressed = NSColor.Name("InitialWindowActionButtonBackgroundPressed")

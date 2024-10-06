@@ -1043,7 +1043,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bottomBarTopBorder.boxType = .custom
     bottomBarTopBorder.titlePosition = .noTitle
     bottomBarTopBorder.borderWidth = 0
-    bottomBarTopBorder.fillColor = NSColor.separatorColor
+    bottomBarTopBorder.fillColor = NSColor(named: .titleBarBorder)!
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
