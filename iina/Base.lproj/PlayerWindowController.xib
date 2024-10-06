@@ -425,7 +425,7 @@
                             <constraint firstItem="irz-R1-ajt" firstAttribute="top" secondItem="g0O-v5-RQj" secondAttribute="top" constant="8" identifier="osdTopMarginConstraint" id="rAU-zU-HxD"/>
                         </constraints>
                     </visualEffectView>
-                    <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
+                    <visualEffectView identifier="TopBarView" wantsLayer="YES" blendingMode="withinWindow" material="titlebar" state="followsWindowActiveState" translatesAutoresizingMaskIntoConstraints="NO" id="TRx-2V-Gr3" userLabel="TopBar View">
                         <rect key="frame" x="0.0" y="372" width="640" height="28"/>
                         <subviews>
                             <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WaC-08-utU" userLabel="Title-Bar View">
@@ -448,7 +448,7 @@
                             <box identifier="TopBarBottomBorder" wantsLayer="YES" verticalHuggingPriority="750" boxType="custom" borderType="none" borderWidth="0.0" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="iA3-pt-6Jm" userLabel="TopBar-BottomBorder Box">
                                 <rect key="frame" x="0.0" y="0.0" width="640" height="1"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="1" id="YtK-mf-czn"/>
+                                    <constraint firstAttribute="height" constant="0.5" id="YtK-mf-czn"/>
                                 </constraints>
                                 <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                                 <color key="fillColor" name="separatorColor" catalog="System" colorSpace="catalog"/>

@@ -8,10 +8,10 @@
 
 import Foundation
 
-// try to roughly match Apple's title bar text:
+// Try to roughly match Apple's title bar colors:
 fileprivate let activeTitleTextOpacity: CGFloat = 0.85
-fileprivate let inactiveTitleTextOpacity: CGFloat = 0.35
-fileprivate let inactiveTitleControlOpacity: CGFloat = 0.50
+fileprivate let activeControlOpacity: CGFloat = 1.0
+fileprivate let inactiveControlOpacity: CGFloat = 0.45
 
 /// For legacy windowed mode. Manual reconstruction of title bar is needed when not using `titled` window style.
 class CustomTitleBarViewController: NSViewController {
@@ -96,6 +96,9 @@ class CustomTitleBarViewController: NSViewController {
     pStyle.lineBreakMode = .byTruncatingMiddle
     titleText.defaultParagraphStyle = pStyle
     titleText.alignment = .center
+
+    titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
+    titleText.textColor = NSColor.windowFrameTextColor
     self.titleText = titleText
 
     // - Trailing views
@@ -175,23 +178,37 @@ class CustomTitleBarViewController: NSViewController {
     refreshTitle()
   }
 
+  override func viewWillAppear() {
+    // Need to call this here to patch case where window is not active, but title bar is
+    // "inside" & is made visible by mouse hover:
+    refreshTitle()
+  }
+
   func refreshTitle() {
     guard let currentPlayback = windowController.player.info.currentPlayback else {
       windowController.player.log.debug("Cannot update window title for custom title bar: no current media")
       return
     }
+
+    // - Update colors
+
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
-    titleText.alphaValue = drawAsKeyWindow ? activeTitleTextOpacity : inactiveTitleTextOpacity
-    let controlAlpha = drawAsKeyWindow ? 1 : inactiveTitleControlOpacity
+
+    // FIXME: apply `inactiveControlOpacity` to buttons in inactive windows when toggling fadeable views!
+    // Currently it is assuming they are active.
+    let buttonAlpha = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
     for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton] {
       // Skip buttons which are not visible
       guard let view, view.alphaValue > 0.0 else { continue }
-      view.alphaValue = controlAlpha
+      view.alphaValue = buttonAlpha
     }
 
+    // This seems to work well at effectively "graying out" the title as needed
+    titleText.alphaValue = drawAsKeyWindow ? activeTitleTextOpacity : inactiveControlOpacity
+
+    // - Update title text content
+    
     let title = currentPlayback.url.lastPathComponent
-    titleText.textColor = NSColor.windowFrameTextColor
-    titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
     titleText.string = title
     titleText.sizeToFit()
   }

@@ -1047,11 +1047,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bottomBarTopBorder.translatesAutoresizingMaskIntoConstraints = false
     bottomBarView.addSubview(bottomBarTopBorder)
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-    bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
     bottomBarTopBorder.borderColor = NSColor.clear
 
     // Do not make visual effects views opaque when window is not in focus
-    for view in [topBarView, osdVisualEffectView, controlBarFloating,
+    for view in [osdVisualEffectView, controlBarFloating,
                  leadingSidebarView, trailingSidebarView, pipOverlayView, bufferIndicatorView] {
       view?.state = .active
     }
