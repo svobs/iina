@@ -415,11 +415,17 @@ class PlayerCore: NSObject {
       log.fatalError("Cannot open player window: empty url list!")
     }
 
+    let playback = Playback(url: urls[0])
+
+    if playback.isNetworkResource {
+      windowController.close()
+      AppDelegate.shared.openURLWindow.showLoadingScreen(playerCore: self)
+    }
+
     /// Need to use `sync` so that:
     /// 1. Prev use of mpv core can finish stopping / drain queue
     /// 2. `currentPlayback` is guaranteed to update before returning, so that `PlayerCore.activeOrNew` does not return same player
     mpv.queue.sync { [self] in
-      let playback = Playback(url: urls[0])
       let path = playback.path
       info.currentPlayback = playback
       log.debug("Opening PlayerWindow for \(path.pii.quoted), isStopped=\(isStopped.yn)")
@@ -2309,6 +2315,15 @@ class PlayerCore: NSObject {
       return
     }
 
+    if currentPlayback.isNetworkResource {
+      DispatchQueue.main.async {
+        let openURLWindow = IINA.AppDelegate.shared.openURLWindow
+        if openURLWindow.playerCore == self {
+          openURLWindow.closeAfterSuccess()
+        }
+      }
+    }
+
     // Kick off thumbnails load/gen - it can happen in background
     reloadThumbnails(forMedia: currentPlayback)
 
@@ -2502,7 +2517,14 @@ class PlayerCore: NSObject {
     /// Make sure to check that `info.currentPlayback != nil` before outputting error
     if eofWhileLoading, let playback = info.currentPlayback, playback.state.isNotYet(.loaded) {
       log.error("Received fileEnded + 'idle-active' from mpv while loading \(playback.path.pii.quoted). Will display alert to user and close window")
-      errorOpeningFileAndClosePlayerWindow(url: playback.url)
+      DispatchQueue.main.async { [self] in
+        Utility.showAlert("error_open_name", arguments: [playback.path.quoted])
+        let openURLWindow = AppDelegate.shared.openURLWindow
+        if openURLWindow.playerCore == self, openURLWindow.window?.isOpen == true {
+          openURLWindow.failedToLoadURL()
+        }
+        _closeWindow()
+      }
     } else if isFileLoaded || state.isAtLeast(.stopping) {
       // Check for stopping status also. Sometimes libmpv doesn't post stop message.
       closeWindow()
@@ -3210,18 +3232,6 @@ class PlayerCore: NSObject {
   func hideOSD() {
     DispatchQueue.main.async {
       self.windowController.hideOSD()
-    }
-  }
-
-  func errorOpeningFileAndClosePlayerWindow(url: URL? = nil) {
-    DispatchQueue.main.async { [self] in
-      if let path = url?.path {
-        Utility.showAlert("error_open_name", arguments: [path.quoted])
-      } else {
-        Utility.showAlert("error_open")
-      }
-
-      _closeWindow()
     }
   }
 

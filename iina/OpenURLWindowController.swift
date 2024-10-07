@@ -23,7 +23,13 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
   @IBOutlet weak var errorMessageLabel: NSTextField!
   @IBOutlet weak var openButton: NSButton!
 
+  @IBOutlet weak var overlayView: NSVisualEffectView!
+  @IBOutlet weak var loadingMediaProgressIndicator: NSProgressIndicator!
+
   var isAlternativeAction = false
+
+  var playerCore: PlayerCore?
+  var loadingURL: String?
 
   init() {
     super.init(window: nil)
@@ -44,29 +50,62 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
     ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).forEach {
       window?.standardWindowButton($0)?.isHidden = true
     }
+
+    loadingMediaProgressIndicator.startAnimation(self)
   }
 
-  override func cancelOperation(_ sender: Any?) {
-    window?.close()
+  func showLoadingScreen(playerCore: PlayerCore) {
+    _ = window
+    overlayView.isHidden = false
+    self.playerCore = playerCore
+    loadingURL = playerCore.info.currentPlayback?.path
+    if #available(macOS 14, *) {
+      NSApp.activate()
+    } else {
+      NSApp.activate(ignoringOtherApps: true)
+    }
+    showWindow(self)
   }
 
-  override func showWindow(_ sender: Any?) {
-    resetFields()
-    super.showWindow(sender)
+  func failedToLoadURL() {
+    guard isWindowLoaded && window?.isVisible == true else { return }
+    urlField.stringValue = loadingURL ?? ""
+    errorMessageLabel.isHidden = false
+    overlayView.isHidden = true
+    urlField.textColor = .systemRed
   }
 
-  func resetFields() {
-    _ = window // load window if not loaded
+  func closeAfterSuccess() {
+    close()
+    resetWindowState()
+  }
+
+  func resetWindowState() {
     urlField.stringValue = ""
     usernameField.stringValue = ""
     passwordField.stringValue = ""
     rememberPasswordCheckBox.state = .off
     urlStackView.setVisibilityPriority(.notVisible, for: httpPrefixTextField)
     window?.makeFirstResponder(urlField)
+    overlayView.isHidden = true
+    playerCore = nil
+    loadingURL = nil
+  }
+
+  func windowShouldClose(_ sender: NSWindow) -> Bool {
+    guard let playerCore else { return true }
+    playerCore.stop()
+    return true
+  }
+
+  func windowWillClose(_ notification: Notification) {
+    playerCore = nil
+    overlayView.isHidden = true
   }
 
   @IBAction func cancelBtnAction(_ sender: Any) {
     window?.close()
+    resetWindowState()
   }
 
   @IBAction func openBtnAction(_ sender: Any) {
