@@ -8,19 +8,23 @@ import Cocoa
 
 /// Original source: https://github.com/thompsonate/Scrollable-NSSlider
 class ScrollableSlider: NSSlider {
+  var sensitivity: Double {
+    1.0
+  }
+
   override func scrollWheel(with event: NSEvent) {
     guard self.isEnabled else { return }
 
-    let range = Float(self.maxValue - self.minValue)
-    var delta = Float(0)
+    let range = Double(self.maxValue - self.minValue)
+    var delta = Double(0)
 
     // Allow horizontal scrolling on horizontal and circular sliders
     if _isVertical && self.sliderType == .linear {
-      delta = Float(event.deltaY)
+      delta = Double(event.deltaY)
     } else if self.userInterfaceLayoutDirection == .rightToLeft {
-      delta = Float(event.deltaY + event.deltaX)
+      delta = Double(event.deltaY + event.deltaX)
     } else {
-      delta = Float(event.deltaY - event.deltaX)
+      delta = Double(event.deltaY - event.deltaX)
     }
 
     // Account for natural scrolling
@@ -28,13 +32,13 @@ class ScrollableSlider: NSSlider {
       delta *= -1
     }
 
-    let increment = range * delta / 100
-    var value = self.floatValue + increment
+    let increment = range * delta * sensitivity / 100
+    var value = self.doubleValue + increment
 
     // Wrap around if slider is circular
     if self.sliderType == .circular {
-      let minValue = Float(self.minValue)
-      let maxValue = Float(self.maxValue)
+      let minValue = Double(self.minValue)
+      let maxValue = Double(self.maxValue)
 
       if value < minValue {
         value = maxValue - abs(increment)
@@ -43,7 +47,7 @@ class ScrollableSlider: NSSlider {
       }
     }
 
-    self.floatValue = value
+    self.doubleValue = value
     self.sendAction(self.action, to: self.target)
   }
 

@@ -20,6 +20,9 @@ final class PlaySlider: ScrollableSlider {
   // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
   static let minPixelChangeThreshold: CGFloat = 1.0
 
+  var _sensitivity: Double = 0.1
+  override var sensitivity: Double { _sensitivity }
+
   /// Knob representing the A loop point for the mpv A-B loop feature.
   var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
 
@@ -55,6 +58,7 @@ final class PlaySlider: ScrollableSlider {
     }
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
+    updateSensitivity()
   }
 
   // MARK:- Drawing
@@ -93,6 +97,12 @@ final class PlaySlider: ScrollableSlider {
     // thought the NSView method would do this. The current Apple documentation does not say what
     // the NSView method does or even if it needs to be called by subclasses.
     needsDisplay = true
+  }
+
+  func updateSensitivity() {
+    let seekAmt = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
+    _sensitivity = pow(10.0, Double(seekAmt) - 3.5)
+    Logger.log("Sensity: \(_sensitivity)")
   }
 
   func updateTo(percentage: Double) {

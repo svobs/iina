@@ -354,7 +354,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
   internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
-  internal lazy var relativeSeekAmount: Int = Preference.integer(for: .relativeSeekAmount)
   internal lazy var volumeScrollAmount: Int = Preference.integer(for: .volumeScrollAmount)
   internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
   internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
@@ -457,9 +456,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         useExactSeek = Preference.SeekOption(rawValue: newValue)!
       }
     case PK.relativeSeekAmount.rawValue:
-      if let newValue = change[.newKey] as? Int {
-        relativeSeekAmount = newValue.clamped(to: 1...5)
-      }
+      playSlider.updateSensitivity()
     case PK.volumeScrollAmount.rawValue:
       if let newValue = change[.newKey] as? Int {
         volumeScrollAmount = newValue.clamped(to: 1...4)
@@ -1743,11 +1740,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       } else {
         scrollDirection = .vertical
       }
-    } else if isTrackpadEnd {
-      scrollDirection = nil
     }
-
-    guard let scrollDirection else { return }
 
     let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
     switch scrollAction {
@@ -1765,6 +1758,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       volumeSlider.scrollWheel(with: event)
     default:
       break
+    }
+    
+    if isTrackpadEnd {
+      scrollDirection = nil
     }
   }
 
