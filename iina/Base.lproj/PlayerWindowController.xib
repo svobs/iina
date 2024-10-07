@@ -664,9 +664,8 @@
             </connections>
             <point key="canvasLocation" x="207" y="109.5"/>
         </window>
-        <customView identifier="OSC-Fragment-Volume" wantsLayer="YES" id="N3B-DL-XOA" userLabel="OSC Fragment: Volume" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
+        <customView identifier="OSC-Fragment-Volume" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="N3B-DL-XOA" userLabel="OSC Fragment: Volume" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="104" height="24"/>
-            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <button identifier="Volume-Mute-Button" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2py-h1-0km">
                     <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
@@ -682,7 +681,7 @@
                         <action selector="muteButtonAction:" target="-2" id="wUf-9f-uHT"/>
                     </connections>
                 </button>
-                <slider identifier="Volume-Slider" wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SAG-kc-FAt" userLabel="Volume Slider" customClass="ScrollableSlider" customModule="IINA" customModuleProvider="target">
+                <slider identifier="Volume-Slider" wantsLayer="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SAG-kc-FAt" userLabel="Volume Slider" customClass="VolumeSlider" customModule="IINA" customModuleProvider="target">
                     <rect key="frame" x="26" y="4" width="74" height="17"/>
                     <constraints>
                         <constraint firstAttribute="width" priority="900" constant="70" identifier="VolumeSliderWidthConstraint" id="P2L-LI-jT7"/>

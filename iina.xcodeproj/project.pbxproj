@@ -348,6 +348,7 @@
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
 		D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741092CB3833500522FA7 /* ScrollableSlider.swift */; };
+		D1C7410C2CB3BCC100522FA7 /* VolumeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */; };
 		D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
@@ -1830,6 +1831,7 @@
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
 		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
+		D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeSlider.swift; sourceTree = "<group>"; };
 		D1C8976D2C871CAC00394EE4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
@@ -2675,6 +2677,7 @@
 				51E63DFA29CFB031008AFC20 /* PlaySlider.swift */,
 				51E63DFC29CFB04B008AFC20 /* PlaySliderLoopKnob.swift */,
 				8461C52D1D45FFF6006E91FF /* PlaySliderCell.swift */,
+				D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */,
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
 				8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */,
 				8487BEC01D744FA800FD17B0 /* FlippedView.swift */,
@@ -3425,6 +3428,7 @@
 				51CACB9529D500290034CEE5 /* VideoPIPViewController.swift in Sources */,
 				512B8FDD2BC2376E00AF41BF /* OutlineView.swift in Sources */,
 				8460FBA91D6497490081841B /* PlaylistViewController.swift in Sources */,
+				D1C7410C2CB3BCC100522FA7 /* VolumeSlider.swift in Sources */,
 				D17504A82918F13E005C3DD0 /* OSCToolbarButton.swift in Sources */,
 				8450404A1E0B13230079C194 /* CropBoxView.swift in Sources */,
 				84F7258F1D486185000DEF1B /* MPVProperty.swift in Sources */,

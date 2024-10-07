@@ -354,7 +354,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
   internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
-  internal lazy var volumeScrollAmount: Int = Preference.integer(for: .volumeScrollAmount)
   internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
   internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
   internal lazy var horizontalScrollAction: Preference.ScrollAction = Preference.enum(for: .horizontalScrollAction)
@@ -458,9 +457,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case PK.relativeSeekAmount.rawValue:
       playSlider.updateSensitivity()
     case PK.volumeScrollAmount.rawValue:
-      if let newValue = change[.newKey] as? Int {
-        volumeScrollAmount = newValue.clamped(to: 1...4)
-      }
+      volumeSlider.updateSensitivity()
     case PK.singleClickAction.rawValue:
       if let newValue = change[.newKey] as? Int {
         singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
@@ -754,7 +751,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var viewportView: ViewportView!
   let defaultAlbumArtView = NSView()
 
-  @IBOutlet weak var volumeSlider: ScrollableSlider!
+  @IBOutlet weak var volumeSlider: VolumeSlider!
   @IBOutlet weak var muteButton: NSButton!
   @IBOutlet weak var playButton: NSButton!
   @IBOutlet weak var playSlider: PlaySlider!

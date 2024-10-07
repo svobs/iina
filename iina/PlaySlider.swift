@@ -20,7 +20,8 @@ final class PlaySlider: ScrollableSlider {
   // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
   static let minPixelChangeThreshold: CGFloat = 1.0
 
-  var _sensitivity: Double = 0.1
+  /// See `updateSensitivity`
+  var _sensitivity: Double = 0.0
   override var sensitivity: Double { _sensitivity }
 
   /// Knob representing the A loop point for the mpv A-B loop feature.
@@ -48,14 +49,6 @@ final class PlaySlider: ScrollableSlider {
 
   required init?(coder: NSCoder) {
     super.init(coder: coder)
-    if #available(macOS 11, *) {
-      // Apple increased the height of sliders in Big Sur. Until we have time to restructure the
-      // on screen controller to accommodate a larger slider reduce the size of the slider from
-      // regular to small. This makes the slider match the behavior seen under Catalina. This MUST
-      // be set before creating the loop knobs as it changes the height of knobs which is referenced
-      // during loop knob initialization.
-      controlSize = .small
-    }
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
     updateSensitivity()
