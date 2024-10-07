@@ -767,6 +767,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   internal var hideCursorTimer: Timer?
 
+  var isDraggingPlaySlider = false
+
   // Scroll direction
 
   /// The direction of current scrolling event.
@@ -781,13 +783,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
    This property records whether the video is paused initially so we can
    recover the status when scrolling finished. */
   var wasPlayingBeforeSeeking = false
-
+  /// Notes the most recent scroll wheel seek time as now
   func scrollWheelSeeking() {
     lastScrollWheelSeekTime = Date().timeIntervalSince1970
   }
   /// Uses some fuzzy logic to provide some time padding after scroll wheel seek ends
   var isInScrollWheelSeek: Bool {
-    Date().timeIntervalSince1970 - lastScrollWheelSeekTime < 0.5
+    Date().timeIntervalSince1970 - lastScrollWheelSeekTime < 0.2
   }
   private var lastScrollWheelSeekTime: TimeInterval = 0
 
@@ -2806,6 +2808,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       fadeableViewsAnimationState = .willHide
       fadeableTopBarAnimationState = .willHide
       player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
+      if !currentLayout.hasPermanentOSC {
+        // OSC is being hidden: hide thumbnail
+        hideSeekTimeAndThumbnail()
+      }
 
       for v in fadeableViews {
         v.animator().alphaValue = 0
@@ -3160,7 +3166,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard !currentLayout.isInteractiveMode else { return }
     let isCoveredByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
     let isCoveredBySidebar = isPoint(pointInWindow, inAnyOf: [leadingSidebarView, trailingSidebarView])
-    guard !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.playbackDurationSec else {
+    let isOSCHidden = currentControlBar?.isHidden ?? false
+    guard !isOSCHidden, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition,
+            let duration = player.info.playbackDurationSec else {
       hideSeekTimeAndThumbnail()
       return
     }
@@ -3186,6 +3194,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
     guard !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible) else {
+      thumbnailPeekView.isHidden = true
+      return
+    }
+
+    if !Preference.bool(for: .showThumbnailDuringSliderSeek) && (isInScrollWheelSeek || isDraggingPlaySlider) {
       thumbnailPeekView.isHidden = true
       return
     }
@@ -3352,7 +3365,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard !isAnimatingLayoutTransition else { return }
     guard loaded else { return }
 
-    if !isInScrollWheelSeek {
+    if !isInScrollWheelSeek {  // scroll wheel will set newer value; do not overwrite it until it is done
       player.updatePlaybackTimeInfo()
     }
 
@@ -3730,6 +3743,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
     let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
     refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
+    setOSDViews()
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

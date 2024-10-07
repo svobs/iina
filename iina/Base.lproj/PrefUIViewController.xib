@@ -3106,11 +3106,11 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="1073"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
-            <rect key="frame" x="0.0" y="0.0" width="500" height="274"/>
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
+            <rect key="frame" x="0.0" y="0.0" width="500" height="300"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">
-                    <rect key="frame" x="-2" y="234" width="124" height="32"/>
+                    <rect key="frame" x="-2" y="260" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Thumbnail Preview:" id="kYu-0l-jQQ">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3118,10 +3118,10 @@ For smoothest results, also enable custom full screen.</string>
                     </textFieldCell>
                 </textField>
                 <stackView distribution="equalSpacing" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="47i-yB-uyE" userLabel="ThumbnailRightColumn Stack View">
-                    <rect key="frame" x="120" y="8" width="380" height="258"/>
+                    <rect key="frame" x="120" y="8" width="380" height="284"/>
                     <subviews>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="mvX-qm-iUh" userLabel="Enable thumbnail preview Checkbox">
-                            <rect key="frame" x="-2" y="239" width="181" height="20"/>
+                            <rect key="frame" x="-2" y="265" width="181" height="20"/>
                             <buttonCell key="cell" type="check" title="Enable thumbnail preview" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Xey-3m-f6G">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -3131,7 +3131,7 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="5Om-Um-kQ4" userLabel="Enable for remote files also Checkbox">
-                            <rect key="frame" x="18" y="213" width="163" height="20"/>
+                            <rect key="frame" x="18" y="239" width="163" height="20"/>
                             <buttonCell key="cell" type="check" title="Enable for remote files" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1NF-4u-sGn">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -3147,7 +3147,7 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="4GJ-sd-vQm" userLabel="Enable in music mode Checkbox">
-                            <rect key="frame" x="18" y="187" width="199" height="20"/>
+                            <rect key="frame" x="18" y="213" width="199" height="20"/>
                             <buttonCell key="cell" type="check" title="Enable in &quot;music mode&quot; also" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="1bZ-wY-ysJ">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -3163,6 +3163,25 @@ For smoothest results, also enable custom full screen.</string>
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
                                 </binding>
+                            </connections>
+                        </button>
+                        <button translatesAutoresizingMaskIntoConstraints="NO" id="tmN-Bh-bO1">
+                            <rect key="frame" x="-2" y="187" width="348" height="20"/>
+                            <buttonCell key="cell" type="check" title="Show seek preview during slider &amp; scroll wheel seeks" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LxA-rL-GWg">
+                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="18" id="nzf-aP-cI8"/>
+                            </constraints>
+                            <connections>
+                                <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableThumbnailPreview" id="3M8-xn-8NF"/>
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" previousBinding="3M8-xn-8NF" id="hZe-1F-ABZ">
+                                    <dictionary key="options">
+                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                    </dictionary>
+                                </binding>
+                                <binding destination="lH7-Vv-0M1" name="value" keyPath="values.showThumbnailDuringSliderSeek" id="foO-aC-uMj"/>
                             </connections>
                         </button>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="TKl-lp-bgR" userLabel="0pt Spacer">
@@ -3291,10 +3310,10 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </stackView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SOY-Cw-Lh1" userLabel="DisplayedSizePixels HStack View">
-                            <rect key="frame" x="20" y="95" width="172" height="21"/>
+                            <rect key="frame" x="20" y="95" width="176" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VqQ-ue-KEO" userLabel="Displayed size: Label">
-                                    <rect key="frame" x="-2" y="3" width="95" height="16"/>
+                                    <rect key="frame" x="-2" y="3" width="99" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Displayed size:" id="f0s-sH-rz8">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3302,7 +3321,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="QSd-B9-68V" userLabel="DisplayedSizePixels-Entry Text Field">
-                                    <rect key="frame" x="99" y="0.0" width="50" height="21"/>
+                                    <rect key="frame" x="103" y="0.0" width="50" height="21"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="50" id="173-i4-0c1"/>
                                     </constraints>
@@ -3324,7 +3343,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </textField>
                                 <textField identifier="DisplayedSizePixelsPx" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3kE-zA-EH8" userLabel="px Label">
-                                    <rect key="frame" x="155" y="3" width="19" height="16"/>
+                                    <rect key="frame" x="159" y="3" width="19" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="px" id="F9N-Mm-Fvd">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3360,18 +3379,18 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </stackView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qe6-RF-ITI" userLabel="Resolution HStack View">
-                            <rect key="frame" x="20" y="66" width="285" height="21"/>
+                            <rect key="frame" x="20" y="66" width="289" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nqn-cQ-Hev" userLabel="Resolution: Label">
-                                    <rect key="frame" x="-2" y="3" width="95" height="16"/>
-                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Resolution:" id="Xrd-Ve-Kd0">
+                                    <rect key="frame" x="-2" y="3" width="99" height="16"/>
+                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Generated size:" id="Xrd-Ve-Kd0">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                 </textField>
                                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="OQ8-ow-oAR" userLabel="ThumbnailResolutionPercentage-Entry Text Field">
-                                    <rect key="frame" x="99" y="0.0" width="35" height="21"/>
+                                    <rect key="frame" x="103" y="0.0" width="35" height="21"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="35" id="u1K-uP-WnW"/>
                                     </constraints>
@@ -3390,7 +3409,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </textField>
                                 <textField identifier="MaximumCacheWidthPx" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ILm-M1-2Me" userLabel="% of video size Label">
-                                    <rect key="frame" x="140" y="3" width="147" height="16"/>
+                                    <rect key="frame" x="144" y="3" width="147" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="% of video's native size" id="uIM-ge-Lc0">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3426,10 +3445,10 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </stackView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="501" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VjJ-JN-yzX" userLabel="DisplayedSizePercentage HStack View">
-                            <rect key="frame" x="20" y="37" width="332" height="21"/>
+                            <rect key="frame" x="20" y="37" width="336" height="21"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PtB-UF-vT8" userLabel="Displayed size: Label">
-                                    <rect key="frame" x="-2" y="3" width="95" height="16"/>
+                                    <rect key="frame" x="-2" y="3" width="99" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Displayed size:" id="Qv4-g5-2wA">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3437,7 +3456,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </textFieldCell>
                                 </textField>
                                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ctm-bY-bfH" userLabel="DisplayedSizePercentage-Entry Text Field">
-                                    <rect key="frame" x="99" y="0.0" width="35" height="21"/>
+                                    <rect key="frame" x="103" y="0.0" width="35" height="21"/>
                                     <constraints>
                                         <constraint firstAttribute="width" constant="35" id="lk9-ds-Den"/>
                                     </constraints>
@@ -3456,7 +3475,7 @@ For smoothest results, also enable custom full screen.</string>
                                     </connections>
                                 </textField>
                                 <textField identifier="DisplayedSizePercentage-PercentLabel" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VFP-gX-KUK" userLabel="% of available height Label">
-                                    <rect key="frame" x="140" y="3" width="194" height="16"/>
+                                    <rect key="frame" x="144" y="3" width="194" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="% of available height in window" id="QwQ-tN-lwn">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -3637,8 +3656,10 @@ For smoothest results, also enable custom full screen.</string>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
+                        <integer value="1000"/>
                     </visibilityPriorities>
                     <customSpacing>
+                        <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>

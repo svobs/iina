@@ -235,6 +235,7 @@ struct Preference {
     static let enableThumbnailPreview = Key("enableThumbnailPreview")
     static let enableThumbnailForRemoteFiles = Key("enableThumbnailForRemoteFiles")
     static let enableThumbnailForMusicMode = Key("enableThumbnailForMusicMode")
+    static let showThumbnailDuringSliderSeek = Key("showThumbnailDuringSliderSeek")
     static let thumbnailBorderStyle = Key("thumbnailBorderStyle")
     static let thumbnailSizeOption = Key("thumbnailSizeOption")
     /// Only for `ThumbnailSizeOption.fixed`. Length of the longer dimension of thumbnail in screen points.
@@ -1218,6 +1219,7 @@ struct Preference {
     .enableThumbnailPreview: true,
     .enableThumbnailForRemoteFiles: false,
     .enableThumbnailForMusicMode: false,
+    .showThumbnailDuringSliderSeek: true,
     .thumbnailBorderStyle: ThumnailBorderStyle.shadowRoundedCorners.rawValue,
     .thumbnailSizeOption: ThumbnailSizeOption.scaleWithViewport.rawValue,
     .thumbnailFixedLength: 240,

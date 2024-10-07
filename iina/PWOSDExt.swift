@@ -334,16 +334,12 @@ extension PlayerWindowController {
         let isBackward = step < 0
         let accDescription = "Relative Seek \(isBackward ? "Backward" : "Forward")"
         var name: String
-        if isInScrollWheelSeek {
-          name = isBackward ? "backward.fill" : "forward.fill"
-        } else {
-          switch abs(step) {
-          case 5, 10, 15, 30, 45, 60, 75, 90:
-            let absStep = Int(abs(step))
-            name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
-          default:
-            name = isBackward ? "gobackward.minus" : "goforward.plus"
-          }
+        switch abs(step) {
+        case 5, 10, 15, 30, 45, 60, 75, 90:
+          let absStep = Int(abs(step))
+          name = isBackward ? "gobackward.\(absStep)" : "goforward.\(absStep)"
+        default:
+          name = isBackward ? "gobackward.minus" : "goforward.plus"
         }
         /// Set icon for next msg, which is expected to be a `seek`
         osd.nextSeekIcon = NSImage(systemSymbolName: name, accessibilityDescription: accDescription)!
@@ -353,7 +349,11 @@ extension PlayerWindowController {
         /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
         /// (although note that there can be subsequent calls to `setOSDViews()` to update the OSD's displayed time while playing,
         /// but those do not count as "new" OSD messages, and thus will continue to use `osd.currentSeekIcon`).
-        if osd.nextSeekIcon != nil || !isInScrollWheelSeek {  // fudge this a bit for scroll wheel seek to look better
+        if isInScrollWheelSeek {
+          // give up on fancy OSD for scroll wheel seek (for now)
+          osd.currentSeekIcon = nil
+          osd.nextSeekIcon = nil
+        } else if osd.nextSeekIcon != nil {
           osd.currentSeekIcon = osd.nextSeekIcon
           osd.nextSeekIcon = nil
         }
