@@ -757,7 +757,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var viewportView: ViewportView!
   let defaultAlbumArtView = NSView()
 
-  @IBOutlet weak var volumeSlider: NSSlider!
+  @IBOutlet weak var volumeSlider: ScrollableSlider!
   @IBOutlet weak var muteButton: NSButton!
   @IBOutlet weak var playButton: NSButton!
   @IBOutlet weak var playSlider: PlaySlider!
@@ -1745,8 +1745,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     } else if isTrackpadEnd {
       scrollDirection = nil
-      return
     }
+
+    guard let scrollDirection else { return }
 
     let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
     switch scrollAction {
@@ -1869,6 +1870,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
       refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+    } else {
+      hideSeekTimeAndThumbnail()
     }
 
     if isMouseInWindow {
