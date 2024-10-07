@@ -1762,33 +1762,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         player.windowController.miniPlayer.handleVolumePopover(isTrackpadBegan, isTrackpadEnd, isMouse)
       }
 
-      // handle the delta value
-
-      let isPrecise = event.hasPreciseScrollingDeltas
-      let isNatural = event.isDirectionInvertedFromDevice
-
-      var deltaX = isPrecise ? Double(event.scrollingDeltaX) : event.scrollingDeltaX.unifiedDouble
-      var deltaY = isPrecise ? Double(event.scrollingDeltaY) : event.scrollingDeltaY.unifiedDouble * 2
-
-      if isNatural {
-        deltaY = -deltaY
-      } else {
-        deltaX = -deltaX
-      }
-
-      let delta = scrollDirection == .horizontal ? deltaX : deltaY
-
-      // don't use precised delta for mouse
-      let newVolume = player.info.volume + (isMouse ? delta : AppData.volumeMap[volumeScrollAmount] * delta)
-      player.setVolume(newVolume)
-      if isInMiniPlayer {
-        player.windowController.miniPlayer.volumeSlider.doubleValue = newVolume
-      } else {
-        volumeSlider.doubleValue = newVolume
-      }
-
-      // Need to manually update the OSC & OSD because they may be missed otherwise
-      updateUI()
+      volumeSlider.scrollWheel(with: event)
     default:
       break
     }
@@ -3642,6 +3616,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBAction func volumeSliderDidChange(_ sender: NSSlider) {
     let value = sender.doubleValue
+    // Sometimes, scroll-to-seek will send an END event before its final value,
+    // which can end up getting interpreted as an incredibly small scroll in an
+    // arbitrary direction. Just filter this out. Will revisit if it shows up again.
+    guard abs(player.info.volume - value) > 0.1 else { return }
+
     if Preference.double(for: .maxVolume) > 100, value > 100 && value < 101 {
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
     }
