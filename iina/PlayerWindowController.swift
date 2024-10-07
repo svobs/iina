@@ -3161,10 +3161,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
     guard !currentLayout.isInteractiveMode else { return }
-    let isCoveredByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
-    let isCoveredBySidebar = isPoint(pointInWindow, inAnyOf: [leadingSidebarView, trailingSidebarView])
+    let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
     let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !isOSCHidden, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition,
+    guard !isOSCHidden, !isOccludedByOSD, !isAnimatingLayoutTransition,
             let duration = player.info.playbackDurationSec else {
       hideSeekTimeAndThumbnail()
       return
