@@ -1438,11 +1438,6 @@ extension NSWindow {
     return true
   }
 
-  var isImportant: Bool {
-    // All the windows we care about have autosave names
-    return !savedStateName.isEmpty
-  }
-
   var isOpen: Bool {
     if let windowController = self.windowController as? PlayerWindowController, windowController.isOpen {
       return true

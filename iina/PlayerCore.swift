@@ -2180,11 +2180,13 @@ class PlayerCore: NSObject {
       log.error("FileStarted: failed to create media from path \(path.pii.quoted)")
       return
     }
+    let playback: Playback
     if let existingPlayback = info.currentPlayback, existingPlayback.url == playbackFromPath.url {
       guard existingPlayback.state.isNotYet(.started) else {
         log.warn("FileStarted: found existing playback for \(existingPlayback.url.absoluteString.pii.quoted), but state is unexpected; aborting (expected: 'started', found: \(existingPlayback.state.rawValue))")
         return
       }
+      playback = existingPlayback
       // update existing entry
       existingPlayback.playlistPos = playbackFromPath.playlistPos
       existingPlayback.state = playbackFromPath.state
@@ -2193,10 +2195,11 @@ class PlayerCore: NSObject {
       // New media, perhaps initiated by mpv
       log.verbose("FileStarted: new playbackPath=\(path.pii.quoted), PL#=\(playbackFromPath.playlistPos)")
       info.currentPlayback = playbackFromPath
+      playback = playbackFromPath
     }
-//    if let parentPlaylist = mpv.getString(MPVProperty.playlist) {
-//      info.currentPlayback!.parentPlaylist = parentPlaylist
-//    }
+    if let parentPlaylist = mpv.getString(MPVProperty.playlistPath) {
+      playback.parentPlaylist = parentPlaylist
+    }
 
     // Stop watchers from prev media (if any)
     stopWatchingSubFile()
@@ -2242,8 +2245,7 @@ class PlayerCore: NSObject {
       }
     }
 
-    let displayName = info.currentPlayback?.displayName ?? "-"
-    sendOSD(.fileStart(displayName, ""))
+    sendOSD(.fileStart(playback.displayName, ""))
 
     events.emit(.fileStarted)
   }

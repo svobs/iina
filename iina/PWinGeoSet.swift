@@ -34,39 +34,49 @@ struct GeometrySet {
 }
 
 extension PlayerWindowController {
+  private func getLatestWindowFrameAndScreenID() -> (NSRect?, String?) {
+    if let window, window.isOpen {
+      return (window.frame, bestScreen.screenID)
+    } else {
+      return (nil, nil)
+    }
+  }
 
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil,
                    video: VideoGeometry? = nil, from inputLayout: LayoutState? = nil) -> GeometrySet {
-    let latestFrame = window?.frame
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
 
     let windowedNew: PWinGeometry
     if let windowed {
       windowedNew = windowed
     } else if inputLayout?.mode.isWindowed ?? false {
-      windowedNew = windowedModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID)
+      windowedNew = geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
     } else if inputLayout?.mode.isFullScreen ?? false {
       // may have changed screen while in FS
-      windowedNew = windowedModeGeo.clone(screenID: bestScreen.screenID)
+      windowedNew = geo.windowed.clone(screenID: latestScreenID, video: video)
     } else {
-      windowedNew = windowedModeGeo
+      windowedNew = geo.windowed
     }
 
     let musicModeNew: MusicModeGeometry
     if let musicMode {
       musicModeNew = musicMode
     } else if inputLayout?.mode == .musicMode {
-      musicModeNew = musicModeGeo.clone(windowFrame: latestFrame, screenID: bestScreen.screenID)
+      musicModeNew = geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: video)
     } else {
-      musicModeNew = musicModeGeo
+      musicModeNew = geo.musicMode
     }
 
-    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video ?? self.player.videoGeo)
+    return GeometrySet(windowed: windowedNew, musicMode: musicModeNew, video: video ?? geo.video)
   }
 
   func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> PWinGeometry {
     if currentLayout.mode.isWindowed {
+      let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
       // If user moved the window recently, window frame might not be completely up to date. Update it & return:
-      return windowedModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newVidGeo)
+      return geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     // Doesn't make sense to update window if currently in FS or some other mode. But update video
     return geo.windowed.clone(video: newVidGeo)
@@ -76,7 +86,8 @@ extension PlayerWindowController {
   /// See also `windowedGeoForCurrentFrame`
   func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> MusicModeGeometry {
     if currentLayout.mode == .musicMode {
-      return musicModeGeo.clone(windowFrame: window?.frame, screenID: bestScreen.screenID, video: newVidGeo)
+      let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
+      return geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     return geo.musicMode.clone(video: newVidGeo)
   }

@@ -1181,7 +1181,6 @@ class MPVController: NSObject {
     return vidGeo
   }
 
-  /// See notes on `backingScaleFactor` in `syncVideoGeometryFromMPV()`
   /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
   /// Also, mpv uses `backingScaleFactor` for calcalations. IINA Advance does not, because that has no correlation with the
   /// screen's actual scale factor and is at best an oversimplification which is less wrong on average. It is like assuming
