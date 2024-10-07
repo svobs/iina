@@ -1204,7 +1204,7 @@ extension PWinGeometry {
         Logger.log.error("\(errPreamble) unrecognized ScreenFitOption: \(fitOptionRawValue)")
         return nil
       }
-      let windowFrame = CGRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
+      let windowFrame = NSRect(x: winOriginX, y: winOriginY, width: winWidth, height: winHeight)
       let viewportMargins = MarginQuad(top: viewportMarginTop, trailing: viewportMarginTrailing,
                                        bottom: viewportMarginBottom, leading: viewportMarginLeading)
       let outsideBars = MarginQuad(top: outsideTopBarHeight, trailing: outsideTrailingBarWidth,
@@ -1219,14 +1219,15 @@ extension PWinGeometry {
         // we will do our best but our best may not be good enough
         Logger.log.error("VideoGeometry for legacy PWinGeometry is nil! Will try to derive it")
         let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
-        let videoSize = viewportSize.subtract(viewportMargins.totalSize)
+        let videoSize = viewportSize - viewportMargins.totalSize
         let defaultVideoGeo: VideoGeometry = VideoGeometry.defaultGeometry(log)
         video = defaultVideoGeo.clone(rawWidth: Int(videoSize.width), rawHeight: Int(videoSize.height))
       }
 
-      return PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
-                          outsideBars: outsideBars, insideBars: insideBars, 
+      let pwinGeo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: fitOption, mode: mode, topMarginHeight: topMarginHeight,
+                          outsideBars: outsideBars, insideBars: insideBars,
                           viewportMargins: viewportMargins, video: video)
+      return pwinGeo
     }
   }
 

@@ -831,7 +831,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       let scaleRatio = newVideoSize.width / videoSize.width
       let viewportSizeWithoutMinMargins = NSSize(width: viewportSize.width - minViewportMargins.totalWidth,
                                                  height: viewportSize.height - minViewportMargins.totalHeight)
-      let scaledViewportWithoutMargins = viewportSizeWithoutMinMargins.multiply(scaleRatio)
+      let scaledViewportWithoutMargins = viewportSizeWithoutMinMargins * scaleRatio
       newViewportSize = NSSize(width: scaledViewportWithoutMargins.width + minViewportMargins.totalWidth,
                                height: scaledViewportWithoutMargins.height + minViewportMargins.totalHeight)
     }

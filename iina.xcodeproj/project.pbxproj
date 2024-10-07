@@ -347,6 +347,7 @@
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
+		D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741092CB3833500522FA7 /* ScrollableSlider.swift */; };
 		D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
@@ -1828,6 +1829,7 @@
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
+		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
 		D1C8976D2C871CAC00394EE4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
@@ -2691,6 +2693,7 @@
 				D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */,
 				D1D579532B16C38F009E3520 /* ClickThroughView.swift */,
 				D1D579552B192946009E3520 /* CustomWindowBorderBox.swift */,
+				D1C741092CB3833500522FA7 /* ScrollableSlider.swift */,
 				512B8FDC2BC2376E00AF41BF /* OutlineView.swift */,
 			);
 			name = Accessories;
@@ -3395,6 +3398,7 @@
 				D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */,
 				D1EF40ED2C3BD10B00921252 /* StateEnum.swift in Sources */,
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
+				D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */,
 				D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */,
 				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
 				D1A4C2DC2BF97BB200CE32A9 /* FileMonitor.swift in Sources */,

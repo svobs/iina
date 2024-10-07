@@ -348,7 +348,7 @@ extension PlayerWindowController {
         return windowGeo.scaleViewport(to: screenVisibleFrame.size, fitOption: .centerInside)
       } else {
         let resizeRatio = resizeWindowStrategy.ratio
-        let scaledVideoSize = newVidGeo.videoSizeCAR.multiply(CGFloat(resizeRatio))
+        let scaledVideoSize = newVidGeo.videoSizeCAR * resizeRatio
         log.verbose("[applyVideoGeo C-2] Applied resizeRatio (\(resizeRatio)) to newVideoSize → \(scaledVideoSize)")
         let centeredScaledGeo = windowGeo.scaleVideo(to: scaledVideoSize, fitOption: .centerInside, mode: currentLayout.mode)
         // User has actively resized the video. Assume this is the new preferred resolution
@@ -377,7 +377,7 @@ extension PlayerWindowController {
         // TODO: if Preference.bool(for: .usePhysicalResolution) {}
 
         // FIXME: regression: viewport keeps expanding when video runs into screen boundary
-        let videoSizeScaled = oldVidGeo.videoSizeCAR.multiply(desiredVideoScale)
+        let videoSizeScaled = oldVidGeo.videoSizeCAR * desiredVideoScale
         let newGeoUnconstrained = windowedGeoForCurrentFrame().scaleVideo(to: videoSizeScaled, fitOption: .noConstraints)
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
         let fitOption: ScreenFitOption = .stayInside
@@ -462,8 +462,8 @@ extension PlayerWindowController {
     let chosenGeo: PWinGeometry
     // Need to resize window to match video aspect ratio, while taking into account any outside panels.
     if lockViewportToVideoSize && window.inLiveResize {
-      let nonViewportAreaSize = currentGeo.windowFrame.size.subtract(currentGeo.viewportSize)
-      let requestedViewportSize = requestedSize.subtract(nonViewportAreaSize)
+      let nonViewportAreaSize = currentGeo.windowFrame.size - currentGeo.viewportSize
+      let requestedViewportSize = requestedSize - nonViewportAreaSize
 
       if isLiveResizingWidth {
         // Option A: resize height based on requested width

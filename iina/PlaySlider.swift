@@ -16,7 +16,7 @@ import Cocoa
 /// disabled the additional thumbs are hidden.
 /// - Requires: The custom slider cell provided by `PlaySliderCell` **must** be used with this class.
 /// - Note: Unlike `NSSlider` the `draw` method of this class will do nothing if the view is hidden.
-final class PlaySlider: NSSlider {
+final class PlaySlider: ScrollableSlider {
   // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
   static let minPixelChangeThreshold: CGFloat = 1.0
 
@@ -102,5 +102,32 @@ final class PlaySlider: NSSlider {
     if pxChange >= PlaySlider.minPixelChangeThreshold {
       doubleValue = percentage
     }
+  }
+
+  override func scrollWheel(with event: NSEvent) {
+    let isTrackpadBegan = event.phase.contains(.began)
+    let isTrackpadEnd = event.phase.contains(.ended)
+    let player = customCell.playerCore
+    guard let wc = player.windowController else { return }
+
+    if isTrackpadBegan {
+      // pause video when seek begins
+      if player.info.isPlaying {
+        player.pause()
+        wc.wasPlayingBeforeSeeking = true
+      }
+    }
+
+    guard !isTrackpadEnd else {
+      // only resume playback when it was playing before seeking
+      if wc.wasPlayingBeforeSeeking {
+        player.resume()
+        wc.wasPlayingBeforeSeeking = false
+      }
+      return
+    }
+
+    wc.scrollWheelSeeking()
+    super.scrollWheel(with: event)
   }
 }

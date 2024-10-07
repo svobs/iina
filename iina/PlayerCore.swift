@@ -974,7 +974,7 @@ class PlayerCore: NSObject {
     DispatchQueue.main.async { [self] in
       let osdViewController = ScreenshootOSDView()
       // Shrink to some fraction of the currently displayed video
-      let relativeSize = windowController.videoView.frame.size.multiply(0.3)
+      let relativeSize = windowController.videoView.frame.size * 0.3
       let previewImageSize = screenshotImage.size.shrink(toSize: relativeSize)
       osdViewController.setImage(screenshotImage,
                        size: previewImageSize,

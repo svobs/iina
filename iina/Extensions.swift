@@ -200,20 +200,20 @@ extension NSSize {
                   height: height)
   }
 
-  func multiply(_ multiplier: CGFloat) -> NSSize {
-    return NSSize(width: width * multiplier, height: height * multiplier)
+  static func * (operand: NSSize, multiplier: CGFloat) -> NSSize {
+    return NSSize(width: operand.width * multiplier, height: operand.height * multiplier)
   }
 
   func multiplyThenRound(_ multiplier: CGFloat) -> NSSize {
     return NSSize(width: (width * multiplier).rounded(), height: (height * multiplier).rounded())
   }
 
-  func add(_ multiplier: CGFloat) -> NSSize {
-    return NSSize(width: width + multiplier, height: height + multiplier)
+  static func + (augend: NSSize, addend: CGFloat) -> NSSize {
+    return NSSize(width: augend.width + addend, height: augend.height + addend)
   }
 
-  func subtract(_ subtrahend: NSSize) -> NSSize {
-    return NSSize(width: width - subtrahend.width, height: height - subtrahend.height)
+  static func - (minuend: NSSize, subtrahend: NSSize) -> NSSize {
+    return NSSize(width: minuend.width - subtrahend.width, height: minuend.height - subtrahend.height)
   }
 
 }
@@ -230,10 +230,6 @@ extension NSRect {
 
   func clone(size newSize: NSSize) -> NSRect {
     return NSRect(origin: self.origin, size: newSize)
-  }
-
-  func multiply(_ multiplier: CGFloat) -> NSRect {
-    return NSRect(x: origin.x, y: origin.y, width: width * multiplier, height: height * multiplier)
   }
 
   func addingTo( top: CGFloat = 0,  trailing: CGFloat = 0, bottom: CGFloat = 0,  leading: CGFloat = 0) -> NSRect {

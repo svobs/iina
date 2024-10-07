@@ -783,28 +783,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /** We need to pause the video when a user starts seeking by scrolling.
    This property records whether the video is paused initially so we can
    recover the status when scrolling finished. */
-  private var wasPlayingBeforeSeeking = false
+  var wasPlayingBeforeSeeking = false
 
-  /** Subclasses should set these value to true if the mouse is in some
-   special views (e.g. volume slider, play slider) before calling
-   `super.scrollWheel()` and set them back to false after calling
-   `super.scrollWheel()`.*/
-  internal var seekOverride = false
-  internal var volumeOverride = false
-
-  private var lastScrollWheelSeekTime: TimeInterval = 0
-  var isInScrollWheelSeek: Bool {
-    set {
-      if newValue {
-        lastScrollWheelSeekTime = Date().timeIntervalSince1970
-      } else {
-        lastScrollWheelSeekTime = 0
-      }
-    }
-    get {
-      Date().timeIntervalSince1970 - lastScrollWheelSeekTime < 0.5
-    }
+  func scrollWheelSeeking() {
+    lastScrollWheelSeekTime = Date().timeIntervalSince1970
   }
+  /// Uses some fuzzy logic to provide some time padding after scroll wheel seek ends
+  var isInScrollWheelSeek: Bool {
+    Date().timeIntervalSince1970 - lastScrollWheelSeekTime < 0.5
+  }
+  private var lastScrollWheelSeekTime: TimeInterval = 0
 
   var mouseActionDisabledViews: [NSView?] {[leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]}
 
@@ -1738,17 +1726,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
-    guard !isMouseEvent(event, inAnyOf: [leadingSidebarView, trailingSidebarView, titleBarView, subPopoverView]) else { return }
     // TODO: tweak scroll so it doesn't get tripped so easily
 
-    if isMouseEvent(event, inAnyOf: [fragPositionSliderView]) && playSlider.isEnabled {
-      seekOverride = true
-    } else if volumeSlider.isEnabled && (isInMiniPlayer && isMouseEvent(event, inAnyOf: [miniPlayer.volumeSliderView])
-                                         || isMouseEvent(event, inAnyOf: [fragVolumeView])) {
-      volumeOverride = true
-    } else {
-      guard !isMouseEvent(event, inAnyOf: [currentControlBar]) else { return }
-    }
+    guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
+                                         titleBarView, subPopoverView]) else { return }
 
     let isMouse = event.phase.isEmpty
     let isTrackpadBegan = event.phase.contains(.began)
@@ -1757,72 +1738,45 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // determine direction
 
     if isMouse || isTrackpadBegan {
-      if event.scrollingDeltaX != 0 {
+      if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
         scrollDirection = .horizontal
-      } else if event.scrollingDeltaY != 0 {
+      } else {
         scrollDirection = .vertical
       }
     } else if isTrackpadEnd {
       scrollDirection = nil
+      return
     }
 
-    let scrollAction: Preference.ScrollAction
-    if seekOverride {
-      scrollAction = .seek
-      isInScrollWheelSeek = true
-    } else if volumeOverride {
-      scrollAction = .volume
-    } else {
-      scrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
-      // show volume popover when volume seek begins and hide on end
-      if scrollAction == .volume && isInMiniPlayer {
-        player.windowController.miniPlayer.handleVolumePopover(isTrackpadBegan, isTrackpadEnd, isMouse)
-      }
-    }
-
-    // pause video when seek begins
-
-    if scrollAction == .seek && isTrackpadBegan {
-      // record pause status
-      if player.info.isPlaying {
-        player.pause()
-        wasPlayingBeforeSeeking = true
-      }
-    }
-
-    if isTrackpadEnd && wasPlayingBeforeSeeking {
-      // only resume playback when it was playing before seeking
-      if wasPlayingBeforeSeeking {
-        player.resume()
-      }
-      wasPlayingBeforeSeeking = false
-    }
-
-    // handle the delta value
-
-    let isPrecise = event.hasPreciseScrollingDeltas
-    let isNatural = event.isDirectionInvertedFromDevice
-
-    var deltaX = isPrecise ? Double(event.scrollingDeltaX) : event.scrollingDeltaX.unifiedDouble
-    var deltaY = isPrecise ? Double(event.scrollingDeltaY) : event.scrollingDeltaY.unifiedDouble * 2
-
-    if isNatural {
-      deltaY = -deltaY
-    } else {
-      deltaX = -deltaX
-    }
-
-    let delta = scrollDirection == .horizontal ? deltaX : deltaY
-
-    // perform action
-
+    let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
     switch scrollAction {
     case .seek:
-      let seekAmount = (isMouse ? AppData.seekAmountMapMouse : AppData.seekAmountMap)[relativeSeekAmount] * delta
-      player.seek(relativeSecond: seekAmount, option: useExactSeek)
-      // TODO: refreshSeekTimeAndThumbnail()
-      isInScrollWheelSeek = true
+      // PlaySlider contains logic for scroll wheel seek.
+      // Also see:
+      playSlider.scrollWheel(with: event)
+
     case .volume:
+      // show volume popover when volume seek begins and hide on end
+      if isInMiniPlayer {
+        player.windowController.miniPlayer.handleVolumePopover(isTrackpadBegan, isTrackpadEnd, isMouse)
+      }
+
+      // handle the delta value
+
+      let isPrecise = event.hasPreciseScrollingDeltas
+      let isNatural = event.isDirectionInvertedFromDevice
+
+      var deltaX = isPrecise ? Double(event.scrollingDeltaX) : event.scrollingDeltaX.unifiedDouble
+      var deltaY = isPrecise ? Double(event.scrollingDeltaY) : event.scrollingDeltaY.unifiedDouble * 2
+
+      if isNatural {
+        deltaY = -deltaY
+      } else {
+        deltaX = -deltaX
+      }
+
+      let delta = scrollDirection == .horizontal ? deltaX : deltaY
+
       // don't use precised delta for mouse
       let newVolume = player.info.volume + (isMouse ? delta : AppData.volumeMap[volumeScrollAmount] * delta)
       player.setVolume(newVolume)
@@ -1831,15 +1785,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       } else {
         volumeSlider.doubleValue = newVolume
       }
+
+      // Need to manually update the OSC & OSD because they may be missed otherwise
+      updateUI()
     default:
       break
     }
-
-    seekOverride = false
-    volumeOverride = false
-
-    // Need to manually update the OSC & OSD because they may be missed otherwise
-    updateUI()
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -1856,7 +1807,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       showFadeableViews(duration: 0)
     case .playSlider:
       if controlBarFloating.isDragging { return }
-      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+
+      if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
+        refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+      }
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseEntered(with: event)
     }
@@ -1881,7 +1835,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         resetFadeTimer()
       }
     case .playSlider:
-      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+      hideSeekTimeAndThumbnail()
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseExited(with: event)
     }
@@ -1913,7 +1867,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     }
 
-    refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+    if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
+      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+    }
 
     if isMouseInWindow {
       let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
@@ -3081,7 +3037,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
               let viewportSize = uncroppedClosedBarsGeo.viewportSize
               let aspectChangeFactor = newVideoAspect / oldVideoAspect
               let viewportSizeMultiplier = (aspectChangeFactor < 0) ? (1.0 / aspectChangeFactor) : aspectChangeFactor
-              var newViewportSize = viewportSize.multiply(viewportSizeMultiplier)
+              var newViewportSize = viewportSize * viewportSizeMultiplier
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
@@ -3230,20 +3186,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard !currentLayout.isInteractiveMode else { return }
     let isCoveredByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
     let isCoveredBySidebar = isPoint(pointInWindow, inAnyOf: [leadingSidebarView, trailingSidebarView])
-    let isMouseInPlaySlider = isPoint(pointInWindow, inAnyOf: [playSlider])
-    guard isMouseInPlaySlider, !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.playbackDurationSec else {
+    guard !isCoveredByOSD, !isCoveredBySidebar, !isAnimatingLayoutTransition, let duration = player.info.playbackDurationSec else {
       hideSeekTimeAndThumbnail()
       return
     }
 
     // - 1. Time Hover Label
 
-    let mousePosX = playSlider.convert(pointInWindow, from: nil).x
+    let xOffsetInPlaySlider = playSlider.convert(pointInWindow, from: nil).x
 
-    timePositionHoverLabelHorizontalCenterConstraint.constant = mousePosX
+    timePositionHoverLabelHorizontalCenterConstraint.constant = xOffsetInPlaySlider
 
-    let playbackPositionPercentage = max(0, Double((mousePosX - 3) / (playSlider.frame.width - 6)))
-    let previewTimeSec = duration * playbackPositionPercentage
+    let playbackPositionRatio = max(0, Double((xOffsetInPlaySlider - 3) / (playSlider.frame.width - 6)))
+    let previewTimeSec = duration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
     if timePositionHoverLabel.stringValue != stringRepresentation {
       timePositionHoverLabel.stringValue = stringRepresentation
@@ -3423,7 +3378,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard !isAnimatingLayoutTransition else { return }
     guard loaded else { return }
 
-    player.updatePlaybackTimeInfo()
+    if !isInScrollWheelSeek {
+      player.updatePlaybackTimeInfo()
+    }
 
     /// Make sure `isInitialSizeDone` is true before displaying, or else OSD text can be incorrectly stretched horizontally.
     /// Make sure file is completely loaded, or else the "watch-later" message may appear separately from the `fileStart` msg.
@@ -3469,8 +3426,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     setOSDViews()
 
     // Update playback position slider in OSC:
+    for label in [leftLabel, rightLabel] {
+      label?.updateText(with: duration, given: pos)
+    }
     let percentage = (pos / duration) * 100
-    [leftLabel, rightLabel].forEach { $0.updateText(with: duration, given: pos) }
     playSlider.updateTo(percentage: percentage)
 
     // Touch bar
@@ -3777,23 +3736,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     setWindowFloatingOnTop(!onTop)
   }
 
-  /** When slider changes */
+  /// Called when `PlaySlider` changes value, either by clicking inside it, dragging inside it, or using scroll wheel (if configured).
   @IBAction func playSliderDidChange(_ sender: NSSlider) {
     guard player.info.isFileLoaded else { return }
+    guard !isInInteractiveMode else { return }
 
-    let percentage = 100 * sender.doubleValue / sender.maxValue
-    player.seek(percent: percentage, forceExact: !followGlobalSeekTypeWhenAdjustSlider)
+    let progressRatio = sender.doubleValue / sender.maxValue
+    let progressPercentage = 100 * progressRatio
+    player.info.playbackPositionSec = player.info.playbackDurationSec! * progressRatio
+    player.seek(percent: progressPercentage, forceExact: !followGlobalSeekTypeWhenAdjustSlider)
 
-    // update position of time label
-    timePositionHoverLabelHorizontalCenterConstraint.constant = sender.knobPointPosition() - playSlider.frame.origin.x
-
-    // update text of time label
-    let seekTimeSec = player.info.playbackDurationSec! * percentage * 0.01
-    let seekTimeString = VideoTime.string(from: seekTimeSec)
-    if log.isTraceEnabled {
-      log.trace("PlaySliderDidChange: setting slider position time label to \(seekTimeString.quoted)")
-    }
-    timePositionHoverLabel.stringValue = seekTimeString
+    // Make fake point in window to pass to function
+    let xOffsetInPlaySlider: CGFloat = max(0.0, progressRatio * (playSlider.frame.width - 6.0) + 3.0)
+    let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
+    let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
+    refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

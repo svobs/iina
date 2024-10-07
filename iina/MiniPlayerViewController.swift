@@ -388,8 +388,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
     if window.inLiveResize, currentGeo.isVideoVisible && !currentGeo.isPlaylistVisible {
       // Special case when scaling only video: need to treat similar to windowed mode
-      let nonViewportAreaSize = currentGeo.windowFrame.size.subtract(currentGeo.viewportSize!)
-      let requestedViewportSize = requestedSize.subtract(nonViewportAreaSize)
+      let nonViewportAreaSize = currentGeo.windowFrame.size - currentGeo.viewportSize!
+      let requestedViewportSize = requestedSize - nonViewportAreaSize
 
       if isLiveResizingWidth {
         // Option A: resize height based on requested width
