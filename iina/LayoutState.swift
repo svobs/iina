@@ -710,10 +710,10 @@ extension PlayerWindowController {
 
     /// Only for windowed modes!
     func buildDefaultInitialGeometry(screen: NSScreen) -> PWinGeometry {
-      let videoSize = AppData.defaultVideoSize
+      let defaultVideoGeo = VideoGeometry.defaultGeometry()
+      let videoSize = defaultVideoGeo.videoSizeRaw
       let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
-      let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video:
-                                VideoGeometry.defaultGeometry())
+      let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: defaultVideoGeo)
       return geo.refit(.centerInside)
     }
 

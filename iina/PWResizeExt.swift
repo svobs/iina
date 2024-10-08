@@ -40,9 +40,10 @@ extension PlayerWindowController {
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
   func applyVideoGeoAtFileOpen(_ ffMeta: FFVideoMeta? = nil, currentPlayback: Playback,
-                               currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
+                               _ currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
     log.verbose("Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil")")
-    applyVideoGeoTransform({ [self] videoGeo in
+
+    let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
         log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.state); aborting")
         return nil
@@ -65,21 +66,44 @@ extension PlayerWindowController {
         rawHeight = nil
       }
 
-      // TODO: sync video-aspect-override. This does get synced from an mpv notification, but there is a slight delay
       // TODO: sync video-crop (actually, add support for video-crop...)
+
+      // FIXME: add support for video-params/aspect-name, use it instead
+      //    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
+      let mpvVideoParamsAspect = player.mpv.getString(MPVProperty.videoParamsAspect)!
+
+      var userAspectLabelDerived = ""
+
+      // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
+      if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
+        userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
+        if userAspectLabelDerived != videoGeo.userAspectLabel {
+          // Not necessarily an error? Need to improve aspect name matching logic
+          log.debug("[applyVideoGeo] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(videoGeo.userAspectLabel.quoted))")
+        }
+      }
+
+      // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = videoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                    userRotation: userRotation)
+                                    codecAspectLabel: mpvVideoParamsAspect,
+                                    userAspectLabel: userAspectLabelDerived,
+                                    userRotation: userRotation,
+                                    log)
 
       if let ffMeta {
+
+        log.debug("[applyVideoGeo] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)")
         return videoGeo.substituting(ffMeta)
       } else if currentMediaAudioStatus == .isAudio {
         // Square album art
+        log.debug("[applyVideoGeo] Using albumArtGeometry because current media is audio")
         return VideoGeometry.albumArtGeometry(log)
       } else {
         return videoGeo
       }
+    }
 
-    }, fileJustOpened: true, then: { [self] in
+    let doAfter = { [self] in
       // Wait until window is completely opened before setting this, so that OSD will not be displayed until then.
       // The OSD can have weird stretching glitches if displayed while zooming open...
       if currentPlayback.state == .loaded {
@@ -90,7 +114,9 @@ extension PlayerWindowController {
       updateUI()
       // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
       updateCustomBorderBoxAndWindowOpacity()
-    })
+    }
+
+    applyVideoGeoTransform(transform, fileJustOpened: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.

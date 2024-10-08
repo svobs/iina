@@ -301,7 +301,7 @@ class MenuController: NSObject, NSMenuDelegate {
     bind(menu: aspectMenu, withOptions: aspectRatioMenuItemTitles, objects: aspectRatioIdentifiers, objectMap: nil,
          action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       /// return `true` if menu item should be checked (i.e. if current aspect matches menu item)
-      return PlayerCore.active?.videoGeo.selectedAspectLabel == $0.representedObject as? String
+      return PlayerCore.active?.videoGeo.userAspectLabel == $0.representedObject as? String
     }
 
     // -- crop

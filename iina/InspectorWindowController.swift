@@ -210,7 +210,13 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
         let vwidth = controller.getInt(MPVProperty.width)
         let vheight = controller.getInt(MPVProperty.height)
-        self.vsizeField.stringValue = "\(vwidth)\u{d7}\(vheight)"
+        let dwidth = controller.getInt(MPVProperty.dwidth)
+        let dheight = controller.getInt(MPVProperty.dheight)
+        var sizeDisplayString = "\(vwidth)\u{d7}\(vheight)"
+        if vwidth != dwidth || vheight != dheight {
+          sizeDisplayString += "  (\(dwidth)\u{d7}\(dheight))"
+        }
+        self.vsizeField.stringValue = sizeDisplayString
 
         let fileSize = controller.getInt(MPVProperty.fileSize)
         self.fileSizeField.stringValue = "\(FloatingPointByteCountFormatter.string(fromByteCount: fileSize))B"
@@ -244,10 +250,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       }
 
       let vbitrate = controller.getInt(MPVProperty.videoBitrate)
-      self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bps"
+      self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bit/s"
 
       let abitrate = controller.getInt(MPVProperty.audioBitrate)
-      self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bps"
+      self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bit/s"
 
       let dynamicStrProperties: [String: NSTextField] = [
         MPVProperty.avsync: self.avsyncField,

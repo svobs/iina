@@ -17,6 +17,41 @@ class Aspect: NSObject {
     return Aspect(string: string) != nil
   }
 
+  // TODO: incorporate mpv aspect-name
+  static func findLabelForAspectRatio(_ aspectRatio: Double) -> String? {
+    let mpvAspect = Aspect.mpvPrecision(of: aspectRatio)
+    let userPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
+    for knownAspectRatio in AppData.aspectsInMenu + userPresets {
+      if let knownAspect = Aspect(string: knownAspectRatio), knownAspect.value == mpvAspect {
+        // Matches a known aspect. Use its colon notation (X:Y) instead of decimal value
+        return knownAspectRatio
+      }
+    }
+    // Not found
+    return nil
+  }
+
+  static func bestLabelFor(_ aspectString: String) -> String {
+    let aspectLabel: String
+    if aspectString.contains(":"), Aspect(string: aspectString) != nil {
+      // Aspect is in colon notation (X:Y)
+      aspectLabel = aspectString
+    } else if let aspectDouble = Double(aspectString), aspectDouble > 0 {
+      /// Aspect is a decimal number, but is not default (`-1` or video default)
+      /// Try to match to known aspect by comparing their decimal values to the new aspect.
+      /// Note that mpv seems to do its calculations to only 2 decimal places of precision, so use that for comparison.
+      if let knownAspectRatio = Aspect.findLabelForAspectRatio(aspectDouble) {
+        aspectLabel = knownAspectRatio
+      } else {
+        aspectLabel = aspectDouble.mpvAspectString
+      }
+    } else {
+      aspectLabel = AppData.defaultAspectIdentifier
+      // -1, default, or unrecognized
+    }
+    return aspectLabel
+  }
+
   private var size: NSSize!
 
   var width: CGFloat {

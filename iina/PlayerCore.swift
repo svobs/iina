@@ -1233,38 +1233,22 @@ class PlayerCore: NSObject {
   /// 2. Player window geometry / displayed video size
   /// 3. Quick Settings controls & menu item checkmarks
   ///
-  /// To hopefully avoid precision problems, `aspectNormalDecimalString` is used for comparisons across data sources.
+  /// To hopefully avoid precision problems, `mpvAspectString` is used for comparisons across data sources.
   func setVideoAspectOverride(_ aspect: String) {
     mpv.queue.async { [self] in
       _setVideoAspectOverride(aspect)
     }
   }
 
+  // FIXME: use mpv aspect-name where possible instead!
   func _setVideoAspectOverride(_ aspectString: String) {
     log.verbose("Got request to set videoAspectOverride to: \(aspectString.quoted)")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    let aspectLabel: String
-    if aspectString.contains(":"), Aspect(string: aspectString) != nil {
-      // Aspect is in colon notation (X:Y)
-      aspectLabel = aspectString
-    } else if let aspectDouble = Double(aspectString), aspectDouble > 0 {
-      /// Aspect is a decimal number, but is not default (`-1` or video default)
-      /// Try to match to known aspect by comparing their decimal values to the new aspect.
-      /// Note that mpv seems to do its calculations to only 2 decimal places of precision, so use that for comparison.
-      if let knownAspectRatio = findLabelForAspectRatio(aspectDouble) {
-        aspectLabel = knownAspectRatio
-      } else {
-        aspectLabel = aspectDouble.aspectNormalDecimalString
-      }
-    } else {
-      aspectLabel = AppData.defaultAspectIdentifier
-      // -1, default, or unrecognized
-      log.verbose("Setting selectedAspect to: \(AppData.defaultAspectIdentifier.quoted) for aspect \(aspectString.quoted)")
-    }
+    let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
     windowController.applyVideoGeoTransform({ [self] videoGeo in
-      guard videoGeo.selectedAspectLabel != aspectLabel else { return nil }
+      guard videoGeo.userAspectLabel != aspectLabel else { return nil }
 
       // Send update to mpv
       mpv.queue.async { [self] in
@@ -1277,27 +1261,14 @@ class PlayerCore: NSObject {
       sendOSD(.aspect(aspectLabel))
 
       // Change video size:
-      log.verbose("[applyVideoGeo:transform] changing selectedAspectLabel: \(videoGeo.selectedAspectLabel.quoted) → \(aspectLabel.quoted)")
-      return videoGeo.clone(selectedAspectLabel: aspectLabel)
+      log.verbose("[applyVideoGeo:transform] changing userAspectLabel: \(videoGeo.userAspectLabel.quoted) → \(aspectLabel.quoted)")
+      return videoGeo.clone(userAspectLabel: aspectLabel)
 
     }, then: { [self] in
       // Update controls in UI. Need to always execute this, so that clicking on the video default aspect
       // immediately changes the selection to "Default".
       reloadQuickSettingsView()
     })
-  }
-
-  private func findLabelForAspectRatio(_ aspectRatioNumber: Double) -> String? {
-    let mpvAspect = Aspect.mpvPrecision(of: aspectRatioNumber)
-    let userPresets = Preference.csvStringArray(for: .aspectRatioPanelPresets) ?? []
-    for knownAspectRatio in AppData.aspectsInMenu + userPresets {
-      if let parsedAspect = Aspect(string: knownAspectRatio), parsedAspect.value == mpvAspect {
-        // Matches a known aspect. Use its colon notation (X:Y) instead of decimal value
-        return knownAspectRatio
-      }
-    }
-    // Not found
-    return nil
   }
 
   func updateMPVWindowScale(using windowGeo: PWinGeometry) {
@@ -2348,7 +2319,7 @@ class PlayerCore: NSObject {
     // Use cached video info (if it is available) to set the correct video geometry right away and without waiting for mpv.
     // This is optional but provides a better viewer experience.
     let ffMeta = MediaMetaCache.shared.getOrReadVideoMeta(forURL: currentPlayback.url, log)
-    windowController.applyVideoGeoAtFileOpen(ffMeta, currentPlayback: currentPlayback, currentMediaAudioStatus: info.currentMediaAudioStatus)
+    windowController.applyVideoGeoAtFileOpen(ffMeta, currentPlayback: currentPlayback, info.currentMediaAudioStatus)
 
     // Launch auto-load tasks on background thread
     $backgroundQueueTicket.withLock { $0 += 1 }

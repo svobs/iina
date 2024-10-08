@@ -149,6 +149,7 @@ class MPVController: NSObject {
     MPVOption.Window.ontop: MPV_FORMAT_FLAG,
     MPVOption.Window.windowScale: MPV_FORMAT_DOUBLE,
     MPVProperty.mediaTitle: MPV_FORMAT_STRING,
+    MPVProperty.videoParamsAspectName: MPV_FORMAT_STRING,
     MPVProperty.videoParamsRotate: MPV_FORMAT_INT64,
     MPVProperty.videoParamsPrimaries: MPV_FORMAT_STRING,
     MPVProperty.videoParamsGamma: MPV_FORMAT_STRING,
@@ -1154,6 +1155,11 @@ class MPVController: NSObject {
     let rawWidth = getInt(MPVProperty.width)
     let rawHeight = getInt(MPVProperty.height)
 
+    let mpvVideoParamsAspect = getString(MPVProperty.videoParamsAspect)!
+    // FIXME: add support for video-params/aspect-name, use it instead
+//    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
+    let mpvVideoAspectOverride = getDouble(MPVOption.Video.videoAspectOverride)
+
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
 
@@ -1165,7 +1171,8 @@ class MPVController: NSObject {
 
     let codecRotation = (mpvVideoParamsRotate - mpvVideoRotate) %% 360
     let vidGeo = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
-                               selectedAspectLabel: player.videoGeo.selectedAspectLabel,
+                               codecAspectLabel: mpvVideoParamsAspect,
+                               userAspectLabel: player.videoGeo.userAspectLabel,
                                codecRotation: codecRotation, userRotation: mpvVideoRotate,
                                selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
 

@@ -17,7 +17,7 @@ import Foundation
 /// `videoSizeRaw` (`rawWidth`, `rawHeight`)
 ///   ➤ Parse `selectedCropLabel` into `cropRect`, then apply it
 ///     ➤ `videoSizeC`: (`videoWidthC` x `videoHeightC`), AKA "dsize", per mpv usage)
-///       ➤ Parse `selectedAspectLabel` into `aspectRatioOverride`, then apply it
+///       ➤ Parse `userAspectLabel` into `aspectRatioOverride`, then apply it
 ///         ➤ `videoSizeCA`
 ///           ➤ apply `totalRotation` (== `userRotation` + `codecRotation`)
 ///             ➤ `videoSizeCAR`
@@ -26,9 +26,9 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   static func defaultGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log
-    return VideoGeometry(rawWidth: Int(AppData.defaultVideoSize.width),
-                         rawHeight: Int(AppData.defaultVideoSize.height),
-                         selectedAspectLabel: "",
+    return VideoGeometry(rawWidth: Constants.DefaultVideoSize.rawWidth,
+                         rawHeight: Constants.DefaultVideoSize.rawHeight,
+                         codecAspectLabel: Constants.DefaultVideoSize.aspectLabel, userAspectLabel: "",
                          codecRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
                          log: log)
@@ -37,8 +37,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// Uses Spotify's standard 1600x1600 dimensions, but the only important property is that its aspect ratio is square.
   static func albumArtGeometry(_ log: Logger.Subsystem? = nil) -> VideoGeometry {
     let log = log ?? Logger.log
-    return VideoGeometry(rawWidth: 1600, rawHeight: 1600,
-                         selectedAspectLabel: "",
+    return VideoGeometry(rawWidth: Constants.AlbumArt.rawWidth, rawHeight: Constants.AlbumArt.rawHeight,
+                         codecAspectLabel: "1:1", userAspectLabel: "",
                          codecRotation: 0, userRotation: 0,
                          selectedCropLabel: AppData.noneCropIdentifier,
                          log: log)
@@ -47,17 +47,18 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   let log: Logger.Subsystem
 
   init(rawWidth: Int, rawHeight: Int,
-       selectedAspectLabel: String,
+       codecAspectLabel: String, userAspectLabel: String,
        codecRotation: Int, userRotation: Int,
        selectedCropLabel: String,
        log: Logger.Subsystem) {
     self.rawWidth = rawWidth
     self.rawHeight = rawHeight
-    if let aspectRatioOverride = Aspect(string: selectedAspectLabel) {
-      self.selectedAspectLabel = selectedAspectLabel
-      self.aspectRatioOverride = Aspect.mpvPrecision(of: aspectRatioOverride.value)
+    self.codecAspectLabel = codecAspectLabel
+    if let aspectRatio = Aspect(string: userAspectLabel) {
+      self.userAspectLabel = userAspectLabel
+      self.aspectRatioOverride = aspectRatio.value
     } else {
-      self.selectedAspectLabel = AppData.defaultAspectIdentifier
+      self.userAspectLabel = AppData.defaultAspectIdentifier
       self.aspectRatioOverride = nil
     }
     self.codecRotation = codecRotation
@@ -93,17 +94,19 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Substitution convenience functions
 
   func clone(rawWidth: Int? = nil, rawHeight: Int? = nil,
-             selectedAspectLabel: String? = nil,
+             codecAspectLabel: String? = nil,
+             userAspectLabel: String? = nil,
              codecRotation: Int? = nil, userRotation: Int? = nil,
-             selectedCropLabel: String? = nil) -> VideoGeometry {
+             selectedCropLabel: String? = nil, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
     return VideoGeometry(rawWidth: rawWidth ?? self.rawWidth, rawHeight: rawHeight ?? self.rawHeight,
-                         selectedAspectLabel: selectedAspectLabel ?? self.selectedAspectLabel,
+                         codecAspectLabel: codecAspectLabel ?? self.codecAspectLabel,
+                         userAspectLabel: userAspectLabel ?? self.userAspectLabel,
                          codecRotation: codecRotation ?? self.codecRotation, userRotation: userRotation ?? self.userRotation,
-                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: self.log)
+                         selectedCropLabel: selectedCropLabel ?? self.selectedCropLabel, log: log ?? self.log)
   }
 
-  func substituting(_ ffMeta: FFVideoMeta) -> VideoGeometry {
-    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height, codecRotation: ffMeta.streamRotation)
+  func substituting(_ ffMeta: FFVideoMeta, _ log: Logger.Subsystem? = nil) -> VideoGeometry {
+    return clone(rawWidth: ffMeta.width, rawHeight: ffMeta.height, codecRotation: ffMeta.streamRotation, log)
   }
 
   // MARK: - TRANSFORMATION 1: Crop
@@ -125,14 +128,6 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   /// The video size after crop applied, or raw video size if no crop applied.
   /// Equal to crop rect size, if crop applied. If there is no crop, then identical to raw video size.
-  ///
-  /// From the mpv manual:
-  /// ```
-  /// dwidth, dheight
-  /// Video display size. This is the video size after filters and aspect scaling have been applied. The actual
-  /// video window size can still be different from this, e.g. if the user resized the video window manually.
-  /// These have the same values as video-out-params/dw and video-out-params/dh.
-  /// ```
   var videoSizeC: CGSize {
     if let cropRect {
       return cropRect.size
@@ -177,20 +172,40 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - TRANSFORMATION 2: Aspect
   // (Crop + Aspect)
 
+  /// The video's aspect ratio. This may be the result of applying pixel aspect ratio, etc, and may be different than
+  /// simple width / height.
+  ///
+  /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
+  /// sidebar's segmented control. It ideally should be in the format `"W:H"` to match the UI and avoid number rounding issues,
+  /// but this is also allowed to contain a decimal number (only the first 2 digits of its decimal will be read, however).
+  let codecAspectLabel: String
+
   /// The currently applied aspect ratio override.
   ///
   /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
-  /// sidebar's segmented control.
-  /// • If this is an aspect-based crop, it ideally should be in the format `"W:H"` to match in the UI, but can also be a decimal number.
-  /// • If this is a crop rect, it should be in mpv format. This can be either `WxH` or `WxH+x+y` forms. See `MPVFilter.cropRect()`
-  let selectedAspectLabel: String
+  /// sidebar's segmented control. It ideally should be in the format `"W:H"` to match the UI and avoid number rounding issues,
+  /// but this is also allowed to contain a decimal number (only the first 2 digits of its decimal will be read, however).
+  let userAspectLabel: String
 
+  // TODO: remove this field. It's not needed
   /// Optional aspect ratio override (mpv property `video-aspect-override`). Truncates aspect to the first 2 digits after decimal.
   let aspectRatioOverride: Double?
 
   /// The video size, after crop + aspect override applied, but before rotation or final scaling.
+  ///
+  /// From the mpv manual:
+  /// ```
+  /// dwidth, dheight
+  /// Video display size. This is the video size after filters and aspect scaling have been applied. The actual
+  /// video window size can still be different from this, e.g. if the user resized the video window manually.
+  /// These have the same values as video-out-params/dw and video-out-params/dh.
+  /// ```
   var videoSizeCA: CGSize {
-    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSizeC)
+    var size = videoSizeC
+    if let aspect = Aspect(string: codecAspectLabel) {
+      size = VideoGeometry.applyAspectOverride(aspect.value, to: videoSizeC)
+    }
+    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: size)
   }
 
   // MARK: - TRANSFORMATION 3: Rotation
@@ -239,13 +254,14 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - Protocol conformance
 
   var description: String {
-    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil"), aspect:\(selectedAspectLabel.quoted)|\(aspectRatioOverride?.description.quoted ?? "nil"), rot:\(userRotation)°|total:\(totalRotation)°, sizes: {raw:(\(rawWidth) x \(rawHeight)), CA:\(videoSizeCA), CAR:\(videoSizeCAR)|\(videoAspectCAR)})"
+    return "VidGeo(crop:\(selectedCropLabel.description.quoted)|\(cropRect?.description ?? "nil") aspect:\(codecAspectLabel.quoted)|override:\(userAspectLabel.quoted) rot:\(userRotation)°|total:\(totalRotation)° sizes: {raw:(\(rawWidth) x \(rawHeight)) CA:\(videoSizeCA) CAR:\(videoSizeCAR)|\(videoAspectCAR)})"
   }
 
   static func == (lhs: VideoGeometry, rhs: VideoGeometry) -> Bool {
     return lhs.rawWidth == rhs.rawWidth
-    && lhs.selectedAspectLabel == rhs.selectedAspectLabel
-    && lhs.totalRotation == rhs.totalRotation
+    && lhs.codecAspectLabel == rhs.codecAspectLabel
+    && lhs.userAspectLabel == rhs.userAspectLabel
+    && lhs.codecRotation == rhs.codecRotation
     && lhs.userRotation == rhs.userRotation
     && lhs.selectedCropLabel == rhs.selectedCropLabel
   }

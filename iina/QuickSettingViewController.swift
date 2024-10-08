@@ -492,10 +492,10 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   /// Reload Aspect settings controls
   private func updateAspectControls() {
-    let aspectLabel = player.videoGeo.selectedAspectLabel
-    aspectPresetsSegment.selectSegment(withLabel: aspectLabel)
+    let userAspectLabel = player.videoGeo.userAspectLabel
+    aspectPresetsSegment.selectSegment(withLabel: userAspectLabel)
     let isAspectInPanel = aspectPresetsSegment.selectedSegment >= 0
-    customAspectTextField.stringValue = isAspectInPanel ? "" : aspectLabel
+    customAspectTextField.stringValue = isAspectInPanel ? "" : userAspectLabel
   }
 
   /// Reload Crop settings controls

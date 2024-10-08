@@ -84,7 +84,11 @@ struct PlayerSaveState: CustomStringConvertible {
     case loopFile = "loopFile"          /// `MPVOption.PlaybackControl.loopFile`
   }
 
-  static fileprivate let videoGeometryPrefStringVersion = "1"
+  /// Added "1" in v1.2
+  static fileprivate let videoGeometryPrefStringVersion1 = "1"
+  /// Upgraded to "2" in v1.3
+  static fileprivate let videoGeometryPrefStringVersion2 = "2"
+
   static fileprivate let specPrefStringVersion1 = "1"
   /// Upgraded to "2" in v1.3
   static fileprivate let specPrefStringVersion2 = "2"
@@ -390,7 +394,7 @@ struct PlayerSaveState: CustomStringConvertible {
       // Retrieve appropriate geometry values, updating to latest window frame if needed:
       let geo: GeometrySet
       if wc.isAnimatingLayoutTransition {
-        geo = GeometrySet(windowed: wc.windowedModeGeo, musicMode: wc.musicModeGeo, video: player.videoGeo)
+        geo = wc.geo
       } else {
         geo = wc.buildGeoSet(from: wc.currentLayout)
       }
@@ -466,19 +470,21 @@ struct PlayerSaveState: CustomStringConvertible {
   }
 
   /// Returns IINA-Advance build number associated with stored player's properties (param).
-  /// Defaults to `1` for v1.0 & v1.1, because `buildNumber` property was not added until v1.2.
+  ///
+  /// `2`: default for v1.0 & v1.1, because `buildNumber` property was not added until v1.2.
+  /// See: `Constants.BuildNumber`
   static private func buildNumber(from properties: [String: Any]) -> Int {
-    return int(for: .buildNumber, properties) ?? 1
+    return int(for: .buildNumber, properties) ?? Constants.BuildNumber.V1_1
   }
 
   static private func geoSet(from props: [String: Any], _ log: Logger.Subsystem) -> GeometrySet {
     // VideoGeometry is needed to quickly calculate & restore video dimensions instead of waiting for mpv to provide it
+    let buildNumber = buildNumber(from: props)
     let videoGeo: VideoGeometry
     if let parsedVideoGeo = VideoGeometry.fromCSV(PlayerSaveState.string(for: .videoGeo, props), log) {
       videoGeo = parsedVideoGeo
     } else {
-      let buildNumber = buildNumber(from: props)
-      if buildNumber < 3 {
+      if buildNumber < Constants.BuildNumber.V1_2 {
         // Older than IINA 1.2
         log.debug("Failed to restore VideoGeometry from CSV (build \(buildNumber) properties). Will attempt to build it from legacy properties instead")
       } else {
@@ -490,7 +496,7 @@ struct PlayerSaveState: CustomStringConvertible {
       let codecRotation = (totalRotation ?? 0) - (userRotation ?? 0)
       videoGeo = defaultGeo.clone(rawWidth: PlayerSaveState.int(for: .videoRawWidth, props),
                                   rawHeight: PlayerSaveState.int(for: .videoRawHeight, props),
-                                  selectedAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
+                                  userAspectLabel: PlayerSaveState.string(for: .videoAspectLabel, props),
                                   codecRotation: codecRotation,
                                   userRotation: userRotation,
                                   selectedCropLabel: PlayerSaveState.string(for: .cropLabel, props))
@@ -734,8 +740,8 @@ struct PlayerSaveState: CustomStringConvertible {
 
     mpv.setInt(MPVOption.Video.videoRotate, self.geoSet.video.userRotation)
 
-    let selectedAspectLabel = self.geoSet.video.selectedAspectLabel
-    let mpvValue = selectedAspectLabel == AppData.defaultAspectIdentifier ? "no" : selectedAspectLabel
+    let userAspectLabel = self.geoSet.video.userAspectLabel
+    let mpvValue = userAspectLabel == AppData.defaultAspectIdentifier ? "no" : userAspectLabel
     mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
 
     if let brightness = int(for: .brightness) {
@@ -908,15 +914,16 @@ extension VideoGeometry {
       log.debug("CSV is empty; returning nil for VideoGeometry")
       return nil
     }
-    return PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 7,
-                                    expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion,
-                                    targetObjName: "VideoGeometry") { errPreamble, iter in
+    if let vidGeoV2: VideoGeometry = PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 8,
+                                                              expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion2,
+                                                              targetObjName: "VideoGeometry v2", { errPreamble, iter in
 
       guard let rawWidth = Int(iter.next()!),
             let rawHeight = Int(iter.next()!),
             let codecRotation = Int(iter.next()!),
             let userRotation = Int(iter.next()!),
-            let selectedAspectLabel = iter.next(),
+            let codecAspectLabel = iter.next(),
+            let userAspectLabel = iter.next(),
             let selectedCropLabel = iter.next()
       else {
         /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
@@ -925,14 +932,42 @@ extension VideoGeometry {
         return nil
       }
 
-      return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight, selectedAspectLabel: selectedAspectLabel,
+      return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
+                           codecAspectLabel: codecAspectLabel, userAspectLabel: userAspectLabel,
+                           codecRotation: codecRotation, userRotation: userRotation, selectedCropLabel: selectedCropLabel, log: log)
+    }) {
+      return vidGeoV2
+    }
+
+    log.debug("Failed to parse VideoGeometry v2; falling back to v1")
+    return PlayerSaveState.parseCSV(csv, separator: separator, expectedTokenCount: 7,
+                                    expectedVersion: PlayerSaveState.videoGeometryPrefStringVersion1,
+                                    targetObjName: "VideoGeometry v1") { errPreamble, iter in
+
+      guard let rawWidth = Int(iter.next()!),
+            let rawHeight = Int(iter.next()!),
+            let codecRotation = Int(iter.next()!),
+            let userRotation = Int(iter.next()!),
+            let userAspectLabel = iter.next(),
+            let selectedCropLabel = iter.next()
+      else {
+        /// NOTE: if Xcode shows the error `'nil' is not compatible with closure result type 'MusicModeGeometry'`
+        /// here, it means that the wrong args are being supplied to the`MusicModeGeometry` constructor below.
+        log.error("\(errPreamble) could not parse one or more tokens")
+        return nil
+      }
+
+      let codecAspectLabel = (Double(rawWidth) / Double(rawHeight)).mpvAspectString
+
+      return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
+                           codecAspectLabel: codecAspectLabel, userAspectLabel: userAspectLabel,
                            codecRotation: codecRotation, userRotation: userRotation, selectedCropLabel: selectedCropLabel, log: log)
     }
   }
 
   /// `VideoGeometry` -> `String`
   func toCSV() -> String {
-    "\(PlayerSaveState.videoGeometryPrefStringVersion),\(fieldStrings.joined(separator: ","))"
+    "\(PlayerSaveState.videoGeometryPrefStringVersion2),\(fieldStrings.joined(separator: ","))"
   }
 
   // MARK: Embedded CSV
@@ -943,7 +978,8 @@ extension VideoGeometry {
       "\(rawHeight)",
       "\(codecRotation)",
       "\(userRotation)",
-      "\(selectedAspectLabel)",
+      "\(codecAspectLabel)",
+      "\(userAspectLabel)",
       "\(selectedCropLabel)"
     ]
   }
@@ -953,14 +989,20 @@ extension VideoGeometry {
     fieldStrings.joined(separator: String(embeddedSeparator))
   }
 
-  /// Assumes embedded CSV is current version
+  /// Assumes embedded CSV is current version (but will fall back & try to parse as prev version if that fails)
   static func fromEmbeddedCSV(_ csvEmbedded: String?, _ log: Logger.Subsystem) -> VideoGeometry? {
     guard let csvEmbedded, !csvEmbedded.isEmpty else {
-      log.debug("CSV is empty; returning nil for MusicModeGeometry")
+      log.debug("CSV is empty; returning nil for embedded VideoGeometry")
       return nil
     }
-    let csv = "\(PlayerSaveState.videoGeometryPrefStringVersion)\(embeddedSeparator)\(csvEmbedded)"
-    return fromCSV(csv, log, separator: embeddedSeparator)
+    let csv2 = "\(PlayerSaveState.videoGeometryPrefStringVersion2)\(embeddedSeparator)\(csvEmbedded)"
+    if let videoGeoV2 = fromCSV(csv2, log, separator: embeddedSeparator) {
+      return videoGeoV2
+    } else {
+      log.debug("Could not parse embedded VideoGeometry v2; trying v1")
+      let csv1 = "\(PlayerSaveState.videoGeometryPrefStringVersion1)\(embeddedSeparator)\(csvEmbedded)"
+      return fromCSV(csv1, log, separator: embeddedSeparator)
+    }
   }
 }
 
@@ -1251,9 +1293,9 @@ extension PlayerWindowController.LayoutSpec {
                     String(self.interactiveMode?.rawValue ?? 0)
     ]
 
-    if buildNumber <= 4 {
+    if buildNumber < Constants.BuildNumber.V1_3 {
       csvItems = [PlayerSaveState.specPrefStringVersion1] + csvItems
-    } else { // v3.0
+    } else { // v1.3
       csvItems = [PlayerSaveState.specPrefStringVersion2] + csvItems + [
         String(moreSidebarState.selectedSubSegment),
         String(moreSidebarState.playlistSidebarWidth)

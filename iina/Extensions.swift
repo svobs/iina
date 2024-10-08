@@ -612,8 +612,8 @@ extension FloatingPoint {
 
   /// Returns a "normalized" number string for the exclusive purpose of comparing two mpv aspect ratios while avoiding precision errors.
   /// Not pretty to put this here, but need to make this searchable & don't have time for a larger refactor
-  var aspectNormalDecimalString: String {
-    return stringMaxFrac2
+  var mpvAspectString: String {
+    return stringTrunc2f
   }
 }
 

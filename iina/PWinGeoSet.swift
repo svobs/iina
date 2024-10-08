@@ -35,7 +35,10 @@ struct GeometrySet {
 
 extension PlayerWindowController {
   private func getLatestWindowFrameAndScreenID() -> (NSRect?, String?) {
-    if let window, window.isOpen {
+    // Need to check state of current playback to avoid race conditions
+    if let window, window.isOpen,
+       player.state.isAtLeast(.started),
+       let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loadedAndSized) {
       return (window.frame, bestScreen.screenID)
     } else {
       return (nil, nil)

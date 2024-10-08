@@ -266,7 +266,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   static var windowedModeGeoLastClosed: PWinGeometry = {
     let csv = Preference.string(for: .uiLastClosedWindowedModeGeometry)
     if csv?.isEmpty ?? true {
-      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty. Falling back to default geometry")
+      Logger.log.debug("Pref entry for \(Preference.quoted(.uiLastClosedWindowedModeGeometry)) is empty or could not be parsed. Falling back to default geometry")
     } else if let savedGeo = PWinGeometry.fromCSV(csv, Logger.log) {
       if savedGeo.mode.isWindowed && !savedGeo.fitOption.isFullScreen {
         Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedWindowedModeGeometry)): \(savedGeo)")
@@ -297,11 +297,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Logger.log.verbose("Loaded pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)): \(savedGeo)")
       return savedGeo
     }
-    Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty. Falling back to default music mode geometry",
+    Logger.log("Pref \(Preference.quoted(.uiLastClosedMusicModeGeometry)) is empty or could not be parsed. Falling back to default music mode geometry",
                level: .debug)
     let defaultScreen = NSScreen.screens[0]
     let defaultGeo = MiniPlayerViewController.buildMusicModeGeometryFromPrefs(screen: defaultScreen,
-                                                                          video: VideoGeometry.defaultGeometry())
+                                                                              video: VideoGeometry.defaultGeometry())
     return defaultGeo
   }() {
     didSet {
@@ -977,7 +977,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       contentView.addSubview(view)
     }
 
-    initDefaultAlbumArtView()
+    initAlbumArtView()
     addVideoViewToWindow()
     player.start()
 
@@ -1135,7 +1135,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     removeObservers()
   }
 
-  private func initDefaultAlbumArtView() {
+  private func initAlbumArtView() {
     defaultAlbumArtView.wantsLayer = true
     defaultAlbumArtView.isHidden = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
@@ -1956,11 +1956,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     log.verbose("PlayerWindow openWindow done")
     if let currentPlayback = player.info.currentPlayback, currentPlayback.isNetworkResource {
-      // Need to show loading msg
+      // Don't wait for load for network stream; open immediately & show loading msg
       player.mpv.queue.async { [self] in
-        log.verbose("Current playback is network resource; setting layout now")
-        applyVideoGeoAtFileOpen(currentPlayback: currentPlayback,
-                                currentMediaAudioStatus: player.info.currentMediaAudioStatus)
+        log.verbose("Current playback is network resource; applying VideoGeometry now")
+        applyVideoGeoAtFileOpen(currentPlayback: currentPlayback, player.info.currentMediaAudioStatus)
       }
     }
   }

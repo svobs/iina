@@ -124,14 +124,19 @@ struct AppData {
   // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
   static let maxConfFileLinesAccepted = 10000
 
-  /// Based on mpv default
-  static let defaultVideoSize = NSSize(width: 640, height: 480)
-
   /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
   static let minVideoSize = NSMakeSize(8, 8)
 }
 
 struct Constants {
+  struct BuildNumber {
+    static let V1_0 = 1
+    static let V1_1 = 2
+    static let V1_2 = 3
+    static let V1_2_1 = 4
+    static let V1_2_2 = 5
+    static let V1_3 = 6
+  }
   struct String {
     static let degree = "°"
     static let dot = "●"
@@ -235,6 +240,16 @@ struct Constants {
     // Window's top bezel must be at least as large as the title bar so that dragging the top of crop doesn't drag the window too
     static let viewportMargins = MarginQuad(top: PlayerWindowController.standardTitleBarHeight, trailing: 24,
                                          bottom: PlayerWindowController.standardTitleBarHeight, leading: 24)
+  }
+  /// Based on mpv default
+  struct DefaultVideoSize {
+    static let rawWidth: Int = 640
+    static let rawHeight: Int = 480
+    static let aspectLabel = "4:3"
+  }
+  struct AlbumArt {
+    static let rawWidth: Int = 1600
+    static let rawHeight: Int = 1600
   }
   struct Distance {
     // TODO: change to % of screen width
