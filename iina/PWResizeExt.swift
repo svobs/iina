@@ -70,7 +70,7 @@ extension PlayerWindowController {
 
       // FIXME: add support for video-params/aspect-name, use it instead
       //    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
-      let mpvVideoParamsAspect = player.mpv.getString(MPVProperty.videoParamsAspect)!
+      let mpvVideoParamsAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
 
       var userAspectLabelDerived = ""
 
