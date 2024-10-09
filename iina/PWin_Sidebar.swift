@@ -1,5 +1,5 @@
 //
-//  Sidebars.swift
+//  PWin_Sidebars.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2023-03-26.
@@ -12,207 +12,218 @@ private func clampPlaylistWidth(_ width: CGFloat) -> CGFloat {
   return width.clamped(to: Constants.Sidebar.minPlaylistWidth...Constants.Sidebar.maxPlaylistWidth).rounded()
 }
 
-/// Enapsulates code relating to leading & trailing sidebars in PlayerWindow.
-extension PlayerWindowController {
+// Sidebar layout state
+struct Sidebar {
+  enum Visibility {
+    case show(tabToShow: Sidebar.Tab)
+    case hide
 
-  // MARK: - Structs & Enums
-
-  // Sidebar layout state
-  struct Sidebar {
-    enum Visibility {
-      case show(tabToShow: Sidebar.Tab)
-      case hide
-
-      var visibleTab: Sidebar.Tab? {
-        switch self {
-        case .show(let tab):
-          return tab
-        case .hide:
-          return nil
-        }
-      }
-    }
-
-    /// Type of the view embedded in sidebar.
-    enum TabGroup: String {
-      case settings
-      case playlist
-
-      func width(using sidebarState: SidebarMiscState) -> CGFloat {
-        switch self {
-        case .settings:
-          return Constants.Sidebar.settingsWidth
-        case .playlist:
-          return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
-        }
-      }
-
-      static func fromPrefs(for locationID: Preference.SidebarLocation) -> Set<Sidebar.TabGroup> {
-        var tabGroups = Set<Sidebar.TabGroup>()
-        if Preference.enum(for: .settingsTabGroupLocation) == locationID {
-          tabGroups.insert(.settings)
-        }
-        if Preference.enum(for: .playlistTabGroupLocation) == locationID {
-          tabGroups.insert(.playlist)
-        }
-        return tabGroups
-      }
-    }
-
-    // Includes all types of tabs possible in all tab groups
-    enum Tab: Equatable {
-      case playlist
-      case chapters
-
-      case video
-      case audio
-      case sub
-      case plugin(id: String)
-
-      init?(name: String?) {
-        guard let name = name else {
-          return nil
-        }
-        switch name {
-        case "playlist":
-          self = .playlist
-        case "chapters":
-          self = .chapters
-        case "video":
-          self = .video
-        case "audio":
-          self = .audio
-        case "sub":
-          self = .sub
-        case "nil":
-          return nil
-        default:
-          if name.hasPrefix("plugin:") {
-            self = .plugin(id: String(name.dropFirst(7)))
-          } else {
-            return nil
-          }
-        }
-      }
-
-      var name: String {
-        switch self {
-        case .playlist: return "playlist"
-        case .chapters: return "chapters"
-        case .video: return "video"
-        case .audio: return "audio"
-        case .sub: return "sub"
-        case .plugin(let id): return "plugin:\(id)"
-        }
-      }
-
-      var group: Sidebar.TabGroup {
-        switch self {
-        case .playlist, .chapters:
-          return .playlist
-        case .video, .audio, .sub, .plugin(id: _):
-          return .settings
-        }
-      }
-    }
-
-    // MARK: - Sidebar Init
-
-    init(_ locationID: Preference.SidebarLocation, tabGroups: Set<TabGroup>, placement: Preference.PanelPlacement,
-         visibility: Sidebar.Visibility, lastVisibleTab: Sidebar.Tab? = nil) {
-      self.locationID = locationID
-      self.placement = placement
-      self.visibility = visibility
-      self.tabGroups = tabGroups
-
-      /// some validation before setting `lastVisibleTab`
-      if let visibleTab = visibility.visibleTab, tabGroups.contains(visibleTab.group) {
-        self.lastVisibleTab = visibleTab
-      } else if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
-        self.lastVisibleTab = lastVisibleTab
-      } else {
-        self.lastVisibleTab = nil
-      }
-    }
-
-    func clone(tabGroups: Set<TabGroup>? = nil, placement: Preference.PanelPlacement? = nil,
-               visibility: Sidebar.Visibility? = nil) -> Sidebar {
-      let newTabGroups = tabGroups ?? self.tabGroups
-      var newVisibility = visibility ?? self.visibility
-      if let newVisibleTab = newVisibility.visibleTab, !newTabGroups.contains(newVisibleTab.group) {
-        Logger.log("Can no longer show visible tab \(newVisibleTab.name) in \(self.locationID). The sidebar will close.", level: .verbose)
-        newVisibility = .hide
-      }
-
-      return Sidebar(self.locationID,
-                     tabGroups: newTabGroups,
-                     placement: placement ?? self.placement,
-                     visibility: newVisibility,
-                     lastVisibleTab: self.lastVisibleTab)
-    }
-
-
-    // MARK: - Stored Properties
-
-    /// `leadingSidebar` or `trailingSidebar`
-    let locationID: Preference.SidebarLocation
-
-    /// One of `show(Sidebar.Tab)` or `hide`:
-    let visibility: Visibility
-
-    /// If sidebar is showing, this should be the same as `visibleTab`. Otherwise this matches the last tab
-    /// which was shown since the current app launch, if it is still valid with respect to the current `tabGroups`.
-    /// Otherwise returns `nil`.
-    let lastVisibleTab: Sidebar.Tab?
-
-    // Should match prefs
-    let placement: Preference.PanelPlacement
-    /// The set of tab groups assigned to this sidebar as configured by prefs. May be empty.
-    /// If empty, this sidebar cannot be shown.
-    /// If `visibleTab` and `lastVisibleTab` must belong to a tab group in this list, respectively.
-    let tabGroups: Set<Sidebar.TabGroup>
-
-
-    // MARK: - Computed Properties
-
-    /// The currently visible tab, if sidebar is open/visible. Is `nil` if sidebar is closed/hidden.
-    /// Use `lastVisibleTab` if the last shown tab needs to be known.
     var visibleTab: Sidebar.Tab? {
-      return visibility.visibleTab
-    }
-
-    /// The parent `TabGroup` of `visibleTab`
-    var visibleTabGroup: Sidebar.TabGroup? {
-      return visibleTab?.group
-    }
-
-    var isVisible: Bool {
-      return visibleTab != nil
-    }
-
-    var defaultTabToShow: Sidebar.Tab? {
-      // Use last visible tab if still valid:
-      if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
-        Logger.log("Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)", level: .verbose)
-        return lastVisibleTab
+      switch self {
+      case .show(let tab):
+        return tab
+      case .hide:
+        return nil
       }
-
-      // Fall back to default for whatever tab group found:
-      if let group = tabGroups.first {
-        switch group {
-        case .playlist:
-          return Sidebar.Tab.playlist
-        case .settings:
-          return Sidebar.Tab.video
-        }
-      }
-
-      // If sidebar has no tab groups, can't show anything:
-      Logger.log("No tab groups found for \(locationID), returning nil for defaultTab", level: .verbose)
-      return nil
     }
   }
 
+  /// Type of the view embedded in sidebar.
+  enum TabGroup: String {
+    case settings
+    case playlist
+
+    func width(using sidebarState: SidebarMiscState) -> CGFloat {
+      switch self {
+      case .settings:
+        return Constants.Sidebar.settingsWidth
+      case .playlist:
+        return clampPlaylistWidth(CGFloat(sidebarState.playlistSidebarWidth))
+      }
+    }
+
+    static func fromPrefs(for locationID: Preference.SidebarLocation) -> Set<Sidebar.TabGroup> {
+      var tabGroups = Set<Sidebar.TabGroup>()
+      if Preference.enum(for: .settingsTabGroupLocation) == locationID {
+        tabGroups.insert(.settings)
+      }
+      if Preference.enum(for: .playlistTabGroupLocation) == locationID {
+        tabGroups.insert(.playlist)
+      }
+      return tabGroups
+    }
+  }
+
+  // Includes all types of tabs possible in all tab groups
+  enum Tab: Equatable {
+    case playlist
+    case chapters
+
+    case video
+    case audio
+    case sub
+    case plugin(id: String)
+
+    init?(name: String?) {
+      guard let name = name else {
+        return nil
+      }
+      switch name {
+      case "playlist":
+        self = .playlist
+      case "chapters":
+        self = .chapters
+      case "video":
+        self = .video
+      case "audio":
+        self = .audio
+      case "sub":
+        self = .sub
+      case "nil":
+        return nil
+      default:
+        if name.hasPrefix("plugin:") {
+          self = .plugin(id: String(name.dropFirst(7)))
+        } else {
+          return nil
+        }
+      }
+    }
+
+    var name: String {
+      switch self {
+      case .playlist: return "playlist"
+      case .chapters: return "chapters"
+      case .video: return "video"
+      case .audio: return "audio"
+      case .sub: return "sub"
+      case .plugin(let id): return "plugin:\(id)"
+      }
+    }
+
+    var group: Sidebar.TabGroup {
+      switch self {
+      case .playlist, .chapters:
+        return .playlist
+      case .video, .audio, .sub, .plugin(id: _):
+        return .settings
+      }
+    }
+  }  // enum Tab
+
+
+  struct SidebarMiscState {
+    let playlistSidebarWidth: Int
+    let selectedSubSegment: Int
+
+    static func fromDefaultPrefs() -> SidebarMiscState {
+      return SidebarMiscState(playlistSidebarWidth: Preference.integer(for: .playlistWidth),
+                              selectedSubSegment: 0)
+    }
+  }
+
+
+  // MARK: - Sidebar Init
+
+  init(_ locationID: Preference.SidebarLocation, tabGroups: Set<TabGroup>, placement: Preference.PanelPlacement,
+       visibility: Sidebar.Visibility, lastVisibleTab: Sidebar.Tab? = nil) {
+    self.locationID = locationID
+    self.placement = placement
+    self.visibility = visibility
+    self.tabGroups = tabGroups
+
+    /// some validation before setting `lastVisibleTab`
+    if let visibleTab = visibility.visibleTab, tabGroups.contains(visibleTab.group) {
+      self.lastVisibleTab = visibleTab
+    } else if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
+      self.lastVisibleTab = lastVisibleTab
+    } else {
+      self.lastVisibleTab = nil
+    }
+  }
+
+  func clone(tabGroups: Set<TabGroup>? = nil, placement: Preference.PanelPlacement? = nil,
+             visibility: Sidebar.Visibility? = nil) -> Sidebar {
+    let newTabGroups = tabGroups ?? self.tabGroups
+    var newVisibility = visibility ?? self.visibility
+    if let newVisibleTab = newVisibility.visibleTab, !newTabGroups.contains(newVisibleTab.group) {
+      Logger.log("Can no longer show visible tab \(newVisibleTab.name) in \(self.locationID). The sidebar will close.", level: .verbose)
+      newVisibility = .hide
+    }
+
+    return Sidebar(self.locationID,
+                   tabGroups: newTabGroups,
+                   placement: placement ?? self.placement,
+                   visibility: newVisibility,
+                   lastVisibleTab: self.lastVisibleTab)
+  }
+
+
+  // MARK: - Stored Properties
+
+  /// `leadingSidebar` or `trailingSidebar`
+  let locationID: Preference.SidebarLocation
+
+  /// One of `show(Sidebar.Tab)` or `hide`:
+  let visibility: Visibility
+
+  /// If sidebar is showing, this should be the same as `visibleTab`. Otherwise this matches the last tab
+  /// which was shown since the current app launch, if it is still valid with respect to the current `tabGroups`.
+  /// Otherwise returns `nil`.
+  let lastVisibleTab: Sidebar.Tab?
+
+  // Should match prefs
+  let placement: Preference.PanelPlacement
+  /// The set of tab groups assigned to this sidebar as configured by prefs. May be empty.
+  /// If empty, this sidebar cannot be shown.
+  /// If `visibleTab` and `lastVisibleTab` must belong to a tab group in this list, respectively.
+  let tabGroups: Set<Sidebar.TabGroup>
+
+
+  // MARK: - Computed Properties
+
+  /// The currently visible tab, if sidebar is open/visible. Is `nil` if sidebar is closed/hidden.
+  /// Use `lastVisibleTab` if the last shown tab needs to be known.
+  var visibleTab: Sidebar.Tab? {
+    return visibility.visibleTab
+  }
+
+  /// The parent `TabGroup` of `visibleTab`
+  var visibleTabGroup: Sidebar.TabGroup? {
+    return visibleTab?.group
+  }
+
+  var isVisible: Bool {
+    return visibleTab != nil
+  }
+
+  var defaultTabToShow: Sidebar.Tab? {
+    // Use last visible tab if still valid:
+    if let lastVisibleTab = lastVisibleTab, tabGroups.contains(lastVisibleTab.group) {
+      Logger.log("Returning last visible tab for \(locationID): \(lastVisibleTab.name.quoted)", level: .verbose)
+      return lastVisibleTab
+    }
+
+    // Fall back to default for whatever tab group found:
+    if let group = tabGroups.first {
+      switch group {
+      case .playlist:
+        return Sidebar.Tab.playlist
+      case .settings:
+        return Sidebar.Tab.video
+      }
+    }
+
+    // If sidebar has no tab groups, can't show anything:
+    Logger.log("No tab groups found for \(locationID), returning nil for defaultTab", level: .verbose)
+    return nil
+  }
+
+}  // end struct Sidebar
+
+
+/// Enapsulates code relating to leading & trailing sidebars in PlayerWindow.
+extension PlayerWindowController {
   // MARK: - Show/Hide functions
 
   // For JavascriptAPICore:
@@ -986,7 +997,7 @@ extension PlayerWindowController {
     // Update layout also. Do this inside the animation pipeline to prevent races
     animationPipeline.submitInstantTask{ [self] in
       let prevLayout = self.currentLayout
-      let moreSidebarState = SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment)
+      let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: Int(newPlaylistWidth), selectedSubSegment: prevLayout.spec.moreSidebarState.selectedSubSegment)
       self.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
     }
 

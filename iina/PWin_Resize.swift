@@ -424,7 +424,6 @@ extension PlayerWindowController {
    */
   func resizeViewport(to desiredViewportSize: CGSize? = nil, centerOnScreen: Bool = false, duration: CGFloat = IINAAnimation.DefaultDuration) {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let window else { return }
 
     switch currentLayout.mode {
     case .windowed, .windowedInteractive:
@@ -453,13 +452,12 @@ extension PlayerWindowController {
   // FIXME: use resizeVideo, not resizeViewport
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
-    guard let window else { return }
     let currentViewportSize: NSSize
     switch currentLayout.mode {
     case .windowed:
       currentViewportSize = windowedGeoForCurrentFrame().viewportSize
     case .musicMode:
-      guard let viewportSize = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID).viewportSize else { return }
+      guard let viewportSize = musicModeGeoForCurrentFrame().viewportSize else { return }
       currentViewportSize = viewportSize
     default:
       return

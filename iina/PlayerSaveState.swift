@@ -112,7 +112,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
   /// Describes the current layout configuration of the player window.
   /// See `buildLayoutTasksForFileOpen()` in `PlayerWindowLayout.swift`.
-  let layoutSpec: PlayerWindowController.LayoutSpec?
+  let layoutSpec: LayoutSpec?
 
   let geoSet: GeometrySet
   let screens: [ScreenMeta]
@@ -122,7 +122,7 @@ struct PlayerSaveState: CustomStringConvertible {
     self.log = Logger.subsystem(forPlayerID: playerID)
 
     let layoutSpecCSV = PlayerSaveState.string(for: .layoutSpec, props)
-    let layoutSpec = PlayerWindowController.LayoutSpec.fromCSV(layoutSpecCSV)
+    let layoutSpec = LayoutSpec.fromCSV(layoutSpecCSV)
     self.layoutSpec = layoutSpec
     self.geoSet = PlayerSaveState.geoSet(from: props, log)
 
@@ -1275,7 +1275,7 @@ extension PWinGeometry {
 
 }
 
-extension PlayerWindowController.LayoutSpec {
+extension LayoutSpec {
   /// `LayoutSpec` -> `String`
   func toCSV(buildNumber: Int) -> String {
     let leadingSidebarTab: String = self.leadingSidebar.visibleTab?.name ?? "nil"
@@ -1305,15 +1305,15 @@ extension PlayerWindowController.LayoutSpec {
   }
 
   /// `String` -> `LayoutSpec`
-  static func fromCSV(_ csv: String?) -> PlayerWindowController.LayoutSpec? {
+  static func fromCSV(_ csv: String?) -> LayoutSpec? {
     guard let csv, !csv.isEmpty else {
       Logger.log.debug("CSV is empty; returning nil for LayoutSpec")
       return nil
     }
-    let parsingFunc: (String, inout IndexingIterator<[String]>) throws -> PlayerWindowController.LayoutSpec? = { errPreamble, iter in
+    let parsingFunc: (String, inout IndexingIterator<[String]>) throws -> LayoutSpec? = { errPreamble, iter in
 
-      let leadingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
-      let traillingSidebarTab = PlayerWindowController.Sidebar.Tab(name: iter.next())
+      let leadingSidebarTab = Sidebar.Tab(name: iter.next())
+      let traillingSidebarTab = Sidebar.Tab(name: iter.next())
 
       guard let modeInt = Int(iter.next()!), let mode = PlayerWindowMode(rawValue: modeInt),
             let isLegacyStyle = Bool.yn(iter.next()) else {
@@ -1337,38 +1337,38 @@ extension PlayerWindowController.LayoutSpec {
       }
 
       let interactModeInt = Int(iter.next()!)
-      let interactiveMode = PlayerWindowController.InteractiveMode(rawValue: interactModeInt ?? 0) ?? nil  /// `0` === `nil` value
+      let interactiveMode = InteractiveMode(rawValue: interactModeInt ?? 0) ?? nil  /// `0` === `nil` value
 
-      var leadingTabGroups = PlayerWindowController.Sidebar.TabGroup.fromPrefs(for: .leadingSidebar)
-      let leadVis: PlayerWindowController.Sidebar.Visibility = leadingSidebarTab == nil ? .hide : .show(tabToShow: leadingSidebarTab!)
+      var leadingTabGroups = Sidebar.TabGroup.fromPrefs(for: .leadingSidebar)
+      let leadVis: Sidebar.Visibility = leadingSidebarTab == nil ? .hide : .show(tabToShow: leadingSidebarTab!)
       // If the tab groups prefs changed somehow since the last run, just add it for now so that the geometry can be restored.
       // Will correct this at the end of restore.
       if let visibleTab = leadVis.visibleTab, !leadingTabGroups.contains(visibleTab.group) {
         Logger.log.error("Restore state is invalid: leadingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups")
         leadingTabGroups.insert(visibleTab.group)
       }
-      let leadingSidebar = PlayerWindowController.Sidebar(.leadingSidebar, tabGroups: leadingTabGroups, placement: leadingSidebarPlacement, visibility: leadVis)
+      let leadingSidebar = Sidebar(.leadingSidebar, tabGroups: leadingTabGroups, placement: leadingSidebarPlacement, visibility: leadVis)
 
-      var trailingTabGroups = PlayerWindowController.Sidebar.TabGroup.fromPrefs(for: .trailingSidebar)
-      let trailVis: PlayerWindowController.Sidebar.Visibility = traillingSidebarTab == nil ? .hide : .show(tabToShow: traillingSidebarTab!)
+      var trailingTabGroups = Sidebar.TabGroup.fromPrefs(for: .trailingSidebar)
+      let trailVis: Sidebar.Visibility = traillingSidebarTab == nil ? .hide : .show(tabToShow: traillingSidebarTab!)
       // Account for invalid visible tab (see note above)
       if let visibleTab = trailVis.visibleTab, !trailingTabGroups.contains(visibleTab.group) {
         Logger.log.error("Restore state is invalid: trailingSidebar has visibleTab \(visibleTab.name) which is outside its configured tab groups")
         trailingTabGroups.insert(visibleTab.group)
       }
-      let trailingSidebar = PlayerWindowController.Sidebar(.trailingSidebar, tabGroups: trailingTabGroups, placement: trailingSidebarPlacement, visibility: trailVis)
+      let trailingSidebar = Sidebar(.trailingSidebar, tabGroups: trailingTabGroups, placement: trailingSidebarPlacement, visibility: trailVis)
 
-      let moreSidebarState: PlayerWindowController.SidebarMiscState
+      let moreSidebarState: Sidebar.SidebarMiscState
 
       if let selectedSubSegment = Int(iter.next() ?? ""), let playlistWidth = Int(iter.next() ?? "") {
-        moreSidebarState = PlayerWindowController.SidebarMiscState(playlistSidebarWidth: playlistWidth,
+        moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: playlistWidth,
                                                                    selectedSubSegment: selectedSubSegment)
       } else {
         // v1 of the CSV lacked this info. Fall back to default
-        moreSidebarState = PlayerWindowController.SidebarMiscState.fromDefaultPrefs()
+        moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
       }
 
-      return PlayerWindowController.LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode, isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement, bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition, interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
+      return LayoutSpec(leadingSidebar: leadingSidebar, trailingSidebar: trailingSidebar, mode: mode, isLegacyStyle: isLegacyStyle, topBarPlacement: topBarPlacement, bottomBarPlacement: bottomBarPlacement, enableOSC: enableOSC, oscPosition: oscPosition, interactiveMode: interactiveMode, moreSidebarState: moreSidebarState)
     }
 
     do {

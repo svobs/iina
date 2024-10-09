@@ -111,8 +111,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       // Put inside task to protect from race
       wc.animationPipeline.submitInstantTask{
         let prevLayout = wc.currentLayout
-        let moreSidebarState = PlayerWindowController.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth, selectedSubSegment: selectedSegment)
-        wc.currentLayout = PlayerWindowController.LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
+        let moreSidebarState = Sidebar.SidebarMiscState(playlistSidebarWidth: prevLayout.spec.moreSidebarState.playlistSidebarWidth, selectedSubSegment: selectedSegment)
+        wc.currentLayout = LayoutState.buildFrom(prevLayout.spec.clone(moreSidebarState: moreSidebarState))
       }
     }
   }

@@ -72,7 +72,7 @@ class FloatingControlBarView: NSVisualEffectView {
 
   // MARK: - Positioning
 
-  func moveTo(centerRatioH ratioH: CGFloat, originRatioV ratioV: CGFloat, layout: PlayerWindowController.LayoutState, viewportSize: CGSize) {
+  func moveTo(centerRatioH ratioH: CGFloat, originRatioV ratioV: CGFloat, layout: LayoutState, viewportSize: CGSize) {
     guard ratioH >= 0 && ratioH <= 1 else {
       if let playerWindowController {
         playerWindowController.log.error("FloatingOSC: cannot update position; centerRatioH is invalid: \(ratioH)")
@@ -197,7 +197,7 @@ class FloatingControlBarView: NSVisualEffectView {
   // MARK: - Coordinates in Viewport
 
   struct FloatingControlBarGeometry {
-    let windowLayout: PlayerWindowController.LayoutState
+    let windowLayout: LayoutState
     let viewportSize: CGSize
 
     // "available" == space to move OSC within

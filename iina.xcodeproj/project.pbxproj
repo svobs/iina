@@ -308,7 +308,7 @@
 		B4E446F725CB54EF0069F06E /* Mustache in Frameworks */ = {isa = PBXBuildFile; productRef = B4E446F625CB54EF0069F06E /* Mustache */; };
 		B4E4470125CE3F930069F06E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B4E4470025CE3F930069F06E /* Sparkle */; };
 		C789872F1E34EF170005769F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C78987311E34EF170005769F /* InfoPlist.strings */; };
-		D101635D2C197D4D00D1D663 /* PWOSDExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D101635C2C197D4D00D1D663 /* PWOSDExt.swift */; };
+		D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = D101635C2C197D4D00D1D663 /* PWin_OSD.swift */; };
 		D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C842872C154003D47C1 /* ConfTableViewController.swift */; };
 		D1049C872872C17F003D47C1 /* BindingTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C862872C17F003D47C1 /* BindingTableViewController.swift */; };
 		D1049C892872CAD6003D47C1 /* ConfTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1049C882872CAD6003D47C1 /* ConfTableState.swift */; };
@@ -318,7 +318,7 @@
 		D12C074028EAEA4400FA9958 /* AppInputConfigBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */; };
 		D13209BB2B90596000069C94 /* AspectTokenField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13209BA2B90596000069C94 /* AspectTokenField.swift */; };
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
-		D13E807E2C026A2700537954 /* PWinGeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWinGeoSet.swift */; };
+		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
 		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
 		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
@@ -329,7 +329,7 @@
 		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
 		D188CB2628D9E95500F166FD /* BindingTableState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2528D9E95500F166FD /* BindingTableState.swift */; };
-		D191EE152ACE763A00FEF801 /* PWLayoutTransSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */; };
+		D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */; };
 		D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */; };
 		D19690CC2B56770F002B0458 /* MPVLogLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19690CB2B56770F002B0458 /* MPVLogLevel.swift */; };
 		D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */; };
@@ -340,15 +340,17 @@
 		D1A4C2E02BFC68DB00CE32A9 /* MarginQuad.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */; };
 		D1A4D9882B1486A10009AB4E /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */; };
 		D1A8878C29D16452000D1AE4 /* RotGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */; };
-		D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */; };
+		D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */; };
 		D1AD325A2ACC078600F86EE8 /* LayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD32592ACC078600F86EE8 /* LayoutState.swift */; };
 		D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */; };
-		D1AE04CE2A9317CD00F58860 /* PWLayoutTransBldr.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */; };
+		D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */; };
 		D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */; };
 		D1B492E62AA0BB9A00212E9C /* MagGestureHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */; };
 		D1B787DB29AF883800DABC9C /* PWinPreviewImgBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */; };
 		D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741092CB3833500522FA7 /* ScrollableSlider.swift */; };
 		D1C7410C2CB3BCC100522FA7 /* VolumeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */; };
+		D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */; };
+		D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741112CB6503100522FA7 /* PWin_Enums.swift */; };
 		D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
@@ -367,8 +369,8 @@
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
 		D1EF40EB2C3BCEA800921252 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EA2C3BCEA800921252 /* Playback.swift */; };
 		D1EF40ED2C3BD10B00921252 /* StateEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EC2C3BD10B00921252 /* StateEnum.swift */; };
-		D1F2D93C2C61CE090078E304 /* PWInitialLayoutBldr.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2D93B2C61CE090078E304 /* PWInitialLayoutBldr.swift */; };
-		D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */; };
+		D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */; };
+		D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */; };
 		D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */; };
 		D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */; };
 		D1FD2DD828521AD500CF7B35 /* MPVLogScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */; };
@@ -1791,7 +1793,7 @@
 		C7DBA5EB1F07C5FD00C2B416 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InitialWindowController.strings; sourceTree = "<group>"; };
 		C7DC79CE1EC63821002DE23B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		C7E90B522087EC5700A58B6B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/SubChooseViewController.strings; sourceTree = "<group>"; };
-		D101635C2C197D4D00D1D663 /* PWOSDExt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PWOSDExt.swift; sourceTree = "<group>"; };
+		D101635C2C197D4D00D1D663 /* PWin_OSD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PWin_OSD.swift; sourceTree = "<group>"; };
 		D1049C842872C154003D47C1 /* ConfTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableViewController.swift; sourceTree = "<group>"; };
 		D1049C862872C17F003D47C1 /* BindingTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableViewController.swift; sourceTree = "<group>"; };
 		D1049C882872CAD6003D47C1 /* ConfTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfTableState.swift; sourceTree = "<group>"; };
@@ -1801,7 +1803,7 @@
 		D12C073F28EAEA4400FA9958 /* AppInputConfigBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfigBuilder.swift; sourceTree = "<group>"; };
 		D13209BA2B90596000069C94 /* AspectTokenField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectTokenField.swift; sourceTree = "<group>"; };
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
-		D13E807D2C026A2700537954 /* PWinGeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinGeoSet.swift; sourceTree = "<group>"; };
+		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
 		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
 		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
@@ -1812,7 +1814,7 @@
 		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		D188CB2528D9E95500F166FD /* BindingTableState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindingTableState.swift; sourceTree = "<group>"; };
-		D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransSteps.swift; sourceTree = "<group>"; };
+		D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxSteps.swift; sourceTree = "<group>"; };
 		D19247FC2BC634D3003BEEE8 /* PlayerCrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCrop.swift; sourceTree = "<group>"; };
 		D19690CB2B56770F002B0458 /* MPVLogLevel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVLogLevel.swift; sourceTree = "<group>"; };
 		D19AF88328A3CBCE009B598C /* InputConfFileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputConfFileCache.swift; sourceTree = "<group>"; };
@@ -1823,15 +1825,17 @@
 		D1A4C2DF2BFC68DB00CE32A9 /* MarginQuad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarginQuad.swift; sourceTree = "<group>"; };
 		D1A4D9872B1486A10009AB4E /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 		D1A8878B29D16452000D1AE4 /* RotGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotGestureHandler.swift; sourceTree = "<group>"; };
-		D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWSidebarExt.swift; sourceTree = "<group>"; };
+		D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Sidebar.swift; sourceTree = "<group>"; };
 		D1AD32592ACC078600F86EE8 /* LayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutState.swift; sourceTree = "<group>"; };
 		D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutTransition.swift; sourceTree = "<group>"; };
-		D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWLayoutTransBldr.swift; sourceTree = "<group>"; };
+		D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_LayoutTxBuilder.swift; sourceTree = "<group>"; };
 		D1AF3D7828F16CA4002A15A7 /* CellEditTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellEditTracker.swift; sourceTree = "<group>"; };
 		D1B492E52AA0BB9A00212E9C /* MagGestureHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagGestureHandler.swift; sourceTree = "<group>"; };
 		D1B787DA29AF883800DABC9C /* PWinPreviewImgBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWinPreviewImgBuilder.swift; sourceTree = "<group>"; };
 		D1C741092CB3833500522FA7 /* ScrollableSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableSlider.swift; sourceTree = "<group>"; };
 		D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeSlider.swift; sourceTree = "<group>"; };
+		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
+		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
 		D1C8976D2C871CAC00394EE4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
@@ -1850,8 +1854,8 @@
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
 		D1EF40EA2C3BCEA800921252 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
 		D1EF40EC2C3BD10B00921252 /* StateEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateEnum.swift; sourceTree = "<group>"; };
-		D1F2D93B2C61CE090078E304 /* PWInitialLayoutBldr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWInitialLayoutBldr.swift; sourceTree = "<group>"; };
-		D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWResizeExt.swift; sourceTree = "<group>"; };
+		D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_InitialLayoutBuilder.swift; sourceTree = "<group>"; };
+		D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Resize.swift; sourceTree = "<group>"; };
 		D1FA42E228E4323E00DF49DD /* InputSectionStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSectionStack.swift; sourceTree = "<group>"; };
 		D1FA42E428E5E54700DF49DD /* AppInputConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInputConfig.swift; sourceTree = "<group>"; };
 		D1FD2DD728521AD500CF7B35 /* MPVLogScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVLogScanner.swift; sourceTree = "<group>"; };
@@ -2809,15 +2813,17 @@
 				E38BD4AE20054BD9007635FC /* PlayerWindow.swift */,
 				84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */,
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
-				D1F64E8F2B2A655C0030E07E /* PWResizeExt.swift */,
-				D1A8878D29D1696C000D1AE4 /* PWSidebarExt.swift */,
-				D101635C2C197D4D00D1D663 /* PWOSDExt.swift */,
-				D1F2D93B2C61CE090078E304 /* PWInitialLayoutBldr.swift */,
-				D1AE04CD2A9317CD00F58860 /* PWLayoutTransBldr.swift */,
-				D191EE142ACE763A00FEF801 /* PWLayoutTransSteps.swift */,
-				D13E807D2C026A2700537954 /* PWinGeoSet.swift */,
+				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
+				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
+				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
+				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
+				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
+				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,
+				D1F2D93B2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift */,
+				D1AE04CD2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift */,
+				D191EE142ACE763A00FEF801 /* PWin_LayoutTxSteps.swift */,
 				D1A44D892A5E18D00089B283 /* PWinGeometry.swift */,
 				D19CF7152AB846D300511F80 /* MusicModeGeo.swift */,
 				D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */,
@@ -3239,14 +3245,14 @@
 				846352581EEEE11A0043F0CC /* ThumbnailPeekView.swift in Sources */,
 				84E745D61DFDD4FD00588DED /* KeyCodeHelper.swift in Sources */,
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
-				D101635D2C197D4D00D1D663 /* PWOSDExt.swift in Sources */,
+				D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */,
 				E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */,
 				84F5D4951E44D5230060A838 /* KeyBindingCriterion.swift in Sources */,
 				D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */,
 				846121BD1F35FCA500ABB39C /* DraggingDetect.swift in Sources */,
 				84A886EC1E2573A5008755BB /* JustExtension.swift in Sources */,
 				51854CDA2A1C489300C40B78 /* FFmpegLogger.swift in Sources */,
-				D13E807E2C026A2700537954 /* PWinGeoSet.swift in Sources */,
+				D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */,
 				84D0FB811F5E5A4000C6A6A7 /* CropBoxViewController.swift in Sources */,
 				84D377631D6B66DE007F7396 /* MPVPlaylistItem.swift in Sources */,
 				E3ECC89E1FE9A6D900BED8C7 /* MPVGeometryDef.swift in Sources */,
@@ -3254,7 +3260,7 @@
 				E337D5E22411B64A00B5729A /* JavascriptPolyfill.swift in Sources */,
 				84E295C01E2CF9F5006388F7 /* ObjcUtils.m in Sources */,
 				8400D5C41E17C6D2006785F5 /* AboutWindowController.swift in Sources */,
-				D1A8878E29D1696C000D1AE4 /* PWSidebarExt.swift in Sources */,
+				D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */,
 				D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */,
 				84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */,
 				E3CB258B2222885E00A62C47 /* JavascriptAPIOverlay.swift in Sources */,
@@ -3292,13 +3298,14 @@
 				D1D87E02292B2AEE00737886 /* BiDictionary.swift in Sources */,
 				519872FF26879B9B00F84BCC /* AccessibilityPreferences.swift in Sources */,
 				842904E21F0EC01600478376 /* AutoFileMatcher.swift in Sources */,
+				D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */,
 				D1049C852872C154003D47C1 /* ConfTableViewController.swift in Sources */,
 				8466BE181D5CDD0300039D03 /* QuickSettingViewController.swift in Sources */,
 				84A0BA9E1D2FAD4000BC8DA1 /* PlayerWindowController.swift in Sources */,
 				E3785B092A83380E00787CB7 /* WebSocketServer.swift in Sources */,
 				84E48D4E1E0F1090002C7A3F /* FilterWindowController.swift in Sources */,
 				E3F698872120D878005792C9 /* ExtendedColors.swift in Sources */,
-				D191EE152ACE763A00FEF801 /* PWLayoutTransSteps.swift in Sources */,
+				D191EE152ACE763A00FEF801 /* PWin_LayoutTxSteps.swift in Sources */,
 				D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */,
 				E3839C5924FFF817007D0AB4 /* JavascriptAPIStandaloneWindow.swift in Sources */,
 				E3366AFA224A039500EF3C32 /* JavascriptAPIPreferences.swift in Sources */,
@@ -3338,19 +3345,19 @@
 				84A0BA901D2F8D4100BC8DA1 /* IINAError.swift in Sources */,
 				D1FD2DDC28533EE700CF7B35 /* InputSection.swift in Sources */,
 				D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */,
-				D1F2D93C2C61CE090078E304 /* PWInitialLayoutBldr.swift in Sources */,
+				D1F2D93C2C61CE090078E304 /* PWin_InitialLayoutBuilder.swift in Sources */,
 				D1FF15752A7E072200C0CE86 /* PlayerCoreManager.swift in Sources */,
 				D1D87E042932086000737886 /* TableUIChangeBuilder.swift in Sources */,
 				84C6D3621EAF8D63009BF721 /* HistoryController.swift in Sources */,
 				D1AF3D7928F16CA4002A15A7 /* CellEditTracker.swift in Sources */,
 				E38B3213214FB9EA000F6D27 /* PrefPluginPermissionView.swift in Sources */,
-				D1AE04CE2A9317CD00F58860 /* PWLayoutTransBldr.swift in Sources */,
+				D1AE04CE2A9317CD00F58860 /* PWin_LayoutTxBuilder.swift in Sources */,
 				51E63DFD29CFB04C008AFC20 /* PlaySliderLoopKnob.swift in Sources */,
 				847644081D48B413004F6DF5 /* MPVOption.swift in Sources */,
 				D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */,
 				D1A4C2E02BFC68DB00CE32A9 /* MarginQuad.swift in Sources */,
 				84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */,
-				D1F64E902B2A655C0030E07E /* PWResizeExt.swift in Sources */,
+				D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */,
 				84A886F31E26CA24008755BB /* Regex.swift in Sources */,
 				D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */,
 				8487BEC31D76A1AF00FD17B0 /* MenuController.swift in Sources */,
@@ -3358,6 +3365,7 @@
 				519CCABD2BFFAEF10079DCAF /* HardwareDecodeCapabilities.swift in Sources */,
 				E38BA1C0253E54F2000B551D /* JavascriptAPIGlobal.swift in Sources */,
 				E39A11FD240F176E00A67F9F /* StringEncodingName.swift in Sources */,
+				D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */,
 				D1FF15792A7FA6A300C0CE86 /* PlayerSaveState.swift in Sources */,
 				E33FEEB52229A44F00B59711 /* JavascriptAPIUtils.swift in Sources */,
 				84C6D3671EB2A427009BF721 /* HistoryWindowController.swift in Sources */,

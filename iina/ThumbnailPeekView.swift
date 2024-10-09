@@ -92,7 +92,7 @@ class ThumbnailPeekView: NSView {
   }
 
   func displayThumbnail(forTime previewTimeSec: Double, originalPosX: CGFloat, _ player: PlayerCore,
-                        _ currentLayout: PlayerWindowController.LayoutState, currentControlBar: NSView,
+                        _ currentLayout: LayoutState, currentControlBar: NSView,
                         _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
 
     guard let thumbnails = player.info.currentPlayback?.thumbnails,

@@ -1,5 +1,5 @@
 //
-//  PWOSDExt.swift
+//  PWin_OSD.swift
 //  iina
 //
 //  Created by Matt Svoboda on 6/11/24.
@@ -9,55 +9,56 @@
 import Foundation
 import Mustache
 
-// PlayerWindow UI: OSD
-extension PlayerWindowController {
-  /// Encapsulates all of the window's OSD state vars
-  class OSDState {
-    let log: Logger.Subsystem
+/// Encapsulates all of the window's OSD state vars
+class OSDState {
+  let log: Logger.Subsystem
 
-    /// Whether current OSD needs user interaction to be dismissed.
-    var isShowingPersistentOSD = false
-    var animationState: UIAnimationState = .hidden
-    var hideOSDTimer: Timer?
-    var nextSeekIcon: NSImage? = nil
-    var currentSeekIcon: NSImage? = nil
-    var lastPlaybackPosition: Double? = nil
-    var lastPlaybackDuration: Double? = nil
-    private var lastDisplayedMsgTS: TimeInterval = 0
-    var lastDisplayedMsg: OSDMessage? = nil {
-      didSet {
-        guard lastDisplayedMsg != nil else { return }
-        lastDisplayedMsgTS = Date().timeIntervalSince1970
-      }
-    }
-    func didShowLastMsgRecently() -> Bool {
-      return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
-    }
-    // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
-    var context: NSViewController? = nil {
-      willSet {
-        guard newValue != context else { return }
-        if let newValue {
-          log.verbose("Updating osd.context to: \(newValue)")
-        } else {
-          log.verbose("Updating osd.context to: nil")
-        }
-      }
-    }
-    var textSizeLast: CGFloat = 0
-    let queueLock = Lock()
-    var queue = LinkedList<() -> Void>()
-
-    func clearQueuedOSDs() {
-      queueLock.withLock {
-        queue.clear()
-      }
-    }
-
-    init(log: Logger.Subsystem) {
-      self.log = log
+  /// Whether current OSD needs user interaction to be dismissed.
+  var isShowingPersistentOSD = false
+  var animationState: PlayerWindowController.UIAnimationState = .hidden
+  var hideOSDTimer: Timer?
+  var nextSeekIcon: NSImage? = nil
+  var currentSeekIcon: NSImage? = nil
+  var lastPlaybackPosition: Double? = nil
+  var lastPlaybackDuration: Double? = nil
+  private var lastDisplayedMsgTS: TimeInterval = 0
+  var lastDisplayedMsg: OSDMessage? = nil {
+    didSet {
+      guard lastDisplayedMsg != nil else { return }
+      lastDisplayedMsgTS = Date().timeIntervalSince1970
     }
   }
+  func didShowLastMsgRecently() -> Bool {
+    return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
+  }
+  // Need to keep a reference to NSViewController here in order for its Objective-C selectors to work
+  var context: NSViewController? = nil {
+    willSet {
+      guard newValue != context else { return }
+      if let newValue {
+        log.verbose("Updating osd.context to: \(newValue)")
+      } else {
+        log.verbose("Updating osd.context to: nil")
+      }
+    }
+  }
+  var textSizeLast: CGFloat = 0
+  let queueLock = Lock()
+  var queue = LinkedList<() -> Void>()
+
+  func clearQueuedOSDs() {
+    queueLock.withLock {
+      queue.clear()
+    }
+  }
+
+  init(log: Logger.Subsystem) {
+    self.log = log
+  }
+}
+
+// PlayerWindow UI: OSD
+extension PlayerWindowController {
 
   /// Enforces `Preference.Key.osdPosition` pref which allows OSD to be on either left or right
   func updateOSDPosition() {

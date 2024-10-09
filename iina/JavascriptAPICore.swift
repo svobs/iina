@@ -284,7 +284,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
       window.setWindowFloatingOnTop(val)
     case "sidebar":
       if let name = value as? String {
-        if let tab = PlayerWindowController.Sidebar.Tab(name: name) {
+        if let tab = Sidebar.Tab(name: name) {
           window.showSidebar(tab: tab, force: true, hideIfAlreadyShown: false)
         } else {
           log("core.window.sidebar: Unknown sidebar name \"\(name)\"", level: .error)
