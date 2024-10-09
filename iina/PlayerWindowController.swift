@@ -1974,15 +1974,29 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     /// Need this as a kludge to ensure it runs after tasks in `applyVideoGeoTransform`
     DispatchQueue.main.async { [self] in
-      animationPipeline.submitInstantTask({ [self] in
+      var animationTasks: [IINAAnimation.Task] = []
+
+      animationTasks.append(.instantTask { [self] in
         refreshKeyWindowStatus()
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
         forceDraw()  // needed if restoring while paused
       })
-      animationPipeline.submit(pendingVideoGeoUpdateTasks)
+
+      animationTasks += pendingVideoGeoUpdateTasks
       pendingVideoGeoUpdateTasks = []
+
+      animationTasks.append(.instantTask { [self] in
+        // Make sure to save after opening (possibly new) window
+        player.saveState()
+        // Especially need to save the updated windows list!
+        // At launch, any unreferenced PWin entries will be deleted from prefs
+        Preference.UIState.saveCurrentOpenWindowList()
+      })
+
+      animationPipeline.submit(animationTasks)
+
       player.mpv.queue.async { [self] in
         if player.pendingResumeWhenShowingWindow {
           player.pendingResumeWhenShowingWindow = false
@@ -2341,7 +2355,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func resizeSubviewsForWindowResize(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
     videoView.videoLayer.enterAsynchronousMode()
-    
+
     if updateVideoView {
       videoView.apply(newGeometry)
     }

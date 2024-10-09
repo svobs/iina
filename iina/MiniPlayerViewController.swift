@@ -19,7 +19,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     return NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .regular)
   }()
 
-  @IBOutlet weak var volumeSlider: NSSlider!
+  @IBOutlet weak var volumeSlider: VolumeSlider!
   @IBOutlet weak var muteButton: NSButton!
   @IBOutlet weak var playButton: NSButton!
   @IBOutlet weak var leftArrowButton: NSButton!
