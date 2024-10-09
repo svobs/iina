@@ -301,11 +301,12 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
-        applyVideoVisibility(to: false)
+        applyVideoVisibility(to: false, showDefaultArt: nil)
       }
     })
   }
 
+  /// Special case when exiting PiP
   func applyVideoTrackFromVideoVisibility() {
     if !isVideoVisible && windowController.pipStatus == .notInPIP {
       player.setVideoTrackEnabled(false)
@@ -315,9 +316,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   // TODO: develop a nice sliding animation if possible
-  func applyVideoVisibility(to showVideo: Bool) {
-    guard let window else { return }
-
+  func applyVideoVisibility(to showVideo: Bool, showDefaultArt: Bool?) {
     windowController.animationPipeline.submitInstantTask{ [self] in
       log.verbose("MusicMode: applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
       let currentGeo = windowController.musicModeGeoForCurrentFrame()
@@ -325,11 +324,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
       guard windowController.isInMiniPlayer, currentGeo.isVideoVisible != newGeo.isVideoVisible else {
         log.debug("Cancelling toggle of videoView visibility; isMiniPlayer=\(windowController.isInMiniPlayer.yn), current=\(currentGeo.isVideoVisible.yesno), new=\(newGeo.isVideoVisible.yesno)")
-        throw IINAError.cancelAnimationTransaction
+        return
       }
 
       log.verbose("MusicMode: setting videoViewVisible=\(showVideo.yn), videoHeight=\(newGeo.videoHeight)")
-      windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo)
+      windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo, showDefaultArt: showDefaultArt)
     }
   }
 

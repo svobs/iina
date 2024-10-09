@@ -717,8 +717,8 @@ extension PlayerWindowController {
     // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
-      if outputGeo.isVideoVisible {
-        // Show art before showing videoView (if videoView already showing, don't care)
+      if isTogglingVideoView, outputGeo.isVideoVisible {
+        // Show/hide art before showing videoView
         updateDefaultArtVisibility(to: showDefaultArt)
       }
 
@@ -762,21 +762,17 @@ extension PlayerWindowController {
 
     // TASK 3: Background cleanup
     tasks.append(.instantTask { [self] in
-      if !outputGeo.isVideoVisible {
-        // Show art after hiding videoView (if videoView already hidden, don't care)
-        updateDefaultArtVisibility(to: showDefaultArt)
-      }
+      // Make sure to update art after videoView has settled
+      updateDefaultArtVisibility(to: showDefaultArt)
 
-      if isTogglingVideoView {
-        if !outputGeo.isVideoVisible && pipStatus == .notInPIP {
+      if isTogglingVideoView && !outputGeo.isVideoVisible {
+        if pipStatus == .notInPIP {
           player.setVideoTrackEnabled(false)
         }
 
         /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
         /// (See note in `applyMusicModeGeo`)
-        if !outputGeo.isVideoVisible {
-          viewportBtmOffsetFromContentViewBtmConstraint.priority = .init(1)
-        }
+        viewportBtmOffsetFromContentViewBtmConstraint.priority = .init(1)
       }
 
       isAnimatingLayoutTransition = false
