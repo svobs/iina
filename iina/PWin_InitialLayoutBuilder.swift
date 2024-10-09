@@ -94,7 +94,7 @@ extension PlayerWindowController {
       log.verbose("[applyVideoGeo] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowed
 
-      if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus == .isAudio {
+      if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
         log.debug("[applyVideoGeo] Opened media is audio: will auto-switch to music mode")
         mode = .musicMode
       } else if Preference.bool(for: .fullScreenWhenOpen) {
@@ -159,7 +159,7 @@ extension PlayerWindowController {
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
             log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
-          } else if currentMediaAudioStatus == .isAudio && !isInMiniPlayer && !isFullScreen {
+          } else if currentMediaAudioStatus.isAudio && !isInMiniPlayer && !isFullScreen {
             log.debug("Opened media is audio: auto-switching to music mode")
             player.enterMusicMode(automatically: true)
             return  // do not even try to go to full screen if already going to music mode

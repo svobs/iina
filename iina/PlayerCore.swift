@@ -2713,9 +2713,10 @@ class PlayerCore: NSObject {
     }
 
     /// Show default album art if loaded and vid is 0.
+    let isFileDone = info.isFileLoadedAndSized
     // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
     let showDefaultArt: Bool?
-    if info.isFileLoadedAndSized && (!isInMiniPlayer || windowController.miniPlayer.isVideoVisible) {
+    if isFileDone && (!isInMiniPlayer || windowController.miniPlayer.isVideoVisible || isShowVideoPendingInMiniPlayer) {
       showDefaultArt = info.shouldShowDefaultArt
     } else {
       showDefaultArt = nil  // don't change existing visibility
@@ -2783,16 +2784,16 @@ class PlayerCore: NSObject {
             // No tracks, so will not get a response from cycle command.
             // Just finish immediately and show default album art
             showVideoViewAfterVidChange()
+            return
           }
-
         }
-        log.verbose("Sending mpv request to cycle video track")
-        if isActive {
-          _ = mpv.command(.cycle, args: ["video"])
-        }
+        guard isActive else { return }
+        log.verbose("Sending mpv request to select video track 1")
+        setTrack(1, forType: .video, silent: true)
       }
     } else {  // disable
       // Change video track to None
+      guard isActive else { return }
       log.verbose("Sending request to mpv: set video track to 0")
       setTrack(0, forType: .video, silent: true)
     }
@@ -3569,14 +3570,14 @@ class PlayerCore: NSObject {
     // Look for players actively playing that are not in music mode and are not just playing audio.
     for player in playing {
       guard player.info.isPlaying,
-            player.info.currentMediaAudioStatus != .isAudio && !player.isInMiniPlayer else { continue }
+            !player.info.currentMediaAudioStatus.isAudio && !player.isInMiniPlayer else { continue }
       SleepPreventer.preventSleep()
       return
     }
     // Now look for players in music mode or playing audio.
     for player in playing {
       guard player.info.isPlaying,
-            player.info.currentMediaAudioStatus == .isAudio || player.isInMiniPlayer else { continue }
+            player.info.currentMediaAudioStatus.isAudio || player.isInMiniPlayer else { continue }
       // Either prevent the screen saver from activating or prevent system from sleeping depending
       // upon user setting.
       SleepPreventer.preventSleep(allowScreenSaver: Preference.bool(for: .allowScreenSaverForAudio))
@@ -3608,7 +3609,7 @@ class NowPlayingInfoManager {
     guard let activePlayer = PlayerCore.lastActive, !activePlayer.isStopping else { return }
 
     if withTitle {
-      if activePlayer.info.currentMediaAudioStatus == .isAudio {
+      if activePlayer.info.currentMediaAudioStatus.isAudio {
         info[MPMediaItemPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
         let (title, album, artist) = activePlayer.getMusicMetadata()
         info[MPMediaItemPropertyTitle] = title

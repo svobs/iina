@@ -41,12 +41,18 @@ extension PlayerWindowController {
   /// If current media is network resource, should be called immediately & show buffering msg.
   func applyVideoGeoAtFileOpen(_ ffMeta: FFVideoMeta? = nil, currentPlayback: Playback,
                                _ currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus) {
-    log.verbose("Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil")")
+    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
+    log.verbose("Calling applyVideoGeoTransform for opened file, vid=\(player.info.vid?.description ?? "nil"), audioStatus=\(currentMediaAudioStatus)")
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
         log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.state); aborting")
         return nil
+      }
+
+      if isInMiniPlayer, geo.musicMode.isVideoVisible, !player.info.isRestoring, currentMediaAudioStatus == .isAudioWithArtHidden {
+        log.verbose("[applyVideoGeoTransform] Player is in music mode + media is audio + has album art but is not showing it. Sending mpv request to select video track 1")
+        player.setTrack(1, forType: .video)
       }
 
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
@@ -72,9 +78,8 @@ extension PlayerWindowController {
       //    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
       let mpvVideoParamsAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
 
-      var userAspectLabelDerived = ""
-
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
+      var userAspectLabelDerived = ""
       if let mpvVideoAspectOverride = player.mpv.getString(MPVOption.Video.videoAspectOverride) {
         userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
         if userAspectLabelDerived != videoGeo.userAspectLabel {
@@ -94,7 +99,7 @@ extension PlayerWindowController {
 
         log.debug("[applyVideoGeo] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)")
         return videoGeo.substituting(ffMeta)
-      } else if currentMediaAudioStatus == .isAudio {
+      } else if currentMediaAudioStatus.isAudio {
         // Square album art
         log.debug("[applyVideoGeo] Using albumArtGeometry because current media is audio")
         return VideoGeometry.albumArtGeometry(log)
@@ -714,14 +719,13 @@ extension PlayerWindowController {
 
     // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
-      isAnimatingLayoutTransition = true  /// do not trigger resize listeners
-      if isTogglingVideoView, outputGeo.isVideoVisible {
+      isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
+      if isTogglingVideoView, outputGeo.isVideoVisible {  // Showing video
         // Show/hide art before showing videoView
         updateDefaultArtVisibility(to: showDefaultArt)
       }
 
       if isTogglingVideoView {
-        isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
         // Hide OSD during animation
         hideOSD(immediately: true)
         // Hide PiP overlay (if in PiP) during animation
@@ -743,9 +747,6 @@ extension PlayerWindowController {
     // TASK 2A (if toggling video view visibility)
     if isTogglingVideoView {
       tasks.append(IINAAnimation.Task{ [self] in
-        // Swap window buttons
-        updateMusicModeButtonsVisibility()
-
         /// Allow it to show again
         closeButtonView.isHidden = false
 
@@ -763,7 +764,7 @@ extension PlayerWindowController {
       // Make sure to update art after videoView has settled
       updateDefaultArtVisibility(to: showDefaultArt)
 
-      if isTogglingVideoView && !outputGeo.isVideoVisible {
+      if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
         if pipStatus == .notInPIP {
           player.setVideoTrackEnabled(false)
         }

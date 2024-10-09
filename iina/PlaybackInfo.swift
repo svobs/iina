@@ -211,8 +211,19 @@ class PlaybackInfo {
 
   enum CurrentMediaAudioStatus {
     case unknown
-    case isAudio
+    case isAudioWithoutArt
+    case isAudioWithArtHidden
+    case isAudioWithArtShown
     case notAudio
+
+    var isAudio: Bool {
+      switch self {
+      case .isAudioWithoutArt, .isAudioWithArtHidden, .isAudioWithArtShown:
+        return true
+      default:
+        return false
+      }
+    }
   }
 
   var currentMediaAudioStatus: CurrentMediaAudioStatus {
@@ -223,11 +234,15 @@ class PlaybackInfo {
       return .unknown
     }
     if noVideoTrack {
-      return .isAudio
+      return .isAudioWithoutArt
     }
     let allVideoTracksAreAlbumCover = !videoTracks.contains { !$0.isAlbumart }
     if allVideoTracksAreAlbumCover {
-      return .isAudio
+      if isVideoTrackSelected {
+        return .isAudioWithArtShown
+      } else {
+        return .isAudioWithArtHidden
+      }
     }
     return .notAudio
   }

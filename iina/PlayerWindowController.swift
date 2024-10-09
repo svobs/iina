@@ -956,7 +956,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // FIXME 2: fix open window with multiple players bug
     // FIXME 3: parent playlist
     // FIXME 4: play bar drawing
-    // FIXME 5: music mode album art cycle
+    // FIXME 6: PWinGeometry is 1px off
 
     // gesture recognizers
     rotationHandler.windowController = self
