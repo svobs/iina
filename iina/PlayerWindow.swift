@@ -24,10 +24,9 @@ class PlayerWindow: NSWindow {
    This function uses a `0` duration animation to effectively remove the implicit default animation.
    It will still animate if used inside an `NSAnimationContext` or `IINAAnimation.Task` with non-zero duration.
 
-   Note: if `animate` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
+   Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    playerWinController?.videoView.videoLayer.enterAsynchronousMode()
     useZeroDurationForNextResize = true
     playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
 

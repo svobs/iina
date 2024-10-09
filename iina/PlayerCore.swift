@@ -2169,6 +2169,7 @@ class PlayerCore: NSObject {
       playback = playbackFromPath
     }
     if let parentPlaylist = mpv.getString(MPVProperty.playlistPath) {
+      // TODO!
       playback.parentPlaylist = parentPlaylist
     }
 
@@ -2688,11 +2689,12 @@ class PlayerCore: NSObject {
     reloadQuickSettingsView()
   }
 
-  func vidChanged(silent: Bool = false) {
+  func vidChanged(silent: Bool = false, forceIfNoChange: Bool = false) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !info.isRestoring, !isStopping else { return }
     let vid = Int(mpv.getInt(MPVOption.TrackSelection.vid))
-    guard vid != info.vid else { return }
+    let didChange = vid != info.vid
+    guard didChange || forceIfNoChange else { return }
     guard info.isFileLoaded else {
       log.verbose("Video track changed to \(vid) but file is not loaded; ignoring")
       return
@@ -2704,13 +2706,16 @@ class PlayerCore: NSObject {
     }
 #endif
 
-    info.vid = vid
+    if didChange {
+      info.vid = vid
+      postNotification(.iinaVIDChanged)
+    }
 
     /// Show default album art if loaded and vid is 0:
     let showDefaultArt: Bool? = info.shouldShowDefaultArt
 
-    postNotification(.iinaVIDChanged)
-    if !silent && (!isInMiniPlayer || (!isShowVideoPendingInMiniPlayer && !windowController.miniPlayer.isVideoVisible)) {
+    // Show OSD in music mode (if configured) when actually changing tracks, but not while toggling videoView visibility
+    if !silent && (!isInMiniPlayer || (!isShowVideoPendingInMiniPlayer && windowController.miniPlayer.isVideoVisible)) {
       sendOSD(.track(info.currentTrack(.video) ?? .noneVideoTrack))
     }
 
@@ -2732,6 +2737,19 @@ class PlayerCore: NSObject {
     }
   }
 
+  /// In music mode, when toggling album art on, we wait for `vidChanged` to get called before showing the art.
+  /// But it will not be called if there is no change (i.e. there are no video tracks at all).
+  /// We can bridge the gap by setting a timer which will call `vidChanged`.
+  @objc func timeoutWaitingToShowVideoView() {
+    guard isShowVideoPendingInMiniPlayer else { return }
+    guard isInMiniPlayer && !windowController.miniPlayer.isVideoVisible else { return }
+
+    log.verbose("Timed out waiting to change tracks before showing album art. Will force show of default album art")
+    mpv.queue.async { [self] in
+      vidChanged(silent: true, forceIfNoChange: true)
+    }
+  }
+
   ///  `showMiniPlayerVideo` is only used if `enable` is true.
   ///  Does nothing if already in the target state
   func setVideoTrackEnabled(_ enable: Bool, showMiniPlayerVideo: Bool = false) {
@@ -2743,6 +2761,10 @@ class PlayerCore: NSObject {
       if !info.isVideoTrackSelected {
         if showMiniPlayerVideo {
           isShowVideoPendingInMiniPlayer = true
+
+          Timer.scheduledTimer(timeInterval: TimeInterval(0.2),
+                               target: self, selector: #selector(self.timeoutWaitingToShowVideoView),
+                               userInfo: nil, repeats: false)
         }
         log.verbose("Sending mpv request to cycle video track")
         if isActive {

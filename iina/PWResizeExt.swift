@@ -309,7 +309,8 @@ extension PlayerWindowController {
       log.verbose("[applyVideoGeo] Prev cached value of musicModeGeo: \(musicModeGeo)")
       let newMusicModeGeo = musicModeGeoForCurrentFrame(newVidGeo: newVidGeo)
       log.verbose("[applyVideoGeo Apply] Applying musicMode result: \(newMusicModeGeo)")
-      return buildApplyMusicModeGeoTasks(newMusicModeGeo, duration: duration, showDefaultArt: showDefaultArt)
+      return buildApplyMusicModeGeoTasks(from: musicModeGeo, to: newMusicModeGeo,
+                                         duration: duration, showDefaultArt: showDefaultArt)
     default:
       log.error("[applyVideoGeo Apply] INVALID MODE: \(newLayout.mode)")
       return []
@@ -440,10 +441,10 @@ extension PlayerWindowController {
       applyWindowGeoInAnimationPipeline(newGeometry, duration: duration)
     case .musicMode:
       /// In music mode, `viewportSize==videoSize` always. Will get `nil` here if video is not visible
-      guard let newMusicModeGeometry = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID)
-        .scaleViewport(to: desiredViewportSize) else { return }
-      log.verbose("Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeometry.windowFrame)")
-      applyMusicModeGeoInAnimationPipeline(newMusicModeGeometry)
+      let currentMusicModeGeo = musicModeGeoForCurrentFrame()
+      guard let newMusicModeGeo = currentMusicModeGeo.scaleViewport(to: desiredViewportSize) else { return }
+      log.verbose("Calling applyMusicModeGeo from resizeViewport, to: \(newMusicModeGeo.windowFrame)")
+      applyMusicModeGeoInAnimationPipeline(from: currentMusicModeGeo, to: newMusicModeGeo)
     default:
       return
     }
@@ -695,30 +696,89 @@ extension PlayerWindowController {
   }
 
   /// Same as `applyMusicModeGeo`, but enqueues inside an `IINAAnimation.Task` for a nice smooth animation
-  func applyMusicModeGeoInAnimationPipeline(_ geometry: MusicModeGeometry,
+  func applyMusicModeGeoInAnimationPipeline(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
                                             duration: CGFloat = IINAAnimation.DefaultDuration,
                                             setFrame: Bool = true, animate: Bool = true, updateCache: Bool = true,
                                             showDefaultArt: Bool? = nil) {
-    let tasks = buildApplyMusicModeGeoTasks(geometry, duration: duration, setFrame: setFrame,
+    let tasks = buildApplyMusicModeGeoTasks(from: inputGeo, to: outputGeo,
+                                            duration: duration, setFrame: setFrame,
                                             updateCache: updateCache, showDefaultArt: showDefaultArt)
     animationPipeline.submit(tasks)
   }
 
-  func buildApplyMusicModeGeoTasks(_ geometry: MusicModeGeometry,
+  func buildApplyMusicModeGeoTasks(from inputGeo: MusicModeGeometry, to outputGeo: MusicModeGeometry,
                                    duration: CGFloat = IINAAnimation.DefaultDuration,
                                    setFrame: Bool = true, updateCache: Bool = true,
                                    showDefaultArt: Bool? = nil) -> [IINAAnimation.Task] {
     var tasks: [IINAAnimation.Task] = []
+
+    let isTogglingVideoView = (inputGeo.isVideoVisible != outputGeo.isVideoVisible)
+
+    // TASK 1: Background prep
     tasks.append(.instantTask { [self] in
       isAnimatingLayoutTransition = true  /// do not trigger resize listeners
+      if outputGeo.isVideoVisible {
+        // Show art before showing videoView (if videoView already showing, don't care)
+        updateDefaultArtVisibility(to: showDefaultArt)
+      }
 
-      updateDefaultArtVisibility(to: showDefaultArt)
+      if isTogglingVideoView {
+        isAnimatingLayoutTransition = true  /// do not trigger `windowDidResize` if possible
+        // Hide OSD during animation
+        hideOSD(immediately: true)
+        // Hide PiP overlay (if in PiP) during animation
+        pipOverlayView.isHidden = true
+
+        /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
+        closeButtonView.isHidden = true
+
+        hideSeekTimeAndThumbnail()
+      }
       resetRotationPreview()
     })
+
+    // TASK 2: Apply animation
     tasks.append(IINAAnimation.Task(duration: duration, timing: .easeInEaseOut, { [self] in
-      applyMusicModeGeo(geometry)
+      applyMusicModeGeo(outputGeo)
     }))
+
+    // TASK 2A (if toggling video view visibility)
+    if isTogglingVideoView {
+      tasks.append(IINAAnimation.Task{ [self] in
+        // Swap window buttons
+        updateMusicModeButtonsVisibility()
+
+        /// Allow it to show again
+        closeButtonView.isHidden = false
+
+        showOrHidePipOverlayView()
+
+        // Need to force draw if window was restored while paused + video hidden
+        if outputGeo.isVideoVisible {
+          forceDraw()
+        }
+      })
+    }
+
+    // TASK 3: Background cleanup
     tasks.append(.instantTask { [self] in
+      if !outputGeo.isVideoVisible {
+        // Show art after hiding videoView (if videoView already hidden, don't care)
+        updateDefaultArtVisibility(to: showDefaultArt)
+      }
+
+      if isTogglingVideoView {
+        if !outputGeo.isVideoVisible && pipStatus == .notInPIP {
+          player.setVideoTrackEnabled(false)
+        }
+
+        /// If needing to deactivate this constraint, do it before the toggle animation, so that window doesn't jump.
+        /// (See note in `applyMusicModeGeo`)
+        if !outputGeo.isVideoVisible {
+          viewportBtmOffsetFromContentViewBtmConstraint.priority = .init(1)
+        }
+      }
+
       isAnimatingLayoutTransition = false
       updateUI()  /// see note about OSD in `buildApplyWindowGeoTasks`
     })
@@ -778,9 +838,9 @@ extension PlayerWindowController {
     /// unless we remove this constraint from the the window's `contentView`. For all other situations this constraint should be active.
     /// Need to execute this in its own task so that other animations are not affected.
     let shouldDisableConstraint = !geometry.isVideoVisible && geometry.isPlaylistVisible
-    animationPipeline.submitInstantTask({ [self] in
-      viewportBottomOffsetFromContentViewBottomConstraint.isActive = !shouldDisableConstraint
-    })
+    if !shouldDisableConstraint {
+      viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
+    }
 
     return geometry
   }

@@ -603,7 +603,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var topBarTrailingSpaceConstraint: NSLayoutConstraint!
 
   // - Bottom OSC constraints
-  @IBOutlet weak var viewportBottomOffsetFromContentViewBottomConstraint: NSLayoutConstraint!
+  @IBOutlet weak var viewportBtmOffsetFromContentViewBtmConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromTopOfBottomBarConstraint: NSLayoutConstraint!
   var viewportBtmOffsetFromBtmOfBottomBarConstraint: NSLayoutConstraint!
   // Needs to be changed to align with either sidepanel or leading edge of window:
@@ -1055,10 +1055,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           // Preemptively set window frames to prevent windows from "jumping" during restore
           if layoutSpec.mode == .musicMode {
             let geo = priorState.geoSet.musicMode.toPWinGeometry()
-            player.window.setFrameImmediately(geo, updateVideoView: true, notify: false)
+            player.window.setFrameImmediately(geo, notify: false)
           } else {
             let geo = priorState.geoSet.windowed
-            player.window.setFrameImmediately(geo, updateVideoView: true, notify: false)
+            player.window.setFrameImmediately(geo, notify: false)
           }
         }
 
@@ -2340,6 +2340,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func resizeSubviewsForWindowResize(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
+    videoView.videoLayer.enterAsynchronousMode()
+    
     if updateVideoView {
       videoView.apply(newGeometry)
     }

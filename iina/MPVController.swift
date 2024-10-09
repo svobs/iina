@@ -1158,7 +1158,7 @@ class MPVController: NSObject {
     let mpvVideoParamsAspect = getString(MPVProperty.videoParamsAspect)!
     // FIXME: add support for video-params/aspect-name, use it instead
 //    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
-    let mpvVideoAspectOverride = getDouble(MPVOption.Video.videoAspectOverride)
+//    let mpvVideoAspectOverride = getDouble(MPVOption.Video.videoAspectOverride)
 
     let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
     let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
