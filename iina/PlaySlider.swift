@@ -20,10 +20,6 @@ final class PlaySlider: ScrollableSlider {
   // Redrawing the slider bar is a very expensive operation, so do not redraw it if there is no noticeable change.
   static let minPixelChangeThreshold: CGFloat = 1.0
 
-  /// See `updateSensitivity`
-  var _sensitivity: Double = 0.0
-  override var sensitivity: Double { _sensitivity }
-
   /// Knob representing the A loop point for the mpv A-B loop feature.
   var abLoopA: PlaySliderLoopKnob { abLoopAKnob }
 
@@ -94,8 +90,8 @@ final class PlaySlider: ScrollableSlider {
 
   func updateSensitivity() {
     let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
-    _sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
-    Logger.log.verbose("Updated PlaySlider sensitivity to: \(_sensitivity)")
+    sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
+    Logger.log.verbose("Updated PlaySlider sensitivity to: \(sensitivity)")
   }
 
   func updateTo(percentage: Double) {
