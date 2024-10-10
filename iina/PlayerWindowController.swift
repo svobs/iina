@@ -3619,10 +3619,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // These are the 2 buttons (Close & Exit) which replace the 3 traffic light title bar buttons in music mode.
   // There are 2 variants because of different styling needs depending on whether videoView is visible
-  func updateMusicModeButtonsVisibility() {
+  func updateMusicModeButtonsVisibility(using geometry: MusicModeGeometry) {
     if isInMiniPlayer {
       // Show only in music mode when video is visible
-      let showCloseButtonOverVideo = miniPlayer.isVideoVisible
+      let showCloseButtonOverVideo = geometry.isVideoVisible
       closeButtonBackgroundViewVE.isHidden = !showCloseButtonOverVideo
 
       // Show only in music mode when video is hidden
@@ -3630,7 +3630,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       miniPlayer.loadIfNeeded()
       // Push the volume button to the right if the buttons on at the same vertical position
-      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(miniPlayer.isVideoVisible ? 12 : 24)
+      miniPlayer.volumeButtonLeadingConstraint.animateToConstant(showCloseButtonOverVideo ? 12 : 24)
     } else {
       closeButtonBackgroundViewVE.isHidden = true
       closeButtonBackgroundViewBox.isHidden = true

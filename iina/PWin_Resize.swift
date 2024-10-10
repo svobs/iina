@@ -788,7 +788,7 @@ extension PlayerWindowController {
     Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)
     Preference.set(geometry.isPlaylistVisible, for: .musicModeShowPlaylist)
 
-    updateMusicModeButtonsVisibility()
+    updateMusicModeButtonsVisibility(using: geometry)
 
     /// Try to detect & remove unnecessary constraint updates - `updateBottomBarHeight()` may cause animation glitches if called twice
     var hasChange: Bool = !geometry.windowFrame.equalTo(window!.frame)

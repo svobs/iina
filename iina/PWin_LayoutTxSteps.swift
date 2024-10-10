@@ -612,7 +612,7 @@ extension PlayerWindowController {
     }
 
     // Need to call this for initial layout also:
-    updateMusicModeButtonsVisibility()
+    updateMusicModeButtonsVisibility(using: musicModeGeo)
 
     if transition.isTogglingInteractiveMode {
       // Even if entering IM, may have a prev crop due to a bug elsewhere. Remove if found

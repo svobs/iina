@@ -428,7 +428,7 @@ class VideoView: NSView {
 
   // MARK: - Color
 
-  func setICCProfile(_ displayId: UInt32) {
+  private func setICCProfile(_ displayId: UInt32) {
     if !Preference.bool(for: .loadIccProfile) {
       hdrSubsystem.debug("Not using ICC due to user preference")
       player.mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
