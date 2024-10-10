@@ -1096,15 +1096,13 @@ class PlayerCore: NSObject {
     }
   }
 
-  func setVolume(_ volume: Double, constrain: Bool = true) {
+  func setVolume(_ volume: Double) {
     mpv.queue.async { [self] in
-      let maxVolume = Preference.integer(for: .maxVolume)
-      let constrainedVolume = volume.clamped(to: 0...Double(maxVolume))
-      let appliedVolume = constrain ? constrainedVolume : volume
-      info.volume = appliedVolume
+      let constrainedVolume = volume.clamped(to: 0...Preference.double(for: .maxVolume))
+      info.volume = constrainedVolume
       // Always show OSD to acknowledge input, even if volume did not change:
-      sendOSD(.volume(Int(appliedVolume)))
-      mpv.setDouble(MPVOption.Audio.volume, appliedVolume)
+      sendOSD(.volume(Int(constrainedVolume)))
+      mpv.setDouble(MPVOption.Audio.volume, constrainedVolume)
       // Save default for future players:
       Preference.set(constrainedVolume, for: .softVolume)
     }
