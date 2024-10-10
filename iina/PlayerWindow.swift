@@ -27,7 +27,6 @@ class PlayerWindow: NSWindow {
    Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    useZeroDurationForNextResize = true
     playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
@@ -36,6 +35,7 @@ class PlayerWindow: NSWindow {
     }
 
     log.verbose("[PWin.setFrame] notify=\(notify.yn) frame=\(geometry.windowFrame)")
+    useZeroDurationForNextResize = true
     setFrame(geometry.windowFrame, display: false, animate: notify)
     contentView?.needsDisplay = true  // set this or sometimes VideoView is not redrawn while paused
   }

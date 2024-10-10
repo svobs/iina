@@ -1230,7 +1230,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                                         bottom: viewportMargins.bottom + bottomHeightOutsideCropBox,
                                         leading: viewportMargins.leading + leadingWidthOutsideCropBox)
 
-    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)) → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
+    log.debug("[geo] Cropping from cropRect \(cropRect) x windowScale (\(scaleRatio)), windowSize=\(windowFrame.size), → newVideoSize:\(cropRectScaledToWindow.size), newVideoAspect:\(croppedVideoAspect), newViewportMargins:\(newViewportMargins)")
     let newFitOption = self.fitOption == .centerInside ? .stayInside : self.fitOption
     log.debug("[geo] Cropped to new cropLabel: \(newVidGeo.selectedCropLabel.quoted), screenID: \(screenID), fitOption: \(newFitOption)")
     return self.clone(fitOption: newFitOption, viewportMargins: newViewportMargins, video: newVidGeo)

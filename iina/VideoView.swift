@@ -167,12 +167,10 @@ class VideoView: NSView {
       } else {
         newAspect = existing.aspectRatio
       }
-      player.log.verbose("Replacing existing aspect constraint for videoView")
     } else {
       newCenterX = centerXAnchor.constraint(equalTo: superview.centerXAnchor)
       newCenterY = centerYAnchor.constraint(equalTo: superview.centerYAnchor)
       newAspect = widthAnchor.constraint(equalTo: heightAnchor, multiplier: aspectMultiplier, constant: 0)
-      player.log.verbose("Adding new aspect constraint for videoView")
     }
     newCenterX.priority = centerPriority
     newCenterY.priority = centerPriority
@@ -219,17 +217,33 @@ class VideoView: NSView {
       log.verbose("VideoView: currently in PiP; ignoring request to set viewportMargin constraints")
       return
     }
+
+    let margins: MarginQuad
+    let videoAspect: Double
+    let aspectPriority: NSLayoutConstraint.Priority
+    let eqPriority: NSLayoutConstraint.Priority
+
     if let geometry = geometry {
-      if log.isTraceEnabled {
-        log.verbose("VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)")
-      }
-      setFixedOffsetConstraints(margins: geometry.viewportMargins, videoAspect: geometry.videoAspect)
+      if log.isTraceEnabled { log.trace("VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)") }
+
+      margins = geometry.viewportMargins
+      videoAspect = geometry.videoAspect
+      eqPriority = NSLayoutConstraint.Priority(499)
+
     } else {
-      if log.isTraceEnabled {
-        log.verbose("VideoView: zeroing out viewportMargin constraints")
-      }
-      setFixedOffsetConstraints(margins: .zero)
+      log.trace("VideoView: zeroing out viewportMargin constraints")
+
+      margins = .zero
+      videoAspect = -1
+      eqPriority = NSLayoutConstraint.Priority(499)
     }
+
+    // Use only EQ. Remove all other constraints
+    rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
+                       aspectMultiplier: videoAspect,
+                       eqIsActive: true, eqPriority: eqPriority,
+                       centerIsActive: true, centerPriority: .defaultLow,
+                       aspectIsActive: videoAspect > 0.0, aspectPriority: NSLayoutConstraint.Priority(501))
   }
 
   // MARK: - Mouse events

@@ -567,8 +567,13 @@ extension PlayerWindowController {
 
   // MARK: - Apply Geometry
 
-  /// Use for resizing window. Not animated. Can be used in windowed or full screen modes. Can be used in music mode only if playlist is hidden.
-  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or moved
+  /// Use for actively resizing the window (i.e., not in response to WindowWillResize).
+  ///
+  /// Use with non-nil `newGeometry` for: (1) pinch-to-zoom, (2) resizing outside sidebars when the whole window needs to be resized or
+  /// moved.
+  /// Not animated.
+  /// Can be used in windowed or full screen modes.
+  /// Can be used in music mode only if playlist is hidden.
   func applyWindowResize(usingGeometry newGeometry: PWinGeometry? = nil) {
     guard let window else { return }
     videoView.videoLayer.enterAsynchronousMode()
@@ -589,25 +594,10 @@ extension PlayerWindowController {
         let geo = newGeometry ?? layout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID, video: geo.video)
 
         if isFullScreen {
-          // Keep video margins up to date in almost every case
-          videoView.apply(geo)
+          resizeSubviewsForWindowResize(using: geo)
         } else {
-          /// To avoid visual bugs, *ALWAYS* update videoView before updating window frame!
+          /// This will also update `videoView`
           player.window.setFrameImmediately(geo, notify: false)
-        }
-      }
-
-      if currentLayout.isMusicMode {
-        // Re-evaluate space requirements for labels. May need to start scrolling.
-        // Will also update saved state
-        miniPlayer.windowDidResize()
-      } else if currentLayout.isInteractiveMode {
-        // Update interactive mode selectable box size. Origin is relative to viewport origin
-        if let newGeometry {
-          let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-          cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-        } else {
-          cropSettingsView?.cropBoxView.resized(with: videoView.bounds)
         }
       }
 

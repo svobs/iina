@@ -2323,6 +2323,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       IINAAnimation.disableAnimation { [self] in
         videoView.apply(newGeometry)
 
+        if newGeometry.mode == .musicMode {
+          // Re-evaluate space requirements for labels. May need to start scrolling.
+          // Will also update saved state
+          miniPlayer.windowDidResize()
+        } else if newGeometry.mode.isInteractiveMode {
+          // Update interactive mode selectable box size. Origin is relative to viewport origin
+          let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
+          cropSettingsView?.cropBoxView.resized(with: newVideoRect)
+        }
+
         // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
         if osd.animationState == .shown {
           updateOSDTextSize(from: newGeometry)
@@ -2358,9 +2368,21 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       videoView.apply(newGeometry)
     }
 
-    if osd.animationState == .shown, player.info.isFileLoadedAndSized {
+    if newGeometry.mode == .musicMode {
+      // Re-evaluate space requirements for labels. May need to start scrolling.
+      // Will also update saved state
+      miniPlayer.windowDidResize()
+    } else if newGeometry.mode.isInteractiveMode {
+      // Update interactive mode selectable box size. Origin is relative to viewport origin
+      let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
+      cropSettingsView?.cropBoxView.resized(with: newVideoRect)
+    }
+
+    if osd.animationState == .shown {
       updateOSDTextSize(from: newGeometry)
-      setOSDViews()
+      if player.info.isFileLoadedAndSized {
+        setOSDViews()
+      }
     }
   }
 
@@ -2371,9 +2393,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Do not want to trigger this during layout transition. It will mess up the intended viewport size.
 //    guard !player.info.isRestoring, !isClosing, !isAnimatingLayoutTransition, !isMagnifying else { return }
 //    log.verbose("Win-DID-Resize mode=\(currentLayout.mode) frame=\(window?.frame.debugDescription ?? "nil")")
-
-//    applyWindowResize()
-//  }
 
   // MARK: - Window Delegate: window move, screen changes
 
@@ -2976,6 +2995,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       log.verbose("Entering interactive mode: \(mode)")
 
+      if videoGeo.codecRotation != 0 {
+        log.warn("FIXME: Video codec rotation is not yet supported in interactive mode! Any selection chosen will be completely wrong!")
+      }
+
       // TODO: use key binding interceptor to support ESC and ENTER keys for interactive mode
 
       let newVideoGeo: VideoGeometry
@@ -3118,7 +3141,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       /// Must update `windowedModeGeo` outside of animation task!
       // this works for full screen modes too
       assert(currentLayout.isInteractiveMode, "CurrentLayout is not in interactive mode: \(currentLayout)")
-      let currentIMGeo = currentLayout.buildGeometry(windowFrame: windowedModeGeo.windowFrame, screenID: bestScreen.screenID, video: geo.video)
+      let winGeoUpdated = windowedGeoForCurrentFrame()  // not even needed if in full screen
+      let currentIMGeo = currentLayout.buildGeometry(windowFrame: winGeoUpdated.windowFrame,
+                                                     screenID: winGeoUpdated.screenID,
+                                                     video: geo.video)
       let newIMGeo = currentIMGeo.cropVideo(using: newVidGeo)
       if currentLayout.mode == .windowedInteractive {
         geoSet = buildGeoSet(windowed: newIMGeo)
