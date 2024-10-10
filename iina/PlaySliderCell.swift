@@ -246,7 +246,7 @@ class PlaySliderCell: NSSliderCell {
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
     guard let wc = playerCore.windowController else { return }
     wc.isDraggingPlaySlider = false
-    if isPausedBeforeSeeking {
+    if !isPausedBeforeSeeking {
       playerCore.resume()
     }
   }
