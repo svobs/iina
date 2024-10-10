@@ -32,22 +32,26 @@ class ScrollableSlider: NSSlider {
       delta *= -1
     }
 
-    let increment = range * delta * sensitivity / 100
-    var value = self.doubleValue + increment
+    let increment = range * delta * sensitivity / 100.0
+    // There can be a huge number of requests which don't change the existing value.
+    // Discard them for a large increase in performance:
+    guard increment != 0.0 else { return }
+
+    var newValue = self.doubleValue + increment
 
     // Wrap around if slider is circular
     if self.sliderType == .circular {
       let minValue = Double(self.minValue)
       let maxValue = Double(self.maxValue)
 
-      if value < minValue {
-        value = maxValue - abs(increment)
-      } else if value > maxValue {
-        value = minValue + abs(increment)
+      if newValue < minValue {
+        newValue = maxValue - abs(increment)
+      } else if newValue > maxValue {
+        newValue = minValue + abs(increment)
       }
     }
 
-    self.doubleValue = value
+    self.doubleValue = newValue
     self.sendAction(self.action, to: self.target)
   }
 

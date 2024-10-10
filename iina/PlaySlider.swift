@@ -114,6 +114,7 @@ final class PlaySlider: ScrollableSlider {
     guard let wc = player.windowController else { return }
 
     if isTrackpadBegan {
+      player.log.verbose("PlaySlider scrollWheel seek began")
       // pause video when seek begins
       if player.info.isPlaying {
         player.pause()
@@ -122,15 +123,19 @@ final class PlaySlider: ScrollableSlider {
     }
 
     guard !isTrackpadEnd else {
+      player.log.verbose("PlaySlider scrollWheel seek ended")
       // only resume playback when it was playing before seeking
       if wc.wasPlayingBeforeSeeking {
         player.resume()
         wc.wasPlayingBeforeSeeking = false
       }
+
       return
     }
 
+    // Report latest scroll time:
     wc.scrollWheelSeeking()
+    /// see `PlayerWindowController.playSliderDidChange`
     super.scrollWheel(with: event)
   }
 }

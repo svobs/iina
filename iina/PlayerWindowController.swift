@@ -1821,14 +1821,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   override func mouseMoved(with event: NSEvent) {
-    /// When using multiple monitors, `mouseExited` may not get fired when cursor moves directly from OSC to other screen.
-    /// In this case, thumbnail & seek time can get stuck in the visible state. We can make this less annoying by hiding when other windows'
-    /// events fire, like here...
-    for playerWinCon in NSApplication.playerWindows {
-      if playerWinCon != self {
-        playerWinCon.hideSeekTimeAndThumbnail()
-      }
-    }
     guard !isInInteractiveMode else { return }
 
     /// Set or unset the cursor to `resizeLeftRight` if able to resize the sidebar
@@ -1848,8 +1840,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
       refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
-    } else {
-      hideSeekTimeAndThumbnail()
     }
 
     if isMouseInWindow {
@@ -3182,13 +3172,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
-    guard !currentLayout.isInteractiveMode else { return }
+  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
     let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !isOSCHidden, !isOccludedByOSD, !isAnimatingLayoutTransition,
+    guard !isOSCHidden && !isOccludedByOSD && !isAnimatingLayoutTransition && !currentLayout.isInteractiveMode else {
+      return false
+    }
+    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
+  }
+
+  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
+    guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
             let duration = player.info.playbackDurationSec else {
-      hideSeekTimeAndThumbnail()
       return
     }
 
@@ -3217,10 +3212,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    if !Preference.bool(for: .showThumbnailDuringSliderSeek) && (isInScrollWheelSeek || isDraggingPlaySlider) {
-      thumbnailPeekView.isHidden = true
-      return
-    }
     thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
                                        currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
                                        isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)

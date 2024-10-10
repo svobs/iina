@@ -2553,11 +2553,8 @@ class PlayerCore: NSObject {
   }
 
   func refreshEdrMode() {
-    guard windowController.loaded else { return }
     DispatchQueue.main.async { [self] in
-      // No need to refresh if playback is being stopped. Must not attempt to refresh if mpv is
-      // terminating as accessing mpv once shutdown has been initiated can trigger a crash.
-      guard !isStopping else { return }
+      guard isActive else { return }
       videoView.refreshEdrMode()
     }
   }

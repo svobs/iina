@@ -109,6 +109,7 @@ class ThumbnailPeekView: NSView {
 
     guard thumbWidth > 0, thumbHeight > 0 else {
       log.error("Cannot display thumbnail: thumbnail width or height is not positive!")
+      isHidden = true
       return
     }
     var thumbAspect = thumbWidth / thumbHeight
@@ -238,6 +239,7 @@ class ThumbnailPeekView: NSView {
     if log.isTraceEnabled {
       log.trace("Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(frame.size)")
     }
+    alphaValue = 1.0
     isHidden = false
   }
 }

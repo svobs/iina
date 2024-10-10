@@ -231,6 +231,7 @@ class PlaySliderCell: NSSliderCell {
   // MARK:- Tracking the Mouse
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
+    playerCore.log.verbose("PlaySlider drag-to-seek began")
     playerCore.windowController.isDraggingPlaySlider = true
     isPausedBeforeSeeking = playerCore.info.isPaused
     let result = super.startTracking(at: startPoint, in: controlView)
@@ -241,10 +242,12 @@ class PlaySliderCell: NSSliderCell {
   }
 
   override func stopTracking(last lastPoint: NSPoint, current stopPoint: NSPoint, in controlView: NSView, mouseIsUp flag: Bool) {
-    if !isPausedBeforeSeeking {
+    playerCore.log.verbose("PlaySlider drag-to-seek ended")
+    super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
+    guard let wc = playerCore.windowController else { return }
+    wc.isDraggingPlaySlider = false
+    if isPausedBeforeSeeking {
       playerCore.resume()
     }
-    super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
-    playerCore.windowController.isDraggingPlaySlider = false
   }
 }
