@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -30,7 +30,7 @@
             <point key="canvasLocation" x="218" y="203.5"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="pxc-7C-SGP"/>
-        <customView id="gZf-gF-XoY">
+        <customView id="gZf-gF-XoY" userLabel="Video Section View">
             <rect key="frame" x="0.0" y="0.0" width="444" height="363"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
@@ -83,7 +83,7 @@
                     <rect key="frame" x="243" y="300" width="127" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Disabled" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="rFu-rL-EJC" id="n21-ZO-Bva">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="MDO-ug-KAV">
                             <items>
                                 <menuItem title="Disabled" state="on" id="rFu-rL-EJC"/>
@@ -212,6 +212,7 @@
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
+                        <action selector="toneMappingTargetPeakAction:" target="-2" id="tkO-UP-e0O"/>
                         <binding destination="pxc-7C-SGP" name="enabled" keyPath="values.enableToneMapping" id="mbf-5t-pSs"/>
                         <binding destination="pxc-7C-SGP" name="value" keyPath="values.toneMappingTargetPeak" id="p2I-ha-v97">
                             <dictionary key="options">
@@ -259,7 +260,7 @@
                     <rect key="frame" x="208" y="2" width="127" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="auto" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="uey-Ao-wwZ" id="Z8Y-Nt-nBs">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="q7F-zj-h8e">
                             <items>
                                 <menuItem title="auto" state="on" id="uey-Ao-wwZ"/>
@@ -360,7 +361,7 @@
             </constraints>
             <point key="canvasLocation" x="783" y="560"/>
         </customView>
-        <customView id="bsP-Kc-xXR">
+        <customView id="bsP-Kc-xXR" userLabel="Audio Section View">
             <rect key="frame" x="0.0" y="0.0" width="480" height="192"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
@@ -536,7 +537,7 @@
                     <rect key="frame" x="266" y="33" width="76" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Item 1" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="iQf-Gb-IuO" id="Eau-zf-my0">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="Vgx-Qo-7h4">
                             <items>
                                 <menuItem title="Item 1" state="on" id="iQf-Gb-IuO"/>
@@ -615,7 +616,7 @@
             </constraints>
             <point key="canvasLocation" x="792" y="75"/>
         </customView>
-        <customView id="co0-g1-6K5">
+        <customView id="co0-g1-6K5" userLabel="ReplayGain View">
             <rect key="frame" x="0.0" y="0.0" width="444" height="206"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
@@ -639,7 +640,7 @@
                     <rect key="frame" x="228" y="176" width="128" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="No adjustment" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="k7b-6o-lCK" id="7sA-xV-Xjo">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="wX9-Gf-TIU">
                             <items>
                                 <menuItem title="No adjustment" state="on" id="k7b-6o-lCK" userLabel="No adjustment"/>
@@ -776,7 +777,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Hfe-b5-JXH">
-                    <rect key="frame" x="118" y="11" width="255" height="14"/>
+                    <rect key="frame" x="118" y="11" width="252" height="14"/>
                     <textFieldCell key="cell" controlSize="small" sendsActionOnEndEditing="YES" title="Gain to apply if the file has no ReplayGain tags." id="m2n-yd-a4n">
                         <font key="font" metaFont="label" size="11"/>
                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>

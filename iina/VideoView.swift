@@ -588,15 +588,12 @@ extension VideoView {
 
     guard player.info.hdrEnabled else { return nil }
 
-    if videoLayer.colorspace?.name == name {
-      hdrSubsystem.debug("HDR mode already enabled, skipping")
-      return true
+    hdrSubsystem.debug("Using HDR color space instead of ICC profile")
+
+    if videoLayer.colorspace?.name != name {
+      videoLayer.colorspace = CGColorSpace(name: name!)
     }
 
-    hdrSubsystem.debug("Will activate HDR color space instead of using ICC profile")
-
-    videoLayer.wantsExtendedDynamicRangeContent = true
-    videoLayer.colorspace = CGColorSpace(name: name!)
     mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
     mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
     // PQ videos will be display as it was, HLG videos will be converted to PQ

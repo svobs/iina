@@ -360,6 +360,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   static private let observedPrefKeys: [Preference.Key] = [
     .enableAdvancedSettings,
+    .enableToneMapping,
+    .toneMappingTargetPeak,
+    .loadIccProfile,
+    .toneMappingAlgorithm,
     .keepOpenOnFileEnd,
     .playlistAutoPlayNext,
     .themeMaterial,
@@ -431,6 +435,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
       })
+    case PK.enableToneMapping.rawValue,
+      PK.toneMappingTargetPeak.rawValue,
+      PK.loadIccProfile.rawValue,
+      PK.toneMappingAlgorithm.rawValue:
+      videoView.refreshEdrMode()
     case PK.themeMaterial.rawValue:
       applyThemeMaterial()
     case PK.playerWindowOpacity.rawValue:
@@ -1722,7 +1731,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
-    // TODO: tweak scroll so it doesn't get tripped so easily
 
     guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
                                          titleBarView, subPopoverView]) else { return }
