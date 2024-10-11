@@ -1488,18 +1488,28 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func restartHideCursorTimer() {
-    if let timer = hideCursorTimer {
-      timer.invalidate()
-    }
+    hideCursorTimer?.invalidate()
     hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
   }
 
+  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
+  /// bounds of the window's real estate.
   @objc private func hideCursor() {
-    guard !currentLayout.isInteractiveMode, !currentLayout.isMusicMode else { return }
-    if log.isTraceEnabled {
-      log.verbose("Hiding cursor")
-    }
+    hideCursorTimer?.invalidate()
     hideCursorTimer = nil
+    guard let window else { return }
+
+    switch currentLayout.mode {
+    case .windowed:
+      let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
+      guard isCursorInWindow else { return }
+    case .fullScreen:
+      let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
+      guard isCursorInScreen else { return }
+    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+      return
+    }
+    log.verbose("Hiding cursor")
     NSCursor.setHiddenUntilMouseMoves(true)
   }
 
@@ -1840,21 +1850,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
     }
 
-    if isMouseInWindow {
-      let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
-      let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableTopBarAnimationState == .hidden
-      // Check whether mouse is in OSC
-      let shouldRestartFadeTimer = !isMouseEvent(event, inAnyOf: [currentControlBar, titleBarView])
-      showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
-    }
+    let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
+    let forceShowTopBar = isTopBarHoverEnabled && isMouseInTopBarArea(event) && fadeableTopBarAnimationState == .hidden
+    // Check whether mouse is in OSC
+    let shouldRestartFadeTimer = !isMouseEvent(event, inAnyOf: [currentControlBar, titleBarView])
+    showFadeableViews(thenRestartFadeTimer: shouldRestartFadeTimer, duration: 0, forceShowTopBar: forceShowTopBar)
 
-    if isMouseInWindow || isFullScreen {
-      // Always hide after timeout even if OSD fade time is longer
-      restartHideCursorTimer()
-    } else {
-      hideCursorTimer?.invalidate()
-      hideCursorTimer = nil
-    }
+    // Always hide after timeout even if OSD fade time is longer
+    restartHideCursorTimer()
   }
 
   // assumes mouse is in window
@@ -2804,7 +2807,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // don't hide UI when dragging control bar
     if controlBarFloating.isDragging { return }
     if hideFadeableViews() {
-      NSCursor.setHiddenUntilMouseMoves(true)
+      hideCursor()
     }
   }
 
@@ -3173,7 +3176,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return tasks
   }
 
-  // MARK: - UI: Thumbnail Preview
+  // MARK: - UI: Seek Time & Thumbnail Preview
 
   func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
