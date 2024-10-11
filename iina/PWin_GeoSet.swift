@@ -39,10 +39,11 @@ extension PlayerWindowController {
       log.debug("Not executing in main queue; will use cached value for window frame & screenID instead of getting fresh data")
       return (nil, nil)
     }
+    let currentPlayback = player.info.currentPlayback
     // Need to check state of current playback to avoid race conditions
     if let window, window.isOpen,
        player.state.isAtLeast(.started),
-       let currentPlayback = player.info.currentPlayback, currentPlayback.state.isAtLeast(.loadedAndSized) {
+       let currentPlayback, currentPlayback.state.isAtLeast(.loaded) {
       return (window.frame, bestScreen.screenID)
     } else {
       return (nil, nil)
