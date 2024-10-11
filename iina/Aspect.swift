@@ -47,9 +47,21 @@ class Aspect: NSObject {
       }
     } else {
       aspectLabel = AppData.defaultAspectIdentifier
-      // -1, default, or unrecognized
+      // -1, Default, "no", or unrecognized
+      // (do not allow "no")
     }
     return aspectLabel
+  }
+
+  /// See: https://mpv.io/manual/stable/#options-video-aspect-override
+  /// First use: `let aspectLabel = bestLabelFor(aspectString)`
+  static func mpvVideoAspectOverride(fromAspectLabel aspectLabel: String) -> String {
+    switch aspectLabel {
+    case AppData.defaultAspectIdentifier:
+      return "-1"
+    default:
+      return aspectLabel
+    }
   }
 
   private var size: NSSize!

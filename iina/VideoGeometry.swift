@@ -185,6 +185,9 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// This is a string so that it can be used to identify the currently selected aspect in the Video menu & in the Video Settings
   /// sidebar's segmented control. It ideally should be in the format `"W:H"` to match the UI and avoid number rounding issues,
   /// but this is also allowed to contain a decimal number (only the first 2 digits of its decimal will be read, however).
+  ///
+  /// This roughly corresponds to mpv's `--video-aspect-override` option. But does not allow values of `0` or `no` to
+  /// use square pixels.
   let userAspectLabel: String
 
   // TODO: remove this field. It's not needed

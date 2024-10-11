@@ -95,11 +95,14 @@ extension PlayerWindowController {
       if initialLayout.mode == .windowed {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
-        PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame, screenID: bestScreen.screenID,
+        PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame,
+                                                                                       screenID: bestScreen.screenID,
                                                                                        video: newVidGeo)
       } else if initialLayout.mode == .musicMode {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
-        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame, screenID: bestScreen.screenID, video: newVidGeo)
+        PlayerWindowController.musicModeGeoLastClosed = musicModeGeo.clone(windowFrame: window.frame,
+                                                                           screenID: bestScreen.screenID,
+                                                                           video: newVidGeo)
       }
       // No additional layout needed
       tasks = []
@@ -275,7 +278,7 @@ extension PlayerWindowController {
       player.overrideAutoMusicMode = true
     }
 
-    // Clean up if serious errors found
+    // Clean up windowedModeGeo if serious errors found with it
     let priorWindowedModeGeo = priorState.geoSet.windowed
     if !priorWindowedModeGeo.mode.isWindowed || priorWindowedModeGeo.fitOption.isFullScreen {
       log.error("While transitioning to initial layout: windowedModeGeo from prior state has invalid mode (\(priorWindowedModeGeo.mode)) or fitOption (\(priorWindowedModeGeo.fitOption)). Will generate a fresh windowedModeGeo from saved layoutSpec and last closed window instead")
@@ -285,7 +288,7 @@ extension PlayerWindowController {
         windowed = initialLayout.convertWindowedModeGeometry(from: lastClosedGeo, video: priorState.geoSet.video,
                                                              keepFullScreenDimensions: false)
       } else {
-        windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen)
+        windowed = initialLayout.buildDefaultInitialGeometry(screen: bestScreen, video: priorState.geoSet.video)
       }
       return priorState.geoSet.clone(windowed: windowed)
     }

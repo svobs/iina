@@ -1263,7 +1263,7 @@ class PlayerCore: NSObject {
 
       // Send update to mpv
       mpv.queue.async { [self] in
-        let mpvValue = aspectLabel == AppData.defaultAspectIdentifier ? "no" : aspectLabel
+        let mpvValue = Aspect.mpvVideoAspectOverride(fromAspectLabel: aspectLabel)
         log.verbose("Setting mpv video-aspect-override to: \(mpvValue.quoted)")
         mpv.setString(MPVOption.Video.videoAspectOverride, mpvValue)
       }

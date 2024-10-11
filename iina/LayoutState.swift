@@ -644,11 +644,11 @@ class LayoutState {
   }
 
   /// Only for windowed modes!
-  func buildDefaultInitialGeometry(screen: NSScreen) -> PWinGeometry {
-    let defaultVideoGeo = VideoGeometry.defaultGeometry()
-    let videoSize = defaultVideoGeo.videoSizeRaw
+  func buildDefaultInitialGeometry(screen: NSScreen, video: VideoGeometry? = nil) -> PWinGeometry {
+    let videoGeo = video ?? VideoGeometry.defaultGeometry()
+    let videoSize = videoGeo.videoSizeRaw
     let windowFrame = NSRect(origin: CGPoint.zero, size: videoSize)
-    let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: defaultVideoGeo)
+    let geo = buildGeometry(windowFrame: windowFrame, screenID: screen.screenID, video: videoGeo)
     return geo.refit(.centerInside)
   }
 
