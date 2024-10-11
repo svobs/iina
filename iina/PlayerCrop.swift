@@ -60,7 +60,7 @@ extension PlayerCore {
     }
 
     mpv.queue.async { [self] in
-      windowController.applyVideoGeoTransform({ [self] videoGeo in
+      windowController.applyVideoGeoTransform("setCrop", { [self] videoGeo in
         guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
         log.verbose("Changing videoGeo selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")
@@ -96,7 +96,7 @@ extension PlayerCore {
       return
     }
 
-    windowController.applyVideoGeoTransform({ [self] videoGeo in
+    windowController.applyVideoGeoTransform("removeCrop", { [self] videoGeo in
       guard let cropFilter = videoGeo.cropFilter else { return nil }
       guard videoGeo.selectedCropLabel != AppData.noneCropIdentifier else { return nil }
 
@@ -115,7 +115,7 @@ extension PlayerCore {
   func updateSelectedCrop(to newCropLabel: String) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.applyVideoGeoTransform({ [self] videoGeo in
+    windowController.applyVideoGeoTransform("updateCrop", { [self] videoGeo in
       guard videoGeo.selectedCropLabel != newCropLabel else { return nil }
 
       log.verbose("[applyVideoGeo:transform]: changing selectedCropLabel \(videoGeo.selectedCropLabel.quoted) → \(newCropLabel.quoted)")

@@ -121,11 +121,12 @@ extension PlayerWindowController {
       updateCustomBorderBoxAndWindowOpacity()
     }
 
-    applyVideoGeoTransform(transform, fileJustOpened: true, then: doAfter)
+    applyVideoGeoTransform("fileLoaded", transform, fileJustOpened: true, then: doAfter)
   }
 
   /// Adjust window, viewport, and videoView sizes when `VideoGeometry` has changes.
-  func applyVideoGeoTransform(_ videoTransform: @escaping VideoGeometry.Transform,
+  func applyVideoGeoTransform(_ transformName: String,
+                              _ videoTransform: @escaping VideoGeometry.Transform,
                               fileJustOpened: Bool = false,
                               then doAfter: (() -> Void)? = nil) {
     assert(DispatchQueue.isExecutingIn(player.mpv.queue))
@@ -148,7 +149,7 @@ extension PlayerWindowController {
     }
 
     guard let currentPlayback = player.info.currentPlayback else {
-      log.verbose("[applyVideoGeo] Aborting: currentPlayback is nil")
+      log.verbose("[applyVideoGeo] Aborting \(transformName.quoted): currentPlayback is nil")
       aborted = true
       return
     }

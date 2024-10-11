@@ -1216,9 +1216,9 @@ class PlayerCore: NSObject {
   func userRotationDidChange(to userRotation: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
 
-    windowController.applyVideoGeoTransform({ [self] videoGeo in
+    windowController.applyVideoGeoTransform("userRotation", { [self] videoGeo in
       guard userRotation != videoGeo.userRotation else { return nil }
-      log.verbose("[applyVideoGeo:transform] Applying userRotation: \(userRotation)")
+      log.verbose("[applyVideoGeo] Applying userRotation: \(userRotation)")
       // Update window geometry
       sendOSD(.rotation(userRotation))
       return videoGeo.clone(userRotation: userRotation)
@@ -1258,7 +1258,7 @@ class PlayerCore: NSObject {
 
     let aspectLabel: String = Aspect.bestLabelFor(aspectString)
 
-    windowController.applyVideoGeoTransform({ [self] videoGeo in
+    windowController.applyVideoGeoTransform("aspectOverride", { [self] videoGeo in
       guard videoGeo.userAspectLabel != aspectLabel else { return nil }
 
       // Send update to mpv
