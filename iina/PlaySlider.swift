@@ -111,6 +111,7 @@ final class PlaySlider: ScrollableSlider {
 
     if isTrackpadBegan {
       player.log.verbose("PlaySlider scrollWheel seek began")
+//      wc.hideCursor()
       // pause video when seek begins
       if player.info.isPlaying {
         player.pause()

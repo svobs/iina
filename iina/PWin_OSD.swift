@@ -428,21 +428,12 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
     }
 
-    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-    let shouldHideSeekTimeAndThumbnail = !shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow)
-
     IINAAnimation.runAsync(IINAAnimation.Task(duration: immediately ? 0 : IINAAnimation.OSDAnimationDuration, { [self] in
-      if shouldHideSeekTimeAndThumbnail {
-        thumbnailPeekView.alphaValue = 0
-      }
       osdVisualEffectView.alphaValue = 0
 
     }), then: { [self] in
       if osd.animationState == .willHide {
         osd.animationState = .hidden
-        if shouldHideSeekTimeAndThumbnail {
-          hideSeekTimeAndThumbnail()
-        }
         osdVisualEffectView.isHidden = true
         osdVStackView.views(in: .bottom).forEach { self.osdVStackView.removeView($0) }
       }

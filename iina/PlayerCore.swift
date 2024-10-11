@@ -2556,6 +2556,9 @@ class PlayerCore: NSObject {
       if RemoteCommandController.useSystemMediaControl {
         NowPlayingInfoManager.updateInfo()
       }
+
+      // End of seeking? Set short timer to hide seek time & thumbnail
+      windowController.resetSeekTimeAndThumbnailTimer()
     }
 
     saveState()

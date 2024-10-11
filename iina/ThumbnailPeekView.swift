@@ -93,12 +93,12 @@ class ThumbnailPeekView: NSView {
 
   func displayThumbnail(forTime previewTimeSec: Double, originalPosX: CGFloat, _ player: PlayerCore,
                         _ currentLayout: LayoutState, currentControlBar: NSView,
-                        _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) {
+                        _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) -> Bool {
 
     guard let thumbnails = player.info.currentPlayback?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTimeSec) else {
       isHidden = true
-      return
+      return false
     }
 
     let log = player.log
@@ -110,7 +110,7 @@ class ThumbnailPeekView: NSView {
     guard thumbWidth > 0, thumbHeight > 0 else {
       log.error("Cannot display thumbnail: thumbnail width or height is not positive!")
       isHidden = true
-      return
+      return false
     }
     var thumbAspect = thumbWidth / thumbHeight
 
@@ -200,7 +200,7 @@ class ThumbnailPeekView: NSView {
           thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
       log.verbose("Not enough space to display thumbnail")
       isHidden = true
-      return
+      return false
     }
 
     // Scaling is a potentially expensive operation, so reuse the last image if no change is needed
@@ -241,5 +241,6 @@ class ThumbnailPeekView: NSView {
     }
     alphaValue = 1.0
     isHidden = false
+    return true
   }
 }

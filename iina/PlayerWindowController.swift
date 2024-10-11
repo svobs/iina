@@ -774,6 +774,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var isDraggingPlaySlider = false
 
+  var seekTimeAndThumbnailAnimationState: UIAnimationState = .shown
+  /** For auto hiding UI after a timeout. */
+  private var hideSeekTimeAndThumbnailTimer: Timer?
+
   // Scroll direction
 
   /// The direction of current scrolling event.
@@ -1848,6 +1852,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
       refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+    } else {
+      hideSeekTimeAndThumbnail(animated: false)
     }
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover
@@ -2822,16 +2828,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     var tasks: [IINAAnimation.Task] = []
 
-    tasks.append(IINAAnimation.Task{ [self] in
+    // Seek time & thumbnail can only be shown if the OSC is visible.
+    // Need to hide them because the OSC is being hidden:
+    let mustHideSeekTimeAndThumbnail = !currentLayout.hasPermanentOSC
+    if mustHideSeekTimeAndThumbnail {
+      hideSeekTimeAndThumbnailTimer?.invalidate()
+    }
+
+    tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
       // Don't hide overlays when in PIP or when they are not actually shown
       destroyFadeTimer()
       fadeableViewsAnimationState = .willHide
       fadeableTopBarAnimationState = .willHide
       player.refreshSyncUITimer(logMsg: "Hiding fadeable views ")
-      if !currentLayout.hasPermanentOSC {
-        // OSC is being hidden: hide thumbnail
-        hideSeekTimeAndThumbnail()
-      }
 
       for v in fadeableViews {
         v.animator().alphaValue = 0
@@ -2850,6 +2859,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             button.alphaValue = 0
           }
         }
+      }
+
+      if mustHideSeekTimeAndThumbnail {
+        seekTimeAndThumbnailAnimationState = .willHide
+        thumbnailPeekView.animator().alphaValue = 0
+        timePositionHoverLabel.isHidden = true
       }
     })
 
@@ -2872,6 +2887,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         } else {
           hideBuiltInTitleBarViews(setAlpha: false)
         }
+      }
+
+      if mustHideSeekTimeAndThumbnail, seekTimeAndThumbnailAnimationState == .willHide {
+        seekTimeAndThumbnailAnimationState = .hidden
+        thumbnailPeekView.isHidden = true
+        timePositionHoverLabel.isHidden = true
       }
     })
 
@@ -3179,9 +3200,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - UI: Seek Time & Thumbnail Preview
 
   func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
-    let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
     let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !isOSCHidden && !isOccludedByOSD && !isAnimatingLayoutTransition && !currentLayout.isInteractiveMode else {
+    guard !player.disableUI && !isOSCHidden && !osd.isShowingPersistentOSD && !isAnimatingLayoutTransition
+            && !currentLayout.isInteractiveMode else {
       return false
     }
     return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
@@ -3230,14 +3251,59 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
-                                       currentControlBar: currentControlBar, geo.video, viewportSize: viewportView.frame.size,
-                                       isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+    let didHide = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
+                                                     currentControlBar: currentControlBar, geo.video,
+                                                     viewportSize: viewportView.frame.size,
+                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+    guard didHide else { return }
+    seekTimeAndThumbnailAnimationState = .shown
   }
 
-  func hideSeekTimeAndThumbnail() {
-    thumbnailPeekView.isHidden = true
-    timePositionHoverLabel.isHidden = true
+  func resetSeekTimeAndThumbnailTimer() {
+    guard seekTimeAndThumbnailAnimationState == .shown else { return }
+    hideSeekTimeAndThumbnailTimer?.invalidate()
+    hideSeekTimeAndThumbnailTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.seekTimeAndThumbnailHideTimeout,
+                                                         target: self, selector: #selector(self.seekTimeAndThumbnailTimeout),
+                                                         userInfo: nil, repeats: false)
+  }
+
+  @objc private func seekTimeAndThumbnailTimeout() {
+
+    let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
+    guard !shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow) else {
+      resetSeekTimeAndThumbnailTimer()
+      return
+    }
+    hideSeekTimeAndThumbnail(animated: true)
+  }
+
+  @objc func hideSeekTimeAndThumbnail(animated: Bool = false) {
+    hideSeekTimeAndThumbnailTimer?.invalidate()
+
+    if animated {
+      var tasks: [IINAAnimation.Task] = []
+
+      tasks.append(IINAAnimation.Task(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
+        // Don't hide overlays when in PIP or when they are not actually shown
+        seekTimeAndThumbnailAnimationState = .willHide
+        thumbnailPeekView.animator().alphaValue = 0
+        timePositionHoverLabel.isHidden = true
+      })
+
+      tasks.append(IINAAnimation.Task(duration: 0) { [self] in
+        // if no interrupt then hide animation
+        guard seekTimeAndThumbnailAnimationState == .willHide else { return }
+        seekTimeAndThumbnailAnimationState = .hidden
+        thumbnailPeekView.isHidden = true
+        timePositionHoverLabel.isHidden = true
+      })
+
+      animationPipeline.submit(tasks)
+    } else {
+      thumbnailPeekView.isHidden = true
+      timePositionHoverLabel.isHidden = true
+      seekTimeAndThumbnailAnimationState = .hidden
+    }
   }
 
   // MARK: - UI: Other
