@@ -111,7 +111,7 @@ struct PlayerSaveState: CustomStringConvertible {
   /// Cached values parsed from `properties`
 
   /// Describes the current layout configuration of the player window.
-  /// See `buildLayoutTasksForFileOpen()` in `PlayerWindowLayout.swift`.
+  /// See `buildWindowInitialLayoutTasks()` in `PlayerWindowLayout.swift`.
   let layoutSpec: LayoutSpec?
 
   let geoSet: GeometrySet

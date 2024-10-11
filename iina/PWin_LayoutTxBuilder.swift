@@ -21,7 +21,7 @@ extension PlayerWindowController {
   func buildLayoutTransition(named transitionName: String,
                              from inputLayout: LayoutState,
                              to outputSpec: LayoutSpec,
-                             isInitialLayout: Bool = false,
+                             isWindowInitialLayout: Bool = false,
                              totalStartingDuration: CGFloat? = nil,
                              totalEndingDuration: CGFloat? = nil,
                              thenRun: Bool = false,
@@ -52,12 +52,12 @@ extension PlayerWindowController {
 
     // OutputGeometry
     let outputGeometry: PWinGeometry = buildOutputGeometry(inputLayout: inputLayout, inputGeometry: inputGeometry,
-                                                         outputLayout: outputLayout, geo, isInitialLayout: isInitialLayout)
+                                                         outputLayout: outputLayout, geo, isWindowInitialLayout: isWindowInitialLayout)
 
     let transition = LayoutTransition(name: transitionName,
                                       from: inputLayout, from: inputGeometry,
                                       to: outputLayout, to: outputGeometry,
-                                      isInitialLayout: isInitialLayout)
+                                      isWindowInitialLayout: isWindowInitialLayout)
 
     // MiddleGeometry if needed (is applied after ClosePanels step)
     transition.middleGeometry = buildMiddleGeometry(forTransition: transition, geo)
@@ -124,10 +124,10 @@ extension PlayerWindowController {
     let endingAnimationDuration: CGFloat = totalEndingDuration ?? IINAAnimation.DefaultDuration
 
     // Extra animation when entering legacy full screen: cover camera housing with black bar
-    let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout
+    let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
 
     // Extra animation when exiting legacy full screen: remove camera housing with black bar
-    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isInitialLayout
+    let useExtraAnimationForExitingLegacyFullScreen = transition.isExitingLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
 
     var fadeInNewViewsDuration = endingAnimationDuration * 0.5
     var openFinalPanelsDuration = endingAnimationDuration
@@ -184,7 +184,7 @@ extension PlayerWindowController {
     })
 
     // Extra task when entering or exiting music mode: move & resize video frame
-    if transition.isTogglingMusicMode && !transition.isInitialLayout {
+    if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: .easeInEaseOut, { [self] in
         log.verbose("[\(transition.name)] Moving & resizing window")
 
@@ -294,7 +294,7 @@ extension PlayerWindowController {
   /// Builds `outputGeometry`.
   /// Note that the result should not necessarily overrite `windowedModeGeo`. It is used by the transition animations.
   private func buildOutputGeometry(inputLayout: LayoutState, inputGeometry: PWinGeometry, 
-                                   outputLayout: LayoutState, _ geo: GeometrySet, isInitialLayout: Bool) -> PWinGeometry {
+                                   outputLayout: LayoutState, _ geo: GeometrySet, isWindowInitialLayout: Bool) -> PWinGeometry {
 
     switch outputLayout.mode {
     case .windowed:
@@ -309,7 +309,7 @@ extension PlayerWindowController {
         prevWindowedGeo = geo.windowed
       }
       return outputLayout.convertWindowedModeGeometry(from: prevWindowedGeo, video: inputGeometry.video,
-                                                      keepFullScreenDimensions: !isInitialLayout)
+                                                      keepFullScreenDimensions: !isWindowInitialLayout)
 
     case .windowedInteractive:
       if inputGeometry.mode == .windowedInteractive {
@@ -394,7 +394,7 @@ extension PlayerWindowController {
     // TOP
     let insideTopBarHeight: CGFloat
     let outsideTopBarHeight: CGFloat
-    if !transition.isInitialLayout && transition.isTopBarPlacementChanging {
+    if !transition.isWindowInitialLayout && transition.isTopBarPlacementChanging {
       insideTopBarHeight = 0  // close completely. will animate reopening if needed later
       outsideTopBarHeight = 0
     } else if transition.outputLayout.topBarHeight < transition.inputLayout.topBarHeight {
@@ -408,7 +408,7 @@ extension PlayerWindowController {
     // BOTTOM
     let insideBottomBarHeight: CGFloat
     let outsideBottomBarHeight: CGFloat
-    if !transition.isInitialLayout && transition.isBottomBarPlacementChanging || transition.isTogglingMusicMode {
+    if !transition.isWindowInitialLayout && transition.isBottomBarPlacementChanging || transition.isTogglingMusicMode {
       // close completely. will animate reopening if needed later
       insideBottomBarHeight = 0
       outsideBottomBarHeight = 0

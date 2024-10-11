@@ -153,7 +153,7 @@ extension PlayerWindowController {
       }
     }
 
-    if !transition.isInitialLayout && transition.isTogglingLegacyStyle {
+    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
   }
@@ -332,13 +332,13 @@ extension PlayerWindowController {
       // Do not do this when first opening the window though, because it will cause the window location restore to be incorrect.
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
-      if !transition.isInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
+      if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
         log.debug("[\(transition.name)] Calling setFrame from closeOldPanels with \(middleGeo.windowFrame)")
         player.window.setFrameImmediately(middleGeo, updateVideoView: !transition.isExitingInteractiveMode)
       }
     }
 
-    if !transition.isInitialLayout && transition.isTogglingLegacyStyle {
+    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
   }
@@ -729,7 +729,7 @@ extension PlayerWindowController {
     updateAdditionalInfo()
     updateVolumeUI()
 
-    if !transition.isInitialLayout && transition.isTogglingLegacyStyle {
+    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
   }
@@ -813,7 +813,7 @@ extension PlayerWindowController {
         let newGeo: PWinGeometry
         if transition.isEnteringLegacyFullScreen {
           // Deal with possible top margin needed to hide camera housing
-          if transition.isInitialLayout {
+          if transition.isWindowInitialLayout {
             /// No animation after this
             newGeo = transition.outputGeometry
           } else if transition.outputGeometry.hasTopPaddingForCameraHousing {
@@ -861,7 +861,7 @@ extension PlayerWindowController {
       videoView.apply(transition.outputGeometry)
     }
 
-    if !transition.isInitialLayout && transition.isTogglingLegacyStyle {
+    if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
   }
@@ -936,7 +936,7 @@ extension PlayerWindowController {
       window.titleVisibility = .visible
     }
 
-    if !transition.isInitialLayout || transition.outputLayout.isFullScreen {
+    if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
       updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
     }
   }
@@ -1062,7 +1062,7 @@ extension PlayerWindowController {
 
     refreshHidesOnDeactivateStatus()
 
-    if !transition.isInitialLayout {
+    if !transition.isWindowInitialLayout {
       window.layoutIfNeeded()
       forceDraw()
 

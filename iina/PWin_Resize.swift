@@ -25,7 +25,7 @@ extension PlayerWindowController {
     // Other state which affects output:
 
     let playback: Playback
-    let windowState: WindowStateAtFileOpen
+    let windowState: WindowStateAtManualOpen
     let currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus
 
     var isRotating: Bool {
@@ -46,12 +46,12 @@ extension PlayerWindowController {
 
     let transform: VideoGeometry.Transform = { [self] videoGeo in
       guard player.state.isNotYet(.stopping) else {
-        log.verbose("[applyVideoGeoTransform] File loaded but player status is \(player.state); aborting")
+        log.verbose("[applyVideoGeo FileOpen] File loaded but player status is \(player.state); aborting")
         return nil
       }
 
       if isInMiniPlayer, geo.musicMode.isVideoVisible, !player.info.isRestoring, currentMediaAudioStatus == .isAudioWithArtHidden {
-        log.verbose("[applyVideoGeoTransform] Player is in music mode + media is audio + has album art but is not showing it. Sending mpv request to select video track 1")
+        log.verbose("[applyVideoGeo FileOpen] Player is in music mode + media is audio + has album art but is not showing it. Sending mpv request to select video track 1")
         player.setTrack(1, forType: .video)
       }
 
@@ -84,7 +84,7 @@ extension PlayerWindowController {
         userAspectLabelDerived = Aspect.bestLabelFor(mpvVideoAspectOverride)
         if userAspectLabelDerived != videoGeo.userAspectLabel {
           // Not necessarily an error? Need to improve aspect name matching logic
-          log.debug("[applyVideoGeo] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(videoGeo.userAspectLabel.quoted))")
+          log.debug("[applyVideoGeo FileOpen] Derived userAspectLabel \(userAspectLabelDerived.quoted) from mpv video-aspect-override (\(mpvVideoAspectOverride)), but it does not match existing userAspectLabel (\(videoGeo.userAspectLabel.quoted))")
         }
       }
 
@@ -96,14 +96,14 @@ extension PlayerWindowController {
                                     log)
 
       if let ffMeta {
-
-        log.debug("[applyVideoGeo] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)")
+        log.debug("[applyVideoGeo FileOpen] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)")
         return videoGeo.substituting(ffMeta)
       } else if currentMediaAudioStatus.isAudio {
         // Square album art
-        log.debug("[applyVideoGeo] Using albumArtGeometry because current media is audio")
+        log.debug("[applyVideoGeo FileOpen] Using albumArtGeometry because current media is audio")
         return VideoGeometry.albumArtGeometry(log)
       } else {
+        log.debug("[applyVideoGeo FileOpen] Derived videoGeo \(videoGeo)")
         return videoGeo
       }
     }
@@ -187,7 +187,7 @@ extension PlayerWindowController {
         }
         
         let newLayout: LayoutState  // kludge/workaround for timing issue, see below
-        let state: WindowStateAtFileOpen
+        let state: WindowStateAtManualOpen
         if fileJustOpened {
           if isRestoring, let priorState {
             state = .restoring(playerState: priorState)
@@ -200,11 +200,11 @@ extension PlayerWindowController {
           }
 
           log.verbose("[applyVideoGeo] JustOpenedFile, windowState=\(state), showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
-          let (initialLayout, windowOpenLayoutTasks) = buildLayoutTasksForFileOpen(windowState: state,
-                                                                                   currentPlayback: currentPlayback,
-                                                                                   currentMediaAudioStatus: currentMediaAudioStatus,
-                                                                                   newVidGeo: newVidGeo,
-                                                                                   showDefaultArt: showDefaultArt)
+          let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(windowState: state,
+                                                                                     currentPlayback: currentPlayback,
+                                                                                     currentMediaAudioStatus: currentMediaAudioStatus,
+                                                                                     newVidGeo: newVidGeo,
+                                                                                     showDefaultArt: showDefaultArt)
           newLayout = initialLayout
 
           animationPipeline.submit(windowOpenLayoutTasks)
@@ -217,7 +217,7 @@ extension PlayerWindowController {
 
         // TODO: guarantee this executes *after* `super.showWindow` is called. The timing seems to work now, but may break in the future...
         pendingVideoGeoUpdateTasks = buildVideoGeoUpdateTasks(forNewVideoGeo: newVidGeo, newLayout: newLayout, windowState: state,
-                                              showDefaultArt: showDefaultArt, didRotate: didRotate)
+                                                              showDefaultArt: showDefaultArt, didRotate: didRotate)
 
         if let doAfter {
           pendingVideoGeoUpdateTasks.append(.instantTask(doAfter))
@@ -234,7 +234,7 @@ extension PlayerWindowController {
   /// Only `applyVideoGeoTransform` should call this.
   private func buildVideoGeoUpdateTasks(forNewVideoGeo newVidGeo: VideoGeometry,
                                         newLayout: LayoutState,
-                                        windowState: WindowStateAtFileOpen,
+                                        windowState: WindowStateAtManualOpen,
                                         showDefaultArt: Bool? = nil,
                                         didRotate: Bool) -> [IINAAnimation.Task] {
 

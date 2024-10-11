@@ -3341,7 +3341,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return returnValue
   }
 
-  func enterMusicMode() {
+  func enterMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
     exitInteractiveMode(then: { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
@@ -3352,7 +3352,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         modeToSetAfterExitingFullScreen = .musicMode
         exitFullScreen()
       } else {
-        let transition = buildTransitionToEnterMusicMode(from: oldLayout)
+        let geo = buildGeoSet(video: newVidGeo, from: oldLayout)
+        let transition = buildTransitionToEnterMusicMode(from: oldLayout, geo)
         animationPipeline.submit(transition.tasks)
       }
     })
@@ -3363,13 +3364,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return buildLayoutTransition(named: "EnterMusicMode", from: oldLayout, to: miniPlayerLayout, geo)
   }
 
-  func exitMusicMode() {
+  func exitMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
     animationPipeline.submitInstantTask { [self] in
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = currentLayout
       let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
-      buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, thenRun: true)
+      let geo = buildGeoSet(video: newVidGeo, from: oldLayout)
+      buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, thenRun: true, geo)
     }
   }
 

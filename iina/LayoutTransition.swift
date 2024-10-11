@@ -25,22 +25,22 @@ extension PlayerWindowController {
     var middleGeometry: PWinGeometry?
     let outputGeometry: PWinGeometry
 
-    /// Should only be true when setting layout on window open. See `buildLayoutTasksForFileOpen()` in `PlayerWindowController`.
-    let isInitialLayout: Bool
+    /// Should only be true when setting layout on window open. See `buildWindowInitialLayoutTasks()`.
+    let isWindowInitialLayout: Bool
 
     var tasks: [IINAAnimation.Task] = []
 
     init(name: String, from inputLayout: LayoutState, from inputGeometry: PWinGeometry,
          to outputLayout: LayoutState, to outputGeometry: PWinGeometry,
          middleGeometry: PWinGeometry? = nil,
-         isInitialLayout: Bool = false) {
+         isWindowInitialLayout: Bool = false) {
       self.name = name
       self.inputLayout = inputLayout
       self.inputGeometry = inputGeometry
       self.middleGeometry = middleGeometry
       self.outputLayout = outputLayout
       self.outputGeometry = outputGeometry
-      self.isInitialLayout = isInitialLayout
+      self.isWindowInitialLayout = isWindowInitialLayout
     }
 
     var isOSCChanging: Bool {
@@ -115,7 +115,7 @@ extension PlayerWindowController {
     }
 
     var isEnteringFullScreen: Bool {
-      return outputLayout.isFullScreen && (!inputLayout.isFullScreen || isInitialLayout)
+      return outputLayout.isFullScreen && (!inputLayout.isFullScreen || isWindowInitialLayout)
     }
 
     var isExitingFullScreen: Bool {

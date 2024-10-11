@@ -11,10 +11,18 @@ import Foundation
 /// Window Initial Layout
 extension PlayerWindowController {
 
-  enum WindowStateAtFileOpen: CustomStringConvertible {
+
+  enum WindowStateAtManualOpen: CustomStringConvertible {
+    /// Not manually opening the file (i.e. current media changed via playlist navigation)
     case notApplicable
+
+    /// Opening window (or reopening closed window) for new file
     case notOpen
+
+    /// Reusing the existing window for new file
     case alreadyOpen
+
+    /// Restoring the window from prior launch
     case restoring(playerState: PlayerSaveState)
 
     /// Need to specify this so that `playerState` is not included...
@@ -32,13 +40,19 @@ extension PlayerWindowController {
     }
   }
 
-  // Set window layout when either opening window for new file, reusing existing window for new file,
-  // or restoring from prior launch.
-  func buildLayoutTasksForFileOpen(windowState: WindowStateAtFileOpen,
-                                   currentPlayback: Playback,
-                                   currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
-                                   newVidGeo: VideoGeometry,
-                                   showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
+  /// Builds tasks to transition the window to its "initial" layout.
+  ///
+  /// Sets the window layout when one of the following is happening:
+  /// 1. Opening window for new file
+  /// 2. Reusing existing window for new file
+  /// 3. Restoring from prior launch.
+  ///
+  /// See `WindowStateAtManualOpen`.
+  func buildWindowInitialLayoutTasks(windowState: WindowStateAtManualOpen,
+                                     currentPlayback: Playback,
+                                     currentMediaAudioStatus: PlaybackInfo.CurrentMediaAudioStatus,
+                                     newVidGeo: VideoGeometry,
+                                     showDefaultArt: Bool? = nil) -> (LayoutState, [IINAAnimation.Task]) {
     assert(DispatchQueue.isExecutingIn(.main))
 
     var isRestoring = false
@@ -49,7 +63,7 @@ extension PlayerWindowController {
     switch windowState {
     case .restoring(let priorState):
       if let priorLayoutSpec = priorState.layoutSpec {
-        log.verbose("[applyVideoGeo] Transitioning to initial layout from prior window state")
+        log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from prior window state")
         isRestoring = true
 
         let initialLayoutSpec: LayoutSpec
@@ -62,7 +76,7 @@ extension PlayerWindowController {
         }
         initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
-        log.error("[applyVideoGeo] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
+        log.error("[applyVideoGeo FileOpen] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
         let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
         initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
@@ -74,7 +88,7 @@ extension PlayerWindowController {
 
     case .alreadyOpen:
       initialLayout = currentLayout
-      log.verbose("[applyVideoGeo] Opening a new file in an already open window, mode=\(initialLayout.mode)")
+      log.verbose("[applyVideoGeo FileOpen] Opening a new file in an already open window, mode=\(initialLayout.mode)")
       guard let window = self.window else { return (initialLayout, []) }
 
       /// `windowFrame` may be slightly off; update it
@@ -91,11 +105,11 @@ extension PlayerWindowController {
       tasks = []
 
     case .notOpen:
-      log.verbose("[applyVideoGeo] Transitioning to initial layout from app prefs")
+      log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from app prefs")
       var mode: PlayerWindowMode = .windowed
 
       if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
-        log.debug("[applyVideoGeo] Opened media is audio: will auto-switch to music mode")
+        log.debug("[applyVideoGeo FileOpen] Opened media is audio: will auto-switch to music mode")
         mode = .musicMode
       } else if Preference.bool(for: .fullScreenWhenOpen) {
         player.didEnterFullScreenViaUserToggle = false
@@ -116,7 +130,7 @@ extension PlayerWindowController {
       tasks = buildTransitionTasks(from: currentLayout, to: initialLayout, newGeoSet, isRestoringFromPrevLaunch: false,
                                    needsNativeFullScreen: needsNativeFullScreen)
     default:
-      Logger.fatal("Invalid WindowStateAtFileOpen state: \(windowState)")
+      Logger.fatal("Invalid WindowStateAtManualOpen state: \(windowState)")
     }
 
     tasks.append(.instantTask{ [self] in
@@ -158,21 +172,21 @@ extension PlayerWindowController {
         // Need to switch to music mode?
         if Preference.bool(for: .autoSwitchToMusicMode) {
           if player.overrideAutoMusicMode {
-            log.verbose("Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
+            log.verbose("[applyVideoGeo FileOpen] Skipping music mode auto-switch ∴ overrideAutoMusicMode=Y")
           } else if currentMediaAudioStatus.isAudio && !isInMiniPlayer && !isFullScreen {
-            log.debug("Opened media is audio: auto-switching to music mode")
-            player.enterMusicMode(automatically: true)
+            log.debug("[applyVideoGeo FileOpen] Opened media is audio: auto-switching to music mode")
+            player.enterMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to music mode
           } else if currentMediaAudioStatus == .notAudio && isInMiniPlayer {
-            log.debug("Opened media is not audio: auto-switching to normal window")
-            player.exitMusicMode(automatically: true)
+            log.debug("[applyVideoGeo FileOpen] Opened media is not audio: auto-switching to normal window")
+            player.exitMusicMode(automatically: true, withNewVidGeo: newVidGeo)
             return  // do not even try to go to full screen if already going to windowed mode
           }
         }
 
         // Need to switch to full screen?
         if Preference.bool(for: .fullScreenWhenOpen) && !isFullScreen && !isInMiniPlayer {
-          log.debug("Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
+          log.debug("[applyVideoGeo FileOpen] Changing to full screen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
           enterFullScreen()
         }
       }
@@ -195,7 +209,7 @@ extension PlayerWindowController {
 
     let transitionName = "\(isRestoringFromPrevLaunch ? "Restore" : "Set")InitialLayout"
     let initialTransition = buildLayoutTransition(named: transitionName,
-                                                  from: currentLayout, to: outputLayout.spec, isInitialLayout: true, newGeoSet)
+                                                  from: currentLayout, to: outputLayout.spec, isWindowInitialLayout: true, newGeoSet)
 
     tasks.append(.instantTask { [self] in
 

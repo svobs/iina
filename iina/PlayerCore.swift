@@ -613,24 +613,24 @@ class PlayerCore: NSObject {
     }
   }
 
-  func enterMusicMode(automatically: Bool = false) {
+  func enterMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug("Switch to mini player, automatically=\(automatically)")
     if !automatically {
       // Toggle manual override
       overrideAutoMusicMode = !overrideAutoMusicMode
       log.verbose("Changed overrideAutoMusicMode to \(overrideAutoMusicMode)")
     }
-    windowController.enterMusicMode()
+    windowController.enterMusicMode(withNewVidGeo: newVidGeo)
     events.emit(.musicModeChanged, data: true)
   }
 
-  func exitMusicMode(automatically: Bool = false) {
+  func exitMusicMode(automatically: Bool = false, withNewVidGeo newVidGeo: VideoGeometry? =  nil) {
     log.debug("Switch to normal window from mini player, automatically=\(automatically)")
     if !automatically {
       overrideAutoMusicMode = !overrideAutoMusicMode
       log.verbose("Changed overrideAutoMusicMode to \(overrideAutoMusicMode)")
     }
-    windowController.exitMusicMode()
+    windowController.exitMusicMode(withNewVidGeo: newVidGeo)
     windowController.updateTitle()
 
     events.emit(.musicModeChanged, data: false)

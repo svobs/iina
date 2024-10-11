@@ -1658,6 +1658,17 @@ class MPVController: NSObject {
       player.log.verbose("Δ mpv prop: 'video-aspect-override' = \(aspect.quoted)")
       player._setVideoAspectOverride(aspect)
 
+    case MPVProperty.videoParamsAspect:
+      guard player.isActive else { break }
+      guard let aspectName = getString(MPVProperty.videoParamsAspect) else { break }
+      player.log.verbose("Δ mpv prop: 'video-params/aspect' = \(aspectName.quoted)")
+
+    case MPVProperty.videoParamsAspectName:
+      guard player.isActive else { break }
+      guard let aspectName = getString(MPVProperty.videoParamsAspectName) else { break }
+      player.log.verbose("Δ mpv prop: 'video-params/aspect-name' = \(aspectName.quoted)")
+      // TODO: use this
+
     case MPVOption.Window.fullscreen:
       player.syncFullScreenState()
 
