@@ -816,6 +816,7 @@ class PlayerCore: NSObject {
   }
 
   func _seek(absoluteSecond: Double) {
+    guard isActive else { return }
     Logger.log("Seek \(absoluteSecond) absolute+exact", level: .verbose, subsystem: subsystem)
     mpv.command(.seek, args: ["\(absoluteSecond)", "absolute+exact"])
   }
@@ -912,6 +913,7 @@ class PlayerCore: NSObject {
     }
 
     mpv.queue.async { [self] in
+      guard isActive else { return }
       mpv.asyncCommand(.screenshot, args: commandFlags, replyUserdata: MPVController.UserData.screenshot)
     }
     return true
@@ -1010,6 +1012,7 @@ class PlayerCore: NSObject {
   /// Synchronize IINA with the state of the [mpv](https://mpv.io/manual/stable/) A-B loop command.
   func syncAbLoop() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
 
     // Obtain the values of the ab-loop-a and ab-loop-b options representing the A & B loop points.
     let a = abLoopA
@@ -1036,6 +1039,7 @@ class PlayerCore: NSObject {
 
   func togglePlaylistLoop() {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let loopMode = getLoopMode()
       if loopMode == .playlist {
         setLoopMode(.off)
@@ -1047,6 +1051,7 @@ class PlayerCore: NSObject {
 
   func toggleFileLoop() {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let loopMode = getLoopMode()
       if loopMode == .file {
         setLoopMode(.off)
@@ -1057,6 +1062,7 @@ class PlayerCore: NSObject {
   }
 
   func getLoopMode() -> LoopMode {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     let loopFileStatus = mpv.getString(MPVOption.PlaybackControl.loopFile)
     guard loopFileStatus != "inf" else { return .file }
     if let loopFileStatus = loopFileStatus, let count = Int(loopFileStatus), count != 0 {
@@ -1071,6 +1077,8 @@ class PlayerCore: NSObject {
   }
 
   private func setLoopMode(_ newMode: LoopMode) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
     switch newMode {
     case .playlist:
       mpv.setString(MPVOption.PlaybackControl.loopPlaylist, "inf")
@@ -1085,12 +1093,14 @@ class PlayerCore: NSObject {
 
   func nextLoopMode() {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       setLoopMode(getLoopMode().next())
     }
   }
 
   func toggleShuffle() {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       mpv.command(.playlistShuffle)
       _reloadPlaylist()
     }
@@ -1111,6 +1121,7 @@ class PlayerCore: NSObject {
   func _setTrack(_ index: Int, forType trackType: MPVTrack.TrackType, silent: Bool = false) {
     log.verbose("Setting \(trackType) track to \(index)")
     assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
 
     let name: String
     switch trackType {
@@ -1140,6 +1151,7 @@ class PlayerCore: NSObject {
     let speedTrunc = speed.truncatedTo6()
     info.playSpeed = speedTrunc  // set preemptively to keep UI in sync
     mpv.queue.async { [self] in
+      guard isActive else { return }
       log.verbose("Setting speed to \(speedTrunc)")
       mpv.setDouble(MPVOption.PlaybackControl.speed, speedTrunc)
 
@@ -2083,7 +2095,7 @@ class PlayerCore: NSObject {
 
     // Ensure Playback History window is updated in real time
     if Preference.bool(for: .recordPlaybackHistory) {
-      HistoryController.shared.queue.async { [self] in
+      HistoryController.shared.async { [self] in
         guard !isShuttingDown else { return }
         /// this will reload the `mpvProgress` field from the `watch-later` config files
         guard let historyItem = HistoryController.shared.history.first(where: {$0.url == info.currentURL}) else { return }
@@ -2212,7 +2224,7 @@ class PlayerCore: NSObject {
 
       /// Launches background task which scans video files and collects video size metadata using ffmpeg
       PlayerCore.backgroundQueue.async { [self] in
-        AutoFileMatcher.fillInVideoSizes(info.currentVideosInfo)
+        MediaMetaCache.shared.fillInVideoSizes(info.currentVideosInfo, onBehalfOf: self)
       }
     }
 
@@ -2333,7 +2345,7 @@ class PlayerCore: NSObject {
 
     // History thread: update history given new playback URL
     if let url = info.currentURL {
-      HistoryController.shared.queue.async { [self] in
+      HistoryController.shared.async { [self] in
         fileLoaded_historyQueueWork(for: url, durationSec: info.playbackDurationSec ?? 0.0)
       }
     }
@@ -2341,7 +2353,6 @@ class PlayerCore: NSObject {
 
   // History task via history queue
   private func fileLoaded_historyQueueWork(for url: URL, durationSec: Double) {
-    assert(DispatchQueue.isExecutingIn(HistoryController.shared.queue))
 
     // 1. Update main history list
     HistoryController.shared.add(url, duration: durationSec)
@@ -3246,10 +3257,9 @@ class PlayerCore: NSObject {
         return
       }
 
-      var reloadTicket: Int = 0
-      $thumbnailReloadTicketCounter.withLock {
+      let reloadTicket: Int = $thumbnailReloadTicketCounter.withLock {
         $0 += 1
-        reloadTicket = $0
+        return $0
       }
 
       // Run the following in the background at lower priority, so the UI is not slowed down

@@ -363,4 +363,5 @@ extension Notification.Name {
   static let savedWindowStateDidChange = Notification.Name("savedWindowStateDidChange")
   static let iinaSecondSubVisibilityChanged = Notification.Name("iinaSecondSubVisibilityChanged")
   static let iinaSubVisibilityChanged = Notification.Name("iinaSubVisibilityChanged")
+  static let iinaHistoryTasksFinished = Notification.Name("iinaHistoryTasksFinished")
 }

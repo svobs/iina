@@ -73,20 +73,6 @@ class AutoFileMatcher {
     audioFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
   }
 
-  static func fillInVideoSizes(_ videoFiles: [FileInfo]) {
-    log.verbose("Filling in video sizes for \(videoFiles.count) files...")
-    let sw = Utility.Stopwatch()
-    var updateCount = 0
-    for fileInfo in videoFiles {
-      if MediaMetaCache.shared.getCachedVideoMeta(forURL: fileInfo.url) == nil {
-        if MediaMetaCache.shared.reloadCachedVideoMeta(forURL: fileInfo.url) != nil {
-          updateCount += 1
-        }
-      }
-    }
-    log.verbose("Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms")
-  }
-
   private func getAllPossibleSubs() -> [FileInfo] {
     log.debug("Getting all sub files...")
 
@@ -373,7 +359,7 @@ class AutoFileMatcher {
       player.info.isMatchingSubtitles = false
 
       // Fill in file sizes after everything else is finished
-      AutoFileMatcher.fillInVideoSizes(videoFiles)
+      MediaMetaCache.shared.fillInVideoSizes(videoFiles, onBehalfOf: player)
 
       log.debug("**Finished matching")
     } catch let err as AutoMatchingError {

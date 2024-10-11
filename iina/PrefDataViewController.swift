@@ -143,7 +143,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
 
   // TODO: this is expensive. Add throttling
   private func reloadWatchLaterCount(_ notification: Notification) {
-    HistoryController.shared.queue.async {
+    HistoryController.shared.async {
       var watchLaterCount = 0
       let searchOptions: FileManager.DirectoryEnumerationOptions = [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
       if let files = try? FileManager.default.contentsOfDirectory(at: Utility.watchLaterURL, includingPropertiesForKeys: nil, options: searchOptions) {

@@ -1438,18 +1438,16 @@ class MPVController: NSObject {
       player.reloadQuickSettingsView()
 
     case MPVOption.PlaybackControl.loopPlaylist, MPVOption.PlaybackControl.loopFile:
-      DispatchQueue.main.async { [self] in
-        let loopMode = player.getLoopMode()
-        switch loopMode {
-        case .file:
-          player.sendOSD(.fileLoop)
-        case .playlist:
-          player.sendOSD(.playlistLoop)
-        default:
-          player.sendOSD(.noLoop)
-        }
-        player.syncUI(.loop)
+      let loopMode = player.getLoopMode()
+      switch loopMode {
+      case .file:
+        player.sendOSD(.fileLoop)
+      case .playlist:
+        player.sendOSD(.playlistLoop)
+      default:
+        player.sendOSD(.noLoop)
       }
+      player.syncUI(.loop)
 
     case MPVOption.Video.deinterlace:
       guard let data = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else { break }

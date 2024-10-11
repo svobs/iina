@@ -109,8 +109,9 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
 
     if isFirstLoad {
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with recentDocuments load:
-      HistoryController.shared.queue.async {
+      HistoryController.shared.async {
         DispatchQueue.main.async {
+          guard !AppDelegate.shared.isTerminating else { return }
           let sw = Utility.Stopwatch()
           self.reloadData()
           self.isFirstLoad = false

@@ -53,7 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: Properties
 
-  private var observedPrefKeys: [Preference.Key] = [
+  let observedPrefKeys: [Preference.Key] = [
     .logLevel,
     .enableLogging,
     .enableAdvancedSettings,
@@ -94,13 +94,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   // TODO: roll this into Startup class
   private var commandLineStatus = CommandLineStatus()
 
+  private var shutdownHandler = ShutdownHandler()
+
   private var lastClosedWindowName: String = ""
   var isShowingOpenFileWindow = false
 
-  /// Whether the shutdown sequence timed out.
-  private var shutdownTimedOut = false
-
-  private(set) var isTerminating = false
+  var isTerminating: Bool {
+    return shutdownHandler.isTerminating
+  }
 
   deinit {
     ObjcUtils.silenced {
@@ -139,7 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       menuController.refreshBuiltInMenuItemBindings()
 
     case PK.resumeLastPosition.rawValue:
-      HistoryController.shared.queue.async {
+      HistoryController.shared.async {
         HistoryController.shared.log.verbose("Reloading playback history in response to change for 'resumeLastPosition'.")
         HistoryController.shared.reloadAll()
       }
@@ -1003,282 +1004,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
   // MARK: - Application termination
 
-  // TODO: put all shutdown stuff in separate file. It's huge
-  @objc
-  func shutdownDidTimeout() {
-    shutdownTimedOut = true
-    if !PlayerCoreManager.shared.allPlayersShutdown {
-      Logger.log("Timed out waiting for players to stop and shut down", level: .warning)
-      // For debugging list players that have not terminated.
-      for player in PlayerCoreManager.shared.playerCores {
-        let label = player.label
-        if !player.isShutDown {
-          Logger.log("Player \(label) failed to shut down", level: .warning)
-        }
-      }
-      // For debugging purposes we do not remove observers in case players stop or shutdown after
-      // the timeout has fired as knowing that occurred maybe useful for debugging why the
-      // termination sequence failed to complete on time.
-      Logger.log("Not waiting for players to shut down; proceeding with application termination",
-                 level: .warning)
-    }
-    if OnlineSubtitle.loggedIn {
-      // The request to log out of the online subtitles provider has not completed. This should not
-      // occur as the logout request uses a timeout that is shorter than the termination timeout to
-      // avoid this occurring. Therefore if this message is logged something has gone wrong with the
-      // shutdown code.
-      Logger.log("Timed out waiting for log out of online subtitles provider to complete",
-                 level: .warning)
-    }
-    Logger.log("Proceeding with application termination due to timeout", level: .warning)
-    // Tell Cocoa to proceed with termination.
-    NSApp.reply(toApplicationShouldTerminate: true)
-  }
-
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
     Logger.log("App should terminate")
-
-    // Save UI state first:
-    for playerWindowController in NSApplication.playerWindows {
-      PlayerSaveState.saveSynchronously(playerWindowController.player)
-    }
-    Preference.UIState.saveCurrentOpenWindowList()
-
-    isTerminating = true
-
-    // Remove observers for IINA preferences.
-    ObjcUtils.silenced {
-      for key in self.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
-
-    HistoryController.shared.stop()
-
-    // Normally termination happens fast enough that the user does not have time to initiate
-    // additional actions, however to be sure shutdown further input from the user.
-    Logger.log("Disabling all menus")
-    menuController.disableAllMenus()
-    // Remove custom menu items added by IINA to the dock menu. AppKit does not allow the dock
-    // supplied items to be changed by an application so there is no danger of removing them.
-    // The menu items are being removed because setting the isEnabled property to false had no
-    // effect under macOS 12.6.
-    removeAllMenuItems(dockMenu)
-    // If supported and enabled disable all remote media commands. This also removes IINA from
-    // the Now Playing widget.
-    if RemoteCommandController.useSystemMediaControl {
-      Logger.log("Disabling remote commands")
-      RemoteCommandController.disableAllCommands()
-    }
-
-    if Preference.UIState.isSaveEnabled {
-      // unlock for new launch
-      Logger.log("Updating lifecycle state of \(Preference.UIState.launchName.quoted) to 'done' in prefs", level: .verbose)
-      UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.done.rawValue, forKey: Preference.UIState.launchName)
-    }
-
-    // The first priority was to shutdown any new input from the user. The second priority is to
-    // send a logout request if logged into an online subtitles provider as that needs time to
-    // complete.
-    if OnlineSubtitle.loggedIn {
-      // Force the logout request to timeout earlier than the overall termination timeout. This
-      // request taking too long does not represent an error in the shutdown code, whereas the
-      // intention of the overall termination timeout is to recover from some sort of hold up in the
-      // shutdown sequence that should not occur.
-      OnlineSubtitle.logout(timeout: Constants.TimeInterval.appTerminationTimeout - 1)
-    }
-
-    // Close all windows. When a player window is closed it will send a stop command to mpv to stop
-    // playback and unload the file.
-    Logger.log("Closing all windows")
-    for window in NSApp.windows {
-      window.close()
-    }
-
-    // Check if there are any players that are not shutdown. If all players are already shutdown
-    // then application termination can proceed immediately. This will happen if there is only one
-    // player and shutdown was initiated by sending a quit command directly to mpv through it's IPC
-    // interface causing mpv and the player to shutdown before application termination is initiated.
-    let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
-    if allPlayersShutdown {
-      Logger.log("All players have shut down")
-    } else {
-      // Shutdown of player cores involves sending the stop and quit commands to mpv. Even though
-      // these commands are sent to mpv using the synchronous API mpv executes them asynchronously.
-      // This requires IINA to wait for mpv to finish executing these commands.
-      Logger.log("Waiting for players to stop and shut down")
-    }
-
-    // Usually will have to wait for logout request to complete if logged into an online subtitle
-    // provider.
-    var canTerminateNow = allPlayersShutdown
-    if OnlineSubtitle.loggedIn {
-      canTerminateNow = false
-      Logger.log("Waiting for logout of online subtitles provider to complete")
-    }
-
-    // If the user pressed Q and mpv initiated the termination then players will already be
-    // shutdown and it may be possible to proceed with termination.
-    if canTerminateNow {
-      Logger.log("Proceeding with application termination")
-      // Tell Cocoa that it is ok to immediately proceed with termination.
+    if shutdownHandler.beginShutdown() {
       return .terminateNow
-    }
-
-    // To ensure termination completes and the user is not required to force quit IINA, impose an
-    // arbitrary timeout that forces termination to complete. The expectation is that this timeout
-    // is never triggered. If a timeout warning is logged during termination then that needs to be
-    // investigated.
-    var timer: Timer
-    if #available(macOS 10.12, *) {
-      timer = Timer(timeInterval: Constants.TimeInterval.appTerminationTimeout, repeats: false) { _ in
-        // Once macOS 10.11 is no longer supported the contents of the method can be inlined in this
-        // closure.
-        self.shutdownDidTimeout()
-      }
-    } else {
-      timer = Timer(timeInterval: Constants.TimeInterval.appTerminationTimeout, target: self,
-                    selector: #selector(self.shutdownDidTimeout), userInfo: nil, repeats: false)
-    }
-
-    RunLoop.main.add(timer, forMode: .common)
-
-    // Establish an observer for a player core stopping.
-    var observers: [NSObjectProtocol] = []
-
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerStopped, object: nil, queue: .main) { note in
-      guard !self.shutdownTimedOut else {
-        // The player has stopped after IINA already timed out, gave up waiting for players to
-        // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
-        // queued tasks during application termination even after AppKit has called
-        // applicationWillTerminate. So this observer can be called after IINA has told Cocoa to
-        // proceed with termination. When the termination sequence times out IINA does not remove
-        // observers as it may be useful for debugging purposes to know that a player stopped after
-        // the timeout as that indicates the stopping was proceeding as opposed to being permanently
-        // blocked. Log that this has occurred and take no further action as it is too late to
-        // proceed with the normal termination sequence.  If the log file has already been closed
-        // then the message will only be printed to the console.
-        Logger.log("Player stopped after application termination timed out", level: .warning)
-        return
-      }
-      guard let player = note.object as? PlayerCore else { return }
-      player.log.verbose("Got iinaPlayerStopped. Requesting player shutdown")
-      // Now that the player has stopped it is safe to instruct the player to terminate. IINA MUST
-      // wait for the player to stop before instructing it to terminate because sending the quit
-      // command to mpv while it is still asynchronously executing the stop command can result in a
-      // watch later file that is missing information such as the playback position. See issue #3939
-      // for details.
-      player.shutdown()
-    })
-
-    /// Proceed with termination if all outstanding shutdown tasks have completed.
-    ///
-    /// This method is called when an observer receives a notification that a player has shutdown or an online subtitles provider logout
-    /// request has completed. If there are no other termination tasks outstanding then this method will instruct AppKit to proceed with
-    /// termination.
-    func proceedWithTermination() {
-      // If any player has not shut down then continue waiting.
-      let allPlayersShutdown = PlayerCoreManager.shared.allPlayersShutdown
-      let didSubtitleSvcLogOut = !OnlineSubtitle.loggedIn
-
-      // All players have shut down.
-      Logger.log("AllPlayersShutdown: \(allPlayersShutdown.yesno), OnlineSubtitleLoggedOut: \(didSubtitleSvcLogOut.yesno)")
-      guard allPlayersShutdown && didSubtitleSvcLogOut else { return }
-      // All players have shutdown. No longer logged into an online subtitles provider.
-
-      Logger.log.debug("Suspending History queue")
-      HistoryController.shared.queue.sync {
-        HistoryController.shared.queue.suspend()
-      }
-
-      Logger.log("Proceeding with application termination")
-      // No longer need the timer that forces termination to proceed.
-      timer.invalidate()
-      // No longer need the observers for players stopping and shutting down, along with the
-      // observer for logout requests completing and saving of playback history finishing.
-      ObjcUtils.silenced {
-        observers.forEach {
-          NotificationCenter.default.removeObserver($0)
-        }
-      }
-      // Tell AppKit to proceed with termination.
-      NSApp.reply(toApplicationShouldTerminate: true)
-    }
-
-    // Establish an observer for a player core shutting down.
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerShutdown, object: nil, queue: .main) { _ in
-      guard !self.shutdownTimedOut else {
-        // The player has shutdown after IINA already timed out, gave up waiting for players to
-        // shutdown, and told Cocoa to proceed with termination. AppKit will continue to process
-        // queued tasks during application termination even after AppKit has called
-        // applicationWillTerminate. So this observer can be called after IINA has told Cocoa to
-        // proceed with termination. When the termination sequence times out IINA does not remove
-        // observers as it may be useful for debugging purposes to know that a player shutdown after
-        // the timeout as that indicates shutdown was proceeding as opposed to being permanently
-        // blocked. Log that this has occurred and take no further action as it is too late to
-        // proceed with the normal termination sequence. If the log file has already been closed
-        // then the message will only be printed to the console.
-        Logger.log("Player shutdown completed after application termination timed out", level: .warning)
-        return
-      }
-      proceedWithTermination()
-    })
-
-    // Establish an observer for logging out of the online subtitle provider.
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaLogoutCompleted, object: nil, queue: .main) { _ in
-      guard !self.shutdownTimedOut else {
-        // The request to log out of the online subtitles provider has completed after IINA already
-        // timed out, gave up waiting for players to shutdown, and told Cocoa to proceed with
-        // termination. This should not occur as the logout request uses a timeout that is shorter
-        // than the termination timeout to avoid this occurring. Therefore if this message is logged
-        // something has gone wrong with the shutdown code.
-        Logger.log(
-          "Logout of online subtitles provider completed after application termination timed out",
-          level: .warning)
-        return
-      }
-      Logger.log("Got iinaLogoutCompleted notification", level: .verbose)
-      proceedWithTermination()
-    })
-
-    // Instruct any players that are already stopped to start shutting down.
-    for player in PlayerCoreManager.shared.playerCores {
-      if !player.isShutDown {
-        player.log.verbose("Requesting shutdown of player")
-        player.shutdown()
-      }
-    }
-    if let player = PlayerCoreManager.shared.demoPlayer {
-      if !player.isShutDown {
-        player.log.verbose("Requesting shutdown of demo player")
-        player.shutdown()
-      }
     }
 
     // Tell AppKit that it is ok to proceed with termination, but wait for our reply.
     return .terminateLater
   }
 
-  /// Remove all menu items in the given menu and any submenus.
-  ///
-  /// This method recursively descends through the entire tree of menu items removing all items.
-  /// - Parameter menu: Menu to remove items from
-  private func removeAllMenuItems(_ menu: NSMenu) {
-    for item in menu.items {
-      if item.hasSubmenu {
-        removeAllMenuItems(item.submenu!)
-      }
-      menu.removeItem(item)
-    }
-  }
-
   func applicationWillTerminate(_ notification: Notification) {
     Logger.log("App will terminate")
     Logger.closeLogFiles()
 
-    ObjcUtils.silenced {
-      self.observers.forEach {
+    ObjcUtils.silenced { [self] in
+      observers.forEach {
         NotificationCenter.default.removeObserver($0)
+      }
+
+      // Remove observers for IINA preferences.
+      for key in observedPrefKeys {
+        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
       }
     }
   }
@@ -1616,7 +1363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Logger.log("OpenFile: user chose \(panel.urls.count) files", level: .verbose)
         if Preference.bool(for: .recordRecentFiles) {
           let urls = panel.urls  // must call this on the main thread
-          HistoryController.shared.queue.async {
+          HistoryController.shared.async {
             HistoryController.shared.noteNewRecentDocumentURLs(urls)
           }
         }

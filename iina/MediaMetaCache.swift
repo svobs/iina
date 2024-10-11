@@ -50,6 +50,25 @@ class MediaMetaCache {
   private var cachedMeta: [URL: MediaMeta] = [:]
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
+  func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
+    let log = player.log
+    log.verbose("Filling in video sizes for \(videoFiles.count) files...")
+    let sw = Utility.Stopwatch()
+    var updateCount = 0
+    for fileInfo in videoFiles {
+      guard player.state.isNotYet(.stopping) else {
+        log.verbose("Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player stopping")
+        return
+      }
+      if getCachedVideoMeta(forURL: fileInfo.url) == nil {
+        if reloadCachedVideoMeta(forURL: fileInfo.url) != nil {
+          updateCount += 1
+        }
+      }
+    }
+    log.verbose("Filled in \(updateCount)/\(videoFiles.count) video sizes in \(sw) ms")
+  }
+
 
   func calculateTotalDuration(_ urls: [URL]) -> Double {
     metaLock.withLock {

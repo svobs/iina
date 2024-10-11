@@ -494,12 +494,18 @@ class MenuController: NSObject, NSMenuDelegate {
     let isDisplayingChapters = player.windowController.isShowing(sidebarTab: .chapters)
     chapterPanel?.title = isDisplayingChapters ? Constants.String.hideChaptersPanel : Constants.String.chaptersPanel
     pause.title = player.info.isPaused ? Constants.String.resume : Constants.String.pause
-    abLoop.state = player.isABLoopActive ? .on : .off
-    let loopMode = player.getLoopMode()
-    fileLoop.state = loopMode == .file ? .on : .off
-    playlistLoop.state = loopMode == .playlist ? .on : .off
     let speed = player.info.playSpeed.string
     speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), speed)
+    player.mpv.queue.async { [self] in
+      guard player.isActive else { return }
+      let abLoopActive = player.isABLoopActive
+      let loopMode = player.getLoopMode()
+      DispatchQueue.main.async { [self] in
+        abLoop.state = abLoopActive ? .on : .off
+        fileLoop.state = loopMode == .file ? .on : .off
+        playlistLoop.state = loopMode == .playlist ? .on : .off
+      }
+    }
   }
 
   private func updateVideoMenu() {

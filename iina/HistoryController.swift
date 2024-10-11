@@ -14,9 +14,14 @@ class HistoryController {
 
   var plistURL: URL
   var history: [PlaybackHistory]
-  var queue = DispatchQueue.newDQ(label: "IINAHistoryController", qos: .background)
   var log = Logger.Subsystem(rawValue: "history")
   var folderMonitor = FolderMonitor(url: Utility.watchLaterURL)
+  /// Whether graceful stop of history queue has commenced (via `stop` func)
+  private var isAppTerminating = false
+
+  /// Number of tasks currently in the queue.
+  @Atomic var tasksOutstanding = 0
+  private var queue = DispatchQueue.newDQ(label: "IINAHistoryController", qos: .background)
 
   var cachedRecentDocumentURLs: [URL]
 
@@ -24,6 +29,42 @@ class HistoryController {
     self.plistURL = plistFileURL
     self.history = []
     cachedRecentDocumentURLs = []
+  }
+
+  func async(_ taskBody: @escaping () -> Void) {
+    guard !isAppTerminating else {
+      log.verbose("Aborting new task: app is terminating")
+      return
+    }
+
+    let group = DispatchGroup()
+    group.enter()
+
+    $tasksOutstanding.withLock { $0 += 1 }
+    queue.async {
+      taskBody()
+      group.leave()
+    }
+
+    // does not wait. But the code in notify() is executed
+    // after enter() and leave() calls are balanced
+
+    group.notify(queue: .main) { [self] in
+      let tasksOutstanding = $tasksOutstanding.withLock { tasksOutstanding in
+        tasksOutstanding -= 1
+        return tasksOutstanding
+      }
+      if tasksOutstanding == 0 {
+        NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+      } else {
+        // The history controller must be able to finish saving playback history before IINA
+        // terminates or history will be lost. If termination times out before saving of playback
+        // history has finished then history will be lost. If that happens then the qos of the
+        // history batch queue will need to be raised to allow the history controller to keep up
+        // with requests to save history.
+        log.verbose("History tasks outstanding: \(tasksOutstanding)")
+      }
+    }
   }
 
   private func watchLaterDirDidChange() {
@@ -48,6 +89,7 @@ class HistoryController {
   }
 
   func stop() {
+    isAppTerminating = true
     log.debug("Stopping watchdog for watch-later dir")
     folderMonitor.stopMonitoring()
   }

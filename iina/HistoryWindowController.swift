@@ -149,7 +149,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     let isInitialLoad = reloadTicketCounter == 0
     if isInitialLoad {
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load.
-      HistoryController.shared.queue.async { [self] in
+      HistoryController.shared.async { [self] in
         self.reloadData()
       }
     } else {
@@ -313,7 +313,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   private func removeAfterConfirmation(_ entries: [PlaybackHistory]) {
     Utility.quickAskPanel("delete_history", sheetWindow: window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
-      HistoryController.shared.queue.async {
+      HistoryController.shared.async {
         HistoryController.shared.remove(entries)
       }
     }

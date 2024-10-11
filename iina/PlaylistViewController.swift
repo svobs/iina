@@ -301,13 +301,17 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func updateLoopBtnStatus() {
     guard isViewLoaded else { return }
-    let loopMode = player.getLoopMode()
-    switch loopMode {
-    case .off:  loopBtn.state = .off
-    case .file: loopBtn.state = .on
-    default:    loopBtn.state = .mixed
+    player.mpv.queue.async { [self] in
+      let loopMode = player.getLoopMode()
+      DispatchQueue.main.async { [self] in
+        switch loopMode {
+        case .off:  loopBtn.state = .off
+        case .file: loopBtn.state = .on
+        default:    loopBtn.state = .mixed
+        }
+        loopBtn.alternateImage = NSImage.init(named: loopBtn.state == .on ? "loop_file" : "loop_dark")
+      }
     }
-    loopBtn.alternateImage = NSImage.init(named: loopBtn.state == .on ? "loop_file" : "loop_dark")
   }
 
   // MARK: - Tab switching
