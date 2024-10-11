@@ -103,6 +103,7 @@ extension Preference {
 
     static var openSheetsDict: [String: Set<String>] = [:]
 
+    /// See comments in `AppDelegqate.windowWillBeginSheet`
     static func addOpenSheet(_ sheetName: String, toWindow windowName: String) {
       if var sheets = openSheetsDict[windowName] {
         sheets.insert(sheetName)

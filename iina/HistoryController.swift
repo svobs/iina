@@ -21,6 +21,7 @@ class HistoryController {
 
   /// Number of tasks currently in the queue.
   @Atomic var tasksOutstanding = 0
+  /// Do not use this directly for tasks. Use `HistoryController.shared.async`.
   private var queue = DispatchQueue.newDQ(label: "IINAHistoryController", qos: .background)
 
   var cachedRecentDocumentURLs: [URL]
@@ -31,31 +32,26 @@ class HistoryController {
     cachedRecentDocumentURLs = []
   }
 
+  /// Enqueues the given task argument in the queue.
+  /// If the application is already shutting down, it will not be enqueued or executed.
   func async(_ taskBody: @escaping () -> Void) {
     guard !isAppTerminating else {
       log.verbose("Aborting new task: app is terminating")
       return
     }
 
-    let group = DispatchGroup()
-    group.enter()
-
     $tasksOutstanding.withLock { $0 += 1 }
-    queue.async {
+    queue.async { [self] in
       taskBody()
-      group.leave()
-    }
 
-    // does not wait. But the code in notify() is executed
-    // after enter() and leave() calls are balanced
-
-    group.notify(queue: .main) { [self] in
       let tasksOutstanding = $tasksOutstanding.withLock { tasksOutstanding in
         tasksOutstanding -= 1
         return tasksOutstanding
       }
       if tasksOutstanding == 0 {
-        NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+        DispatchQueue.main.async {
+          NotificationCenter.default.post(Notification(name: .iinaHistoryTasksFinished))
+        }
       } else {
         // The history controller must be able to finish saving playback history before IINA
         // terminates or history will be lost. If termination times out before saving of playback

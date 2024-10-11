@@ -767,10 +767,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var leftLabel: DurationDisplayTextField!
 
   /// Differentiate between single clicks and double clicks.
-  internal var singleClickTimer: Timer?
-  internal var mouseExitEnterCount = 0
+  private var singleClickTimer: Timer?
+  private var mouseExitEnterCount = 0
 
-  internal var hideCursorTimer: Timer?
+  private var hideCursorTimer: Timer?
 
   var isDraggingPlaySlider = false
 
@@ -1715,7 +1715,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .fullscreen:
       toggleWindowFullScreen()
     case .hideOSC:
-      hideFadeableViews()
+      hideFadeableViewsAndCursor()
     case .togglePIP:
       menuTogglePIP(.dummy)
     case .contextMenu:
@@ -1787,9 +1787,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .playSlider:
       if controlBarFloating.isDragging { return }
 
-      if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
-        refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
-      }
+      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseEntered(with: event)
     }
@@ -2701,17 +2699,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - UI: Show / Hide Fadeable Views
 
-  func isUITimerNeeded() -> Bool {
-//    log.verbose("Checking if UITimer needed. hasPermanentOSC:\(currentLayout.hasPermanentOSC.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osd.animationState)")
-    if currentLayout.hasPermanentOSC {
-      return true
-    }
-    let showingFadeableViews = fadeableViewsAnimationState == .shown || fadeableViewsAnimationState == .willShow
-    let showingFadeableTopBar = fadeableTopBarAnimationState == .shown || fadeableViewsAnimationState == .willShow
-    let showingOSD = osd.animationState == .shown || osd.animationState == .willShow
-    return showingFadeableViews || showingFadeableTopBar || showingOSD
-  }
-
   // Shows fadeableViews and titlebar via fade
   func showFadeableViews(thenRestartFadeTimer restartFadeTimer: Bool = true,
                          duration: CGFloat = IINAAnimation.DefaultDuration,
@@ -2812,6 +2799,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return tasks
   }
 
+  /// Executed when `hideFadeableViewsTimer` fires
   @objc func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
     if controlBarFloating.isDragging { return }
@@ -3187,6 +3175,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - UI: Thumbnail Preview
 
+  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
+    let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
+    let isOSCHidden = currentControlBar?.isHidden ?? false
+    guard !isOSCHidden && !isOccludedByOSD && !isAnimatingLayoutTransition && !currentLayout.isInteractiveMode else {
+      return false
+    }
+    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
+  }
+
   /// Display time label & thumbnail when mouse over slider
   private func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
     thumbDisplayTicketCounter += 1
@@ -3198,18 +3195,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
-    let isOccludedByOSD = !osdVisualEffectView.isHidden && isPoint(pointInWindow, inAnyOf: [osdVisualEffectView])
-    let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !isOSCHidden && !isOccludedByOSD && !isAnimatingLayoutTransition && !currentLayout.isInteractiveMode else {
-      return false
-    }
-    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
-  }
-
   func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
     guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
             let duration = player.info.playbackDurationSec else {
+      hideSeekTimeAndThumbnail()
       return
     }
 
@@ -3393,6 +3382,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   // MARK: - Sync UI with playback
+
+  func isUITimerNeeded() -> Bool {
+    //    log.verbose("Checking if UITimer needed. hasPermanentOSC:\(currentLayout.hasPermanentOSC.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osd.animationState)")
+    if currentLayout.hasPermanentOSC {
+      return true
+    }
+    let showingFadeableViews = fadeableViewsAnimationState == .shown || fadeableViewsAnimationState == .willShow
+    let showingFadeableTopBar = fadeableTopBarAnimationState == .shown || fadeableViewsAnimationState == .willShow
+    let showingOSD = osd.animationState == .shown || osd.animationState == .willShow
+    return showingFadeableViews || showingFadeableTopBar || showingOSD
+  }
 
   func updateUI() {
     assert(DispatchQueue.isExecutingIn(.main))
