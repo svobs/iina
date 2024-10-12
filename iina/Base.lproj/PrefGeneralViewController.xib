@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22690"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -52,7 +52,7 @@
                                     <rect key="frame" x="191" y="-4" width="227" height="25"/>
                                     <popUpButtonCell key="cell" type="push" title="Show welcome window" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="z9T-8h-1T0" id="6y1-KS-0tJ">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="MId-eC-pMR">
                                             <items>
                                                 <menuItem title="Show welcome window" state="on" id="z9T-8h-1T0"/>
@@ -79,11 +79,18 @@
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="GBo-zD-pax" userLabel="0pt Spacer">
+                            <rect key="frame" x="0.0" y="1111" width="1" height="0.0"/>
+                            <constraints>
+                                <constraint firstAttribute="height" id="Cbt-7p-Fdi"/>
+                                <constraint firstAttribute="width" constant="1" id="nLl-YA-5LL"/>
+                            </constraints>
+                        </customView>
                         <stackView distribution="fill" orientation="horizontal" alignment="firstBaseline" horizontalStackHuggingPriority="100" verticalStackHuggingPriority="100" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="R2b-dw-sL7" userLabel="WhenAllWindowsClosed-HStack View">
-                            <rect key="frame" x="0.0" y="669" width="397" height="442"/>
+                            <rect key="frame" x="0.0" y="661" width="397" height="446"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="hDQ-Ns-0hM" userLabel="When last window is closed:">
-                                    <rect key="frame" x="-2" y="425" width="190" height="16"/>
+                                    <rect key="frame" x="-2" y="429" width="190" height="16"/>
                                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="When last window is closed:" id="VYb-KL-oiL">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -91,10 +98,10 @@
                                     </textFieldCell>
                                 </textField>
                                 <popUpButton horizontalHuggingPriority="750" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-JZ-pOJ">
-                                    <rect key="frame" x="191" y="418" width="210" height="25"/>
+                                    <rect key="frame" x="191" y="422" width="210" height="25"/>
                                     <popUpButtonCell key="cell" type="push" title="Do same action as at launch" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="LLC-oc-e6Q" id="RAv-Yr-VKh">
                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                        <font key="font" metaFont="menu"/>
+                                        <font key="font" metaFont="message"/>
                                         <menu key="menu" id="8Yo-th-5Mt">
                                             <items>
                                                 <menuItem title="Do same action as at launch" state="on" id="LLC-oc-e6Q"/>
@@ -122,7 +129,7 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="FoP-ng-1IO" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="665" width="1" height="0.0"/>
+                            <rect key="frame" x="0.0" y="657" width="1" height="0.0"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="5t5-72-0cf"/>
                                 <constraint firstAttribute="height" id="AHW-ed-igt"/>
@@ -136,7 +143,7 @@
                             </connections>
                         </customView>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="0me-8u-hdd">
-                            <rect key="frame" x="-2" y="644" width="460" height="18"/>
+                            <rect key="frame" x="-2" y="636" width="460" height="18"/>
                             <buttonCell key="cell" type="check" title="Allow welcome window to be shown via File &gt; New Window" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="dCz-9V-uDQ">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
@@ -150,15 +157,15 @@
                                 <binding destination="IBP-Mz-Maa" name="value" keyPath="values.enableCmdN" id="Gnw-LA-WPC"/>
                             </connections>
                         </button>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iYC-W4-rw7" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="641" width="1" height="0.0"/>
+                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="iYC-W4-rw7" userLabel="4pt Spacer">
+                            <rect key="frame" x="0.0" y="629" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="EeM-Vo-3UT"/>
-                                <constraint firstAttribute="height" id="Gw4-n1-XBM"/>
+                                <constraint firstAttribute="height" constant="4" id="Gw4-n1-XBM"/>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2uj-sK-U1e" userLabel="WhenMediaIsStartedSection VStack View">
-                            <rect key="frame" x="0.0" y="550" width="458" height="87"/>
+                            <rect key="frame" x="0.0" y="538" width="458" height="87"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="f24-lZ-4m7">
                                     <rect key="frame" x="-2" y="70" width="124" height="17"/>
@@ -268,14 +275,14 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="WA9-3L-BKN" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="542" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="530" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="2V8-32-0UZ"/>
                                 <constraint firstAttribute="height" constant="4" id="KEX-QB-VNH"/>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aKH-Me-5XB" userLabel="WhenMediaIsOpenedManuallySection VStack View">
-                            <rect key="frame" x="0.0" y="423" width="458" height="115"/>
+                            <rect key="frame" x="0.0" y="411" width="458" height="115"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="10b-EJ-N6W">
                                     <rect key="frame" x="-2" y="98" width="204" height="17"/>
@@ -337,7 +344,7 @@
                                                                 <rect key="frame" x="121" y="-4" width="131" height="25"/>
                                                                 <popUpButtonCell key="cell" type="push" title="Loop playlist" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="5WC-Sp-6mg" id="tIo-lj-Gvh">
                                                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                                                    <font key="font" metaFont="menu"/>
+                                                                    <font key="font" metaFont="message"/>
                                                                     <menu key="menu" id="Lny-Z2-TiC">
                                                                         <items>
                                                                             <menuItem title="Loop playlist" state="on" id="5WC-Sp-6mg">
@@ -409,14 +416,14 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="hb8-iM-6GW" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="415" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="403" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="JVp-qb-MC4"/>
                                 <constraint firstAttribute="height" constant="4" id="jsR-qK-FxH"/>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8L4-Ee-969" userLabel="WhileMediaIsPlayingSection VStack View">
-                            <rect key="frame" x="0.0" y="306" width="458" height="105"/>
+                            <rect key="frame" x="0.0" y="294" width="458" height="105"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Sh2-Uc-LNm">
                                     <rect key="frame" x="-2" y="88" width="143" height="17"/>
@@ -553,14 +560,14 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="uJ2-rv-7Ce" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="298" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="286" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="4" id="7bg-fU-AZ1"/>
                                 <constraint firstAttribute="width" constant="1" id="ncw-Vh-5lG"/>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="b30-nk-gre" userLabel="WhenMediaEndsSection VStack View">
-                            <rect key="frame" x="0.0" y="183" width="458" height="111"/>
+                            <rect key="frame" x="0.0" y="171" width="458" height="111"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="f10-fj-03c">
                                     <rect key="frame" x="-2" y="94" width="117" height="17"/>
@@ -653,14 +660,14 @@
                             </customSpacing>
                         </stackView>
                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="hzq-nn-zqb" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="175" width="1" height="4"/>
+                            <rect key="frame" x="0.0" y="163" width="1" height="4"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="1" id="LRg-bS-uwc"/>
                                 <constraint firstAttribute="height" constant="4" id="XgZ-hL-RSw"/>
                             </constraints>
                         </customView>
                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="4" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8iE-FU-0g0" userLabel="PauseResumeWheSection VStack View">
-                            <rect key="frame" x="0.0" y="12" width="458" height="159"/>
+                            <rect key="frame" x="0.0" y="0.0" width="458" height="159"/>
                             <subviews>
                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WSg-Sb-Mqv">
                                     <rect key="frame" x="-2" y="142" width="462" height="17"/>
@@ -778,27 +785,6 @@
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="0d5-bc-MQK" userLabel="4pt Spacer">
-                            <rect key="frame" x="0.0" y="4" width="1" height="4"/>
-                            <constraints>
-                                <constraint firstAttribute="height" constant="4" id="DrD-eb-8Lb"/>
-                                <constraint firstAttribute="width" constant="1" id="f29-uK-aP5"/>
-                            </constraints>
-                        </customView>
-                        <customView translatesAutoresizingMaskIntoConstraints="NO" id="yKE-AY-fnC" userLabel="0pt Spacer">
-                            <rect key="frame" x="0.0" y="0.0" width="1" height="0.0"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="1" id="MFH-yv-8b5"/>
-                                <constraint firstAttribute="height" id="NNg-4B-IHE"/>
-                            </constraints>
-                            <connections>
-                                <binding destination="IBP-Mz-Maa" name="hidden" keyPath="values.enableRestoreUIState" id="HyI-A9-qf7">
-                                    <dictionary key="options">
-                                        <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                    </dictionary>
-                                </binding>
-                            </connections>
-                        </customView>
                     </subviews>
                     <constraints>
                         <constraint firstItem="0me-8u-hdd" firstAttribute="height" secondItem="hDQ-Ns-0hM" secondAttribute="height" id="0oq-cG-qld"/>
@@ -813,7 +799,6 @@
                         <constraint firstItem="8Ql-ym-BvF" firstAttribute="height" secondItem="DUm-O0-pdI" secondAttribute="height" id="vCL-TH-fql"/>
                     </constraints>
                     <visibilityPriorities>
-                        <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
                         <integer value="1000"/>
@@ -846,7 +831,6 @@
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
                         <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
                     </customSpacing>
                 </stackView>
             </subviews>
@@ -860,7 +844,7 @@
                 <constraint firstItem="WFe-Uj-CJG" firstAttribute="top" secondItem="6zR-96-iKB" secondAttribute="top" constant="8" id="Rpw-Ae-biB"/>
                 <constraint firstItem="38y-2I-MGs" firstAttribute="leading" secondItem="6zR-96-iKB" secondAttribute="leading" id="ykt-2x-cLQ"/>
             </constraints>
-            <point key="canvasLocation" x="-2189" y="57"/>
+            <point key="canvasLocation" x="-2913.5" y="56.5"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="IBP-Mz-Maa"/>
         <customView id="y7O-rd-dnT" userLabel="Prefs &gt; General &gt; Playlist" propertyAccessControl="none">
@@ -977,7 +961,7 @@
                     <rect key="frame" x="191" y="105" width="128" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="PNG" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="3XO-ks-TDg" id="Ep0-Sx-T0v">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="NJ4-8v-c9y">
                             <items>
                                 <menuItem title="PNG" state="on" id="3XO-ks-TDg"/>
@@ -1189,7 +1173,7 @@
                     <rect key="frame" x="261" y="33" width="88" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Hourly" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="3600" imageScaling="proportionallyDown" inset="2" selectedItem="slG-Jb-54B" id="fRX-zX-ecC">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="menu"/>
+                        <font key="font" metaFont="message"/>
                         <menu key="menu" id="oZC-kI-PeA">
                             <items>
                                 <menuItem title="Hourly" state="on" tag="3600" id="slG-Jb-54B">

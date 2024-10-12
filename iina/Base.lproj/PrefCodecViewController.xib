@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23090" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23090"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -32,7 +32,7 @@
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="pxc-7C-SGP"/>
         <customView id="gZf-gF-XoY" userLabel="Video Section View">
-            <rect key="frame" x="0.0" y="0.0" width="444" height="374"/>
+            <rect key="frame" x="0.0" y="0.0" width="444" height="360"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleVideo" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2BH-mP-kfr">
@@ -296,7 +296,7 @@
             </subviews>
             <constraints>
                 <constraint firstItem="4rB-d2-drE" firstAttribute="baseline" secondItem="EWs-Ib-pVZ" secondAttribute="baseline" id="0Wl-YU-BME"/>
-                <constraint firstItem="2BH-mP-kfr" firstAttribute="top" secondItem="gZf-gF-XoY" secondAttribute="top" constant="22" id="0jh-iZ-prT"/>
+                <constraint firstItem="2BH-mP-kfr" firstAttribute="top" secondItem="gZf-gF-XoY" secondAttribute="top" constant="8" id="0jh-iZ-prT"/>
                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="IGa-h9-bKr" secondAttribute="trailing" id="0l4-7Z-nJD"/>
                 <constraint firstItem="40Z-9R-jw0" firstAttribute="leading" secondItem="xXS-nP-Chk" secondAttribute="leading" id="1of-sZ-BN6"/>
                 <constraint firstItem="0Re-PY-hmC" firstAttribute="top" secondItem="4rB-d2-drE" secondAttribute="bottom" constant="4" id="5Mm-wm-VFG"/>
@@ -363,11 +363,11 @@
             <point key="canvasLocation" x="783" y="560"/>
         </customView>
         <customView id="bsP-Kc-xXR" userLabel="Audio Section View">
-            <rect key="frame" x="0.0" y="0.0" width="480" height="302"/>
+            <rect key="frame" x="0.0" y="0.0" width="480" height="288"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <textField identifier="SectionTitleAudio" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0Ig-J7-VYp">
-                    <rect key="frame" x="-2" y="278" width="46" height="16"/>
+                    <rect key="frame" x="-2" y="264" width="46" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Audio:" id="sV5-dL-MUt">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -566,7 +566,7 @@
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kG3-P9-brK">
-                    <rect key="frame" x="118" y="278" width="81" height="16"/>
+                    <rect key="frame" x="118" y="264" width="81" height="16"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="Audio driver:" id="Zco-Ba-Idk">
                         <font key="font" usesAppearanceFont="YES"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -574,7 +574,7 @@
                     </textFieldCell>
                 </textField>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="up4-ch-kMU">
-                    <rect key="frame" x="205" y="277" width="93" height="18"/>
+                    <rect key="frame" x="205" y="263" width="93" height="18"/>
                     <buttonCell key="cell" type="radio" title="Core Audio" bezelStyle="regularSquare" imagePosition="left" inset="2" id="fSC-Em-JR4">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -588,7 +588,7 @@
                     </connections>
                 </button>
                 <button tag="1" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="G7x-f6-vZn">
-                    <rect key="frame" x="205" y="255" width="111" height="18"/>
+                    <rect key="frame" x="205" y="241" width="111" height="18"/>
                     <buttonCell key="cell" type="radio" title="AVFoundation" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="GvK-IC-26c">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -598,7 +598,7 @@
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Zv0-Cg-282">
-                    <rect key="frame" x="118" y="194" width="364" height="56"/>
+                    <rect key="frame" x="118" y="194" width="364" height="42"/>
                     <textFieldCell key="cell" allowsUndo="NO" id="2Md-pv-gSi">
                         <font key="font" metaFont="smallSystem"/>
                         <string key="title">AVFoundation is a new, experimental audio driver offering Spatial Audio support. However, you may encounter some issues when using AVFoundation, such as audio delays.</string>
@@ -607,7 +607,7 @@
                     </textFieldCell>
                 </textField>
                 <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9pR-Z7-Xzm">
-                    <rect key="frame" x="437" y="271" width="25" height="25"/>
+                    <rect key="frame" x="437" y="257" width="25" height="25"/>
                     <buttonCell key="cell" type="help" bezelStyle="helpButton" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="d2k-lz-Ecc">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
@@ -617,7 +617,7 @@
                     </connections>
                 </button>
                 <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Dbe-hj-GvX">
-                    <rect key="frame" x="316" y="256" width="16" height="16"/>
+                    <rect key="frame" x="316" y="242" width="16" height="16"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="16" id="aRV-dO-XZr"/>
                         <constraint firstAttribute="height" constant="16" id="gBQ-Qw-F7g"/>
