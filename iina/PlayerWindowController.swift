@@ -3732,17 +3732,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   @IBAction func volumeSliderDidChange(_ sender: NSSlider) {
-    let newVolume = sender.doubleValue
-    // Sometimes, scroll-to-seek will send an END event before its final value,
-    // which can end up getting interpreted as an incredibly small scroll in an
-    // arbitrary direction. Just filter this out. Will revisit if it shows up again.
-    let maxVolume = Preference.double(for: .maxVolume)
-    let constrainedVolume = newVolume.clamped(to: 0...maxVolume)
-    guard newVolume == 0.0 || newVolume == maxVolume || (abs(player.info.volume - newVolume) > 0.1) else { return }
-    if maxVolume > 100, newVolume > 100 && newVolume < 101 {
+    let value = sender.doubleValue
+    if Preference.double(for: .maxVolume) > 100, value > 100 && value < 101 {
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
     }
-    player.setVolume(newVolume)
+    player.setVolume(value)
   }
 
   @IBAction func backBtnAction(_ sender: NSButton) {
