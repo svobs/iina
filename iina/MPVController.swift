@@ -1468,13 +1468,15 @@ class MPVController: NSObject {
       player.reloadQuickSettingsView()
 
     case MPVOption.Audio.mute:
-      if let isMuted = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee {
-        guard player.info.isMuted != isMuted else { break }
-        player.info.isMuted = isMuted
-        player.syncUI(.muteButton)
-        let volume = Int(player.info.volume)
-        player.sendOSD(isMuted ? OSDMessage.mute(volume) : OSDMessage.unMute(volume))
+      guard let isMuted = UnsafePointer<Bool>(OpaquePointer(property.data))?.pointee else {
+        logPropertyValueError(MPVOption.Audio.mute, property.format)
+        break
       }
+      guard player.info.isMuted != isMuted else { break }
+      player.info.isMuted = isMuted
+      player.syncUI(.muteButton)
+      let volume = Int(player.info.volume)
+      player.sendOSD(isMuted ? OSDMessage.mute(volume) : OSDMessage.unMute(volume))
 
     case MPVOption.Audio.volume:
       guard let volume = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
