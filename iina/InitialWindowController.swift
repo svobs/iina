@@ -11,7 +11,6 @@ import Cocoa
 fileprivate extension NSUserInterfaceItemIdentifier {
   static let openFile = NSUserInterfaceItemIdentifier("openFile")
   static let openURL = NSUserInterfaceItemIdentifier("openURL")
-  static let resumeLast = NSUserInterfaceItemIdentifier("resumeLast")
 }
 
 fileprivate extension NSColor {
@@ -27,7 +26,7 @@ fileprivate extension NSColor {
 }
 
 fileprivate class GrayHighlightRowView: NSTableRowView {
-  
+
   override func drawSelection(in dirtyRect: NSRect) {
     if self.selectionHighlightStyle != .none {
       let selectionRect = NSInsetRect(self.bounds, 0, 0)
@@ -423,8 +422,6 @@ class InitialWindowViewActionButton: NSView {
   }
   var hoverBackground = NSColor.initialWindowActionButtonBackgroundHover
   var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
-
-  var action: Selector?
 
   override func awakeFromNib() {
     self.wantsLayer = true

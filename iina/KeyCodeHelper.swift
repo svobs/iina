@@ -503,11 +503,11 @@ class KeyCodeHelper {
    */
   public static func normalizeMpv(_ mpvKeystrokes: String) -> String {
     let normalizedList = splitAndNormalizeMpvString(mpvKeystrokes)
-    let normnalizedString = normalizedList.joined(separator: "-")
+    let normalizedString = normalizedList.joined(separator: "-")
     if AppInputConfig.logBindingsRebuild {
-      AppInputConfig.log.verbose("Normalized mpv: \(mpvKeystrokes.quoted) → \(normnalizedString.quoted)")
+      AppInputConfig.log.verbose("Normalized mpv: \(mpvKeystrokes.quoted) → \(normalizedString.quoted)")
     }
-    return normnalizedString
+    return normalizedString
   }
 
   /** Converts an mpv-formatted key string to a (key, modifiers) pair suitable for assignment to a MacOS menu item.

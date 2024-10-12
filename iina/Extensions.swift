@@ -459,24 +459,25 @@ extension Double {
   }
 }
 
-extension Comparable {
-  func clamped(to range: ClosedRange<Self>) -> Self {
+extension NSInteger {
+  func clamped(to range: Range<Self>) -> Self {
     if self < range.lowerBound {
       return range.lowerBound
     } else if self > range.upperBound {
-      return range.upperBound
+      return range.upperBound - 1
     } else {
       return self
     }
   }
 }
 
-extension BinaryInteger {
-  func clamped(to range: Range<Self>) -> Self {
+extension Comparable {
+
+  func clamped(to range: ClosedRange<Self>) -> Self {
     if self < range.lowerBound {
       return range.lowerBound
-    } else if self >= range.upperBound {
-      return range.upperBound.advanced(by: -1)
+    } else if self > range.upperBound {
+      return range.upperBound
     } else {
       return self
     }
@@ -1210,11 +1211,8 @@ extension NSUserInterfaceItemIdentifier {
   static let isChosen = NSUserInterfaceItemIdentifier("IsChosen")
   static let trackId = NSUserInterfaceItemIdentifier("TrackId")
   static let trackName = NSUserInterfaceItemIdentifier("TrackName")
-  static let isPlayingCell = NSUserInterfaceItemIdentifier("IsPlayingCell")
-  static let trackNameCell = NSUserInterfaceItemIdentifier("TrackNameCell")
   static let key = NSUserInterfaceItemIdentifier("Key")
   static let value = NSUserInterfaceItemIdentifier("Value")
-  static let action = NSUserInterfaceItemIdentifier("Action")
 }
 
 extension NSAppearance {

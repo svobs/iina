@@ -149,6 +149,7 @@
 		34ACABFA2C142A0C00F871A0 /* libzmq.5.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = 34ACAB382C142A0300F871A0 /* libzmq.5.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		34ACABFB2C142A0C00F871A0 /* libzstd.1.dylib in Copy Dylibs */ = {isa = PBXBuildFile; fileRef = 34ACAB4E2C142A0400F871A0 /* libzstd.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		34F294C02C0B68B300F14962 /* Contribution.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 34F294BF2C0B68B300F14962 /* Contribution.rtf */; };
+		34F8B6F62C6C7B0100AE4B16 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 34F8B6F52C6C7B0100AE4B16 /* PrefPluginViewController.xib */; };
 		34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FD798D291C76A600963EDE /* LogWindowController.swift */; };
 		49542975216C34950058F680 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49542974216C34950058F680 /* Cocoa.framework */; };
 		49542978216C34950058F680 /* SafariExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49542977216C34950058F680 /* SafariExtensionHandler.swift */; };
@@ -207,15 +208,12 @@
 		8434BAAD1D5E4546003BECF2 /* SlideUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */; };
 		844C59E71F7C143D008D1B00 /* ThumbnailCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844C59E61F7C143D008D1B00 /* ThumbnailCacheManager.swift */; };
 		844D72EF1E056E1400522E5E /* input.conf in Copy Configs */ = {isa = PBXBuildFile; fileRef = 84E745D81DFDE8C100588DED /* input.conf */; };
-		844DE1BF1D3E2B9900272589 /* MPVEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844DE1BE1D3E2B9900272589 /* MPVEvent.swift */; };
 		8450403D1E0A9EE20079C194 /* InspectorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8450403B1E0A9EE20079C194 /* InspectorWindowController.swift */; };
 		845040401E0ACADD0079C194 /* MPVNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8450403F1E0ACADD0079C194 /* MPVNode.swift */; };
 		845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845040451E0B0F500079C194 /* CropSettingsViewController.swift */; };
 		8450404A1E0B13230079C194 /* CropBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845040491E0B13230079C194 /* CropBoxView.swift */; };
 		8451E6D92604AEFC009A15D7 /* Just in Frameworks */ = {isa = PBXBuildFile; productRef = 8451E6D82604AEFC009A15D7 /* Just */; };
 		8452DD851D3B956D008A543A /* Preference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8452DD841D3B956D008A543A /* Preference.swift */; };
-		845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845404A91E4396F500B02B12 /* ScriptLoader.swift */; };
-		845404AC1E43980900B02B12 /* LuaScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845404AB1E43980900B02B12 /* LuaScript.swift */; };
 		845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845ABEAB1D4D19C000BFB15B /* MPVTrack.swift */; };
 		845AC09C1E1AE6C10080B614 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 845AC09E1E1AE6C10080B614 /* Localizable.strings */; };
 		845E70B2210CB59D00D06C42 /* ScrollingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845E70B1210CB59D00D06C42 /* ScrollingTextField.swift */; };
@@ -233,7 +231,6 @@
 		8476440A1D48CC3D004F6DF5 /* MPVCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847644091D48CC3D004F6DF5 /* MPVCommand.swift */; };
 		8476440C1D48F63D004F6DF5 /* OSDMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8476440B1D48F63D004F6DF5 /* OSDMessage.swift */; };
 		84791C8B1D405E9D0069E28A /* PlaybackInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84791C8A1D405E9D0069E28A /* PlaybackInfo.swift */; };
-		84795C371E0825AD0059A648 /* GifGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84795C361E0825AD0059A648 /* GifGenerator.swift */; };
 		84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84795C381E083EE30059A648 /* PrefControlViewController.swift */; };
 		847C62CA1DC13CDA00E1EF16 /* PrefGeneralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847C62C81DC13CDA00E1EF16 /* PrefGeneralViewController.swift */; };
 		84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84817C951DBDCA5F00CC2279 /* SettingsListCellView.swift */; };
@@ -256,7 +253,6 @@
 		84A0BA951D2F9E9600BC8DA1 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 84A0BA931D2F9E9600BC8DA1 /* MainMenu.xib */; };
 		84A0BA971D2FA1CE00BC8DA1 /* PlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */; };
 		84A0BA991D2FAAA700BC8DA1 /* MPVController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */; };
-		84A0BA9B1D2FAB4100BC8DA1 /* Parameter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A0BA9A1D2FAB4100BC8DA1 /* Parameter.swift */; };
 		84A0BA9E1D2FAD4000BC8DA1 /* PlayerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */; };
 		84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A0BAA01D2FAE7600BC8DA1 /* VideoView.swift */; };
 		84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A886E31E24F37D008755BB /* ShooterSubtitle.swift */; };
@@ -352,7 +348,6 @@
 		D1C7410C2CB3BCC100522FA7 /* VolumeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */; };
 		D1C741102CB6476900522FA7 /* PWin_PIP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */; };
 		D1C741122CB6503400522FA7 /* PWin_Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C741112CB6503100522FA7 /* PWin_Enums.swift */; };
-		D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */; };
 		D1C897762C8DAA6700394EE4 /* ControlBarGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */; };
 		D1D29A282ADE2E8000D8660F /* CustomTitleBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */; };
 		D1D4C7422B0F3219003B09C2 /* MPVHookValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */; };
@@ -1204,6 +1199,7 @@
 		34F294BD2C0A211100F14962 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/ScreenshootOSDView.strings; sourceTree = "<group>"; };
 		34F294BE2C0A211100F14962 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/ScreenshootOSDView.strings; sourceTree = "<group>"; };
 		34F294BF2C0B68B300F14962 /* Contribution.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Contribution.rtf; sourceTree = "<group>"; };
+		34F8B6F42C6C7B0100AE4B16 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		34FD798D291C76A600963EDE /* LogWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogWindowController.swift; sourceTree = "<group>"; };
 		440DDE351E9010420063E211 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/MainMenu.strings; sourceTree = "<group>"; };
 		440DDE361E9010420063E211 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
@@ -1427,15 +1423,12 @@
 		8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SlideUpButton.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		843B97AA1E82D3C100D07261 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		844C59E61F7C143D008D1B00 /* ThumbnailCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailCacheManager.swift; sourceTree = "<group>"; };
-		844DE1BE1D3E2B9900272589 /* MPVEvent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MPVEvent.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		844E2FD21F1C7C6000CB1170 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/HistoryWindowController.strings; sourceTree = "<group>"; };
 		8450403B1E0A9EE20079C194 /* InspectorWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InspectorWindowController.swift; sourceTree = "<group>"; };
 		8450403F1E0ACADD0079C194 /* MPVNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVNode.swift; sourceTree = "<group>"; };
 		845040451E0B0F500079C194 /* CropSettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CropSettingsViewController.swift; sourceTree = "<group>"; };
 		845040491E0B13230079C194 /* CropBoxView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CropBoxView.swift; sourceTree = "<group>"; };
 		8452DD841D3B956D008A543A /* Preference.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Preference.swift; sourceTree = "<group>"; };
-		845404A91E4396F500B02B12 /* ScriptLoader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptLoader.swift; sourceTree = "<group>"; };
-		845404AB1E43980900B02B12 /* LuaScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LuaScript.swift; sourceTree = "<group>"; };
 		845900C1220E134200B4A7C4 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/MainMenu.strings; sourceTree = "<group>"; };
 		845900C2220E134200B4A7C4 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
 		845900C3220E134200B4A7C4 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
@@ -1491,7 +1484,6 @@
 		8476440B1D48F63D004F6DF5 /* OSDMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = OSDMessage.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		84791C8A1D405E9D0069E28A /* PlaybackInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlaybackInfo.swift; sourceTree = "<group>"; };
 		84792F541EBB957E002E98F6 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		84795C361E0825AD0059A648 /* GifGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GifGenerator.swift; sourceTree = "<group>"; };
 		84795C381E083EE30059A648 /* PrefControlViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefControlViewController.swift; sourceTree = "<group>"; };
 		847C62C81DC13CDA00E1EF16 /* PrefGeneralViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefGeneralViewController.swift; sourceTree = "<group>"; };
 		84817C951DBDCA5F00CC2279 /* SettingsListCellView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsListCellView.swift; sourceTree = "<group>"; };
@@ -1548,7 +1540,6 @@
 		84A0BA941D2F9E9600BC8DA1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		84A0BA961D2FA1CE00BC8DA1 /* PlayerCore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlayerCore.swift; sourceTree = "<group>"; };
 		84A0BA981D2FAAA700BC8DA1 /* MPVController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MPVController.swift; sourceTree = "<group>"; };
-		84A0BA9A1D2FAB4100BC8DA1 /* Parameter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parameter.swift; sourceTree = "<group>"; };
 		84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlayerWindowController.swift; sourceTree = "<group>"; };
 		84A0BAA01D2FAE7600BC8DA1 /* VideoView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoView.swift; sourceTree = "<group>"; };
 		84A0F6021EBB4A7C001FCF44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InspectorWindowController.strings"; sourceTree = "<group>"; };
@@ -1868,7 +1859,6 @@
 		D1C7410B2CB3BCBB00522FA7 /* VolumeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeSlider.swift; sourceTree = "<group>"; };
 		D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_PIP.swift; sourceTree = "<group>"; };
 		D1C741112CB6503100522FA7 /* PWin_Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Enums.swift; sourceTree = "<group>"; };
-		D1C8976D2C871CAC00394EE4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PrefPluginViewController.xib; sourceTree = "<group>"; };
 		D1C897752C8DAA6700394EE4 /* ControlBarGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlBarGeometry.swift; sourceTree = "<group>"; };
 		D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTitleBar.swift; sourceTree = "<group>"; };
 		D1D4C7412B0F3219003B09C2 /* MPVHookValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVHookValue.swift; sourceTree = "<group>"; };
@@ -2323,7 +2313,7 @@
 				8488D6E51E11ABE900D5B952 /* PrefNetworkViewController.swift */,
 				8400D5F81E1AB34D006785F5 /* PrefNetworkViewController.xib */,
 				E353070321496CE4008FE492 /* PrefPluginViewController.swift */,
-				D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */,
+				34F8B6F52C6C7B0100AE4B16 /* PrefPluginViewController.xib */,
 				E337D5E3241C12BE00B5729A /* PrefPluginPermissionListView.swift */,
 				E38B3211214FB9EA000F6D27 /* PrefPluginPermissionView.swift */,
 				E38B3212214FB9EA000F6D27 /* PrefPluginPermissionView.xib */,
@@ -2357,7 +2347,6 @@
 				84EC12821F4F939000137C1E /* FilterPresets.swift */,
 				84EC12881F504D2500137C1E /* FilterPresets.strings */,
 				E3CB75BC1FDACB82004DB10A /* SavedFilter.swift */,
-				845404AB1E43980900B02B12 /* LuaScript.swift */,
 				84C6D3631EB276E9009BF721 /* PlaybackHistory.swift */,
 				D19690CB2B56770F002B0458 /* MPVLogLevel.swift */,
 				840D47971DFEEE6A000D9A64 /* KeyMapping.swift */,
@@ -2526,7 +2515,6 @@
 				8497A4831D2FF573005F504F /* iina-Bridging-Header.h */,
 				513A4FF929B53F8100A8EA7D /* Atomic.swift */,
 				51854CD92A1C489300C40B78 /* FFmpegLogger.swift */,
-				84A0BA9A1D2FAB4100BC8DA1 /* Parameter.swift */,
 				84EB1F061D2F5E76004FA5A1 /* Utility.swift */,
 				8461C52F1D462488006E91FF /* VideoTime.swift */,
 				8434BAA61D5DF2DA003BECF2 /* Extensions.swift */,
@@ -2538,7 +2526,6 @@
 				D1D87E0529320F7C00737886 /* UndoHelper.swift */,
 				84E745D51DFDD4FD00588DED /* KeyCodeHelper.swift */,
 				84BEEC411DFEE46200F945CA /* StreamReader.swift */,
-				84795C361E0825AD0059A648 /* GifGenerator.swift */,
 				8488D6DB1E1167EF00D5B952 /* FloatingPointByteCountFormatter.swift */,
 				841A599C1E1FF5800079E177 /* SleepPreventer.swift */,
 				84A886F21E26CA24008755BB /* Regex.swift */,
@@ -2577,7 +2564,6 @@
 				D1D736172989693A000EB5F4 /* Player */,
 				84EB1ED91D2F51D3004FA5A1 /* AppDelegate.swift */,
 				D11FB53F2CB8E4E20012A45A /* ShutdownHandler.swift */,
-				845404A91E4396F500B02B12 /* ScriptLoader.swift */,
 				84C6D3611EAF8D63009BF721 /* HistoryController.swift */,
 				84FBCB361EEACDDD0076C77C /* FFmpegController.h */,
 				84FBCB371EEACDDD0076C77C /* FFmpegController.m */,
@@ -2591,7 +2577,6 @@
 		84A0BAA81D2FAFCD00BC8DA1 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				844DE1BE1D3E2B9900272589 /* MPVEvent.swift */,
 				E3CB258E222799B800A62C47 /* MPVHook.swift */,
 				84EB1F041D2F5C5B004FA5A1 /* AppData.swift */,
 				84A0BA8F1D2F8D4100BC8DA1 /* IINAError.swift */,
@@ -3171,7 +3156,6 @@
 				D114C7B12BEDEF3E0002D077 /* PrefDataViewController.xib in Resources */,
 				E32712B224F2B8CA00359DAB /* ScreenshootOSDView.xib in Resources */,
 				8400D5DB1E1AB326006785F5 /* FontPickerWindowController.xib in Resources */,
-				D1C8976E2C871CAD00394EE4 /* PrefPluginViewController.xib in Resources */,
 				8400D5EA1E1AB33B006785F5 /* KeyRecordViewController.xib in Resources */,
 				84EC12861F504D2500137C1E /* FilterPresets.strings in Resources */,
 				E38B3214214FB9EA000F6D27 /* PrefPluginPermissionView.xib in Resources */,
@@ -3192,6 +3176,7 @@
 				E338368A202651CF00ABC812 /* PrefOSCToolbarDraggingItemViewController.xib in Resources */,
 				34ACA04B29DBB0090030C09C /* LogWindowController.xib in Resources */,
 				8483FB001EDFF325000F55D6 /* Credits.rtf in Resources */,
+				34F8B6F62C6C7B0100AE4B16 /* PrefPluginViewController.xib in Resources */,
 				84F5D49A1E44E9A50060A838 /* KeyBinding.strings in Resources */,
 				E34A0E012053F93A00B50097 /* PrefOSCToolbarSettingsSheetController.xib in Resources */,
 				E34E909A24F821280073BF04 /* GuideWindowController.xib in Resources */,
@@ -3364,7 +3349,6 @@
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
 				D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
-				84795C371E0825AD0059A648 /* GifGenerator.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,
 				513A4FFA29B53F8100A8EA7D /* Atomic.swift in Sources */,
 				84AABE981DBFB62F00D138FD /* FixedFontManager.m in Sources */,
@@ -3436,7 +3420,6 @@
 				D114C7AE2BEDEE150002D077 /* PrefDataViewController.swift in Sources */,
 				8407D1401E3A684C0043895D /* GLVideoLayer.swift in Sources */,
 				D19F9DAA28645C860054CC45 /* EditableTableView.swift in Sources */,
-				84A0BA9B1D2FAB4100BC8DA1 /* Parameter.swift in Sources */,
 				84EB1F051D2F5C5B004FA5A1 /* AppData.swift in Sources */,
 				51F7974728C7E00200812D0D /* Lock.swift in Sources */,
 				D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */,
@@ -3444,7 +3427,6 @@
 				84C8D58F1D794CE600D98A0E /* MPVFilter.swift in Sources */,
 				D1C7410A2CB3833B00522FA7 /* ScrollableSlider.swift in Sources */,
 				D19AF88428A3CBCE009B598C /* InputConfFileCache.swift in Sources */,
-				845404AA1E4396F500B02B12 /* ScriptLoader.swift in Sources */,
 				D1A4C2DC2BF97BB200CE32A9 /* FileMonitor.swift in Sources */,
 				84A0BAA11D2FAE7600BC8DA1 /* VideoView.swift in Sources */,
 				E395858A253314400096811F /* JavascriptAPISidebarView.swift in Sources */,
@@ -3452,7 +3434,6 @@
 				D19247FD2BC634D3003BEEE8 /* PlayerCrop.swift in Sources */,
 				E32693F924BA138000BF7ADC /* JavascriptPluginSubtitleItem.swift in Sources */,
 				34FD798E291C76A600963EDE /* LogWindowController.swift in Sources */,
-				844DE1BF1D3E2B9900272589 /* MPVEvent.swift in Sources */,
 				845040471E0B0F500079C194 /* CropSettingsViewController.swift in Sources */,
 				E33836852026223800ABC812 /* PrefOSCToolbarSettingsSheetController.swift in Sources */,
 				D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */,
@@ -3460,7 +3441,6 @@
 				51C1BA3A291CA76700C1208A /* InfoDictionary.swift in Sources */,
 				E301EFDA21312AB300BC8588 /* KeychainAccess.swift in Sources */,
 				8434BAA71D5DF2DA003BECF2 /* Extensions.swift in Sources */,
-				845404AC1E43980900B02B12 /* LuaScript.swift in Sources */,
 				E35306F42147F78D008FE492 /* JavascriptAPICore.swift in Sources */,
 				D1FA42E528E5E54700DF49DD /* AppInputConfig.swift in Sources */,
 				D1FF15772A7E35F300C0CE86 /* WindowAutosaveName.swift in Sources */,
@@ -3627,7 +3607,6 @@
 			isa = PBXVariantGroup;
 			children = (
 				34F8B6F42C6C7B0100AE4B16 /* Base */,
-				34F8B6F82C6C7B0300AE4B16 /* en */,
 				34B1FD942C70483400FB93A4 /* af */,
 				34B1FD952C70483500FB93A4 /* ca */,
 				34B1FD962C70483600FB93A4 /* zh-Hans */,
@@ -4720,14 +4699,6 @@
 				D114C7B02BEDEF3E0002D077 /* Base */,
 			);
 			name = PrefDataViewController.xib;
-			sourceTree = "<group>";
-		};
-		D1C8976C2C871CAC00394EE4 /* PrefPluginViewController.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				D1C8976D2C871CAC00394EE4 /* Base */,
-			);
-			name = PrefPluginViewController.xib;
 			sourceTree = "<group>";
 		};
 		E32712B424F2B8CA00359DAB /* ScreenshootOSDView.xib */ = {

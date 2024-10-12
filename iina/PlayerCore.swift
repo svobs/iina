@@ -2270,8 +2270,8 @@ class PlayerCore: NSObject {
         log.error("Could not create URL for path, skipping: \(path)")
       }
     }
-    let position = mpv.getDouble(MPVProperty.timePos)
-    info.playbackPositionSec = position
+    let timePosition = mpv.getDouble(MPVProperty.timePos)
+    info.playbackPositionSec = timePosition
 
     triedUsingExactSeekForCurrentFile = false
     // Playback will move directly from stopped to loading when transitioning to the next file in

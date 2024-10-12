@@ -394,7 +394,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   @discardableResult
-  func pasteFromPasteboard(_ tableView: NSTableView, row: Int, from pboard: NSPasteboard) -> Bool {
+  func pasteFromPasteboard(row: Int, from pboard: NSPasteboard) -> Bool {
     if let paths = pboard.propertyList(forType: .nsFilenames) as? [String] {
       let playableFiles = Utility.resolveURLs(player.getPlayableFiles(in: paths.map {
         $0.hasPrefix("/") ? URL(fileURLWithPath: $0) : URL(string: $0)!
@@ -450,7 +450,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       return true
     }
     // Otherwise, could be copy/cut & paste within playlistTableView
-    return pasteFromPasteboard(tableView, row: row, from: info.draggingPasteboard)
+    return pasteFromPasteboard(row: row, from: info.draggingPasteboard)
   }
 
   // MARK: - Edit Menu Support
@@ -480,7 +480,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   @objc func paste(_ sender: NSMenuItem) {
     let dest = playlistTableView.selectedRowIndexes.first ?? 0
-    pasteFromPasteboard(playlistTableView, row: dest, from: .general)
+    pasteFromPasteboard(row: dest, from: .general)
   }
 
   @objc func delete(_ sender: NSMenuItem) {

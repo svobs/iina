@@ -534,13 +534,13 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     deinterlaceLabel.stringValue = NSLocalizedString("quicksetting.deinterlace", comment: "Deinterlace")
     hdrLabel.stringValue = NSLocalizedString("quicksetting.hdr", comment: "HDR")
 
-    let speed = player.mpv.getDouble(MPVOption.PlaybackControl.speed)
+    let speed = player.info.playSpeed
     updateSpeed(to: speed)
   }
 
   /// Reload `Audio` tab
   private func updateAudioTabControls() {
-    let audioDelay = player.mpv.getDouble(MPVOption.Audio.audioDelay)
+    let audioDelay = player.info.audioDelay
     audioDelaySlider.doubleValue = audioDelay
     customAudioDelayTextField.doubleValue = audioDelay
     audioDelayResetBtn.isHidden = audioDelay == 0.0

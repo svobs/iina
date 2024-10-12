@@ -522,10 +522,6 @@ class Utility {
                                                 attributes: FontAttributes(font: active ? .systemBold : .system, size: .system, align: .center).value)
   }
 
-  static func toRealSubScale(fromDisplaySubScale scale: Double) -> Double {
-    return scale > 0 ? scale : -1 / scale
-  }
-
   static func toDisplaySubScale(fromRealSubScale realScale: Double) -> Double {
     return realScale >= 1 ? realScale : -1 / realScale
   }
@@ -736,12 +732,9 @@ class Utility {
   static func resolveURLs(_ urls: [URL]) -> [URL] {
     return urls.map { (try? URL(resolvingAliasFileAt: $0)) ?? $0 }
   }
-
 }
 
 // http://stackoverflow.com/questions/33294620/
-
-
 func rawPointerOf<T : AnyObject>(obj : T) -> UnsafeRawPointer {
   return UnsafeRawPointer(Unmanaged.passUnretained(obj).toOpaque())
 }

@@ -152,8 +152,6 @@ struct Constants {
     static let resume = NSLocalizedString("menu.resume", comment: "Resume")
     static let `default` = NSLocalizedString("quicksetting.item_default", comment: "Default")
     static let none = NSLocalizedString("quicksetting.item_none", comment: "None")
-    static let audioDelay = "Audio Delay"
-    static let subDelay = "Subtitle Delay"
     static let pip = NSLocalizedString("menu.pip", comment: "Enter Picture-in-Picture")
     static let exitPIP = NSLocalizedString("menu.exit_pip", comment: "Exit Picture-in-Picture")
     static let miniPlayer = NSLocalizedString("menu.mini_player", comment: "Enter Music Mode")
