@@ -907,6 +907,13 @@ class MPVController: NSObject {
     return mpv_set_property_string(mpv, name, value)
   }
 
+  func getEnum<T: MPVOptionValue>(_ name: String) -> T {
+    guard let value = getString(name) else {
+      return T.defaultValue
+    }
+    return T.init(rawValue: value) ?? T.defaultValue
+  }
+
   func getInt(_ name: String) -> Int {
     var data = Int64()
     mpv_get_property(mpv, name, MPV_FORMAT_INT64, &data)
@@ -1202,12 +1209,17 @@ class MPVController: NSObject {
   private func readEvents() {
     queue.async {
       while ((self.mpv) != nil) {
-        let event = mpv_wait_event(self.mpv, 0)
+        let event = mpv_wait_event(self.mpv, 0)!
+        let eventId = event.pointee.event_id
         // Do not deal with mpv-event-none
-        if event?.pointee.event_id == MPV_EVENT_NONE {
+        if eventId == MPV_EVENT_NONE {
           break
         }
         self.handleEvent(event)
+        // Must stop reading events once the mpv core is shutdown.
+        if eventId == MPV_EVENT_SHUTDOWN {
+          break
+        }
       }
     }
   }

@@ -8,12 +8,9 @@
 
 import Foundation
 
-fileprivate let subsystem = Logger.makeSubsystem("fmatcher")
-fileprivate let log = subsystem
-
 class AutoFileMatcher {
 
-  private enum AutoMatchingError: Error {
+  private enum TicketExpiredError: Error {
     case ticketExpired
   }
 
@@ -34,25 +31,30 @@ class AutoFileMatcher {
   private var subsGroupedBySeries: [String: [FileInfo]] = [:]
   private var unmatchedVideos: [FileInfo] = []
 
+  private let subsystem: Logger.Subsystem
+  private var log: Logger.Subsystem { subsystem }
+
   init(player: PlayerCore, ticket: Int) {
     self.player = player
     self.ticket = ticket
+    subsystem = Logger.makeSubsystem("fmatcher\(player.label)")
   }
 
   /// checkTicket
   private func checkTicket() throws {
     if player.backgroundQueueTicket != ticket {
-      throw AutoMatchingError.ticketExpired
+      throw TicketExpiredError.ticketExpired
     }
   }
 
-  private func getAllMediaFiles() {
+  private func getAllMediaFiles() throws {
     // get all files in current directory
     guard let files = try? fm.contentsOfDirectory(at: currentFolder, includingPropertiesForKeys: nil, options: searchOptions) else { return }
 
     log.debug("Getting all media files...")
     // group by extension
     for file in files {
+      try checkTicket()
       let fileInfo = FileInfo(file)
       if let mediaType = Utility.mediaType(forExtension: fileInfo.ext) {
         switch mediaType {
@@ -73,7 +75,8 @@ class AutoFileMatcher {
     audioFiles.sort { $0.filename.localizedStandardCompare($1.filename) == .orderedAscending }
   }
 
-  private func getAllPossibleSubs() -> [FileInfo] {
+  private func getAllPossibleSubs() throws -> [FileInfo] {
+    try checkTicket()
     log.debug("Getting all sub files...")
 
     // search subs
@@ -111,6 +114,7 @@ class AutoFileMatcher {
     // get all possible sub files
     var subtitles = subFiles
     for subDir in subDirs {
+      try checkTicket()
       if let contents = try? fm.contentsOfDirectory(at: subDir, includingPropertiesForKeys: nil, options: searchOptions) {
         subtitles.append(contentsOf: contents.compactMap { subExts.contains($0.pathExtension.lowercased()) ? FileInfo($0) : nil })
       }
@@ -130,13 +134,14 @@ class AutoFileMatcher {
     }
   }
 
-  private func matchVideoAndSubSeries() -> [String: String] {
+  private func matchVideoAndSubSeries() throws -> [String: String] {
     var prefixDistance: [String: [String: UInt]] = [:]
     var closestVideoForSub: [String: String] = [:]
 
     log.debug("Matching video and sub series...")
     // calculate edit distance between each v/s prefix
     for (sp, _) in subsGroupedBySeries {
+      try checkTicket()
       prefixDistance[sp] = [:]
       var minDist = UInt.max
       var minVideo = ""
@@ -155,6 +160,7 @@ class AutoFileMatcher {
 
     var matchedPrefixes: [String: String] = [:]  // video: sub
     for (vp, vl) in videosGroupedBySeries {
+      try checkTicket()
       guard vl.count > 2 else { continue }
       var minDist = UInt.max
       var minSub = ""
@@ -327,10 +333,10 @@ class AutoFileMatcher {
       currentFolder = folder
 
       player.info.isMatchingSubtitles = true
-      getAllMediaFiles()
+      try getAllMediaFiles()
 
       // get all possible subtitles
-      subtitles = getAllPossibleSubs()
+      subtitles = try getAllPossibleSubs()
       player.info.currentSubsInfo = subtitles
 
       // add files to playlist
@@ -348,7 +354,7 @@ class AutoFileMatcher {
       log.debug("Finished with \(subsGroupedBySeries.count) groups")
 
       // match video and sub series
-      let matchedPrefixes = matchVideoAndSubSeries()
+      let matchedPrefixes = try matchVideoAndSubSeries()
 
       // match sub stage 1
       try matchSubs(withMatchedSeries: matchedPrefixes)
@@ -361,8 +367,9 @@ class AutoFileMatcher {
       // Fill in file sizes after everything else is finished
       MediaMetaCache.shared.fillInVideoSizes(videoFiles, onBehalfOf: player)
 
+      player.postNotification(.iinaPlaylistChanged)
       log.debug("**Finished matching")
-    } catch let err as AutoMatchingError {
+    } catch let err as TicketExpiredError {
       player.info.isMatchingSubtitles = false
       guard case .ticketExpired = err else {
         log.error(err.localizedDescription)

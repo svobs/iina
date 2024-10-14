@@ -14,6 +14,8 @@ class GLVideoLayer: CAOpenGLLayer {
 
   unowned var videoView: VideoView!
 
+  private var bufferDepth: GLint = 8
+
   private let cglContext: CGLContextObj
   private let cglPixelFormat: CGLPixelFormatObj
 
@@ -64,22 +66,30 @@ class GLVideoLayer: CAOpenGLLayer {
   }
 #endif
 
-  override init() {
-    cglPixelFormat = GLVideoLayer.createPixelFormat()
+  init(_ videoView: VideoView) {
+    self.videoView = videoView
+    (cglPixelFormat, bufferDepth) = GLVideoLayer.createPixelFormat(videoView.player)
     cglContext = GLVideoLayer.createContext(cglPixelFormat)
     asychronousModeLock = Lock()
     super.init()
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+    wantsExtendedDynamicRangeContent = true
+    if bufferDepth > 8 {
+      contentsFormat = .RGBA16Float
+    }
   }
 
   override init(layer: Any) {
     let previousLayer = layer as! GLVideoLayer
-    self.cglPixelFormat = previousLayer.cglPixelFormat
-    self.cglContext = previousLayer.cglContext
-    self.videoView = previousLayer.videoView
-    self.asychronousModeLock = previousLayer.asychronousModeLock
+    cglPixelFormat = previousLayer.cglPixelFormat
+    bufferDepth = previousLayer.bufferDepth
+    cglContext = previousLayer.cglContext
+    videoView = previousLayer.videoView
+    asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+    wantsExtendedDynamicRangeContent = true
+    contentsFormat = previousLayer.contentsFormat
   }
 
   required init?(coder aDecoder: NSCoder) {
@@ -147,13 +157,16 @@ class GLVideoLayer: CAOpenGLLayer {
                                   h: Int32(dims[3]),
                                   internal_format: 0)
         withUnsafeMutablePointer(to: &data) { data in
-          var params: [mpv_render_param] = [
-            mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: .init(data)),
-            mpv_render_param(type: MPV_RENDER_PARAM_FLIP_Y, data: .init(flip)),
-            mpv_render_param()
-          ]
-          mpv_render_context_render(context, &params)
-          ignoreGLError()
+          withUnsafeMutablePointer(to: &bufferDepth) { bufferDepth in
+            var params: [mpv_render_param] = [
+              mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: .init(data)),
+              mpv_render_param(type: MPV_RENDER_PARAM_FLIP_Y, data: .init(flip)),
+              mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data:.init(bufferDepth)),
+              mpv_render_param()
+            ]
+            mpv_render_context_render(context, &params)
+            ignoreGLError()
+          }
         }
       } else {
         glClearColor(0, 0, 0, 1)
@@ -227,12 +240,15 @@ class GLVideoLayer: CAOpenGLLayer {
   override func display() {
     super.display()
     CATransaction.flush()
+
 #if LOG_VIDEO_LAYER
     displayCountTotal += 1
 #endif
-    // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
-    // This can happen when IINA is playing in another space, as might occur when just playing
-    // audio. See issue #5025.
+
+    // Must lock the OpenGL context before calling mpv render methods. Can't wait until we have
+    // checked the flags to see if a skip renderer is needed because the OpenGL context must always
+    // be locked before locking the isUninited lock to avoid deadlocks. The flags can't be checked
+    // without locking isUninited to avoid data races.
     guard videoView.player.mpv.lockAndSetOpenGLContext() else { return }
     defer { videoView.player.mpv.unlockOpenGLContext() }
     videoView.$isUninited.withLock() { [self] isUninited in
@@ -244,6 +260,9 @@ class GLVideoLayer: CAOpenGLLayer {
       }
       guard needsMPVRender else { return }
 
+      // Neither canDraw nor draw(inCGLContext:) were called by AppKit, needs a skip render.
+      // This can happen when IINA is playing in another space, as might occur when just playing
+      // audio. See issue #5025.
       if let renderContext = videoView.player.mpv.mpvRenderContext,
          videoView.player.mpv.shouldRenderUpdateFrame() {
         var skip: CInt = 1
@@ -261,12 +280,129 @@ class GLVideoLayer: CAOpenGLLayer {
 
   // MARK: - Core OpenGL Context and Pixel Format
 
+  static let glVersions: [CGLOpenGLProfile] = [
+    kCGLOGLPVersion_3_2_Core,
+    kCGLOGLPVersion_Legacy
+  ]
+
+  static let glFormatBase: [CGLPixelFormatAttribute] = [
+    kCGLPFAOpenGLProfile,
+    kCGLPFAAccelerated,
+    kCGLPFADoubleBuffer
+  ]
+
+  static let glFormatSoftwareBase: [CGLPixelFormatAttribute] = [
+    kCGLPFAOpenGLProfile,
+    kCGLPFARendererID,
+    CGLPixelFormatAttribute(UInt32(kCGLRendererGenericFloatID)),
+    kCGLPFADoubleBuffer
+  ]
+
+  static let glFormatOptional: [[CGLPixelFormatAttribute]] = [
+    [kCGLPFABackingStore],
+    [kCGLPFAAllowOfflineRenderers]
+  ]
+
+  static let glFormat10Bit: [CGLPixelFormatAttribute] = [
+    kCGLPFAColorSize,
+    _CGLPixelFormatAttribute(rawValue: 64),
+    kCGLPFAColorFloat
+  ]
+
+  static let glFormatAutoGPU: [CGLPixelFormatAttribute] = [
+    kCGLPFASupportsAutomaticGraphicsSwitching
+  ]
+
+  static let attributeLookUp: [UInt32: String] = [
+    kCGLOGLPVersion_3_2_Core.rawValue: "kCGLOGLPVersion_3_2_Core",
+    kCGLOGLPVersion_Legacy.rawValue: "kCGLOGLPVersion_Legacy",
+    kCGLPFAOpenGLProfile.rawValue: "kCGLPFAOpenGLProfile",
+    UInt32(kCGLRendererGenericFloatID): "kCGLRendererGenericFloatID",
+    kCGLPFARendererID.rawValue: "kCGLPFARendererID",
+    kCGLPFAAccelerated.rawValue: "kCGLPFAAccelerated",
+    kCGLPFADoubleBuffer.rawValue: "kCGLPFADoubleBuffer",
+    kCGLPFABackingStore.rawValue: "kCGLPFABackingStore",
+    kCGLPFAColorSize.rawValue: "kCGLPFAColorSize",
+    kCGLPFAColorFloat.rawValue: "kCGLPFAColorFloat",
+    kCGLPFAAllowOfflineRenderers.rawValue: "kCGLPFAAllowOfflineRenderers",
+    kCGLPFASupportsAutomaticGraphicsSwitching.rawValue: "kCGLPFASupportsAutomaticGraphicsSwitching"
+  ]
+
+  private static func createPixelFormat(_ player: PlayerCore) -> (CGLPixelFormatObj, GLint) {
+    var pix: CGLPixelFormatObj?
+    var depth: GLint = 8
+    var err: CGLError = CGLError(rawValue: 0)
+    let swRender: CocoaCbSwRenderer = player.mpv.getEnum(MPVOption.GPURendererOptions.cocoaCbSwRenderer)
+
+    if swRender != .yes {
+      (pix, depth, err) = GLVideoLayer.findPixelFormat(player)
+    }
+
+    if (err != kCGLNoError || pix == nil) && swRender != .no {
+      (pix, depth, err) = GLVideoLayer.findPixelFormat(player, software: true)
+    }
+
+    guard let pixelFormat = pix, err == kCGLNoError else {
+      Logger.fatal("Cannot create OpenGL pixel format!")
+    }
+
+    return (pixelFormat, depth)
+  }
+
+  private static func findPixelFormat(_ player: PlayerCore, software: Bool = false) -> (CGLPixelFormatObj?, GLint, CGLError) {
+    var pix: CGLPixelFormatObj?
+    var err: CGLError = CGLError(rawValue: 0)
+    var npix: GLint = 0
+
+    for ver in glVersions {
+      var glBase = software ? glFormatSoftwareBase : glFormatBase
+      glBase.insert(CGLPixelFormatAttribute(ver.rawValue), at: 1)
+
+      var glFormat = [glBase]
+      if player.mpv.getFlag(MPVOption.GPURendererOptions.cocoaCb10bitContext) {
+        glFormat += [glFormat10Bit]
+      }
+      glFormat += glFormatOptional
+
+      if !Preference.bool(for: .forceDedicatedGPU) {
+        glFormat += [glFormatAutoGPU]
+      }
+
+      for index in stride(from: glFormat.count-1, through: 0, by: -1) {
+        let format = glFormat.flatMap { $0 } + [_CGLPixelFormatAttribute(rawValue: 0)]
+        err = CGLChoosePixelFormat(format, &pix, &npix)
+
+        if err == kCGLBadAttribute || err == kCGLBadPixelFormat || pix == nil {
+          glFormat.remove(at: index)
+        } else {
+          let attArray = format.map({ (value: _CGLPixelFormatAttribute) -> String in
+            return attributeLookUp[value.rawValue] ?? String(value.rawValue)
+          })
+
+          player.log.debug("Created CGL pixel format with attributes: " +
+                     "\(attArray.joined(separator: ", "))")
+          return (pix, glFormat.contains(glFormat10Bit) ? 16 : 8, err)
+        }
+      }
+    }
+
+    let errS = String(cString: CGLErrorString(err))
+    player.log.debug("Couldn't create a " + "\(software ? "software" : "hardware accelerated") " +
+               "CGL pixel format: \(errS) (\(err.rawValue))")
+    let swRenderer: CocoaCbSwRenderer = player.mpv.getEnum(MPVOption.GPURendererOptions.cocoaCbSwRenderer)
+    if software == false && swRenderer == .auto {
+      player.log.debug("Falling back to software renderer")
+    }
+
+    return (pix, 8, err)
+  }
+
   private static func createContext(_ pixelFormat: CGLPixelFormatObj) -> CGLContextObj {
     var ctx: CGLContextObj?
     CGLCreateContext(pixelFormat, nil, &ctx)
 
     guard let ctx = ctx else {
-      Logger.fatal("Cannot create OpenGL context")
+      Logger.fatal("Cannot create OpenGL context!")
     }
 
     // Sync to vertical retrace.
@@ -278,37 +414,6 @@ class GLVideoLayer: CAOpenGLLayer {
 
     CGLSetCurrentContext(ctx)
     return ctx
-  }
-
-  private static func createPixelFormat() -> CGLPixelFormatObj {
-    var attributeList: [CGLPixelFormatAttribute] = [
-      kCGLPFADoubleBuffer,
-      kCGLPFAAllowOfflineRenderers,
-      kCGLPFAColorFloat,
-      kCGLPFAColorSize, CGLPixelFormatAttribute(64),
-      kCGLPFAOpenGLProfile, CGLPixelFormatAttribute(kCGLOGLPVersion_3_2_Core.rawValue),
-      kCGLPFAAccelerated,
-    ]
-
-    if (!Preference.bool(for: .forceDedicatedGPU)) {
-      attributeList.append(kCGLPFASupportsAutomaticGraphicsSwitching)
-    }
-
-    var pix: CGLPixelFormatObj?
-    var npix: GLint = 0
-
-    for index in (0..<attributeList.count).reversed() {
-      let attributes = Array(
-        attributeList[0...index] + [_CGLPixelFormatAttribute(rawValue: 0)]
-      )
-      CGLChoosePixelFormat(attributes, &pix, &npix)
-      if let pix = pix {
-        Logger.log("Created OpenGL pixel format with \(attributes)", level: .debug)
-        return pix
-      }
-    }
-
-    Logger.fatal("Cannot create OpenGL pixel format!")
   }
 
   // MARK: Utils

@@ -39,9 +39,9 @@ class VideoView: NSView {
 
   // MARK: - Init
 
-  override init(frame: CGRect) {
+  init(frame: CGRect, player: PlayerCore) {
+    self.player = player
     super.init(frame: frame)
-    wantsLayer = true
 
     translatesAutoresizingMaskIntoConstraints = false
 
@@ -50,8 +50,7 @@ class VideoView: NSView {
   }
 
   convenience init(player: PlayerCore) {
-    self.init(frame: NSRect(origin: CGPointZero, size: AppData.minVideoSize))
-    self.player = player
+    self.init(frame: NSRect(origin: CGPointZero, size: AppData.minVideoSize), player: player)
   }
 
   required init?(coder: NSCoder) {
@@ -84,10 +83,9 @@ class VideoView: NSView {
     uninit()
   }
 
+  /// Called when property `self.wantsLayer` is set to `true`.
   override func makeBackingLayer() -> CALayer {
-    let layer = GLVideoLayer()
-    layer.colorspace = VideoView.SRGB
-    layer.videoView = self
+    let layer = GLVideoLayer(self)
     return layer
   }
 
@@ -99,6 +97,7 @@ class VideoView: NSView {
   @discardableResult
   func refreshContentsScale() -> Bool {
     guard let window else { return false }
+    guard player.isActive else { return false }
     let oldScaleFactor = videoLayer.contentsScale
     let newScaleFactor = window.backingScaleFactor
     if oldScaleFactor != newScaleFactor {
@@ -459,9 +458,12 @@ class VideoView: NSView {
       }
     }
 
-    if videoLayer.colorspace != VideoView.SRGB {
-      videoLayer.colorspace = VideoView.SRGB
-      videoLayer.wantsExtendedDynamicRangeContent = false
+    let screenColorSpace = self.window?.screen?.colorSpace
+    let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
+    if videoLayer.colorspace != sdrColorSpace {
+      let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
+      log.debug("Setting layer color space to \(name)")
+      videoLayer.colorspace = sdrColorSpace
       player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
       player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
       player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")

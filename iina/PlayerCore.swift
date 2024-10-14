@@ -120,7 +120,7 @@ class PlayerCore: NSObject {
   }
 
   var mpv: MPVController!
-  lazy var videoView: VideoView = VideoView(player: self)
+  var videoView: VideoView!
 
   var bindingController: PlayerBindingController!
 
@@ -265,6 +265,7 @@ class PlayerCore: NSObject {
     self.info = PlaybackInfo(log: log)
     self.isDemoPlayer = isDemoPlayer
     super.init()
+    self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
     self.bindingController = PlayerBindingController(playerCore: self)
     self.windowController = PlayerWindowController(playerCore: self)
@@ -489,6 +490,8 @@ class PlayerCore: NSObject {
     log.verbose("Player start")
 
     startMPV()
+    /// This will create & add the `GLVideoLayer` if it was not already init:
+    videoView.wantsLayer = true
     loadPlugins()
     if isAudioOnly {
       log.debug("Player is audio only. Will not init video")
@@ -554,6 +557,14 @@ class PlayerCore: NSObject {
   /// - Important: As a part of shutting down the player this method sends a quit command to mpv. Even though the command is
   ///     sent to mpv using the synchronous API mpv executes the quit command asynchronously. The player is not fully shutdown
   ///     until mpv finishes executing the quit command and shuts down.
+  /// - Note: If the user clicks on `Quit` right after starting to play a video then the background task may still be running and
+  ///     loading files into the playlist and adding subtitles. If that is the case then the background task **must be** stopped before
+  ///     sending a `quit` command to mpv. If the background task is allowed to access mpv after a `quit` command has been
+  ///     sent mpv could crash. The `stop` method takes care of instructing the background task to stop and will wait for it to stop
+  ///     before sending a `stop` command to mpv. _However_ mpv will stop on its own if the end of the video is reached. When
+  ///     that happens while IINA is quitting then this method may be called with the background task still running. If the background
+  ///     task is still running this method only changes the player state. When the background task ends it will notice that shutting
+  ///     down was in progress and will call this method again to continue the process of shutting down..
   func shutdown() {
     assert(DispatchQueue.isExecutingIn(.main))
     guard state.isNotYet(.shuttingDown) else {
@@ -589,8 +600,6 @@ class PlayerCore: NSObject {
     if isMPVInitiated {
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
       refreshSyncUITimer()   // Shut down timer
-      // The user must have used mpv's IPC interface to send a quit command directly to mpv. Must
-      // perform the actions that were skipped when IINA's normal shutdown process was bypassed.
       mpv.removeObservers()
     }
     uninitVideo()            // Shut down DisplayLink
@@ -688,6 +697,11 @@ class PlayerCore: NSObject {
   }
 
   /// Stop playback and unload the media.
+  ///
+  /// This method is called when a window closes. The player may be:
+  /// - In one of the "active" states
+  /// - In the `idle` state
+  /// - In the `shutdown` state
   func stop() {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -2084,7 +2098,7 @@ class PlayerCore: NSObject {
     // The player must be active to be able to save the watch later configuration.
     if isActive {
       log.debug("Write watch later config")
-      mpv.command(.writeWatchLaterConfig)
+      mpv.command(.writeWatchLaterConfig, level: .verbose)
     }
     saveToLastPlayedFile(info.currentURL, duration: info.playbackDurationSec, position: info.playbackPositionSec)
 

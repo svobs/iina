@@ -991,6 +991,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     initAlbumArtView()
+    /// Note that this will add `videoView`, but at first run it will not yet have a video layer.
+    /// Need to wait until after mpv is initialized before creating `videoView.layer`
     addVideoViewToWindow()
     player.start()
 

@@ -168,138 +168,157 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   func updateInfo(dynamic: Bool = false) {
     guard let player = PlayerCore.lastActive else { return }
+
+    DispatchQueue.main.async { [self] in
+      _updateInfo(dynamic: dynamic, player)
+    }
+  }
+
+  private func _updateInfo(dynamic: Bool, _ player: PlayerCore) {
+    let controller = player.mpv!
+    if !dynamic {
+      updateStaticInfo(player)
+    }
+
+    let vbitrate = controller.getInt(MPVProperty.videoBitrate)
+    self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bit/s"
+
+    let abitrate = controller.getInt(MPVProperty.audioBitrate)
+    self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bit/s"
+
+    let dynamicStrProperties: [String: NSTextField] = [
+      MPVProperty.avsync: self.avsyncField,
+      MPVProperty.totalAvsyncChange: self.totalAvsyncField,
+      MPVProperty.frameDropCount: self.droppedFramesField,
+      MPVProperty.mistimedFrameCount: self.mistimedFramesField,
+      MPVProperty.displayFps: self.displayFPSField,
+      MPVProperty.estimatedVfFps: self.voFPSField,
+      MPVProperty.estimatedDisplayFps: self.edispFPSField,
+      MPVProperty.currentAo: self.aoField,
+    ]
+
+    for (k, v) in dynamicStrProperties {
+      let value = controller.getString(k)
+      v.stringValue = value ?? "N/A"
+      self.setLabelColor(v, by: value != nil)
+    }
+
+    let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
+    self.vprimariesField.stringValue = sigPeak > 0
+    ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
+    : "N/A";
+    self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
+
+    if player.info.isFileLoaded {
+      if let colorspace = player.windowController.videoView.videoLayer.colorspace {
+        let screenColorSpace = player.windowController.window?.screen?.colorSpace
+        let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
+        let isHdr = colorspace != sdrColorSpace
+        // Prefer the name of the CGColorSpace of the layer. If the CGColorSpace does not have a
+        // name then if the layer is set to the color space of the screen then fall back to the
+        // localized name on the NSColorSpace, if present. Otherwise report it as unspecified.
+        let name: String = {
+          if let name = colorspace.name { return name as String }
+          if let screenColorSpace, colorspace == screenColorSpace.cgColorSpace,
+             let name = screenColorSpace.localizedName { return name }
+          return "Unspecified"
+        }()
+        self.vcolorspaceField.stringValue = "\(name) (\(isHdr ? "H" : "S")DR)"
+      } else {
+        self.vcolorspaceField.stringValue = "Unspecified (SDR)"
+      }
+    } else {
+      self.vcolorspaceField.stringValue = "N/A"
+    }
+    self.setLabelColor(self.vcolorspaceField, by: player.info.isFileLoaded)
+
+    if player.windowController.loaded && player.info.isFileLoaded {
+      if let hwPf = controller.getString(MPVProperty.videoParamsHwPixelformat) {
+        self.vPixelFormat.stringValue = "\(hwPf) (HW)"
+      } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
+        self.vPixelFormat.stringValue = "\(swPf) (SW)"
+      } else {
+        self.vPixelFormat.stringValue = "N/A"
+      }
+    }
+    self.setLabelColor(self.vPixelFormat, by: player.info.isFileLoaded)
+  }
+
+  private func updateStaticInfo(_ player: PlayerCore) {
     let controller = player.mpv!
     let info = player.info
 
-    DispatchQueue.main.async {
+    // string properties
 
-      if !dynamic {
+    let strProperties: [String: NSTextField] = [
+      MPVProperty.path: self.pathField,
+      MPVProperty.fileFormat: self.fileFormatField,
+      MPVProperty.chapters: self.chaptersField,
+      MPVProperty.editions: self.editionsField,
+      // in mpv 0.38, video-codec-name is an alias of current-tracks/video/codec, etc
+      MPVProperty.currentTracksVideoCodec: self.vformatField,
+      MPVProperty.currentTracksVideoCodecDesc: self.vcodecField,
+      MPVProperty.hwdecCurrent: self.vdecoderField,
+      MPVProperty.containerFps: self.vfpsField,
+      MPVProperty.currentVo: self.voField,
+      MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
+      MPVProperty.audioParamsFormat: self.aformatField,
+      MPVProperty.audioParamsChannels: self.achannelsField,
+      MPVProperty.audioBitrate: self.abitrateField,
+      MPVProperty.audioParamsSamplerate: self.asamplerateField
+    ]
 
-        // string properties
-
-        let strProperties: [String: NSTextField] = [
-          MPVProperty.path: self.pathField,
-          MPVProperty.fileFormat: self.fileFormatField,
-          MPVProperty.chapters: self.chaptersField,
-          MPVProperty.editions: self.editionsField,
-          // in mpv 0.38, video-codec-name is an alias of current-tracks/video/codec, etc
-          MPVProperty.currentTracksVideoCodec: self.vformatField,
-          MPVProperty.currentTracksVideoCodecDesc: self.vcodecField,
-          MPVProperty.hwdecCurrent: self.vdecoderField,
-          MPVProperty.containerFps: self.vfpsField,
-          MPVProperty.currentVo: self.voField,
-          MPVProperty.currentTracksAudioCodecDesc: self.acodecField,
-          MPVProperty.audioParamsFormat: self.aformatField,
-          MPVProperty.audioParamsChannels: self.achannelsField,
-          MPVProperty.audioBitrate: self.abitrateField,
-          MPVProperty.audioParamsSamplerate: self.asamplerateField
-        ]
-
-        for (k, v) in strProperties {
-          var value = controller.getString(k)
-          if value == "" { value = nil }
-          v.stringValue = value ?? "N/A"
-          self.setLabelColor(v, by: value != nil)
-        }
-
-        // other properties
-
-        let duration = controller.getDouble(MPVProperty.duration)
-        self.durationField.stringValue = VideoTime(duration).stringRepresentation
-
-        let vwidth = controller.getInt(MPVProperty.width)
-        let vheight = controller.getInt(MPVProperty.height)
-        let dwidth = controller.getInt(MPVProperty.dwidth)
-        let dheight = controller.getInt(MPVProperty.dheight)
-        var sizeDisplayString = "\(vwidth)\u{d7}\(vheight)"
-        if vwidth != dwidth || vheight != dheight {
-          sizeDisplayString += "  (\(dwidth)\u{d7}\(dheight))"
-        }
-        self.vsizeField.stringValue = sizeDisplayString
-
-        let fileSize = controller.getInt(MPVProperty.fileSize)
-        self.fileSizeField.stringValue = "\(FloatingPointByteCountFormatter.string(fromByteCount: fileSize))B"
-
-        // track list
-
-        self.trackPopup.removeAllItems()
-        var needSeparator = false
-        for track in info.videoTracks {
-          self.trackPopup.menu?.addItem(withTitle: "Video" + track.readableTitle,
-                                   action: nil, tag: nil, obj: track, stateOn: false)
-          needSeparator = true
-        }
-        if needSeparator && !info.audioTracks.isEmpty {
-          self.trackPopup.menu?.addItem(NSMenuItem.separator())
-        }
-        for track in info.audioTracks {
-          self.trackPopup.menu?.addItem(withTitle: "Audio" + track.readableTitle,
-                                   action: nil, tag: nil, obj: track, stateOn: false)
-          needSeparator = true
-        }
-        if needSeparator && !info.subTracks.isEmpty {
-          self.trackPopup.menu?.addItem(NSMenuItem.separator())
-        }
-        for track in info.subTracks {
-          self.trackPopup.menu?.addItem(withTitle: "Subtitle" + track.readableTitle,
-                                   action: nil, tag: nil, obj: track, stateOn: false)
-        }
-        self.trackPopup.selectItem(at: 0)
-        self.updateTrack()
-      }
-
-      let vbitrate = controller.getInt(MPVProperty.videoBitrate)
-      self.vbitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: vbitrate) + "bit/s"
-
-      let abitrate = controller.getInt(MPVProperty.audioBitrate)
-      self.abitrateField.stringValue = FloatingPointByteCountFormatter.string(fromByteCount: abitrate) + "bit/s"
-
-      let dynamicStrProperties: [String: NSTextField] = [
-        MPVProperty.avsync: self.avsyncField,
-        MPVProperty.totalAvsyncChange: self.totalAvsyncField,
-        MPVProperty.frameDropCount: self.droppedFramesField,
-        MPVProperty.mistimedFrameCount: self.mistimedFramesField,
-        MPVProperty.displayFps: self.displayFPSField,
-        MPVProperty.estimatedVfFps: self.voFPSField,
-        MPVProperty.estimatedDisplayFps: self.edispFPSField,
-        MPVProperty.currentAo: self.aoField,
-      ]
-
-      for (k, v) in dynamicStrProperties {
-        let value = controller.getString(k)
-        v.stringValue = value ?? "N/A"
-        self.setLabelColor(v, by: value != nil)
-      }
-
-      let sigPeak = controller.getDouble(MPVProperty.videoParamsSigPeak);
-      self.vprimariesField.stringValue = sigPeak > 0
-        ? "\(controller.getString(MPVProperty.videoParamsPrimaries) ?? "?") / \(controller.getString(MPVProperty.videoParamsGamma) ?? "?") (\(sigPeak > 1 ? "H" : "S")DR)"
-        : "N/A";
-      self.setLabelColor(self.vprimariesField, by: sigPeak > 0)
-
-      if let player = PlayerCore.lastActive, player.info.isFileLoaded {
-        if let colorspace = player.windowController.videoView.videoLayer.colorspace {
-          let isHdr = colorspace != VideoView.SRGB
-          self.vcolorspaceField.stringValue = "\(colorspace.name!) (\(isHdr ? "H" : "S")DR)"
-        } else {
-          self.vcolorspaceField.stringValue = "Unspecified (SDR)"
-        }
-      } else {
-        self.vcolorspaceField.stringValue = "N/A"
-      }
-      self.setLabelColor(self.vcolorspaceField, by: player.info.isFileLoaded)
-
-      if player.windowController.loaded && player.info.isFileLoaded {
-        if let hwPf = controller.getString(MPVProperty.videoParamsHwPixelformat) {
-          self.vPixelFormat.stringValue = "\(hwPf) (HW)"
-        } else if let swPf = controller.getString(MPVProperty.videoParamsPixelformat) {
-          self.vPixelFormat.stringValue = "\(swPf) (SW)"
-        } else {
-          self.vPixelFormat.stringValue = "N/A"
-        }
-      }
-      self.setLabelColor(self.vPixelFormat, by: player.info.isFileLoaded)
+    for (k, v) in strProperties {
+      var value = controller.getString(k)
+      if value == "" { value = nil }
+      v.stringValue = value ?? "N/A"
+      self.setLabelColor(v, by: value != nil)
     }
+
+    // other properties
+
+    let duration = controller.getDouble(MPVProperty.duration)
+    self.durationField.stringValue = VideoTime(duration).stringRepresentation
+
+    let vwidth = controller.getInt(MPVProperty.width)
+    let vheight = controller.getInt(MPVProperty.height)
+    let dwidth = controller.getInt(MPVProperty.dwidth)
+    let dheight = controller.getInt(MPVProperty.dheight)
+    var sizeDisplayString = "\(vwidth)\u{d7}\(vheight)"
+    if vwidth != dwidth || vheight != dheight {
+      sizeDisplayString += "  (\(dwidth)\u{d7}\(dheight))"
+    }
+    self.vsizeField.stringValue = sizeDisplayString
+
+    let fileSize = controller.getInt(MPVProperty.fileSize)
+    self.fileSizeField.stringValue = "\(FloatingPointByteCountFormatter.string(fromByteCount: fileSize))B"
+
+    // track list
+
+    self.trackPopup.removeAllItems()
+    var needSeparator = false
+    for track in info.videoTracks {
+      self.trackPopup.menu?.addItem(withTitle: "Video" + track.readableTitle,
+                                    action: nil, tag: nil, obj: track, stateOn: false)
+      needSeparator = true
+    }
+    if needSeparator && !info.audioTracks.isEmpty {
+      self.trackPopup.menu?.addItem(NSMenuItem.separator())
+    }
+    for track in info.audioTracks {
+      self.trackPopup.menu?.addItem(withTitle: "Audio" + track.readableTitle,
+                                    action: nil, tag: nil, obj: track, stateOn: false)
+      needSeparator = true
+    }
+    if needSeparator && !info.subTracks.isEmpty {
+      self.trackPopup.menu?.addItem(NSMenuItem.separator())
+    }
+    for track in info.subTracks {
+      self.trackPopup.menu?.addItem(withTitle: "Subtitle" + track.readableTitle,
+                                    action: nil, tag: nil, obj: track, stateOn: false)
+    }
+    self.trackPopup.selectItem(at: 0)
+    self.updateTrack()
   }
 
   private func fileLoaded(_ notification: Notification) {
