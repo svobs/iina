@@ -31,7 +31,7 @@ class VideoView: NSView {
 
   private var videoViewConstraints: VideoViewConstraints? = nil
 
-  lazy var hdrSubsystem = Logger.makeSubsystem("hdr")
+  private lazy var logHDR = Logger.makeSubsystem("hdr\(player.label)")
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
@@ -414,51 +414,50 @@ class VideoView: NSView {
 
   // MARK: - Color
 
-  private func setICCProfile(_ displayId: UInt32) {
+  private func setICCProfile() {
+    let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
-      hdrSubsystem.debug("Not using ICC due to user preference")
-      player.mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
-    } else {
-      hdrSubsystem.debug("Loading ICC profile")
-      typealias ProfileData = (uuid: CFUUID, profileUrl: URL?)
-      guard let uuid = CGDisplayCreateUUIDFromDisplayID(displayId)?.takeRetainedValue() else { return }
-
-      var argResult: ProfileData = (uuid, nil)
-      withUnsafeMutablePointer(to: &argResult) { data in
-        ColorSyncIterateDeviceProfiles({ (dict: CFDictionary?, ptr: UnsafeMutableRawPointer?) -> Bool in
-          if let info = dict as? [String: Any], let current = info["DeviceProfileIsCurrent"] as? Int {
-            let deviceID = info["DeviceID"] as! CFUUID
-            let ptr = ptr!.bindMemory(to: ProfileData.self, capacity: 1)
-            let uuid = ptr.pointee.uuid
-
-            if current == 1, deviceID == uuid, let profileURL = info["DeviceProfileURL"] as? URL {
-              ptr.pointee.profileUrl = profileURL
-              return false
-            }
-          }
-          return true
-        }, data)
+      logHDR.verbose("Not using ICC profile due to user preference")
+      player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
+    } else if let screenColorSpace {
+      logHDR.verbose("Using ICC profile")
+      player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
+      $isUninited.withLock() { isUninited in
+        guard !isUninited else { return }
+        setRenderICCProfile(screenColorSpace)
       }
-
-      if let iccProfilePath = argResult.profileUrl?.path, FileManager.default.fileExists(atPath: iccProfilePath) {
-        player.mpv.setString(MPVOption.GPURendererOptions.iccProfile, iccProfilePath)
-      }
-    }
-
-    let screenColorSpace = self.window?.screen?.colorSpace
-    let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
-    if videoLayer.colorspace != sdrColorSpace {
-      let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
-      log.debug("Setting layer color space to \(name)")
-      videoLayer.colorspace = sdrColorSpace
-      player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
-      player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
-      player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
-      player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
-      player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
-      player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
     }
   }
+
+  /// Set an ICC profile for use with the mpv [icc-profile-auto](https://mpv.io/manual/stable/#options-icc-profile-auto)
+  /// option.
+  ///
+  /// This method fulfills the mpv requirement that applications using libmpv with the render API provide the ICC profile via
+  /// `MPV_RENDER_PARAM_ICC_PROFILE` in order for the `--icc-profile-auto` option to work. The ICC profile data will not
+  /// be used by mpv unless the option is enabled.
+  ///
+  /// The IINA `Load ICC profile` setting is tied to the `--icc-profile-auto` option. This allows users to override IINA using
+  /// the [--icc-profile](https://mpv.io/manual/stable/#options-icc-profile) option.
+  private func setRenderICCProfile(_ profile: NSColorSpace) {
+
+    guard let renderContext = player.mpv.mpvRenderContext else { return }
+    guard var iccData = profile.iccProfileData else {
+      let name = profile.localizedName ?? "unnamed"
+      player.log.warn("Color space \(name) does not contain ICC profile data")
+      return
+    }
+    iccData.withUnsafeMutableBytes { (ptr: UnsafeMutableRawBufferPointer) in
+      guard let baseAddress = ptr.baseAddress, ptr.count > 0 else { return }
+
+      let u8Ptr = baseAddress.assumingMemoryBound(to: UInt8.self)
+      var icc = mpv_byte_array(data: u8Ptr, size: ptr.count)
+      withUnsafeMutableBytes(of: &icc) { (ptr: UnsafeMutableRawBufferPointer) in
+        let params = mpv_render_param(type: MPV_RENDER_PARAM_ICC_PROFILE, data: ptr.baseAddress)
+        mpv_render_context_set_parameter(renderContext, params)
+      }
+    }
+  }
+
 
   // MARK: - Error Logging
 
@@ -544,19 +543,19 @@ extension VideoView {
     if player.info.hdrAvailable != edrAvailable {
       player.windowController.quickSettingView.setHdrAvailability(to: edrAvailable)
     }
-    if edrEnabled != true { setICCProfile(displayId) }
+    if edrEnabled != true { setICCProfile() }
   }
 
   func requestEdrMode() -> Bool? {
     guard let mpv = player.mpv else { return false }
 
     guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      hdrSubsystem.debug("HDR primaries and gamma not available")
+      logHDR.debug("HDR primaries and gamma not available")
       return false
     }
   
     let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
-    hdrSubsystem.debug("HDR gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
+    logHDR.debug("HDR gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
 
     var name: CFString? = nil
     switch primaries {
@@ -580,22 +579,21 @@ extension VideoView {
       return false // SDR
 
     default:
-      hdrSubsystem.debug("Unknown HDR color space information gamma=\(gamma) primaries=\(primaries)")
+      logHDR.debug("Unknown HDR color space information gamma=\(gamma) primaries=\(primaries)")
       return false
     }
 
     let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
     guard maxRangeEDR > 1.0 else {
-      hdrSubsystem.debug("HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))")
+      logHDR.debug("HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))")
       return false
     }
 
     guard player.info.hdrEnabled else { return nil }
 
-    hdrSubsystem.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
+    logHDR.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
     videoLayer.colorspace = CGColorSpace(name: name!)
-
-    mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
+    mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
     // PQ videos will be display as it was, HLG videos will be converted to PQ
     mpv.setString(MPVOption.GPURendererOptions.targetTrc, "pq")
@@ -607,29 +605,29 @@ extension VideoView {
       // display.
       if targetPeak == 0 {
         if let displayInfo = CoreDisplay_DisplayCreateInfoDictionary(currentDisplay!)?.takeRetainedValue() as? [String: AnyObject] {
-          hdrSubsystem.debug("Successfully obtained information about the display")
+          logHDR.debug("Successfully obtained information about the display")
           // Prefer ReferencePeakHDRLuminance, which is reported by newer macOS versions.
           if let hdrLuminance = displayInfo["ReferencePeakHDRLuminance"] as? Int {
-            hdrSubsystem.debug("Found ReferencePeakHDRLuminance: \(hdrLuminance)")
+            logHDR.debug("Found ReferencePeakHDRLuminance: \(hdrLuminance)")
             targetPeak = hdrLuminance
           } else if let hdrLuminance = displayInfo["DisplayBacklight"] as? Int {
             // We know macOS Catalina uses this key.
-            hdrSubsystem.debug("Found DisplayBacklight: \(hdrLuminance)")
+            logHDR.debug("Found DisplayBacklight: \(hdrLuminance)")
             targetPeak = hdrLuminance
           } else {
-            hdrSubsystem.debug("Didn't find ReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
-            hdrSubsystem.debug("Display info dictionary: \(displayInfo)")
+            logHDR.debug("Didn't find ReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
+            logHDR.debug("Display info dictionary: \(displayInfo)")
             targetPeak = 400
           }
         } else {
-          hdrSubsystem.warn("Unable to obtain display information, assuming HDR400")
+          logHDR.warn("Unable to obtain display information, assuming HDR400")
           targetPeak = 400
         }
       }
       let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))?.mpvString
       ?? Preference.ToneMappingAlgorithmOption.defaultValue.mpvString
 
-      hdrSubsystem.debug("Will enable tone mapping target-peak=\(targetPeak) algorithm=\(algorithm)")
+      logHDR.debug("Will enable tone mapping target-peak=\(targetPeak) algorithm=\(algorithm)")
       mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)
       mpv.setString(MPVOption.GPURendererOptions.toneMapping, algorithm)
     } else {
