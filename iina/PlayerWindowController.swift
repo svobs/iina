@@ -188,6 +188,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Is non-nil if within the activation rect of one of the sidebars
   var sidebarResizeCursor: NSCursor? = nil
 
+  var isDraggingPlaySlider = false
+
   // - Fadeable Views
 
   /// Views that will show/hide when cursor moving in/out of the window
@@ -346,10 +348,105 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     apply(visibility: visibility, view)
   }
 
-  // MARK: - Observed user defaults
+  // MARK: - Notification & user defaults observers
 
-  // Cached user default values
-  lazy var displayTimeAndBatteryInFullScreen: Bool = Preference.bool(for: .displayTimeAndBatteryInFullScreen)
+  private var notificationCenterObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
+
+  private func addObservers() {
+    guard let window else { return }
+    removeObservers()
+
+    addObserver(to: NSWorkspace.shared.notificationCenter, forName: NSWorkspace.activeSpaceDidChangeNotification) { [self] _ in
+      // FIXME: this is not ready for production yet! Need to fix issues with freezing video
+      guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
+      if !window.isOnActiveSpace && pipStatus == .notInPIP {
+        animationPipeline.submitInstantTask({ [self] in
+          log.debug("Window is no longer in active space; entering PIP")
+          enterPIP(then: { [self] in
+            isWindowPipDueToInactiveSpace = true
+          })
+        })
+      } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pipStatus == .inPIP {
+        animationPipeline.submitInstantTask({ [self] in
+          log.debug("Window is in active space again; exiting PIP")
+          isWindowPipDueToInactiveSpace = false
+          exitPIP()
+        })
+      }
+    }
+
+    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
+      player.refreshEdrMode()
+    }
+
+    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
+      windowDidChangeScreenProfile(noti)
+    }
+
+    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
+      windowDidChangeScreen(noti)
+    }
+
+    addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
+      updateTitle()
+    }
+
+    // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
+    // This is legacy code which will not run in newer versions of MacOS.
+    addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
+      windowDidChangeScreenParameters(noti)
+    }
+
+    // Observe the loop knobs on the progress bar and update mpv when the knobs move.
+    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
+      guard let self = self else { return }
+      let seconds = self.percentToSeconds(self.playSlider.abLoopA.doubleValue)
+      self.player.abLoopA = seconds
+      self.player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
+    }
+    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
+      guard let self = self else { return }
+      let seconds = self.percentToSeconds(self.playSlider.abLoopB.doubleValue)
+      self.player.abLoopB = seconds
+      self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
+    }
+
+    addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
+      if Preference.bool(for: .pauseWhenGoesToSleep) {
+        self.player.pause()
+      }
+    }
+
+    PlayerWindowController.observedPrefKeys.forEach { key in
+      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
+    }
+  }
+
+  internal func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
+                            using block: @escaping (Notification) -> Void) {
+    let observer: NSObjectProtocol = notificationCenter.addObserver(forName: name, object: object, queue: .main, using: block)
+    var observers = notificationCenterObservers[notificationCenter] ?? []
+    observers.append(observer)
+    notificationCenterObservers[notificationCenter] = observers
+  }
+
+  private func removeObservers() {
+    ObjcUtils.silenced { [self] in
+      for key in PlayerWindowController.observedPrefKeys {
+        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
+      }
+
+      let ncObservers = notificationCenterObservers
+      notificationCenterObservers = [:]
+      for (notificationCenter, observers) in ncObservers {
+        for observer in observers {
+          notificationCenter.removeObserver(observer)
+        }
+        log.verbose("Removed \(observers.count) observers from \(notificationCenter.className)")
+      }
+    }
+  }
+
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
   internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
@@ -545,7 +642,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       updateUseLegacyFullScreen()
     case PK.displayTimeAndBatteryInFullScreen.rawValue:
       if let newValue = change[.newKey] as? Bool {
-        displayTimeAndBatteryInFullScreen = newValue
         if !newValue {
           additionalInfoView.isHidden = true
         }
@@ -772,8 +868,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   private var hideCursorTimer: Timer?
 
-  var isDraggingPlaySlider = false
-
   var seekTimeAndThumbnailAnimationState: UIAnimationState = .shown
   /** For auto hiding UI after a timeout. */
   private var hideSeekTimeAndThumbnailTimer: Timer?
@@ -973,6 +1067,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // FIXME 3: parent playlist
     // FIXME 4: play bar drawing
     // FIXME 6: PWinGeometry is 1px off
+    // FIXME 7: play icon height in FF/RW
 
     // gesture recognizers
     rotationHandler.windowController = self
@@ -1087,81 +1182,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if player.disableUI { hideFadeableViews() }
     }
 
-    // add notification observers
-
-    // FIXME: these should be added at window open instead, and removed at window close!
-
-    NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: nil, using: { [unowned self] _ in
-      // FIXME: this is not ready for production yet! Need to fix issues with freezing video
-      guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
-      if !window.isOnActiveSpace && pipStatus == .notInPIP {
-        animationPipeline.submitInstantTask({ [self] in
-          log.debug("Window is no longer in active space; entering PIP")
-          enterPIP(then: { [self] in
-            isWindowPipDueToInactiveSpace = true
-          })
-        })
-      } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pipStatus == .inPIP {
-        animationPipeline.submitInstantTask({ [self] in
-          log.debug("Window is in active space again; exiting PIP")
-          isWindowPipDueToInactiveSpace = false
-          exitPIP()
-        })
-      }
-    })
-
-    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
-      player.refreshEdrMode()
-    }
-
-    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
-      windowDidChangeScreenProfile(noti)
-    }
-
-    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
-      windowDidChangeScreen(noti)
-    }
-
-    addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
-      updateTitle()
-    }
-
-    // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
-    // This is legacy code which will not run in newer versions of MacOS.
-    addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
-      windowDidChangeScreenParameters(noti)
-    }
-
-    // Observe the loop knobs on the progress bar and update mpv when the knobs move.
-    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
-      guard let self = self else { return }
-      let seconds = self.percentToSeconds(self.playSlider.abLoopA.doubleValue)
-      self.player.abLoopA = seconds
-      self.player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
-    }
-    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
-      guard let self = self else { return }
-      let seconds = self.percentToSeconds(self.playSlider.abLoopB.doubleValue)
-      self.player.abLoopB = seconds
-      self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
-    }
-
-    addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
-      if Preference.bool(for: .pauseWhenGoesToSleep) {
-        self.player.pause()
-      }
-    }
-
-    PlayerWindowController.observedPrefKeys.forEach { key in
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
-
     log.verbose("PlayerWindow windowDidLoad done")
     player.events.emit(.windowLoaded)
-  }
-
-  deinit {
-    removeObservers()
   }
 
   private func initAlbumArtView() {
@@ -1192,19 +1214,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Center in superview
     defaultAlbumArtView.centerXAnchor.constraint(equalTo: viewportView.centerXAnchor).isActive = true
     defaultAlbumArtView.centerYAnchor.constraint(equalTo: viewportView.centerYAnchor).isActive = true
-  }
-
-  private func removeObservers() {
-    ObjcUtils.silenced {
-      for key in PlayerWindowController.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
-  }
-
-  internal func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
-                            using block: @escaping (Notification) -> Void) {
-    notificationCenter.addObserver(forName: name, object: object, queue: .main, using: block)
   }
 
   static func buildScreenMap() -> [UInt32 : ScreenMeta] {
@@ -1961,6 +1970,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateBufferIndicatorView()
     updateOSDPosition()
 
+    // add notification observers
+    addObservers()
+
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)
     }
@@ -2034,6 +2046,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     defer {
       player.events.emit(.windowWillClose)
     }
+
+    removeObservers()
 
     // Close PIP
     if pipStatus == .inPIP {
@@ -3649,7 +3663,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func updateAdditionalInfo() {
-    guard isFullScreen && displayTimeAndBatteryInFullScreen else {
+    guard isFullScreen && Preference.bool(for: .displayTimeAndBatteryInFullScreen) else {
       return
     }
 
