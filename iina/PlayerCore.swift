@@ -2174,6 +2174,7 @@ class PlayerCore: NSObject {
 
   // MARK: - Listeners
 
+  /// A [MPV_EVENT_START_FILE](https://mpv.io/manual/stable/#command-interface-mpv-event-start-file) was received.
   func fileStarted(path: String, playlistPos: Int) {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard !isStopping else { return }
@@ -2266,6 +2267,8 @@ class PlayerCore: NSObject {
   }
 
 
+  /// A [MPV_EVENT_FILE_LOADED](https://mpv.io/manual/stable/#command-interface-mpv-event-file-loaded) was received.
+  ///
   /// This function is called right after file loaded, triggered by mpv `fileLoaded` notification.
   /// We should now be able to get track info from mpv and can start rendering the video in the final size.
   func fileLoaded() {

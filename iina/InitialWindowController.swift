@@ -385,10 +385,10 @@ extension InitialWindowController: NSTableViewDelegate, NSTableViewDataSource {
 
   func updateLastFileButtonHighlight() {
     if recentFilesTableView.selectedRow >= 0 {
-      // remove "LastFle" button highlight
+      // remove "LastFile" button highlight
       lastFileContainerView.layer?.backgroundColor = NSColor.initialWindowActionButtonBackground.cgColor
     } else {
-      // re-highlight "LastFle" button
+      // re-highlight "LastFile" button
       lastFileContainerView.layer?.backgroundColor = NSColor.initialWindowLastFileBackground.cgColor
     }
   }
