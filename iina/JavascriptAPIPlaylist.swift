@@ -34,7 +34,7 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
 
   func list() -> [[String: Any]] {
     guard isPlaying() else { return [] }
-
+    let playlist = player!.info.playlist
     return player!.info.playlist.map {
       [
         "filename": Playback.path(from: $0.url),
@@ -47,13 +47,15 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
   }
 
   func count() -> Int {
-    return player!.info.playlist.count
+    let playlist = player!.info.playlist
+    return playlist.count
   }
 
   func add(_ url: JSValue, _ at: Int = -1) -> Any {
     guard isPlaying() else { return false }
 
-    let count = player!.info.playlist.count
+    let playlist = player!.info.playlist
+    let count = playlist.count
     guard at < count else {
       log("playlist.add: Invalid index.", level: .error)
       return false
@@ -97,7 +99,8 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
 
   func move(_ index: Int, _ to: Int) -> Any {
     guard isPlaying() else { return false }
-    let count = player!.info.playlist.count
+    let playlist = player!.info.playlist
+    let count = playlist.count
 
     guard index >= 0 && index < count && to >= 0 && to < count && index != to else {
       log("playlist.move: Invalid index.", level: .error)
@@ -109,7 +112,8 @@ class JavascriptAPIPlaylist: JavascriptAPI, JavascriptAPIPlaylistExportable {
 
   func play(_ index: Int) {
     guard isPlaying() else { return }
-    let count = player!.info.playlist.count
+    let playlist = player!.info.playlist
+    let count = playlist.count
 
     guard index >= 0 && index < count else {
       log("playlist.play: Invalid index.", level: .error)

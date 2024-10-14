@@ -1180,7 +1180,7 @@ class PlayerCore: NSObject {
       /// Try to stay consistent by linking the contrapositive together: "set speed" -> "play".
       /// The intuition should be most apparent when using the speed slider in Quick Settings.
       if info.isPaused {
-        if let forceResume, forceResume {
+        if forceResume == true {
           _resume()
         } else if forceResume == nil && Preference.bool(for: .resetSpeedWhenPaused) {
           _resume()
@@ -1635,8 +1635,9 @@ class PlayerCore: NSObject {
       for path in paths {
         _addToPlaylist(path)
       }
-      if index <= info.playlist.count && index >= 0 {
-        let previousCount = info.playlist.count
+      let playlist = info.playlist
+      if index <= playlist.count && index >= 0 {
+        let previousCount = playlist.count
         for i in 0..<paths.count {
           _playlistMove(previousCount + i, to: index + i)
         }

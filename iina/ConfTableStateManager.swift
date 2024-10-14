@@ -36,8 +36,9 @@ class ConfTableStateManager: NSObject {
     _ = loadSelectedConfBindingsIntoAppConfig()
 
     InputConfFileCache.fileDQ.async {
-      AppInputConfig.log.debug("Loading \(AppData.defaultConfs.count) builtin conf files into cache")
-      for (confName, filePath) in AppData.defaultConfs {
+      let defaults = Constants.InputConf.defaults
+      AppInputConfig.log.debug("Loading \(defaults.count) builtin conf files into cache")
+      for (confName, filePath) in defaults {
         self.fileCache.getOrLoadConfFile(at: filePath, isReadOnly: true, confName: confName)
       }
       
@@ -87,7 +88,7 @@ class ConfTableStateManager: NSObject {
   }
 
   static var defaultConfName: String {
-    AppData.defaultConfNamesSorted[0]
+    Constants.InputConf.defaultConfNamesSorted[0]
   }
 
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {

@@ -111,17 +111,6 @@ struct AppData {
   static let gainAdjustmentHelpLink = "https://mpv.io/manual/stable/#options-replaygain"
   static let audioDriverHellpLink = "https://mpv.io/manual/stable/#audio-output-drivers-coreaudio"
 
-  static let confFileExtension = "conf"
-
-  // Immmutable default input configs.
-  // TODO: combine into a SortedDictionary when available
-  static let defaultConfNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default"]
-  static let defaultConfs: [String: String] = [
-    "IINA Default": Bundle.main.path(forResource: "iina-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!,
-    "mpv Default": Bundle.main.path(forResource: "input", ofType: AppData.confFileExtension, inDirectory: "config")!,
-    "VLC Default": Bundle.main.path(forResource: "vlc-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!,
-    "Movist Default": Bundle.main.path(forResource: "movist-default-input", ofType: AppData.confFileExtension, inDirectory: "config")!
-  ]
   // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
   static let maxConfFileLinesAccepted = 10000
 
@@ -129,6 +118,7 @@ struct AppData {
   static let minVideoSize = NSMakeSize(8, 8)
 }
 
+typealias Str = String
 struct Constants {
   struct BuildNumber {
     static let V1_0 = 1
@@ -206,6 +196,24 @@ struct Constants {
     static let mirror = "iina_mirror"
     static let audioEq = "iina_aeq"
     static let delogo = "iina_delogo"
+  }
+  struct InputConf {
+    // Immmutable default input configs.
+    // TODO: combine into an OrderedDictionary when available
+    static let defaultConfNamesSorted = ["IINA Default", "mpv Default", "VLC Default", "Movist Default", "Movist v2 Default"]
+    static let defaults: [Str: Str] = [
+      "IINA Default": resourcePath("iina-default-input"),
+      "mpv Default": resourcePath("input"),
+      "VLC Default": resourcePath("vlc-default-input"),
+      "Movist Default": resourcePath("movist-default-input"),
+      "Movist v2 Default": resourcePath("movist-v2-default-input"),
+    ]
+
+    static func resourcePath(_ resource: Str) -> Str {
+      return Bundle.main.path(forResource: resource, ofType: fileExtension, inDirectory: confDirName)!
+    }
+    static let fileExtension  = "conf"
+    static private let confDirName  = "config"
   }
   struct Sidebar {
     static let animationDuration: CGFloat = 0.2

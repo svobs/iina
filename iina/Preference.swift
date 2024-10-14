@@ -1318,7 +1318,7 @@ struct Preference {
     .ytdlRawOptions: "",
     .httpProxy: "",
 
-      .currentInputConfigName: AppData.defaultConfNamesSorted[0],
+      .currentInputConfigName: Constants.InputConf.defaultConfNamesSorted[0],
 
       .enableAdvancedSettings: false,
     .useMpvOsd: false,

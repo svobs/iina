@@ -438,7 +438,7 @@ extension ConfTableViewController: NSTableViewDataSource {
     pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.forEach {
       if let url = $0 as? URL {
         let filePath = url.path
-        if filePath.lowercasedPathExtension == AppData.confFileExtension {
+        if filePath.lowercasedPathExtension == Constants.InputConf.fileExtension {
           fileList.append(url.path)
         }
       }

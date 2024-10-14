@@ -361,7 +361,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   func numberOfRows(in tableView: NSTableView) -> Int {
     if tableView == playlistTableView {
-      return player.info.playlist.count
+      let playlist = player.info.playlist
+      return playlist.count
     } else if tableView == chapterTableView {
       return player.info.chapters.count
     } else {
@@ -382,7 +383,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   func copyToPasteboard(_ tableView: NSTableView, writeRowsWith rowIndexes: IndexSet, to pboard: NSPasteboard) {
     do {
       let indexesData = try NSKeyedArchiver.archivedData(withRootObject: rowIndexes, requiringSecureCoding: true)
-      let filePaths = rowIndexes.map { player.info.playlist[$0].url.path }
+      let playlist = player.info.playlist
+      let filePaths = rowIndexes.compactMap{ $0 < playlist.count ? playlist[$0].url.path : nil }
       pboard.declareTypes([.iinaPlaylistItem, .nsFilenames], owner: tableView)
       pboard.setData(indexesData, forType: .iinaPlaylistItem)
       pboard.setPropertyList(filePaths, forType: .nsFilenames)
@@ -511,7 +513,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     Utility.quickMultipleOpenPanel(title: "Add to playlist", canChooseDir: true) { urls in
       let playableFiles = self.player.getPlayableFiles(in: urls)
       if playableFiles.count != 0 {
-        self.player.addToPlaylist(paths: playableFiles.map { $0.path }, at: self.player.info.playlist.count)
+        self.player.addToPlaylist(paths: playableFiles.map { $0.path })
         self.player.sendOSD(.addToPlaylist(playableFiles.count))
       }
     }
@@ -1156,7 +1158,8 @@ class SubPopoverViewController: NSViewController, NSTableViewDelegate, NSTableVi
   @IBAction func wrongSubBtnAction(_ sender: AnyObject) {
     player.info.$matchedSubs.withLock { $0[filePath]?.removeAll() }
     tableView.reloadData()
-    if let row = player.info.playlist.firstIndex(where: { Playback.path(from: $0.url) == filePath }) {
+    let playlist = player.info.playlist
+    if let row = playlist.firstIndex(where: { Playback.path(from: $0.url) == filePath }) {
       playlistTableView.reloadData(forRowIndexes: IndexSet(integer: row), columnIndexes: IndexSet(integersIn: 0...1))
     }
   }

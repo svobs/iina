@@ -23,7 +23,6 @@ extension PlayerWindowController {
           let filename = Playback.path(from: item.url)
           playlist.append((filename + "\n"))
         }
-
         do {
           try playlist.write(to: url, atomically: true, encoding: String.Encoding.utf8)
         } catch let error as NSError {

@@ -63,7 +63,8 @@ struct ConfTableState {
       }
       return filePath
     }
-    if let filePath = AppData.defaultConfs[selectedConf] {
+    let defaults = Constants.InputConf.defaults
+    if let filePath = defaults[selectedConf] {
       Logger.log("Found file path for default conf \(selectedConf.pii.quoted): \(filePath.pii.quoted)", level: .verbose)
       return filePath
     }
@@ -92,11 +93,11 @@ struct ConfTableState {
   }
 
   static func isBuiltinConf(_ confName: String) -> Bool {
-    return AppData.defaultConfs[confName] != nil
+    return Constants.InputConf.defaults[confName] != nil
   }
 
   func getFilePath(forConfName confName: String) -> String {
-    if let defaultConfPath = AppData.defaultConfs[confName] {
+    if let defaultConfPath = Constants.InputConf.defaults[confName] {
       return defaultConfPath
     }
     if let userConfPath = userConfDict[confName] {
@@ -118,7 +119,7 @@ struct ConfTableState {
 
   func getBuiltinConfName(forFilePath filePath: String) -> String? {
     let filePathLower = filePath.lowercased()
-    for (builtinConfName, builtinFilePath) in AppData.defaultConfs {
+    for (builtinConfName, builtinFilePath) in Constants.InputConf.defaults {
       if builtinFilePath.lowercased() == filePathLower {
         return builtinConfName
       }
@@ -323,7 +324,7 @@ struct ConfTableState {
     var confTableRows: [String] = []
 
     // - default confs:
-    confTableRows.append(contentsOf: AppData.defaultConfNamesSorted)
+    confTableRows.append(contentsOf: Constants.InputConf.defaultConfNamesSorted)
 
     // - user: explicitly sort (ignoring case)
     var userConfNameList: [String] = []

@@ -55,6 +55,8 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
   }
 
   func showLoadingScreen(playerCore: PlayerCore) {
+    guard !playerCore.info.isRestoring else { return }
+    
     _ = window
     overlayView.isHidden = false
     self.playerCore = playerCore
