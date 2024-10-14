@@ -8,6 +8,8 @@
 
 import Foundation
 
+fileprivate let clearFilterWhenChangeMade = false
+
 /**
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
@@ -80,7 +82,7 @@ class BindingTableStateManager: NSObject {
     let userConfMappingsNew = extractUserConfMappings(from: allRowsNew)
 
     // If a filter is active for these ops, clear it. Otherwise the new row may be hidden by the filter, which might confuse the user.
-    if !BindingTableState.current.filterString.isEmpty {
+    if clearFilterWhenChangeMade && !BindingTableState.current.filterString.isEmpty {
       switch tableUIChange.changeType {
       case .updateRows, .insertRows, .moveRows, .removeRows:
         // This will cause an asynchronous load of the table's UI. So we will end up with 2 table updates from our one action.
@@ -222,9 +224,9 @@ class BindingTableStateManager: NSObject {
       // This can't be done until after the new `AppInputConfig` is received due to the possibility of rows being added/removed
       // which are outside the user conf section.
       if !newState.filterString.isEmpty {
-        // Sanity check. Filter change * regular change = big headache
-        assert(newFilterString == nil, "Expected filteredString not to change at the same time TableUIChange is pre-calculated!")
-        tableUIChange = applyFilter(to: unfilteredTableChange, oldState: oldState, newState: newState)
+        // Attempting to update table rows while a filter is active.
+        // TODO: The animation functionality here needs improvement. Need to retain selection on update!
+        tableUIChange = buildTableDiff(oldState: oldState, newState: newState)
       } else {
         tableUIChange = unfilteredTableChange
       }
@@ -233,31 +235,6 @@ class BindingTableStateManager: NSObject {
       tableUIChange = buildTableDiff(oldState: oldState, newState: newState)
     }
     updateTableUI(oldState: oldState, newState: newState, desiredTableUIChange: tableUIChange)
-  }
-
-  // FIXME: this mapping is not straightforward and there are probably bugs here.
-  // Determine if this code is even called anymore and maybe delete this function.
-  private func applyFilter(to unfilteredTableChange: TableUIChange, oldState: BindingTableState, newState: BindingTableState) -> TableUIChange {
-    Logger.log("Attempting to apply filter to TableUIChange data. This functionality has not been well-tested!", level: .warning)
-    let filtereUIChange = unfilteredTableChange.shallowClone()
-    filtereUIChange.toRemove = translateToFiltered(unfilteredTableChange.toRemove, oldState)
-    filtereUIChange.toInsert = translateToFiltered(unfilteredTableChange.toInsert, newState)
-    filtereUIChange.toUpdate = translateToFiltered(unfilteredTableChange.toUpdate, oldState)
-    filtereUIChange.newSelectedRowIndexes = translateToFiltered(unfilteredTableChange.newSelectedRowIndexes, newState)
-
-    if let toMove = unfilteredTableChange.toMove {
-      filtereUIChange.toMove = []
-
-      for (from, to) in toMove {
-        if let fromFiltered = oldState.getFilteredIndex(fromUniltered: from), let toFiltered = oldState.getFilteredIndex(fromUniltered: to) {
-          filtereUIChange.toMove?.append((fromFiltered, toFiltered))
-        } else {
-          Logger.log("Failed to find filtered index from either or both of ToMove pair: (\(from), \(to)); skipping", level: .error)
-        }
-      }
-    }
-
-    return filtereUIChange
   }
 
   private func translateToFiltered(_ unfilteredSet: IndexSet?, _ oldState: BindingTableState) -> IndexSet? {
