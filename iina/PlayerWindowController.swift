@@ -1110,13 +1110,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     })
 
-    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification, object: nil) { [unowned self] noti in
+    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
       player.refreshEdrMode()
     }
 
-    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification, using: self.windowDidChangeScreenProfile(_:))
+    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
+      windowDidChangeScreenProfile(noti)
+    }
 
-    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification, using: self.windowDidChangeScreen(_:))
+    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
+      windowDidChangeScreen(noti)
+    }
 
     addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
       updateTitle()
@@ -1124,8 +1128,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
     // This is legacy code which will not run in newer versions of MacOS.
-    NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main,
-                                           using: self.windowDidChangeScreenParameters)
+    addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
+      windowDidChangeScreenParameters(noti)
+    }
 
     // Observe the loop knobs on the progress bar and update mpv when the knobs move.
     addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
@@ -1141,7 +1146,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
     }
 
-    NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: nil) { [unowned self] _ in
+    addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
       if Preference.bool(for: .pauseWhenGoesToSleep) {
         self.player.pause()
       }

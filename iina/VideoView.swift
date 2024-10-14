@@ -597,14 +597,15 @@ extension VideoView {
       return false
     }
 
-    guard (window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0) > 1.0 else {
-      hdrSubsystem.debug("HDR video was found but the display does not support EDR mode")
+    let maxRangeEDR = window?.screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
+    guard maxRangeEDR > 1.0 else {
+      hdrSubsystem.debug("HDR video was found but the display does not support EDR mode (maxEDR=\(maxRangeEDR))")
       return false
     }
 
     guard player.info.hdrEnabled else { return nil }
 
-    hdrSubsystem.debug("Using HDR color space instead of ICC profile")
+    hdrSubsystem.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
     videoLayer.colorspace = CGColorSpace(name: name!)
 
     mpv.setString(MPVOption.GPURendererOptions.iccProfile, "")
