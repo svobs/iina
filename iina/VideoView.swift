@@ -219,7 +219,7 @@ class VideoView: NSView {
 
     let margins: MarginQuad
     let videoAspect: Double
-    let aspectPriority: NSLayoutConstraint.Priority
+    let aspectPriority: NSLayoutConstraint.Priority = .init(501)
     let eqPriority: NSLayoutConstraint.Priority
 
     if let geometry = geometry {
@@ -242,7 +242,7 @@ class VideoView: NSView {
                        aspectMultiplier: videoAspect,
                        eqIsActive: true, eqPriority: eqPriority,
                        centerIsActive: true, centerPriority: .defaultLow,
-                       aspectIsActive: videoAspect > 0.0, aspectPriority: NSLayoutConstraint.Priority(501))
+                       aspectIsActive: videoAspect > 0.0, aspectPriority: aspectPriority)
   }
 
   // MARK: - Mouse events
@@ -551,7 +551,7 @@ extension VideoView {
     guard player.windowController.loaded else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
-    log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen\(displayId): ")
+    log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {

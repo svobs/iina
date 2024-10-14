@@ -243,7 +243,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
     self.setLabelColor(self.vPixelFormat, by: player.info.isFileLoaded)
   }
-
+                
   private func updateStaticInfo(_ player: PlayerCore) {
     let controller = player.mpv!
     let info = player.info

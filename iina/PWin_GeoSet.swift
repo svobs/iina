@@ -35,8 +35,8 @@ struct GeometrySet {
 
 extension PlayerWindowController {
   private func getLatestWindowFrameAndScreenID() -> (NSRect?, String?) {
-    guard DispatchQueue.isExecutingIn(.main) else {
-      log.debug("Not executing in main queue; will use cached value for window frame & screenID instead of getting fresh data")
+    guard DispatchQueue.isExecutingIn(.main, logError: false) else {
+      log.debug("Not executing in main queue; will use cached window frame & screenID")
       return (nil, nil)
     }
     let currentPlayback = player.info.currentPlayback

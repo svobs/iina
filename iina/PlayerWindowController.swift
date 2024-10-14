@@ -936,6 +936,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // need to deal with control bar, so we handle it manually
     window.isMovableByWindowBackground  = false
 
+    // Registers this window for didChangeScreenProfileNotification
+    window.displaysWhenScreenProfileChanges = true
+
     viewportView.clipsToBounds = true
 
     /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
@@ -1111,12 +1114,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.refreshEdrMode()
     }
 
+    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification, using: self.windowDidChangeScreenProfile(_:))
+
+    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification, using: self.windowDidChangeScreen(_:))
+
     addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
       updateTitle()
     }
 
     // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
-    NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main, using: self.windowDidChangeScreenParameters)
+    // This is legacy code which will not run in newer versions of MacOS.
+    NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main,
+                                           using: self.windowDidChangeScreenParameters)
 
     // Observe the loop knobs on the progress bar and update mpv when the knobs move.
     addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
@@ -1188,7 +1197,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  internal func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil, using block: @escaping (Notification) -> Void) {
+  internal func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
+                            using block: @escaping (Notification) -> Void) {
     notificationCenter.addObserver(forName: name, object: object, queue: .main, using: block)
   }
 

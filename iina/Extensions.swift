@@ -1363,22 +1363,24 @@ extension NSScreen {
 
   static func forScreenID(_ screenID: String) -> NSScreen? {
     let splitted = screenID.split(separator: ":")
-    guard splitted.count > 0,
-          let displayID = UInt32(splitted[0]) 
-    else {
-      return nil
+    guard splitted.count > 0, let displayID = UInt32(splitted[0]) else { return nil }
+    if let screen = forDisplayID(displayID) {
+      // TODO: better matching logic. There is no guarantee that displayId will be consistent for the same screen across launches
+      if screen.screenID != screenID {
+        Logger.log("NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned", level: .error)
+      }
+      return screen
     }
+    Logger.log("Failed to find an NSScreen for screenID \(screenID.quoted). Returning nil", level: .error)
+    return nil
+  }
 
+  static func forDisplayID(_ displayID: UInt32) -> NSScreen? {
     for screen in NSScreen.screens {
       if screen.displayId == displayID {
-        // TODO: better matching logic. There is no guarantee that displayId will be consistent for the same screen across launches
-        if screen.screenID != screenID {
-          Logger.log("NSScreen with displayID \(displayID) is not exact match! Search target was \(screenID.quoted), but found \(screen.screenID.quoted). It is possible the wrong screen is being returned", level: .error)
-        }
         return screen
       }
     }
-    Logger.log("Failed to find an NSScreen for screenID \(screenID.quoted). Returning nil", level: .error)
     return nil
   }
 
@@ -1665,18 +1667,18 @@ extension DispatchQueue {
    USE THIS instead of `DispatchQueue.isExecutingIn(...))`: this will at least show an error msg.
    To work, the desired queue must first be registered with `registerDetection()` (or use `newDQ` to init)
    */
-  public static func isExecutingIn(_ dq: DispatchQueue) -> Bool {
+  public static func isExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
     let isExpected = DispatchQueue.current == dq
-    if !isExpected {
-      Logger.log("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))", level: .error)
+    if !isExpected && logError {
+      Logger.log.error("ERROR We are in the wrong queue: '\(DispatchQueue.currentQueueLabel ?? "nil")' (expected: \(dq.label))")
     }
     return isExpected
   }
 
-  public static func isNotExecutingIn(_ dq: DispatchQueue) -> Bool {
+  public static func isNotExecutingIn(_ dq: DispatchQueue, logError: Bool = true) -> Bool {
     let isExpected = DispatchQueue.current != dq
-    if !isExpected {
-      Logger.log("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'", level: .error)
+    if !isExpected && logError {
+      Logger.log.error("ERROR We should not be executing in: '\(DispatchQueue.currentQueueLabel ?? "nil")'")
     }
     return isExpected
   }
