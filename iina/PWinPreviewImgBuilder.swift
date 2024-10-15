@@ -37,6 +37,7 @@ class PWinPreviewImageBuilder {
   let topBarPlacement: Preference.PanelPlacement = Preference.enum(for: .topBarPlacement)
   let bottomBarPlacement: Preference.PanelPlacement = Preference.enum(for: .bottomBarPlacement)
   let appearance: NSAppearance
+  let desktopWallpaperColor: NSColor
 
   lazy var hasTitleBar: Bool = {
     return !isLegacyWindow || LayoutSpec.enableTitleBarForLegacyWindow  // No title bar for legacy window
@@ -48,27 +49,33 @@ class PWinPreviewImageBuilder {
 
   init(_ enclosingView: NSView) {
     self.appearance = enclosingView.iinaAppearance
+    self.desktopWallpaperColor = PWinPreviewImageBuilder.desktopWallpaperColor(from: appearance)
   }
 
-  fileprivate var iconColor: NSColor = {
-    .textColor
-  }()
-
-  fileprivate lazy var desktopWallpaperColor: NSColor = {
+  private static func desktopWallpaperColor(from appearance: NSAppearance) -> NSColor {
     if appearance.isDark {
       return NSColor(red: 0x54 / 255, green: 0x55 / 255, blue: 0x54 / 255, alpha: 1.0)  // "stone"
     } else {
       return NSColor(red: 0x7A / 255, green: 0x7B / 255, blue: 0x80 / 255, alpha: 1.0)  // "space gray pro"
     }
 //    NSColor(red: 0x68 / 255, green: 0x67 / 255, blue: 0xAF / 255, alpha: 1.0)  // "blue violet"
-  }()
+  }
 
   func buildPWinPreviewImage() -> NSImage? {
+    var image: NSImage?
+    appearance.applyAppearanceFor {
+      image = _buildPWinPreviewImage()
+    }
+    return image
+  }
+
+  func _buildPWinPreviewImage() -> NSImage? {
     guard let videoViewImg = loadCGImage(named: "preview-videoview"),
           let titleBarButtonsImg = loadCGImage(named: "preview-titlebar-buttons") else {
       Logger.log("Cannot generate window preview image: failed to load asset(s)", level: .error)
       return nil
     }
+    let iconColor = NSColor.textColor
     let titleBarHeight = hasTitleBar ? titleBarHeight : 0
     let windowRoundedCornerRadius = isLegacyWindow ? 0 : nativeWindowRoundedCornerRadius
 
@@ -168,7 +175,7 @@ class PWinPreviewImageBuilder {
         let totalHeight = CGFloat(menuBarHeight)
         let padTotalV = totalHeight * 0.36
         let padTotalH = padTotalV * 2
-        _ = drawPaddedIcon(appleLogo, in: cgContext, x: CGFloat(desktopInset), y: CGFloat(outputImgHeight - menuBarHeight),
+        _ = drawPaddedIcon(appleLogo, in: cgContext, iconColor: iconColor, x: CGFloat(desktopInset), y: CGFloat(outputImgHeight - menuBarHeight),
                            totalHeight: totalHeight, padTotalH: padTotalH, padTotalV: padTotalV)
       } else {
         // Sorry older versions
@@ -238,11 +245,14 @@ class PWinPreviewImageBuilder {
           nextIconMinX += spacingH
         }
 
-        nextIconMinX += drawIconVCenter(leftArrowImage, in: cgContext, originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
+        nextIconMinX += drawIconVCenter(leftArrowImage, in: cgContext, iconColor: iconColor,
+                                        originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
         nextIconMinX += spacingH
-        nextIconMinX += drawIconVCenter(playImage, in: cgContext, originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
+        nextIconMinX += drawIconVCenter(playImage, in: cgContext, iconColor: iconColor,
+                                        originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
         nextIconMinX += spacingH
-        nextIconMinX += drawIconVCenter(rightArrowImage, in: cgContext, originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
+        nextIconMinX += drawIconVCenter(rightArrowImage, in: cgContext, iconColor: iconColor,
+                                        originX: nextIconMinX, centerY: iconGroupCenterY, iconHeight: iconHeight)
         nextIconMinX += spacingH
 
         if oscPosition == .floating {
@@ -340,7 +350,8 @@ class PWinPreviewImageBuilder {
 
   /// Draws icon from left to right in the given context. The width of the icon is derived from `totalHeight` and the icon's aspect ratio.
   /// Returns the horizontal space which was used by the icon (including padding).
-  private func drawPaddedIcon(_ iconImage: NSImage, in cgContext: CGContext, x originX: CGFloat, y originY: CGFloat, totalHeight: CGFloat,
+  private func drawPaddedIcon(_ iconImage: NSImage, in cgContext: CGContext, iconColor: NSColor,
+                              x originX: CGFloat, y originY: CGFloat, totalHeight: CGFloat,
                               padTotalH: CGFloat? = nil, padTotalV: CGFloat? = nil,
                               padL: CGFloat? = nil, padR: CGFloat? = nil,
                               padT: CGFloat? = nil, padB: CGFloat? = nil) -> CGFloat {
@@ -354,20 +365,23 @@ class PWinPreviewImageBuilder {
     let iconHeight = totalHeight - padTop - padBottom
     let iconWidth = CGFloat(iconHeight) * iconImage.size.aspect
 
-    drawIcon(iconImage, in: cgContext, originX: originX + padLeft, originY: originY + padBottom, width: iconWidth, height: iconHeight)
+    drawIcon(iconImage, in: cgContext, iconColor: iconColor,
+             originX: originX + padLeft, originY: originY + padBottom,
+             width: iconWidth, height: iconHeight)
     return padRight + iconWidth
   }
 
   /// Draws icon from left to right in the given context. The width of the icon is derived from `iconHeight` and the icon's aspect ratio.
   /// Returns the width of the icon (not including padding).
-  private func drawIconVCenter(_ iconImage: NSImage, in cgContext: CGContext, originX: CGFloat, centerY: CGFloat, iconHeight: CGFloat) -> CGFloat {
+  private func drawIconVCenter(_ iconImage: NSImage, in cgContext: CGContext, iconColor: NSColor,
+                               originX: CGFloat, centerY: CGFloat, iconHeight: CGFloat) -> CGFloat {
     let originY = centerY - (iconHeight / 2)
     let iconWidth = CGFloat(iconHeight) * iconImage.size.aspect
-    drawIcon(iconImage, in: cgContext, originX: originX, originY: originY, width: iconWidth, height: iconHeight)
+    drawIcon(iconImage, in: cgContext, iconColor: iconColor, originX: originX, originY: originY, width: iconWidth, height: iconHeight)
     return iconWidth
   }
 
-  private func drawIcon(_ iconImage: NSImage, in cgContext: CGContext,
+  private func drawIcon(_ iconImage: NSImage, in cgContext: CGContext, iconColor: NSColor,
                         originX: CGFloat, originY: CGFloat, width: CGFloat, height: CGFloat) {
     // Note: this doesn't support alpha
     let tintedImage: NSImage = iconImage.tinted(iconColor)

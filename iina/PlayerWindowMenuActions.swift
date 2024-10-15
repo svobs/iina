@@ -436,8 +436,9 @@ extension PlayerWindowController {
   }
 
   @objc func menuCycleTrack(_ sender: NSMenuItem) {
+    let tag = sender.tag
     player.mpv.queue.async { [self] in
-      switch sender.tag {
+      switch tag {
       case 0: player.mpv.command(.cycle, args: ["video"])
       case 1: player.mpv.command(.cycle, args: ["audio"])
       case 2: player.mpv.command(.cycle, args: ["sub"])

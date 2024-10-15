@@ -125,6 +125,8 @@ class GLVideoLayer: CAOpenGLLayer {
 
   override func draw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                      forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
+    assert(DispatchQueue.current == nil || DispatchQueue.current!.qos == DispatchQoS.userInteractive,
+           "Unexpected DQ priority for: \(DispatchQueue.current!.label)")
     videoView.player.mpv.lockAndSetOpenGLContext()
     defer { videoView.player.mpv.unlockOpenGLContext() }
     guard !videoView.isUninited else { return }

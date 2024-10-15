@@ -716,11 +716,7 @@ return -1;\
         }
         break;
       case AVCOL_PRI_SMPTE432:
-        if (@available(macOS 10.15.4, *)) {
-          cgColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ);
-        } else {
-          cgColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ_EOTF);
-        }
+        cgColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3_PQ);
     }
     if (!cgColorSpace) {
       LOG_ERROR(@"Cannot create color space");

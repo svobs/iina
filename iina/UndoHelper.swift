@@ -36,6 +36,10 @@ class UndoHelper {
     Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Registering for \(undoMan.isRedoing ? UndoHelper.REDO : UndoHelper.UNDO)")
 
     undoMan.registerUndo(withTarget: self, handler: { manager in
+      guard let undoMan = self.undoManager else {
+        Logger.log.error("Cannot undo: undoManager is nil!")
+        return
+      }
       // Undo starts here. Or: undo of the undo (redo)
       Logger.log("[\(UndoHelper.formatAction(origActionName, undoMan))] Starting \(UndoHelper.currentOp(undoMan)) (\(UndoHelper.extraDebug(undoMan)))")
 

@@ -1307,13 +1307,21 @@ extension NSAppearance {
   }
 
   // Performs the given closure with this appearance by temporarily making this the current appearance.
-  func applyAppearanceFor<T>(_ closure: () throws -> T) rethrows -> T {
-    let previousAppearance = NSAppearance.current
-    NSAppearance.current = self
-    defer {
-      NSAppearance.current = previousAppearance
+  func applyAppearanceFor<T>(_ closure: ()  -> T) -> T {
+    if #available(macOS 11.0, *) {
+      var result: T?
+      self.performAsCurrentDrawingAppearance {
+        result = closure()
+      }
+      return result!
+    } else {
+      let previousAppearance = NSAppearance.current
+      NSAppearance.current = self
+      defer {
+        NSAppearance.current = previousAppearance
+      }
+      return closure()
     }
-    return try closure()
   }
 }
 
