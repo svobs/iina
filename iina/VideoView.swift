@@ -198,17 +198,6 @@ class VideoView: NSView {
     superview.needsLayout = true
   }
 
-  private func setFixedOffsetConstraints(margins: MarginQuad, videoAspect: Double = -1.0) {
-    log.verbose("Constraining videoView for fixed offsets=\(margins), aspect=\(videoAspect)")
-
-    // Use only EQ. Remove all other constraints
-    rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
-                       aspectMultiplier: videoAspect,
-                       eqIsActive: true, eqPriority: NSLayoutConstraint.Priority(499),
-                       centerIsActive: true, centerPriority: .defaultLow,
-                       aspectIsActive: videoAspect > 0.0, aspectPriority: NSLayoutConstraint.Priority(501))
-  }
-
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
@@ -219,22 +208,20 @@ class VideoView: NSView {
 
     let margins: MarginQuad
     let videoAspect: Double
-    let aspectPriority: NSLayoutConstraint.Priority = .init(501)
-    let eqPriority: NSLayoutConstraint.Priority
+    let aspectPriority: NSLayoutConstraint.Priority = .required
+    let eqPriority: NSLayoutConstraint.Priority = .init(499)
 
-    if let geometry = geometry {
+    if let geometry {
       if log.isTraceEnabled { log.trace("VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)") }
 
       margins = geometry.viewportMargins
       videoAspect = geometry.videoAspect
-      eqPriority = NSLayoutConstraint.Priority(499)
 
     } else {
       log.trace("VideoView: zeroing out viewportMargin constraints")
 
       margins = .zero
       videoAspect = -1
-      eqPriority = NSLayoutConstraint.Priority(499)
     }
 
     // Use only EQ. Remove all other constraints
