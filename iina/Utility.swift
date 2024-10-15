@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import UniformTypeIdentifiers
 
 typealias PK = Preference.Key
 
@@ -591,6 +592,18 @@ class Utility {
       return DispatchQueue.main.sync {
         block()
       }
+    }
+  }
+
+  static func icon(for url: URL) -> NSImage {
+    if #available(macOS 11.0, *) {
+      if let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
+        return NSWorkspace.shared.icon(for: uttype)
+      } else {
+        return NSWorkspace.shared.icon(for: .data)
+      }
+    } else {
+      return NSWorkspace.shared.icon(forFileType: url.pathExtension)
     }
   }
 

@@ -395,7 +395,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
         filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
         let fileExists = fileExistsMap[entry.url] ?? true
         filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
-        filenameView.docImage.image = NSWorkspace.shared.icon(forFileType: entry.url.pathExtension)
+        filenameView.docImage.image = Utility.icon(for: entry.url)
       } else if identifier == .progress {
         // Progress cell
         let progressView = cell as! HistoryProgressCellView

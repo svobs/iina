@@ -74,11 +74,16 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
         continue
       }
 
-      Logger.log.debug("UTI: \(identifier.quoted) ➤ \(exts)")
+      Logger.log.verbose("UTImportedType: \(identifier.quoted) ➤ \(exts)")
       for ext in exts {
-        let uttypes = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
-        for uttype in uttypes {
-          uttypeIdentifiers.insert(uttype.identifier)
+        if #available(macOS 11.0, *) {
+          let uttypes = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
+          for uttype in uttypes {
+            uttypeIdentifiers.insert(uttype.identifier)
+          }
+        } else {
+          let uttIdentifier = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, ext as CFString, nil)!.takeUnretainedValue()
+          uttypeIdentifiers.insert(uttIdentifier as String)
         }
       }
     }
