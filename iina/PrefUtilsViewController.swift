@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import UniformTypeIdentifiers
 
 class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbeddable {
 
@@ -46,7 +47,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
       let cfBundleID = Bundle.main.bundleIdentifier as CFString?
       else { return }
 
-    Logger.log("Set self as default")
+    Logger.log("Setting this app as default for \(utiTypes.count) filetypes")
 
     var successCount = 0
     var failedCount = 0
@@ -57,8 +58,10 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
       "public.text": setAsDefaultPlaylistCheckBox.state == .on
     ]
 
+    var uttypeIdentifiers: Set<String> = []
     for utiType in utiTypes {
       guard
+        let identifier = utiType["UTTypeIdentifier"] as? String,
         let conformsTo = utiType["UTTypeConformsTo"] as? [String],
         let tagSpec = utiType["UTTypeTagSpecification"] as? [String: Any],
         let exts = tagSpec["public.filename-extension"] as? [String]
@@ -71,15 +74,23 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
         continue
       }
 
+      Logger.log.debug("UTI: \(identifier.quoted) ➤ \(exts)")
       for ext in exts {
-        let utiString = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, ext as CFString, nil)!.takeUnretainedValue()
-        let status = LSSetDefaultRoleHandlerForContentType(utiString, .all, cfBundleID)
-        if status == kOSReturnSuccess {
-          successCount += 1
-        } else {
-          Logger.log("failed for \(ext): return value \(status)", level: .error)
-          failedCount += 1
+        let uttypes = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
+        for uttype in uttypes {
+          uttypeIdentifiers.insert(uttype.identifier)
         }
+      }
+    }
+
+    for identifier in uttypeIdentifiers {
+      Logger.log.debug("Set default for UTType: \(identifier.quoted)")
+      let status = LSSetDefaultRoleHandlerForContentType(identifier as CFString, .all, cfBundleID)
+      if status == kOSReturnSuccess {
+        successCount += 1
+      } else {
+        Logger.log.error("Failed for \(identifier.quoted): return value \(status)")
+        failedCount += 1
       }
     }
 
