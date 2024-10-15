@@ -69,13 +69,11 @@ class PlaySliderCell: NSSliderCell {
     let fillColor = isHighlighted ? knobActiveColor : knobColor
 
     let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
-    let shColor: NSColor = .shadowColor
 
     if isLightTheme {
       NSGraphicsContext.saveGraphicsState()
       let shadow = NSShadow()
       shadow.shadowBlurRadius = 1
-      shadow.shadowColor = shColor
       shadow.shadowOffset = NSSize(width: 0, height: -0.5)
       shadow.set()
     }
@@ -84,9 +82,11 @@ class PlaySliderCell: NSSliderCell {
     path.fill()
 
     if isLightTheme {
-      path.lineWidth = 0.4
-      shColor.setStroke()
-      path.stroke()
+      if let shadowColor = NSShadow().shadowColor {
+        path.lineWidth = 0.4
+        shadowColor.setStroke()
+        path.stroke()
+      }
       NSGraphicsContext.restoreGraphicsState()
     }
   }
