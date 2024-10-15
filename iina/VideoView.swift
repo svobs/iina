@@ -420,7 +420,7 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     } else if let screenColorSpace {
-      logHDR.verbose("Using ICC profile")
+      logHDR.verbose("Auto-selecting ICC profile from screen color space")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
       $isUninited.withLock() { isUninited in
         guard !isUninited else { return }
@@ -550,12 +550,15 @@ extension VideoView {
     guard let mpv = player.mpv else { return false }
 
     guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      logHDR.debug("HDR primaries and gamma not available")
+      logHDR.debug("Video primaries & gamma not available")
       return false
     }
   
     let peak = mpv.getDouble(MPVProperty.videoParamsSigPeak)
-    logHDR.debug("HDR gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
+    logHDR.debug("Video gamma=\(gamma), primaries=\(primaries), sig_peak=\(peak)")
+
+    // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
+    guard gamma == "hlg" || gamma == "pq" else { return false }
 
     var name: CFString? = nil
     switch primaries {
@@ -579,7 +582,7 @@ extension VideoView {
       return false // SDR
 
     default:
-      logHDR.debug("Unknown HDR color space information gamma=\(gamma) primaries=\(primaries)")
+      logHDR.warn("Unsupported color space: gamma=\(gamma) primaries=\(primaries)")
       return false
     }
 
@@ -627,7 +630,7 @@ extension VideoView {
       let algorithm = Preference.ToneMappingAlgorithmOption(rawValue: Preference.integer(for: .toneMappingAlgorithm))?.mpvString
       ?? Preference.ToneMappingAlgorithmOption.defaultValue.mpvString
 
-      logHDR.debug("Will enable tone mapping target-peak=\(targetPeak) algorithm=\(algorithm)")
+      logHDR.debug("Will enable tone mapping: target-peak=\(targetPeak) algorithm=\(algorithm)")
       mpv.setInt(MPVOption.GPURendererOptions.targetPeak, targetPeak)
       mpv.setString(MPVOption.GPURendererOptions.toneMapping, algorithm)
     } else {
