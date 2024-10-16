@@ -2629,7 +2629,6 @@ class PlayerCore: NSObject {
     startWatchingSubFile()
     postNotification(.iinaSIDChanged)
     saveState()
-    sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSubTrack))
   }
 
   func secondarySidChanged(silent: Bool = false) {
@@ -2644,6 +2643,9 @@ class PlayerCore: NSObject {
     info.secondSid = ssid
 
     log.verbose("SSID changed to \(ssid)")
+    if !silent {
+      sendOSD(.track(info.currentTrack(.secondSub) ?? .noneSecondSubTrack))
+    }
     postNotification(.iinaSIDChanged)
     saveState()
     reloadQuickSettingsView()

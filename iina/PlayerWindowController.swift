@@ -350,13 +350,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Notification & user defaults observers
 
-  private var notificationCenterObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
+  private var co: CocoaObserver!
 
   private func addObservers() {
     guard let window else { return }
-    removeObservers()
 
-    addObserver(to: NSWorkspace.shared.notificationCenter, forName: NSWorkspace.activeSpaceDidChangeNotification) { [self] _ in
+    co.initObservers()
+
+    co.addObserver(to: NSWorkspace.shared.notificationCenter, forName: NSWorkspace.activeSpaceDidChangeNotification) { [self] _ in
       // FIXME: this is not ready for production yet! Need to fix issues with freezing video
       guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
       if !window.isOnActiveSpace && pipStatus == .notInPIP {
@@ -375,74 +376,45 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
     }
 
-    addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
+    co.addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
       player.refreshEdrMode()
     }
 
-    addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
+    co.addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
       windowDidChangeScreenProfile(noti)
     }
 
-    addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
+    co.addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
       windowDidChangeScreen(noti)
     }
 
-    addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
+    co.addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
       updateTitle()
     }
 
     // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
     // This is legacy code which will not run in newer versions of MacOS.
-    addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
+    co.addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
       windowDidChangeScreenParameters(noti)
     }
 
     // Observe the loop knobs on the progress bar and update mpv when the knobs move.
-    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
+    co.addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
       guard let self = self else { return }
       let seconds = self.percentToSeconds(self.playSlider.abLoopA.doubleValue)
       self.player.abLoopA = seconds
       self.player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
     }
-    addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
+    co.addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
       guard let self = self else { return }
       let seconds = self.percentToSeconds(self.playSlider.abLoopB.doubleValue)
       self.player.abLoopB = seconds
       self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
     }
 
-    addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
+    co.addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
       if Preference.bool(for: .pauseWhenGoesToSleep) {
         self.player.pause()
-      }
-    }
-
-    PlayerWindowController.observedPrefKeys.forEach { key in
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
-  }
-
-  internal func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
-                            using block: @escaping (Notification) -> Void) {
-    let observer: NSObjectProtocol = notificationCenter.addObserver(forName: name, object: object, queue: .main, using: block)
-    var observers = notificationCenterObservers[notificationCenter] ?? []
-    observers.append(observer)
-    notificationCenterObservers[notificationCenter] = observers
-  }
-
-  private func removeObservers() {
-    ObjcUtils.silenced { [self] in
-      for key in PlayerWindowController.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-
-      let ncObservers = notificationCenterObservers
-      notificationCenterObservers = [:]
-      for (notificationCenter, observers) in ncObservers {
-        for observer in observers {
-          notificationCenter.removeObserver(observer)
-        }
-        log.verbose("Removed \(observers.count) observers from \(notificationCenter.className)")
       }
     }
   }
@@ -521,162 +493,161 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     .allowVideoToOverlapCameraHousing,
   ]
 
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
     guard isOpen else { return }  // do not want to respond to some things like blackOutOtherMonitors while closed!
-    guard let keyPath = keyPath, let change = change else { return }
 
-    switch keyPath {
-    case PK.enableAdvancedSettings.rawValue:
+    switch key {
+    case .enableAdvancedSettings:
       animationPipeline.submitTask({ [self] in
         updateCustomBorderBoxAndWindowOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
       })
-    case PK.enableToneMapping.rawValue,
-      PK.toneMappingTargetPeak.rawValue,
-      PK.loadIccProfile.rawValue,
-      PK.toneMappingAlgorithm.rawValue:
+    case .enableToneMapping,
+      .toneMappingTargetPeak,
+      .loadIccProfile,
+      .toneMappingAlgorithm:
       videoView.refreshEdrMode()
-    case PK.themeMaterial.rawValue:
+    case .themeMaterial:
       applyThemeMaterial()
-    case PK.playerWindowOpacity.rawValue:
+    case .playerWindowOpacity:
       animationPipeline.submitTask({ [self] in
         updateCustomBorderBoxAndWindowOpacity()
       })
-    case PK.showRemainingTime.rawValue:
-      if let newValue = change[.newKey] as? Bool {
+    case .showRemainingTime:
+      if let newValue = newValue as? Bool {
         rightLabel.mode = newValue ? .remaining : .duration
       }
-    case PK.maxVolume.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .maxVolume:
+      if let newValue = newValue as? Int {
         if player.mpv.getDouble(MPVOption.Audio.volume) > Double(newValue) {
           player.mpv.setDouble(MPVOption.Audio.volume, Double(newValue))
         } else {
           updateVolumeUI()
         }
       }
-    case PK.useExactSeek.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .useExactSeek:
+      if let newValue = newValue as? Int {
         useExactSeek = Preference.SeekOption(rawValue: newValue)!
       }
-    case PK.relativeSeekAmount.rawValue:
+    case .relativeSeekAmount:
       playSlider.updateSensitivity()
-    case PK.volumeScrollAmount.rawValue:
+    case .volumeScrollAmount:
       volumeSlider.updateSensitivity()
-    case PK.singleClickAction.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .singleClickAction:
+      if let newValue = newValue as? Int {
         singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
       }
-    case PK.doubleClickAction.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .doubleClickAction:
+      if let newValue = newValue as? Int {
         doubleClickAction = Preference.MouseClickAction(rawValue: newValue)!
       }
-    case PK.playlistShowMetadata.rawValue, PK.playlistShowMetadataInMusicMode.rawValue, PK.shortenFileGroupsInPlaylist.rawValue:
+    case .playlistShowMetadata, .playlistShowMetadataInMusicMode, .shortenFileGroupsInPlaylist:
       // Reload now, even if not visible. Don't nitpick.
       player.windowController.playlistView.playlistTableView.reloadData()
-    case PK.autoSwitchToMusicMode.rawValue:
+    case .autoSwitchToMusicMode:
       player.overrideAutoMusicMode = false
 
-    case PK.keepOpenOnFileEnd.rawValue, PK.playlistAutoPlayNext.rawValue:
+    case .keepOpenOnFileEnd, .playlistAutoPlayNext:
       player.mpv.updateKeepOpenOptionFromPrefs()
 
-    case PK.enableOSC.rawValue,
-      PK.oscPosition.rawValue,
-      PK.topBarPlacement.rawValue,
-      PK.bottomBarPlacement.rawValue,
-      PK.oscBarHeight.rawValue,
-      PK.oscBarPlaybackIconSize.rawValue,
-      PK.oscBarPlaybackIconSpacing.rawValue,
-      PK.oscBarToolbarIconSize.rawValue,
-      PK.oscBarToolbarIconSpacing.rawValue,
-      PK.showLeadingSidebarToggleButton.rawValue,
-      PK.showTrailingSidebarToggleButton.rawValue,
-      PK.controlBarToolbarButtons.rawValue,
-      PK.allowVideoToOverlapCameraHousing.rawValue,
-      PK.useLegacyWindowedMode.rawValue:
+    case .enableOSC,
+      .oscPosition,
+      .topBarPlacement,
+      .bottomBarPlacement,
+      .oscBarHeight,
+      .oscBarPlaybackIconSize,
+      .oscBarPlaybackIconSpacing,
+      .oscBarToolbarIconSize,
+      .oscBarToolbarIconSpacing,
+      .showLeadingSidebarToggleButton,
+      .showTrailingSidebarToggleButton,
+      .controlBarToolbarButtons,
+      .allowVideoToOverlapCameraHousing,
+      .useLegacyWindowedMode:
 
-      log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(keyPath.quoted)")
+      log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()
-    case PK.lockViewportToVideoSize.rawValue:
-      if let isLocked = change[.newKey] as? Bool, isLocked {
-        log.debug("Pref \(keyPath.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
+    case .lockViewportToVideoSize:
+      if let isLocked = newValue as? Bool, isLocked {
+        log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
         resizeViewport()
       }
-    case PK.hideWindowsWhenInactive.rawValue:
+    case .hideWindowsWhenInactive:
       animationPipeline.submitInstantTask({ [self] in
         refreshHidesOnDeactivateStatus()
       })
 
-    case PK.thumbnailSizeOption.rawValue,
-      PK.thumbnailFixedLength.rawValue,
-      PK.thumbnailRawSizePercentage.rawValue,
-      PK.enableThumbnailPreview.rawValue,
-      PK.enableThumbnailForRemoteFiles.rawValue, 
-      PK.enableThumbnailForMusicMode.rawValue:
+    case .thumbnailSizeOption,
+      .thumbnailFixedLength,
+      .thumbnailRawSizePercentage,
+      .enableThumbnailPreview,
+      .enableThumbnailForRemoteFiles,
+      .enableThumbnailForMusicMode:
 
-      log.verbose("Pref \(keyPath.quoted) changed: requesting thumbs regen")
+      log.verbose("Pref \(key.rawValue.quoted) changed: requesting thumbs regen")
       // May need to remove thumbs or generate new ones: let method below figure it out:
       player.reloadThumbnails(forMedia: player.info.currentPlayback)
 
-    case PK.showChapterPos.rawValue:
-      if let newValue = change[.newKey] as? Bool {
+    case .showChapterPos:
+      if let newValue = newValue as? Bool {
         playSlider.customCell.drawChapters = newValue
       }
-    case PK.verticalScrollAction.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .verticalScrollAction:
+      if let newValue = newValue as? Int {
         verticalScrollAction = Preference.ScrollAction(rawValue: newValue)!
       }
-    case PK.horizontalScrollAction.rawValue:
-      if let newValue = change[.newKey] as? Int {
+    case .horizontalScrollAction:
+      if let newValue = newValue as? Int {
         horizontalScrollAction = Preference.ScrollAction(rawValue: newValue)!
       }
-    case PK.arrowButtonAction.rawValue, PK.playSliderBarLeftColor.rawValue:
+    case .arrowButtonAction, .playSliderBarLeftColor:
       updateTitleBarAndOSC()
-    case PK.blackOutMonitor.rawValue:
-      if let newValue = change[.newKey] as? Bool {
+    case .blackOutMonitor:
+      if let newValue = newValue as? Bool {
         if isFullScreen {
           newValue ? blackOutOtherMonitors() : removeBlackWindows()
         }
       }
-    case PK.useLegacyFullScreen.rawValue:
+    case .useLegacyFullScreen:
       updateUseLegacyFullScreen()
-    case PK.displayTimeAndBatteryInFullScreen.rawValue:
-      if let newValue = change[.newKey] as? Bool {
+    case .displayTimeAndBatteryInFullScreen:
+      if let newValue = newValue as? Bool {
         if !newValue {
           additionalInfoView.isHidden = true
         }
       }
-    case PK.alwaysShowOnTopIcon.rawValue:
+    case .alwaysShowOnTopIcon:
       updateOnTopButton()
-    case PK.leadingSidebarPlacement.rawValue, PK.trailingSidebarPlacement.rawValue:
+    case .leadingSidebarPlacement, .trailingSidebarPlacement:
       updateSidebarPlacements()
-    case PK.settingsTabGroupLocation.rawValue:
-      if let newRawValue = change[.newKey] as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
+    case .settingsTabGroupLocation:
+      if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
         self.moveTabGroup(.settings, toSidebarLocation: newLocationID)
       }
-    case PK.playlistTabGroupLocation.rawValue:
-      if let newRawValue = change[.newKey] as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
+    case .playlistTabGroupLocation:
+      if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
         self.moveTabGroup(.playlist, toSidebarLocation: newLocationID)
       }
-    case PK.osdAutoHideTimeout.rawValue, PK.enableControlBarAutoHide.rawValue:
-      if let newTimeout = change[.newKey] as? Double {
+    case .osdAutoHideTimeout, .enableControlBarAutoHide:
+      if let newTimeout = newValue as? Double {
         if osd.animationState == .shown, let hideOSDTimer = osd.hideOSDTimer, hideOSDTimer.isValid {
           // Reschedule timer to prevent prev long timeout from lingering
           osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(newTimeout), target: self,
-                                                   selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
+                                                  selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
         }
       }
-    case PK.osdPosition.rawValue:
+    case .osdPosition:
       // If OSD is showing, it will move over as a neat animation:
       animationPipeline.submitInstantTask {
         self.updateOSDPosition()
       }
-    case PK.osdTextSize.rawValue:
+    case .osdTextSize:
       animationPipeline.submitInstantTask { [self] in
         updateOSDTextSize()
         setOSDViews()
       }
-    case PK.aspectRatioPanelPresets.rawValue, PK.cropPanelPresets.rawValue:
+    case .aspectRatioPanelPresets, .cropPanelPresets:
       quickSettingView.updateSegmentLabels()
     default:
       return
@@ -1008,6 +979,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     miniPlayer.windowController = self
 
     viewportView.player = player
+
+    co = CocoaObserver(observedPrefKeys: PlayerWindowController.observedPrefKeys,
+                       player.log, prefDidChange: self.prefDidChange)
 
     loaded = true
 
@@ -1970,7 +1944,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateBufferIndicatorView()
     updateOSDPosition()
 
-    // add notification observers
     addObservers()
 
     if let priorState = player.info.priorState {
@@ -2047,7 +2020,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.events.emit(.windowWillClose)
     }
 
-    removeObservers()
+    co.removeObservers()
 
     // Close PIP
     if pipStatus == .inPIP {

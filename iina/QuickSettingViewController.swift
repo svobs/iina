@@ -318,8 +318,8 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
       eqPopUpButton.menu?.addItem(withTitle: preset.name, tag: eqPresetProfileMenuItemTag, obj: preset.localizationKey)
     }
 
-    func observe(_ name: Notification.Name, block: @escaping (Notification) -> Void) {
-      observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: block))
+    func observe(_ name: Notification.Name, using callback: @escaping (Notification) -> Void) {
+      observers.append(NotificationCenter.default.addObserver(forName: name, object: player, queue: .main, using: callback))
     }
 
     // notifications
@@ -338,10 +338,12 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
         self.reload()
       }
     }
-    observe(.iinaSIDChanged) { [unowned self] _ in
+    let subChangedCallback: (Notification) -> Void = { [unowned self] _ in
       guard currentTab == .sub else { return }
       self.reload()
     }
+    observe(.iinaSIDChanged, using: subChangedCallback)
+    observe(.iinaSSIDChanged, using: subChangedCallback)
     observe(.iinaSecondSubVisibilityChanged) { [unowned self] _ in secHideSwitch.state = player.info.isSecondSubVisible ? .on : .off }
     observe(.iinaSubVisibilityChanged) { [unowned self] _ in hideSwitch.state = player.info.isSubVisible ? .on : .off }
 
