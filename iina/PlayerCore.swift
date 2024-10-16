@@ -670,7 +670,6 @@ class PlayerCore: NSObject {
   func pause() {
     assert(DispatchQueue.isExecutingIn(.main))
     let isNormalSpeed = info.playSpeed == 1
-    info.isPaused = true  // set preemptively to prevent inconsistencies in UI
     mpv.queue.async { [self] in
       guard !info.isIdle, !isStopping else { return }
       /// Set this so that callbacks will fire even though `info.isPaused` was already set
@@ -693,7 +692,6 @@ class PlayerCore: NSObject {
   }
 
   func resume() {
-    info.isPaused = false  // set preemptively to prevent inconsistencies in UI
     mpv.queue.async { [self] in
       /// Set this so that callbacks will fire even though `info.isPaused` was already set
       info.pauseStateWasChangedLocally = true

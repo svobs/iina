@@ -22,9 +22,13 @@ fileprivate let floatingPlayIconSize: CGFloat = 24
 fileprivate let floatingPlayIconSpacing: CGFloat = 24
 fileprivate let floatingVolumeIconSize: CGFloat = 18
 
+fileprivate let minMarginAbovePlayBtn: CGFloat = 16
+
 // TODO: reimplement OSC title bar feature
 
 struct ControlBarGeometry {
+  static let minBarHeightForSpeedLabel: CGFloat = 30
+
   static var current = ControlBarGeometry()
 
   let position: Preference.OSCPosition
@@ -49,6 +53,22 @@ struct ControlBarGeometry {
     } else {
       return playIconSize
     }
+  }
+
+  var speedLabelFontSize: CGFloat {
+    let idealSize = playIconSize * 0.25
+    let freeHeight = barHeight - playIconSize
+    let deficit: CGFloat = max(0.0, idealSize - freeHeight)
+    let compromise = idealSize - (0.5 * deficit)
+    return compromise.clamped(to: 8...32)
+  }
+
+  var playIconSizeWithSpeedLabel: CGFloat {
+    guard barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel else { return playIconSize }
+    let freeHeight: CGFloat = barHeight - playIconSize
+    let deficit: CGFloat = speedLabelFontSize - freeHeight + minMarginAbovePlayBtn
+//    NSLog("IconSize:\(playIconSize), FreeHeight:\(freeHeight), Deficit:\(deficit)")
+    return playIconSize - (deficit < 0.0 ? 0.0 : deficit)
   }
 
   init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
@@ -96,6 +116,12 @@ struct ControlBarGeometry {
     let adjustableHeight = barHeight - baseHeight
 
     return baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+  }
+
+  /// Width of left, right, play btns + their spacing
+  var totalPlayControlsWidth: CGFloat {
+    let itemCount: CGFloat = 3
+    return (playIconSpacing * (itemCount + 1)) + (playIconSize * itemCount)
   }
 
   var playIconSizeTicks: Int {

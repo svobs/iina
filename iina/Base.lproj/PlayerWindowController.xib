@@ -74,8 +74,6 @@
                 <outlet property="playbackBtnsHorizontalPaddingConstraint" destination="V3v-73-S9H" id="N0E-eR-w7j"/>
                 <outlet property="rightArrowButton" destination="EIi-qd-glM" id="U46-Gl-e8D"/>
                 <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
-                <outlet property="speedLabel" destination="Yg9-Sd-sWy" id="fps-VD-ZgC"/>
-                <outlet property="speedLabelVerticalConstraint" destination="CFh-ZJ-jP5" id="M01-DM-YmJ"/>
                 <outlet property="thumbnailPeekView" destination="vej-bg-g6C" id="sws-ib-t4r"/>
                 <outlet property="timePositionHoverLabel" destination="qOq-6a-7j7" id="ngM-1f-G5D"/>
                 <outlet property="timePositionHoverLabelHorizontalCenterConstraint" destination="ekV-Sh-cEZ" id="zYq-k1-B2g"/>
@@ -117,7 +115,7 @@
             <windowStyleMask key="styleMask" closable="YES" miniaturizable="YES" resizable="YES" texturedBackground="YES" fullSizeContentView="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="640" height="400"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1496" height="933"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1728" height="1079"/>
             <value key="minSize" type="size" width="285" height="120"/>
             <view key="contentView" identifier="PlayerWindow-ContentView" autoresizesSubviews="NO" wantsLayer="YES" id="se5-gp-TjO" userLabel="PWin-Content View">
                 <rect key="frame" x="0.0" y="0.0" width="640" height="400"/>
@@ -603,7 +601,7 @@
                     <box identifier="customWindowBorderTopHighlightBox" wantsLayer="YES" boxType="custom" borderType="line" title="CustomWindowBorderTopHighlight Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="IeW-QK-xIO" userLabel="CustomWindowBorderTopHighlight Box" customClass="CustomWindowBorderBox" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="400" width="640" height="1"/>
                         <view key="contentView" wantsLayer="YES" id="2sJ-m4-Y4B" userLabel="Box View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
-                            <rect key="frame" x="1" y="0.5" width="638" height="0.0"/>
+                            <rect key="frame" x="1" y="1" width="638" height="0.0"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         </view>
                         <constraints>
@@ -734,7 +732,7 @@
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="46" id="sDf-om-KlV"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="center" title="-:--:--" id="1XQ-Mt-jmZ">
+                    <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="center" title="-:--:--" id="1XQ-Mt-jmZ">
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -767,7 +765,7 @@
             </constraints>
             <point key="canvasLocation" x="230" y="471"/>
         </customView>
-        <customView identifier="OSC-Fragment-Playback-Control-Middle" wantsLayer="YES" placeholderIntrinsicWidth="184" placeholderIntrinsicHeight="24" translatesAutoresizingMaskIntoConstraints="NO" id="Yv6-0K-6E4" userLabel="OSC Fragment: Playback Control Buttons" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
+        <customView identifier="OSC-Fragment-Playback-Control-Middle" wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" placeholderIntrinsicWidth="184" placeholderIntrinsicHeight="24" translatesAutoresizingMaskIntoConstraints="NO" id="Yv6-0K-6E4" userLabel="OSC Fragment: Playback Control Buttons" customClass="PlaybackControlButtonsView" customModule="IINA" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="144" height="24"/>
             <subviews>
                 <customView wantsLayer="YES" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="siV-cJ-huN" userLabel="Left-most Spacer">
@@ -800,7 +798,7 @@
                 <button wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gxw-pJ-Lcg" userLabel="Play/Pause Button">
                     <rect key="frame" x="60" y="0.0" width="24" height="24"/>
                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="play" imagePosition="only" alignment="center" alternateImage="pause" refusesFirstResponder="YES" state="on" imageScaling="proportionallyUpOrDown" inset="2" id="mWQ-R0-GGr">
-                        <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system" size="16"/>
                     </buttonCell>
                     <constraints>
@@ -833,17 +831,6 @@
                         <constraint firstAttribute="height" id="Tly-Wr-aIt"/>
                     </constraints>
                 </customView>
-                <textField identifier="Left-Speed-Label" hidden="YES" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" alphaValue="0.5" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yg9-Sd-sWy" userLabel="Speed Label">
-                    <rect key="frame" x="57" y="22" width="30" height="13"/>
-                    <constraints>
-                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="26" id="OjQ-BT-Oar"/>
-                    </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="center" title="32x" id="eCe-SS-Wlj">
-                        <font key="font" metaFont="system" size="10"/>
-                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
             </subviews>
             <constraints>
                 <constraint firstItem="X5y-IG-ngq" firstAttribute="width" secondItem="I07-AH-cjL" secondAttribute="width" id="0vs-zP-8OU"/>
@@ -851,16 +838,16 @@
                 <constraint firstItem="I07-AH-cjL" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="3Ay-6s-tGt"/>
                 <constraint firstItem="I07-AH-cjL" firstAttribute="leading" secondItem="10x-bg-xlj" secondAttribute="trailing" id="4Tm-Rh-0Wm"/>
                 <constraint firstItem="siV-cJ-huN" firstAttribute="width" secondItem="I07-AH-cjL" secondAttribute="width" multiplier="0.5" id="Bmz-N9-sPf"/>
-                <constraint firstItem="Yg9-Sd-sWy" firstAttribute="top" secondItem="Yv6-0K-6E4" secondAttribute="top" constant="-11" identifier="speedLabelVerticalConstraint" id="CFh-ZJ-jP5"/>
+                <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="Yv6-0K-6E4" secondAttribute="centerY" id="GqH-aB-GKs"/>
                 <constraint firstItem="X5y-IG-ngq" firstAttribute="leading" secondItem="gxw-pJ-Lcg" secondAttribute="trailing" id="HpP-YU-jdV"/>
-                <constraint firstAttribute="bottom" secondItem="gxw-pJ-Lcg" secondAttribute="bottom" id="MOd-KQ-LJ8"/>
+                <constraint firstAttribute="height" relation="greaterThanOrEqual" secondItem="10x-bg-xlj" secondAttribute="height" priority="900" id="Jtd-FG-hGH"/>
+                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="centerY" secondItem="Yv6-0K-6E4" secondAttribute="centerY" id="OAm-KT-kJi"/>
                 <constraint firstAttribute="trailing" secondItem="06z-vV-Q73" secondAttribute="trailing" id="PLL-cS-kT4"/>
                 <constraint firstItem="X5y-IG-ngq" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="RPF-3O-S3e"/>
-                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="centerX" secondItem="Yg9-Sd-sWy" secondAttribute="centerX" id="Wce-1d-pFF"/>
                 <constraint firstItem="gxw-pJ-Lcg" firstAttribute="leading" secondItem="I07-AH-cjL" secondAttribute="trailing" id="XL0-Ya-7hM"/>
                 <constraint firstItem="EIi-qd-glM" firstAttribute="width" secondItem="10x-bg-xlj" secondAttribute="width" id="YB1-TV-uzN"/>
                 <constraint firstItem="gxw-pJ-Lcg" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="Z2A-b1-tEM"/>
-                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="top" secondItem="Yv6-0K-6E4" secondAttribute="top" id="aJW-dV-zhS"/>
+                <constraint firstAttribute="height" relation="greaterThanOrEqual" secondItem="gxw-pJ-Lcg" secondAttribute="height" priority="900" id="Zxw-C4-y8F"/>
                 <constraint firstItem="siV-cJ-huN" firstAttribute="leading" secondItem="Yv6-0K-6E4" secondAttribute="leading" id="cHK-nA-SWz"/>
                 <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="df8-1t-m24"/>
                 <constraint firstItem="06z-vV-Q73" firstAttribute="width" secondItem="siV-cJ-huN" secondAttribute="width" id="e2w-hD-kbq"/>

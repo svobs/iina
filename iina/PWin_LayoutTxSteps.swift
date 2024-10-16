@@ -153,6 +153,10 @@ extension PlayerWindowController {
       }
     }
 
+    if transition.isOSCChanging || transition.isTogglingMusicMode {
+      removeSpeedLabelFromControlBar()
+    }
+
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -521,7 +525,8 @@ extension PlayerWindowController {
       }
       arrowBtnsSquareWidthConstraint.animateToConstant(arrowBtnsSideLength)
 
-      playBtnSquareWidthConstraint.animateToConstant(oscGeo.playIconSize)
+      let playIconSize = player.info.shouldShowSpeedLabel ? oscGeo.playIconSizeWithSpeedLabel : oscGeo.playIconSize
+      playBtnSquareWidthConstraint.animateToConstant(playIconSize)
 
       var spacing = oscGeo.playIconSpacing
       let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
@@ -530,23 +535,13 @@ extension PlayerWindowController {
       }
       playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
 
-      if outputLayout.oscPosition == .top {
-        speedLabelVerticalConstraint.isActive = false
-        speedLabelVerticalConstraint = speedLabel.bottomAnchor.constraint(equalTo: speedLabel.superview!.bottomAnchor, constant: 10)
-        speedLabelVerticalConstraint.isActive = true
-      } else {
-        speedLabelVerticalConstraint.isActive = false
-        speedLabelVerticalConstraint = speedLabel.topAnchor.constraint(equalTo: speedLabel.superview!.topAnchor, constant: -11)
-        speedLabelVerticalConstraint.isActive = true
-      }
-
     } else if outputLayout.isMusicMode {
-      // Music mode always has a control bar
 
+      // Music mode always has a control bar
       miniPlayer.loadIfNeeded()
       currentControlBar = miniPlayer.musicModeControlBarView
-    } else {  // No OSC & not music mode
 
+    } else {  // No OSC & not music mode
       currentControlBar = nil
     }
 
@@ -609,6 +604,11 @@ extension PlayerWindowController {
       if !miniPlayer.isVideoVisible, pipStatus == .notInPIP {
         player.setVideoTrackEnabled(false)
       }
+    }
+
+    // Not floating OSC!
+    if !transition.outputLayout.hasFloatingOSC {
+      addSpeedLabelToControlBar(transition)
     }
 
     // Need to call this for initial layout also:
@@ -796,6 +796,7 @@ extension PlayerWindowController {
 
         controlBarFloating.addMarginConstraints()
       }
+      addSpeedLabelToControlBar(transition)
 
       // Update floating control bar position
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -1368,6 +1369,45 @@ extension PlayerWindowController {
       miniPlayer.leftArrowToPlayButtonSpaceConstraint.animateToConstant(spacing)
       miniPlayer.playButtonToRightArrowSpaceConstraint.animateToConstant(spacing)
     }
+  }
+
+  func addSpeedLabelToControlBar(_ transition: LayoutTransition) {
+    guard transition.outputLayout.isMusicMode || transition.outputLayout.enableOSC else { return }
+    speedLabelHorizontalConstraint?.isActive = false
+    speedLabelVerticalConstraint?.isActive = false
+
+    let secondItem = transition.outputLayout.isMusicMode ? miniPlayer.playButton : playButton
+
+    let oscGeo = ControlBarGeometry.current
+    let speedLabelFontSize = oscGeo.speedLabelFontSize
+    log.verbose("Adding speed label to control bar, fontSize=\(speedLabelFontSize)")
+    speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
+
+    // superview will be fragPlaybackControlButtonsView (unless in music mode) whose top & bottom match play button's
+    secondItem!.superview!.addSubview(speedLabel)
+
+    let hConstraint = speedLabel.centerXAnchor.constraint(equalTo: secondItem!.centerXAnchor)
+    speedLabelHorizontalConstraint = hConstraint
+    hConstraint.isActive = true
+
+    if transition.outputLayout.enableOSC || transition.isEnteringMusicMode {
+      let newConstant: CGFloat = 4
+      let vConstraint: NSLayoutConstraint
+      if transition.outputLayout.oscPosition == .top {
+        vConstraint = speedLabel.superview!.bottomAnchor.constraint(equalTo: speedLabel.bottomAnchor, constant: newConstant)
+      } else {
+        vConstraint = speedLabel.topAnchor.constraint(equalTo: speedLabel.superview!.topAnchor, constant: newConstant)
+      }
+      speedLabelVerticalConstraint = vConstraint
+      vConstraint.isActive = true
+    }
+  }
+
+  func removeSpeedLabelFromControlBar() {
+    log.verbose("Removing speed label from control bar")
+    speedLabelHorizontalConstraint?.isActive = false
+    speedLabelVerticalConstraint?.isActive = false
+    // no need to actually remove from superview
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs

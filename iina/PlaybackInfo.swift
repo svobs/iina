@@ -153,6 +153,11 @@ class PlaybackInfo {
   var abLoopStatus: LoopStatus = .cleared
 
   var playSpeed: Double = 1.0
+
+  var shouldShowSpeedLabel: Bool {
+    return !(isPaused || playSpeed == 1)
+  }
+
   var playbackPositionSec: Double?
   var playbackDurationSec: Double?
 

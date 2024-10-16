@@ -538,7 +538,7 @@ extension NSInteger {
   func clamped(to range: Range<Self>) -> Self {
     if self < range.lowerBound {
       return range.lowerBound
-    } else if self > range.upperBound {
+    } else if self >= range.upperBound {
       return range.upperBound - 1
     } else {
       return self

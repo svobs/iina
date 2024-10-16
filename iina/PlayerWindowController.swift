@@ -8,7 +8,23 @@
 
 import Cocoa
 
-// MARK: - Constants
+class PlaybackControlButtonsView: ClickThroughStackView {
+  private var playerWindowController: PlayerWindowController? {
+    return window?.windowController as? PlayerWindowController
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    super.mouseDown(with: event)
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    playerWindowController?.playButtonAction(self)
+  }
+}
+
+// Use single instance of each for efficiency
+fileprivate let playImage = NSImage(named: "play")
+fileprivate let pauseImage = NSImage(named: "pause")
 
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
@@ -734,7 +750,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var timePositionHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
   @IBOutlet weak var volumeIconSizeConstraint: NSLayoutConstraint!
-  @IBOutlet weak var speedLabelVerticalConstraint: NSLayoutConstraint!
+  var speedLabelHorizontalConstraint: NSLayoutConstraint? = nil
+  var speedLabelVerticalConstraint: NSLayoutConstraint? = nil
 
   // - Outlets: Views
 
@@ -807,11 +824,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragToolbarView: NSStackView? = nil
   @IBOutlet weak var fragVolumeView: NSView!
   @IBOutlet var fragPositionSliderView: NSView!
-  /// See `playBtnSquareWidthConstraint`, `playbackBtnsHorizontalPaddingConstraint`, &
+  /// See `playBtnSquareWidthConstraint`, `playbackBtnsHorizontalPaddingConstraint` &
   /// `playbackBtnsHorizontalPaddingConstraint` for sizing
   @IBOutlet weak var fragPlaybackControlButtonsView: NSView!
+//  var fragPlaybackControlButtonsView: PlaybackControlButtonsView! TODO:
 
-  @IBOutlet weak var speedLabel: NSTextField!
+  /// Speed indicator label, when playing at speeds other than 1x
+  let speedLabel = NSTextField()
 
   // OSD
   @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
@@ -1126,9 +1145,34 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
     bottomBarTopBorder.borderColor = NSColor.clear
 
+    speedLabel.translatesAutoresizingMaskIntoConstraints = false
+    speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
+    speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    speedLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+    speedLabel.setContentHuggingPriority(.required, for: .horizontal)
+    speedLabel.setContentHuggingPriority(.required, for: .vertical)
+    speedLabel.font = NSFont.messageFont(ofSize: 10)
+    speedLabel.textColor = .textColor
+    speedLabel.alphaValue = 0.75
+    speedLabel.isBordered = false
+    speedLabel.drawsBackground = false
+    speedLabel.isBezeled = false
+    speedLabel.isEditable = false
+    speedLabel.isSelectable = false
+    speedLabel.isEnabled = true
+    speedLabel.refusesFirstResponder = true
+    speedLabel.alignment = .center
+
     bufferIndicatorView.roundCorners()
     additionalInfoView.roundCorners()
     osdVisualEffectView.roundCorners()
+
+//    fragPlaybackControlButtonsView = PlaybackControlButtonsView()
+//    fragPlaybackControlButtonsView.translatesAutoresizingMaskIntoConstraints = false
+//    fragPlaybackControlButtonsView.addSubview(playButton)
+//    fragPlaybackControlButtonsView.widthAnchor.constraint(equalToConstant: <#T##CGFloat#>)
+//    fragPlaybackControlButtonsView.nextResponder = playButton
+//    speedLabel.nextResponder = playButton
 
     // Video controllers and timeline indicators should not flip in a right-to-left language.
     fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
@@ -3588,18 +3632,22 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded else { return }
 
     let isPaused = player.info.isPaused
-    let state: NSControl.StateValue = isPaused ? .off : .on
+    let playPauseImage = isPaused ? playImage : pauseImage
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
     // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
     player.windowController.miniPlayer.loadIfNeeded()
-    player.windowController.miniPlayer.playButton.state = state
-    playButton.state = state
+    player.windowController.miniPlayer.playButton.image = playPauseImage
+    playButton.image = playPauseImage
 
+    let oscGeo = ControlBarGeometry.current
     let playSpeed = player.info.playSpeed
-    let isNormalSpeed = playSpeed == 1
-    speedLabel.isHidden = isPaused || isNormalSpeed
+    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
+    speedLabel.isHidden = !showSpeedLabel
 
-    if !isNormalSpeed {
+    let playIconSize = showSpeedLabel ? oscGeo.playIconSizeWithSpeedLabel : oscGeo.playIconSize
+    playBtnSquareWidthConstraint.animateToConstant(playIconSize)
+
+    if showSpeedLabel {
       speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
     }
 
@@ -3750,10 +3798,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     player.exitMusicMode()
   }
 
-  @IBAction func playButtonAction(_ sender: NSButton) {
+  @IBAction func playButtonAction(_ sender: AnyObject) {
     let wasPaused = player.info.isPaused
     wasPaused ? player.resume() : player.pause()
-    assert(player.info.isPaused == !wasPaused)
   }
 
   @IBAction func muteButtonAction(_ sender: NSButton) {
