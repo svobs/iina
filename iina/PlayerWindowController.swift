@@ -3261,6 +3261,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
                                                      isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
     guard didHide else { return }
     seekTimeAndThumbnailAnimationState = .shown
+    // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
+    // reliably, so using a timer works well as a failsafe.
+    resetSeekTimeAndThumbnailTimer()
   }
 
   func resetSeekTimeAndThumbnailTimer() {
