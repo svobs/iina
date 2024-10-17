@@ -3898,7 +3898,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let xOffsetInPlaySlider: CGFloat = max(0.0, progressRatio * (playSlider.frame.width - 6.0) + 3.0)
     let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
     let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
-    refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
+    refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
     setOSDViews()
   }
 
