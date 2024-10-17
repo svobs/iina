@@ -103,45 +103,10 @@ struct BindingTableState {
     Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
-
-    // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
-    // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
-    var beforeInsert: [InputBinding] = []
-    var afterInsert: [InputBinding] = []
-    var movedRows: [InputBinding] = []
-    var moveIndexPairs: [(Int, Int)] = []
-    var dstIndexes = IndexSet()
-    var moveFromOffset = 0
-    var moveToOffset = 0
-
-    // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
-    for (origIndex, row) in allRows.enumerated() {
-      if srcIndexes.contains(origIndex) {
-        if origIndex < insertIndex {
-          // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
-          moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
-          dstIndexes.insert(insertIndex + moveFromOffset - 1)  // new selected index
-          moveFromOffset -= 1
-        } else {
-          moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
-          dstIndexes.insert(insertIndex + moveToOffset)  // new selected index
-          moveToOffset += 1
-        }
-        movedRows.append(row)
-      } else if origIndex < insertIndex {
-        beforeInsert.append(row)
-      } else {
-        afterInsert.append(row)
-      }
-    }
-    let allRowsUpdated = beforeInsert + movedRows + afterInsert
-
-    let tableUIChange = TableUIChange(.moveRows, completionHandler: afterComplete)
-    Logger.log("Generated \(moveIndexPairs.count) movePairs: \(moveIndexPairs); will change selection: \(srcIndexes.map{$0}) → \(dstIndexes.map{$0})", level: .verbose)
-    tableUIChange.toMove = moveIndexPairs
-    tableUIChange.newSelectedRowIndexes = dstIndexes
+    let (tableUIChange, allRowsUpdated) = TableUIChange.buildMove(rowIndexes, to: insertIndex, in: allRows, completionHandler: afterComplete)
     tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
 
+    Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
     doAction(allRowsUpdated, tableUIChange)
     return insertIndex
   }
@@ -192,7 +157,7 @@ struct BindingTableState {
       return
     }
 
-    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.buildRemove(indexesToRemove, from: allRows)
+    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.buildRemove(indexesToRemove, in: allRows)
     tableUIChange.toRemove = indexesToRemove
 
     doAction(remainingRowsUnfiltered, tableUIChange)

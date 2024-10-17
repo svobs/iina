@@ -115,8 +115,8 @@ class TableUIChange {
   }
 
   static func buildInsertion(at insertIndex: Int, insertCount: Int,
-                             completionHandler afterComplete: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
-    let tableUIChange = TableUIChange(.insertRows, completionHandler: afterComplete)
+                             completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
+    let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
     let toInsert = IndexSet(insertIndex..<(insertIndex+insertCount))
     tableUIChange.toInsert = toInsert
     tableUIChange.newSelectedRowIndexes = toInsert
@@ -124,7 +124,7 @@ class TableUIChange {
   }
 
   static func buildRemove<T>(_ indexesToRemove: IndexSet,
-                             from allCurrentRows: [T],
+                             in allCurrentRows: [T],
                              completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
     tableUIChange.toRemove = indexesToRemove
@@ -150,6 +150,49 @@ class TableUIChange {
     return (tableUIChange, remainingRows)
   }
 
+  static func buildMove<T>(_ indexesToMove: IndexSet,
+                           to insertIndex: Int,
+                           in allCurrentRows: [T],
+                           completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+
+    // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
+    // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
+    var beforeInsert: [T] = []
+    var afterInsert: [T] = []
+    var movedRows: [T] = []
+    var moveIndexPairs: [(Int, Int)] = []
+    var dstIndexes = IndexSet()
+    var moveFromOffset = 0
+    var moveToOffset = 0
+
+    // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
+    for (origIndex, row) in allCurrentRows.enumerated() {
+      if indexesToMove.contains(origIndex) {
+        if origIndex < insertIndex {
+          // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
+          moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
+          dstIndexes.insert(insertIndex + moveFromOffset - 1)  // new selected index
+          moveFromOffset -= 1
+        } else {
+          moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
+          dstIndexes.insert(insertIndex + moveToOffset)  // new selected index
+          moveToOffset += 1
+        }
+        movedRows.append(row)
+      } else if origIndex < insertIndex {
+        beforeInsert.append(row)
+      } else {
+        afterInsert.append(row)
+      }
+    }
+    let allRowsUpdated = beforeInsert + movedRows + afterInsert
+
+    let tableUIChange = TableUIChange(.moveRows, completionHandler: completionHandler)
+    tableUIChange.toMove = moveIndexPairs
+    tableUIChange.newSelectedRowIndexes = dstIndexes
+
+    return (tableUIChange, allRowsUpdated)
+  }
   // MARK: Execute
 
   // Subclasses should override executeContentUpdates() instead of this

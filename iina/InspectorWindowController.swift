@@ -591,23 +591,31 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.post(tableUIChange)
   }
 
-  func moveWatchRows(from rowlist: IndexSet, to targetRowIndex: Int) {
-    // TODO: flesh this out
+  func moveWatchRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
+    let (tableUIChange, watchPropertiesNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
+
+    // Save model
+    watchProperties = watchPropertiesNew
+    saveWatchList()
+
+    // Animate update to Watch table UI:
+    watchTableView.post(tableUIChange)
   }
 
   func removeRowsFromWatchTable(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
-    let (tableUIChange, remainingProperties) = TableUIChange.buildRemove(rowIndexes, from: watchProperties,
+    let (tableUIChange, remainingProperties) = TableUIChange.buildRemove(rowIndexes, in: watchProperties,
                                                                          completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
     })
 
+    // Save model
     watchProperties = remainingProperties
     saveWatchList()
 
-    // Notify Watch table of update:
+    // Animate update to Watch table UI:
     watchTableView.post(tableUIChange)
   }
 
