@@ -420,13 +420,31 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     } else if let screenColorSpace {
-      logHDR.verbose("Auto-selecting ICC profile from screen color space")
+      logHDR.verbose("Configuring auto ICC profile")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
       $isUninited.withLock() { isUninited in
         guard !isUninited else { return }
         setRenderICCProfile(screenColorSpace)
       }
     }
+
+    let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
+    if videoLayer.colorspace != sdrColorSpace {
+      let name: String = {
+        if let name = sdrColorSpace.name { return name as String }
+        if let name = screenColorSpace?.localizedName { return name }
+        return "Unspecified"
+      }()
+      logHDR.debug("Setting layer color space to \(name)")
+      videoLayer.colorspace = sdrColorSpace
+    }
+
+    player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
+    player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")
+    player.mpv.setString(MPVOption.GPURendererOptions.targetPeak, "auto")
+    player.mpv.setString(MPVOption.GPURendererOptions.toneMapping, "auto")
+    player.mpv.setString(MPVOption.GPURendererOptions.toneMappingParam, "default")
+    player.mpv.setFlag(MPVOption.Screenshot.screenshotTagColorspace, false)
   }
 
   /// Set an ICC profile for use with the mpv [icc-profile-auto](https://mpv.io/manual/stable/#options-icc-profile-auto)
