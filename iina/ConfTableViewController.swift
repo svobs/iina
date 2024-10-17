@@ -59,16 +59,14 @@ class ConfTableViewController: NSObject {
     tableView.editableTextColumnIndexes = [nameColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForConfTable)
 
-    if #available(macOS 10.13, *) {
-      // Enable drag & drop for MacOS 10.13+
-      var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.fileURL, .iinaKeyMapping]
-      if Preference.bool(for: .acceptRawTextAsKeyBindings) {
-        acceptableDraggedTypes.append(.string)
-      }
-      tableView.registerForDraggedTypes(acceptableDraggedTypes)
-      tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
-      tableView.draggingDestinationFeedbackStyle = .regular
+    // Enable drag & drop
+    var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.fileURL, .iinaKeyMapping]
+    if Preference.bool(for: .acceptRawTextAsKeyBindings) {
+      acceptableDraggedTypes.append(.string)
     }
+    tableView.registerForDraggedTypes(acceptableDraggedTypes)
+    tableView.setDraggingSourceOperationMask([.copy], forLocal: false)
+    tableView.draggingDestinationFeedbackStyle = .regular
 
     tableView.scrollRowToVisible(0)
   }

@@ -50,6 +50,8 @@ class BindingTableViewController: NSObject {
     tableView.editableTextColumnIndexes = [keyColumnIndex, actionColumnIndex]
     tableView.registerTableUIChangeObserver(forName: .iinaPendingUIChangeForBindingTable)
     observers.append(NotificationCenter.default.addObserver(forName: .iinaKeyBindingErrorOccurred, object: nil, queue: .main, using: errorDidOccur))
+
+    // Enable drag & drop
     var acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.iinaKeyMapping]
     if Preference.bool(for: .acceptRawTextAsKeyBindings) {
       acceptableDraggedTypes.append(.string)
@@ -257,7 +259,8 @@ extension BindingTableViewController: NSTableViewDataSource {
   /*
    Drag start: set session variables.
    */
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+  @objc func tableView(_ tableView: NSTableView,
+                       draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
     self.draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
     self.tableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
@@ -266,7 +269,9 @@ extension BindingTableViewController: NSTableViewDataSource {
   /**
    This is implemented to support dropping items onto the Trash icon in the Dock.
    */
-  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+  @objc func tableView(_ tableView: NSTableView,
+                       draggingSession session: NSDraggingSession,
+                       endedAt screenPoint: NSPoint, operation: NSDragOperation) {
     guard !bindingTableState.inputConfFile.isReadOnly && operation == NSDragOperation.delete else {
       return
     }
@@ -294,7 +299,9 @@ extension BindingTableViewController: NSTableViewDataSource {
   /*
    Validate drop while hovering.
    */
-  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+  @objc func tableView(_ tableView: NSTableView,
+                       validateDrop info: NSDraggingInfo,
+                       proposedRow rowIndex: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
 
     guard !bindingTableState.inputConfFile.isReadOnly else {
       return []  // deny drop
@@ -353,11 +360,13 @@ extension BindingTableViewController: NSTableViewDataSource {
   /*
    Accept the drop and execute changes, or reject drop.
    */
-  @objc func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+  @objc func tableView(_ tableView: NSTableView,
+                       acceptDrop info: NSDraggingInfo,
+                       row rowIndex: Int, dropOperation: NSTableView.DropOperation) -> Bool {
 
-    let rowList = KeyMapping.deserializeList(from: info.draggingPasteboard)
-    Logger.log("User dropped \(rowList.count) binding rows into KeyBinding table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
-    guard !rowList.isEmpty else {
+    let mappingList = KeyMapping.deserializeList(from: info.draggingPasteboard)
+    Logger.log("User dropped \(mappingList.count) binding rows into KeyBinding table \(dropOperation == .on ? "on" : "above") rowIndex \(rowIndex)")
+    guard !mappingList.isEmpty else {
       return false
     }
 
@@ -366,7 +375,7 @@ extension BindingTableViewController: NSTableViewDataSource {
       return false
     }
 
-    info.numberOfValidItemsForDrop = rowList.count
+    info.numberOfValidItemsForDrop = mappingList.count
     info.draggingFormation = draggingFormation
     info.animatesToDestination = true
 
@@ -377,8 +386,8 @@ extension BindingTableViewController: NSTableViewDataSource {
 
     // Return immediately, and import (or fail to) asynchronously
     if dragMask.contains(.copy) {
-      DispatchQueue.main.async {
-        self.copyMappings(from: rowList, to: rowIndex, isAfterNotAt: false)
+      DispatchQueue.main.async { [self] in
+        copyMappings(mappingList, to: rowIndex)
       }
       return true
     } else if dragMask.contains(.move) {
@@ -388,7 +397,7 @@ extension BindingTableViewController: NSTableViewDataSource {
       }
       guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
             sequenceNumber == info.draggingSequenceNumber,
-            draggedRowIndexes.count == rowList.count else {
+            draggedRowIndexes.count == mappingList.count else {
         Logger.log("Something went wrong keeping track of moved row indexes! Rejecting drop!", level: .error)
         return false
       }
@@ -398,8 +407,8 @@ extension BindingTableViewController: NSTableViewDataSource {
           return false
         }
       }
-      DispatchQueue.main.async {
-        self.moveMappings(from: draggedRowIndexes, to: rowIndex, isAfterNotAt: false)
+      DispatchQueue.main.async { [self] in
+        moveMappings(from: draggedRowIndexes, to: rowIndex)
       }
       return true
     } else {
@@ -577,23 +586,23 @@ extension BindingTableViewController: EditableTableViewDelegate {
   }
 
   // e.g., drag & drop "copy" operation
-  private func copyMappings(from mappingList: [KeyMapping], to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func copyMappings(_ mappingList: [KeyMapping], to rowIndex: Int) {
     guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !mappingList.isEmpty else { return }
 
     // Make sure to use copy() to clone the object here
     let newMappings: [KeyMapping] = mappingList.map { $0.clone() }
 
-    bindingTableState.insertNewBindings(relativeTo: rowIndex, isAfterNotAt: isAfterNotAt, newMappings,
-                                                                    afterComplete: scrollToFirstInserted)
+    bindingTableState.insertNewBindings(relativeTo: rowIndex, newMappings,
+                                        afterComplete: scrollToFirstInserted)
   }
 
   // e.g., drag & drop "move" operation
-  private func moveMappings(from rowIndexes: IndexSet, to rowIndex: Int, isAfterNotAt: Bool = false) {
+  private func moveMappings(from rowIndexes: IndexSet, to rowIndex: Int) {
     guard requireCurrentConfIsEditable(forAction: "move binding(s)") else { return }
     guard !rowIndexes.isEmpty else { return }
 
-    let firstInsertedRowIndex = bindingTableState.moveBindings(from: rowIndexes, to: rowIndex, isAfterNotAt: isAfterNotAt,
+    let firstInsertedRowIndex = bindingTableState.moveBindings(from: rowIndexes, to: rowIndex,
                                                                afterComplete: self.scrollToFirstInserted)
     self.tableView.scrollRowToVisible(firstInsertedRowIndex)
   }

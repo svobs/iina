@@ -96,11 +96,11 @@ struct BindingTableState {
     return nil
   }
 
-  func moveBindings(from rowIndexes: IndexSet, to index: Int, isAfterNotAt: Bool = false,
+  func moveBindings(from rowIndexes: IndexSet, to index: Int,
                     afterComplete: TableUIChange.CompletionHandler? = nil) -> Int {
 
-    let insertIndex = getClosestValidInsertIndex(from: index, isAfterNotAt: isAfterNotAt, returnUnfilteredIndex: true)
-    Logger.log("Moving \(rowIndexes.count) bindings \(isAfterNotAt ? "after" : "to") \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)", level: .verbose)
+    let insertIndex = getClosestValidInsertIndex(from: index, returnUnfilteredIndex: true)
+    Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
 

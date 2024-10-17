@@ -846,6 +846,10 @@ extension String {
     return "\"\(self)\""
   }
 
+  func containsWhitespaceOrNewlines() -> Bool {
+    return rangeOfCharacter(from: .whitespacesAndNewlines) != nil
+  }
+
   mutating func deleteLast(_ num: Int) {
     removeLast(Swift.min(num, count))
   }
@@ -1266,6 +1270,14 @@ extension NSBox {
     let box = NSBox(frame: NSRect(origin: .zero, size: NSSize(width: 100, height: 1)))
     box.boxType = .separator
     return box
+  }
+}
+
+extension NSPasteboard {
+
+  func getStringItems() -> [String] {
+    guard let pasteboardItems else { return [] }
+    return pasteboardItems.compactMap{$0.string(forType: .string)}
   }
 }
 

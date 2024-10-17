@@ -11,6 +11,9 @@ import Cocoa
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
 
+fileprivate let draggingFormation: NSDraggingFormation = .default
+fileprivate let defaultDragOperation = NSDragOperation.move
+
 class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
@@ -74,11 +77,12 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   @IBOutlet weak var displayFPSField: NSTextField!
   @IBOutlet weak var voFPSField: NSTextField!
   @IBOutlet weak var edispFPSField: NSTextField!
-  @IBOutlet weak var watchTableView: NSTableView!
+  @IBOutlet weak var watchTableView: EditableTableView!
   @IBOutlet weak var deleteButton: NSButton!
 
   @IBOutlet weak var watchTableContainerView: NSView!
   private var tableHeightConstraint: NSLayoutConstraint? = nil
+  private var draggedRowInfo: (Int, IndexSet)? = nil
 
   init() {
     super.init(window: nil)
@@ -129,6 +133,13 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     // Other UI init
 
     deleteButton.isEnabled = false
+
+    /* TODO: WIP
+    let acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.string]
+    watchTableView.registerForDraggedTypes(acceptableDraggedTypes)
+    watchTableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
+    watchTableView.draggingDestinationFeedbackStyle = .regular
+     */
 
     // Restore tab selection
     let selectTabIndex: Int = Preference.UIState.get(.uiInspectorWindowTabIndex)
@@ -243,7 +254,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
     self.setLabelColor(self.vPixelFormat, by: player.info.isFileLoaded)
   }
-                
+
   private func updateStaticInfo(_ player: PlayerCore) {
     let controller = player.mpv!
     let info = player.info
@@ -359,7 +370,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
   }
 
-  // MARK: NSTableView
+  // MARK: - NSTableView
 
   func numberOfRows(in tableView: NSTableView) -> Int {
     return watchProperties.count
@@ -410,6 +421,169 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
   }
 
+  // MARK: Drag & Drop
+
+  /// Drag start: define which operations are allowed, and in which contexts
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    session.draggingFormation = draggingFormation
+
+    switch(context) {
+    case .withinApplication:
+      return .copy.union(.move)
+    case .outsideApplication:
+      return .copy
+    default:
+      return .copy
+    }
+  }
+
+  /// Drag start: convert tableview rows to clipboard items
+  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
+    let watchProperties = watchProperties
+    if rowIndex < watchProperties.count {
+      return watchProperties[rowIndex] as NSString
+    }
+    return nil
+  }
+
+  /// Drag start: set session variables.
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
+    watchTableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
+  }
+
+  /// This is implemented to support dropping items onto the Trash icon in the Dock.
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+
+    guard operation == NSDragOperation.delete else { return }
+
+    let stringList = session.draggingPasteboard.getStringItems()
+    guard !stringList.isEmpty else { return }
+
+    guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
+          session.draggingSequenceNumber == sequenceNumber && stringList.count == draggedRowIndexes.count else {
+      Logger.log.error("Cancelling drop: dragged data does not match!")
+      return
+    }
+
+    Logger.log.verbose("User dragged to the trash: \(stringList)")
+    // TODO: this is the wrong animation
+    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
+                                                   completionHandler: { [self] in
+      removeRowsFromWatchTable(draggedRowIndexes)
+    })
+  }
+
+  /// Validate drop while hovering.
+  @objc func tableView(_ tableView: NSTableView,
+                       validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
+                       proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+
+    let stringList = info.draggingPasteboard.getStringItems()
+    guard !stringList.isEmpty else { return [] }
+
+    // Update that little red number:
+    info.numberOfValidItemsForDrop = stringList.count
+
+    // Do not animate the drop; we have the row animations already
+    info.animatesToDestination = false
+
+    let isAfterNotAt = dropOperation == .on
+    let rowCount = watchProperties.count
+    let targetRowIndex = (isAfterNotAt ? rowIndex + 1 : rowIndex).clamped(to: 0...rowCount)
+    // 1. Do not allow "drop into".
+    // 2. targetRowIndex==0 means "above first row"
+    // 3. targetRowIndex==rowCount means "below the last row"
+    tableView.setDropRow(targetRowIndex, dropOperation: .above)
+
+    var dragMask = info.draggingSourceOperationMask
+    if dragMask.contains(.every) || dragMask.contains(.generic) {
+      dragMask = defaultDragOperation
+    }
+
+    if dragMask.contains(.copy) {
+      // Explicit copy is ok
+      return .copy
+    }
+
+    // Dragging table rows within same table?
+    if let dragSource = info.draggingSource as? NSTableView, dragSource == watchTableView {
+      guard let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
+            sequenceNumber == info.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
+        Logger.log.error("Denying move within table: dragged data does not match!")
+        return []
+      }
+      return .move
+    }
+    // From outside of table -> only copy allowed
+    return .copy
+  }
+
+  /// Accept the drop and execute changes, or reject drop.
+  ///
+  /// Remember that we can expect the following (see notes in `tableView(_, validateDrop, …)`)
+  /// 1. `0 <= targetRowIndex <= rowCount`
+  /// 2. `dropOperation = .above`.
+  @objc func tableView(_ tableView: NSTableView,
+                       acceptDrop info: NSDraggingInfo, row targetRowIndex: Int,
+                       dropOperation: NSTableView.DropOperation) -> Bool {
+
+    guard dropOperation == .above else {
+      Logger.log.error("Watch Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
+      return false
+    }
+
+    let stringList = info.draggingPasteboard.getStringItems()
+    Logger.log.debug("User dropped \(stringList.count) text rows into Watch table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
+    guard !stringList.isEmpty else {
+      return false
+    }
+
+    info.numberOfValidItemsForDrop = stringList.count
+    info.draggingFormation = draggingFormation
+    info.animatesToDestination = true
+
+    var dragMask = info.draggingSourceOperationMask
+    if dragMask.contains(.every) || dragMask.contains(.generic) {
+      dragMask = defaultDragOperation
+    }
+
+    // Return immediately, and import (or fail to) asynchronously
+    if dragMask.contains(.copy) {
+      DispatchQueue.main.async { [self] in
+        insertWatchRows(stringList, to: targetRowIndex)
+      }
+      return true
+    } else if dragMask.contains(.move) {
+      // Only allow drags from the same table
+      guard let dragSource = info.draggingSource as? NSTableView, dragSource == watchTableView,
+            let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
+            sequenceNumber == info.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
+        Logger.log.error("Denying move within table: dragged data does not match!")
+        return false
+      }
+      DispatchQueue.main.async { [self] in
+        moveWatchRows(from: draggedRowIndexes, to: targetRowIndex)
+      }
+      return true
+    } else {
+      Logger.log("Rejecting drop: got unexpected drag mask: \(dragMask)")
+      return false
+    }
+  }
+
+  func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
+    // TODO: flesh this out
+  }
+
+  func moveWatchRows(from rowlist: IndexSet, to targetRowIndex: Int) {
+    // TODO: flesh this out
+  }
+
+  // MARK: - Window Geometry
+
   func resizeTableColumns(forTableWidth tableWidth: CGFloat) {
     guard let keyColumn = watchTableView.tableColumn(withIdentifier: .key),
           let valueColumn = watchTableView.tableColumn(withIdentifier: .value),
@@ -451,6 +625,16 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
   }
 
+  /// Workaround (as of MacOS 13.4): try to ensure `watchTableView` never scrolls vertically, because `NSTableView` will draw rows
+  /// overlapping the header (maybe only a problem for custom `NSTableHeaderCell`s which are not opaque), but looks quite ugly.
+  private func computeMinTableHeight() -> CGFloat {
+    /// Add `1` to `numberOfRows` because it will scroll if there is not at least 1 empty row
+    return watchTableView.headerView!.frame.height + CGFloat(
+      watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
+  }
+
+  // MARK: - IBActions
+
   @IBAction func addWatchAction(_ sender: AnyObject) {
     Utility.quickPromptPanel("add_watch", sheetWindow: window) { [self] str in
       self.watchProperties.append(str)
@@ -467,6 +651,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   @IBAction func removeWatchAction(_ sender: AnyObject) {
     let rowIndexes = watchTableView.selectedRowIndexes
+    removeRowsFromWatchTable(rowIndexes)
+  }
+
+  func removeRowsFromWatchTable(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
 
     let watchPropertiesOld = watchProperties
@@ -482,17 +670,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.removeRows(at: rowIndexes, withAnimation: AccessibilityPreferences.motionReductionEnabled ? [] : .slideUp)
     tableHeightConstraint?.constant = computeMinTableHeight()
   }
-
-  /// Workaround (as of MacOS 13.4): try to ensure `watchTableView` never scrolls vertically, because `NSTableView` will draw rows
-  /// overlapping the header (maybe only a problem for custom `NSTableHeaderCell`s which are not opaque), but looks quite ugly.
-  private func computeMinTableHeight() -> CGFloat {
-    /// Add `1` to `numberOfRows` because it will scroll if there is not at least 1 empty row
-    return watchTableView.headerView!.frame.height + CGFloat(
-      watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
-  }
-
-
-  // MARK: IBActions
 
   @IBAction func tabSwitched(_ sender: NSSegmentedControl) {
     tabView.selectTabViewItem(at: sender.selectedSegment)
