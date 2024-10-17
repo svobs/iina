@@ -415,6 +415,9 @@ class VideoView: NSView {
   // MARK: - Color
 
   private func setICCProfile() {
+    guard player.mpv.lockAndSetOpenGLContext() else { return }
+    defer { player.mpv.unlockOpenGLContext() }
+
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
@@ -422,6 +425,7 @@ class VideoView: NSView {
     } else if let screenColorSpace {
       logHDR.verbose("Configuring auto ICC profile")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
+
       $isUninited.withLock() { isUninited in
         guard !isUninited else { return }
         setRenderICCProfile(screenColorSpace)
@@ -453,7 +457,6 @@ class VideoView: NSView {
   /// The IINA `Load ICC profile` setting is tied to the `--icc-profile-auto` option. This allows users to override IINA using
   /// the [--icc-profile](https://mpv.io/manual/stable/#options-icc-profile) option.
   private func setRenderICCProfile(_ profile: NSColorSpace) {
-
     guard let renderContext = player.mpv.mpvRenderContext else { return }
     guard var iccData = profile.iccProfileData else {
       let name = profile.localizedName ?? "unnamed"
