@@ -430,11 +430,7 @@ class VideoView: NSView {
 
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
     if videoLayer.colorspace != sdrColorSpace {
-      let name: String = {
-        if let name = sdrColorSpace.name { return name as String }
-        if let name = screenColorSpace?.localizedName { return name }
-        return "Unspecified"
-      }()
+      let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
       logHDR.debug("Setting layer color space to \(name)")
       videoLayer.colorspace = sdrColorSpace
     }
@@ -578,7 +574,7 @@ extension VideoView {
     // HDR videos use a Hybrid Log Gamma (HLG) or a Perceptual Quantization (PQ) transfer function.
     guard gamma == "hlg" || gamma == "pq" else { return false }
 
-    var name: CFString? = nil
+    let name: CFString
     switch primaries {
     case "display-p3":
       if #available(macOS 10.15.4, *) {
@@ -613,7 +609,7 @@ extension VideoView {
     guard player.info.hdrEnabled else { return nil }
 
     logHDR.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
-    videoLayer.colorspace = CGColorSpace(name: name!)
+    videoLayer.colorspace = CGColorSpace(name: name)
     mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
     // PQ videos will be display as it was, HLG videos will be converted to PQ
