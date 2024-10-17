@@ -349,6 +349,8 @@ extension Notification.Name {
   static let iinaPendingUIChangeForConfTable = Notification.Name("IINAPendingUIChangeForConfTable")
   // Contains a TableUIChange which should be applied to the Key Bindings table
   static let iinaPendingUIChangeForBindingTable = Notification.Name("IINAPendingUIChangeForBindingTable")
+  static let pendingUIChangeForInspectorTable = Notification.Name("pendingUIChangeForInspectorTable")
+  static let pendingUIChangeForMpvOptionsTable = Notification.Name("pendingUIChangeForMpvOptionsTable")
   // Requests that the search field above the Key Bindings table change its text to the contained string
   static let iinaKeyBindingSearchFieldShouldUpdate = Notification.Name("IINAKeyBindingSearchFieldShouldUpdate")
   // The AppInputConfig was rebuilt

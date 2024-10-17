@@ -17,6 +17,8 @@ class EditableTableView: NSTableView {
   // Must provide this for editCell() to work
   var editableTextColumnIndexes: [Int] = []
 
+  var tableChangeNotificationName: Notification.Name!
+
   // Must provide this for EditableTableView extended functionality
   var editableDelegate: EditableTableViewDelegate? = nil {
     didSet {
@@ -304,6 +306,13 @@ class EditableTableView: NSTableView {
 
   func registerTableUIChangeObserver(forName name: Notification.Name) {
     observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main, using: tableShouldChange))
+    tableChangeNotificationName = name
+  }
+
+  func post(_ tableUIChange:  TableUIChange) {
+    let not = Notification(name: tableChangeNotificationName, object: tableUIChange)
+    Logger.log.verbose("Posting \(not.name.rawValue.quoted) notification with changeType \(tableUIChange.changeType)")
+    NotificationCenter.default.post(not)
   }
 
   // Row(s) changed in datasource. Could be insertions, deletions, selection change, etc (see: `ContentChangeType`).

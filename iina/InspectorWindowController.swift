@@ -122,6 +122,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
+    watchTableView.registerTableUIChangeObserver(forName: .pendingUIChangeForInspectorTable)
 
     tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())
     tableHeightConstraint!.isActive = true
@@ -134,12 +135,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     deleteButton.isEnabled = false
 
-    /* TODO: WIP
     let acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.string]
     watchTableView.registerForDraggedTypes(acceptableDraggedTypes)
     watchTableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
     watchTableView.draggingDestinationFeedbackStyle = .regular
-     */
 
     // Restore tab selection
     let selectTabIndex: Int = Preference.UIState.get(.uiInspectorWindowTabIndex)
@@ -510,10 +509,9 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     // Dragging table rows within same table?
     if let dragSource = info.draggingSource as? NSTableView, dragSource == watchTableView {
-      guard let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
-            sequenceNumber == info.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
-        Logger.log.error("Denying move within table: dragged data does not match!")
-        return []
+      guard getLastDraggedRowsIfMatch(stringList, info, from: watchTableView) != nil else {
+        Logger.log.error("Denying move within table: drag source is not same table!")
+        return []  // disallow any operation
       }
       return .move
     }
@@ -558,10 +556,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       return true
     } else if dragMask.contains(.move) {
       // Only allow drags from the same table
-      guard let dragSource = info.draggingSource as? NSTableView, dragSource == watchTableView,
-            let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
-            sequenceNumber == info.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
-        Logger.log.error("Denying move within table: dragged data does not match!")
+      guard let draggedRowIndexes = getLastDraggedRowsIfMatch(stringList, info, from: watchTableView) else {
+        Logger.log.error("Denying move within table: drag source is not same table!")
         return false
       }
       DispatchQueue.main.async { [self] in
@@ -574,12 +570,45 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     }
   }
 
+  private func getLastDraggedRowsIfMatch(_ stringList: [String], _ dragInfo: NSDraggingInfo, from sourceTable: NSTableView) -> IndexSet? {
+    guard let dragSource = dragInfo.draggingSource as? NSTableView, dragSource == sourceTable,
+          let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
+          sequenceNumber == dragInfo.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
+      return nil
+    }
+    return draggedRowIndexes
+  }
+
   func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
-    // TODO: flesh this out
+    let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: stringList.count)
+
+    var allRowsNew = watchProperties
+    allRowsNew.insert(contentsOf: stringList, at: targetRowIndex)
+    watchProperties = allRowsNew
+    saveWatchList()
+
+    // Notify Watch table of update:
+    watchTableView.post(tableUIChange)
   }
 
   func moveWatchRows(from rowlist: IndexSet, to targetRowIndex: Int) {
     // TODO: flesh this out
+  }
+
+  func removeRowsFromWatchTable(_ rowIndexes: IndexSet) {
+    guard !rowIndexes.isEmpty else { return }
+
+    Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
+    let (tableUIChange, remainingProperties) = TableUIChange.buildRemove(rowIndexes, from: watchProperties,
+                                                                         completionHandler: { [self] _ in
+      tableHeightConstraint?.constant = computeMinTableHeight()
+    })
+
+    watchProperties = remainingProperties
+    saveWatchList()
+
+    // Notify Watch table of update:
+    watchTableView.post(tableUIChange)
   }
 
   // MARK: - Window Geometry
@@ -652,23 +681,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   @IBAction func removeWatchAction(_ sender: AnyObject) {
     let rowIndexes = watchTableView.selectedRowIndexes
     removeRowsFromWatchTable(rowIndexes)
-  }
-
-  func removeRowsFromWatchTable(_ rowIndexes: IndexSet) {
-    guard !rowIndexes.isEmpty else { return }
-
-    let watchPropertiesOld = watchProperties
-    var watchPropertiesNew: [String] = []
-    for (index, property) in watchPropertiesOld.enumerated() {
-      if !rowIndexes.contains(index) {
-        watchPropertiesNew.append(property)
-      }
-    }
-    watchProperties = watchPropertiesNew
-    saveWatchList()
-
-    watchTableView.removeRows(at: rowIndexes, withAnimation: AccessibilityPreferences.motionReductionEnabled ? [] : .slideUp)
-    tableHeightConstraint?.constant = computeMinTableHeight()
   }
 
   @IBAction func tabSwitched(_ sender: NSSegmentedControl) {

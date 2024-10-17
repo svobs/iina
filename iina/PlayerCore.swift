@@ -2496,7 +2496,7 @@ class PlayerCore: NSObject {
   }
 
   func chapterChanged() {
-    guard !isShuttingDown else { return }
+    guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
     info.chapter = chapter
     log.verbose("Δ mpv prop: `chapter` = \(info.chapter)")
@@ -2536,8 +2536,11 @@ class PlayerCore: NSObject {
   }
 
   func mediaTitleChanged() {
-    guard !isStopping else { return }
-    postNotification(.iinaMediaTitleChanged)
+    guard isActive else { return }
+    DispatchQueue.main.async { [self] in
+      guard windowController.isOpen else { return }
+      postNotification(.iinaMediaTitleChanged)
+    }
   }
 
   func reloadQuickSettingsView() {

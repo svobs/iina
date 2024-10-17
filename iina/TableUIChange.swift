@@ -22,7 +22,8 @@ class TableUIChange {
   typealias AnimationBlock = (NSAnimationContext) -> Void
   typealias CompletionHandler = (TableUIChange) -> Void
 
-  // After removal of rows, select the next single row after the last one removed:
+  // TODO: find a way to parameterize this cleanly
+  /// `selectNextRowAfterDelete` = after removal of rows, select the next single row after the last one removed
   static let selectNextRowAfterDelete = true
 
   enum ContentChangeType {
@@ -111,6 +112,42 @@ class TableUIChange {
   init(_ changeType: ContentChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
     self.changeType = changeType
     self.completionHandler = completionHandler
+  }
+
+  static func buildInsertion(at insertIndex: Int, insertCount: Int,
+                             completionHandler afterComplete: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
+    let tableUIChange = TableUIChange(.insertRows, completionHandler: afterComplete)
+    let toInsert = IndexSet(insertIndex..<(insertIndex+insertCount))
+    tableUIChange.toInsert = toInsert
+    tableUIChange.newSelectedRowIndexes = toInsert
+    return tableUIChange
+  }
+
+  static func buildRemove<T>(_ indexesToRemove: IndexSet,
+                             from allCurrentRows: [T],
+                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
+    tableUIChange.toRemove = indexesToRemove
+
+    var remainingRows: [T] = []
+    var lastRemovedIndex = 0
+    for (rowIndex, row) in allCurrentRows.enumerated() {
+      if indexesToRemove.contains(rowIndex) {
+        lastRemovedIndex = rowIndex
+      } else {
+        remainingRows.append(row)
+      }
+    }
+
+    if TableUIChange.selectNextRowAfterDelete {
+      // After removal, select the single row after the last one removed:
+      let countRemoved = allCurrentRows.count - remainingRows.count
+      if countRemoved < allCurrentRows.count {
+        let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
+        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
+      }
+    }
+    return (tableUIChange, remainingRows)
   }
 
   // MARK: Execute

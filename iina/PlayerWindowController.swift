@@ -2989,7 +2989,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    guard player.state.isNotYet(.stopping) else { return }
+    guard player.isActive else { return }
     let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
 
     DispatchQueue.main.async { [self] in

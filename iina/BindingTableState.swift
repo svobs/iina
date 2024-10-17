@@ -159,16 +159,13 @@ struct BindingTableState {
       return
     }
 
-    let tableUIChange = TableUIChange(.insertRows, completionHandler: afterComplete)
-    let toInsert = IndexSet(insertIndex..<(insertIndex+mappingList.count))
-    tableUIChange.toInsert = toInsert
-    tableUIChange.newSelectedRowIndexes = toInsert
-
     var allRowsNew = allRows
-    for mapping in mappingList.reversed() {
-      // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
-      allRowsNew.insert(InputBinding(mapping, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME), at: insertIndex)
-    }
+    // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
+    let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME)}
+    allRowsNew.insert(contentsOf: insertedRows, at: insertIndex)
+
+    let tableUIChange = TableUIChange.buildInsertion(at: insertIndex, insertCount: insertedRows.count,
+                                                     completionHandler: afterComplete)
 
     doAction(allRowsNew, tableUIChange)
   }
@@ -195,26 +192,8 @@ struct BindingTableState {
       return
     }
 
-    var remainingRowsUnfiltered: [InputBinding] = []
-    var lastRemovedIndex = 0
-    for (rowIndex, row) in allRows.enumerated() {
-      if indexesToRemove.contains(rowIndex) {
-        lastRemovedIndex = rowIndex
-      } else {
-        remainingRowsUnfiltered.append(row)
-      }
-    }
-    let tableUIChange = TableUIChange(.removeRows)
+    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.buildRemove(indexesToRemove, from: allRows)
     tableUIChange.toRemove = indexesToRemove
-
-    if TableUIChange.selectNextRowAfterDelete {
-      // After removal, select the single row after the last one removed:
-      let countRemoved = allRows.count - remainingRowsUnfiltered.count
-      if countRemoved < allRows.count {
-        let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
-      }
-    }
 
     doAction(remainingRowsUnfiltered, tableUIChange)
   }
