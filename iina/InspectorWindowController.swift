@@ -11,9 +11,6 @@ import Cocoa
 fileprivate let watchTableBackgroundColor = NSColor(red: 2.0/3, green: 2.0/3, blue: 2.0/3, alpha: 0.1)
 fileprivate let watchTableColumnHeaderColor = NSColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
 
-fileprivate let draggingFormation: NSDraggingFormation = .default
-fileprivate let defaultDragOperation = NSDragOperation.move
-
 class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource {
 
   override var windowNibName: NSNib.Name {
@@ -82,7 +79,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   @IBOutlet weak var watchTableContainerView: NSView!
   private var tableHeightConstraint: NSLayoutConstraint? = nil
-  private var draggedRowInfo: (Int, IndexSet)? = nil
+  private var tableDragDelegate: TableDragDelegate<String>? = nil
 
   init() {
     super.init(window: nil)
@@ -110,6 +107,18 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.delegate = self
     watchTableView.dataSource = self
 
+    tableDragDelegate = TableDragDelegate<String>(watchTableView,
+                                                getFromPasteboardFunc: { pb in pb.getStringItems() },
+                                                getAllCurentFunc: { self.watchProperties },
+                                                moveFunc: moveWatchRows,
+                                                insertFunc: insertWatchRows,
+                                                removeFunc: removeRowsFromWatchTable)
+
+    let acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.string]
+    watchTableView.registerForDraggedTypes(acceptableDraggedTypes)
+    watchTableView.setDraggingSourceOperationMask([tableDragDelegate!.defaultDragOperation], forLocal: false)
+    watchTableView.draggingDestinationFeedbackStyle = .regular
+
     let headerFont = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
     for column in watchTableView.tableColumns {
       let headerCell = WatchTableColumnHeaderCell()
@@ -134,11 +143,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     // Other UI init
 
     deleteButton.isEnabled = false
-
-    let acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.string]
-    watchTableView.registerForDraggedTypes(acceptableDraggedTypes)
-    watchTableView.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
-    watchTableView.draggingDestinationFeedbackStyle = .regular
 
     // Restore tab selection
     let selectTabIndex: Int = Preference.UIState.get(.uiInspectorWindowTabIndex)
@@ -420,103 +424,33 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     deleteButton.isEnabled = !watchTableView.selectedRowIndexes.isEmpty
   }
 
-  // MARK: Drag & Drop
+  // MARK: Watch Table Drag & Drop
 
-  /// Drag start: define which operations are allowed, and in which contexts
-  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-    session.draggingFormation = draggingFormation
-
-    switch(context) {
-    case .withinApplication:
-      return .copy.union(.move)
-    case .outsideApplication:
-      return .copy
-    default:
-      return .copy
-    }
-  }
-
-  /// Drag start: convert tableview rows to clipboard items
   @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
     let watchProperties = watchProperties
     if rowIndex < watchProperties.count {
-      return watchProperties[rowIndex] as NSString
+      return watchProperties[rowIndex] as NSString?
     }
     return nil
   }
 
-  /// Drag start: set session variables.
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    return tableDragDelegate!.draggingSession(session, sourceOperationMaskFor: context)
+  }
+
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
-    draggedRowInfo = (session.draggingSequenceNumber, rowIndexes)
-    watchTableView.setDraggingImageToAllColumns(session, screenPoint, rowIndexes)
+    tableDragDelegate!.tableView(tableView, draggingSession: session, willBeginAt: screenPoint, forRowIndexes: rowIndexes)
   }
 
-  /// This is implemented to support dropping items onto the Trash icon in the Dock.
   @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
                        endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-
-    guard operation == NSDragOperation.delete else { return }
-
-    let stringList = session.draggingPasteboard.getStringItems()
-    guard !stringList.isEmpty else { return }
-
-    guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
-          session.draggingSequenceNumber == sequenceNumber && stringList.count == draggedRowIndexes.count else {
-      Logger.log.error("Cancelling drop: dragged data does not match!")
-      return
-    }
-
-    Logger.log.verbose("User dragged to the trash: \(stringList)")
-    // TODO: this is the wrong animation
-    NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
-                                                   completionHandler: { [self] in
-      removeRowsFromWatchTable(draggedRowIndexes)
-    })
+    tableDragDelegate!.tableView(tableView, draggingSession: session, endedAt: screenPoint, operation: operation)
   }
 
-  /// Validate drop while hovering.
-  @objc func tableView(_ tableView: NSTableView,
-                       validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
                        proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-
-    let stringList = info.draggingPasteboard.getStringItems()
-    guard !stringList.isEmpty else { return [] }
-
-    // Update that little red number:
-    info.numberOfValidItemsForDrop = stringList.count
-
-    // Do not animate the drop; we have the row animations already
-    info.animatesToDestination = false
-
-    let isAfterNotAt = dropOperation == .on
-    let rowCount = watchProperties.count
-    let targetRowIndex = (isAfterNotAt ? rowIndex + 1 : rowIndex).clamped(to: 0...rowCount)
-    // 1. Do not allow "drop into".
-    // 2. targetRowIndex==0 means "above first row"
-    // 3. targetRowIndex==rowCount means "below the last row"
-    tableView.setDropRow(targetRowIndex, dropOperation: .above)
-
-    var dragMask = info.draggingSourceOperationMask
-    if dragMask.contains(.every) || dragMask.contains(.generic) {
-      dragMask = defaultDragOperation
-    }
-
-    if dragMask.contains(.copy) {
-      // Explicit copy is ok
-      return .copy
-    }
-
-    // Dragging table rows within same table?
-    if let dragSource = info.draggingSource as? NSTableView, dragSource == watchTableView {
-      guard getLastDraggedRowsIfMatch(stringList, info, from: watchTableView) != nil else {
-        Logger.log.error("Denying move within table: drag source is not same table!")
-        return []  // disallow any operation
-      }
-      return .move
-    }
-    // From outside of table -> only copy allowed
-    return .copy
+    return tableDragDelegate!.tableView(tableView, validateDrop: info, proposedRow: rowIndex, proposedDropOperation: dropOperation)
   }
 
   /// Accept the drop and execute changes, or reject drop.
@@ -527,57 +461,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   @objc func tableView(_ tableView: NSTableView,
                        acceptDrop info: NSDraggingInfo, row targetRowIndex: Int,
                        dropOperation: NSTableView.DropOperation) -> Bool {
-
-    guard dropOperation == .above else {
-      Logger.log.error("Watch Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
-      return false
-    }
-
-    let stringList = info.draggingPasteboard.getStringItems()
-    Logger.log.debug("User dropped \(stringList.count) text rows into Watch table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
-    guard !stringList.isEmpty else {
-      return false
-    }
-
-    info.numberOfValidItemsForDrop = stringList.count
-    info.draggingFormation = draggingFormation
-    info.animatesToDestination = true
-
-    var dragMask = info.draggingSourceOperationMask
-    if dragMask.contains(.every) || dragMask.contains(.generic) {
-      dragMask = defaultDragOperation
-    }
-
-    // Return immediately, and import (or fail to) asynchronously
-    if dragMask.contains(.copy) {
-      DispatchQueue.main.async { [self] in
-        insertWatchRows(stringList, to: targetRowIndex)
-      }
-      return true
-    } else if dragMask.contains(.move) {
-      // Only allow drags from the same table
-      guard let draggedRowIndexes = getLastDraggedRowsIfMatch(stringList, info, from: watchTableView) else {
-        Logger.log.error("Denying move within table: drag source is not same table!")
-        return false
-      }
-      DispatchQueue.main.async { [self] in
-        moveWatchRows(from: draggedRowIndexes, to: targetRowIndex)
-      }
-      return true
-    } else {
-      Logger.log("Rejecting drop: got unexpected drag mask: \(dragMask)")
-      return false
-    }
+    return tableDragDelegate!.tableView(tableView, acceptDrop: info, row: targetRowIndex, dropOperation: dropOperation)
   }
 
-  private func getLastDraggedRowsIfMatch(_ stringList: [String], _ dragInfo: NSDraggingInfo, from sourceTable: NSTableView) -> IndexSet? {
-    guard let dragSource = dragInfo.draggingSource as? NSTableView, dragSource == sourceTable,
-          let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
-          sequenceNumber == dragInfo.draggingSequenceNumber, draggedRowIndexes.count == stringList.count else {
-      return nil
-    }
-    return draggedRowIndexes
-  }
+  // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
     let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: stringList.count)
