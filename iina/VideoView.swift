@@ -35,9 +35,7 @@ class VideoView: NSView {
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
-  // MARK: - Attributes
-
-  // MARK: - Init
+  // MARK: Init
 
   init(frame: CGRect, player: PlayerCore) {
     self.player = player
@@ -56,6 +54,8 @@ class VideoView: NSView {
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
+
+  // MARK: De-Init
 
   /// Uninitialize this view.
   ///
@@ -110,9 +110,16 @@ class VideoView: NSView {
   }
 
   func refreshAll() {
-    updateDisplayLink()
-    refreshContentsScale()
-    refreshEdrMode()
+    // Do not execute if hidden during restore! Some of these calls may cause the window to show
+    guard player.isActive && !player.info.isRestoring else { return }
+    guard player.mpv.lockAndSetOpenGLContext() else { return }
+    defer { player.mpv.unlockOpenGLContext() }
+    $isUninited.withLock() { [self] isUninited in
+      guard !isUninited else { return }
+      updateDisplayLink()
+      refreshContentsScale()
+      _refreshEdrMode()
+    }
   }
 
   // MARK: - Constraints
@@ -315,9 +322,8 @@ class VideoView: NSView {
   func startDisplayLink() {
     let link = obtainDisplayLink()
 
-    guard !isUninited else { return }
     guard !CVDisplayLinkIsRunning(link) else { return }
-    refreshAll()
+    updateDisplayLink()
 
     checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
                 "CVDisplayLinkSetOutputCallback")
@@ -379,9 +385,14 @@ class VideoView: NSView {
     if !temporary {
       displayIdleTimer?.invalidate()
     }
-    startDisplayLink()
-    if temporary {
-      displayIdle()
+    guard player.mpv.lockAndSetOpenGLContext() else { return }
+    defer { player.mpv.unlockOpenGLContext() }
+    $isUninited.withLock() { [self] isUninited in
+      guard !isUninited else { return }
+      startDisplayLink()
+      if temporary {
+        displayIdle()
+      }
     }
   }
 
@@ -413,16 +424,18 @@ class VideoView: NSView {
   }
 
   @objc func makeDisplayIdle() {
-    videoLayer.videoView.stopDisplayLink()
-    videoLayer.exitAsynchronousMode()
+    guard player.mpv.lockAndSetOpenGLContext() else { return }
+    defer { player.mpv.unlockOpenGLContext() }
+    $isUninited.withLock() { [self] isUninited in
+      guard !isUninited else { return }
+      videoLayer.videoView.stopDisplayLink()
+      videoLayer.exitAsynchronousMode()
+    }
   }
 
   // MARK: - Color
 
   private func setICCProfile() {
-    guard player.mpv.lockAndSetOpenGLContext() else { return }
-    defer { player.mpv.unlockOpenGLContext() }
-
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
@@ -430,11 +443,8 @@ class VideoView: NSView {
     } else if let screenColorSpace {
       logHDR.verbose("Configuring auto ICC profile")
       player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
-
-      $isUninited.withLock() { isUninited in
-        guard !isUninited else { return }
-        setRenderICCProfile(screenColorSpace)
-      }
+      // This MUST be locked via openGLContext
+      setRenderICCProfile(screenColorSpace)
     }
 
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
@@ -555,12 +565,22 @@ class VideoView: NSView {
 // MARK: - HDR
 
 extension VideoView {
+
   func refreshEdrMode() {
-    // Do not execute if hidden during restore! Some of these calls will cause the window to show
-    guard !Preference.bool(for: .isRestoreInProgress) else { return }
-    guard player.isActive else { return }
+    guard player.mpv.lockAndSetOpenGLContext() else { return }
+    defer { player.mpv.unlockOpenGLContext() }
+    $isUninited.withLock() { [self] isUninited in
+      guard !isUninited else { return }
+      _refreshEdrMode()
+    }
+  }
+
+  func _refreshEdrMode() {
+    // Do not execute if hidden during restore! Some of these calls may cause the window to show
+    guard player.isActive && !player.info.isRestoring else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
+
     log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
@@ -570,7 +590,7 @@ extension VideoView {
     if edrEnabled != true { setICCProfile() }
   }
 
-  func requestEdrMode() -> Bool? {
+  private func requestEdrMode() -> Bool? {
     guard let mpv = player.mpv else { return false }
 
     guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {

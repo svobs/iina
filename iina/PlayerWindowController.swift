@@ -1272,9 +1272,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
       /// Make sure `defaultAlbumArtView` stays above `videoView`
       viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
-      // Screen may have changed. Refresh:
-      videoView.refreshAll()
     }
+    // Screen may have changed. Refresh:
+    videoView.refreshAll()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !player.info.isRestoring {  // this can mess up music mode restore
@@ -3772,6 +3772,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
     guard loaded, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
+    guard !Preference.bool(for: .isRestoreInProgress) else { return }
     log.verbose("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused
     videoView.displayActive(temporary: player.info.isPaused)
