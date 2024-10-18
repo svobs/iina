@@ -389,15 +389,17 @@ struct PlayerSaveState: CustomStringConvertible {
     assert(DispatchQueue.isExecutingIn(.main))
     player.log.debug("Saving player state synchronously")
     let wc = player.windowController!
+
+    // Retrieve appropriate geometry values, updating to latest window frame if needed:
+    let geo: GeometrySet
+    if wc.isAnimatingLayoutTransition {
+      geo = wc.geo
+    } else {
+      geo = wc.buildGeoSet(from: wc.currentLayout)
+    }
+
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
     saveQueue.sync {
-      // Retrieve appropriate geometry values, updating to latest window frame if needed:
-      let geo: GeometrySet
-      if wc.isAnimatingLayoutTransition {
-        geo = wc.geo
-      } else {
-        geo = wc.buildGeoSet(from: wc.currentLayout)
-      }
       let properties = generatePropDict(from: player, geo)
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")

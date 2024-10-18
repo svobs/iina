@@ -56,8 +56,8 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
   private var draggedRowInfo: (Int, IndexSet)? = nil
 
-  @IBOutlet weak var playlistTableView: NSTableView!
-  @IBOutlet weak var chapterTableView: NSTableView!
+  @IBOutlet weak var playlistTableView: EditableTableView!
+  @IBOutlet weak var chapterTableView: EditableTableView!
   @IBOutlet weak var playlistBtn: NSButton!
   @IBOutlet weak var chaptersBtn: NSButton!
   @IBOutlet weak var tabView: NSTabView!
