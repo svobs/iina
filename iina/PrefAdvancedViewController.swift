@@ -32,11 +32,14 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   var hasResizableWidth: Bool = false
 
+  /// Each entry should have a 2-element array:
   var options: [[String]] = []
 
   override var sectionViews: [NSView] {
     return [headerView, loggingSettingsView, mpvSettingsView]
   }
+
+  private var tableDragDelegate: TableDragDelegate<[String]>? = nil
 
   @IBOutlet var headerView: NSView!
   @IBOutlet var loggingSettingsView: NSView!
@@ -63,13 +66,119 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.sizeLastColumnToFit()
     optionsTableView.editableTextColumnIndexes = [0, 1]
     refreshRemoveButton()
-    
+
+    tableDragDelegate = TableDragDelegate<[String]>(optionsTableView,
+                                                    acceptableDraggedTypes: [.string],
+                                                    tableChangeNotificationName: .pendingUIChangeForMpvOptionsTable,
+                                                    getFromPasteboardFunc: self.getFromPasteboard,
+                                                    getAllCurentFunc: { self.options },
+                                                    moveFunc: moveOptionRows,
+                                                    insertFunc: insertOptionRows,
+                                                    removeFunc: removeOptionRows)
+
+
     enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings", comment: "Enable advanced settings")
   }
 
-  func saveToUserDefaults() {
+  private func saveToUserDefaults() {
     Preference.set(options, for: .userOptions)
-    UserDefaults.standard.synchronize()
+  }
+
+  private func getFromPasteboard(_ pasteboard: NSPasteboard) -> [[String]] {
+    let stringItems = pasteboard.getStringItems()
+    var optionPairs: [[String]] = []
+    for stringItem in stringItems {
+      let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
+      let key = String(splitted[0])
+      let val = splitted.count > 1 ? String(splitted[1]) : ""
+      optionPairs.append([key, val])
+    }
+    return optionPairs
+  }
+
+  // MARK: Options Table Drag & Drop
+
+  @objc func tableView(_ tableView: NSTableView, pasteboardWriterForRow rowIndex: Int) -> NSPasteboardWriting? {
+    let options = options
+    guard rowIndex < options.count else { return nil }
+
+    let rowString = options[rowIndex].joined(separator: "=")
+    return rowString as NSString?
+  }
+
+  @objc func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    return tableDragDelegate!.draggingSession(session, sourceOperationMaskFor: context)
+  }
+
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    tableDragDelegate!.tableView(tableView, draggingSession: session, willBeginAt: screenPoint, forRowIndexes: rowIndexes)
+  }
+
+  @objc func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession,
+                       endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+    tableDragDelegate!.tableView(tableView, draggingSession: session, endedAt: screenPoint, operation: operation)
+  }
+
+  @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
+                       proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+    return tableDragDelegate!.tableView(tableView, validateDrop: info, proposedRow: rowIndex, proposedDropOperation: dropOperation)
+  }
+
+  @objc func tableView(_ tableView: NSTableView,
+                       acceptDrop info: NSDraggingInfo, row targetRowIndex: Int,
+                       dropOperation: NSTableView.DropOperation) -> Bool {
+    return tableDragDelegate!.tableView(tableView, acceptDrop: info, row: targetRowIndex, dropOperation: dropOperation)
+  }
+
+  // MARK: - Options Table CRUD
+
+  func insertOptionRows(_ itemList: [[String]], to targetRowIndex: Int) {
+    let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: itemList.count,
+                                                     completionHandler: { [self] _ in
+      refreshRemoveButton()
+    })
+
+    // Save model
+    var allItemsNew = options
+    allItemsNew.insert(contentsOf: itemList, at: targetRowIndex)
+    options = allItemsNew
+    saveToUserDefaults()
+
+    // Notify Watch table of update:
+    optionsTableView.post(tableUIChange)
+  }
+
+  func moveOptionRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
+    let (tableUIChange, allItemsNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: options,
+                                                               completionHandler: { [self] _ in
+      refreshRemoveButton()
+    })
+
+    // Save model
+    options = allItemsNew
+    saveToUserDefaults()
+
+    // Animate update to Watch table UI:
+    optionsTableView.post(tableUIChange)
+  }
+
+  func removeOptionRows(_ rowIndexes: IndexSet) {
+    guard !rowIndexes.isEmpty else { return }
+
+    Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
+    let (tableUIChange, allItemsNew) = TableUIChange.buildRemove(rowIndexes, in: options,
+                                                                 selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete,
+                                                                 completionHandler: { [self] _ in
+      refreshRemoveButton()
+    })
+
+    // Save model
+    options = allItemsNew
+    saveToUserDefaults()
+
+    // Animate update to Watch table UI:
+    optionsTableView.post(tableUIChange)
   }
 
   // MARK: - IBAction
@@ -90,12 +199,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   @IBAction func removeOptionBtnAction(_ sender: AnyObject) {
-    if optionsTableView.selectedRow >= 0 {
-      options.remove(at: optionsTableView.selectedRow)
-      optionsTableView.reloadData()
-      refreshRemoveButton()
-      saveToUserDefaults()
-    }
+    removeOptionRows(optionsTableView.selectedRowIndexes)
   }
 
   @IBAction func chooseDirBtnAction(_ sender: AnyObject) {

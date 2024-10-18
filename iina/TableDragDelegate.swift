@@ -21,6 +21,8 @@ class TableDragDelegate<TableItem> {
   let removeRows: (_ indexes: IndexSet) -> Void
 
   init(_ targetTable: EditableTableView,
+       acceptableDraggedTypes: [NSPasteboard.PasteboardType],
+       tableChangeNotificationName: Notification.Name,
        getFromPasteboardFunc: @escaping (_: NSPasteboard) -> [TableItem],
        getAllCurentFunc: @escaping () -> [TableItem],
        moveFunc: @escaping (_: IndexSet, _: Int) -> Void,
@@ -32,6 +34,11 @@ class TableDragDelegate<TableItem> {
     self.moveRows = moveFunc
     self.insertRows = insertFunc
     self.removeRows = removeFunc
+
+    targetTable.registerTableUIChangeObserver(forName: tableChangeNotificationName)
+    targetTable.registerForDraggedTypes(acceptableDraggedTypes)
+    targetTable.setDraggingSourceOperationMask([defaultDragOperation], forLocal: false)
+    targetTable.draggingDestinationFeedbackStyle = .regular
   }
 
   private var draggedRowInfo: (Int, IndexSet)? = nil

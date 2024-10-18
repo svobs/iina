@@ -125,6 +125,7 @@ class TableUIChange {
 
   static func buildRemove<T>(_ indexesToRemove: IndexSet,
                              in allCurrentRows: [T],
+                             selectNextRowAfterDelete: Bool = true,
                              completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
     tableUIChange.toRemove = indexesToRemove
@@ -139,7 +140,7 @@ class TableUIChange {
       }
     }
 
-    if TableUIChange.selectNextRowAfterDelete {
+    if selectNextRowAfterDelete {
       // After removal, select the single row after the last one removed:
       let countRemoved = allCurrentRows.count - remainingRows.count
       if countRemoved < allCurrentRows.count {

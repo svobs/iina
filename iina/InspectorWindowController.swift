@@ -106,18 +106,16 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchProperties = Preference.array(for: .watchProperties) as! [String]
     watchTableView.delegate = self
     watchTableView.dataSource = self
+    watchTableView.selectNextRowAfterDelete = false
 
     tableDragDelegate = TableDragDelegate<String>(watchTableView,
-                                                getFromPasteboardFunc: { pb in pb.getStringItems() },
-                                                getAllCurentFunc: { self.watchProperties },
-                                                moveFunc: moveWatchRows,
-                                                insertFunc: insertWatchRows,
-                                                removeFunc: removeRowsFromWatchTable)
-
-    let acceptableDraggedTypes: [NSPasteboard.PasteboardType] = [.string]
-    watchTableView.registerForDraggedTypes(acceptableDraggedTypes)
-    watchTableView.setDraggingSourceOperationMask([tableDragDelegate!.defaultDragOperation], forLocal: false)
-    watchTableView.draggingDestinationFeedbackStyle = .regular
+                                                  acceptableDraggedTypes: [.string],
+                                                  tableChangeNotificationName: .pendingUIChangeForInspectorTable,
+                                                  getFromPasteboardFunc: { pb in pb.getStringItems() },
+                                                  getAllCurentFunc: { self.watchProperties },
+                                                  moveFunc: moveWatchRows,
+                                                  insertFunc: insertWatchRows,
+                                                  removeFunc: removeRowsFromWatchTable)
 
     let headerFont = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
     for column in watchTableView.tableColumns {
@@ -131,7 +129,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
-    watchTableView.registerTableUIChangeObserver(forName: .pendingUIChangeForInspectorTable)
 
     tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())
     tableHeightConstraint!.isActive = true
@@ -156,8 +153,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     removeTimerAndListeners()
     updateTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(dynamicUpdate), userInfo: nil, repeats: true)
 
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.fileLoaded))
-    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.fileLoaded))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaFileLoaded, object: nil, queue: .main, using: self.needsUpdate))
+    observers.append(NotificationCenter.default.addObserver(forName: .iinaPlayerWindowChanged, object: nil, queue: .main, using: self.needsUpdate))
 
     super.showWindow(sender)
   }
@@ -335,7 +332,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     self.updateTrack()
   }
 
-  private func fileLoaded(_ notification: Notification) {
+  private func needsUpdate(_ notification: Notification) {
     updateInfo()
   }
 
@@ -469,9 +466,9 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
     let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: stringList.count)
 
-    var allRowsNew = watchProperties
-    allRowsNew.insert(contentsOf: stringList, at: targetRowIndex)
-    watchProperties = allRowsNew
+    var allItemsNew = watchProperties
+    allItemsNew.insert(contentsOf: stringList, at: targetRowIndex)
+    watchProperties = allItemsNew
     saveWatchList()
 
     // Notify Watch table of update:
@@ -479,10 +476,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   }
 
   func moveWatchRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
-    let (tableUIChange, watchPropertiesNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
+    let (tableUIChange, allItemsNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
 
     // Save model
-    watchProperties = watchPropertiesNew
+    watchProperties = allItemsNew
     saveWatchList()
 
     // Animate update to Watch table UI:
@@ -493,13 +490,13 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
-    let (tableUIChange, remainingProperties) = TableUIChange.buildRemove(rowIndexes, in: watchProperties,
-                                                                         completionHandler: { [self] _ in
+    let (tableUIChange, allItemsNew) = TableUIChange.buildRemove(rowIndexes, in: watchProperties,
+                                                                 completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
     })
 
     // Save model
-    watchProperties = remainingProperties
+    watchProperties = allItemsNew
     saveWatchList()
 
     // Animate update to Watch table UI:

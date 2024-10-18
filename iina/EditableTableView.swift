@@ -16,6 +16,8 @@ class EditableTableView: NSTableView {
 
   // Must provide this for editCell() to work
   var editableTextColumnIndexes: [Int] = []
+  /// `selectNextRowAfterDelete` = after removal of rows, select the next single row after the last one removed
+  var selectNextRowAfterDelete = true
 
   var tableChangeNotificationName: Notification.Name!
 
