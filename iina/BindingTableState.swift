@@ -124,13 +124,11 @@ struct BindingTableState {
       return
     }
 
-    var allRowsNew = allRows
     // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
     let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME)}
-    allRowsNew.insert(contentsOf: insertedRows, at: insertIndex)
 
-    let tableUIChange = TableUIChange.buildInsertion(at: insertIndex, insertCount: insertedRows.count,
-                                                     completionHandler: afterComplete)
+    let (tableUIChange, allRowsNew) = TableUIChange.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
+                                                                completionHandler: afterComplete)
 
     doAction(allRowsNew, tableUIChange)
   }

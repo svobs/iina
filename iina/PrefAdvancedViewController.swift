@@ -134,14 +134,12 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   // MARK: - Options Table CRUD
 
   func insertOptionRows(_ itemList: [[String]], to targetRowIndex: Int) {
-    let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: itemList.count,
-                                                     completionHandler: { [self] _ in
+    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: itemList, at: targetRowIndex, in: options,
+                                                                 completionHandler: { [self] _ in
       refreshRemoveButton()
     })
 
     // Save model
-    var allItemsNew = options
-    allItemsNew.insert(contentsOf: itemList, at: targetRowIndex)
     options = allItemsNew
     saveToUserDefaults()
 
@@ -301,5 +299,13 @@ extension PrefAdvancedViewController: EditableTableViewDelegate {
     options[rowIndex] = rowValues
     saveToUserDefaults()
     return true
+  }
+
+  func isDeleteEnabled() -> Bool {
+    !optionsTableView.selectedRowIndexes.isEmpty
+  }
+
+  func doEditMenuDelete() {
+    removeOptionRows(optionsTableView.selectedRowIndexes)
   }
 }

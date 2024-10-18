@@ -114,13 +114,17 @@ class TableUIChange {
     self.completionHandler = completionHandler
   }
 
-  static func buildInsertion(at insertIndex: Int, insertCount: Int,
-                             completionHandler: TableUIChange.CompletionHandler? = nil) -> TableUIChange {
+  static func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
+                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
-    let toInsert = IndexSet(insertIndex..<(insertIndex+insertCount))
+    let toInsert = IndexSet(insertIndex..<(insertIndex+itemsToInsert.count))
     tableUIChange.toInsert = toInsert
     tableUIChange.newSelectedRowIndexes = toInsert
-    return tableUIChange
+
+    var allItemsNew = allCurrentItems
+    allItemsNew.insert(contentsOf: itemsToInsert, at: insertIndex)
+
+    return (tableUIChange, allItemsNew)
   }
 
   static func buildRemove<T>(_ indexesToRemove: IndexSet,

@@ -106,6 +106,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchProperties = Preference.array(for: .watchProperties) as! [String]
     watchTableView.delegate = self
     watchTableView.dataSource = self
+    watchTableView.editableDelegate = self
     watchTableView.selectNextRowAfterDelete = false
 
     tableDragDelegate = TableDragDelegate<String>(watchTableView,
@@ -115,7 +116,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
                                                   getAllCurentFunc: { self.watchProperties },
                                                   moveFunc: moveWatchRows,
                                                   insertFunc: insertWatchRows,
-                                                  removeFunc: removeRowsFromWatchTable)
+                                                  removeFunc: removeWatchRows)
 
     let headerFont = NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)
     for column in watchTableView.tableColumns {
@@ -464,10 +465,13 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
-    let tableUIChange = TableUIChange.buildInsertion(at: targetRowIndex, insertCount: stringList.count)
+    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
+                                                     completionHandler: { [self] _ in
+      tableHeightConstraint?.constant = computeMinTableHeight()
+      watchTableContainerView.layout()
+    })
 
-    var allItemsNew = watchProperties
-    allItemsNew.insert(contentsOf: stringList, at: targetRowIndex)
+    // Save model
     watchProperties = allItemsNew
     saveWatchList()
 
@@ -486,13 +490,14 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.post(tableUIChange)
   }
 
-  func removeRowsFromWatchTable(_ rowIndexes: IndexSet) {
+  func removeWatchRows(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
     let (tableUIChange, allItemsNew) = TableUIChange.buildRemove(rowIndexes, in: watchProperties,
                                                                  completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
+      watchTableContainerView.layout()
     })
 
     // Save model
@@ -572,7 +577,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   @IBAction func removeWatchAction(_ sender: AnyObject) {
     let rowIndexes = watchTableView.selectedRowIndexes
-    removeRowsFromWatchTable(rowIndexes)
+    removeWatchRows(rowIndexes)
   }
 
   @IBAction func tabSwitched(_ sender: NSSegmentedControl) {
@@ -604,5 +609,16 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
       super.draw(withFrame: cellFrame, in: controlView)
     }
+  }
+}
+
+extension InspectorWindowController: EditableTableViewDelegate {
+
+  func isDeleteEnabled() -> Bool {
+    !watchTableView.selectedRowIndexes.isEmpty
+  }
+
+  func doEditMenuDelete() {
+    removeWatchRows(watchTableView.selectedRowIndexes)
   }
 }
