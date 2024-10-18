@@ -81,17 +81,30 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   private func saveToUserDefaults() {
+    let options = options
+    let userOptionsString = options.map{"--\(optionToString($0))"}.joined(separator: " ")
+    Logger.log.verbose("Saving mpv user options to prefs. CommandLine (derived): \(userOptionsString.pii.quoted)")
     Preference.set(options, for: .userOptions)
   }
 
+  private func optionToString(_ option: [String]) -> String {
+    return option.joined(separator: "=")
+  }
+
+  private func optionFromString(_ stringItem: String) -> [String] {
+    let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
+    let key = String(splitted[0])
+    let val = splitted.count > 1 ? String(splitted[1]) : ""
+    return [key, val]
+  }
+
+  /// Input pasteboard item: "{key}={val}"
+  /// Ouput item: `[key, val]`
   private func getFromPasteboard(_ pasteboard: NSPasteboard) -> [[String]] {
     let stringItems = pasteboard.getStringItems()
     var optionPairs: [[String]] = []
     for stringItem in stringItems {
-      let splitted = stringItem.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
-      let key = String(splitted[0])
-      let val = splitted.count > 1 ? String(splitted[1]) : ""
-      optionPairs.append([key, val])
+      optionPairs.append(optionFromString(stringItem))
     }
     return optionPairs
   }
@@ -102,7 +115,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     let options = options
     guard rowIndex < options.count else { return nil }
 
-    let rowString = options[rowIndex].joined(separator: "=")
+    let rowString = optionToString(options[rowIndex])
     return rowString as NSString?
   }
 
@@ -133,9 +146,27 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   // MARK: - Options Table CRUD
 
-  func insertOptionRows(_ itemList: [[String]], to targetRowIndex: Int) {
+  func insertOptionRows(_ itemList: [[String]], at targetRowIndex: Int) {
     let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: itemList, at: targetRowIndex, in: options,
-                                                                 completionHandler: { [self] _ in
+                                                                 completionHandler: { [self] tableUIChange in
+      refreshRemoveButton()
+    })
+
+    // Save model
+    options = allItemsNew
+    saveToUserDefaults()
+
+    // Notify Watch table of update:
+    optionsTableView.post(tableUIChange)
+  }
+
+  func insertNewOptionRow(_ newItem: [String], at targetRowIndex: Int) {
+    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: [newItem], at: targetRowIndex, in: options,
+                                                                 completionHandler: { [self] tableUIChange in
+      // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableUIChange object
+      if let insertedRowIndex = tableUIChange.toInsert?.first {
+        optionsTableView.editCell(row: insertedRowIndex, column: 0)
+      }
       refreshRemoveButton()
     })
 
@@ -190,10 +221,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   @IBAction func addOptionBtnAction(_ sender: AnyObject) {
-    options.append(["name", "value"])
-    optionsTableView.reloadData()
-    optionsTableView.selectRowIndexes(IndexSet(integer: options.count - 1), byExtendingSelection: false)
-    saveToUserDefaults()
+    let selectedRowIndexes = optionsTableView.selectedRowIndexes
+    let insertIndex = selectedRowIndexes.isEmpty ? optionsTableView.numberOfRows : selectedRowIndexes.max()! + 1
+    insertNewOptionRow(["", ""], at: insertIndex)
   }
 
   @IBAction func removeOptionBtnAction(_ sender: AnyObject) {
@@ -271,33 +301,51 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
 
 extension PrefAdvancedViewController: EditableTableViewDelegate {
   func userDidDoubleClickOnCell(row rowIndex: Int, column columnIndex: Int) -> Bool {
-    Logger.log("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
+    Logger.log.verbose("Double-click: Edit requested for row \(rowIndex), col \(columnIndex)")
     optionsTableView.editCell(row: rowIndex, column: columnIndex)
     return true
   }
 
   func userDidPressEnterOnRow(_ rowIndex: Int) -> Bool {
-    Logger.log("Enter key: Edit requested for row \(rowIndex)")
+    Logger.log.verbose("Enter key: Edit requested for row \(rowIndex)")
     optionsTableView.editCell(row: rowIndex, column: 0)
     return true
   }
 
   func editDidEndWithNewText(newValue: String, row rowIndex: Int, column columnIndex: Int) -> Bool {
-    Logger.log("User finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)", level: .verbose)
+    Logger.log.verbose("User finished editing value for row \(rowIndex), col \(columnIndex): \(newValue.quoted)")
     guard rowIndex < options.count else {
       return false
     }
 
-    var rowValues = options[rowIndex]
+    var optionPair: [String] = options[rowIndex]
 
-    guard columnIndex < rowValues.count else {
-      Logger.log("userDidEndEditing(): bad column index: \(columnIndex)")
-      return false
+    var newValue = newValue
+    if columnIndex == 0 {
+      // Delete unnecessary prefix from confused users
+      newValue = newValue.deletingPrefix("--")
+
+      if newValue.contains("=") {
+        Logger.log.verbose("User name entry has '=' in it")
+        if optionPair[1].isEmpty {
+          // Assume user entered whole line in Name column. Just fix it
+          let split = newValue.split(separator: "=")
+          newValue = String(split[0])
+          optionPair[1] = String(split[1])
+        } else {
+          // not valid - will break our parsing!
+          return false
+        }
+      }
     }
 
-    rowValues[columnIndex] = newValue
-    options[rowIndex] = rowValues
+    optionPair[columnIndex] = newValue
+    options[rowIndex] = optionPair
     saveToUserDefaults()
+
+    DispatchQueue.main.async { [self] in
+      optionsTableView.reloadRow(rowIndex)
+    }
     return true
   }
 

@@ -464,7 +464,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   // MARK: - Watch Table CRUD
 
-  func insertWatchRows(_ stringList: [String], to targetRowIndex: Int) {
+  func insertWatchRows(_ stringList: [String], at targetRowIndex: Int) {
     let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
                                                      completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
@@ -479,7 +479,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.post(tableUIChange)
   }
 
-  func moveWatchRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
+  func moveWatchRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
     let (tableUIChange, allItemsNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
 
     // Save model

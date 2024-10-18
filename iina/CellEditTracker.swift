@@ -114,6 +114,11 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
   @discardableResult
   private func commitChanges(to current: CurrentFocus) -> Bool {
     if current.textField.stringValue != current.stringValueOrig {
+
+      guard self.parentTable.editableTextColumnIndexes.contains(current.column) else {
+        Logger.fatal("editDidEndWithNewText(): invalid column index: \(current.column)")  // programmer error
+      }
+
       if self.delegate.editDidEndWithNewText(newValue: current.textField.stringValue, row: current.row, column: current.column) {
         Logger.log("editDidEndWithNewText() returned TRUE: assuming new value accepted", level: .verbose)
         return true

@@ -346,7 +346,8 @@ class MPVController: NSObject {
     let userOptions: [[String]]
     if Preference.bool(for: .enableAdvancedSettings) {
       if let opts = Preference.value(for: .userOptions) as? [[String]] {
-        userOptions = opts
+        // User Options table allows saving of empty values. Filter those out
+        userOptions = opts.filter{ $0.count > 0 && !$0[0].isEmpty }
       } else {
         userOptions = []
         DispatchQueue.main.async {  // do not block startup! Must avoid deadlock in static initializers

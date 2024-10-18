@@ -280,6 +280,10 @@ class EditableTableView: NSTableView {
     }
   }
 
+  func reloadRow(_ rowIndex: Int) {
+    reloadData(forRowIndexes: IndexSet(integer: rowIndex), columnIndexes: IndexSet(integersIn: 0..<self.numberOfColumns))
+  }
+
   // Use this instead of reloadData() if the table data needs to be reloaded but the row count is the same.
   // This will preserve the selection indexes (whereas reloadData() will not)
   func reloadExistingRows(reselectRowsAfter: Bool, usingNewSelection newRowIndexes: IndexSet? = nil) {
@@ -321,11 +325,11 @@ class EditableTableView: NSTableView {
   // This notification contains the information needed to make the updates to the table (see: `TableUIChange`).
   private func tableShouldChange(_ notification: Notification) {
     guard let tableUIChange = notification.object as? TableUIChange else {
-      Logger.log("Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))", level: .error)
+      Logger.log.error("Received \"\(notification.name.rawValue)\" with invalid object: \(type(of: notification.object))")
       return
     }
 
-    Logger.log("Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)", level: .verbose)
+    Logger.log.trace("Received \"\(notification.name.rawValue)\" notification with changeType \(tableUIChange.changeType)")
     tableUIChange.execute(on: self)
   }
 }
