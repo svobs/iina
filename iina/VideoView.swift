@@ -109,7 +109,13 @@ class VideoView: NSView {
     return false
   }
 
-  // MARK: - VideoView Constraints
+  func refreshAll() {
+    updateDisplayLink()
+    refreshContentsScale()
+    refreshEdrMode()
+  }
+
+  // MARK: - Constraints
 
   struct VideoViewConstraints {
     let eqOffsetTop: NSLayoutConstraint
@@ -311,7 +317,7 @@ class VideoView: NSView {
 
     guard !isUninited else { return }
     guard !CVDisplayLinkIsRunning(link) else { return }
-    updateDisplayLink()
+    refreshAll()
 
     checkResult(CVDisplayLinkSetOutputCallback(link, displayLinkCallback, mutableRawPointerOf(obj: self)),
                 "CVDisplayLinkSetOutputCallback")
@@ -361,7 +367,6 @@ class VideoView: NSView {
     }
     player.mpv.setDouble(MPVOption.Video.displayFpsOverride, actualFps)
 
-    refreshEdrMode()
     log.verbose("Done updating DisplayLink")
   }
 

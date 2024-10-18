@@ -1272,10 +1272,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
       /// Make sure `defaultAlbumArtView` stays above `videoView`
       viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
-      videoView.updateDisplayLink()
-      // Screen may have changed. Refresh contentsScale
-      videoView.refreshContentsScale()
-      player.refreshEdrMode()
+      // Screen may have changed. Refresh:
+      videoView.refreshAll()
     }
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
@@ -2504,7 +2502,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
       animationPipeline.submitInstantTask({ [self] in
         log.verbose("WindowDidChangeScreen (tkt \(ticket)): screenFrame=\(screen.frame)")
-        videoView.updateDisplayLink()
+        videoView.refreshAll()
         player.events.emit(.windowScreenChanged)
       })
 
@@ -2561,9 +2559,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       // Update the cached value
       cachedScreens = screens
 
-      videoView.updateDisplayLink()
-      videoView.refreshContentsScale()
-      player.refreshEdrMode()
+      videoView.refreshAll()
 
       guard !player.info.isRestoring, !isAnimatingLayoutTransition else { return }
 
