@@ -1997,6 +1997,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Preference.UIState.windowsMinimized.insert(window.savedStateName)
     } else {
       Preference.UIState.windowsOpen.insert(window.savedStateName)
+      if player.info.isRestoring {
+        // Hide window during init. When done, showWindow will be called
+        window.orderOut(self)
+      }
     }
 
     if !player.info.isRestoring {
