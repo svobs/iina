@@ -1338,6 +1338,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
          let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
          let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) {
 
+        if !isMiniaturized && !isWindowMiniaturizedDueToPip {
+          // Hide window during init. When done, showWindow will be called
+          log.verbose("Ordering out window while restoring")
+          window!.orderOut(self)
+        }
+
         // Process PIP options first, to make sure it's not miniturized due to PIP
         if isInPip {
           let pipOption: Preference.WindowBehaviorWhenPip
@@ -1997,10 +2003,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       Preference.UIState.windowsMinimized.insert(window.savedStateName)
     } else {
       Preference.UIState.windowsOpen.insert(window.savedStateName)
-      if player.info.isRestoring {
-        // Hide window during init. When done, showWindow will be called
-        window.orderOut(self)
-      }
     }
 
     if !player.info.isRestoring {

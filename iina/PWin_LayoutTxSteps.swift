@@ -716,6 +716,18 @@ extension PlayerWindowController {
       }
     }
 
+    if outputLayout.leadingSidebarPlacement == .insideViewport {
+      leadingSidebarView.material = .menu
+    } else {
+      leadingSidebarView.material = .toolTip
+    }
+
+    if outputLayout.trailingSidebarPlacement == .insideViewport {
+      trailingSidebarView.material = .menu
+    } else {
+      trailingSidebarView.material = .toolTip
+    }
+
     updateDepthOrderOfBars(topBar: outputLayout.topBarPlacement, bottomBar: outputLayout.bottomBarPlacement,
                            leadingSidebar: outputLayout.leadingSidebarPlacement, trailingSidebar: outputLayout.trailingSidebarPlacement)
 
@@ -1070,17 +1082,23 @@ extension PlayerWindowController {
       // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
       // animation task, which means that frames will not be updated yet & can't be measured correctly
       if Logger.isEnabled(.error) {
-        let actualVideoSize = videoView.frame.size
-        let expectedVideoSize = transition.outputGeometry.videoSize
-        if ((expectedVideoSize.area > 0) && (actualVideoSize.area > 0)) {
-          if (expectedVideoSize.width != actualVideoSize.width) || (expectedVideoSize.height != actualVideoSize.height) {
-            log.error("[\(transition.name)] ❌ 'VideoViewSize' sanity check failed! Expected=\(expectedVideoSize) Actual=\(actualVideoSize). Aspect: expected=\(expectedVideoSize.mpvAspect), actual=\(actualVideoSize.mpvAspect)")
-          }
-        }
-        let actualWindowSize = window.frame.size
-        let expectedWindowSize = transition.outputGeometry.windowFrame.size
-        if (expectedWindowSize.width != actualWindowSize.width) || (expectedWindowSize.height != actualWindowSize.height) {
-          log.error("[\(transition.name)] ❌ 'WindowSize' sanity check failed! Expected=\(expectedWindowSize)  Actual=\(actualWindowSize)")
+        let vidSizeA = videoView.frame.size
+        let vidSizeE = transition.outputGeometry.videoSize
+        let winSizeA = window.frame.size
+        let winSizeE = transition.outputGeometry.windowFrame.size
+
+        let isWrongVidSize = (vidSizeE.area > 0 && vidSizeA.area > 0) &&
+          ((vidSizeE.width != vidSizeA.width) || (vidSizeE.height != vidSizeA.height))
+        let isWrongWinSize = (winSizeE.width != winSizeA.width) || (winSizeE.height != winSizeA.height)
+
+        if isWrongVidSize || isWrongWinSize {
+          let wrong = "ⓧ"
+          let lines = ["[\(transition.name)] ❌ Sanity check failed!",
+                       "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
+                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect)",
+                       "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")"
+                       ]
+          log.error(lines.joined(separator: "\n"))
         }
       }
 

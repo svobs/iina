@@ -556,7 +556,9 @@ class VideoView: NSView {
 
 extension VideoView {
   func refreshEdrMode() {
-    guard player.windowController.loaded else { return }
+    // Do not execute if hidden during restore! Some of these calls will cause the window to show
+    guard !Preference.bool(for: .isRestoreInProgress) else { return }
+    guard player.isActive else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
     log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
