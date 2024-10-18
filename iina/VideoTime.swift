@@ -34,7 +34,7 @@ struct VideoTime {
   }
 
   func stringRepresentationWithPrecision(_ precision: UInt) -> String {
-    if self == Constants.Time.infinite {
+    if self.second.isInfinite {
       return "End"
     }
     let h_ = h > 0 ? "\(h):" : ""
@@ -92,8 +92,11 @@ func <(lhs: VideoTime, rhs: VideoTime) -> Bool {
 }
 
 func ==(lhs: VideoTime, rhs: VideoTime) -> Bool {
-  // ignore additional digits and compare the time in milliseconds
-  return Int(lhs.second * 1000) == Int(rhs.second * 1000)
+  if lhs.second.isFinite && rhs.second.isFinite {
+    // ignore additional digits and compare the time in milliseconds
+    return Int(lhs.second * 1000) == Int(rhs.second * 1000)
+  }
+  return lhs.second == rhs.second
 }
 
 func *(lhs: VideoTime, rhs: Double) -> VideoTime {

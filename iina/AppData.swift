@@ -172,9 +172,6 @@ struct Constants {
     static let maxCachedVideoSizes: Int = 100000
     static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
   }
-  struct Time {
-    static let infinite = VideoTime(999, 0, 0)
-  }
   struct TimeInterval {
     static let pastLaunchResponseTimeout = 1.0
     static let seekTimeAndThumbnailHideTimeout = 0.2

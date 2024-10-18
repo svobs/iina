@@ -657,13 +657,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
       switch identifier {
       case .isChosen:
         // left column
-        let pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
-        Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
+        let pointerGlyph: String
         if isCurrentChapter {
-          v.setTitle("", textColor: textColor)
+          pointerGlyph = view.userInterfaceLayoutDirection == .rightToLeft ?
+          Constants.String.blackLeftPointingTriangle :  Constants.String.blackRightPointingTriangle
         } else {
-          v.setTitle(pointerGlyph, textColor: textColor)
+          pointerGlyph = ""
         }
+        v.setTitle(pointerGlyph, textColor: textColor)
       case .trackName:
         // right column
         let titleString = chapter.title.isEmpty ? "Chapter \(row)" : chapter.title
