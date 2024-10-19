@@ -2607,19 +2607,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
 
     player.mpv.queue.async { [self] in
-      _abLoop()
+      player.abLoop()
     }
-  }
-
-  @discardableResult
-  func _abLoop() -> Int32 {
-    assert(DispatchQueue.isExecutingIn(player.mpv.queue))
-
-    let returnValue = player.abLoop()
-    if returnValue == 0 {
-      syncPlaySliderABLoop()
-    }
-    return returnValue
   }
 
   func enterMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
