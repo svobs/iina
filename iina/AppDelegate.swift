@@ -820,9 +820,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     DispatchQueue.main.async { [self] in
       // This notification can sometimes happen if the app had multiple windows at shutdown.
       // We will ignore it in this case, because this is exactly the case that we want to save!
-      guard !isTerminating else {
-        return
-      }
+      guard !isTerminating else { return }
+      
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
       if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {

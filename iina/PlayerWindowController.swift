@@ -393,11 +393,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
 
     co.addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
-      player.refreshEdrMode()
-    }
-
-    co.addObserver(to: .default, forName: NSWindow.didChangeScreenProfileNotification) { [self] noti in
-      windowDidChangeScreenProfile(noti)
+      colorSpaceDidChange(noti)
     }
 
     co.addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
@@ -1267,11 +1263,19 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// to this window. Will do nothing if it's already there.
   func addVideoViewToWindow() {
     guard let window else { return }
-    videoView.$isUninited.withLock() { isUninited in
-      guard !viewportView.subviews.contains(videoView) else { return }
-      player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
-      /// Make sure `defaultAlbumArtView` stays above `videoView`
-      viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
+    do {
+      let hasOpenGL = player.mpv.lockAndSetOpenGLContext()
+      defer {
+        if hasOpenGL {
+          player.mpv.unlockOpenGLContext()
+        }
+      }
+      videoView.$isUninited.withLock() { isUninited in
+        guard !viewportView.subviews.contains(videoView) else { return }
+        player.log.verbose("Adding videoView to viewportView, screenScaleFactor: \(window.screenScaleFactor)")
+        /// Make sure `defaultAlbumArtView` stays above `videoView`
+        viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
+      }
     }
     // Screen may have changed. Refresh:
     videoView.refreshAll()
@@ -2470,8 +2474,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     forceDraw()
   }
 
-  func windowDidChangeScreenProfile(_ notification: Notification) {
-    log.verbose("WindowDidChangeScreenProfile received")
+  func colorSpaceDidChange(_ notification: Notification) {
+    log.verbose("ColorSpaceDidChange received")
     videoView.refreshEdrMode()
   }
 
@@ -2523,7 +2527,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         if currentLayout.isLegacyFullScreen {
           let layout = currentLayout
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose("Updating legacy full screen window in response to WindowDidChangeScreen")
+          log.verbose("WindowDidChangeScreen: updating legacy full screen window")
           let fsGeo = layout.buildFullScreenGeometry(inScreenID: screenID, video: geo.video)
           applyLegacyFSGeo(fsGeo)
           // Update screenID at least, so that window won't go back to other screen when exiting FS
@@ -2560,7 +2564,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let screens = PlayerWindowController.buildScreenMap()
       let screenIDs = screens.keys.sorted()
       let cachedScreenIDs = cachedScreens.keys.sorted()
-      log.verbose("WindowDidChangeScreenParameters (tkt \(ticket)): screenIDs was \(cachedScreenIDs), is now \(screenIDs)")
+      log.verbose("WndDidChangeScreenParams (tkt \(ticket)): screenIDs was \(cachedScreenIDs), is now \(screenIDs)")
 
       // Update the cached value
       cachedScreens = screens
@@ -2578,7 +2582,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         let layout = currentLayout
         if layout.isLegacyFullScreen {
           guard layout.isLegacyFullScreen else { return }  // check again now that we are inside animation
-          log.verbose("Updating legacy full screen window in response to ScreenParametersNotification")
+          log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
           applyLegacyFSGeo(fsGeo)
         } else if layout.mode == .windowed {
@@ -2588,10 +2592,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let oldGeo = windowedModeGeo
           let newGeo = oldGeo.refit()
           guard !newGeo.hasEqual(windowFrame: oldGeo.windowFrame, videoSize: oldGeo.videoSize) else {
-            log.verbose("No need to update windowFrame in response to ScreenParametersNotification - no change")
+            log.verbose("WndDidChangeScreenParams: no change to windowFrame")
             return
           }
-          log.verbose("Calling setFrame() in response to ScreenParametersNotification with windowFrame \(newGeo.windowFrame), videoSize \(newGeo.videoSize)")
+          log.verbose("WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)")
           player.window.setFrameImmediately(newGeo, notify: false)
         }
       })
@@ -2986,12 +2990,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   private func _updateTitle() {
+    guard player.isActive else { return }
     guard let currentPlayback = player.info.currentPlayback else {
       log.verbose("Cannot update window title: currentPlayback is nil")
       return
     }
 
-    guard player.isActive else { return }
     let (mediaTitle, mediaAlbum, mediaArtist) = player.getMusicMetadata()
 
     DispatchQueue.main.async { [self] in
