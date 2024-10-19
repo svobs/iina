@@ -748,9 +748,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var controlBarFloating: FloatingControlBarView!
 
   /// Control bar at bottom of window, if configured. May be `insideViewport` or `outsideViewport`.
-  var bottomBarView: NSView! = NSVisualEffectView()
+  let bottomBarView: NSView = NSVisualEffectView()
   /// Top border of `bottomBarView`.
-  var bottomBarTopBorder = NSBox()
+  let bottomBarTopBorder = NSBox()
 
   @IBOutlet weak var timePositionHoverLabel: NSTextField!
   @IBOutlet weak var thumbnailPeekView: ThumbnailPeekView!
@@ -785,8 +785,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet var fragPositionSliderView: NSView!
   /// See `playBtnSquareWidthConstraint`, `playbackBtnsHorizontalPaddingConstraint` &
   /// `playbackBtnsHorizontalPaddingConstraint` for sizing
-  @IBOutlet weak var fragPlaybackControlButtonsView: NSView!
-//  var fragPlaybackControlButtonsView: PlaybackControlButtonsView! TODO:
+  @IBOutlet weak var fragPlaybackBtnsView: NSView!  // TODO:
+//  let fragPlaybackBtnsView = PlaybackControlButtonsView()
 
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
@@ -1011,7 +1011,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // FIXME: stick to individual side of screen
     // FIXME: parent playlist
     // FIXME: play bar drawing
-    // FIXME: PWinGeometry is 0.5px off when set to half-screen
     // FIXME: play icon height in FF/RW
 
     // gesture recognizers
@@ -1051,6 +1050,45 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // Bottom bar init
 
+    initBottomBarView(in: contentView)
+    initSpeedLabel()
+//    initPlaybackBtnsView()
+
+    // Video controllers and timeline indicators should not flip in a right-to-left language.
+    fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
+    fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
+
+    bufferIndicatorView.roundCorners()
+    additionalInfoView.roundCorners()
+    osdVisualEffectView.roundCorners()
+
+    contentView.configureSubtreeForCoreAnimation()
+
+    animationPipeline.submitInstantTask{ [self] in
+      if player.info.isRestoring {
+        if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
+          // Preemptively set window frames to prevent windows from "jumping" during restore
+          if layoutSpec.mode == .musicMode {
+            let geo = priorState.geoSet.musicMode.toPWinGeometry()
+            player.window.setFrameImmediately(geo, notify: false)
+          } else {
+            let geo = priorState.geoSet.windowed
+            player.window.setFrameImmediately(geo, notify: false)
+          }
+        }
+
+        defaultAlbumArtView.isHidden = player.info.isVideoTrackSelected
+      }
+
+
+      if player.disableUI { hideFadeableViews() }
+    }
+
+    log.verbose("PlayerWindow windowDidLoad done")
+    player.events.emit(.windowLoaded)
+  }
+
+  private func initBottomBarView(in contentView: NSView) {
     contentView.addSubview(bottomBarView, positioned: .above, relativeTo: viewportView)
     bottomBarView.clipsToBounds = true
     if let bottomBarView = bottomBarView as? NSVisualEffectView {
@@ -1096,7 +1134,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     bottomBarTopBorder.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
     bottomBarTopBorder.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
     bottomBarTopBorder.borderColor = NSColor.clear
+  }
 
+  private func initSpeedLabel() {
     speedLabel.translatesAutoresizingMaskIntoConstraints = false
     speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
     speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -1115,45 +1155,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     speedLabel.refusesFirstResponder = true
     speedLabel.alignment = .center
 
-    bufferIndicatorView.roundCorners()
-    additionalInfoView.roundCorners()
-    osdVisualEffectView.roundCorners()
+    speedLabel.nextResponder = playButton
+  }
 
-//    fragPlaybackControlButtonsView = PlaybackControlButtonsView()
-//    fragPlaybackControlButtonsView.translatesAutoresizingMaskIntoConstraints = false
-//    fragPlaybackControlButtonsView.addSubview(playButton)
-//    fragPlaybackControlButtonsView.widthAnchor.constraint(equalToConstant: <#T##CGFloat#>)
-//    fragPlaybackControlButtonsView.nextResponder = playButton
-//    speedLabel.nextResponder = playButton
-
-    // Video controllers and timeline indicators should not flip in a right-to-left language.
-    fragPlaybackControlButtonsView.userInterfaceLayoutDirection = .leftToRight
-    fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
-
-    contentView.configureSubtreeForCoreAnimation()
-
-    animationPipeline.submitInstantTask{ [self] in
-      if player.info.isRestoring {
-        if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
-          // Preemptively set window frames to prevent windows from "jumping" during restore
-          if layoutSpec.mode == .musicMode {
-            let geo = priorState.geoSet.musicMode.toPWinGeometry()
-            player.window.setFrameImmediately(geo, notify: false)
-          } else {
-            let geo = priorState.geoSet.windowed
-            player.window.setFrameImmediately(geo, notify: false)
-          }
-        }
-
-        defaultAlbumArtView.isHidden = player.info.isVideoTrackSelected
-      }
-
-
-      if player.disableUI { hideFadeableViews() }
-    }
-
-    log.verbose("PlayerWindow windowDidLoad done")
-    player.events.emit(.windowLoaded)
+  private func initPlaybackBtnsView() {
+    fragPlaybackBtnsView.addSubview(leftArrowButton)
+    fragPlaybackBtnsView.addSubview(playButton)
+    fragPlaybackBtnsView.addSubview(rightArrowButton)
+    fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
+    fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: 0)
+    fragPlaybackBtnsView.nextResponder = playButton
   }
 
   private func initAlbumArtView() {
@@ -1289,48 +1300,48 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let isOnTop = priorState.bool(for: .isOnTop) ?? false
     setWindowFloatingOnTop(isOnTop, updateOnTopStatus: true)
 
-    if let stateString = priorState.string(for: .miscWindowBools) {
-      let splitted: [String] = stateString.split(separator: ",").map{String($0)}
-      if splitted.count >= 5,
-         let isMiniaturized = Bool.yn(splitted[0]),
-         let isHidden = Bool.yn(splitted[1]),
-         let isInPip = Bool.yn(splitted[2]),
-         let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
-         let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) {
+    guard let stateString = priorState.string(for: .miscWindowBools) else { return }
 
-        if !isMiniaturized && !isWindowMiniaturizedDueToPip {
-          // Hide window during init. When done, showWindow will be called
-          log.verbose("Ordering out window while restoring")
-          window!.orderOut(self)
-        }
+    let splitted: [String] = stateString.split(separator: ",").map{String($0)}
+    guard splitted.count >= 5,
+       let isMiniaturized = Bool.yn(splitted[0]),
+       let isHidden = Bool.yn(splitted[1]),
+       let isInPip = Bool.yn(splitted[2]),
+       let isWindowMiniaturizedDueToPip = Bool.yn(splitted[3]),
+          let isPausedPriorToInteractiveMode = Bool.yn(splitted[4]) else {
+      log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)")
+      return
+    }
 
-        // Process PIP options first, to make sure it's not miniturized due to PIP
-        if isInPip {
-          let pipOption: Preference.WindowBehaviorWhenPip
-          if isHidden {  // currently this will only be true due to PIP
-            pipOption = .hide
-          } else if isWindowMiniaturizedDueToPip {
-            pipOption = .minimize
-          } else {
-            pipOption = .doNothing
-          }
-          // Run in queue to avert race condition with window load
-          animationPipeline.submitInstantTask({ [self] in
-            enterPIP(usePipBehavior: pipOption)
-          })
-        } else if isMiniaturized {
-          // Not in PIP, but miniturized
-          // Run in queue to avert race condition with window load
-          animationPipeline.submitInstantTask({ [self] in
-            window?.miniaturize(nil)
-          })
-        }
-        if isPausedPriorToInteractiveMode {
-          self.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
-        }
+    if !isMiniaturized && !isWindowMiniaturizedDueToPip {
+      // Hide window during init. When done, showWindow will be called
+      log.verbose("Ordering out window while restoring")
+      window!.orderOut(self)
+    }
+
+    // Process PIP options first, to make sure it's not miniturized due to PIP
+    if isInPip {
+      let pipOption: Preference.WindowBehaviorWhenPip
+      if isHidden {  // currently this will only be true due to PIP
+        pipOption = .hide
+      } else if isWindowMiniaturizedDueToPip {
+        pipOption = .minimize
       } else {
-        log.error("Failed to restore property \(PlayerSaveState.PropName.miscWindowBools.rawValue.quoted): could not parse \(stateString.quoted)")
+        pipOption = .doNothing
       }
+      // Run in queue to avert race condition with window load
+      animationPipeline.submitInstantTask({ [self] in
+        enterPIP(usePipBehavior: pipOption)
+      })
+    } else if isMiniaturized {
+      // Not in PIP, but miniturized
+      // Run in queue to avert race condition with window load
+      animationPipeline.submitInstantTask({ [self] in
+        window?.miniaturize(nil)
+      })
+    }
+    if isPausedPriorToInteractiveMode {
+      self.isPausedPriorToInteractiveMode = isPausedPriorToInteractiveMode
     }
   }
 
@@ -1458,6 +1469,14 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     default:
       break
     }
+  }
+
+  fileprivate func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
+    return [[
+      "x": event.locationInWindow.x,
+      "y": event.locationInWindow.y,
+      "isRepeat": event.isARepeat
+    ] as [String : Any]]
   }
 
   // MARK: - Window delegate: Open / Close
@@ -1716,16 +1735,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   func window(_ window: NSWindow, startCustomAnimationToEnterFullScreenOn screen: NSScreen, withDuration duration: TimeInterval) {
     animateEntryIntoFullScreen(withDuration: IINAAnimation.NativeFullScreenTransitionDuration, isLegacy: false)
-  }
-
-  func windowDidFailToEnterFullScreen(_ window: NSWindow) {
-    // FIXME: handle this
-    log.error("Window failed to enter full screen!")
-  }
-
-  func windowDidFailToExitFullScreen(_ window: NSWindow) {
-    // FIXME: handle this
-    log.error("Window failed to exit full screen!")
   }
 
   // Animation: Enter FullScreen
@@ -3188,12 +3197,4 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-}
-
-fileprivate func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
-  return [[
-    "x": event.locationInWindow.x,
-    "y": event.locationInWindow.y,
-    "isRepeat": event.isARepeat
-  ] as [String : Any]]
 }

@@ -412,7 +412,7 @@ extension PlayerWindowController {
     if !transition.inputLayout.hasFloatingOSC {
       // Always remove subviews from OSC - is inexpensive + easier than figuring out if anything has changed
       // (except for floating OSC, which doesn't change much and has animation glitches if removed & re-added)
-      for view in [fragVolumeView, fragToolbarView, fragPlaybackControlButtonsView] {
+      for view in [fragVolumeView, fragToolbarView, fragPlaybackBtnsView] {
         view?.removeFromSuperview()
       }
       removeToolBar()
@@ -792,7 +792,7 @@ extension PlayerWindowController {
       currentControlBar = controlBarFloating
 
       if !transition.inputLayout.hasFloatingOSC {
-        oscFloatingPlayButtonsContainerView.addView(fragPlaybackControlButtonsView, in: .center)
+        oscFloatingPlayButtonsContainerView.addView(fragPlaybackBtnsView, in: .center)
         // There sweems to be a race condition when adding to these StackViews.
         // Sometimes it still contains the old view, and then trying to add again will cause a crash.
         // Must check if it already contains the view before adding.
@@ -1334,7 +1334,7 @@ extension PlayerWindowController {
 
   /// For `bottom` and `top` OSC only - not `floating`
   private func addControlBarViews(to containerView: NSStackView, _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
-    containerView.addView(fragPlaybackControlButtonsView, in: .leading)
+    containerView.addView(fragPlaybackBtnsView, in: .leading)
     containerView.addView(fragPositionSliderView, in: .leading)
     containerView.addView(fragVolumeView, in: .leading)
 
@@ -1404,7 +1404,7 @@ extension PlayerWindowController {
     log.verbose("Adding speed label to control bar, fontSize=\(speedLabelFontSize)")
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
 
-    // superview will be fragPlaybackControlButtonsView (unless in music mode) whose top & bottom match play button's
+    // superview will be fragPlaybackBtnsView (unless in music mode) whose top & bottom match play button's
     secondItem!.superview!.addSubview(speedLabel)
 
     let hConstraint = speedLabel.centerXAnchor.constraint(equalTo: secondItem!.centerXAnchor)

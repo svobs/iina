@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
@@ -33,7 +32,7 @@
                 <outlet property="controlBarTop" destination="pgt-r3-Vbf" id="dqS-nQ-If8"/>
                 <outlet property="customWindowBorderBox" destination="xqX-4W-gdw" id="ut2-mE-M78"/>
                 <outlet property="customWindowBorderTopHighlightBox" destination="IeW-QK-xIO" id="6In-Z5-KJw"/>
-                <outlet property="fragPlaybackControlButtonsView" destination="Yv6-0K-6E4" id="8vA-vh-qiH"/>
+                <outlet property="fragPlaybackBtnsView" destination="Yv6-0K-6E4" id="8vA-vh-qiH"/>
                 <outlet property="fragPositionSliderView" destination="BE1-yC-oJL" id="KXu-MZ-mx8"/>
                 <outlet property="fragVolumeView" destination="N3B-DL-XOA" id="4VW-Wa-AD7"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
@@ -601,7 +600,7 @@
                     <box identifier="customWindowBorderTopHighlightBox" wantsLayer="YES" boxType="custom" borderType="line" title="CustomWindowBorderTopHighlight Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="IeW-QK-xIO" userLabel="CustomWindowBorderTopHighlight Box" customClass="CustomWindowBorderBox" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="400" width="640" height="1"/>
                         <view key="contentView" wantsLayer="YES" id="2sJ-m4-Y4B" userLabel="Box View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
-                            <rect key="frame" x="1" y="1" width="638" height="0.0"/>
+                            <rect key="frame" x="1" y="0.5" width="638" height="0.0"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         </view>
                         <constraints>
