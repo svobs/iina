@@ -537,12 +537,7 @@ class PlayerCore: NSObject {
 
     // init mpv render context.
     mpv.mpvInitRendering()
-
-    guard mpv.lockAndSetOpenGLContext() else { return }
-    defer { mpv.unlockOpenGLContext() }
-    videoView.$isUninited.withLock() { [self] _ in
-      videoView.startDisplayLink()
-    }
+    videoView.startDisplayLink()
   }
 
   // unload main window video view

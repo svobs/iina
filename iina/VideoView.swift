@@ -389,18 +389,9 @@ class VideoView: NSView {
     if !temporary {
       displayIdleTimer?.invalidate()
     }
-    _displayActive()
+    startDisplayLink()
     if temporary {
       displayIdle()
-    }
-  }
-
-  private func _displayActive() {
-    guard player.mpv.lockAndSetOpenGLContext() else { return }
-    defer { player.mpv.unlockOpenGLContext() }
-    $isUninited.withLock() { [self] isUninited in
-      guard !isUninited else { return }
-      startDisplayLink()
     }
   }
 
