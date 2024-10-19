@@ -50,7 +50,7 @@
 "GlZ-YU-dNm.title" = "BORDO";
 
 /* Class = "NSTextFieldCell"; title = "-5s"; ObjectID = "IYU-eq-dls"; */
-"YCG-xK-eAs.title" = "-5s";
+"YCG-xK-eAs.title" = "-3s";
 
 /* Class = "NSMenuItem"; title = "1.5"; ObjectID = "JbG-Ur-b55"; */
 "JbG-Ur-b55.title" = "1.5";
@@ -200,7 +200,7 @@
 "xfX-wr-DTJ.title" = "+5s";
 
 /* Class = "NSTextFieldCell"; title = "+5s"; ObjectID = "Kt8-Kg-i2O"; */
-"Kt8-Kg-i2O.title" = "+5s";
+"Kt8-Kg-i2O.title" = "+3s";
 
 /* Class = "NSTextFieldCell"; title = "Equalizer"; ObjectID = "zcD-Tg-7Oi"; */
 "zcD-Tg-7Oi.title" = "Equalizzatore:";

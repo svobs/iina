@@ -1484,13 +1484,14 @@ class MPVController: NSObject {
       player.sendOSD(.volume(Int(volume)))
 
     case MPVOption.Audio.audioDelay:
-      guard let data = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
+      guard let delayUnrounded = UnsafePointer<Double>(OpaquePointer(property.data))?.pointee else {
         logPropertyValueError(MPVOption.Audio.audioDelay, property.format)
         break
       }
-      player.log.verbose("Δ mpv prop: `audio-delay` = \(data)")
-      player.info.audioDelay = data
-      player.sendOSD(.audioDelay(data))
+      let delay = delayUnrounded.roundedTo6()
+      player.log.verbose("Δ mpv prop: `audio-delay` = \(delay)")
+      player.info.audioDelay = delay
+      player.sendOSD(.audioDelay(delay))
       player.reloadQuickSettingsView()
 
     case MPVOption.Subtitles.subVisibility:

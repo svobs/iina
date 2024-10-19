@@ -493,29 +493,36 @@ extension Double {
 
   func roundedTo1() -> Double {
     let scaledUp = self * 1e1
-    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let scaledUpRounded = scaledUp.rounded(.down)
     let finalVal = scaledUpRounded / 1e1
     return finalVal
   }
 
   func roundedTo2() -> Double {
     let scaledUp = self * 1e2
-    let scaledUpRounded = scaledUp.rounded(.up)
+    let scaledUpRounded = scaledUp.rounded(.down)
     let finalVal = scaledUpRounded / 1e2
     return finalVal
   }
 
   func roundedTo3() -> Double {
     let scaledUp = self * 1e3
-    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let scaledUpRounded = scaledUp.rounded(.down)
     let finalVal = scaledUpRounded / 1e3
     return finalVal
   }
 
   func roundedTo5() -> Double {
     let scaledUp = self * 1e5
-    let scaledUpRounded = scaledUp.rounded(.toNearestOrEven)
+    let scaledUpRounded = scaledUp.rounded(.down)
     let finalVal = scaledUpRounded / 1e5
+    return finalVal
+  }
+
+  func roundedTo6() -> Double {
+    let scaledUp = self * 1e6
+    let scaledUpRounded = scaledUp.rounded(.down)
+    let finalVal = scaledUpRounded / 1e6
     return finalVal
   }
 
