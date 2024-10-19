@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Provides Pinch to Zoom feature.
 class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
 
   lazy var magnificationGestureRecognizer: NSMagnificationGestureRecognizer = {

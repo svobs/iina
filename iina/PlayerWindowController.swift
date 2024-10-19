@@ -1336,6 +1336,45 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Key events
 
+  override func keyDown(with event: NSEvent) {
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    log.verbose("KEYDOWN: \(normalizedKeyCode.quoted)")
+
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyDown, player: player,
+      arguments: keyEventArgs(event), handler: { [self] in
+        if let keyBinding = player.bindingController.matchActiveKeyBinding(endingWith: event) {
+
+          guard !keyBinding.isIgnored else {
+            // if "ignore", just swallow the event. Do not forward; do not beep
+            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
+            return true
+          }
+
+          return handleKeyBinding(keyBinding)
+        }
+        return false
+      }, defaultHandler: {
+        // invalid key: beep if cmd failed
+        super.keyDown(with: event)
+      })
+  }
+
+  // Note: If a KeyUp appears without a KeyDown, this indicates the keypress triggered a menu item!
+  override func keyUp(with event: NSEvent) {
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    log.verbose("KEYUP: \(normalizedKeyCode.quoted)")
+
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyUp, player: player,
+      arguments: keyEventArgs(event), defaultHandler: {
+        // invalid key
+        super.keyUp(with: event)
+      })
+  }
+
   // Returns true if handled
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
@@ -1398,43 +1437,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  override func keyDown(with event: NSEvent) {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYDOWN: \(normalizedKeyCode.quoted)")
-
-    PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyDown, player: player,
-      arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = player.bindingController.matchActiveKeyBinding(endingWith: event) {
-
-          guard !keyBinding.isIgnored else {
-            // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
-            return true
-          }
-
-          return handleKeyBinding(keyBinding)
-        }
-        return false
-      }, defaultHandler: {
-        // invalid key: beep if cmd failed
-        super.keyDown(with: event)
-      })
-  }
-
-  // Note: If a KeyUp appears without a KeyDown, this indicates the keypress triggered a menu item!
-  override func keyUp(with event: NSEvent) {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYUP: \(normalizedKeyCode.quoted)")
-
-    PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyUp, player: player,
-      arguments: keyEventArgs(event), defaultHandler: {
-        // invalid key
-        super.keyUp(with: event)
-      })
+  private func handleIINACommand(_ cmd: IINACommand) {
+    switch cmd {
+    case .openFile:
+      AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
+    case .openURL:
+      AppDelegate.shared.openURL(self)
+    case .flip:
+      menuToggleFlip(.dummy)
+    case .mirror:
+      menuToggleMirror(.dummy)
+    case .saveCurrentPlaylist:
+      menuSavePlaylist(.dummy)
+    case .deleteCurrentFile:
+      menuDeleteCurrentFile(.dummy)
+    case .findOnlineSubs:
+      menuFindOnlineSub(.dummy)
+    case .saveDownloadedSub:
+      saveDownloadedSub(.dummy)
+    default:
+      break
+    }
   }
 
   // MARK: - Window delegate: Open / Close
@@ -2607,7 +2630,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
 
     player.mpv.queue.async { [self] in
-      player.abLoop()
+      _ = player.abLoop()
     }
   }
 
@@ -3147,29 +3170,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   // MARK: - Utility
-
-  func handleIINACommand(_ cmd: IINACommand) {
-    switch cmd {
-    case .openFile:
-      AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
-    case .openURL:
-      AppDelegate.shared.openURL(self)
-    case .flip:
-      menuToggleFlip(.dummy)
-    case .mirror:
-      menuToggleMirror(.dummy)
-    case .saveCurrentPlaylist:
-      menuSavePlaylist(.dummy)
-    case .deleteCurrentFile:
-      menuDeleteCurrentFile(.dummy)
-    case .findOnlineSubs:
-      menuFindOnlineSub(.dummy)
-    case .saveDownloadedSub:
-      saveDownloadedSub(.dummy)
-    default:
-      break
-    }
-  }
 
   /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
   /// Try not to call this while animating. It can cause the window to briefly disappear
