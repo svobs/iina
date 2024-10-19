@@ -1084,6 +1084,8 @@ extension PlayerWindowController {
       if Logger.isEnabled(.error) {
         let vidSizeA = videoView.frame.size
         let vidSizeE = transition.outputGeometry.videoSize
+        let viewportSizeA = viewportView.frame.size
+        let viewportSizeE = transition.outputGeometry.viewportSize
         let winSizeA = window.frame.size
         let winSizeE = transition.outputGeometry.windowFrame.size
 
@@ -1096,6 +1098,7 @@ extension PlayerWindowController {
           let lines = ["[\(transition.name)] ❌ Sanity check failed!",
                        "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect)",
+                       "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")"
                        ]
           log.error(lines.joined(separator: "\n"))

@@ -237,8 +237,12 @@ class VideoView: NSView {
       videoAspect = -1
     }
 
-    // Use only EQ. Remove all other constraints
-    rebuildConstraints(top: margins.top, trailing: -margins.trailing, bottom: -margins.bottom, leading: margins.leading,
+    // Use only EQ. Remove all other constraints.
+    // Subtract 1 from each margin to get the equivalent constraint.
+    rebuildConstraints(top: max(0, margins.top - 1),
+                       trailing: -(max(0, margins.trailing - 1)),
+                       bottom: -(max(0, margins.bottom - 1)),
+                       leading: max(0, margins.leading - 1),
                        aspectMultiplier: videoAspect,
                        eqIsActive: true, eqPriority: eqPriority,
                        centerIsActive: true, centerPriority: .defaultLow,

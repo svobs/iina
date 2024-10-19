@@ -145,18 +145,18 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     self.video = video
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
+#if DEBUG
     assert(viewportSize.width >= 0 && viewportSize.height >= 0,
            "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
     assert(viewportSize.width.isInteger && viewportSize.height.isInteger,
            "Expected integer W & H for viewportSize, found \(viewportSize)")
+#endif
 
     let videoViewAspect = video.videoViewAspect
     let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: videoViewAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
     self.videoSize = videoSize
 
-    // FIXME: use best viewport margins
-    // FIXME: this is 1 too many sometimes during sidebar resize! Bad calculation!
     if let viewportMargins {
       self.viewportMargins = viewportMargins
     } else {
