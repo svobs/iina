@@ -363,6 +363,8 @@
 		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
 		D1E1446C29E3971C005DCEA3 /* IINAAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */; };
 		D1E407B92CC1CA8B002A2F9B /* TableDragDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */; };
+		D1E407BB2CC392F9002A2F9B /* PWin_Visibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */; };
+		D1E407BD2CC39549002A2F9B /* PWin_MouseInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
 		D1EF40EB2C3BCEA800921252 /* Playback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF40EA2C3BCEA800921252 /* Playback.swift */; };
@@ -1878,6 +1880,8 @@
 		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
 		D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IINAAnimation.swift; sourceTree = "<group>"; };
 		D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableDragDelegate.swift; sourceTree = "<group>"; };
+		D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Visibility.swift; sourceTree = "<group>"; };
+		D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_MouseInput.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
 		D1EF40EA2C3BCEA800921252 /* Playback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playback.swift; sourceTree = "<group>"; };
@@ -2842,6 +2846,8 @@
 				E38BD4AE20054BD9007635FC /* PlayerWindow.swift */,
 				84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */,
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
+				D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */,
+				D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */,
 				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
@@ -3277,6 +3283,7 @@
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
 				D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */,
 				E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */,
+				D1E407BD2CC39549002A2F9B /* PWin_MouseInput.swift in Sources */,
 				84F5D4951E44D5230060A838 /* KeyBindingCriterion.swift in Sources */,
 				D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */,
 				846121BD1F35FCA500ABB39C /* DraggingDetect.swift in Sources */,
@@ -3306,6 +3313,7 @@
 				84D0FB7E1F5E519300C6A6A7 /* FreeSelectingViewController.swift in Sources */,
 				E3530702214935DE008FE492 /* JavascriptAPIConsole.swift in Sources */,
 				840D47A01DFEFC49000D9A64 /* KeyRecordView.swift in Sources */,
+				D1E407BB2CC392F9002A2F9B /* PWin_Visibility.swift in Sources */,
 				84791C8B1D405E9D0069E28A /* PlaybackInfo.swift in Sources */,
 				E322A4F820A8442E00C67D32 /* PlaylistPlaybackProgressView.swift in Sources */,
 				84D123B41ECAA405004E0D53 /* TouchBarSupport.swift in Sources */,

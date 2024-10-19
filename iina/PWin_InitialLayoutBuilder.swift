@@ -305,7 +305,6 @@ extension PlayerWindowController {
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else if initialLayout.isMusicMode {
-      // TODO: fancier animation into music mode
       windowedModeGeo = PlayerWindowController.windowedModeGeoLastClosed
 
     } else {
