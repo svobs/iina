@@ -428,12 +428,12 @@ class VideoView: NSView {
   }
 
   @objc func makeDisplayIdle() {
+    videoLayer.exitAsynchronousMode()
     guard player.mpv.lockAndSetOpenGLContext() else { return }
     defer { player.mpv.unlockOpenGLContext() }
     $isUninited.withLock() { [self] isUninited in
       guard !isUninited else { return }
       videoLayer.videoView.stopDisplayLink()
-      videoLayer.exitAsynchronousMode()
     }
   }
 

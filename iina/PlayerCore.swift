@@ -2770,10 +2770,10 @@ class PlayerCore: NSObject {
     }
 
     /// Show default album art if loaded and vid is 0.
-    let isFileDone = info.isFileLoadedAndSized
+    let isFileReady = info.isFileLoadedAndSized
     // Check state so that we don't duplicate work. Don't change in miniPlayer if videoView not visible
     let showDefaultArt: Bool?
-    if isFileDone && (!isInMiniPlayer || windowController.miniPlayer.isVideoVisible || isShowVideoPendingInMiniPlayer) {
+    if isFileReady && (!isInMiniPlayer || windowController.miniPlayer.isVideoVisible || isShowVideoPendingInMiniPlayer) {
       showDefaultArt = info.shouldShowDefaultArt
     } else {
       showDefaultArt = nil  // don't change existing visibility

@@ -135,13 +135,14 @@ extension PlayerWindowController {
     let showDefaultArt = player.info.shouldShowDefaultArt
     let currentMediaAudioStatus = player.info.currentMediaAudioStatus
 
-    log.verbose("[applyVideoGeo] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
+    log.verbose("[applyVideoGeo \(transformName)] Entered, restoring=\(isRestoring.yn), showDefaultArt=\(showDefaultArt?.yn ?? "nil"), fileJustOpened=\(fileJustOpened.yn)")
 
-    var aborted = false
+    var abortedInMpvQueue = false
 
     /// Make sure `doAfter` is always executed
     defer {
-      if aborted, let doAfter {
+      if abortedInMpvQueue, let doAfter {
+        log.verbose("[applyVideoGeo \(transformName)] Exiting doAfter due to abort in mpv queue")
         DispatchQueue.main.async { [self] in
           animationPipeline.submitInstantTask(doAfter)
         }
@@ -149,14 +150,14 @@ extension PlayerWindowController {
     }
 
     guard let currentPlayback = player.info.currentPlayback else {
-      log.verbose("[applyVideoGeo] Aborting \(transformName.quoted): currentPlayback is nil")
-      aborted = true
+      log.verbose("[applyVideoGeo \(transformName)] Aborting: currentPlayback is nil")
+      abortedInMpvQueue = true
       return
     }
 
     guard currentPlayback.state.isAtLeast(.loaded) else {
-      log.verbose("[applyVideoGeo] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource.yn)")
-      aborted = true
+      log.verbose("[applyVideoGeo \(transformName)] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource.yn)")
+      abortedInMpvQueue = true
       return
     }
 
@@ -165,20 +166,35 @@ extension PlayerWindowController {
       player.info.priorState = nil
       player.info.isRestoring = false
 
-      log.debug("[applyVideoGeo] Done with restore")
+      log.debug("[applyVideoGeo \(transformName)] Done with restore")
+      if isWindowMiniturized, currentPlayback.state == .loaded {
+        // If minimized, the call to DispatchQueue.main.async below doesn't seem to execute. Patch this loophole
+        log.debug("[applyVideoGeo \(transformName)] Window is minimized: setting to loadedAndSized")
+        currentPlayback.state = .loadedAndSized
+      }
     }
 
     DispatchQueue.main.async { [self] in
       animationPipeline.submitInstantTask { [self] in
+        var aborted = false
+
+        /// Make sure `doAfter` is always executed
+        defer {
+          if aborted, let doAfter {
+            log.verbose("[applyVideoGeo \(transformName)] Exiting doAfter due to abort in main queue")
+            animationPipeline.submitInstantTask(doAfter)
+          }
+        }
+
         let oldVidGeo = geo.video
         guard let newVidGeo = videoTransform(oldVidGeo) else {
-          log.verbose("[applyVideoGeo] Aborting due to transform returning nil")
+          log.verbose("[applyVideoGeo \(transformName)] Aborting due to transform returning nil")
           aborted = true
           return
         }
 
         guard !player.isStopping else {
-          log.verbose("[applyVideoGeo] Aborting because player is stopping (status=\(player.state))")
+          log.verbose("[applyVideoGeo \(transformName)] Aborting because player is stopping (status=\(player.state))")
           aborted = true
           return
         }
@@ -200,7 +216,7 @@ extension PlayerWindowController {
             state = .alreadyOpen
           }
 
-          log.verbose("[applyVideoGeo] JustOpenedFile, windowState=\(state), showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
+          log.verbose("[applyVideoGeo \(transformName)] WindowState=\(state) showDefaultArt=\(showDefaultArt?.yn ?? "nil")")
           let (initialLayout, windowOpenLayoutTasks) = buildWindowInitialLayoutTasks(windowState: state,
                                                                                      currentPlayback: currentPlayback,
                                                                                      currentMediaAudioStatus: currentMediaAudioStatus,
