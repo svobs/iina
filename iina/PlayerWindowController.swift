@@ -1051,12 +1051,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     // video view
 
-    // FIXME 1: stick to individual side of screen
-    // FIXME 2: fix open window with multiple players bug
-    // FIXME 3: parent playlist
-    // FIXME 4: play bar drawing
-    // FIXME 6: PWinGeometry is 1px off
-    // FIXME 7: play icon height in FF/RW
+    // FIXME: stick to individual side of screen
+    // FIXME: parent playlist
+    // FIXME: play bar drawing
+    // FIXME: PWinGeometry is 0.5px off when set to half-screen
+    // FIXME: play icon height in FF/RW
 
     // gesture recognizers
     rotationHandler.windowController = self
@@ -3120,9 +3119,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
               // Calculate viewport size needed to satisfy min margins of interactive mode, then grow video at least as large
               let minViewportSizeIM = uncroppedClosedBarsGeo.minViewportSize(mode: .windowedInteractive)
-              let minViewportSizeWindowed = PWinGeometry.computeMinSize(withAspect: newVideoAspect,
-                                                                      minWidth: minViewportSizeIM.width,
-                                                                      minHeight: minViewportSizeIM.height)
+              let minViewportSizeWindowed = CGSize.computeMinSize(withAspect: newVideoAspect,
+                                                                  minWidth: minViewportSizeIM.width,
+                                                                  minHeight: minViewportSizeIM.height)
               let minViewportMarginsIM = PWinGeometry.minViewportMargins(forMode: .windowedInteractive)
               newViewportSize = NSSize(width: max(newViewportSize.width + minViewportMarginsIM.totalWidth, minViewportSizeWindowed.width),
                                        height: max(newViewportSize.height + minViewportMarginsIM.totalHeight, minViewportSizeWindowed.height))

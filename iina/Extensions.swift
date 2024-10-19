@@ -643,6 +643,34 @@ extension CGSize: @retroactive CustomStringConvertible {
   public var description: String {
     return "(\(width.strMin) x \(height.strMin))"
   }
+
+  /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
+  /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
+  static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {
+    let sizeKeepingMinWidth = NSSize(width: minWidth, height: round(minWidth / aspect))
+    if sizeKeepingMinWidth.height >= minHeight {
+      return sizeKeepingMinWidth
+    }
+
+    let sizeKeepingMinHeight = NSSize(width: round(minHeight * aspect), height: minHeight)
+    if sizeKeepingMinHeight.width >= minWidth {
+      return sizeKeepingMinHeight
+    }
+
+    // Negative aspect, but just barely?
+    if minWidth < minHeight {
+      let width = round(minWidth * aspect)
+      let sizeScalingUpWidth = NSSize(width: width, height: round(width / aspect))
+      if sizeScalingUpWidth.width >= minWidth, sizeScalingUpWidth.height >= minHeight {
+        return sizeScalingUpWidth
+      }
+    }
+    let scaledUpHeight = round(minHeight * aspect)
+    let sizeScalingUpHeight = NSSize(width: round(scaledUpHeight * aspect), height: scaledUpHeight)
+    assert(sizeScalingUpHeight.width >= minWidth && sizeScalingUpHeight.height >= minHeight, "sizeScalingUpHeight \(sizeScalingUpHeight) < \(minWidth)x\(minHeight)")
+    return sizeScalingUpHeight
+  }
+
 }
 
 extension FloatingPoint {
