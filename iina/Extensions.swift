@@ -412,6 +412,10 @@ extension CGFloat {
     }
   }
 
+  var isInteger: Bool {
+    return CGFloat(Int(self)) == self
+  }
+
   /// Do not use trailing zeros
   var strMin: String {
     fmtDecimalOmitTrailingZeroes.string(for: self)!
@@ -449,6 +453,10 @@ extension Double {
     } else {
       return "\(rounded)"
     }
+  }
+
+  var isInteger: Bool {
+    return Double(Int(self)) == self
   }
 
   var twoDecimalPlaces: String {

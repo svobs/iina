@@ -130,32 +130,39 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: Initializers / Factory Methods
 
   /// Derives `viewportSize` and `videoSize` from `windowFrame`, `viewportMargins` and `videoAspect`
-  init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption, mode: PlayerWindowMode, topMarginHeight: CGFloat,
-       outsideBars: MarginQuad, insideBars: MarginQuad, viewportMargins: MarginQuad? = nil, video: VideoGeometry) {
+  init(windowFrame: NSRect, screenID: String, fitOption: ScreenFitOption,
+       mode: PlayerWindowMode, topMarginHeight: CGFloat,
+       outsideBars: MarginQuad, insideBars: MarginQuad,
+       viewportMargins: MarginQuad? = nil, video: VideoGeometry) {
 
     self.windowFrame = windowFrame
     self.screenID = screenID
     self.fitOption = fitOption
     self.mode = mode
-
     self.topMarginHeight = topMarginHeight
-
     self.outsideBars = outsideBars
-
     self.insideBars = insideBars
+    self.video = video
 
     let viewportSize = PWinGeometry.deriveViewportSize(from: windowFrame, topMarginHeight: topMarginHeight, outsideBars: outsideBars)
-    assert(viewportSize.width >= 0 && viewportSize.height >= 0, "Expected viewportSize width & height >= 0, found \(viewportSize)")
+    assert(viewportSize.width >= 0 && viewportSize.height >= 0,
+           "Expected W ≥ 0 & H ≥ 0 for viewportSize, found \(viewportSize)")
+    assert(viewportSize.width.isInteger && viewportSize.height.isInteger,
+           "Expected integer W & H for viewportSize, found \(viewportSize)")
+
     let videoViewAspect = video.videoViewAspect
     let videoSize = PWinGeometry.computeVideoSize(withAspectRatio: videoViewAspect, toFillIn: viewportSize,
                                                   minViewportMargins: viewportMargins, mode: mode)
-    assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected videoSize width & height >= 0, found \(videoSize)")
     self.videoSize = videoSize
+
     // FIXME: use best viewport margins
     // FIXME: this is 1 too many sometimes during sidebar resize! Bad calculation!
-    self.viewportMargins = viewportMargins ?? PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
-                                                                                      insideBars: insideBars, mode: mode)
-    self.video = video
+    if let viewportMargins {
+      self.viewportMargins = viewportMargins
+    } else {
+      self.viewportMargins = PWinGeometry.computeBestViewportMargins(viewportSize: viewportSize, videoSize: videoSize,
+                                                                     insideBars: insideBars, mode: mode)
+    }
 
 #if DEBUG
     assert(topMarginHeight >= 0, "Expected topMarginHeight >= 0, found \(topMarginHeight)")
@@ -175,6 +182,11 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
            ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
            "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
+
+    let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
+                               height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
+    assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
+           "windowSize sum \(sumWindowSize) != windowFrame.size \(windowFrame.size)")
 #endif
   }
 
@@ -491,7 +503,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
            "videoSize \(videoSize) + minMargins \(minMargins) → sum: \(sumViewportSize) > viewportSize \(viewportSize)")
 
     assert((usableViewportSize.width - videoSize.width >= 0) && (usableViewportSize.height - videoSize.height >= 0),
-           "videoSize \(videoSize) cannot be larger than usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
+           "Derived videoSize \(videoSize) > usableViewportSize \(usableViewportSize)! (videoAspect: \(videoAspect), viewportSize: \(viewportSize), minViewportMargins: \(minMargins))")
+
+    assert(videoSize.width >= 0 && videoSize.height >= 0, "Expected W ≥ 0 & H ≥ 0 for videoSize, found \(videoSize)")
+    assert(videoSize.width.isInteger && videoSize.height.isInteger, "Expected integer W & H for videoSize, found \(videoSize)")
 #endif
     return videoSize
   }
