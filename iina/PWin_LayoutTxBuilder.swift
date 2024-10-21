@@ -88,13 +88,17 @@ extension PlayerWindowController {
 
     // - Determine durations
 
-    var startingAnimationDuration = IINAAnimation.DefaultDuration
-    if transition.isEnteringFullScreen {
+    let startingAnimationDuration: CGFloat
+    if transition.isWindowInitialLayout {
+      startingAnimationDuration = 0
+    } else if transition.isEnteringFullScreen {
       startingAnimationDuration = 0
     } else if transition.isEnteringMusicMode && !transition.isExitingFullScreen {
       startingAnimationDuration = IINAAnimation.DefaultDuration
-    } else if let totalStartingDuration = totalStartingDuration {
+    } else if let totalStartingDuration {
       startingAnimationDuration = totalStartingDuration / 3
+    } else {
+      startingAnimationDuration = IINAAnimation.DefaultDuration
     }
 
     var showFadeableViewsDuration: CGFloat = startingAnimationDuration
@@ -115,13 +119,17 @@ extension PlayerWindowController {
       }
       if !transition.needsFadeOutOldViews {
         fadeOutOldViewsDuration = 0
-      }
-      if !transition.needsCloseOldPanels {
+      } else if !transition.needsCloseOldPanels {
         closeOldPanelsDuration = 0
       }
     }
 
-    let endingAnimationDuration: CGFloat = totalEndingDuration ?? IINAAnimation.DefaultDuration
+    let endingAnimationDuration: CGFloat
+    if transition.isWindowInitialLayout {
+      endingAnimationDuration = 0
+    } else {
+      endingAnimationDuration = totalEndingDuration ?? IINAAnimation.DefaultDuration
+    }
 
     // Extra animation when entering legacy full screen: cover camera housing with black bar
     let useExtraAnimationForEnteringLegacyFullScreen = transition.isEnteringLegacyFullScreen && windowedModeScreen.hasCameraHousing && !transition.isWindowInitialLayout
@@ -140,8 +148,7 @@ extension PlayerWindowController {
     } else {
       if !transition.needsFadeInNewViews {
         fadeInNewViewsDuration = 0
-      }
-      if !transition.needsAnimationForOpenFinalPanels {
+      } else if !transition.needsAnimationForOpenFinalPanels {
         openFinalPanelsDuration = 0
       }
     }

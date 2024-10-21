@@ -1252,10 +1252,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     playBtnVertOffsetConstraint.isActive = true  // TEMPORARY!
-
-    /// TODO: see `addControlBarViews(to containerView`
-    /// TODO: see `func updateHiddenViewsAndConstraints(_ transition: LayoutTransition`
-
   }
 
   private func initAlbumArtView() {
@@ -1383,7 +1379,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
       let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-      buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec, thenRun: true)
+      buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,
+                            totalStartingDuration: IINAAnimation.DefaultDuration * 0.5,
+                            totalEndingDuration: IINAAnimation.DefaultDuration * 0.5,
+                            thenRun: true)
     }
   }
 

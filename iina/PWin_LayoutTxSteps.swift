@@ -279,6 +279,34 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)")
 
+    if outputLayout.enableOSC {
+      // Reduce size of icons if they are smaller
+      let oscGeo = ControlBarGeometry.current
+
+      if volumeIconSizeConstraint.constant > oscGeo.volumeIconSize {
+        volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
+      }
+
+      if arrowBtnWidthConstraint.constant > oscGeo.arrowIconSize {
+        arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+      }
+      if playBtnWidthConstraint.constant > oscGeo.playIconSize {
+        playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
+      }
+
+      if fragPlaybackBtnsWidthConstraint.constant > oscGeo.totalPlayControlsWidth {
+        fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+      }
+
+      if leftArrowBtnHorizOffsetConstraint.constant > oscGeo.leftArrowOffsetX {
+        leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
+      }
+
+      if rightArrowBtnHorizOffsetConstraint.constant > oscGeo.rightArrowOffsetX {
+        rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
+      }
+    }
+
     if transition.inputLayout.titleBarHeight > 0 && outputLayout.titleBarHeight == 0 {
       titleBarHeightConstraint.animateToConstant(0)
     }
@@ -450,7 +478,7 @@ extension PlayerWindowController {
     // [Re-]add OSC:
     if outputLayout.enableOSC {
       let oscGeo = ControlBarGeometry.current
-      log.verbose("[\(transition.name)] Setting up control bar: \(outputLayout.oscPosition) (playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing))")
+      log.verbose("[\(transition.name)] Setting up control bar=\(outputLayout.oscPosition) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
       switch outputLayout.oscPosition {
       case .top:
@@ -512,14 +540,6 @@ extension PlayerWindowController {
       timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
 
       updateArrowButtonImages()
-      volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
-
-      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
-      playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
-
-      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
-      leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
-      rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
 
     } else if outputLayout.isMusicMode {
 
@@ -759,6 +779,19 @@ extension PlayerWindowController {
 
     let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
     updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement)
+
+    if outputLayout.enableOSC {
+      // Increase size of icons if they are larger
+      let oscGeo = ControlBarGeometry.current
+
+      volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
+      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+      playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
+      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+      leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
+      rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
+    }
+
 
     // Sidebars (if opening)
     let leadingSidebar = transition.outputLayout.leadingSidebar
@@ -1344,37 +1377,15 @@ extension PlayerWindowController {
 
   private func updateArrowButtonImages() {
     let oscGeo = ControlBarGeometry.current
-
-    let arrowBtnAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-    let leftImage: NSImage
-    let rightImage: NSImage
-    switch arrowBtnAction {
-    case .playlist:
-      leftImage = #imageLiteral(resourceName: "nextl")
-      rightImage = #imageLiteral(resourceName: "nextr")
-    case .speed:
-      leftImage = #imageLiteral(resourceName: "speedl")
-      rightImage = #imageLiteral(resourceName: "speed")
-    case .seek:
-      if #available(macOS 11.0, *) {
-        let leftIcon = NSImage(systemSymbolName: "gobackward.10", accessibilityDescription: "Step Backward 10s")!
-        leftImage = leftIcon
-        let rightIcon = NSImage(systemSymbolName: "goforward.10", accessibilityDescription: "Step Forward 10s")!
-        rightImage = rightIcon
-      } else {
-        leftImage = #imageLiteral(resourceName: "speedl")
-        rightImage = #imageLiteral(resourceName: "speed")
-      }
-    }
-    leftArrowButton.image = leftImage
-    rightArrowButton.image = rightImage
+    leftArrowButton.image = oscGeo.leftArrowImage
+    rightArrowButton.image = oscGeo.rightArrowImage
 
     if isInMiniPlayer {
       miniPlayer.loadIfNeeded()
-      miniPlayer.leftArrowButton.image = leftImage
-      miniPlayer.rightArrowButton.image = rightImage
+      miniPlayer.leftArrowButton.image = oscGeo.leftArrowImage
+      miniPlayer.rightArrowButton.image = oscGeo.rightArrowImage
 
-      let spacing: CGFloat = arrowBtnAction == .seek ? 12 : 16
+      let spacing: CGFloat = oscGeo.arrowBtnAction == .seek ? 12 : 16
       miniPlayer.leftArrowToPlayButtonSpaceConstraint.animateToConstant(spacing)
       miniPlayer.playButtonToRightArrowSpaceConstraint.animateToConstant(spacing)
     }

@@ -197,6 +197,36 @@ struct ControlBarGeometry {
     }
   }
 
+  var leftArrowImage: NSImage {
+    switch arrowBtnAction {
+    case .playlist:
+      return #imageLiteral(resourceName: "nextl")
+    case .speed:
+      return #imageLiteral(resourceName: "speedl")
+    case .seek:
+      if #available(macOS 11.0, *) {
+        return NSImage(systemSymbolName: "gobackward.10", accessibilityDescription: "Step Backward 10s")!
+      } else {
+        return #imageLiteral(resourceName: "speedl")
+      }
+    }
+  }
+
+  var rightArrowImage: NSImage {
+    switch arrowBtnAction {
+    case .playlist:
+      return #imageLiteral(resourceName: "nextr")
+    case .speed:
+      return #imageLiteral(resourceName: "speed")
+    case .seek:
+      if #available(macOS 11.0, *) {
+        return NSImage(systemSymbolName: "goforward.10", accessibilityDescription: "Step Forward 10s")!
+      } else {
+        return #imageLiteral(resourceName: "speed")
+      }
+    }
+  }
+
   var totalToolbarWidth: CGFloat {
     let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
     let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)
