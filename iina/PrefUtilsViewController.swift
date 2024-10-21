@@ -74,7 +74,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
         continue
       }
 
-      Logger.log("UTImportedType: \(identifier.quoted) ➤ \(exts)", level: .verbose)
+      Logger.log.verbose("UTImportedType: \(identifier.quoted) ➤ \(exts)")
       for ext in exts {
         if #available(macOS 11.0, *) {
           let uttypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
@@ -92,12 +92,12 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
     }
 
     for identifier in utiTargetSet {
-      Logger.log("Seting default for UTI: \(identifier.quoted)", level: .verbose)
+      Logger.log.verbose("Setting default for UTI: \(identifier.quoted)")
       let status = LSSetDefaultRoleHandlerForContentType(identifier as CFString, .all, cfBundleID)
       if status == kOSReturnSuccess {
         successCount += 1
       } else {
-        Logger.log("Failed for \(identifier.quoted): return value \(status)", level: .error)
+        Logger.log.error("Failed for \(identifier.quoted): return value \(status)")
         failedCount += 1
       }
     }

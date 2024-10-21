@@ -255,7 +255,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @Atomic var screenParamsChangedTicketCounter: Int = 0
   @Atomic var thumbDisplayTicketCounter: Int = 0
 
-  // MARK: - Window geometry vars
+  // - Window Geometry
+
   var geo: GeometrySet
 
   var windowedModeGeo: PWinGeometry {
@@ -913,7 +914,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   lazy var subPopoverView = playlistView.subPopover?.contentViewController?.view
 
-  // MARK: - PIP
+  // PIP
 
   lazy var _pip: PIPViewController = {
     let pip = VideoPIPViewController()
@@ -1863,124 +1864,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   }
 
-  // MARK: - Window delegate: Resize
-
-  func windowWillStartLiveResize(_ notification: Notification) {
-    guard !isAnimatingLayoutTransition else { return }
-    log.verbose("WindowWillStartLiveResize")
-    isLiveResizingWidth = nil  // reset this
-  }
-
-  func windowWillResize(_ window: NSWindow, to requestedSize: NSSize) -> NSSize {
-    guard !isAnimatingLayoutTransition else { return requestedSize }
-
-    let currentLayout = currentLayout
-    log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingTx=\(isAnimatingLayoutTransition.yn) denyNext=\(denyNextWindowResize.yn)")
-    videoView.videoLayer.enterAsynchronousMode()
-
-    if !currentLayout.isFullScreen && denyNextWindowResize {
-      log.verbose("WinWillResize: denying this resize; will stay at \(window.frame.size)")
-      denyNextWindowResize = false
-      return window.frame.size
-    }
-
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    if lockViewportToVideoSize && window.inLiveResize {
-      /// Notes on the trickiness of live window resize:
-      /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
-      /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
-      /// or right sides. Similarly, "B" works with left or right sides, but will not work with top or bottom.
-      /// 2. We can make all 4 sides allow resizing by first checking if the user is requesting a different height: if yes, use "B";
-      /// and if no, use "A".
-      /// 3. Unfortunately (2) causes resize from the corners to jump all over the place, because in that case either height or width will change
-      /// in small increments (depending on how fast the user moves the cursor) but this will result in a different choice between "A" or "B" schemes
-      /// each time, with very different answers, which causes the jumpiness. In this case either scheme will work fine, just as long as we stick
-      /// to the same scheme for the whole resize. So to fix this, we add `isLiveResizingWidth`, and once set, stick to scheme "B".
-      if isLiveResizingWidth == nil {
-        if window.frame.height != requestedSize.height {
-          isLiveResizingWidth = false
-        } else if window.frame.width != requestedSize.width {
-          isLiveResizingWidth = true
-        }
-      }
-      log.verbose("WinWillResize: PREV:\(window.frame.size), REQ:\(requestedSize) choseWidth:\(isLiveResizingWidth?.yesno ?? "nil")")
-    }
-
-    let isLiveResizingWidth = isLiveResizingWidth ?? true
-    switch currentLayout.mode {
-    case .windowed, .windowedInteractive:
-      let newGeometry = resizeWindow(window, to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize, isLiveResizingWidth: isLiveResizingWidth)
-
-      /// This is copied from `resizeSubviewsForWindowResize`, but the animation seems to look worse when run from a function call.
-      /// Possibly a timing issue? It doesn't help that AppKit is calling `setFrame` after this method returns, and we cannot access
-      /// that code to ensure it is encapsulated within the same animation transaction as the code below. But this solution
-      /// seems to get us 99% there; the video only exhibits a small noticeable wobble for some limited cases ...
-      IINAAnimation.disableAnimation { [self] in
-        videoView.apply(newGeometry)
-
-        if newGeometry.mode == .musicMode {
-          // Re-evaluate space requirements for labels. May need to start scrolling.
-          // Will also update saved state
-          miniPlayer.windowDidResize()
-        } else if newGeometry.mode.isInteractiveMode {
-          // Update interactive mode selectable box size. Origin is relative to viewport origin
-          let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-          cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-        }
-
-        // Only resize OSD if it is already showing a message. It will always be sized prior to displaying a new message.
-        if osd.animationState == .shown {
-          updateOSDTextSize(from: newGeometry)
-          if player.info.isFileLoadedAndSized {
-            setOSDViews()
-          }
-        }
-      }
-
-      return newGeometry.windowFrame.size
-
-    case .fullScreen, .fullScreenInteractive:
-      if currentLayout.isLegacyFullScreen {
-        let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
-        IINAAnimation.disableAnimation { [self] in
-          videoView.apply(newGeometry)
-        }
-        return newGeometry.windowFrame.size
-      } else {  // is native full screen
-        // This method can be called as a side effect of the animation. If so, ignore.
-        return requestedSize
-      }
-
-    case .musicMode:
-      return miniPlayer.resizeWindow(window, to: requestedSize, isLiveResizingWidth: isLiveResizingWidth)
-    }
-  }
-
-  func resizeSubviewsForWindowResize(using newGeometry: PWinGeometry, updateVideoView: Bool = true) {
-    videoView.videoLayer.enterAsynchronousMode()
-
-    if updateVideoView {
-      videoView.apply(newGeometry)
-    }
-
-    if newGeometry.mode == .musicMode {
-      // Re-evaluate space requirements for labels. May need to start scrolling.
-      // Will also update saved state
-      miniPlayer.windowDidResize()
-    } else if newGeometry.mode.isInteractiveMode {
-      // Update interactive mode selectable box size. Origin is relative to viewport origin
-      let newVideoRect = NSRect(origin: CGPointZero, size: newGeometry.videoSize)
-      cropSettingsView?.cropBoxView.resized(with: newVideoRect)
-    }
-
-    if osd.animationState == .shown {
-      updateOSDTextSize(from: newGeometry)
-      if player.info.isFileLoadedAndSized {
-        setOSDViews()
-      }
-    }
-  }
-
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
   /// Not currently used!
@@ -2629,6 +2512,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   // MARK: - UI: Other
+
+  func showContextMenu() {
+    // TODO
+  }
 
   func refreshHidesOnDeactivateStatus() {
     guard let window else { return }

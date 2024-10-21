@@ -2608,6 +2608,7 @@ class PlayerCore: NSObject {
   func refreshEdrMode() {
     DispatchQueue.main.async { [self] in
       guard isActive else { return }
+      guard window != nil else { return }
       videoView.refreshEdrMode()
     }
   }

@@ -649,6 +649,42 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return newOrigin
   }
 
+  /// Encapsulates logic for `windowWillResize`, but specfically for windowed modes.
+  func resizeWindow(to requestedSize: NSSize,
+                    lockViewportToVideoSize: Bool,
+                    inLiveResize: Bool, isLiveResizingWidth: Bool) -> PWinGeometry {
+    guard mode.isWindowed else {
+      log.error("[geo] PWinGeometry cannot resize window: mode (\(mode)) is not windowed!")
+      return self
+    }
+
+    let chosenGeo: PWinGeometry
+    // Need to resize window to match video aspect ratio, while taking into account any outside panels.
+    if lockViewportToVideoSize && inLiveResize {
+      let nonViewportAreaSize = self.windowFrame.size - self.viewportSize
+      let requestedViewportSize = requestedSize - nonViewportAreaSize
+
+      if isLiveResizingWidth {
+        // Option A: resize height based on requested width
+        let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
+                                              height: round(requestedViewportSize.width / self.videoAspect))
+        chosenGeo = self.scaleViewport(to: resizedWidthViewportSize)
+      } else {
+        // Option B: resize width based on requested height
+        let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * self.videoAspect),
+                                               height: requestedViewportSize.height)
+        chosenGeo = self.scaleViewport(to: resizedHeightViewportSize)
+      }
+    } else {
+      /// If `!inLiveResize`: resize request is not coming from the user. Could be BetterTouchTool, Retangle, or some window manager, or the OS.
+      /// These tools seem to expect that both dimensions of the returned size are less than the requested dimensions, so check for this.
+      /// If `lockViewportToVideoSize && !inLiveResize`: scale window to requested size; `refit()` below will constrain as needed.
+      chosenGeo = self.scaleWindow(to: requestedSize)
+    }
+
+    return chosenGeo
+  }
+
   func refit(_ newFit: ScreenFitOption? = nil, lockViewportToVideoSize: Bool? = nil) -> PWinGeometry {
     return scaleViewport(fitOption: newFit, lockViewportToVideoSize: lockViewportToVideoSize)
   }

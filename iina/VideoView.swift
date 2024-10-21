@@ -434,16 +434,17 @@ class VideoView: NSView {
 
   // MARK: - Color
 
-  private func setICCProfile() {
+  func setICCProfile() {
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
-      player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     } else if let screenColorSpace {
-      logHDR.verbose("Configuring auto ICC profile")
-      player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, true)
+      logHDR.verbose("Configuring auto ICC profile (FIXME: commented out)")
       // This MUST be locked via openGLContext
-      setRenderICCProfile(screenColorSpace)
+      // FIXME: this crashes!
+//      setRenderICCProfile(screenColorSpace)
+    } else {
+      logHDR.warn("Cannot set auto ICC profile; no screen color space")
     }
 
     let sdrColorSpace = screenColorSpace?.cgColorSpace ?? VideoView.SRGB
@@ -452,6 +453,9 @@ class VideoView: NSView {
       logHDR.debug("Setting layer color space to \(name)")
       videoLayer.colorspace = sdrColorSpace
     }
+
+    let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
+    player.mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, useAutoICC)
 
     player.mpv.setString(MPVOption.GPURendererOptions.targetTrc, "auto")
     player.mpv.setString(MPVOption.GPURendererOptions.targetPrim, "auto")

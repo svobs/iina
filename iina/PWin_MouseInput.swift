@@ -285,10 +285,6 @@ extension PlayerWindowController {
     }
   }
 
-  private func showContextMenu() {
-    // TODO
-  }
-
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
 
