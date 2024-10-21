@@ -41,7 +41,6 @@
                 <outlet property="leadingTitleBarAccessoryView" destination="LFL-4a-93B" id="2gm-1u-SgO"/>
                 <outlet property="leadingTitleBarLeadingSpaceConstraint" destination="8Ry-mq-mNQ" id="abn-rz-U1P"/>
                 <outlet property="leadingTitleBarTrailingSpaceConstraint" destination="ckY-Xn-Az9" id="2Sw-bW-ZKj"/>
-                <outlet property="leftArrowButton" destination="10x-bg-xlj" id="HOT-Yl-7aO"/>
                 <outlet property="leftLabel" destination="NBD-MV-OuG" id="7xb-a1-6NR"/>
                 <outlet property="muteButton" destination="2py-h1-0km" id="baB-6t-gO7"/>
                 <outlet property="onTopButton" destination="Ztc-Kn-fxI" id="xCA-hX-VpW"/>
@@ -67,7 +66,6 @@
                 <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
                 <outlet property="playSlider" destination="eBP-6g-bAT" id="lGv-18-YeQ"/>
                 <outlet property="playSliderHeightConstraint" destination="VU5-c1-ivd" id="NEQ-Hc-xay"/>
-                <outlet property="rightArrowButton" destination="EIi-qd-glM" id="U46-Gl-e8D"/>
                 <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
                 <outlet property="thumbnailPeekView" destination="vej-bg-g6C" id="sws-ib-t4r"/>
                 <outlet property="timePositionHoverLabel" destination="qOq-6a-7j7" id="ngM-1f-G5D"/>
@@ -760,67 +758,6 @@
             </constraints>
             <point key="canvasLocation" x="230" y="471"/>
         </customView>
-        <customView identifier="OSC-Fragment-Playback-Control-Middle" wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" placeholderIntrinsicWidth="184" placeholderIntrinsicHeight="24" translatesAutoresizingMaskIntoConstraints="NO" id="Yv6-0K-6E4" userLabel="OSC Fragment: Playback Control Buttons" customClass="PlaybackControlButtonsView" customModule="IINA" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="144" height="24"/>
-            <subviews>
-                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="siV-cJ-huN" userLabel="Left-most Spacer">
-                    <rect key="frame" x="0.0" y="12" width="12" height="0.0"/>
-                    <constraints>
-                        <constraint firstAttribute="height" id="uyL-7g-PMl"/>
-                    </constraints>
-                </customView>
-                <button wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="10x-bg-xlj" userLabel="Left Arrow Button">
-                    <rect key="frame" x="12" y="0.0" width="24" height="24"/>
-                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="speedl" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" maxAcceleratorLevel="5" id="ijT-3Y-AK2">
-                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES" multiLevelAccelerator="YES"/>
-                        <font key="font" metaFont="system" size="16"/>
-                    </buttonCell>
-                    <connections>
-                        <action selector="leftArrowButtonAction:" target="-2" id="WRV-J4-Hq8"/>
-                    </connections>
-                </button>
-                <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I07-AH-cjL" userLabel="Left-Middle Spacer">
-                    <rect key="frame" x="36" y="12" width="24" height="0.0"/>
-                </customView>
-                <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="X5y-IG-ngq" userLabel="Right-Middle Spacer">
-                    <rect key="frame" x="84" y="12" width="24" height="0.0"/>
-                </customView>
-                <button wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EIi-qd-glM" userLabel="Right Arrow Button">
-                    <rect key="frame" x="108" y="0.0" width="24" height="24"/>
-                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="speed" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" maxAcceleratorLevel="5" id="Aiu-eh-hd9">
-                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES" multiLevelAccelerator="YES"/>
-                        <font key="font" metaFont="system" size="16"/>
-                    </buttonCell>
-                    <connections>
-                        <action selector="rightArrowButtonAction:" target="-2" id="mQT-3l-E7s"/>
-                    </connections>
-                </button>
-                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="06z-vV-Q73" userLabel="Right-most Spacer">
-                    <rect key="frame" x="132" y="12" width="12" height="0.0"/>
-                </customView>
-            </subviews>
-            <constraints>
-                <constraint firstItem="X5y-IG-ngq" firstAttribute="width" secondItem="I07-AH-cjL" secondAttribute="width" id="0vs-zP-8OU"/>
-                <constraint firstItem="EIi-qd-glM" firstAttribute="leading" secondItem="X5y-IG-ngq" secondAttribute="trailing" id="2sT-6b-mTR"/>
-                <constraint firstItem="I07-AH-cjL" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="3Ay-6s-tGt"/>
-                <constraint firstItem="I07-AH-cjL" firstAttribute="leading" secondItem="10x-bg-xlj" secondAttribute="trailing" id="4Tm-Rh-0Wm"/>
-                <constraint firstItem="siV-cJ-huN" firstAttribute="width" secondItem="I07-AH-cjL" secondAttribute="width" multiplier="0.5" id="Bmz-N9-sPf"/>
-                <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="Yv6-0K-6E4" secondAttribute="centerY" id="GqH-aB-GKs"/>
-                <constraint firstAttribute="height" relation="greaterThanOrEqual" secondItem="10x-bg-xlj" secondAttribute="height" priority="900" id="Jtd-FG-hGH"/>
-                <constraint firstAttribute="trailing" secondItem="06z-vV-Q73" secondAttribute="trailing" id="PLL-cS-kT4"/>
-                <constraint firstItem="X5y-IG-ngq" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="RPF-3O-S3e"/>
-                <constraint firstItem="EIi-qd-glM" firstAttribute="width" secondItem="10x-bg-xlj" secondAttribute="width" id="YB1-TV-uzN"/>
-                <constraint firstItem="siV-cJ-huN" firstAttribute="leading" secondItem="Yv6-0K-6E4" secondAttribute="leading" id="cHK-nA-SWz"/>
-                <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="df8-1t-m24"/>
-                <constraint firstItem="06z-vV-Q73" firstAttribute="width" secondItem="siV-cJ-huN" secondAttribute="width" id="e2w-hD-kbq"/>
-                <constraint firstItem="06z-vV-Q73" firstAttribute="leading" secondItem="EIi-qd-glM" secondAttribute="trailing" id="eOx-13-7hg"/>
-                <constraint firstItem="06z-vV-Q73" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="ilf-uc-agk"/>
-                <constraint firstItem="10x-bg-xlj" firstAttribute="leading" secondItem="siV-cJ-huN" secondAttribute="trailing" id="qcZ-ea-Ibq"/>
-                <constraint firstItem="EIi-qd-glM" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="wi2-4e-TSD"/>
-                <constraint firstItem="X5y-IG-ngq" firstAttribute="height" secondItem="I07-AH-cjL" secondAttribute="height" id="ysE-OM-OHP"/>
-            </constraints>
-            <point key="canvasLocation" x="-166" y="453"/>
-        </customView>
         <customView identifier="Leading-TitleBarAccessoryView" wantsLayer="YES" id="LFL-4a-93B" userLabel="Leading Title Bar Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="28" height="50"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
@@ -957,8 +894,6 @@
         <image name="playing-in-pip" width="87" height="68"/>
         <image name="sidebar.leading" width="15" height="12"/>
         <image name="sidebar.trailing" width="15" height="12"/>
-        <image name="speed" width="24" height="24"/>
-        <image name="speedl" width="24" height="24"/>
         <image name="volume" width="16" height="14"/>
         <image name="▶️" width="128" height="128"/>
         <namedColor name="CustomWindowBorder">

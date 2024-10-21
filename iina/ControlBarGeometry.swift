@@ -33,6 +33,8 @@ struct ControlBarGeometry {
 
   let position: Preference.OSCPosition
 
+  let arrowBtnAction: Preference.ArrowButtonAction
+
   /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
   
@@ -116,8 +118,9 @@ struct ControlBarGeometry {
     self.playIconSize = playIconSize
 
     // Compute size of arrow buttons
-    let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-    if arrowBtnFunction == .seek {
+    let arrowBtnAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    self.arrowBtnAction = arrowBtnAction
+    if arrowBtnAction == .seek {
       self.arrowIconSize = playIconSize * 0.75
     } else {
       self.arrowIconSize = playIconSize

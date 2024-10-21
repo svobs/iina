@@ -1343,6 +1343,8 @@ extension PlayerWindowController {
   }
 
   private func updateArrowButtonImages() {
+    let oscGeo = ControlBarGeometry.current
+
     let arrowBtnAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     let leftImage: NSImage
     let rightImage: NSImage

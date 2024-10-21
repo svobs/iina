@@ -764,8 +764,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var timePositionHoverLabel: NSTextField!
   @IBOutlet weak var thumbnailPeekView: ThumbnailPeekView!
-  @IBOutlet weak var leftArrowButton: NSButton!
-  @IBOutlet weak var rightArrowButton: NSButton!
+  var leftArrowButton: NSButton!
+  var rightArrowButton: NSButton!
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
   @IBOutlet weak var leadingSidebarTrailingBorder: NSBox!  // shown if leading sidebar is "outside"
@@ -1162,11 +1162,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     speedLabel.nextResponder = playButton
   }
 
+  //
+  private func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
+    guard #available(macOS 14.0, *) else { return NSImage(named: fallbackImage)! }
+    let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+    return NSImage.findSFSymbol(names, withConfiguration: configuration)
+  }
+
+
   private func initPlaybackBtnsView() {
     let oscGeo = ControlBarGeometry.current
-
-//    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
-//    speedLabel.isHidden = !showSpeedLabel
 
     // Play button
     playButton = NSButton(image: playImage, target: self, action: #selector(playButtonAction(_:)))
@@ -1182,6 +1187,30 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
+    // Left Arrow button
+    let rewindImage = makeSymbol(["backward.fill"], "speedl")
+    leftArrowButton = NSButton(image: rewindImage, target: self, action: #selector(leftArrowButtonAction(_:)))
+    leftArrowButton.setButtonType(.multiLevelAccelerator)
+    leftArrowButton.isBordered = false
+    leftArrowButton.maxAcceleratorLevel = 5
+    leftArrowButton.bezelStyle = .regularSquare
+    leftArrowButton.imagePosition = .imageOnly
+    leftArrowButton.refusesFirstResponder = true
+    leftArrowButton.imageScaling = .scaleProportionallyUpOrDown
+    leftArrowButton.translatesAutoresizingMaskIntoConstraints = false
+
+    // Right Arrow button
+    let ffImage = makeSymbol(["forward.fill"], "speed")
+    rightArrowButton = NSButton(image: ffImage, target: self, action: #selector(rightArrowButtonAction(_:)))
+    rightArrowButton.setButtonType(.multiLevelAccelerator)
+    rightArrowButton.isBordered = false
+    rightArrowButton.maxAcceleratorLevel = 5
+    rightArrowButton.bezelStyle = .regularSquare
+    rightArrowButton.imagePosition = .imageOnly
+    rightArrowButton.refusesFirstResponder = true
+    rightArrowButton.imageScaling = .scaleProportionallyUpOrDown
+    rightArrowButton.translatesAutoresizingMaskIntoConstraints = false
+
     fragPlaybackBtnsView.addSubview(leftArrowButton)
     fragPlaybackBtnsView.addSubview(playButton)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
@@ -1194,12 +1223,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
     fragPlaybackBtnsWidthConstraint.isActive = true
 
-    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconSize)
-    arrowBtnWidthConstraint.isActive = true
-
     leftArrowBtnHorizOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                  constant: oscGeo.leftArrowOffsetX)
     leftArrowBtnHorizOffsetConstraint.isActive = true
+
+    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconSize)
+    arrowBtnWidthConstraint.isActive = true
 
     rightArrowBtnHorizOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                    constant: oscGeo.rightArrowOffsetX)
