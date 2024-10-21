@@ -570,6 +570,8 @@ class VideoView: NSView {
 extension VideoView {
 
   func refreshEdrMode() {
+    guard player.windowController.loaded else { return }
+    guard player.isActive else { return }
     guard player.mpv.lockAndSetOpenGLContext() else { return }
     defer { player.mpv.unlockOpenGLContext() }
     $isUninited.withLock() { [self] isUninited in

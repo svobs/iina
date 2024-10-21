@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class PlaybackControlButtonsView: ClickThroughStackView {
+class PlaybackControlButtonsView: ClickThroughView {
   private var playerWindowController: PlayerWindowController? {
     return window?.windowController as? PlayerWindowController
   }
@@ -23,8 +23,8 @@ class PlaybackControlButtonsView: ClickThroughStackView {
 }
 
 // Use single instance of each for efficiency
-fileprivate let playImage = NSImage(named: "play")
-fileprivate let pauseImage = NSImage(named: "pause")
+fileprivate let playImage = NSImage(named: "play")!
+fileprivate let pauseImage = NSImage(named: "pause")!
 
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
@@ -698,20 +698,29 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// Sets the size of the spacer view in the top overlay which reserves space for a title bar.
   @IBOutlet weak var titleBarHeightConstraint: NSLayoutConstraint!
+
+
+  var fragPlaybackBtnsWidthConstraint: NSLayoutConstraint!
+
   /// Size of each side of the (square) `playButton`
-  @IBOutlet weak var playBtnSquareWidthConstraint: NSLayoutConstraint!
+  var playBtnWidthConstraint: NSLayoutConstraint!
   /// Size of each side of square buttons `leftArrowButton` & `rightArrowButton`
-  @IBOutlet weak var arrowBtnsSquareWidthConstraint: NSLayoutConstraint!
+  var arrowBtnWidthConstraint: NSLayoutConstraint!
+
+  var leftArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
+  var rightArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
+
+  var speedLabelHorizontalConstraint: NSLayoutConstraint? = nil
+  var speedLabelVerticalConstraint: NSLayoutConstraint? = nil
+
   /// Space added to the left and right of *each* of the 3 square playback buttons:
-  @IBOutlet weak var playbackBtnsHorizontalPaddingConstraint: NSLayoutConstraint!
+//  @IBOutlet weak var playbackBtnsHorizontalPaddingConstraint: NSLayoutConstraint!
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
   @IBOutlet weak var timePositionHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
   @IBOutlet weak var volumeIconSizeConstraint: NSLayoutConstraint!
-  var speedLabelHorizontalConstraint: NSLayoutConstraint? = nil
-  var speedLabelVerticalConstraint: NSLayoutConstraint? = nil
 
   // - Outlets: Views
 
@@ -784,10 +793,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var fragToolbarView: NSStackView? = nil
   @IBOutlet weak var fragVolumeView: NSView!
   @IBOutlet var fragPositionSliderView: NSView!
-  /// See `playBtnSquareWidthConstraint`, `playbackBtnsHorizontalPaddingConstraint` &
-  /// `playbackBtnsHorizontalPaddingConstraint` for sizing
-  @IBOutlet weak var fragPlaybackBtnsView: NSView!  // TODO:
-//  let fragPlaybackBtnsView = PlaybackControlButtonsView()
+  let fragPlaybackBtnsView = PlaybackControlButtonsView()
 
   /// Speed indicator label, when playing at speeds other than 1x
   let speedLabel = NSTextField()
@@ -807,7 +813,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var volumeSlider: VolumeSlider!
   @IBOutlet weak var muteButton: NSButton!
-  @IBOutlet weak var playButton: NSButton!
+  var playButton: NSButton!
   @IBOutlet weak var playSlider: PlaySlider!
   @IBOutlet weak var rightLabel: DurationDisplayTextField!
   @IBOutlet weak var leftLabel: DurationDisplayTextField!
@@ -956,8 +962,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     co = CocoaObserver(observedPrefKeys: PlayerWindowController.observedPrefKeys,
                        player.log, prefDidChange: self.prefDidChange)
 
-    loaded = true
-
     guard let window = window else { return }
     guard let contentView = window.contentView else { return }
 
@@ -980,39 +984,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Registers this window for didChangeScreenProfileNotification
     window.displaysWhenScreenProfileChanges = true
 
-    viewportView.clipsToBounds = true
-
-    /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
-    /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
-    /// notch and the preference `allowVideoToOverlapCameraHousing` is false.
-    contentView.wantsLayer = true
-    // Need this to be black also, for sidebar animations
-    viewportView.wantsLayer = true
-    setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
-
-    applyThemeMaterial()
-    // Update to corect values before displaying. Only useful when restoring at launch
-    updateUI()
-
     leftLabel.mode = .current
     rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
     // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
     timePositionHoverLabel.nextResponder = playSlider
-
-    // Titlebar accessories
-
-    // Update this here to reduce animation jitter on older versions of MacOS:
-    viewportTopOffsetFromTopBarTopConstraint.constant = PlayerWindowController.standardTitleBarHeight
-
-    addTitleBarAccessoryViews()
-
-    // video view
-
-    // FIXME: stick to individual side of screen
-    // FIXME: parent playlist
-    // FIXME: play bar drawing
-    // FIXME: play icon height in FF/RW
 
     // gesture recognizers
     rotationHandler.windowController = self
@@ -1020,52 +996,79 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 
-    // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
-    // screen mode once overlaying views are fully hidden (issue #3844). After applying this
-    // workaround another bug in Ventura where an external monitor goes black could not be
-    // reproduced (issue #4015). The workaround adds a tiny subview with such a low alpha level it
-    // is invisible to the human eye. This workaround may not be effective in all cases.
-    if #available(macOS 13, *) {
-      let view = NSView(frame: NSRect(origin: .zero, size: NSSize(width: 0.1, height: 0.1)))
-      view.wantsLayer = true
-      view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
-      view.layer?.opacity = 0.01
-      contentView.addSubview(view)
-    }
-
-    initAlbumArtView()
-    /// Note that this will add `videoView`, but at first run it will not yet have a video layer.
-    /// Need to wait until after mpv is initialized before creating `videoView.layer`
-    addVideoViewToWindow()
-    player.start()
-
     playlistView.windowController = self
     quickSettingView.windowController = self
 
     // other initialization
     osdAccessoryProgress.usesThreadedAnimation = false
 
-    // Top bar: other init
-    topBarView.clipsToBounds = true
-    topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
+    /// Note that this will add `videoView`, but at first run it will not yet have a video layer.
+    /// Need to wait until after mpv is initialized before creating `videoView.layer`
+    addVideoViewToWindow()
+    player.start()
 
-    // Bottom bar init
-
-    initBottomBarView(in: contentView)
-    initSpeedLabel()
-//    initPlaybackBtnsView()
-
-    // Video controllers and timeline indicators should not flip in a right-to-left language.
-    fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
-    fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
-
-    bufferIndicatorView.roundCorners()
-    additionalInfoView.roundCorners()
-    osdVisualEffectView.roundCorners()
-
-    contentView.configureSubtreeForCoreAnimation()
-
+    /// Use an animation task to init views, to hopefully prevent partial/redundant draws.
+    /// NOTE: this will likely execute *after* `_showWindow()`
     animationPipeline.submitInstantTask{ [self] in
+
+      // FIXME: stick to individual side of screen
+      // FIXME: parent playlist
+      // FIXME: play bar drawing
+
+      // Top bar: other init
+      topBarView.clipsToBounds = true
+      topBarBottomBorder.fillColor = NSColor(named: .titleBarBorder)!
+
+      viewportView.clipsToBounds = true
+
+      /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
+      /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
+      /// notch and the preference `allowVideoToOverlapCameraHousing` is false.
+      contentView.wantsLayer = true
+      // Need this to be black also, for sidebar animations
+      viewportView.wantsLayer = true
+      setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
+
+      applyThemeMaterial()
+
+      // Titlebar accessories
+
+      // Update this here to reduce animation jitter on older versions of MacOS:
+      viewportTopOffsetFromTopBarTopConstraint.constant = PlayerWindowController.standardTitleBarHeight
+
+      addTitleBarAccessoryViews()
+
+      // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
+      // screen mode once overlaying views are fully hidden (issue #3844). After applying this
+      // workaround another bug in Ventura where an external monitor goes black could not be
+      // reproduced (issue #4015). The workaround adds a tiny subview with such a low alpha level it
+      // is invisible to the human eye. This workaround may not be effective in all cases.
+      if #available(macOS 13, *) {
+        let view = NSView(frame: NSRect(origin: .zero, size: NSSize(width: 0.1, height: 0.1)))
+        view.wantsLayer = true
+        view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
+        view.layer?.opacity = 0.01
+        contentView.addSubview(view)
+      }
+
+      initBottomBarView(in: contentView)
+      initSpeedLabel()
+      initPlaybackBtnsView()
+      initAlbumArtView()
+      fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
+
+      bufferIndicatorView.roundCorners()
+      additionalInfoView.roundCorners()
+      osdVisualEffectView.roundCorners()
+
+      contentView.configureSubtreeForCoreAnimation()
+
+      // Make sure to set this inside the animation task! See note above
+      loaded = true
+
+      // Update to corect values before displaying. Only useful when restoring at launch
+      updateUI()
+
       if player.info.isRestoring {
         if let priorState = player.info.priorState, let layoutSpec = priorState.layoutSpec {
           // Preemptively set window frames to prevent windows from "jumping" during restore
@@ -1081,12 +1084,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         defaultAlbumArtView.isHidden = player.info.isVideoTrackSelected
       }
 
-
       if player.disableUI { hideFadeableViews() }
+
+      log.verbose("PlayerWindow windowDidLoad done")
+      player.events.emit(.windowLoaded)
     }
 
-    log.verbose("PlayerWindow windowDidLoad done")
-    player.events.emit(.windowLoaded)
   }
 
   private func initBottomBarView(in contentView: NSView) {
@@ -1105,8 +1108,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     viewportBtmOffsetFromTopOfBottomBarConstraint.isActive = true
     viewportBtmOffsetFromTopOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromTopOfBottomBarConstraint")
 
-    viewportBtmOffsetFromBtmOfBottomBarConstraint =  viewportView.bottomAnchor
-      .constraint(equalTo: bottomBarView.bottomAnchor, constant: 0)
+    viewportBtmOffsetFromBtmOfBottomBarConstraint = viewportView.bottomAnchor.constraint(equalTo: bottomBarView.bottomAnchor, constant: 0)
     viewportBtmOffsetFromBtmOfBottomBarConstraint.isActive = true
     viewportBtmOffsetFromBtmOfBottomBarConstraint.identifier = .init("viewportBtmOffsetFromBtmOfBottomBarConstraint")
 
@@ -1138,6 +1140,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   private func initSpeedLabel() {
+    speedLabel.identifier = .init("speedLabel")  // helps with debug logging
     speedLabel.translatesAutoresizingMaskIntoConstraints = false
     speedLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
     speedLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -1160,12 +1163,70 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   private func initPlaybackBtnsView() {
+    let oscGeo = ControlBarGeometry.current
+
+//    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
+//    speedLabel.isHidden = !showSpeedLabel
+
+    // Play button
+    playButton = NSButton(image: playImage, target: self, action: #selector(playButtonAction(_:)))
+    playButton.isBordered = false
+    playButton.bezelStyle = .regularSquare
+    playButton.imagePosition = .imageOnly
+    playButton.refusesFirstResponder = true
+    playButton.imageScaling = .scaleProportionallyUpOrDown
+    playButton.translatesAutoresizingMaskIntoConstraints = false
+    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: oscGeo.playIconSize)
+    playBtnWidthConstraint.priority = .init(850)
+    playBtnWidthConstraint.isActive = true
+    let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
+    playAspectConstraint.isActive = true
+
     fragPlaybackBtnsView.addSubview(leftArrowButton)
     fragPlaybackBtnsView.addSubview(playButton)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
-    fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: 0)
-    fragPlaybackBtnsView.nextResponder = playButton
+    fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
+
+    // Video controllers and timeline indicators should not flip in a right-to-left language.
+    fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
+
+    fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
+    fragPlaybackBtnsWidthConstraint.isActive = true
+
+    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconSize)
+    arrowBtnWidthConstraint.isActive = true
+
+    leftArrowBtnHorizOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
+                                                                                 constant: oscGeo.leftArrowOffsetX)
+    leftArrowBtnHorizOffsetConstraint.isActive = true
+
+    rightArrowBtnHorizOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
+                                                                                   constant: oscGeo.rightArrowOffsetX)
+    rightArrowBtnHorizOffsetConstraint.isActive = true
+
+    // Left & Right arrow buttons are always same size
+    leftArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.widthAnchor, multiplier: 1).isActive = true
+
+    let leftArrowAspectConstraint = leftArrowButton.widthAnchor.constraint(equalTo: leftArrowButton.heightAnchor)
+    leftArrowAspectConstraint.isActive = true
+    let rightArrowAspectConstraint = rightArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.heightAnchor)
+    rightArrowAspectConstraint.isActive = true
+
+    let leftArrowBtnVertOffsetConstraint = leftArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    leftArrowBtnVertOffsetConstraint.isActive = true
+    let rightArrowBtnVertOffsetConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    rightArrowBtnVertOffsetConstraint.isActive = true
+
+    let playBtnHorizOffsetConstraint = playButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
+    playBtnHorizOffsetConstraint.isActive = true
+
+    let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    playBtnVertOffsetConstraint.isActive = true  // TEMPORARY!
+
+    /// TODO: see `addControlBarViews(to containerView`
+    /// TODO: see `func updateHiddenViewsAndConstraints(_ transition: LayoutTransition`
+
   }
 
   private func initAlbumArtView() {
@@ -2782,9 +2843,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
     speedLabel.isHidden = !showSpeedLabel
 
-    let playIconSize = showSpeedLabel ? oscGeo.playIconSizeWithSpeedLabel : oscGeo.playIconSize
-    playBtnSquareWidthConstraint.animateToConstant(playIconSize)
-
     if showSpeedLabel {
       speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
     }
@@ -2907,7 +2965,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       log.verbose("Skipping force video redraw: no video track selected")
       return
     }
-    guard loaded, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
+    guard loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
     guard !Preference.bool(for: .isRestoreInProgress) else { return }
     log.verbose("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused

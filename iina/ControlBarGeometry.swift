@@ -42,6 +42,9 @@ struct ControlBarGeometry {
   /// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
   let playIconSize: CGFloat
 
+  /// This is usually the same as `playIconSize`, but can vary based on icon type
+  let arrowIconSize: CGFloat
+
   /// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
   let playIconSpacing: CGFloat
 
@@ -71,6 +74,7 @@ struct ControlBarGeometry {
     return playIconSize - (deficit < 0.0 ? 0.0 : deficit)
   }
 
+  /// All fields are optional. Any omitted fields will be filled in from preferences
   init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
        barHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
@@ -92,11 +96,11 @@ struct ControlBarGeometry {
                                                                 barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
 
     let oscPosition = oscPosition ?? Preference.enum(for: .oscPosition)
-    self.position = oscPosition
+    let playIconSize: CGFloat
     if oscPosition == .floating {
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
-      self.playIconSize = floatingPlayIconSize
+      playIconSize = floatingPlayIconSize
       self.playIconSpacing = floatingPlayIconSpacing
     } else {
       // Reduce max button size so they don't touch edges or (if .top) icons above
@@ -104,8 +108,19 @@ struct ControlBarGeometry {
 
       self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
       self.toolIconSpacing = max(0, desiredToolbarIconSpacing)
-      self.playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
+      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
       self.playIconSpacing = max(0, desiredPlayIconSpacing)
+    }
+
+    self.position = oscPosition
+    self.playIconSize = playIconSize
+
+    // Compute size of arrow buttons
+    let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+    if arrowBtnFunction == .seek {
+      self.arrowIconSize = playIconSize * 0.75
+    } else {
+      self.arrowIconSize = playIconSize
     }
   }
 
@@ -120,8 +135,18 @@ struct ControlBarGeometry {
 
   /// Width of left, right, play btns + their spacing
   var totalPlayControlsWidth: CGFloat {
-    let itemCount: CGFloat = 3
-    return (playIconSpacing * (itemCount + 1)) + (playIconSize * itemCount)
+    let itemSizes = [arrowIconSize, playIconSize, arrowIconSize]
+    let totalIconSpace = itemSizes.reduce(0, +)
+    let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count + 1)
+    return totalIconSpace + totalInterIconSpace
+  }
+
+  var leftArrowOffsetX: CGFloat {
+    -rightArrowOffsetX
+  }
+
+  var rightArrowOffsetX: CGFloat {
+    (playIconSize + arrowIconSize) * 0.5 + playIconSpacing
   }
 
   var playIconSizeTicks: Int {

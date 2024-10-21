@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
+        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
@@ -16,7 +17,6 @@
                 <outlet property="additionalInfoStackView" destination="HJv-RK-JT8" id="T3L-fd-A60"/>
                 <outlet property="additionalInfoTitle" destination="3uh-OF-zy6" id="N6w-Hh-fQ1"/>
                 <outlet property="additionalInfoView" destination="Qbi-jx-9pO" id="bdV-ZH-SkC"/>
-                <outlet property="arrowBtnsSquareWidthConstraint" destination="2Or-DS-VM6" id="XIg-ub-3ai"/>
                 <outlet property="backButtonBox" destination="6vJ-s6-gdD" id="CK1-B8-Kga"/>
                 <outlet property="backButtonVE" destination="NWr-qI-ocU" id="qqc-Fd-kAb"/>
                 <outlet property="bufferDetailLabel" destination="hlZ-5D-Wag" id="3Ld-2C-wGO"/>
@@ -32,7 +32,6 @@
                 <outlet property="controlBarTop" destination="pgt-r3-Vbf" id="dqS-nQ-If8"/>
                 <outlet property="customWindowBorderBox" destination="xqX-4W-gdw" id="ut2-mE-M78"/>
                 <outlet property="customWindowBorderTopHighlightBox" destination="IeW-QK-xIO" id="6In-Z5-KJw"/>
-                <outlet property="fragPlaybackBtnsView" destination="Yv6-0K-6E4" id="8vA-vh-qiH"/>
                 <outlet property="fragPositionSliderView" destination="BE1-yC-oJL" id="KXu-MZ-mx8"/>
                 <outlet property="fragVolumeView" destination="N3B-DL-XOA" id="4VW-Wa-AD7"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
@@ -66,11 +65,8 @@
                 <outlet property="osdVStackView" destination="g0j-zS-jKv" id="aoo-Tm-yhj"/>
                 <outlet property="osdVisualEffectView" destination="g0O-v5-RQj" id="V4X-8K-6O1"/>
                 <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
-                <outlet property="playBtnSquareWidthConstraint" destination="7xv-qQ-n43" id="Bu6-zH-TFP"/>
-                <outlet property="playButton" destination="gxw-pJ-Lcg" id="t9H-xd-uqj"/>
                 <outlet property="playSlider" destination="eBP-6g-bAT" id="lGv-18-YeQ"/>
                 <outlet property="playSliderHeightConstraint" destination="VU5-c1-ivd" id="NEQ-Hc-xay"/>
-                <outlet property="playbackBtnsHorizontalPaddingConstraint" destination="V3v-73-S9H" id="N0E-eR-w7j"/>
                 <outlet property="rightArrowButton" destination="EIi-qd-glM" id="U46-Gl-e8D"/>
                 <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
                 <outlet property="thumbnailPeekView" destination="vej-bg-g6C" id="sws-ib-t4r"/>
@@ -600,7 +596,7 @@
                     <box identifier="customWindowBorderTopHighlightBox" wantsLayer="YES" boxType="custom" borderType="line" title="CustomWindowBorderTopHighlight Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="IeW-QK-xIO" userLabel="CustomWindowBorderTopHighlight Box" customClass="CustomWindowBorderBox" customModule="IINA" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="400" width="640" height="1"/>
                         <view key="contentView" wantsLayer="YES" id="2sJ-m4-Y4B" userLabel="Box View" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
-                            <rect key="frame" x="1" y="0.5" width="638" height="0.0"/>
+                            <rect key="frame" x="1" y="1" width="638" height="0.0"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         </view>
                         <constraints>
@@ -767,68 +763,40 @@
         <customView identifier="OSC-Fragment-Playback-Control-Middle" wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" placeholderIntrinsicWidth="184" placeholderIntrinsicHeight="24" translatesAutoresizingMaskIntoConstraints="NO" id="Yv6-0K-6E4" userLabel="OSC Fragment: Playback Control Buttons" customClass="PlaybackControlButtonsView" customModule="IINA" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="144" height="24"/>
             <subviews>
-                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="siV-cJ-huN" userLabel="Left-most Spacer">
+                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="siV-cJ-huN" userLabel="Left-most Spacer">
                     <rect key="frame" x="0.0" y="12" width="12" height="0.0"/>
                     <constraints>
                         <constraint firstAttribute="height" id="uyL-7g-PMl"/>
                     </constraints>
                 </customView>
-                <button wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="10x-bg-xlj" userLabel="Left Arrow Button">
+                <button wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="10x-bg-xlj" userLabel="Left Arrow Button">
                     <rect key="frame" x="12" y="0.0" width="24" height="24"/>
                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="speedl" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" maxAcceleratorLevel="5" id="ijT-3Y-AK2">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES" multiLevelAccelerator="YES"/>
                         <font key="font" metaFont="system" size="16"/>
                     </buttonCell>
-                    <constraints>
-                        <constraint firstAttribute="width" constant="24" identifier="arrowBtnsSquareWidthConstraint" id="2Or-DS-VM6"/>
-                        <constraint firstAttribute="width" secondItem="10x-bg-xlj" secondAttribute="height" multiplier="1:1" id="h3a-98-udy"/>
-                    </constraints>
                     <connections>
                         <action selector="leftArrowButtonAction:" target="-2" id="WRV-J4-Hq8"/>
                     </connections>
                 </button>
-                <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I07-AH-cjL" userLabel="Left-Middle Spacer">
+                <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I07-AH-cjL" userLabel="Left-Middle Spacer">
                     <rect key="frame" x="36" y="12" width="24" height="0.0"/>
-                    <constraints>
-                        <constraint firstAttribute="height" id="1HN-C0-JT5"/>
-                        <constraint firstAttribute="width" constant="24" identifier="playbackBtnsHorizontalPaddingConstraint" id="V3v-73-S9H"/>
-                    </constraints>
                 </customView>
-                <button wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gxw-pJ-Lcg" userLabel="Play/Pause Button">
-                    <rect key="frame" x="60" y="0.0" width="24" height="24"/>
-                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="play" imagePosition="only" alignment="center" alternateImage="pause" refusesFirstResponder="YES" state="on" imageScaling="proportionallyUpOrDown" inset="2" id="mWQ-R0-GGr">
-                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system" size="16"/>
-                    </buttonCell>
-                    <constraints>
-                        <constraint firstAttribute="width" secondItem="gxw-pJ-Lcg" secondAttribute="height" multiplier="1:1" id="7Xg-CL-HXe"/>
-                        <constraint firstAttribute="width" priority="850" constant="24" identifier="playBtnSquareWidthConstraint" id="7xv-qQ-n43"/>
-                    </constraints>
-                    <connections>
-                        <action selector="playButtonAction:" target="-2" id="JbM-wO-FAa"/>
-                    </connections>
-                </button>
-                <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="X5y-IG-ngq" userLabel="Right-Middle Spacer">
+                <customView wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="X5y-IG-ngq" userLabel="Right-Middle Spacer">
                     <rect key="frame" x="84" y="12" width="24" height="0.0"/>
                 </customView>
-                <button wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EIi-qd-glM" userLabel="Right Arrow Button">
+                <button wantsLayer="YES" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EIi-qd-glM" userLabel="Right Arrow Button">
                     <rect key="frame" x="108" y="0.0" width="24" height="24"/>
                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="speed" imagePosition="only" alignment="center" refusesFirstResponder="YES" imageScaling="proportionallyUpOrDown" inset="2" maxAcceleratorLevel="5" id="Aiu-eh-hd9">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES" multiLevelAccelerator="YES"/>
                         <font key="font" metaFont="system" size="16"/>
                     </buttonCell>
-                    <constraints>
-                        <constraint firstAttribute="width" secondItem="EIi-qd-glM" secondAttribute="height" multiplier="1:1" id="3Wl-xU-eqe"/>
-                    </constraints>
                     <connections>
                         <action selector="rightArrowButtonAction:" target="-2" id="mQT-3l-E7s"/>
                     </connections>
                 </button>
-                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="06z-vV-Q73" userLabel="Right-most Spacer">
+                <customView wantsLayer="YES" verticalCompressionResistancePriority="1" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="06z-vV-Q73" userLabel="Right-most Spacer">
                     <rect key="frame" x="132" y="12" width="12" height="0.0"/>
-                    <constraints>
-                        <constraint firstAttribute="height" id="Tly-Wr-aIt"/>
-                    </constraints>
                 </customView>
             </subviews>
             <constraints>
@@ -838,15 +806,10 @@
                 <constraint firstItem="I07-AH-cjL" firstAttribute="leading" secondItem="10x-bg-xlj" secondAttribute="trailing" id="4Tm-Rh-0Wm"/>
                 <constraint firstItem="siV-cJ-huN" firstAttribute="width" secondItem="I07-AH-cjL" secondAttribute="width" multiplier="0.5" id="Bmz-N9-sPf"/>
                 <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="Yv6-0K-6E4" secondAttribute="centerY" id="GqH-aB-GKs"/>
-                <constraint firstItem="X5y-IG-ngq" firstAttribute="leading" secondItem="gxw-pJ-Lcg" secondAttribute="trailing" id="HpP-YU-jdV"/>
                 <constraint firstAttribute="height" relation="greaterThanOrEqual" secondItem="10x-bg-xlj" secondAttribute="height" priority="900" id="Jtd-FG-hGH"/>
-                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="centerY" secondItem="Yv6-0K-6E4" secondAttribute="centerY" id="OAm-KT-kJi"/>
                 <constraint firstAttribute="trailing" secondItem="06z-vV-Q73" secondAttribute="trailing" id="PLL-cS-kT4"/>
                 <constraint firstItem="X5y-IG-ngq" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="RPF-3O-S3e"/>
-                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="leading" secondItem="I07-AH-cjL" secondAttribute="trailing" id="XL0-Ya-7hM"/>
                 <constraint firstItem="EIi-qd-glM" firstAttribute="width" secondItem="10x-bg-xlj" secondAttribute="width" id="YB1-TV-uzN"/>
-                <constraint firstItem="gxw-pJ-Lcg" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="Z2A-b1-tEM"/>
-                <constraint firstAttribute="height" relation="greaterThanOrEqual" secondItem="gxw-pJ-Lcg" secondAttribute="height" priority="900" id="Zxw-C4-y8F"/>
                 <constraint firstItem="siV-cJ-huN" firstAttribute="leading" secondItem="Yv6-0K-6E4" secondAttribute="leading" id="cHK-nA-SWz"/>
                 <constraint firstItem="10x-bg-xlj" firstAttribute="centerY" secondItem="siV-cJ-huN" secondAttribute="centerY" id="df8-1t-m24"/>
                 <constraint firstItem="06z-vV-Q73" firstAttribute="width" secondItem="siV-cJ-huN" secondAttribute="width" id="e2w-hD-kbq"/>
@@ -991,8 +954,6 @@
         <image name="mute" width="16" height="14"/>
         <image name="ontop" width="16" height="14"/>
         <image name="ontop_off" width="16" height="14"/>
-        <image name="pause" width="24" height="24"/>
-        <image name="play" width="24" height="24"/>
         <image name="playing-in-pip" width="87" height="68"/>
         <image name="sidebar.leading" width="15" height="12"/>
         <image name="sidebar.trailing" width="15" height="12"/>

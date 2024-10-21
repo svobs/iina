@@ -458,8 +458,8 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                   height: windowFrame.height - outsideBars.top - outsideBars.bottom - topMarginHeight)
   }
 
-  /// Snap `value` to `otherValue` if they are less than 2 px apart. If it can't snap, the number is rounded to
-  /// the nearest integer.
+  /// Snap `value` to `otherValue` if they are less than or equal to 2 px apart. If it can't snap, the number is
+  /// rounded to the nearest integer.
   ///
   /// This helps smooth out division imprecision. The goal is to end up with whole numbers in calculation results
   /// without having to distort things. Fractional values will be interpreted differently by mpv, Core Graphics,

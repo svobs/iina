@@ -514,26 +514,12 @@ extension PlayerWindowController {
       updateArrowButtonImages()
       volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
 
-      let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-      let arrowBtnsSideLength: CGFloat
-      if arrowBtnFunction == .seek {
-        // By default the "seek" icons are as tall as the Play icon.
-        // This looks too big for a secondary button. Reduce it in size a bit.
-        arrowBtnsSideLength = oscGeo.playIconSize * 0.75
-      } else {
-        arrowBtnsSideLength = oscGeo.playIconSize
-      }
-      arrowBtnsSquareWidthConstraint.animateToConstant(arrowBtnsSideLength)
+      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+      playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
 
-      let playIconSize = player.info.shouldShowSpeedLabel ? oscGeo.playIconSizeWithSpeedLabel : oscGeo.playIconSize
-      playBtnSquareWidthConstraint.animateToConstant(playIconSize)
-
-      var spacing = oscGeo.playIconSpacing
-      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-      if arrowButtonAction == .seek {
-        spacing *= 0.5
-      }
-      playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
+      fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+      leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
+      rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
 
     } else if outputLayout.isMusicMode {
 
@@ -1333,7 +1319,8 @@ extension PlayerWindowController {
   // MARK: - Controller content layout
 
   /// For `bottom` and `top` OSC only - not `floating`
-  private func addControlBarViews(to containerView: NSStackView, _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
+  private func addControlBarViews(to containerView: NSStackView,
+                                  _ oscGeo: ControlBarGeometry, _ transition: LayoutTransition) {
     containerView.addView(fragPlaybackBtnsView, in: .leading)
     containerView.addView(fragPositionSliderView, in: .leading)
     containerView.addView(fragVolumeView, in: .leading)
@@ -1348,12 +1335,11 @@ extension PlayerWindowController {
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
-    var spacing = oscGeo.playIconSpacing
-    let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-    if arrowButtonAction == .seek {
-      spacing *= 0.5
-    }
-    playbackBtnsHorizontalPaddingConstraint.animateToConstant(spacing)
+    arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+
+    fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
+    leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
+    rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
   }
 
   private func updateArrowButtonImages() {
