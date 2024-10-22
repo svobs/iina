@@ -825,6 +825,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case vertical
   }
 
+  /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
+  let windowScrollWheel = LogicalScrollWheel()
+
   internal var scrollDirection: ScrollDirection?
 
   var isInScrollWheelSeek: Bool {
@@ -980,6 +983,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     magnificationHandler.windowController = self
     contentView.addGestureRecognizer(magnificationHandler.magnificationGestureRecognizer)
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
+
+    windowScrollWheel.scrollWheelDidStart = self.scrollWheelDidStart(_:)
 
     playlistView.windowController = self
     quickSettingView.windowController = self
@@ -3127,7 +3132,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBAction func playSliderAction(_ sender: NSSlider) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
-    log.verbose("playSliderAction called")
 
     let progressRatio = sender.doubleValue / sender.maxValue
     let progressPercentage = 100 * progressRatio

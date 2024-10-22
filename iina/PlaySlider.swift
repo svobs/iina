@@ -108,7 +108,7 @@ final class PlaySlider: ScrollableSlider {
     }
   }
 
-  override func scrollWheelDidStart() {
+  override func scrollWheelDidStart(_ event: NSEvent) {
     let player = customCell.playerCore
     player.log.verbose("PlaySlider scrollWheel seek began")
     // pause video when seek begins

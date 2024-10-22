@@ -7,8 +7,6 @@
 
 import Foundation
 
-fileprivate let momentumStartTimeout: TimeInterval = 0.05
-
 /// Adds scroll wheel support to `NSSlider`.
 ///
 /// From `developer.apple.com`:
@@ -27,113 +25,37 @@ fileprivate let momentumStartTimeout: TimeInterval = 0.05
 /// events, momentumPhase is set to NSEventPhaseChanged until the momentum subsides, or the user stops the momentum scrolling; the
 /// final momentum scroll wheel event has a momentumPhase value of NSEventPhaseEnded.
 class ScrollableSlider: NSSlider {
-  /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
-  /// But at least it will stay within this class.
-  private enum ScrollState {
-    case notScrolling
-    case scrollMayBegin(_ intentStartTime: TimeInterval)
-    case userScroll
-    case userScrollJustEnded
-    case momentumScrollJustStarted
-    case momentumScrolling
-    case momentumScrollJustEnded
-  }
-  private var state: ScrollState = .notScrolling
-  private var momentumTimer: Timer? = nil
+  private let scrollWheel: LogicalScrollWheel
 
   var sensitivity: Double = 1.0
 
+  required init?(coder: NSCoder) {
+    self.scrollWheel = LogicalScrollWheel()
+    super.init(coder: coder)
+    scrollWheel.scrollWheelDidStart = scrollWheelDidStart
+    scrollWheel.scrollWheelDidEnd = scrollWheelDidEnd
+  }
+
   /// Subclasses can override
-  func scrollWheelDidStart() { }
+  func scrollWheelDidStart(_ event: NSEvent) { }
 
   /// Subclasses can override
   func scrollWheelDidEnd() { }
 
   /// Returns true if this slider is in mid-scroll
   func isScrolling() -> Bool {
-    switch state {
-    case .notScrolling, .scrollMayBegin:
-      return false
-    default:
-      return true
-    }
+    return scrollWheel.isScrolling()
   }
 
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
 
-    let newState = mapPhasesToScrollState(event)
+    scrollWheel.changeState(with: event)
+    guard scrollWheel.isScrolling() else { return }
+    executeScrollAction(with: event)
+  }
 
-    Logger.log.verbose("SCROLL WHEEL phases={\(event.phase.name), \(event.momentumPhase.name)} State: \(state) → \(newState)")
-
-    switch newState {
-    case .scrollMayBegin:
-      state = newState
-      return
-
-    case .userScroll:
-      switch state {
-      case .scrollMayBegin(let intentStartTime):
-        let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
-        guard timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold else {
-          return  // not yet reached
-        }
-        Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollTimeThreshold \(Constants.TimeInterval.minScrollWheelTimeThreshold). Starting scroll")
-        state = .userScroll
-        scrollWheelDidStart()
-      case .userScroll:
-        state = .userScroll
-      default:
-        state = .notScrolling
-        return  // invalid state
-      }
-
-    case .userScrollJustEnded:
-      switch state {
-      case .userScroll:
-        state = .userScrollJustEnded
-        momentumTimer?.invalidate()
-        momentumTimer = Timer.scheduledTimer(timeInterval: momentumStartTimeout, target: self,
-                                             selector: #selector(self.momentumStartDidTimeOut), userInfo: nil, repeats: false)
-      default:
-        state = .notScrolling
-        return  // invalid state
-      }
-
-    case .momentumScrollJustStarted:
-      switch state {
-      case .userScrollJustEnded:
-        momentumTimer?.invalidate()
-        state = .momentumScrollJustStarted
-      default:
-        state = .notScrolling
-        return  // invalid state
-      }
-
-    case .momentumScrolling:
-      switch state {
-      case .momentumScrollJustStarted, .momentumScrolling:
-        momentumTimer?.invalidate()
-        state = .momentumScrolling
-      default:
-        state = .notScrolling
-        return  // invalid state
-      }
-
-    case .momentumScrollJustEnded:
-      switch state {
-      case .momentumScrollJustStarted, .momentumScrolling:
-        state = .notScrolling
-        scrollWheelDidEnd()
-      default:
-        state = .notScrolling
-        return  // invalid state
-      }
-
-    default:
-      Logger.log.fatalError("Invalid value for newState: \(newState)")
-    }
-
+  func executeScrollAction(with event: NSEvent) {
     var delta: Double
 
     // Allow horizontal scrolling on horizontal and circular sliders
@@ -149,7 +71,6 @@ class ScrollableSlider: NSSlider {
     if event.isDirectionInvertedFromDevice {
       delta *= -1
     }
-    Logger.log.verbose("Delta: \(delta)")
 
     let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
     // There can be a huge number of requests which don't change the existing value.
@@ -170,45 +91,4 @@ class ScrollableSlider: NSSlider {
     doubleValue = newValue
     sendAction(action, to: target)
   }
-
-  /// Executed when `momentumTimer` fires.
-  @objc func momentumStartDidTimeOut() {
-    guard case .userScrollJustEnded = state else { return }
-    Logger.log.verbose("Momentum timer expired")
-    state = .notScrolling
-    scrollWheelDidEnd()
-  }
-
-  private func mapPhasesToScrollState(_ event: NSEvent) -> ScrollState {
-    let phase = event.phase
-    let momentumPhase = event.momentumPhase
-
-    if momentumPhase.isEmpty {
-      if phase.contains(.mayBegin) {
-        /// This only happens for trackpad. It indicates user pressed down on it but did not change its value.
-        /// Just treat it like a `began` event so that it starts the min threshold timer
-        return .scrollMayBegin(Date().timeIntervalSince1970)
-      } else if phase.contains(.began) {
-        if case .scrollMayBegin = state {
-          /// This is valid if `mayBegin` was already encountered
-          return .userScroll
-        }
-        return .scrollMayBegin(Date().timeIntervalSince1970)
-      } else if phase.contains(.changed) {
-        return .userScroll
-      } else if phase.contains(.ended) || phase.contains(.cancelled) {
-        return .userScrollJustEnded
-      }
-    } else if phase.isEmpty {
-      if momentumPhase.contains(.began) {
-        return .momentumScrollJustStarted
-      } else if momentumPhase.contains(.changed) {
-        return .momentumScrolling
-      } else if momentumPhase.contains(.ended) || momentumPhase.contains(.cancelled) {
-        return .momentumScrollJustEnded
-      }
-    }
-    fatalError("Unrecognized or invalid scroll wheel event phase (\(phase)) or momentumPhase (\(momentumPhase))")
-  }
-
 }

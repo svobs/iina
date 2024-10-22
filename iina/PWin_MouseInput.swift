@@ -285,31 +285,32 @@ extension PlayerWindowController {
     }
   }
 
+  func scrollWheelDidStart(_ event: NSEvent) {
+    if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+      scrollDirection = .horizontal
+      log.verbose("Scroll direction is horizontal")
+    } else {
+      scrollDirection = .vertical
+      log.verbose("Scroll direction is vertical")
+    }
+  }
+
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
 
     guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
                                          titleBarView, subPopoverView]) else { return }
 
-    // determine direction
-
-    if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
-      scrollDirection = .horizontal
-    } else {
-      scrollDirection = .vertical
-    }
-//    if scrollDirection == .horizontal {
-//      NSLog("HORIZONTAL !")
-//    } else {
-//      NSLog("VERTICAL !")
-//    }
+    // This will call scrollWheelDidStart() when necessary
+    windowScrollWheel.changeState(with: event)
+    guard windowScrollWheel.isScrolling() else { return }
 
     let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
     switch scrollAction {
     case .seek:
       // PlaySlider contains logic for scroll wheel seek.
       // Also see:
-      playSlider.scrollWheel(with: event)
+      playSlider.executeScrollAction(with: event)
 
     case .volume:
       // show volume popover when volume seek begins and hide on end
@@ -317,7 +318,7 @@ extension PlayerWindowController {
         player.windowController.miniPlayer.showVolumePopover()
       }
 
-      volumeSlider.scrollWheel(with: event)
+      volumeSlider.executeScrollAction(with: event)
     default:
       break
     }
