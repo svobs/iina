@@ -96,7 +96,8 @@ final class PlaySlider: ScrollableSlider {
   func updateSensitivity() {
     let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
     sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
-    Logger.log.verbose("Updated PlaySlider sensitivity to: \(sensitivity)")
+    stepScrollSensitivity = sensitivity
+    Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity), stepScroll=\(stepScrollSensitivity)")
   }
 
   func updateTo(percentage: Double) {

@@ -824,7 +824,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var scrollActionSlider: ScrollableSlider? = nil
 
   var isInScrollWheelSeek: Bool {
-    return playSlider.isScrolling()
+    return windowScrollWheel.isScrolling() || playSlider.isScrolling() || volumeSlider.isScrolling()
   }
 
   var mouseActionDisabledViews: [NSView?] {[leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]}

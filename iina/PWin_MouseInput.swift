@@ -422,7 +422,7 @@ extension PlayerWindowController {
     // This will call scrollWheelDidStart() when necessary
     windowScrollWheel.changeState(with: event)
     guard windowScrollWheel.isScrolling() else { return }
-    scrollActionSlider?.executeScrollAction(with: event)
+    scrollActionSlider?.executeScrollAction(with: event, isNonAppleDevice: windowScrollWheel.isScrollingNonAppleDevice())
   }
 
 }

@@ -178,7 +178,9 @@ struct Constants {
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
 
-    static let minScrollWheelTimeThreshold = 0.08
+    /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
+    /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
+    static let minScrollWheelTimeThreshold = 0.05
 
     static let historyTableCompleteFileStatusReload = 600.0
 

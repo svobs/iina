@@ -28,6 +28,7 @@ class ScrollableSlider: NSSlider {
   private let scrollWheel: LogicalScrollWheel
 
   var sensitivity: Double = 1.0
+  var stepScrollSensitivity: Double = 10.0
 
   required init?(coder: NSCoder) {
     self.scrollWheel = LogicalScrollWheel()
@@ -47,15 +48,19 @@ class ScrollableSlider: NSSlider {
     return scrollWheel.isScrolling()
   }
 
+  func isScrollingNonAppleDevice() -> Bool {
+    return scrollWheel.isScrollingNonAppleDevice()
+  }
+
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
 
     scrollWheel.changeState(with: event)
     guard scrollWheel.isScrolling() else { return }
-    executeScrollAction(with: event)
+    executeScrollAction(with: event, isNonAppleDevice: scrollWheel.isScrollingNonAppleDevice())
   }
 
-  func executeScrollAction(with event: NSEvent) {
+  func executeScrollAction(with event: NSEvent, isNonAppleDevice: Bool) {
     var delta: Double
 
     // Allow horizontal scrolling on horizontal and circular sliders
@@ -72,7 +77,9 @@ class ScrollableSlider: NSSlider {
       delta *= -1
     }
 
-    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
+    let adjustment = isNonAppleDevice ? stepScrollSensitivity : sensitivity
+
+    let valueChange = (maxValue - minValue) * delta * adjustment / 100.0
     // There can be a huge number of requests which don't change the existing value.
     // Discard them for a large increase in performance:
     guard valueChange != 0.0 else { return }

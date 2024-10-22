@@ -10,12 +10,27 @@ import Foundation
 
 fileprivate let momentumStartTimeout: TimeInterval = 0.05
 
+/// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling.
+///
+/// Internally this class maintains its own state machine which it updates from the `phase` & `momentumPhase` properties
+/// of each `NSEvent` (see `mapPhasesToScrollState`) which is received by the `scrollWheel` method of the view being scrolled,
+/// all of which is done by passing each event to the `changeState` method below.
+///
+/// It's important to note that only Apple devices (Magic Mouse, Magic Trackpad) are supported for full smooth scrolling, which
+/// may also include a "momentum" component. Non-Apple devices can only execute coarser-grained "step"-type scrolling. This
+/// class does its best to execute value changes smoothly and consolidate all the various states into standard "start" & "end"
+/// events, between which queries to `isScrolling` will return `true`.
+///
+/// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to ignore scrolls
+/// which are shorter than `Constants.TimeInterval.minScrollWheelTimeThreshold` to help avoid unwanted scrolling. (This is not
+/// a concern for non-Apple scroll wheels due to their more discrete "step"-like behavior, and lack of momentum).
 class LogicalScrollWheel {
 
   /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
   /// But at least it will stay within this class.
   private enum ScrollState {
     case notScrolling
+    case didStepScroll  /// non-Apple devices are limited to this single state
     case scrollMayBegin(_ intentStartTime: TimeInterval)
     case userScroll
     case userScrollJustEnded
@@ -24,10 +39,19 @@ class LogicalScrollWheel {
     case momentumScrollJustEnded
   }
   private var state: ScrollState = .notScrolling
-  private var momentumTimer: Timer? = nil
+  private var scrollTimer: Timer? = nil
 
+  /// Optional callback. Will be called when scroll starts.
+  ///
+  /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
+  /// - This will be at most once per scroll.
+  /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
   var scrollWheelDidStart: ((NSEvent) -> Void)?
 
+  /// Optional callback. Will be called when scroll ends.
+  ///
+  /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
+  /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
   var scrollWheelDidEnd: (() -> Void)?
 
   init(scrollWheelDidStart: ((NSEvent) -> Void)? = nil, scrollWheelDidEnd: (() -> Void)? = nil) {
@@ -44,6 +68,13 @@ class LogicalScrollWheel {
     }
   }
 
+  func isScrollingNonAppleDevice() -> Bool {
+    if case .didStepScroll = state {
+      return true
+    }
+    return false
+  }
+
   func changeState(with event: NSEvent) {
     let newState = mapPhasesToScrollState(event)
 
@@ -52,9 +83,23 @@ class LogicalScrollWheel {
     }
 
     switch newState {
+    case .notScrolling:
+      state = .notScrolling
+
+    case .didStepScroll:
+      resetScrollTimer(timeout: momentumStartTimeout)
+      if case .didStepScroll = state {
+        // already started; nothing to do
+        return
+      }
+
+      state = .didStepScroll
+      if let scrollWheelDidStart {
+        scrollWheelDidStart(event)
+      }
+
     case .scrollMayBegin:
       state = newState
-      return
 
     case .userScroll:
       switch state {
@@ -72,39 +117,33 @@ class LogicalScrollWheel {
         state = .userScroll
       default:
         state = .notScrolling
-        return  // invalid state
       }
 
     case .userScrollJustEnded:
       switch state {
       case .userScroll:
         state = .userScrollJustEnded
-        momentumTimer?.invalidate()
-        momentumTimer = Timer.scheduledTimer(timeInterval: momentumStartTimeout, target: self,
-                                             selector: #selector(self.momentumStartDidTimeOut), userInfo: nil, repeats: false)
+        resetScrollTimer(timeout: momentumStartTimeout)
       default:
         state = .notScrolling
-        return  // invalid state
       }
 
     case .momentumScrollJustStarted:
       switch state {
       case .userScrollJustEnded:
-        momentumTimer?.invalidate()
+        scrollTimer?.invalidate()
         state = .momentumScrollJustStarted
       default:
         state = .notScrolling
-        return  // invalid state
       }
 
     case .momentumScrolling:
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
-        momentumTimer?.invalidate()
+        scrollTimer?.invalidate()
         state = .momentumScrolling
       default:
         state = .notScrolling
-        return  // invalid state
       }
 
     case .momentumScrollJustEnded:
@@ -116,18 +155,21 @@ class LogicalScrollWheel {
         }
       default:
         state = .notScrolling
-        return  // invalid state
       }
 
-    default:
-      Logger.log.fatalError("Invalid value for newState: \(newState)")
     }
   }
 
-  /// Executed when `momentumTimer` fires.
-  @objc func momentumStartDidTimeOut() {
-    guard case .userScrollJustEnded = state else { return }
-    Logger.log.verbose("Momentum timer expired")
+  private func resetScrollTimer(timeout: TimeInterval) {
+    scrollTimer?.invalidate()
+    scrollTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
+                                         selector: #selector(self.scrollDidTimeOut), userInfo: nil, repeats: false)
+  }
+
+  /// Executed when `scrollTimer` fires.
+  @objc func scrollDidTimeOut() {
+    guard isScrolling() else { return }
+    Logger.log.verbose("Scroll timed out")
     state = .notScrolling
     if let scrollWheelDidEnd {
       scrollWheelDidEnd()
@@ -153,6 +195,8 @@ class LogicalScrollWheel {
         return .userScroll
       } else if phase.contains(.ended) || phase.contains(.cancelled) {
         return .userScrollJustEnded
+      } else if phase.isEmpty {
+        return .didStepScroll
       }
     } else if phase.isEmpty {
       if momentumPhase.contains(.began) {
