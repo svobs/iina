@@ -268,7 +268,7 @@ extension PlayerWindowController {
       timeout = IINAAnimation.DefaultDuration
     }
     hideFadeableViewsTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideFadeableViewsAndCursor), userInfo: nil, repeats: false)
-    hideFadeableViewsTimer?.tolerance = 0.1
+    hideFadeableViewsTimer?.tolerance = 0.05
   }
 
   private func destroyFadeTimer() {

@@ -1321,6 +1321,34 @@ extension NSBox {
   }
 }
 
+extension NSEvent.Phase {
+  var name: String {
+    if self.contains(.began) {
+      return "began"
+    }
+    if self.contains(.stationary) {
+      return "stationary"
+    }
+    if self.contains(.changed) {
+      return "changed"
+    }
+    if self.contains(.ended) {
+      return "ended"
+    }
+    if self.contains(.mayBegin) {
+      return "mayBegin"
+    }
+    if self.contains(.cancelled) {
+      return "cancelled"
+    }
+    if self.isEmpty {
+      return "none"
+    }
+
+    return "UNKNOWN"
+  }
+}
+
 extension NSPasteboard {
 
   func getStringItems() -> [String] {

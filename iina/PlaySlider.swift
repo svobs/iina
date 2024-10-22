@@ -41,6 +41,11 @@ final class PlaySlider: ScrollableSlider {
 
   private var abLoopBKnob: PlaySliderLoopKnob!
 
+  /** We need to pause the video when a user starts seeking by scrolling.
+   This property records whether the video is paused initially so we can
+   recover the status when scrolling finished. */
+  private var wasPlayingBeforeSeeking = false
+
   // MARK:- Initialization
 
   required init?(coder: NSCoder) {
@@ -103,34 +108,23 @@ final class PlaySlider: ScrollableSlider {
     }
   }
 
-  override func scrollWheel(with event: NSEvent) {
-    let isTrackpadBegan = event.phase.contains(.began)
-    let isTrackpadEnd = event.phase.contains(.ended)
+  override func scrollWheelDidStart() {
     let player = customCell.playerCore
-    guard let wc = player.windowController else { return }
-
-    if isTrackpadBegan {
-      player.log.verbose("PlaySlider scrollWheel seek began")
-//      wc.hideCursor()
-      // pause video when seek begins
-      if player.info.isPlaying {
-        player.pause()
-        wc.wasPlayingBeforeSeeking = true
-      }
+    player.log.verbose("PlaySlider scrollWheel seek began")
+    // pause video when seek begins
+    if player.info.isPlaying {
+      player.pause()
+      wasPlayingBeforeSeeking = true
     }
+  }
 
-    if isTrackpadEnd {
-      player.log.verbose("PlaySlider scrollWheel seek ended")
-      // only resume playback when it was playing before seeking
-      if wc.wasPlayingBeforeSeeking {
-        player.resume()
-        wc.wasPlayingBeforeSeeking = false
-      }
+  override func scrollWheelDidEnd() {
+    let player = customCell.playerCore
+    player.log.verbose("PlaySlider scrollWheel seek ended")
+    // only resume playback when it was playing before seeking
+    if wasPlayingBeforeSeeking {
+      player.resume()
+      wasPlayingBeforeSeeking = false
     }
-
-    // Report latest scroll time:
-    wc.scrollWheelSeeking()
-    /// see `PlayerWindowController.playSliderDidChange`
-    super.scrollWheel(with: event)
   }
 }

@@ -178,6 +178,8 @@ struct Constants {
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
 
+    static let minScrollWheelTimeThreshold = 0.08
+
     static let historyTableCompleteFileStatusReload = 600.0
 
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.

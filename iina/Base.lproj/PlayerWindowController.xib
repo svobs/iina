@@ -703,7 +703,7 @@
                     </constraints>
                     <sliderCell key="cell" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="f1c-xF-8a2" customClass="PlaySliderCell" customModule="IINA" customModuleProvider="target"/>
                     <connections>
-                        <action selector="playSliderDidChange:" target="-2" id="UBG-Ky-3rr"/>
+                        <action selector="playSliderAction:" target="-2" id="UBG-Ky-3rr"/>
                     </connections>
                 </slider>
                 <textField identifier="Playback-Position-LeftLabel" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" alphaValue="0.5" mirrorLayoutDirectionWhenInternationalizing="never" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NBD-MV-OuG" userLabel="Left Label" customClass="DurationDisplayTextField" customModule="IINA" customModuleProvider="target">

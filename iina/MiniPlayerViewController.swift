@@ -44,6 +44,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var playButtonToRightArrowSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
 
+  private var hideVolumePopoverTimer: Timer?
+
   unowned var windowController: PlayerWindowController!
   var player: PlayerCore {
     return windowController.player
@@ -73,12 +75,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     return CGFloat(Preference.float(for: .musicModeMaxWidth))
   }
 
-  lazy var hideVolumePopover: DispatchWorkItem = {
-    DispatchWorkItem {
-      self.volumePopover.animates = true
-      self.volumePopover.performClose(self)
-    }
-  }()
+  /// Executed when `hideVolumePopoverTimer` fires.
+  @objc private func hideVolumePopover() {
+    volumePopover.animates = true
+    volumePopover.performClose(self)
+  }
 
   var currentDisplayedPlaylistHeight: CGFloat {
     // most reliable first-hand source for this is a constraint:
@@ -215,27 +216,18 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   /// From `NSPopoverDelegate`: open volume popover
-  func handleVolumePopover(_ isTrackpadBegan: Bool, _ isTrackpadEnd: Bool, _ isMouse: Bool) {
-    hideVolumePopover.cancel()
-    hideVolumePopover = DispatchWorkItem {
-      self.volumePopover.animates = true
-      self.volumePopover.performClose(self)
+  func showVolumePopover() {
+    hideVolumePopoverTimer?.invalidate()
+
+    // if it's a mouse, simply show popover then hide after a while when user stops scrolling
+    if !volumePopover.isShown {
+      volumePopover.animates = false
+      volumePopover.show(relativeTo: volumeButton.bounds, of: volumeButton, preferredEdge: .minY)
     }
-    if isTrackpadBegan {
-       // enabling animation here causes user not seeing their volume changes during popover transition
-       volumePopover.animates = false
-       volumePopover.show(relativeTo: volumeButton.bounds, of: volumeButton, preferredEdge: .minY)
-     } else if isTrackpadEnd {
-       DispatchQueue.main.asyncAfter(deadline: .now(), execute: hideVolumePopover)
-     } else if isMouse {
-       // if it's a mouse, simply show popover then hide after a while when user stops scrolling
-       if !volumePopover.isShown {
-         volumePopover.animates = false
-         volumePopover.show(relativeTo: volumeButton.bounds, of: volumeButton, preferredEdge: .minY)
-       }
-       let timeout = Preference.double(for: .osdAutoHideTimeout)
-       DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: hideVolumePopover)
-     }
+
+    let timeout = Preference.double(for: .osdAutoHideTimeout)
+    hideVolumePopoverTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self,
+                                                  selector: #selector(self.hideVolumePopover), userInfo: nil, repeats: false)
   }
 
   // MARK: - IBActions

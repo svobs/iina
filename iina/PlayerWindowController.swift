@@ -827,19 +827,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   internal var scrollDirection: ScrollDirection?
 
-  /** We need to pause the video when a user starts seeking by scrolling.
-   This property records whether the video is paused initially so we can
-   recover the status when scrolling finished. */
-  var wasPlayingBeforeSeeking = false
-  /// Notes the most recent scroll wheel seek time as now
-  func scrollWheelSeeking() {
-    lastScrollWheelSeekTime = Date().timeIntervalSince1970
-  }
-  /// Uses some fuzzy logic to provide some time padding after scroll wheel seek ends
   var isInScrollWheelSeek: Bool {
-    Date().timeIntervalSince1970 - lastScrollWheelSeekTime < 0.2
+    return playSlider.isScrolling()
   }
-  private var lastScrollWheelSeekTime: TimeInterval = 0
 
   var mouseActionDisabledViews: [NSView?] {[leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]}
 
@@ -3134,9 +3124,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   /// Called when `PlaySlider` changes value, either by clicking inside it, dragging inside it, or using scroll wheel (if configured).
-  @IBAction func playSliderDidChange(_ sender: NSSlider) {
+  @IBAction func playSliderAction(_ sender: NSSlider) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
+    log.verbose("playSliderAction called")
 
     let progressRatio = sender.doubleValue / sender.maxValue
     let progressPercentage = 100 * progressRatio

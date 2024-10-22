@@ -298,11 +298,11 @@ extension PlayerWindowController {
     } else {
       scrollDirection = .vertical
     }
-    if scrollDirection == .horizontal {
-      NSLog("HORIZONTAL !")
-    } else {
-      NSLog("VERTICAL !")
-    }
+//    if scrollDirection == .horizontal {
+//      NSLog("HORIZONTAL !")
+//    } else {
+//      NSLog("VERTICAL !")
+//    }
 
     let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
     switch scrollAction {
@@ -314,10 +314,7 @@ extension PlayerWindowController {
     case .volume:
       // show volume popover when volume seek begins and hide on end
       if isInMiniPlayer {
-        let isMouse = event.phase.isEmpty
-        let isTrackpadBegan = event.phase.contains(.began)
-        let isTrackpadEnd = event.phase.contains(.ended)
-        player.windowController.miniPlayer.handleVolumePopover(isTrackpadBegan, isTrackpadEnd, isMouse)
+        player.windowController.miniPlayer.showVolumePopover()
       }
 
       volumeSlider.scrollWheel(with: event)
