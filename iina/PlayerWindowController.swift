@@ -710,11 +710,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var leftArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
   var rightArrowBtnHorizOffsetConstraint: NSLayoutConstraint!
 
-  var speedLabelHorizontalConstraint: NSLayoutConstraint? = nil
-  var speedLabelVerticalConstraint: NSLayoutConstraint? = nil
-
-  /// Space added to the left and right of *each* of the 3 square playback buttons:
-//  @IBOutlet weak var playbackBtnsHorizontalPaddingConstraint: NSLayoutConstraint!
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
   @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
@@ -1162,34 +1157,46 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     speedLabel.nextResponder = playButton
   }
 
-  //
-  private func makeSymbol(_ names: [String], _ fallbackImage: NSImage.Name) -> NSImage {
-    guard #available(macOS 14.0, *) else { return NSImage(named: fallbackImage)! }
-    let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-    return NSImage.findSFSymbol(names, withConfiguration: configuration)
-  }
-
-
   private func initPlaybackBtnsView() {
     let oscGeo = ControlBarGeometry.current
 
     // Play button
-    playButton = NSButton(image: playImage, target: self, action: #selector(playButtonAction(_:)))
+    playButton = NSButton(image: playImage, target: self,
+                          action: #selector(playButtonAction(_:)))
+    playButton.identifier = .init("playButton")  // helps with debug logging
     playButton.isBordered = false
     playButton.bezelStyle = .regularSquare
     playButton.imagePosition = .imageOnly
     playButton.refusesFirstResponder = true
     playButton.imageScaling = .scaleProportionallyUpOrDown
     playButton.translatesAutoresizingMaskIntoConstraints = false
-    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: oscGeo.playIconSize)
-    playBtnWidthConstraint.priority = .init(850)
+    playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+    playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+    let playIconSize = oscGeo.playIconSize
+    playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: playIconSize)
+    playBtnWidthConstraint.priority = .init(850)  // allow to shrink for animations or speedLabel
     playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
     playAspectConstraint.isActive = true
 
+    let playButtonVStackView = ClickThroughStackView()
+    playButtonVStackView.identifier = .init("playButtonVStackView")
+    playButtonVStackView.orientation = .vertical
+    playButtonVStackView.alignment = .centerX
+    playButtonVStackView.detachesHiddenViews = true
+    playButtonVStackView.layer?.backgroundColor = .clear
+    playButtonVStackView.spacing = 0
+    playButtonVStackView.edgeInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    playButtonVStackView.addView(speedLabel, in: .center)
+    playButtonVStackView.addView(playButton, in: .center)
+    playButtonVStackView.setHuggingPriority(.init(250), for: .vertical)
+    playButtonVStackView.setHuggingPriority(.init(250), for: .horizontal)
+    playButtonVStackView.translatesAutoresizingMaskIntoConstraints = false
+
     // Left Arrow button
-    let rewindImage = makeSymbol(["backward.fill"], "speedl")
-    leftArrowButton = NSButton(image: rewindImage, target: self, action: #selector(leftArrowButtonAction(_:)))
+    leftArrowButton = NSButton(image: oscGeo.leftArrowImage, target: self,
+                               action: #selector(leftArrowButtonAction(_:)))
+    leftArrowButton.identifier = .init("leftArrowButton")
     leftArrowButton.setButtonType(.multiLevelAccelerator)
     leftArrowButton.isBordered = false
     leftArrowButton.maxAcceleratorLevel = 5
@@ -1200,8 +1207,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     leftArrowButton.translatesAutoresizingMaskIntoConstraints = false
 
     // Right Arrow button
-    let ffImage = makeSymbol(["forward.fill"], "speed")
-    rightArrowButton = NSButton(image: ffImage, target: self, action: #selector(rightArrowButtonAction(_:)))
+    rightArrowButton = NSButton(image: oscGeo.rightArrowImage, target: self,
+                                action: #selector(rightArrowButtonAction(_:)))
+    rightArrowButton.identifier = .init("rightArrowButton")
     rightArrowButton.setButtonType(.multiLevelAccelerator)
     rightArrowButton.isBordered = false
     rightArrowButton.maxAcceleratorLevel = 5
@@ -1211,14 +1219,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     rightArrowButton.imageScaling = .scaleProportionallyUpOrDown
     rightArrowButton.translatesAutoresizingMaskIntoConstraints = false
 
+    fragPlaybackBtnsView.identifier = .init("fragPlaybackBtnsView")
     fragPlaybackBtnsView.addSubview(leftArrowButton)
-    fragPlaybackBtnsView.addSubview(playButton)
+    fragPlaybackBtnsView.addSubview(playButtonVStackView)
     fragPlaybackBtnsView.addSubview(rightArrowButton)
+
+    playButtonVStackView.heightAnchor.constraint(lessThanOrEqualTo: fragPlaybackBtnsView.heightAnchor).isActive = true
+
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
     fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
 
     // Video controllers and timeline indicators should not flip in a right-to-left language.
     fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
+
+    let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
+    playBtnVertOffsetConstraint.isActive = true
+
+    let playBtnHorizOffsetConstraint = playButtonVStackView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
+    playBtnHorizOffsetConstraint.isActive = true
+
+    speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
 
     fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
     fragPlaybackBtnsWidthConstraint.isActive = true
@@ -1228,14 +1248,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     leftArrowBtnHorizOffsetConstraint.isActive = true
 
     arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconSize)
+    arrowBtnWidthConstraint.identifier = .init("arrowBtnWidthConstraint")
     arrowBtnWidthConstraint.isActive = true
 
     rightArrowBtnHorizOffsetConstraint = rightArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                    constant: oscGeo.rightArrowOffsetX)
+    rightArrowBtnHorizOffsetConstraint.identifier = .init("rightArrowBtnHorizOffsetConstraint")
     rightArrowBtnHorizOffsetConstraint.isActive = true
 
     // Left & Right arrow buttons are always same size
-    leftArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.widthAnchor, multiplier: 1).isActive = true
+    let arrowBtnsEqualWidthConstraint = leftArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.widthAnchor, multiplier: 1)
+    arrowBtnsEqualWidthConstraint.identifier = .init("arrowBtnsEqualWidthConstraint")
+    arrowBtnsEqualWidthConstraint.isActive = true
 
     let leftArrowAspectConstraint = leftArrowButton.widthAnchor.constraint(equalTo: leftArrowButton.heightAnchor)
     leftArrowAspectConstraint.isActive = true
@@ -1246,12 +1270,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     leftArrowBtnVertOffsetConstraint.isActive = true
     let rightArrowBtnVertOffsetConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     rightArrowBtnVertOffsetConstraint.isActive = true
-
-    let playBtnHorizOffsetConstraint = playButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor)
-    playBtnHorizOffsetConstraint.isActive = true
-
-    let playBtnVertOffsetConstraint = playButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
-    playBtnVertOffsetConstraint.isActive = true  // TEMPORARY!
   }
 
   private func initAlbumArtView() {
@@ -2860,22 +2878,28 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let isPaused = player.info.isPaused
     let playPauseImage = isPaused ? playImage : pauseImage
-    // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
-    // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-    player.windowController.miniPlayer.loadIfNeeded()
-    player.windowController.miniPlayer.playButton.image = playPauseImage
-    playButton.image = playPauseImage
 
     let oscGeo = ControlBarGeometry.current
     let playSpeed = player.info.playSpeed
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
-    speedLabel.isHidden = !showSpeedLabel
 
-    if showSpeedLabel {
-      speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
-    }
+    let hasLayoutChange = speedLabel.isHidden == showSpeedLabel
+    let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration * 8 : 0
 
-    player.touchBarSupport.updateTouchBarPlayBtn()
+    IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
+      // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
+      // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
+      player.windowController.miniPlayer.loadIfNeeded()
+      player.windowController.miniPlayer.playButton.image = playPauseImage
+      playButton.image = playPauseImage
+
+      speedLabel.isHidden = !showSpeedLabel
+
+      if showSpeedLabel {
+        speedLabel.stringValue = "\(playSpeed.stringTrunc3f)x"
+      }
+      player.touchBarSupport.updateTouchBarPlayBtn()
+    }))
   }
 
   func syncPlaySliderABLoop() {

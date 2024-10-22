@@ -153,10 +153,6 @@ extension PlayerWindowController {
       }
     }
 
-    if transition.isOSCChanging || transition.isTogglingMusicMode {
-      removeSpeedLabelFromControlBar()
-    }
-
     if !transition.isWindowInitialLayout && transition.isTogglingLegacyStyle {
       forceDraw()
     }
@@ -1393,41 +1389,11 @@ extension PlayerWindowController {
 
   func addSpeedLabelToControlBar(_ transition: LayoutTransition) {
     guard transition.outputLayout.isMusicMode || transition.outputLayout.enableOSC else { return }
-    speedLabelHorizontalConstraint?.isActive = false
-    speedLabelVerticalConstraint?.isActive = false
-
-    let secondItem = transition.outputLayout.isMusicMode ? miniPlayer.playButton : playButton
 
     let oscGeo = ControlBarGeometry.current
     let speedLabelFontSize = oscGeo.speedLabelFontSize
-    log.verbose("Adding speed label to control bar, fontSize=\(speedLabelFontSize)")
+    log.verbose("Updating speed label fontSize=\(speedLabelFontSize)")
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
-
-    // superview will be fragPlaybackBtnsView (unless in music mode) whose top & bottom match play button's
-    secondItem!.superview!.addSubview(speedLabel)
-
-    let hConstraint = speedLabel.centerXAnchor.constraint(equalTo: secondItem!.centerXAnchor)
-    speedLabelHorizontalConstraint = hConstraint
-    hConstraint.isActive = true
-
-    if transition.outputLayout.enableOSC || transition.isEnteringMusicMode {
-      let newConstant: CGFloat = 4
-      let vConstraint: NSLayoutConstraint
-      if transition.outputLayout.oscPosition == .top {
-        vConstraint = speedLabel.superview!.bottomAnchor.constraint(equalTo: speedLabel.bottomAnchor, constant: newConstant)
-      } else {
-        vConstraint = speedLabel.topAnchor.constraint(equalTo: speedLabel.superview!.topAnchor, constant: newConstant)
-      }
-      speedLabelVerticalConstraint = vConstraint
-      vConstraint.isActive = true
-    }
-  }
-
-  func removeSpeedLabelFromControlBar() {
-    log.verbose("Removing speed label from control bar")
-    speedLabelHorizontalConstraint?.isActive = false
-    speedLabelVerticalConstraint?.isActive = false
-    // no need to actually remove from superview
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
