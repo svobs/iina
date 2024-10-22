@@ -679,7 +679,7 @@
                     </constraints>
                     <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="ncp-01-dCG" customClass="VolumeSliderCell" customModule="IINA" customModuleProvider="target"/>
                     <connections>
-                        <action selector="volumeSliderDidChange:" target="-2" id="5AA-pG-FOc"/>
+                        <action selector="volumeSliderAction:" target="-2" id="5AA-pG-FOc"/>
                     </connections>
                 </slider>
             </subviews>

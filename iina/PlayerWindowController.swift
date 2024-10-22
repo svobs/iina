@@ -819,19 +819,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Scroll direction
 
-  /// The direction of current scrolling event.
-  enum ScrollDirection {
-    case horizontal
-    case vertical
-  }
-
   /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
   let windowScrollWheel = LogicalScrollWheel()
-
-  var scrollDirection: ScrollDirection = .vertical
-  var scrollAction: Preference.ScrollAction {
-    scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
-  }
+  var scrollActionSlider: ScrollableSlider? = nil
 
   var isInScrollWheelSeek: Bool {
     return playSlider.isScrolling()
@@ -3034,7 +3024,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  @IBAction func volumeSliderDidChange(_ sender: NSSlider) {
+  @IBAction func volumeSliderAction(_ sender: NSSlider) {
+    // show volume popover when volume seek begins and hide on end
+    if isInMiniPlayer {
+      miniPlayer.showVolumePopover()
+    }
     let value = sender.doubleValue
     if Preference.double(for: .maxVolume) > 100, value > 100 && value < 101 {
       NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)

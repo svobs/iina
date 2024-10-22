@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -250,7 +249,7 @@
                     </constraints>
                     <sliderCell key="cell" controlSize="small" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="rZ7-sj-3jn" customClass="VolumeSliderCell" customModule="IINA" customModuleProvider="target"/>
                     <connections>
-                        <action selector="volumeSliderDidChange:" target="-1" id="amd-td-7lV"/>
+                        <action selector="volumeSliderAction:" target="-1" id="amd-td-7lV"/>
                     </connections>
                 </slider>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="MP6-sS-T7f" userLabel="50 Label">
