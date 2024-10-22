@@ -820,7 +820,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Scroll direction
 
   /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
-  let windowScrollWheel = LogicalScrollWheel()
+  let windowScrollWheel = VirtualScrollWheel()
   var scrollActionSlider: ScrollableSlider? = nil
 
   var isInScrollWheelSeek: Bool {

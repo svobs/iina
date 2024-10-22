@@ -14,10 +14,6 @@ final class VolumeSlider: ScrollableSlider {
     updateSensitivity()
   }
 
-  var windowController: PlayerWindowController? {
-    return window?.windowController as? PlayerWindowController
-  }
-
   func updateSensitivity() {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
     sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)

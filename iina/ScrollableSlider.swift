@@ -25,13 +25,13 @@ import Foundation
 /// events, momentumPhase is set to NSEventPhaseChanged until the momentum subsides, or the user stops the momentum scrolling; the
 /// final momentum scroll wheel event has a momentumPhase value of NSEventPhaseEnded.
 class ScrollableSlider: NSSlider {
-  private let scrollWheel: LogicalScrollWheel
+  private let scrollWheel: VirtualScrollWheel
 
   var sensitivity: Double = 1.0
   var stepScrollSensitivity: Double = 10.0
 
   required init?(coder: NSCoder) {
-    self.scrollWheel = LogicalScrollWheel()
+    self.scrollWheel = VirtualScrollWheel()
     super.init(coder: coder)
     scrollWheel.scrollWheelDidStart = scrollWheelDidStart
     scrollWheel.scrollWheelDidEnd = scrollWheelDidEnd

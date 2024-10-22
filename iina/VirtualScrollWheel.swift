@@ -1,5 +1,5 @@
 //
-//  LogicalScrollWheel.swift
+//  VirtualScrollWheel.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-10-22.
@@ -24,7 +24,7 @@ fileprivate let momentumStartTimeout: TimeInterval = 0.05
 /// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to ignore scrolls
 /// which are shorter than `Constants.TimeInterval.minScrollWheelTimeThreshold` to help avoid unwanted scrolling. (This is not
 /// a concern for non-Apple scroll wheels due to their more discrete "step"-like behavior, and lack of momentum).
-class LogicalScrollWheel {
+class VirtualScrollWheel {
 
   /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
   /// But at least it will stay within this class.
