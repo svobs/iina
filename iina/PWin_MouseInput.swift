@@ -291,18 +291,17 @@ extension PlayerWindowController {
     guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
                                          titleBarView, subPopoverView]) else { return }
 
-    let isMouse = event.phase.isEmpty
-    let isTrackpadBegan = event.phase.contains(.began)
-    let isTrackpadEnd = event.phase.contains(.ended)
-
     // determine direction
 
-    if isMouse || isTrackpadBegan {
-      if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
-        scrollDirection = .horizontal
-      } else {
-        scrollDirection = .vertical
-      }
+    if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+      scrollDirection = .horizontal
+    } else {
+      scrollDirection = .vertical
+    }
+    if scrollDirection == .horizontal {
+      NSLog("HORIZONTAL !")
+    } else {
+      NSLog("VERTICAL !")
     }
 
     let scrollAction: Preference.ScrollAction = scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
@@ -315,16 +314,15 @@ extension PlayerWindowController {
     case .volume:
       // show volume popover when volume seek begins and hide on end
       if isInMiniPlayer {
+        let isMouse = event.phase.isEmpty
+        let isTrackpadBegan = event.phase.contains(.began)
+        let isTrackpadEnd = event.phase.contains(.ended)
         player.windowController.miniPlayer.handleVolumePopover(isTrackpadBegan, isTrackpadEnd, isMouse)
       }
 
       volumeSlider.scrollWheel(with: event)
     default:
       break
-    }
-
-    if isTrackpadEnd {
-      scrollDirection = nil
     }
   }
 

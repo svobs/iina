@@ -119,15 +119,13 @@ final class PlaySlider: ScrollableSlider {
       }
     }
 
-    guard !isTrackpadEnd else {
+    if isTrackpadEnd {
       player.log.verbose("PlaySlider scrollWheel seek ended")
       // only resume playback when it was playing before seeking
       if wc.wasPlayingBeforeSeeking {
         player.resume()
         wc.wasPlayingBeforeSeeking = false
       }
-
-      return
     }
 
     // Report latest scroll time:

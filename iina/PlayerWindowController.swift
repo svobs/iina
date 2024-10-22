@@ -2884,7 +2884,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
 
     let hasLayoutChange = speedLabel.isHidden == showSpeedLabel
-    let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration * 8 : 0
+    let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration : 0
 
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.

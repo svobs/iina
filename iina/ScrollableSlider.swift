@@ -7,12 +7,37 @@
 
 import Foundation
 
+fileprivate let minScrollWheelDuration: CGFloat = 0.08
+
 /// Adds scroll wheel support to `NSSlider`.
 class ScrollableSlider: NSSlider {
   var sensitivity: Double = 1.0
+  var lastScrollWheelStartTime: TimeInterval = 0
+  private var isIgnoringScroll: Bool = false
 
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
+
+    let isTrackpadBegan = event.phase.contains(.began)
+    let isTrackpadEnd = event.phase.contains(.ended)
+    let currentTime = Date().timeIntervalSince1970
+    if isTrackpadBegan {
+      lastScrollWheelStartTime = currentTime
+      isIgnoringScroll = false
+    }
+    let trackpadDuration = currentTime - lastScrollWheelStartTime
+
+    if isTrackpadEnd && trackpadDuration < minScrollWheelDuration {
+      Logger.log.verbose("Ignored scroll wheel event; duration too short (\(trackpadDuration))")
+      isIgnoringScroll = true
+      return
+    }
+
+
+    guard !isIgnoringScroll && trackpadDuration >= minScrollWheelDuration else {
+      // Trackpad min time was not met; ignore
+      return
+    }
 
     var delta: Double
 
