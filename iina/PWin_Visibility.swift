@@ -12,7 +12,7 @@ import Foundation
 /// Show/hide fadeable views
 /// Show/hide seek time & thumbnail
 /// Hide mouse cursor
-/// Sow/hide default album art
+/// Show/hide default album art
 extension PlayerWindowController {
 
   // MARK: - Visibility utility functions

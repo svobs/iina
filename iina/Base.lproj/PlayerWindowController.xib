@@ -67,7 +67,6 @@
                 <outlet property="playSlider" destination="eBP-6g-bAT" id="lGv-18-YeQ"/>
                 <outlet property="playSliderHeightConstraint" destination="VU5-c1-ivd" id="NEQ-Hc-xay"/>
                 <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
-                <outlet property="thumbnailPeekView" destination="vej-bg-g6C" id="sws-ib-t4r"/>
                 <outlet property="timePositionHoverLabel" destination="qOq-6a-7j7" id="ngM-1f-G5D"/>
                 <outlet property="timePositionHoverLabelHorizontalCenterConstraint" destination="ekV-Sh-cEZ" id="zYq-k1-B2g"/>
                 <outlet property="timePositionHoverLabelVerticalSpaceConstraint" destination="ZlC-qT-aez" id="3PF-D3-K9o"/>
@@ -327,28 +326,6 @@
                             <color key="color" white="0.0" alpha="0.5" colorSpace="calibratedWhite"/>
                         </shadow>
                     </visualEffectView>
-                    <customView identifier="Thumbnail-Peek-View" hidden="YES" wantsLayer="YES" id="vej-bg-g6C" customClass="ThumbnailPeekView" customModule="IINA" customModuleProvider="target">
-                        <rect key="frame" x="30" y="45" width="160" height="90"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <subviews>
-                            <imageView identifier="Thumbnail-Image-View" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HHm-A9-jIP" userLabel="Thumbnail Image View">
-                                <rect key="frame" x="0.0" y="0.0" width="160" height="90"/>
-                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="oxN-cQ-vJx"/>
-                            </imageView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstAttribute="trailing" secondItem="HHm-A9-jIP" secondAttribute="trailing" id="S6X-Sh-qpJ"/>
-                            <constraint firstItem="HHm-A9-jIP" firstAttribute="top" secondItem="vej-bg-g6C" secondAttribute="top" id="kFV-6J-FYW"/>
-                            <constraint firstAttribute="bottom" secondItem="HHm-A9-jIP" secondAttribute="bottom" id="nLX-0l-gEv"/>
-                            <constraint firstItem="HHm-A9-jIP" firstAttribute="leading" secondItem="vej-bg-g6C" secondAttribute="leading" id="tSq-Pp-P0C"/>
-                        </constraints>
-                        <shadow key="shadow">
-                            <color key="color" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        </shadow>
-                        <connections>
-                            <outlet property="imageView" destination="HHm-A9-jIP" id="KtN-I3-vJb"/>
-                        </connections>
-                    </customView>
                     <visualEffectView identifier="OSD-View" hidden="YES" wantsLayer="YES" blendingMode="withinWindow" material="toolTip" state="active" translatesAutoresizingMaskIntoConstraints="NO" id="g0O-v5-RQj" userLabel="OSD Visual Effect View">
                         <rect key="frame" x="8" y="303" width="169" height="61"/>
                         <subviews>

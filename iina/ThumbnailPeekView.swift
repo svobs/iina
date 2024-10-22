@@ -13,15 +13,43 @@ fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffset
 
 class ThumbnailPeekView: NSView {
 
-  @IBOutlet var imageView: NSImageView!
+  let imageView = NSImageView()
+  var widthConstraint: NSLayoutConstraint!
+  var heightConstraint: NSLayoutConstraint!
 
-  override func awakeFromNib() {
+  init() {
+    super.init(frame: .zero)
+    translatesAutoresizingMaskIntoConstraints = false
+    autoresizesSubviews = true
     wantsLayer = true
     layer?.masksToBounds = true
+    addSubview(imageView)
+    let shadow = NSShadow()
+    shadow.shadowColor = .black
+    shadow.shadowBlurRadius = 0
+    shadow.shadowOffset = .zero
+    self.shadow = shadow
+    imageView.translatesAutoresizingMaskIntoConstraints = false
+    imageView.addConstraintsToFillSuperview()
+    imageView.autoresizesSubviews = true
     imageView.wantsLayer = true
     imageView.layer?.masksToBounds = true
+    imageView.imageScaling = .scaleProportionallyUpOrDown
+    imageView.imageFrameStyle = .none
+    imageView.refusesFirstResponder = true
+    imageView.isEnabled = true
+    imageView.isHidden = false
+
+    widthConstraint = widthAnchor.constraint(equalToConstant: 160)
+    widthConstraint.isActive = true
+    heightConstraint = heightAnchor.constraint(equalToConstant: 90)
+    heightConstraint.isActive = true
 
     refreshColors()
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
   func refreshBorderStyle() {
@@ -203,7 +231,7 @@ class ThumbnailPeekView: NSView {
       return false
     }
 
-    // Scaling is a potentially expensive operation, so reuse the last image if no change is needed
+    // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
     if thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
       thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
 
@@ -217,7 +245,8 @@ class ThumbnailPeekView: NSView {
       }
       finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight))
       imageView.image = finalImage
-      frame.size = finalImage.size
+      widthConstraint.constant = finalImage.size.width
+      heightConstraint.constant = finalImage.size.height
     }
 
     let thumbOriginY: CGFloat

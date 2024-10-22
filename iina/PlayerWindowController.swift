@@ -758,7 +758,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let bottomBarTopBorder = NSBox()
 
   @IBOutlet weak var timePositionHoverLabel: NSTextField!
-  @IBOutlet weak var thumbnailPeekView: ThumbnailPeekView!
+  var thumbnailPeekView = ThumbnailPeekView()
   var leftArrowButton: NSButton!
   var rightArrowButton: NSButton!
 
@@ -817,15 +817,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var singleClickTimer: Timer?
   var mouseExitEnterCount = 0
 
-  // Scroll direction
+  /// Scroll wheel (see `PWin_MouseInput.swift`)
 
   /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
   let windowScrollWheel = VirtualScrollWheel()
+  /// One of `playSlider`, `volumeSlider`, or `nil`
   var scrollActionSlider: ScrollableSlider? = nil
 
   var isInScrollWheelSeek: Bool {
     return windowScrollWheel.isScrolling() || playSlider.isScrolling() || volumeSlider.isScrolling()
   }
+
+  // Other state
 
   var mouseActionDisabledViews: [NSView?] {[leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]}
 
@@ -1035,6 +1038,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         contentView.addSubview(view)
       }
 
+      contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: osdVisualEffectView)
+      thumbnailPeekView.identifier = .init("thumbnailPeekView")
+      thumbnailPeekView.isHidden = true
       initBottomBarView(in: contentView)
       initSpeedLabel()
       initPlaybackBtnsView()
