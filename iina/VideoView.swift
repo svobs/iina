@@ -111,15 +111,10 @@ class VideoView: NSView {
 
   func refreshAll() {
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.isActive && !player.info.isRestoring else { return }
-    guard player.mpv.lockAndSetOpenGLContext() else { return }
-    defer { player.mpv.unlockOpenGLContext() }
-    $isUninited.withLock() { [self] isUninited in
-      guard !isUninited else { return }
-      updateDisplayLink()
-      refreshContentsScale()
-      _refreshEdrMode()
-    }
+    guard player.windowController.loaded, player.isActive && !player.info.isRestoring else { return }
+    updateDisplayLink()
+    refreshContentsScale()
+    _refreshEdrMode()
   }
 
   // MARK: - Constraints
