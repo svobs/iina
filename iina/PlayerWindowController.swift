@@ -828,7 +828,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
   let windowScrollWheel = LogicalScrollWheel()
 
-  internal var scrollDirection: ScrollDirection?
+  var scrollDirection: ScrollDirection = .vertical
+  var scrollAction: Preference.ScrollAction {
+    scrollDirection == .horizontal ? horizontalScrollAction : verticalScrollAction
+  }
 
   var isInScrollWheelSeek: Bool {
     return playSlider.isScrolling()
@@ -985,6 +988,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     contentView.addGestureRecognizer(rotationHandler.rotationGestureRecognizer)
 
     windowScrollWheel.scrollWheelDidStart = self.scrollWheelDidStart(_:)
+    windowScrollWheel.scrollWheelDidEnd = self.scrollWheelDidEnd
 
     playlistView.windowController = self
     quickSettingView.windowController = self
