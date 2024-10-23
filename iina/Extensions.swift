@@ -1151,17 +1151,6 @@ extension NSImage {
     return self
   }
 
-  static func maskImage(cornerRadius: CGFloat) -> NSImage {
-    let image = NSImage(size: NSSize(width: cornerRadius * 2, height: cornerRadius * 2), flipped: false) { rectangle in
-      let bezierPath = NSBezierPath(roundedRect: rectangle, xRadius: cornerRadius, yRadius: cornerRadius)
-      NSColor.black.setFill()
-      bezierPath.fill()
-      return true
-    }
-    image.capInsets = NSEdgeInsets(top: cornerRadius, left: cornerRadius, bottom: cornerRadius, right: cornerRadius)
-    return image
-  }
-
   /// This uses CoreGraphics calls, which in tests was ~5x faster than using `NSAffineTransform` on `NSImage` directly
   func rotated(degrees: Int) -> NSImage {
     let currentImage = self.cgImage!
@@ -1209,7 +1198,8 @@ extension NSImage {
     return NSImage(cgImage: croppedImage, size: cropSize)
   }
 
-  func resized(newWidth: Int, newHeight: Int) -> NSImage {
+  /// `cornerRadius`: if greater than 0, round the corners by this radius
+  func resized(newWidth: Int, newHeight: Int, cornerRadius: CGFloat = 0) -> NSImage {
     guard CGFloat(newWidth) != self.size.width || CGFloat(newHeight) != self.size.height else {
       return self
     }
@@ -1226,7 +1216,14 @@ extension NSImage {
     }
 
     let newImage = NSImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: { cgContext in
-      cgContext.draw(currentImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+      let outputRect = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+      if cornerRadius > 0.0 {
+        cgContext.beginPath()
+        cgContext.addPath(CGPath(roundedRect: outputRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
+        cgContext.closePath()
+        cgContext.clip()
+      }
+      cgContext.draw(currentImage, in: outputRect)
     })
 
     guard let newImage else { return self }

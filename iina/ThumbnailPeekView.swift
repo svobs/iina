@@ -11,38 +11,30 @@ import Cocoa
 fileprivate let thumbnailExtraOffsetX = Constants.Distance.Thumbnail.extraOffsetX
 fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffsetY
 
-class ThumbnailPeekView: NSView {
+class ThumbnailPeekView: NSImageView {
 
-  let imageView = NSImageView()
   var widthConstraint: NSLayoutConstraint!
   var heightConstraint: NSLayoutConstraint!
 
   init() {
-    super.init(frame: .zero)
-    translatesAutoresizingMaskIntoConstraints = false
-    autoresizesSubviews = true
+    let dummyFrame = NSRect(origin: .zero, size: CGSize(width: 160, height: 90))
+    super.init(frame: dummyFrame)
     wantsLayer = true
     layer?.masksToBounds = true
-    addSubview(imageView)
+    imageScaling = .scaleNone
+    imageFrameStyle = .none
+    refusesFirstResponder = true
+
     let shadow = NSShadow()
     shadow.shadowColor = .black
     shadow.shadowBlurRadius = 0
     shadow.shadowOffset = .zero
     self.shadow = shadow
-    imageView.translatesAutoresizingMaskIntoConstraints = false
-    imageView.addConstraintsToFillSuperview()
-    imageView.autoresizesSubviews = true
-    imageView.wantsLayer = true
-    imageView.layer?.masksToBounds = true
-    imageView.imageScaling = .scaleProportionallyUpOrDown
-    imageView.imageFrameStyle = .none
-    imageView.refusesFirstResponder = true
-    imageView.isEnabled = true
-    imageView.isHidden = false
 
-    widthConstraint = widthAnchor.constraint(equalToConstant: 160)
+    translatesAutoresizingMaskIntoConstraints = false
+    widthConstraint = widthAnchor.constraint(equalToConstant: dummyFrame.width)
     widthConstraint.isActive = true
-    heightConstraint = heightAnchor.constraint(equalToConstant: 90)
+    heightConstraint = heightAnchor.constraint(equalToConstant: dummyFrame.height)
     heightConstraint.isActive = true
 
     refreshColors()
@@ -52,8 +44,8 @@ class ThumbnailPeekView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  func refreshBorderStyle() {
-    guard let layer = self.layer else { return }
+  private func updateBorderStyle(thumbWidth: CGFloat, thumbHeight: CGFloat) -> CGFloat {
+    guard let layer = self.layer else { return 0.0 }
 
     let cornerRadius: CGFloat
     let style: Preference.ThumnailBorderStyle = Preference.isAdvancedEnabled ? Preference.enum(for: .thumbnailBorderStyle) : Preference.ThumnailBorderStyle.defaultValue
@@ -69,38 +61,38 @@ class ThumbnailPeekView: NSView {
     case .outlineRoundedCorners:
       layer.borderWidth = outlineRoundedCornersWidth()
       layer.shadowRadius = 0
-      cornerRadius = roundedCornerRadius()
+      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     case .shadowSharpCorners:
       layer.borderWidth = 0
-      layer.shadowRadius = shadowRadius()
+      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
       cornerRadius = 0
     case .shadowRoundedCorners:
       layer.borderWidth = 0
-      layer.shadowRadius = shadowRadius()
-      cornerRadius = roundedCornerRadius()
+      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
+      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     case .outlinePlusShadowSharpCorners:
       layer.borderWidth = outlineRoundedCornersWidth()
-      layer.shadowRadius = shadowRadius()
+      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
       cornerRadius = 0
     case .outlinePlusShadowRoundedCorners:
       layer.borderWidth = outlineRoundedCornersWidth()
-      layer.shadowRadius = shadowRadius()
-      cornerRadius = roundedCornerRadius()
+      layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
+      cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     }
 
     layer.cornerRadius = cornerRadius
-    imageView.layer?.cornerRadius = cornerRadius
+    return cornerRadius
   }
 
-  private func roundedCornerRadius() -> CGFloat {
+  private func roundedCornerRadius(forHeight frameHeight: CGFloat) -> CGFloat {
     // Set corner radius to betwen 10 and 20
-    return 10 + min(10, max(0, (frame.height - 400) * 0.01))
+    return 10 + min(10, max(0, (frameHeight - 400) * 0.01))
   }
 
-  private func shadowRadius() -> CGFloat {
+  private func shadowRadius(forHeight frameHeight: CGFloat) -> CGFloat {
     // Set shadow radius to between 0 and 10 based on frame height
     // shadow is set in xib
-    return min(10, 2 + (frame.height * 0.005))
+    return min(10, 2 + (frameHeight * 0.005))
   }
 
   private func outlineRoundedCornersWidth() -> CGFloat {
@@ -231,6 +223,8 @@ class ThumbnailPeekView: NSView {
       return false
     }
 
+    let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
+
     // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
     if thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
       thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
@@ -243,8 +237,8 @@ class ThumbnailPeekView: NSView {
       } else {
         croppedImage = rotatedImage
       }
-      finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight))
-      imageView.image = finalImage
+      finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
+      self.image = finalImage
       widthConstraint.constant = finalImage.size.width
       heightConstraint.constant = finalImage.size.height
     }
@@ -262,8 +256,6 @@ class ThumbnailPeekView: NSView {
     let maxX = minX + availableWidth
     let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
     frame.origin = NSPoint(x: thumbOriginX, y: thumbOriginY)
-
-    refreshBorderStyle()
 
     if log.isTraceEnabled {
       log.trace("Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(frame.size)")
