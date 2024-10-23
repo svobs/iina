@@ -234,11 +234,7 @@ struct ControlBarGeometry {
     case .speed:
       return #imageLiteral(resourceName: "speedl")
     case .seek:
-      if #available(macOS 11.0, *) {
-        return NSImage(systemSymbolName: "gobackward.10", accessibilityDescription: "Step Backward 10s")!
-      } else {
-        return #imageLiteral(resourceName: "speedl")
-      }
+      return Images.stepBackward10
     }
   }
 
@@ -249,11 +245,7 @@ struct ControlBarGeometry {
     case .speed:
       return #imageLiteral(resourceName: "speed")
     case .seek:
-      if #available(macOS 11.0, *) {
-        return NSImage(systemSymbolName: "goforward.10", accessibilityDescription: "Step Forward 10s")!
-      } else {
-        return #imageLiteral(resourceName: "speed")
-      }
+      return Images.stepForward10
     }
   }
 }

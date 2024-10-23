@@ -377,3 +377,33 @@ extension Notification.Name {
   static let iinaSubVisibilityChanged = Notification.Name("iinaSubVisibilityChanged")
   static let iinaHistoryTasksFinished = Notification.Name("iinaHistoryTasksFinished")
 }
+
+struct Images {
+  // Use single instance of each for efficiency
+  static let play = NSImage(named: "play")!
+  static let pause = NSImage(named: "pause")!
+  static let replay: NSImage = {
+    if #available(macOS 11.0, *) {
+      if let img = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: "Restart from beginning") {
+        return img
+      }
+    }
+    return NSImage(named: "arrow.counterclockwise")!
+  }()
+
+  static let stepForward10: NSImage = {
+    if #available(macOS 11.0, *) {
+      return NSImage(systemSymbolName: "goforward.10", accessibilityDescription: "Step Forward 10s")!
+    } else {
+      return #imageLiteral(resourceName: "speed")
+    }
+  }()
+
+  static let stepBackward10: NSImage = {
+    if #available(macOS 11.0, *) {
+      return NSImage(systemSymbolName: "gobackward.10", accessibilityDescription: "Step Backward 10s")!
+    } else {
+      return #imageLiteral(resourceName: "speedl")
+    }
+  }()
+}

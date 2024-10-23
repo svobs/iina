@@ -323,6 +323,7 @@
 		D17504A82918F13E005C3DD0 /* OSCToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */; };
 		D17780D82CA0B68B006B3B33 /* MediaMetaCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */; };
 		D17B857B2C94C8B5002A8EDE /* movist-v2-default-input.conf in Copy Configs */ = {isa = PBXBuildFile; fileRef = D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */; };
+		D17CBBA32CC8E37F006160AC /* PWin_WinDidLoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
@@ -1841,6 +1842,7 @@
 		D17504A529167ACF005C3DD0 /* CascadingMenuItemBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CascadingMenuItemBuilder.swift; sourceTree = "<group>"; };
 		D17504A72918F13E005C3DD0 /* OSCToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSCToolbarButton.swift; sourceTree = "<group>"; };
 		D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaMetaCache.swift; sourceTree = "<group>"; };
+		D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_WinDidLoad.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
@@ -2855,6 +2857,7 @@
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
 				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
+				D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */,
 				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
@@ -3303,6 +3306,7 @@
 				D1A8878E29D1696C000D1AE4 /* PWin_Sidebar.swift in Sources */,
 				D1AD325C2ACC07E500F86EE8 /* LayoutTransition.swift in Sources */,
 				84A886E41E24F37D008755BB /* ShooterSubtitle.swift in Sources */,
+				D17CBBA32CC8E37F006160AC /* PWin_WinDidLoad.swift in Sources */,
 				E3CB258B2222885E00A62C47 /* JavascriptAPIOverlay.swift in Sources */,
 				E337D5E6241EF60400B5729A /* JavascriptAPISubtitle.swift in Sources */,
 				84A09A0E1F2DF596000FF343 /* MiniPlayerViewController.swift in Sources */,
