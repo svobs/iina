@@ -8,7 +8,7 @@
 
 import Cocoa
 
-fileprivate let tableCellFontSize: CGFloat = 12
+fileprivate let tableCellFontSize: CGFloat = 13
 
 @objcMembers
 class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbeddable {

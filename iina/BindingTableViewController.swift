@@ -12,7 +12,7 @@ fileprivate let keyColumnIndex = 0
 fileprivate let actionColumnIndex = 2
 fileprivate let draggingFormation: NSDraggingFormation = .default
 fileprivate let defaultDragOperation = NSDragOperation.move
-fileprivate let tableCellFontSize: CGFloat = 12
+fileprivate let tableCellFontSize: CGFloat = 13
 
 class BindingTableViewController: NSObject {
 
