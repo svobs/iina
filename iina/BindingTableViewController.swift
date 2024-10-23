@@ -12,6 +12,7 @@ fileprivate let keyColumnIndex = 0
 fileprivate let actionColumnIndex = 2
 fileprivate let draggingFormation: NSDraggingFormation = .default
 fileprivate let defaultDragOperation = NSDragOperation.move
+fileprivate let tableCellFontSize: CGFloat = 12
 
 class BindingTableViewController: NSObject {
 
@@ -192,6 +193,12 @@ extension BindingTableViewController: NSTableViewDelegate {
 
   private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool, origin: InputBindingOrigin, italic: Bool = false) {
     guard let textField = cell.textField else { return }
+
+    if isRaw {
+      textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
+    } else {
+      textField.font = .systemFont(ofSize: tableCellFontSize)
+    }
 
     if isEnabled {
       textField.setFormattedText(stringValue: stringValue, textColor: origin == InputBindingOrigin.confFile ? nil : nonConfTextColor, italic: italic)

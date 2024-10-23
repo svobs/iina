@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let tableCellFontSize: CGFloat = 12
+
 @objcMembers
 class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbeddable {
 
@@ -295,6 +297,7 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
 
   private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool) {
     guard let textField = cell.textField else { return }
+    textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
     textField.setFormattedText(stringValue: stringValue, textColor: isEnabled ? .controlTextColor : .disabledControlTextColor)
   }
 }

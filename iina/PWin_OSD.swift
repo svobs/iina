@@ -378,11 +378,11 @@ extension PlayerWindowController {
       let timeout: Double
       if let forcedTimeout = forcedTimeout {
         timeout = forcedTimeout
-        log.verbose("Showing OSD '\(msg)', forced timeout: \(timeout) s")
+        log.verbose("Showing OSD '\(msg)' forcedTimeout=\(timeout)")
       } else {
         // Timer and animation APIs require Double, but we must support legacy prefs, which store as Float
         timeout = max(IINAAnimation.OSDAnimationDuration, Double(Preference.float(for: .osdAutoHideTimeout)))
-        log.verbose("Showing OSD '\(msg)', timeout: \(timeout) s")
+        log.verbose("Showing OSD '\(msg)' timeout=\(timeout)")
       }
       osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
     } else {
