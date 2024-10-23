@@ -236,7 +236,7 @@ extension PlayerWindowController {
       player.refreshSyncUITimer()
       updateUI()
       // Fix rare case where window is still invisible after closing in music mode and reopening in windowed
-      updateCustomBorderBoxAndWindowOpacity()
+      updateWindowBorderAndOpacity()
     }
 
     applyVideoGeoTransform("fileLoaded", transform, fileJustOpened: true, then: doAfter)
@@ -748,7 +748,7 @@ extension PlayerWindowController {
     tasks.append(IINAAnimation.Task(duration: duration, timing: timing, { [self] in
 
       // This is only needed to achieve "fade-in" effect when opening window:
-      updateCustomBorderBoxAndWindowOpacity()
+      updateWindowBorderAndOpacity()
 
       /// Make sure this is up-to-date. Do this before `setFrame`
       if !isWindowHidden {
@@ -867,7 +867,7 @@ extension PlayerWindowController {
     videoView.videoLayer.enterAsynchronousMode()
 
     // This is only needed to achieve "fade-in" effect when opening window:
-    updateCustomBorderBoxAndWindowOpacity()
+    updateWindowBorderAndOpacity()
 
     // Update defaults:
     Preference.set(geometry.isVideoVisible, for: .musicModeShowAlbumArt)

@@ -458,7 +458,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     switch key {
     case .enableAdvancedSettings:
       animationPipeline.submitTask({ [self] in
-        updateCustomBorderBoxAndWindowOpacity()
+        updateWindowBorderAndOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
       })
@@ -471,7 +471,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       applyThemeMaterial()
     case .playerWindowOpacity:
       animationPipeline.submitTask({ [self] in
-        updateCustomBorderBoxAndWindowOpacity()
+        updateWindowBorderAndOpacity()
       })
     case .showRemainingTime:
       if let newValue = newValue as? Bool {
@@ -2334,31 +2334,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     viewportView.layer?.backgroundColor = newColor
   }
 
-  func updateCustomBorderBoxAndWindowOpacity(using layout: LayoutState? = nil, windowOpacity: Float? = nil) {
+  func updateWindowBorderAndOpacity(using layout: LayoutState? = nil, windowOpacity newOpacity: Float? = nil) {
     let layout = layout ?? currentLayout
     /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
-    let windowOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : windowOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
+    let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
     // Native window removes the border if winodw background is transparent.
     // Try to match this behavior for legacy window
-    let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || windowOpacity < 1.0
+    let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || newOpacity < 1.0
     if hide != customWindowBorderBox.isHidden {
       log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
       customWindowBorderBox.isHidden = hide
       customWindowBorderTopHighlightBox.isHidden = hide
     }
 
-    // Set this *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards
-    setWindowOpacity(to: windowOpacity)
-  }
-
-  /// Do not call this. Call `updateCustomBorderBoxAndWindowOpacity` instead.
-  private func setWindowOpacity(to newValue: Float) {
+    // Update window opacity *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards.
     guard let window else { return }
-    let existingValue = window.contentView?.layer?.opacity ?? -1
-    guard existingValue != newValue else { return }
-    log.debug("Changing window opacity, \(existingValue) → \(newValue)")
-    window.backgroundColor = newValue < 1.0 ? .clear : .black
-    window.contentView?.layer?.opacity = newValue
+    let existingOpacity = window.contentView?.layer?.opacity ?? -1
+    guard existingOpacity != newOpacity else { return }
+    log.debug("Changing window opacity: \(existingOpacity) → \(newOpacity)")
+    window.backgroundColor = newOpacity < 1.0 ? .clear : .black
+    window.contentView?.layer?.opacity = newOpacity
   }
 
   // MARK: - Sync UI with playback

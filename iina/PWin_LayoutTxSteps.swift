@@ -56,7 +56,7 @@ extension PlayerWindowController {
     // Need to call this here to avoid border being drawn incorrectly during FS transition.
     // But don't want to interfere with special effects such as fade-in
     let opacity = window.contentView?.layer?.opacity ?? -1
-    updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout, windowOpacity: opacity)
+    updateWindowBorderAndOpacity(using: transition.outputLayout, windowOpacity: opacity)
 
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
@@ -963,7 +963,7 @@ extension PlayerWindowController {
     }
 
     if !transition.isWindowInitialLayout || transition.outputLayout.isFullScreen {
-      updateCustomBorderBoxAndWindowOpacity(using: transition.outputLayout)
+      updateWindowBorderAndOpacity(using: transition.outputLayout)
     }
   }
 

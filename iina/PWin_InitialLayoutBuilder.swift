@@ -232,7 +232,7 @@ extension PlayerWindowController {
           player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
 
           // Set window opacity to 0 initially to start fade-in effect
-          updateCustomBorderBoxAndWindowOpacity(using: outputLayout, windowOpacity: 0.0)
+          updateWindowBorderAndOpacity(using: outputLayout, windowOpacity: 0.0)
         }
 
         if !outputLayout.isFullScreen, Preference.bool(for: .alwaysFloatOnTop) && !player.info.isPaused {
