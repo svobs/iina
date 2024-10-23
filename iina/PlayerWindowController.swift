@@ -2269,6 +2269,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Just don't update in this case
     guard !isAnimatingLayoutTransition else { return }
     guard loaded else { return }
+    guard player.state.isNotYet(.shuttingDown) else { return }
 
     if !isInScrollWheelSeek {  // scroll wheel will set newer value; do not overwrite it until it is done
       player.updatePlaybackTimeInfo()

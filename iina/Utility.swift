@@ -607,6 +607,7 @@ class Utility {
     }
   }
 
+  
   // MARK: - Util classes
 
   class Stopwatch: CustomStringConvertible {

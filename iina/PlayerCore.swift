@@ -540,14 +540,6 @@ class PlayerCore: NSObject {
     videoView.startDisplayLink()
   }
 
-  // unload main window video view
-  private func uninitVideo() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard state.isNotYet(.shuttingDown) else { return }
-    state = .shuttingDown
-    videoView.uninit()
-  }
-
   func saveState() {
     PlayerSaveState.save(self)
   }
@@ -583,6 +575,7 @@ class PlayerCore: NSObject {
       return
     }
     log.debug("Shutting down player")
+    state = .shuttingDown
     savePlaybackPosition() // Save state to mpv watch-later (if enabled)
     refreshSyncUITimer()   // Shut down timer
     mpv.mpvQuit()
@@ -604,18 +597,18 @@ class PlayerCore: NSObject {
     log.debug("Player has shut down\(suffix)")
     // If mpv shutdown was initiated by mpv then the player state has not been saved.
     if isMPVInitiated {
+      state = .shuttingDown  // Make sure to indicate shutdown before calling `refreshSyncUITimer`
       savePlaybackPosition() // Save state to mpv watch-later (if enabled)
       refreshSyncUITimer()   // Shut down timer
       mpv.removeObservers()
     }
-    uninitVideo()            // Shut down DisplayLink
+    videoView.uninit()       // Shut down DisplayLink. Has its own lock.
 
     mpv.queue.sync { [self] in  // run in queue to avoid race condition when handling events in queue, which checks mpv!=nil
       mpv.mpvDestroy()
     }
     state = .shutDown
     PlayerCoreManager.shared.removePlayer(withLabel: label)
-
     postNotification(.iinaPlayerShutdown)
     if isMPVInitiated {
       // Initiate application termination. AppKit requires this be done from the main thread,
@@ -2106,6 +2099,7 @@ class PlayerCore: NSObject {
     }
     saveToLastPlayedFile(info.currentURL, duration: info.playbackDurationSec, position: info.playbackPositionSec)
 
+    // The rest of the stuff below relates to UI updates and should be cancelled if shutting down.
     guard !isShuttingDown else { return }
 
     // Ensure playlist is updated in real time
@@ -2985,7 +2979,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
 
     let useTimer: Bool
-    if isStopping {
+    if state.isAtLeast(.stopping) {
       useTimer = false
     } else if info.isPaused {
       // Follow energy efficiency best practices and ensure IINA is absolutely idle when the

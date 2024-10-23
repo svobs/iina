@@ -764,7 +764,8 @@ class MPVController: NSObject {
   func mpvDestroy() {
     player.log.verbose("Destroying mpv")
     guard mpv != nil else {
-      fatalError("mpvUninitRendering() called but mpv handle is nil!")
+      log.error("mpvUninitRendering() called but mpv handle is nil!")
+      return
     }
     mpv_destroy(mpv)
     mpv = nil
@@ -792,15 +793,22 @@ class MPVController: NSObject {
     removeOptionObservers()
     // Remove observers for mpv properties. Because 0 was passed for reply_userdata when registering
     // mpv property observers all observers can be removed in one call.
+    guard let mpv else {
+      player.log.debug("Skipping called to mpv_unobserve_property because mpv is nil")
+      return
+    }
+    player.log.verbose("Calling mpv_unobserve_property")
     mpv_unobserve_property(mpv, 0)
   }
 
   /// Remove observers for IINA preferences.
   private func removeOptionObservers() {
-    ObjcUtils.silenced {
-      self.optionObservers.forEach { (k, _) in
+    player.log.verbose("Removing option observers")
+    ObjcUtils.silenced { [self] in
+      for (k, _) in optionObservers {
         UserDefaults.standard.removeObserver(self, forKeyPath: k)
       }
+      optionObservers = [:]
     }
   }
 
@@ -844,7 +852,11 @@ class MPVController: NSObject {
         }
       }
     }
-    let returnValue = mpv_command(self.mpv, &cargs)
+    guard let mpv else {
+      log.debug("Aborting command: mpv is nil! Returning error")
+      return -20 // mpv_error.MPV_ERROR_GENERIC
+    }
+    let returnValue = mpv_command(mpv, &cargs)
     if checkError {
       chkErr(returnValue)
     }

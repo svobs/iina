@@ -110,6 +110,12 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
     resetWindowState()
   }
 
+  @IBAction func stopLoadingBtnAction(_ sender: Any) {
+    guard let playerCore else { return }
+    playerCore.stop()
+    overlayView.isHidden = true
+  }
+
   @IBAction func openBtnAction(_ sender: Any) {
     if let url = getURL().url {
       if rememberPasswordCheckBox.state == .on,
@@ -133,15 +139,29 @@ class OpenURLWindowController: IINAWindowController, NSWindowDelegate, NSTextFie
     let username = usernameField.stringValue
     let password = passwordField.stringValue
     let trimmedUrlString = urlField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard var urlValue = trimmedUrlString.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
-      return (nil, false)
+    // For apps built with Xcode 15 or later the behavior of the URL initializer has changed when
+    // running under macOS Sonoma or later. The behavior now matches URLComponents and will
+    // automatically percent encode characters. Must not apply percent encoding to the string
+    // passed to the URL initializer if the new new behavior is active.
+    var performPercentEncoding = true
+#if compiler(>=5.9)
+    if #available(macOS 14, *) {
+      performPercentEncoding = false
+    }
+#endif
+    var pstr = trimmedUrlString
+    if performPercentEncoding {
+      guard let urlValue = trimmedUrlString.addingPercentEncoding(withAllowedCharacters: .urlAllowed) else {
+        return (nil, false)
+      }
+      pstr = urlValue
     }
     var hasScheme = true
-    if let url = URL(string: urlValue), url.scheme == nil {
-      urlValue = "http://" + urlValue
+    if let url = URL(string: pstr), url.scheme == nil {
+      pstr = "http://" + pstr
       hasScheme = false
     }
-    guard let nsurl = NSURL(string: urlValue)?.standardized, let urlComponents = NSURLComponents(url: nsurl, resolvingAgainstBaseURL: false) else { return (nil, false) }
+    guard let nsurl = NSURL(string: pstr)?.standardized, let urlComponents = NSURLComponents(url: nsurl, resolvingAgainstBaseURL: false) else { return (nil, false) }
     if !username.isEmpty {
       urlComponents.user = username
       if !password.isEmpty {

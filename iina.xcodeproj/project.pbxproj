@@ -634,7 +634,6 @@
 
 /* Begin PBXFileReference section */
 		0507C25E2B5617650043AD05 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/MainMenu.strings; sourceTree = "<group>"; };
-		0507C25F2B5617660043AD05 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/MainWindowController.strings; sourceTree = "<group>"; };
 		0507C2602B5617660043AD05 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
 		0507C2612B5617660043AD05 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/PlaylistViewController.strings; sourceTree = "<group>"; };
 		0507C2622B5617660043AD05 /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/InspectorWindowController.strings; sourceTree = "<group>"; };
@@ -1088,7 +1087,6 @@
 		34ACAC7D2C142CE600F871A0 /* client.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
 		34ACAC7E2C142CE600F871A0 /* render.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = render.h; sourceTree = "<group>"; };
 		34ACAD602C16917000F871A0 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/MainMenu.strings; sourceTree = "<group>"; };
-		34ACAD612C16917000F871A0 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/MainWindowController.strings; sourceTree = "<group>"; };
 		34ACAD622C16917000F871A0 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
 		34ACAD632C16917000F871A0 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/PlaylistViewController.strings; sourceTree = "<group>"; };
 		34ACAD642C16917000F871A0 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InspectorWindowController.strings; sourceTree = "<group>"; };
@@ -1152,7 +1150,6 @@
 		34B1FDB02C70484B00FB93A4 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/PrefPluginViewController.strings; sourceTree = "<group>"; };
 		34B1FDB12C70484B00FB93A4 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/PrefPluginViewController.strings; sourceTree = "<group>"; };
 		34F294492C0A1BDE00F14962 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/MainMenu.strings; sourceTree = "<group>"; };
-		34F2944A2C0A1BDE00F14962 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/MainWindowController.strings; sourceTree = "<group>"; };
 		34F2944B2C0A1BDE00F14962 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/QuickSettingViewController.strings; sourceTree = "<group>"; };
 		34F2944C2C0A1BDE00F14962 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/PlaylistViewController.strings; sourceTree = "<group>"; };
 		34F2944D2C0A1BDE00F14962 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InspectorWindowController.strings; sourceTree = "<group>"; };
@@ -3703,9 +3700,6 @@
 				348BFFB328DC64F90045F683 /* hu */,
 				348BFFD528DC657C0045F683 /* pt */,
 				348BFFF728DC688C0045F683 /* sr-Latn */,
-				0507C25F2B5617660043AD05 /* he */,
-				34F2944A2C0A1BDE00F14962 /* id */,
-				34ACAD612C16917000F871A0 /* hr */,
 			);
 			name = PlayerWindowController.xib;
 			sourceTree = "<group>";

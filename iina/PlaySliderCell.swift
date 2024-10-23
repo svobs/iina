@@ -60,6 +60,16 @@ class PlaySliderCell: NSSliderCell {
   // MARK:- Displaying the Cell
 
   override func drawKnob(_ knobRect: NSRect) {
+    let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
+    if isLightTheme {
+      drawKnobWithShadow(knobRect: knobRect)
+    } else {
+      drawKnobOnly(knobRect: knobRect)
+    }
+  }
+
+  @discardableResult
+  private func drawKnobOnly(knobRect: NSRect) -> NSBezierPath {
     // Round the X position for cleaner drawing
     let rect = NSMakeRect(round(knobRect.origin.x),
                           knobRect.origin.y + 0.5 * (knobRect.height - knobHeight),
@@ -80,15 +90,26 @@ class PlaySliderCell: NSSliderCell {
 
     fillColor.setFill()
     path.fill()
+    return path
+  }
 
-    if isLightTheme {
-      if let shadowColor = NSShadow().shadowColor {
-        path.lineWidth = 0.4
-        shadowColor.setStroke()
-        path.stroke()
-      }
-      NSGraphicsContext.restoreGraphicsState()
+  private func drawKnobWithShadow(knobRect: NSRect) {
+    NSGraphicsContext.saveGraphicsState()
+
+    let shadow = NSShadow()
+    shadow.shadowBlurRadius = 1
+    shadow.shadowOffset = NSSize(width: 0, height: -0.5)
+    shadow.set()
+
+    let path = drawKnobOnly(knobRect: knobRect)
+
+    /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
+    if let shadowColor = shadow.shadowColor {
+      path.lineWidth = 0.4
+      shadowColor.setStroke()
+      path.stroke()
     }
+    NSGraphicsContext.restoreGraphicsState()
   }
 
   override func knobRect(flipped: Bool) -> NSRect {

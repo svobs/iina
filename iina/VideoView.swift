@@ -592,7 +592,7 @@ extension VideoView {
     guard let mpv = player.mpv else { return false }
 
     guard let primaries = mpv.getString(MPVProperty.videoParamsPrimaries), let gamma = mpv.getString(MPVProperty.videoParamsGamma) else {
-      logHDR.debug("Video primaries & gamma not available")
+      logHDR.debug("Video gamma and primaries not available")
       return false
     }
   
