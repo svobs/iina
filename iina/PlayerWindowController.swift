@@ -1174,7 +1174,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     playButton.refusesFirstResponder = true
     playButton.imageScaling = .scaleProportionallyUpOrDown
     if #available(macOS 11.0, *) {
-      let config = NSImage.SymbolConfiguration(textStyle: .headline)
+      /// The only reason for setting this is so that `replayImage`, when used, will be drawn in bold.
+      /// This is ignored when using play & pause images (they are static assets).
+      /// Looks like `pointSize` here is ignored. Not sure if `scale` is relevant either?
+      let config = NSImage.SymbolConfiguration(pointSize: 8, weight: .semibold, scale: .small)
       playButton.symbolConfiguration = config
     }
     playButton.translatesAutoresizingMaskIntoConstraints = false
