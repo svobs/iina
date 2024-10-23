@@ -77,7 +77,6 @@ extension PlayerWindowController {
 
       // FIXME: stick to individual side of screen
       // FIXME: parent playlist
-      // FIXME: play bar drawing
 
       // Top bar: other init
       topBarView.clipsToBounds = true

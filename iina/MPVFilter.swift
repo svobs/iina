@@ -60,7 +60,6 @@ class MPVFilter: NSObject {
           // else print param names
         } else {
           str += "="
-          // FIXME: this is an awful kludge
           // special tweak for lavfi filters
           if name == "lavfi" {
             str += "\(params!["graph"]!)"

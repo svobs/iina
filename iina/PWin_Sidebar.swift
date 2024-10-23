@@ -937,7 +937,7 @@ extension PlayerWindowController {
       /// If `lockViewportToVideoSize` is `true`, it is necessary to resize the window's height to
       /// accomodate the change in video height.
       if Preference.bool(for: .lockViewportToVideoSize) {
-        let desiredViewportSize = NSSize(width: newViewportWidth, height: newViewportWidth / viewportSize.aspect)
+        let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
         newGeo = resizedPlaylistGeo.scaleViewport(to: desiredViewportSize)
       } else {
         /// If `lockViewportToVideoSize` is `false`, window size won't change.
@@ -983,7 +983,7 @@ extension PlayerWindowController {
       let resizedPlaylistGeo = oldGeo.clone(outsideBars: oldGeo.outsideBars.clone(trailing: newPlaylistWidth))
 
       if Preference.bool(for: .lockViewportToVideoSize) {
-        let desiredViewportSize = NSSize(width: newViewportWidth, height: newViewportWidth / viewportSize.aspect)
+        let desiredViewportSize = NSSize(width: newViewportWidth, height: round(newViewportWidth / viewportSize.aspect))
         newGeo = resizedPlaylistGeo.scaleViewport(to: desiredViewportSize)
       } else {
         newGeo = resizedPlaylistGeo.refit()
