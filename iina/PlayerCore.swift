@@ -1015,16 +1015,15 @@ class PlayerCore: NSObject {
   /// When the command is first invoked it sets the A loop point to the timestamp of the current frame. When the command is invoked
   /// a second time it sets the B loop point to the timestamp of the current frame, activating looping and causing mpv to seek back to
   /// the A loop point. When the command is invoked again both loop points are cleared (set to zero) and looping stops.
-  func abLoop() -> Int32 {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-
-    // may subject to change
-    let returnValue = mpv.command(.abLoop)
-    if returnValue == 0 {
+  func abLoop() {
+    mpv.queue.async { [self] in
+      // may subject to change
+      let returnValue = mpv.command(.abLoop)
+      guard returnValue == 0 else { return }
+      
       syncAbLoop()
       sendOSD(.abLoop(info.abLoopStatus))
     }
-    return returnValue
   }
 
   /// Synchronize IINA with the state of the [mpv](https://mpv.io/manual/stable/) A-B loop command.

@@ -1137,7 +1137,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       switch keyBinding.action.first! {
 
       case MPVCommand.abLoop.rawValue:
-        abLoop()
+        player.abLoop()
         returnValue = 0
 
       case MPVCommand.quit.rawValue:
@@ -2166,88 +2166,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return tasks
   }
 
-  // MARK: - UI: Seek Time & Thumbnail Preview
-
-  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
-    let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !player.disableUI && !isOSCHidden && !osd.isShowingPersistentOSD && !isAnimatingLayoutTransition
-            && !currentLayout.isInteractiveMode else {
-      return false
-    }
-    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
-  }
-
-  /// Display time label & thumbnail when mouse over slider
-  func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
-    thumbDisplayTicketCounter += 1
-    let currentTicket = thumbDisplayTicketCounter
-
-    DispatchQueue.main.async { [self] in
-      guard currentTicket == thumbDisplayTicketCounter else { return }
-      refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
-    }
-  }
-
-  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
-    guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
-            let duration = player.info.playbackDurationSec else {
-      hideSeekTimeAndThumbnail()
-      return
-    }
-
-    // - 1. Time Hover Label
-
-    let xOffsetInPlaySlider = playSlider.convert(pointInWindow, from: nil).x
-
-    timePositionHoverLabelHorizontalCenterConstraint.constant = xOffsetInPlaySlider
-
-    let playbackPositionRatio = max(0, Double((xOffsetInPlaySlider - 3) / (playSlider.frame.width - 6)))
-    let previewTimeSec = duration * playbackPositionRatio
-    let stringRepresentation = VideoTime.string(from: previewTimeSec)
-    if timePositionHoverLabel.stringValue != stringRepresentation {
-      timePositionHoverLabel.stringValue = stringRepresentation
-    }
-    timePositionHoverLabel.isHidden = false
-
-    // - 2. Thumbnail Preview
-
-    guard let currentControlBar else {
-      thumbnailPeekView.isHidden = true
-      return
-    }
-    guard !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible) else {
-      thumbnailPeekView.isHidden = true
-      return
-    }
-
-    let didHide = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
-                                                     currentControlBar: currentControlBar, geo.video,
-                                                     viewportSize: viewportView.frame.size,
-                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
-    guard didHide else { return }
-    seekTimeAndThumbnailAnimationState = .shown
-    // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
-    // reliably, so using a timer works well as a failsafe.
-    resetSeekTimeAndThumbnailTimer()
-  }
-
-  // MARK: - UI: Other
+  // MARK: - UI: Music mode
 
   func showContextMenu() {
     // TODO
-  }
-
-  func refreshHidesOnDeactivateStatus() {
-    guard let window else { return }
-    window.hidesOnDeactivate = currentLayout.isWindowed && Preference.bool(for: .hideWindowsWhenInactive)
-  }
-
-  func abLoop() {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    player.mpv.queue.async { [self] in
-      _ = player.abLoop()
-    }
   }
 
   func enterMusicMode(withNewVidGeo newVidGeo: VideoGeometry? = nil) {
@@ -2326,34 +2248,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.saveState()
     }
     resetCollectionBehavior()
-  }
-
-  func setEmptySpaceColor(to newColor: CGColor) {
-    guard let window else { return }
-    window.contentView?.layer?.backgroundColor = newColor
-    viewportView.layer?.backgroundColor = newColor
-  }
-
-  func updateWindowBorderAndOpacity(using layout: LayoutState? = nil, windowOpacity newOpacity: Float? = nil) {
-    let layout = layout ?? currentLayout
-    /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
-    let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
-    // Native window removes the border if winodw background is transparent.
-    // Try to match this behavior for legacy window
-    let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || newOpacity < 1.0
-    if hide != customWindowBorderBox.isHidden {
-      log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
-      customWindowBorderBox.isHidden = hide
-      customWindowBorderTopHighlightBox.isHidden = hide
-    }
-
-    // Update window opacity *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards.
-    guard let window else { return }
-    let existingOpacity = window.contentView?.layer?.opacity ?? -1
-    guard existingOpacity != newOpacity else { return }
-    log.debug("Changing window opacity: \(existingOpacity) → \(newOpacity)")
-    window.backgroundColor = newOpacity < 1.0 ? .clear : .black
-    window.contentView?.layer?.opacity = newOpacity
   }
 
   // MARK: - Sync UI with playback
@@ -2629,18 +2523,97 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func forceDraw() {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
-      log.verbose("Skipping force video redraw: no video track selected")
+  func refreshHidesOnDeactivateStatus() {
+    guard let window else { return }
+    window.hidesOnDeactivate = currentLayout.isWindowed && Preference.bool(for: .hideWindowsWhenInactive)
+  }
+
+  /// All args are optional overrides
+  func updateWindowBorderAndOpacity(using layout: LayoutState? = nil, windowOpacity newOpacity: Float? = nil) {
+    let layout = layout ?? currentLayout
+    /// The title bar of the native `titled` style doesn't support translucency. So do not allow it for native modes:
+    let newOpacity: Float = layout.isFullScreen || !layout.spec.isLegacyStyle ? 1.0 : newOpacity ?? (Preference.isAdvancedEnabled ? Preference.float(for: .playerWindowOpacity) : 1.0)
+    // Native window removes the border if winodw background is transparent.
+    // Try to match this behavior for legacy window
+    let hide = !layout.spec.isLegacyStyle || layout.isFullScreen || newOpacity < 1.0
+    if hide != customWindowBorderBox.isHidden {
+      log.debug("Changing custom border to: \(hide ? "hidden" : "shown")")
+      customWindowBorderBox.isHidden = hide
+      customWindowBorderTopHighlightBox.isHidden = hide
+    }
+
+    // Update window opacity *after* showing the views above. Apparently their alpha values will not get updated if shown afterwards.
+    guard let window else { return }
+    let existingOpacity = window.contentView?.layer?.opacity ?? -1
+    guard existingOpacity != newOpacity else { return }
+    log.debug("Changing window opacity: \(existingOpacity) → \(newOpacity)")
+    window.backgroundColor = newOpacity < 1.0 ? .clear : .black
+    window.contentView?.layer?.opacity = newOpacity
+  }
+
+  // MARK: - UI: Seek Time & Thumbnail Preview
+
+  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
+    let isOSCHidden = currentControlBar?.isHidden ?? false
+    guard !player.disableUI && !isOSCHidden && !osd.isShowingPersistentOSD && !isAnimatingLayoutTransition
+            && !currentLayout.isInteractiveMode else {
+      return false
+    }
+    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
+  }
+
+  /// Display time label & thumbnail when mouse over slider
+  func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
+    thumbDisplayTicketCounter += 1
+    let currentTicket = thumbDisplayTicketCounter
+
+    DispatchQueue.main.async { [self] in
+      guard currentTicket == thumbDisplayTicketCounter else { return }
+      refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
+    }
+  }
+
+  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
+    guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
+          let duration = player.info.playbackDurationSec else {
+      hideSeekTimeAndThumbnail()
       return
     }
-    guard loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
-    guard !Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Forcing video redraw")
-    // Does nothing if already active. Will restart idle timer if paused
-    videoView.displayActive(temporary: player.info.isPaused)
-    videoView.videoLayer.drawAsync(forced: true)
+
+    // - 1. Time Hover Label
+
+    let xOffsetInPlaySlider = playSlider.convert(pointInWindow, from: nil).x
+
+    timePositionHoverLabelHorizontalCenterConstraint.constant = xOffsetInPlaySlider
+
+    let playbackPositionRatio = max(0, Double((xOffsetInPlaySlider - 3) / (playSlider.frame.width - 6)))
+    let previewTimeSec = duration * playbackPositionRatio
+    let stringRepresentation = VideoTime.string(from: previewTimeSec)
+    if timePositionHoverLabel.stringValue != stringRepresentation {
+      timePositionHoverLabel.stringValue = stringRepresentation
+    }
+    timePositionHoverLabel.isHidden = false
+
+    // - 2. Thumbnail Preview
+
+    guard let currentControlBar else {
+      thumbnailPeekView.isHidden = true
+      return
+    }
+    guard !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible) else {
+      thumbnailPeekView.isHidden = true
+      return
+    }
+
+    let didHide = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
+                                                     currentControlBar: currentControlBar, geo.video,
+                                                     viewportSize: viewportView.frame.size,
+                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+    guard didHide else { return }
+    seekTimeAndThumbnailAnimationState = .shown
+    // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
+    // reliably, so using a timer works well as a failsafe.
+    resetSeekTimeAndThumbnailTimer()
   }
 
   // MARK: - IBActions
@@ -2798,6 +2771,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   // MARK: - Utility
+
+  func forceDraw() {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard let currentVideoTrack = player.info.currentTrack(.video), currentVideoTrack.id != 0 else {
+      log.verbose("Skipping force video redraw: no video track selected")
+      return
+    }
+    guard loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
+    guard !Preference.bool(for: .isRestoreInProgress) else { return }
+    log.verbose("Forcing video redraw")
+    // Does nothing if already active. Will restart idle timer if paused
+    videoView.displayActive(temporary: player.info.isPaused)
+    videoView.videoLayer.drawAsync(forced: true)
+  }
+
+  func setEmptySpaceColor(to newColor: CGColor) {
+    guard let window else { return }
+    window.contentView?.layer?.backgroundColor = newColor
+    viewportView.layer?.backgroundColor = newColor
+  }
 
   /// Do not call this in while in native full screen. It seems to cause FS to get stuck and unable to exit.
   /// Try not to call this while animating. It can cause the window to briefly disappear
