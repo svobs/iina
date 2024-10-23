@@ -589,7 +589,6 @@ extension PlayerWindowController {
     }
   }
 
-  // FIXME: use resizeVideo, not resizeViewport
   func scaleVideoByIncrement(_ widthStep: CGFloat) {
     assert(DispatchQueue.isExecutingIn(.main))
     let currentViewportSize: NSSize
@@ -603,7 +602,8 @@ extension PlayerWindowController {
       return
     }
     let heightStep = widthStep / currentViewportSize.mpvAspect
-    let desiredViewportSize = CGSize(width: currentViewportSize.width + widthStep, height: currentViewportSize.height + heightStep)
+    let desiredViewportSize = CGSize(width: round(currentViewportSize.width + widthStep),
+                                     height: round(currentViewportSize.height + heightStep))
     log.verbose("Incrementing viewport width by \(widthStep), to desired size \(desiredViewportSize)")
     resizeViewport(to: desiredViewportSize)
   }
