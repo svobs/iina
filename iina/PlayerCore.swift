@@ -1020,7 +1020,7 @@ class PlayerCore: NSObject {
       // may subject to change
       let returnValue = mpv.command(.abLoop)
       guard returnValue == 0 else { return }
-      
+
       syncAbLoop()
       sendOSD(.abLoop(info.abLoopStatus))
     }

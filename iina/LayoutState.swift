@@ -313,16 +313,7 @@ class LayoutState {
     self.titleBarHeight + self.topOSCHeight
   }
 
-  var bottomBarHeight: CGFloat {
-    if isInteractiveMode {
-      return Constants.InteractiveMode.outsideBottomBarHeight
-    }
-    if enableOSC && oscPosition == .bottom {
-      // FIXME: store this instead!
-      return ControlBarGeometry.current.barHeight
-    }
-    return 0
-  }
+  var bottomBarHeight: CGFloat = 0
 
   /// - Bar widths/heights IF `.outsideViewport`
 
@@ -503,7 +494,7 @@ class LayoutState {
         outputLayout.trafficLightButtons = .showAlways
       }
 
-    } else if !outputLayout.isMusicMode {
+    } else if outputLayout.isWindowed {
       let visibleState: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
 
       outputLayout.topBarView = visibleState
@@ -551,11 +542,16 @@ class LayoutState {
         outputLayout.topOSCHeight = ControlBarGeometry.current.barHeight
       case .bottom:
         outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
+        outputLayout.bottomBarHeight = ControlBarGeometry.current.barHeight
       }
     } else {  // No OSC
       if layoutSpec.mode == .musicMode || layoutSpec.isInteractiveMode {
         assert(outputLayout.bottomBarPlacement == .outsideViewport)
         outputLayout.bottomBarView = .showAlways
+
+        if layoutSpec.isInteractiveMode {
+          outputLayout.bottomBarHeight = Constants.InteractiveMode.outsideBottomBarHeight
+        }
       }
     }
 
