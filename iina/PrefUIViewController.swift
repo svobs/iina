@@ -71,6 +71,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var topBarPositionContainerView: NSView!
   @IBOutlet weak var showTopBarTriggerContainerView: NSView!
   @IBOutlet weak var windowPreviewImageView: NSImageView!
+  @IBOutlet weak var arrowButtonActionPopUpButton: NSPopUpButton!
   @IBOutlet weak var oscBottomPlacementContainerView: NSView!
   @IBOutlet weak var oscSnapToCenterCheckboxContainerView: NSView!
   @IBOutlet weak var oscHeightStackView: NSStackView!
@@ -143,6 +144,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     .oscBarPlaybackIconSpacing,
     .oscBarToolbarIconSize,
     .oscBarToolbarIconSpacing,
+    .arrowButtonAction,
 
     .useLegacyWindowedMode,
     .aspectRatioPanelPresets,
@@ -223,6 +225,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   case PK.cropPanelPresets.rawValue:
       updateCropControlsFromPrefs()
     case PK.showTopBarTrigger.rawValue,
+      PK.arrowButtonAction.rawValue,
       PK.enableOSC.rawValue,
       PK.topBarPlacement.rawValue,
       PK.bottomBarPlacement.rawValue,
@@ -344,6 +347,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       context.allowsImplicitAnimation = animate ? !AccessibilityPreferences.motionReductionEnabled : false
       context.timingFunction = CAMediaTimingFunction(name: .linear)
 
+      let arrowButtonAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
+      arrowButtonActionPopUpButton.selectItem(withTag: arrowButtonAction.rawValue)
       autoHideAfterCheckBox.isEnabled = hasOverlay
       oscAutoHideTimeoutTextField.isEnabled = hasOverlay
       hideFadeableViewsOutsideWindowCheckBox.isEnabled = hasOverlay
@@ -524,6 +529,16 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
     ControlBarGeometry.current = geo
     Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
+  }
+
+  @IBAction func arrowButtonActionAction(_ sender: NSPopUpButton) {
+    let arrowButtonAction: Preference.ArrowButtonAction = .init(rawValue: sender.selectedTag()) ?? .defaultValue
+    let geo = ControlBarGeometry(arrowButtonAction: arrowButtonAction)
+    Logger.log.verbose("Updating arrowButtonAction to: \(geo.arrowButtonAction)")
+    ControlBarGeometry.current = geo
+    let val = geo.arrowButtonAction.rawValue
+    guard val != Preference.integer(for: .arrowButtonAction) else { return }
+    Preference.set(val, for: .arrowButtonAction)
   }
 
   // MARK: - PiP

@@ -8,6 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="PrefUIViewController" customModule="IINA" customModuleProvider="target">
             <connections>
+                <outlet property="arrowButtonActionPopUpButton" destination="SyB-0R-TLF" id="mQe-sW-7py"/>
                 <outlet property="aspectPresetsTokenField" destination="ujy-m2-hkj" id="6na-Cg-CtC"/>
                 <outlet property="autoHideAfterCheckBox" destination="IvI-R5-Sdu" id="wu0-bY-KHj"/>
                 <outlet property="cropPresetsTokenField" destination="hg9-M3-Cff" id="6pU-e7-Aco"/>
@@ -1251,7 +1252,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-727"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="578" height="1271"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -1801,7 +1802,7 @@ For smoothest results, also enable custom full screen.</string>
                                                                     </menu>
                                                                 </popUpButtonCell>
                                                                 <connections>
-                                                                    <binding destination="lH7-Vv-0M1" name="selectedTag" keyPath="values.arrowBtnAction" id="Kqm-bY-Szg"/>
+                                                                    <action selector="arrowButtonActionAction:" target="-2" id="aO8-jy-alE"/>
                                                                 </connections>
                                                             </popUpButton>
                                                         </subviews>
@@ -3106,7 +3107,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="-20" y="1073"/>
         </customView>
-        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="500" height="300"/>
             <subviews>
                 <textField identifier="SectionTitleThumb" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maZ-e8-1vw" userLabel="Thumbnail Preview Section Label">

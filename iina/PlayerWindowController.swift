@@ -25,6 +25,15 @@ class PlaybackControlButtonsView: ClickThroughView {
 // Use single instance of each for efficiency
 fileprivate let playImage = NSImage(named: "play")!
 fileprivate let pauseImage = NSImage(named: "pause")!
+fileprivate let replayImage: NSImage = {
+  if #available(macOS 11.0, *) {
+    if let img = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: "Restart from beginning") {
+      return img
+    }
+  }
+  return NSImage(named: "arrow.counterclockwise")!
+}()
+
 
 class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   unowned var player: PlayerCore
@@ -540,7 +549,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       .showTrailingSidebarToggleButton,
       .controlBarToolbarButtons,
       .allowVideoToOverlapCameraHousing,
-      .useLegacyWindowedMode:
+      .useLegacyWindowedMode,
+      .arrowButtonAction,
+      .playSliderBarLeftColor:
 
       log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
       updateTitleBarAndOSC()
@@ -577,8 +588,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if let newValue = newValue as? Int {
         horizontalScrollAction = Preference.ScrollAction(rawValue: newValue)!
       }
-    case .arrowButtonAction, .playSliderBarLeftColor:
-      updateTitleBarAndOSC()
     case .blackOutMonitor:
       if let newValue = newValue as? Bool {
         if isFullScreen {
@@ -1164,6 +1173,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     playButton.imagePosition = .imageOnly
     playButton.refusesFirstResponder = true
     playButton.imageScaling = .scaleProportionallyUpOrDown
+    if #available(macOS 11.0, *) {
+      let config = NSImage.SymbolConfiguration(textStyle: .headline)
+      playButton.symbolConfiguration = config
+    }
     playButton.translatesAutoresizingMaskIntoConstraints = false
     playButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -1224,6 +1237,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     fragPlaybackBtnsView.translatesAutoresizingMaskIntoConstraints = false
     fragPlaybackBtnsView.setContentHuggingPriority(.init(rawValue: 249), for: .vertical)  // hug superview more than default
 
+    // Try to make sure the buttons' bounding boxes reach the full height, for activation
+    // (their images will be limited by the width constraint & will stop scaling before this)
+    let leftArrowHeightConstraint = leftArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
+    leftArrowHeightConstraint.identifier = .init("leftArrowHeightConstraint")
+    leftArrowHeightConstraint.priority = .defaultHigh
+    leftArrowHeightConstraint.isActive = true
+    let rightArrowHeightConstraint = rightArrowButton.heightAnchor.constraint(equalTo: fragPlaybackBtnsView.heightAnchor)
+    rightArrowHeightConstraint.identifier = .init("rightArrowHeightConstraint")
+    rightArrowHeightConstraint.priority = .defaultHigh
+    rightArrowHeightConstraint.isActive = true
+
     // Video controllers and timeline indicators should not flip in a right-to-left language.
     fragPlaybackBtnsView.userInterfaceLayoutDirection = .leftToRight
 
@@ -1236,13 +1260,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     speedLabel.topAnchor.constraint(equalTo: fragPlaybackBtnsView.topAnchor).isActive = true
 
     fragPlaybackBtnsWidthConstraint = fragPlaybackBtnsView.widthAnchor.constraint(equalToConstant: oscGeo.totalPlayControlsWidth)
+    fragPlaybackBtnsWidthConstraint.identifier = .init("fragPlaybackBtnsWidthConstraint")
     fragPlaybackBtnsWidthConstraint.isActive = true
 
     leftArrowBtnHorizOffsetConstraint = leftArrowButton.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor,
                                                                                  constant: oscGeo.leftArrowOffsetX)
+    leftArrowBtnHorizOffsetConstraint.identifier = .init("leftArrowBtnHorizOffsetConstraint")
     leftArrowBtnHorizOffsetConstraint.isActive = true
 
-    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconSize)
+    arrowBtnWidthConstraint = leftArrowButton.widthAnchor.constraint(equalToConstant: oscGeo.arrowIconWidth)
     arrowBtnWidthConstraint.identifier = .init("arrowBtnWidthConstraint")
     arrowBtnWidthConstraint.isActive = true
 
@@ -1255,11 +1281,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let arrowBtnsEqualWidthConstraint = leftArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.widthAnchor, multiplier: 1)
     arrowBtnsEqualWidthConstraint.identifier = .init("arrowBtnsEqualWidthConstraint")
     arrowBtnsEqualWidthConstraint.isActive = true
-
-    let leftArrowAspectConstraint = leftArrowButton.widthAnchor.constraint(equalTo: leftArrowButton.heightAnchor)
-    leftArrowAspectConstraint.isActive = true
-    let rightArrowAspectConstraint = rightArrowButton.widthAnchor.constraint(equalTo: rightArrowButton.heightAnchor)
-    rightArrowAspectConstraint.isActive = true
 
     let leftArrowBtnVertOffsetConstraint = leftArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     leftArrowBtnVertOffsetConstraint.isActive = true
@@ -2872,7 +2893,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded else { return }
 
     let isPaused = player.info.isPaused
-    let playPauseImage = isPaused ? playImage : pauseImage
+    let playPauseImage: NSImage
+    if isPaused {
+      if let mediaPosition = player.info.playbackPositionSec, let mediaDuration =  player.info.playbackDurationSec,
+         mediaPosition == mediaDuration, Preference.bool(for: .resumeFromEndRestartsPlayback) {
+        playPauseImage = replayImage
+      } else {
+        playPauseImage = playImage
+      }
+    } else {
+      playPauseImage = pauseImage
+    }
 
     let oscGeo = ControlBarGeometry.current
     let playSpeed = player.info.playSpeed

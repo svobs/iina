@@ -283,8 +283,8 @@ extension PlayerWindowController {
         volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
       }
 
-      if arrowBtnWidthConstraint.constant > oscGeo.arrowIconSize {
-        arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+      if arrowBtnWidthConstraint.constant > oscGeo.arrowIconHeight {
+        arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
       }
       if playBtnWidthConstraint.constant > oscGeo.playIconSize {
         playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
@@ -535,8 +535,6 @@ extension PlayerWindowController {
       timePositionHoverLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
       timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
 
-      updateArrowButtonImages()
-
     } else if outputLayout.isMusicMode {
 
       // Music mode always has a control bar
@@ -781,7 +779,7 @@ extension PlayerWindowController {
       let oscGeo = ControlBarGeometry.current
 
       volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
-      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+      arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
       playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
       fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
       leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
@@ -1364,7 +1362,7 @@ extension PlayerWindowController {
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
 
-    arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconSize)
+    arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
 
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
     leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
@@ -1381,7 +1379,7 @@ extension PlayerWindowController {
       miniPlayer.leftArrowButton.image = oscGeo.leftArrowImage
       miniPlayer.rightArrowButton.image = oscGeo.rightArrowImage
 
-      let spacing: CGFloat = oscGeo.arrowBtnAction == .seek ? 12 : 16
+      let spacing: CGFloat = oscGeo.arrowButtonAction == .seek ? 12 : 16
       miniPlayer.leftArrowToPlayButtonSpaceConstraint.animateToConstant(spacing)
       miniPlayer.playButtonToRightArrowSpaceConstraint.animateToConstant(spacing)
     }

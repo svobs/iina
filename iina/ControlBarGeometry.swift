@@ -29,11 +29,17 @@ fileprivate let minMarginAbovePlayBtn: CGFloat = 16
 struct ControlBarGeometry {
   static let minBarHeightForSpeedLabel: CGFloat = 30
 
-  static var current = ControlBarGeometry()
+  static var current = ControlBarGeometry() {
+    didSet {
+      Logger.log.verbose("ControlBarGeometry.current was updated")
+    }
+  }
+
+  // MARK: Stored properties
 
   let position: Preference.OSCPosition
 
-  let arrowBtnAction: Preference.ArrowButtonAction
+  let arrowButtonAction: Preference.ArrowButtonAction
 
   /// Preferred height for "full-width" OSCs (i.e. top/bottom, not floating/title bar)
   let barHeight: CGFloat
@@ -44,40 +50,25 @@ struct ControlBarGeometry {
   /// Size of a side the 3 square playback button icons (Play/Pause, LeftArrow, RightArrow):
   let playIconSize: CGFloat
 
+  let leftArrowImage: NSImage
+  let rightArrowImage: NSImage
+
   /// This is usually the same as `playIconSize`, but can vary based on icon type
-  let arrowIconSize: CGFloat
+  let arrowIconHeight: CGFloat
+
+  /// Depends on `arrowIconHeight` and aspect ratio of arrow image
+  let arrowIconWidth: CGFloat
 
   /// Scale of spacing to the left & right of each playback button (for top/bottom OSC):
   let playIconSpacing: CGFloat
 
   let toolbarItems: [Preference.ToolBarButton]
 
-  var volumeIconSize: CGFloat {
-    if position == .floating {
-      return floatingVolumeIconSize
-    } else {
-      return playIconSize
-    }
-  }
-
-  var speedLabelFontSize: CGFloat {
-    let idealSize = playIconSize * 0.25
-    let freeHeight = barHeight - playIconSize
-    let deficit: CGFloat = max(0.0, idealSize - freeHeight)
-    let compromise = idealSize - (0.5 * deficit)
-    return compromise.clamped(to: 8...32)
-  }
-
-  var playIconSizeWithSpeedLabel: CGFloat {
-    guard barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel else { return playIconSize }
-    let freeHeight: CGFloat = barHeight - playIconSize
-    let deficit: CGFloat = speedLabelFontSize - freeHeight + minMarginAbovePlayBtn
-//    NSLog("IconSize:\(playIconSize), FreeHeight:\(freeHeight), Deficit:\(deficit)")
-    return playIconSize - (deficit < 0.0 ? 0.0 : deficit)
-  }
+  // MARK: Init
 
   /// All fields are optional. Any omitted fields will be filled in from preferences
   init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
+       arrowButtonAction: Preference.ArrowButtonAction? = nil,
        barHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
@@ -118,27 +109,44 @@ struct ControlBarGeometry {
     self.playIconSize = playIconSize
 
     // Compute size of arrow buttons
-    let arrowBtnAction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
-    self.arrowBtnAction = arrowBtnAction
-    if arrowBtnAction == .seek {
-      self.arrowIconSize = playIconSize * 0.75
+    let arrowButtonAction = arrowButtonAction ?? Preference.enum(for: .arrowButtonAction)
+    let arrowIconHeight: CGFloat
+    if arrowButtonAction == .seek {
+      arrowIconHeight = playIconSize * 0.75
     } else {
-      self.arrowIconSize = playIconSize
+      arrowIconHeight = playIconSize
+    }
+    let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
+    let img = leftArrowImage.cgImage!
+    let imageAspect = CGFloat(img.width) / CGFloat(img.height)
+    self.leftArrowImage = leftArrowImage
+    self.rightArrowImage = ControlBarGeometry.rightArrowImage(given: arrowButtonAction)
+    self.arrowIconWidth = round(arrowIconHeight * imageAspect)
+    self.arrowButtonAction = arrowButtonAction
+    self.arrowIconHeight = arrowIconHeight
+  }
+
+  var volumeIconSize: CGFloat {
+    if position == .floating {
+      return floatingVolumeIconSize
+    } else {
+      return playIconSize
     }
   }
 
-  private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
+  // MARK: Computed props: Playback Controls
 
-    let baseHeight = barHeight * iconSizeBaseMultiplier
-    let adjustableHeight = barHeight - baseHeight
-
-    return baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+  var speedLabelFontSize: CGFloat {
+    let idealSize = playIconSize * 0.25
+    let freeHeight = barHeight - playIconSize
+    let deficit: CGFloat = max(0.0, idealSize - freeHeight)
+    let compromise = idealSize - (0.5 * deficit)
+    return compromise.clamped(to: 8...32)
   }
 
   /// Width of left, right, play btns + their spacing
   var totalPlayControlsWidth: CGFloat {
-    let itemSizes = [arrowIconSize, playIconSize, arrowIconSize]
+    let itemSizes = [arrowIconWidth, playIconSize, arrowIconWidth]
     let totalIconSpace = itemSizes.reduce(0, +)
     let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count + 1)
     return totalIconSpace + totalInterIconSpace
@@ -149,7 +157,12 @@ struct ControlBarGeometry {
   }
 
   var rightArrowOffsetX: CGFloat {
-    (playIconSize + arrowIconSize) * 0.5 + playIconSpacing
+    (playIconSize + arrowIconWidth) * 0.5 + playIconSpacing
+  }
+
+  var playIconSpacingTicks: Int {
+    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks
+    return Int(round(ticksDouble))
   }
 
   var playIconSizeTicks: Int {
@@ -159,6 +172,8 @@ struct ControlBarGeometry {
     return Int(round(ticks))
   }
 
+  // MARK: Computed props: Toolbar
+
   var toolIconSizeTicks: Int {
     let baseHeight = barHeight * iconSizeBaseMultiplier
     let adjustableHeight = barHeight - baseHeight
@@ -166,26 +181,17 @@ struct ControlBarGeometry {
     return Int(round(ticks))
   }
 
-  private static func toolIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
-
-    return barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
-  }
-
   var toolIconSpacingTicks: Int {
     return Int(round(toolIconSpacing * toolSpacingScaleMultiplier / barHeight * maxTicks))
   }
 
-  private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
-    guard let ticks else { return nil }
-
-    return barHeight * ((CGFloat(ticks) / maxTicks) + playIconSpacingMinScaleMultiplier)
+  var totalToolbarWidth: CGFloat {
+    let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
+    let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)
+    return totalIconWidth + totalIconSpacing
   }
 
-  var playIconSpacingTicks: Int {
-    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks
-    return Int(round(ticksDouble))
-  }
+  // MARK: Static
 
   static func buttonSize(iconSize: CGFloat, iconSpacing: CGFloat) -> CGFloat {
     return iconSize + max(0, 2 * iconSpacing)
@@ -197,8 +203,32 @@ struct ControlBarGeometry {
     }
   }
 
-  var leftArrowImage: NSImage {
-    switch arrowBtnAction {
+  /// Prefs UI ticks → CGFloat
+  private static func iconSize(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+    guard let ticks else { return nil }
+
+    let baseHeight = barHeight * iconSizeBaseMultiplier
+    let adjustableHeight = barHeight - baseHeight
+
+    return baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+  }
+
+  /// Prefs UI ticks → CGFloat
+  private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+    guard let ticks else { return nil }
+
+    return barHeight * ((CGFloat(ticks) / maxTicks) + playIconSpacingMinScaleMultiplier)
+  }
+
+  /// Prefs UI ticks → CGFloat
+  private static func toolIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
+    guard let ticks else { return nil }
+
+    return barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
+  }
+
+  static func leftArrowImage(given arrowButtonAction: Preference.ArrowButtonAction) -> NSImage {
+    switch arrowButtonAction {
     case .playlist:
       return #imageLiteral(resourceName: "nextl")
     case .speed:
@@ -212,8 +242,8 @@ struct ControlBarGeometry {
     }
   }
 
-  var rightArrowImage: NSImage {
-    switch arrowBtnAction {
+  static func rightArrowImage(given arrowButtonAction: Preference.ArrowButtonAction) -> NSImage {
+    switch arrowButtonAction {
     case .playlist:
       return #imageLiteral(resourceName: "nextr")
     case .speed:
@@ -225,11 +255,5 @@ struct ControlBarGeometry {
         return #imageLiteral(resourceName: "speed")
       }
     }
-  }
-
-  var totalToolbarWidth: CGFloat {
-    let totalIconSpacing: CGFloat = 2 * toolIconSpacing * CGFloat(toolbarItems.count + 1)
-    let totalIconWidth = toolIconSize * CGFloat(toolbarItems.count)
-    return totalIconWidth + totalIconSpacing
   }
 }
