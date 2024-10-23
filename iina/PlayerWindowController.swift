@@ -1414,8 +1414,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let oldLayout = currentLayout
       let newLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
       buildLayoutTransition(named: "UpdateTitleBarAndOSC", from: oldLayout, to: newLayoutSpec,
-                            totalStartingDuration: IINAAnimation.DefaultDuration * 0.5,
-                            totalEndingDuration: IINAAnimation.DefaultDuration * 0.5,
                             thenRun: true)
     }
   }
