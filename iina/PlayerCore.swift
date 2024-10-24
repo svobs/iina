@@ -882,19 +882,20 @@ class PlayerCore: NSObject {
       return false
     }
 
-    log.debug("Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction))")")
+    log.debug("Screenshot requested by user\(keyBinding == nil ? "" : " (rawAction: \(keyBinding!.rawAction?.quoted ?? "nil"))")")
 
     var commandFlags: [String] = []
 
     if let keyBinding {
       var canUseIINAScreenshot = true
 
-      guard let commandName = keyBinding.action.first, commandName == MPVCommand.screenshot.rawValue else {
-        log.error("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction)")
+      guard let rawAction = keyBinding.rawAction, let action = keyBinding.action,
+            let commandName = keyBinding.action?.first, commandName == MPVCommand.screenshot.rawValue else {
+        log.error("Cannot take screenshot: unexpected first token in key binding action: \(keyBinding.rawAction?.quoted ?? "nil")")
         return false
       }
-      if keyBinding.action.count > 1 {
-        commandFlags = keyBinding.action[1].split(separator: "+").map{String($0)}
+      if action.count > 1 {
+        commandFlags = action[1].split(separator: "+").map{String($0)}
 
         for flag in commandFlags {
           switch flag {
@@ -913,7 +914,7 @@ class PlayerCore: NSObject {
       }
 
       if !canUseIINAScreenshot {
-        let returnValue = mpv.command(rawString: keyBinding.rawAction)
+        let returnValue = mpv.command(rawString: rawAction)
         return returnValue == 0
       }
     }

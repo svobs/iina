@@ -31,7 +31,8 @@ class KeyBindingTranslator {
     "no-osd", "osd-auto", "osd-bar", "osd-msg-bar", "raw", "repeatable", "expand-properties"
   ]
 
-  static func readableCommand(fromAction action: [String], isIINACommand: Bool = false) -> String {
+  static func readableCommand(fromAction action: [String]?, isIINACommand: Bool = false) -> String {
+    guard let action else { return "" }
     var commands = action.filter { !KeyBindingTranslator.UnsupportedCmdPrefix.contains($0) }
     // Command
     guard !commands.isEmpty else {

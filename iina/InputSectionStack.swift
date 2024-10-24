@@ -185,14 +185,14 @@ class InputSectionStack {
   private func extractScriptNames(inputSection: MPVInputSection) -> Set<String> {
     var scriptNameSet = Set<String>()
     for kb in inputSection.keyMappingList {
-      if kb.action.count == 2 && kb.action[0] == MPVCommand.scriptBinding.rawValue {
-        let scriptBindingName = kb.action[1]
+      if let action = kb.action, action.count == 2, action[0] == MPVCommand.scriptBinding.rawValue {
+        let scriptBindingName = action[1]
         if let scriptName = parseScriptName(from: scriptBindingName) {
           scriptNameSet.insert(scriptName)
         }
       } else {
         // indicates our code is wrong
-        log.error("Unexpected action for parsed key binding from 'define-section': \(kb.rawAction.quoted)")
+        log.error("Unexpected action for parsed key binding from 'define-section': \(kb.rawAction?.quoted ?? "nil")")
       }
     }
     return scriptNameSet

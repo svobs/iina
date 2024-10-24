@@ -14,6 +14,13 @@ fileprivate let draggingFormation: NSDraggingFormation = .default
 fileprivate let defaultDragOperation = NSDragOperation.move
 fileprivate let tableCellFontSize: CGFloat = 13
 
+/// Table View Controller for the `Key Bindings` (aka "Binding") table (a subview of `PrefKeyBindingViewController`).
+///
+/// - The Key Bindings table's entire data & UI state at any given moment is encapsulated into an instance of `BindingTableState`.
+/// Each instance, once created, is immutable, and serves as a state snapshot to facilitate undo/redo.
+/// - Any user action which makes an atomic change to the table's state requires a new `BindingTableState`, and any action
+/// (whether new, or undo, or redo) must go through `BindingTableStateManager` which keeps track of `BindingTableState`
+/// instances & applies the relevant changes.
 class BindingTableViewController: NSObject {
 
   private unowned var tableView: EditableTableView!
@@ -136,12 +143,20 @@ extension BindingTableViewController: NSTableViewDelegate {
     switch columnName {
     case "keyColumn":
       let stringValue = bindingRow.getKeyColumnDisplay(raw: isRaw)
-      setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin)
+      setFormattedText(for: cell, to: stringValue,
+                       isEnabled: bindingRow.isEnabled,
+                       origin: bindingRow.origin,
+                       userFixedPitchFont: isRaw)
       return cell
 
     case "actionColumn":
       let stringValue = bindingRow.getActionColumnDisplay(raw: isRaw)
-      setFormattedText(for: cell, to: stringValue, isEnabled: bindingRow.isEnabled, origin: bindingRow.origin, italic: !bindingRow.canBeModified)
+      let hasRawAction = bindingRow.keyMapping.rawAction != nil
+      setFormattedText(for: cell, to: stringValue,
+                       isEnabled: bindingRow.isEnabled,
+                       origin: bindingRow.origin,
+                       italic: !bindingRow.canBeModified,
+                       userFixedPitchFont: isRaw && hasRawAction)
       return cell
 
     case "statusColumn":
@@ -191,10 +206,12 @@ extension BindingTableViewController: NSTableViewDelegate {
     }
   }
 
-  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool, origin: InputBindingOrigin, italic: Bool = false) {
+  private func setFormattedText(for cell: NSTableCellView, to stringValue: String,
+                                isEnabled: Bool, origin: InputBindingOrigin, italic: Bool = false,
+                                userFixedPitchFont: Bool) {
     guard let textField = cell.textField else { return }
 
-    if isRaw {
+    if userFixedPitchFont {
       textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
     } else {
       textField.font = .systemFont(ofSize: tableCellFontSize)
@@ -510,8 +527,11 @@ extension BindingTableViewController: EditableTableViewDelegate {
     guard let row = bindingTableState.getDisplayedRow(at: rowIndex) else {
       return
     }
-
-    showEditBindingPopup(key: row.keyMapping.rawKey, action: row.keyMapping.readableAction, ok: { rawKey, rawAction, isIINACommand in
+    guard let readableAction = row.keyMapping.readableAction else {
+      Logger.log.error("Cannot edit binding row \(rowIndex): action missing from KeyMapping (\(row.keyMapping))!")
+      return
+    }
+    showEditBindingPopup(key: row.keyMapping.rawKey, action: readableAction, ok: { rawKey, rawAction, isIINACommand in
       let newVersion = row.keyMapping.clone(rawKey: rawKey, rawAction: rawAction, isIINACommand: isIINACommand)
       self.bindingTableState.updateBinding(at: rowIndex, to: newVersion)
     })

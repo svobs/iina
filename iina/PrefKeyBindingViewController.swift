@@ -11,6 +11,10 @@ import Cocoa
 fileprivate let fm = FileManager.default
 fileprivate typealias KC = PrefKeyBindingViewController
 
+/// Root view for all `Settings` > `Key Bindings` UI.
+///
+/// For the Configuration ("Conf") table, see `ConfTableViewController`.
+/// For the Key Bindings ("Binding") table, see `BindingTableViewController`
 @objcMembers
 class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEmbeddable {
 

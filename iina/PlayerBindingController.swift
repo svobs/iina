@@ -179,7 +179,7 @@ class PlayerBindingController {
           log.verbose("Ignoring \(keyMapping.normalizedMpvKey.quoted) (from: \(binding.srcSectionName.quoted))")
           hasPartialValidSequence = true
         } else {
-          log.debug("Found matching binding: \(keyMapping.normalizedMpvKey.quoted) → \(keyMapping.readableAction.quoted) (from: \(binding.srcSectionName.quoted))")
+          log.debug("Found matching binding: \(keyMapping.normalizedMpvKey.quoted) → \(keyMapping.actionDescription().quoted) (from: \(binding.srcSectionName.quoted))")
           // Non-ignored action! Clear prev key buffer as per mpv spec
           keyPressHistory.clear()
           return keyMapping

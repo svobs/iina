@@ -20,6 +20,9 @@ fileprivate let draggingFormation: NSDraggingFormation = .default
 /// Change to `true` to use `builtInConfTextColor` for built-in configs
 fileprivate let useSeparateColorForBuiltinConfs = true
 
+/// Table View Controller for the `Configuration` (aka "Conf") table (a subview of `PrefKeyBindingViewController`).
+///
+/// Each row of the Conf table represents an mpv "input config file" (`*.conf` file).
 class ConfTableViewController: NSObject {
   private unowned var tableView: EditableTableView!
   private var confTableState: ConfTableState {

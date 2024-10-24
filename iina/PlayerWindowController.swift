@@ -1116,6 +1116,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return true
     }
 
+    guard let rawAction = keyBinding.rawAction, let action = keyBinding.action else {
+      log.error("Expected key binding to have an mpv action, aborting: \(keyBinding)")
+      return false
+    }
+
     // Some script bindings will draw to the video area. We don't know which will, but
     // if the DisplayLink is not active the updates will not be displayed.
     // So start the DisplayLink temporily if not already running:
@@ -1123,18 +1128,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     if keyBinding.isIINACommand {
       // - IINA command
-      if let iinaCommand = IINACommand(rawValue: keyBinding.rawAction) {
+      if let iinaCommand = IINACommand(rawValue: rawAction) {
         handleIINACommand(iinaCommand)
         return true
       } else {
-        log.error("Unrecognized IINA command: \(keyBinding.rawAction.quoted)")
+        log.error("Unrecognized IINA command: \(rawAction.quoted)")
         return false
       }
     } else {
       // - mpv command
       let returnValue: Int32
       // execute the command
-      switch keyBinding.action.first! {
+      switch action.first! {
 
       case MPVCommand.abLoop.rawValue:
         player.abLoop()
@@ -1158,12 +1163,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         return player.screenshot(fromKeyBinding: keyBinding)
         
       default:
-        returnValue = player.mpv.command(rawString: keyBinding.rawAction)
+        returnValue = player.mpv.command(rawString: rawAction)
       }
       if returnValue == 0 {
         return true
       } else {
-        Logger.log("Return value \(returnValue) when executing key command \(keyBinding.rawAction)", level: .error)
+        log.error("Return value \(returnValue) when executing key command \(rawAction)")
         return false
       }
     }

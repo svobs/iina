@@ -46,7 +46,7 @@ class AppInputConfigBuilder {
         duplicateKeys.insert(key)
         prevSameKeyBinding.isEnabled = false
         if prevSameKeyBinding.origin == .iinaPlugin {
-          prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.readableAction.quoted). Plugins must use key bindings which have not already been used."
+          prevSameKeyBinding.displayMessage = "\(key.quoted) is overridden by \(binding.keyMapping.actionDescription().quoted). Plugins must use key bindings which have not already been used."
         } else {
           prevSameKeyBinding.displayMessage = "This binding is overridden by a binding below it which also uses \(key.quoted)"
         }
@@ -163,23 +163,25 @@ class AppInputConfigBuilder {
     var displayMessage: String = ""
     var finalMapping: KeyMapping = keyMapping
 
-    if keyMapping.rawKey == "default-bindings" && keyMapping.action.count == 1 && keyMapping.action[0] == "start" {
-      if AppInputConfig.logBindingsRebuild {
-        log.verbose("Skipping line: \"default-bindings start\"")
-      }
-      displayMessage = "IINA does not support default-level (\"builtin\") bindings" // TODO: localize
-      isEnabled = false
-    } else if let destinationSectionName = keyMapping.destinationSection {
-      /// Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
-      if destinationSectionName == section.name {
-        /// Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
-        let newRawAction = Array(keyMapping.action.dropFirst()).joined(separator: " ")
-        finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, comment: keyMapping.comment)
-        log.verbose("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)")
-      } else {
-        log.verbose("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)")
-        displayMessage = "Adding bindings to other input sections is not supported"  // TODO: localize
+    if let action = keyMapping.action {
+      if keyMapping.rawKey == "default-bindings", action.count == 1 && action[0] == "start" {
+        if AppInputConfig.logBindingsRebuild {
+          log.verbose("Skipping line: \"default-bindings start\"")
+        }
+        displayMessage = "IINA does not support default-level (\"builtin\") bindings" // TODO: localize
         isEnabled = false
+      } else if let destinationSectionName = keyMapping.destinationSection {
+        /// Special case: does the command contain an explicit input section using curly braces? (Example line: `Meta+K {default} screenshot`)
+        if destinationSectionName == section.name {
+          /// Drop "{section}" because it is unnecessary and will get in the way of libmpv command execution
+          let newRawAction = Array(action.dropFirst()).joined(separator: " ")
+          finalMapping = KeyMapping(rawKey: keyMapping.rawKey, rawAction: newRawAction, comment: keyMapping.comment)
+          log.verbose("Modifying binding to remove redundant section specifier (\(destinationSectionName.quoted)) for key: \(keyMapping.rawKey.quoted)")
+        } else {
+          log.verbose("Skipping binding which specifies section \(destinationSectionName.quoted) for key: \(keyMapping.rawKey.quoted)")
+          displayMessage = "Adding bindings to other input sections is not supported"  // TODO: localize
+          isEnabled = false
+        }
       }
     }
 

@@ -100,11 +100,6 @@ class InputBinding: NSObject {
   }
 
   func getActionColumnDisplay(raw: Bool) -> String {
-    if let menuItemMapping = self.keyMapping as? MenuItemMapping {
-      // These don't map directly to mpv commands, but have a description stored in the comment
-      return menuItemMapping.comment ?? ""
-    } else {
-      return raw ? keyMapping.readableAction : keyMapping.readableCommand
-    }
+    return keyMapping.actionDescription(preferRaw: raw)
   }
 }

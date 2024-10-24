@@ -46,33 +46,52 @@ class KeyMapping: NSObject, Codable {
 
   // MARK: Action
 
-  let action: [String]
+  var action: [String]? {
+    guard let rawAction else { return nil }
+    return rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+  }
 
   // The action with @iina removed (if applicable), but otherwise not formatted
-  let rawAction: String
+  let rawAction: String?
 
-  // Similar to rawAction, but includes the #@iina prefix if appropriate, and
-  // the tokens are always separated by exactly one space
-  var readableAction: String {
+  /// Similar to rawAction, but includes the #@iina prefix if appropriate, and
+  /// the tokens are always separated by exactly one space
+  var readableAction: String? {
     get {
+      guard let action else { return nil }
       let joined = action.joined(separator: " ")
       return isIINACommand ? ("\(KeyMapping.IINA_PREFIX) " + joined) : joined
     }
   }
 
   // The human-language description of the action
-  var readableCommand: String {
+  var readableCommand: String? {
+    guard let action else { return nil }
     return KeyBindingTranslator.readableCommand(fromAction: action, isIINACommand: isIINACommand)
+  }
+
+  /// Returns a String suitable for display in the Action column of the Key Bindings table.
+  func actionDescription(preferRaw: Bool = true) -> String {
+    if let mpvCommandString = preferRaw ? readableAction : readableCommand {
+      return mpvCommandString
+    }
+    // Some subclass (e.g. MenuItemMapping) don't have mpv actions.
+    // Fall back to comment field instead:
+    if let comment {
+      return comment
+    }
+    assert(false, "Should never get here!")
+    return ""
   }
 
   // This is a rare occurrence. The section, if it exists, will be the first element in `action` and will be surrounded by curly braces.
   // Leave it inside `rawAction` and `action` so that it will be easy to edit in the UI.
   var destinationSection: String? {
     get {
-      if action.count > 1 && action[0].count > 0 && action[0][action[0].startIndex] == "{" {
-        if let endIndex = action[0].firstIndex(of: "}") {
-          let inner = action[0][action[0].index(after: action[0].startIndex)..<endIndex]
-          return inner.trimmingCharacters(in: .whitespaces)
+      if let action, action.count > 1 {
+        var token = action[0]
+        if token.count > 2, token.removeFirst() == "{", token.removeLast() == "}" {
+          return token.trimmingCharacters(in: .whitespaces)
         }
       }
       return nil
@@ -89,6 +108,7 @@ class KeyMapping: NSObject, Codable {
     get {
       let iinaPrefix = isIINACommand ? "\(KeyMapping.IINA_PREFIX) " : ""
       let commentString = (comment == nil || comment!.isEmpty) ? "" : "   #\(comment!)"
+      let rawAction = rawAction ?? ""
       return "\(iinaPrefix)\(rawKey) \(rawAction)\(commentString)"
     }
   }
@@ -104,7 +124,6 @@ class KeyMapping: NSObject, Codable {
     isIINACommand = try container.decode(Bool.self, forKey: .isIINACommand)
     comment = try container.decodeIfPresent(String.self, forKey: .comment)
     normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
-    action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
   }
 
   func encode(to encoder: Encoder) throws {
@@ -118,14 +137,13 @@ class KeyMapping: NSObject, Codable {
 
   // Note: neither `rawKey` nor `rawAction` paranms should start with `KeyMapping.IINA_PREFIX`.
   // (If this is an IINA command, use `isIINACommand: true`)
-  init(rawKey: String, rawAction: String, isIINACommand: Bool = false, comment: String? = nil) {
-    assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && !rawAction.hasPrefix(KeyMapping.IINA_PREFIX), "Bad input to KeyMapping init")
+  init(rawKey: String, rawAction: String?, isIINACommand: Bool = false, comment: String? = nil) {
+    assert(!rawKey.hasPrefix(KeyMapping.IINA_PREFIX) && (rawAction == nil || !rawAction!.hasPrefix(KeyMapping.IINA_PREFIX)), "Bad input to KeyMapping init")
 
     self.rawKey = rawKey
     self.normalizedMpvKey = KeyCodeHelper.normalizeMpv(rawKey)
     self.isIINACommand = isIINACommand
     self.rawAction = rawAction
-    self.action = rawAction.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
     self.comment = comment
   }
 
@@ -148,7 +166,7 @@ class KeyMapping: NSObject, Codable {
   }
 
   public override var description: String {
-    return "\(rawKey.quoted) → \(isIINACommand ? "@IINA" : "") \(rawAction.quoted)"
+    return "\(rawKey.quoted) → \(isIINACommand ? "@IINA" : "") \(rawAction?.quoted ?? "nil")"
   }
 
   func rawEquals(_ other: KeyMapping) -> Bool {
@@ -247,7 +265,7 @@ class MenuItemMapping: KeyMapping {
     self.sourceName = sourceName
 
     // Store description in `comment`
-    super.init(rawKey: rawKey, rawAction: "", isIINACommand: true, comment: actionDescription)
+    super.init(rawKey: rawKey, rawAction: nil, isIINACommand: true, comment: actionDescription)
     self.menuItem = menuItem
   }
 
