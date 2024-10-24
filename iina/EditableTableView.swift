@@ -21,6 +21,14 @@ class EditableTableView: NSTableView {
 
   var tableChangeNotificationName: Notification.Name!
 
+  override var isEnabled: Bool {
+    didSet {
+      Logger.log.verbose("Table isEnabled changed to \(isEnabled); reloading data")
+      // Need to reload rows in order to redraw them as grayed out
+      reloadData()
+    }
+  }
+
   // Must provide this for EditableTableView extended functionality
   var editableDelegate: EditableTableViewDelegate? = nil {
     didSet {
