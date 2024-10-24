@@ -22,10 +22,6 @@ class TableUIChange {
   typealias AnimationBlock = (NSAnimationContext) -> Void
   typealias CompletionHandler = (TableUIChange) -> Void
 
-  // TODO: find a way to parameterize this cleanly
-  /// `selectNextRowAfterDelete` = after removal of rows, select the next single row after the last one removed
-  static let selectNextRowAfterDelete = true
-
   enum ContentChangeType {
     case removeRows
 
@@ -109,94 +105,16 @@ class TableUIChange {
     return false
   }
 
+  var hasSelectionAfterChange: Bool {
+    if let newSelectedRowIndexes {
+      return !newSelectedRowIndexes.isEmpty
+    }
+    return false
+  }
+
   init(_ changeType: ContentChangeType, completionHandler: TableUIChange.CompletionHandler? = nil) {
     self.changeType = changeType
     self.completionHandler = completionHandler
-  }
-
-  static func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
-                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
-    let toInsert = IndexSet(insertIndex..<(insertIndex+itemsToInsert.count))
-    tableUIChange.toInsert = toInsert
-    tableUIChange.newSelectedRowIndexes = toInsert
-
-    var allItemsNew = allCurrentItems
-    allItemsNew.insert(contentsOf: itemsToInsert, at: insertIndex)
-
-    return (tableUIChange, allItemsNew)
-  }
-
-  static func buildRemove<T>(_ indexesToRemove: IndexSet,
-                             in allCurrentRows: [T],
-                             selectNextRowAfterDelete: Bool = false,
-                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-    let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
-    tableUIChange.toRemove = indexesToRemove
-
-    var remainingRows: [T] = []
-    var lastRemovedIndex = 0
-    for (rowIndex, row) in allCurrentRows.enumerated() {
-      if indexesToRemove.contains(rowIndex) {
-        lastRemovedIndex = rowIndex
-      } else {
-        remainingRows.append(row)
-      }
-    }
-
-    if selectNextRowAfterDelete {
-      // After removal, select the single row after the last one removed:
-      let countRemoved = allCurrentRows.count - remainingRows.count
-      if countRemoved < allCurrentRows.count {
-        let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
-        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
-      }
-    }
-    return (tableUIChange, remainingRows)
-  }
-
-  static func buildMove<T>(_ indexesToMove: IndexSet,
-                           to insertIndex: Int,
-                           in allCurrentRows: [T],
-                           completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
-
-    // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
-    // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
-    var beforeInsert: [T] = []
-    var afterInsert: [T] = []
-    var movedRows: [T] = []
-    var moveIndexPairs: [(Int, Int)] = []
-    var dstIndexes = IndexSet()
-    var moveFromOffset = 0
-    var moveToOffset = 0
-
-    // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
-    for (origIndex, row) in allCurrentRows.enumerated() {
-      if indexesToMove.contains(origIndex) {
-        if origIndex < insertIndex {
-          // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
-          moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
-          dstIndexes.insert(insertIndex + moveFromOffset - 1)  // new selected index
-          moveFromOffset -= 1
-        } else {
-          moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
-          dstIndexes.insert(insertIndex + moveToOffset)  // new selected index
-          moveToOffset += 1
-        }
-        movedRows.append(row)
-      } else if origIndex < insertIndex {
-        beforeInsert.append(row)
-      } else {
-        afterInsert.append(row)
-      }
-    }
-    let allRowsUpdated = beforeInsert + movedRows + afterInsert
-
-    let tableUIChange = TableUIChange(.moveRows, completionHandler: completionHandler)
-    tableUIChange.toMove = moveIndexPairs
-    tableUIChange.newSelectedRowIndexes = dstIndexes
-
-    return (tableUIChange, allRowsUpdated)
   }
 
   // MARK: - Execute

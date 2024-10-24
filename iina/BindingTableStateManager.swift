@@ -14,6 +14,7 @@ fileprivate let clearFilterWhenChangeMade = false
  Responsible for changing the state of the Key Bindings table by building new versions of `BindingTableState`.
  */
 class BindingTableStateManager: NSObject {
+  static let selectNextRowAfterDelete = false
   enum Key: String {
     case appInputConfig = "AppInputConfig"
     case tableUIChange = "BindingTableChange"
@@ -110,7 +111,7 @@ class BindingTableStateManager: NSObject {
       let userConfSectionStartIndexOld = tableStateOld.appInputConfig.userConfSectionStartIndex
       let userConfSectionStartIndexNew = tableStateNew.appInputConfig.userConfSectionStartIndex
       let userConfSectionOffsetChange = userConfSectionStartIndexOld - userConfSectionStartIndexNew
-      let tableUIChangeUndo = TableUIChangeBuilder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange)
+      let tableUIChangeUndo = TableUIChangeBuilder.inverted(from: tableUIChange, andAdjustAllIndexesBy: userConfSectionOffsetChange, selectNextRowAfterDelete: BindingTableStateManager.selectNextRowAfterDelete)
       tableUIChangeUndo.setUpFlashForChangedRows()
 
       let bindingRowsOld = tableStateOld.appInputConfig.bindingCandidateList

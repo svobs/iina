@@ -56,17 +56,18 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   override func viewDidLoad() {
     super.viewDidLoad()
 
-    guard let op = Preference.value(for: .userOptions) as? [[String]] else {
+    guard let userOptions = Preference.value(for: .userOptions) as? [[String]] else {
       Utility.showAlert("extra_option.cannot_read", sheetWindow: view.window)
       return
     }
-    optionsList = op
+    optionsList = userOptions
 
     optionsTableView.dataSource = self
     optionsTableView.delegate = self
     optionsTableView.editableDelegate = self
     optionsTableView.sizeLastColumnToFit()
     optionsTableView.editableTextColumnIndexes = [0, 1]
+    optionsTableView.selectNextRowAfterDelete = false
     refreshRemoveButton()
 
     tableDragDelegate = TableDragDelegate<[String]>(optionsTableView,
@@ -127,11 +128,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   // MARK: - Options Table CRUD
 
   func insertOptionRows(_ itemList: [[String]], at targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: itemList, at: targetRowIndex, in: optionsList,
-                                                                 completionHandler: { [self] tableUIChange in
-      refreshRemoveButton()
+    let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: itemList, at: targetRowIndex, in: optionsList,
+                                                                    completionHandler: { [self] tableUIChange in
+      // Do not query table directly here. It seems to interfere with the row animations.
+      // Easy enough to get the selection from the TableUIChange object.
+      removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
-
+    
     // Save model
     optionsList = allItemsNew
     saveToUserDefaults()
@@ -141,13 +144,13 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   func insertNewOptionRows(_ newItems: [[String]], at targetRowIndex: Int, thenStartEdit: Bool = false) {
-    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: newItems, at: targetRowIndex, in: optionsList,
-                                                                 completionHandler: { [self] tableUIChange in
+    let (tableUIChange, allItemsNew) = optionsTableView.buildInsert(of: newItems, at: targetRowIndex, in: optionsList,
+                                                                    completionHandler: { [self] tableUIChange in
       // We don't know beforehand exactly which row it will end up at, but we can get this info from the TableUIChange object
       if thenStartEdit, let insertedRowIndex = tableUIChange.toInsert?.first {
         optionsTableView.editCell(row: insertedRowIndex, column: 0)
       }
-      refreshRemoveButton()
+      removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
     // Save model
@@ -159,9 +162,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   }
 
   func moveOptionRows(from rowIndexes: IndexSet, to targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: optionsList,
-                                                               completionHandler: { [self] _ in
-      refreshRemoveButton()
+    let (tableUIChange, allItemsNew) = optionsTableView.buildMove(rowIndexes, to: targetRowIndex, in: optionsList,
+                                                                  completionHandler: { [self] tableUIChange in
+      removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
     // Save model
@@ -174,12 +177,11 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   func removeOptionRows(_ rowIndexes: IndexSet) {
     guard !rowIndexes.isEmpty else { return }
-
-    Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
-    let (tableUIChange, allItemsNew) = TableUIChange.buildRemove(rowIndexes, in: optionsList,
-                                                                 selectNextRowAfterDelete: optionsTableView.selectNextRowAfterDelete,
-                                                                 completionHandler: { [self] _ in
-      refreshRemoveButton()
+    
+    Logger.log.verbose("Removing rows from Options table: \(rowIndexes)")
+    let (tableUIChange, allItemsNew) = optionsTableView.buildRemove(rowIndexes, in: optionsList,
+                                                                    completionHandler: { [self] tableUIChange in
+      removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
     // Save model
@@ -263,9 +265,6 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
   }
 
   func tableViewSelectionDidChange(_ notification: Notification) {
-    if optionsTableView.selectedRowIndexes.count == 0 {
-      optionsTableView.reloadData()
-    }
     refreshRemoveButton()
   }
 

@@ -10,7 +10,8 @@ import Foundation
 
 class TableUIChangeBuilder {
   // Derives the inverse of the given `TableUIChange` (as suitable for an Undo) and returns it.
-  static func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0) -> TableUIChange {
+  static func inverted(from original: TableUIChange, andAdjustAllIndexesBy offset: Int = 0,
+                       selectNextRowAfterDelete: Bool) -> TableUIChange {
     let inverted: TableUIChange
 
     switch original.changeType {
@@ -70,7 +71,7 @@ class TableUIChangeBuilder {
 
       // Preserve selection if possible:
       if let origBeginningSelection = original.oldSelectedRowIndexes,
-          let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
+         let origEndingSelection = original.newSelectedRowIndexes, inverted.changeType == .moveRows {
         inverted.newSelectedRowIndexes = origBeginningSelection
         inverted.oldSelectedRowIndexes = origEndingSelection
         Logger.log("Invert: changed movePairs from \(movePairsOrig) to \(inverted.toMove!.map{$0}); changed selection from \(origEndingSelection.map{$0}) to \(origBeginningSelection.map{$0})", level: .verbose)
@@ -78,7 +79,7 @@ class TableUIChangeBuilder {
     }
 
     // Select next row after delete event (maybe):
-    applyExtraSelectionRules(to: inverted)
+    applyExtraSelectionRules(to: inverted, selectNextRowAfterDelete: selectNextRowAfterDelete)
 
     return inverted
   }
@@ -149,8 +150,8 @@ class TableUIChangeBuilder {
     return diff
   }
 
-  static private func applyExtraSelectionRules(to tableUIChange: TableUIChange) {
-    if TableUIChange.selectNextRowAfterDelete && !tableUIChange.hasMove && !tableUIChange.hasInsert && tableUIChange.hasRemove {
+  static private func applyExtraSelectionRules(to tableUIChange: TableUIChange, selectNextRowAfterDelete: Bool) {
+    if selectNextRowAfterDelete && !tableUIChange.hasMove && !tableUIChange.hasInsert && tableUIChange.hasRemove {
       // After selected rows are deleted, keep a selection on the table by selecting the next row
       if let toRemove = tableUIChange.toRemove, let lastRemoveIndex = toRemove.last {
         let newSelectionIndex: Int = lastRemoveIndex - toRemove.count + 1
@@ -162,5 +163,117 @@ class TableUIChangeBuilder {
         }
       }
     }
+  }
+
+  /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
+  static func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
+                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    let tableUIChange = TableUIChange(.insertRows, completionHandler: completionHandler)
+    let toInsert = IndexSet(insertIndex..<(insertIndex+itemsToInsert.count))
+    tableUIChange.toInsert = toInsert
+    tableUIChange.newSelectedRowIndexes = toInsert
+
+    var allItemsNew = allCurrentItems
+    allItemsNew.insert(contentsOf: itemsToInsert, at: insertIndex)
+
+    return (tableUIChange, allItemsNew)
+  }
+
+  /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
+  static func buildRemove<T>(_ indexesToRemove: IndexSet,
+                             in allCurrentRows: [T],
+                             selectNextRowAfterDelete: Bool,
+                             completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
+    tableUIChange.toRemove = indexesToRemove
+
+    var remainingRows: [T] = []
+    var lastRemovedIndex = 0
+    for (rowIndex, row) in allCurrentRows.enumerated() {
+      if indexesToRemove.contains(rowIndex) {
+        lastRemovedIndex = rowIndex
+      } else {
+        remainingRows.append(row)
+      }
+    }
+
+    if selectNextRowAfterDelete {
+      // After removal, select the single row after the last one removed:
+      let countRemoved = allCurrentRows.count - remainingRows.count
+      if countRemoved < allCurrentRows.count {
+        let newSelectionIndex: Int = lastRemovedIndex - countRemoved + 1
+        tableUIChange.newSelectedRowIndexes = IndexSet(integer: newSelectionIndex)
+      }
+    }
+    return (tableUIChange, remainingRows)
+  }
+
+  /// Do not use this moving forward. Use the equivalent `EditableTableView` method.
+  static func buildMove<T>(_ indexesToMove: IndexSet,
+                           to insertIndex: Int,
+                           in allCurrentRows: [T],
+                           completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+
+    // Divide all the rows into 3 groups: before + after the insert, + the insert itself.
+    // Since each row will be moved in order from top to bottom, it's fairly easy to calculate where each row will go
+    var beforeInsert: [T] = []
+    var afterInsert: [T] = []
+    var movedRows: [T] = []
+    var moveIndexPairs: [(Int, Int)] = []
+    var dstIndexes = IndexSet()
+    var moveFromOffset = 0
+    var moveToOffset = 0
+
+    // Drag & Drop reorder algorithm: https://stackoverflow.com/questions/2121907/drag-drop-reorder-rows-on-nstableview
+    for (origIndex, row) in allCurrentRows.enumerated() {
+      if indexesToMove.contains(origIndex) {
+        if origIndex < insertIndex {
+          // If we moved the row from above to below, all rows up to & including its new location get shifted up 1
+          moveIndexPairs.append((origIndex + moveFromOffset, insertIndex - 1))
+          dstIndexes.insert(insertIndex + moveFromOffset - 1)  // new selected index
+          moveFromOffset -= 1
+        } else {
+          moveIndexPairs.append((origIndex, insertIndex + moveToOffset))
+          dstIndexes.insert(insertIndex + moveToOffset)  // new selected index
+          moveToOffset += 1
+        }
+        movedRows.append(row)
+      } else if origIndex < insertIndex {
+        beforeInsert.append(row)
+      } else {
+        afterInsert.append(row)
+      }
+    }
+    let allRowsUpdated = beforeInsert + movedRows + afterInsert
+
+    let tableUIChange = TableUIChange(.moveRows, completionHandler: completionHandler)
+    tableUIChange.toMove = moveIndexPairs
+    tableUIChange.newSelectedRowIndexes = dstIndexes
+
+    return (tableUIChange, allRowsUpdated)
+  }
+}
+
+// MARK: - EditableTableView
+
+extension EditableTableView {
+  func buildInsert<T>(of itemsToInsert: [T], at insertIndex: Int, in allCurrentItems: [T],
+                      completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    return TableUIChangeBuilder.buildInsert(of: itemsToInsert, at: insertIndex, in: allCurrentItems,
+                                            completionHandler: completionHandler)
+  }
+  func buildRemove<T>(_ indexesToRemove: IndexSet,
+                      in allCurrentRows: [T],
+                      completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    return TableUIChangeBuilder.buildRemove(indexesToRemove, in: allCurrentRows,
+                                            selectNextRowAfterDelete: selectNextRowAfterDelete,
+                                            completionHandler: completionHandler)
+  }
+  func buildMove<T>(_ indexesToMove: IndexSet,
+                    to insertIndex: Int,
+                    in allCurrentRows: [T],
+                    completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
+    return TableUIChangeBuilder.buildMove(indexesToMove, to: insertIndex, in: allCurrentRows,
+                                          completionHandler: completionHandler)
   }
 }

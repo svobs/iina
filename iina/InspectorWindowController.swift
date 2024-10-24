@@ -465,7 +465,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ stringList: [String], at targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = TableUIChange.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
+    let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
                                                      completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
       watchTableContainerView.layout()
@@ -480,7 +480,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   }
 
   func moveWatchRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
-    let (tableUIChange, allItemsNew) = TableUIChange.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
+    let (tableUIChange, allItemsNew) = watchTableView.buildMove(rowIndexes, to: targetRowIndex, in: watchProperties)
 
     // Save model
     watchProperties = allItemsNew
@@ -494,7 +494,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     guard !rowIndexes.isEmpty else { return }
 
     Logger.log.verbose("Removing rows from Watch table: \(rowIndexes)")
-    let (tableUIChange, allItemsNew) = TableUIChange.buildRemove(rowIndexes, in: watchProperties,
+    let (tableUIChange, allItemsNew) = watchTableView.buildRemove(rowIndexes, in: watchProperties,
                                                                  completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
       watchTableContainerView.layout()

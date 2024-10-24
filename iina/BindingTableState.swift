@@ -103,7 +103,8 @@ struct BindingTableState {
     Logger.log.verbose("Moving \(rowIndexes.count) bindings to \(isFiltered ? "filtered" : "unfiltered") index \(index), which equates to insert at unfiltered index \(insertIndex)")
 
     let srcIndexes = ensureUnfilteredIndexes(forRowIndexes: rowIndexes)  // guarantees unfiltered indexes
-    let (tableUIChange, allRowsUpdated) = TableUIChange.buildMove(rowIndexes, to: insertIndex, in: allRows, completionHandler: afterComplete)
+    let (tableUIChange, allRowsUpdated) = TableUIChangeBuilder.buildMove(rowIndexes, to: insertIndex, in: allRows,
+                                                                         completionHandler: afterComplete)
     tableUIChange.oldSelectedRowIndexes = srcIndexes  // to help restore selection on undo
 
     Logger.log.verbose("Generated \(tableUIChange.toMove!.count) movePairs: \(tableUIChange.toMove!); will change selection: \(srcIndexes.map{$0}) → \(tableUIChange.newSelectedRowIndexes!.map{$0})")
@@ -127,8 +128,8 @@ struct BindingTableState {
     // We can get away with making these assumptions about InputBinding fields, because only the "default" section can be modified by the user
     let insertedRows = mappingList.map{InputBinding($0, origin: .confFile, srcSectionName: SharedInputSection.USER_CONF_SECTION_NAME)}
 
-    let (tableUIChange, allRowsNew) = TableUIChange.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
-                                                                completionHandler: afterComplete)
+    let (tableUIChange, allRowsNew) = TableUIChangeBuilder.buildInsert(of: insertedRows, at: insertIndex, in: allRows,
+                                                                       completionHandler: afterComplete)
 
     doAction(allRowsNew, tableUIChange)
   }
@@ -155,7 +156,8 @@ struct BindingTableState {
       return
     }
 
-    let (tableUIChange, remainingRowsUnfiltered) = TableUIChange.buildRemove(indexesToRemove, in: allRows)
+    let (tableUIChange, remainingRowsUnfiltered) = TableUIChangeBuilder.buildRemove(indexesToRemove, in: allRows,
+                                                                                    selectNextRowAfterDelete: BindingTableStateManager.selectNextRowAfterDelete)
     tableUIChange.toRemove = indexesToRemove
 
     doAction(remainingRowsUnfiltered, tableUIChange)
