@@ -9,6 +9,8 @@
 import Cocoa
 
 fileprivate let tableCellFontSize: CGFloat = 13
+// Options are of type text, which can be dangerous if unrelated text is on the clipboard.
+fileprivate let maxAllowedPastedOptions = 1000
 
 @objcMembers
 class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbeddable {
@@ -80,7 +82,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
                                                     removeFunc: removeOptionRows)
 
 
-    enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings", comment: "Enable advanced settings")
+    enableAdvancedSettingsLabel.stringValue = NSLocalizedString("preference.enable_adv_settings",
+                                                                comment: "Enable advanced settings")
   }
 
   private func saveToUserDefaults() {
@@ -116,7 +119,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
 
   @objc func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow rowIndex: Int,
                        proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
-    return tableDragDelegate!.tableView(tableView, validateDrop: info, proposedRow: rowIndex, proposedDropOperation: dropOperation)
+    return tableDragDelegate!.tableView(tableView, validateDrop: info, proposedRow: rowIndex,
+                                        proposedDropOperation: dropOperation)
   }
 
   @objc func tableView(_ tableView: NSTableView,
@@ -139,7 +143,7 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsList = allItemsNew
     saveToUserDefaults()
 
-    // Notify Watch table of update:
+    // Notify Options table of update:
     optionsTableView.post(tableUIChange)
   }
 
@@ -153,11 +157,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    // Save model
     optionsList = allItemsNew
     saveToUserDefaults()
 
-    // Notify Watch table of update:
     optionsTableView.post(tableUIChange)
   }
 
@@ -167,11 +169,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    // Save model
     optionsList = allItemsNew
     saveToUserDefaults()
 
-    // Animate update to Watch table UI:
     optionsTableView.post(tableUIChange)
   }
 
@@ -184,11 +184,9 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
       removeButton.isHidden = !tableUIChange.hasSelectionAfterChange
     })
 
-    // Save model
     optionsList = allItemsNew
     saveToUserDefaults()
 
-    // Animate update to Watch table UI:
     optionsTableView.post(tableUIChange)
   }
 
@@ -412,7 +410,12 @@ fileprivate func readOptionsListFromPasteboard(_ pasteboard: NSPasteboard) -> [[
 }
 
 fileprivate func readOptionsFromClipboard() -> [[String]] {
-  return readOptionsListFromPasteboard(NSPasteboard.general)
+  let optionsList = readOptionsListFromPasteboard(NSPasteboard.general)
+  guard optionsList.count < maxAllowedPastedOptions else {
+    Logger.log.debug("Disabling paste: clipboard contains more than \(maxAllowedPastedOptions) options (counted: \(optionsList.count))")
+    return []
+  }
+  return optionsList
 }
 
 // Convert conf file path to URL and put it in clipboard
