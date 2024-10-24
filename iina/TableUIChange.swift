@@ -129,7 +129,7 @@ class TableUIChange {
 
   static func buildRemove<T>(_ indexesToRemove: IndexSet,
                              in allCurrentRows: [T],
-                             selectNextRowAfterDelete: Bool = true,
+                             selectNextRowAfterDelete: Bool = false,
                              completionHandler: TableUIChange.CompletionHandler? = nil) -> (TableUIChange, [T]) {
     let tableUIChange = TableUIChange(.removeRows, completionHandler: completionHandler)
     tableUIChange.toRemove = indexesToRemove
@@ -198,9 +198,10 @@ class TableUIChange {
 
     return (tableUIChange, allRowsUpdated)
   }
-  // MARK: Execute
 
-  // Subclasses should override executeContentUpdates() instead of this
+  // MARK: - Execute
+
+  /// Subclasses should override executeContentUpdates() instead of this
   func execute(on tableView: EditableTableView) {
     let animationGroups = LinkedList<AnimationBlock>()
 
