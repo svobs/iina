@@ -15,7 +15,6 @@ class AboutWindowContributorAvatarItem: NSCollectionViewItem {
 
   override func viewDidLoad() {
     guard let imageView = imageView else { return }
-    imageView.wantsLayer = true
     imageView.layer?.shadowColor = NSColor.controlBackgroundColor.cgColor
     imageView.layer?.shadowOffset = CGSize(width: 0, height: 1)
     imageView.layer?.shadowRadius = 2

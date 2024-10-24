@@ -86,10 +86,8 @@ extension PlayerWindowController {
 
       /// Set `window.contentView`'s background to black so that the windows behind this one don't bleed through
       /// when `lockViewportToVideoSize` is disabled, or when in legacy full screen on a Macbook screen  with a
-      /// notch and the preference `allowVideoToOverlapCameraHousing` is false.
-      contentView.wantsLayer = true
-      // Need this to be black also, for sidebar animations
-      viewportView.wantsLayer = true
+      /// notch and the preference `allowVideoToOverlapCameraHousing` is false. Also needed so that sidebars don't
+      /// bleed through during their show/hide animations.
       setEmptySpaceColor(to: Constants.Color.defaultWindowBackgroundColor)
 
       applyThemeMaterial()
@@ -108,7 +106,6 @@ extension PlayerWindowController {
       // is invisible to the human eye. This workaround may not be effective in all cases.
       if #available(macOS 13, *) {
         let view = NSView(frame: NSRect(origin: .zero, size: NSSize(width: 0.1, height: 0.1)))
-        view.wantsLayer = true
         view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
         view.layer?.opacity = 0.01
         contentView.addSubview(view)
@@ -358,7 +355,6 @@ extension PlayerWindowController {
   }
 
   private func initAlbumArtView() {
-    defaultAlbumArtView.wantsLayer = true
     defaultAlbumArtView.isHidden = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
     viewportView.addSubview(defaultAlbumArtView)

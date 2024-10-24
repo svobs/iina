@@ -233,7 +233,6 @@
 		84791C8B1D405E9D0069E28A /* PlaybackInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84791C8A1D405E9D0069E28A /* PlaybackInfo.swift */; };
 		84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84795C381E083EE30059A648 /* PrefControlViewController.swift */; };
 		847C62CA1DC13CDA00E1EF16 /* PrefGeneralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847C62C81DC13CDA00E1EF16 /* PrefGeneralViewController.swift */; };
-		84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84817C951DBDCA5F00CC2279 /* SettingsListCellView.swift */; };
 		84817C981DBDCE4300CC2279 /* RoundedColorWell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */; };
 		8483FB001EDFF325000F55D6 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 8483FAFF1EDFF325000F55D6 /* Credits.rtf */; };
 		84879A981E0FFC7E0004F894 /* PrefUIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84879A961E0FFC7E0004F894 /* PrefUIViewController.swift */; };
@@ -1492,7 +1491,6 @@
 		84792F541EBB957E002E98F6 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		84795C381E083EE30059A648 /* PrefControlViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefControlViewController.swift; sourceTree = "<group>"; };
 		847C62C81DC13CDA00E1EF16 /* PrefGeneralViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefGeneralViewController.swift; sourceTree = "<group>"; };
-		84817C951DBDCA5F00CC2279 /* SettingsListCellView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsListCellView.swift; sourceTree = "<group>"; };
 		84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoundedColorWell.swift; sourceTree = "<group>"; };
 		8482982123C3843C0088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/MainMenu.strings; sourceTree = "<group>"; };
 		8482982323C384400088E223 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PlayerWindowController.strings; sourceTree = "<group>"; };
@@ -2720,7 +2718,6 @@
 				84F725551D4783EE000DEF1B /* VolumeSliderCell.swift */,
 				8434BAAC1D5E4546003BECF2 /* SlideUpButton.swift */,
 				8487BEC01D744FA800FD17B0 /* FlippedView.swift */,
-				84817C951DBDCA5F00CC2279 /* SettingsListCellView.swift */,
 				84817C971DBDCE4300CC2279 /* RoundedColorWell.swift */,
 				84AABE921DBFAF1A00D138FD /* FontPickerWindowController.swift */,
 				8400D5DD1E1AB326006785F5 /* FontPickerWindowController.xib */,
@@ -3398,7 +3395,6 @@
 				847644081D48B413004F6DF5 /* MPVOption.swift in Sources */,
 				D1D87E0629320F7C00737886 /* UndoHelper.swift in Sources */,
 				D1A4C2E02BFC68DB00CE32A9 /* MarginQuad.swift in Sources */,
-				84817C961DBDCA5F00CC2279 /* SettingsListCellView.swift in Sources */,
 				D1F64E902B2A655C0030E07E /* PWin_Resize.swift in Sources */,
 				84A886F31E26CA24008755BB /* Regex.swift in Sources */,
 				D1FA42E328E4323E00DF49DD /* InputSectionStack.swift in Sources */,

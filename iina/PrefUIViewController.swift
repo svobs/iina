@@ -183,8 +183,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     updateAspectControlsFromPrefs()
     updateCropControlsFromPrefs()
 
-    oscToolbarStackView.wantsLayer = true
-
     let geo = ControlBarGeometry.current
     let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: geo.barHeight)
     hConstraint.isActive = true
@@ -821,7 +819,6 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 class PlayerWindowPreviewView: NSView {
 
   override func awakeFromNib() {
-    self.wantsLayer = true
     self.layer?.cornerRadius = 6
     self.layer?.masksToBounds = true
     self.layer?.borderWidth = 1

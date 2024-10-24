@@ -45,7 +45,6 @@ class CustomTitleBarViewController: NSViewController {
                                                     action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
-    leadingStackView.wantsLayer = true
     leadingStackView.layer?.backgroundColor = .clear
     leadingStackView.orientation = .horizontal
     leadingStackView.distribution = .fill
@@ -90,7 +89,6 @@ class CustomTitleBarViewController: NSViewController {
     titleText.isEditable = false
     titleText.isSelectable = false
     titleText.isFieldEditor = false
-    titleText.wantsLayer = true
     titleText.backgroundColor = .clear
     let pStyle: NSMutableParagraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
     pStyle.lineBreakMode = .byTruncatingMiddle
@@ -111,7 +109,6 @@ class CustomTitleBarViewController: NSViewController {
     trailingSidebarToggleButton = makeTitleBarButton(imgName: "sidebar.trailing",
                                                      action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
-    trailingStackView.wantsLayer = true
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
     trailingStackView.detachesHiddenViews = true

@@ -23,7 +23,6 @@ class SidebarTabView: NSViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    view.wantsLayer = true
     view.layer?.cornerRadius = 6.0  // TODO: why?
     updateStyle()
     label.stringValue = name

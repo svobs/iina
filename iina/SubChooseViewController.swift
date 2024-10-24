@@ -27,7 +27,6 @@ class SubChooseViewController: NSViewController {
     super.viewDidLoad()
 
     if let scrollView = tableView.enclosingScrollView {
-      scrollView.wantsLayer = true
       scrollView.layer?.cornerRadius = 6
     }
 

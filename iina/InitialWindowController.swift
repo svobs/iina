@@ -37,13 +37,11 @@ fileprivate class GrayHighlightRowView: NSTableRowView {
   }
 
   func setHoverHighlight() {
-    self.wantsLayer = true
     self.layer?.cornerRadius = 6
     self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackgroundHover.cgColor
   }
 
   func unsetHoverHighlight() {
-    self.wantsLayer = true
     self.layer?.cornerRadius = 6
     self.layer?.backgroundColor = NSColor.initialWindowActionButtonBackground.cgColor
   }
@@ -133,8 +131,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
     appIcon.unregisterDraggedTypes()
     window?.contentView?.registerForDraggedTypes([.nsFilenames, .nsURL, .string])
 
-    mainView.wantsLayer = true
-
     let infoDict = InfoDictionary.shared
     let (version, build) = infoDict.version
 
@@ -185,7 +181,6 @@ class InitialWindowController: IINAWindowController, NSWindowDelegate {
       gradientLayer.colors = window.effectiveAppearance.isDark ?
         [NSColor.black.withAlphaComponent(0.4).cgColor, NSColor.black.withAlphaComponent(0).cgColor] :
         [NSColor.black.withAlphaComponent(0.1).cgColor, NSColor.black.withAlphaComponent(0).cgColor]
-      leftOverlayView.wantsLayer = true
       leftOverlayView.layer = gradientLayer
     }
   }
@@ -424,7 +419,6 @@ class InitialWindowViewActionButton: NSView {
   var pressedBackground = NSColor.initialWindowActionButtonBackgroundPressed
 
   override func awakeFromNib() {
-    self.wantsLayer = true
     self.layer?.cornerRadius = 6  // Round highlights
     self.layer?.backgroundColor = normalBackground.cgColor
     self.addTrackingArea(NSTrackingArea(rect: self.bounds, options: [.activeInKeyWindow, .mouseEnteredAndExited], owner: self, userInfo: nil))

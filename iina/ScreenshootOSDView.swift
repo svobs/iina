@@ -24,7 +24,6 @@ class ScreenshootOSDView: NSViewController {
     self.size = imageSize
     self.fileURL = fileURL
     view.translatesAutoresizingMaskIntoConstraints = false
-    imageView.wantsLayer = true
     imageView.widthAnchor.constraint(lessThanOrEqualToConstant: imageSize.width).isActive = true
     imageView.heightAnchor.constraint(lessThanOrEqualToConstant: imageSize.height).isActive = true
     imageView.layer?.borderColor = NSColor.gridColor.withAlphaComponent(0.6).cgColor

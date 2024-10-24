@@ -295,9 +295,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     speedResetBtn.toolTip = NSLocalizedString("quicksetting.reset_speed", comment: "Reset speed to 1x")
 
     subLoadSegmentedControl.image(forSegment: 1)?.isTemplate = true
-    switchHorizontalLine.wantsLayer = true
     switchHorizontalLine.layer?.opacity = 0.5
-    switchHorizontalLine2.wantsLayer = true
     switchHorizontalLine2.layer?.opacity = 0.5
 
     // Localize decimal format of numbers

@@ -1811,7 +1811,6 @@ extension NSView {
       // Don't mess with these
       return
     }
-    self.wantsLayer = true
     self.layerContentsRedrawPolicy = .onSetNeedsDisplay
     for subview in self.subviews {
       subview.configureSubtreeForCoreAnimation()

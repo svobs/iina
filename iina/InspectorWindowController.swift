@@ -128,7 +128,6 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
       column.headerCell = headerCell
     }
 
-    watchTableContainerView.wantsLayer = true
     watchTableContainerView.layer?.backgroundColor = watchTableBackgroundColor.cgColor
 
     tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())

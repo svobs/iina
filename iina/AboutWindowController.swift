@@ -200,7 +200,6 @@ extension AboutWindowController: NSCollectionViewDataSource {
 class AboutWindowButton: NSButton {
 
   override func awakeFromNib() {
-    wantsLayer = true
     layer?.cornerRadius = 4
     updateState()
   }

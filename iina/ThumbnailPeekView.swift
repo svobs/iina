@@ -19,7 +19,6 @@ class ThumbnailPeekView: NSImageView {
   init() {
     let dummyFrame = NSRect(origin: .zero, size: CGSize(width: 160, height: 90))
     super.init(frame: dummyFrame)
-    wantsLayer = true
     layer?.masksToBounds = true
     imageScaling = .scaleNone
     imageFrameStyle = .none
