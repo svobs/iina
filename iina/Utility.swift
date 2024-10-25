@@ -601,19 +601,16 @@ class Utility {
   }
 
   static func icon(for url: URL?) -> NSImage {
-    if let url {
-      if #available(macOS 11.0, *) {
-        if let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
-          return NSWorkspace.shared.icon(for: uttype)
-        }
-      } else {
-        return NSWorkspace.shared.icon(forFileType: url.pathExtension)
+    if #available(macOS 11.0, *) {
+      if let url, let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
+        return NSWorkspace.shared.icon(for: uttype)
       }
+      return NSWorkspace.shared.icon(for: .data)
+    } else {
+      return NSWorkspace.shared.icon(forFileType: url?.pathExtension ?? "")
     }
-    return NSWorkspace.shared.icon(for: .data)
   }
 
-  
   // MARK: - Util classes
 
   class Stopwatch: CustomStringConvertible {
