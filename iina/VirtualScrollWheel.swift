@@ -16,6 +16,26 @@ fileprivate let stepScrollSessionTimeout: TimeInterval = 0.05
 /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
 fileprivate let momentumStartTimeout: TimeInterval = 0.05
 
+/// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
+/// But at least it will stay within this file. (See `state` variable vs `mapPhasesToScrollState()`)
+fileprivate enum ScrollState {
+  case notScrolling
+
+  case didStepScroll  /// non-Apple devices are limited to this single state
+
+  case scrollMayBegin(_ intentStartTime: TimeInterval)
+  case userScroll
+  case userScrollJustEnded
+  case momentumScrollJustStarted
+  case momentumScrolling
+  case momentumScrollJustEnded
+
+  /// Only set by `startScrollSession()`. Equivalent of `didStepScroll` state.
+  case stepScrollForced
+  /// Only set by `startScrollSession()`. Equivalent of `userScroll` state.
+  case userScrollForced
+}
+
 /// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling.
 ///
 /// Internally this class maintains its own state machine which it updates from the `phase` & `momentumPhase` properties
@@ -39,26 +59,6 @@ class VirtualScrollWheel {
 
   var sensitivity: Double = 1.0
 
-  /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
-  /// But at least it will stay within this class. (See `state` variable vs `mapPhasesToScrollState()`)
-  private enum ScrollState {
-    case notScrolling
-
-    case didStepScroll  /// non-Apple devices are limited to this single state
-
-    case scrollMayBegin(_ intentStartTime: TimeInterval)
-    case userScroll
-    case userScrollJustEnded
-    case momentumScrollJustStarted
-    case momentumScrolling
-    case momentumScrollJustEnded
-
-    /// Only set by `startScrollSession()`. Equivalent of `didStepScroll` state.
-    case stepScrollForced
-    /// Only set by `startScrollSession()`. Equivalent of `userScroll` state.
-    case userScrollForced
-  }
-
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
   /// from the underlying source of scroll wheel `NSEvent`s.
   private var state: ScrollState = .notScrolling
@@ -70,6 +70,14 @@ class VirtualScrollWheel {
   init() {
     updateSensitivity()
   }
+
+  func scrollWheel(with event: NSEvent) {
+    changeState(with: event)
+    guard isScrolling() else { return }
+    executeScrollAction(with: event)
+  }
+
+  // MARK: State API
 
   /// Subclasses can override
   func updateSensitivity() { }
@@ -121,15 +129,71 @@ class VirtualScrollWheel {
   /// Returns true if doing a step-type scroll, which non-Apple devices are limited to.
   func isScrollingNonAppleDevice() -> Bool {
     switch state {
-    case .didStepScroll,
-        .stepScrollForced:
+    case .didStepScroll, .stepScrollForced:
       return true
     default:
       return false
     }
   }
 
-  func changeState(with event: NSEvent) {
+  // MARK: Scroll execution
+
+  func executeScrollAction(with event: NSEvent) {
+    guard let outputSlider else { return }
+
+    let delta = extractDelta(from: event)
+
+#if DEBUG
+    scrollSessionDeltaTotal += delta
+#endif
+
+    let doubleValue = outputSlider.doubleValue
+    let maxValue = outputSlider.maxValue
+    let minValue = outputSlider.minValue
+    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
+    // There can be a huge number of requests which don't change the existing value.
+    // Discard them for a large increase in performance:
+    guard valueChange != 0.0 else { return }
+
+    var newValue = doubleValue + valueChange
+
+    // Wrap around if slider is circular
+    if outputSlider.sliderType == .circular {
+      if newValue < minValue {
+        newValue = maxValue - abs(valueChange)
+      } else if newValue > maxValue {
+        newValue = minValue + abs(valueChange)
+      }
+    }
+
+    outputSlider.doubleValue = newValue
+    outputSlider.sendAction(outputSlider.action, to: outputSlider.target)
+  }
+
+
+  private func extractDelta(from event: NSEvent) -> CGFloat {
+    guard let outputSlider else { return 0.0 }
+
+    var delta: Double
+    // Allow horizontal scrolling on horizontal and circular sliders
+    if outputSlider.isVertical && outputSlider.sliderType == .linear {
+      delta = event.deltaY
+    } else if outputSlider.userInterfaceLayoutDirection == .rightToLeft {
+      delta = event.deltaY + event.deltaX
+    } else {
+      delta = event.deltaY - event.deltaX
+    }
+
+    // Account for natural scrolling
+    if event.isDirectionInvertedFromDevice {
+      delta *= -1
+    }
+    return delta
+  }
+
+  // MARK: - Internal state machine
+
+  private func changeState(with event: NSEvent) {
     let newState = mapPhasesToScrollState(event)
 
     if Logger.log.isTraceEnabled {
@@ -213,11 +277,11 @@ class VirtualScrollWheel {
   private func resetScrollTimer(timeout: TimeInterval) {
     scrollTimer?.invalidate()
     scrollTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
-                                         selector: #selector(self.scrollDidTimeOut), userInfo: nil, repeats: false)
+                                       selector: #selector(self.scrollDidTimeOut), userInfo: nil, repeats: false)
   }
 
   /// Executed when `scrollTimer` fires.
-  @objc func scrollDidTimeOut() {
+  @objc private func scrollDidTimeOut() {
     guard isScrolling() else { return }
     Logger.log.verbose("Scroll timed out")
     state = .notScrolling
@@ -258,62 +322,4 @@ class VirtualScrollWheel {
     fatalError("Unrecognized or invalid scroll wheel event phase (\(phase)) or momentumPhase (\(momentumPhase))")
   }
 
-  func scrollWheel(with event: NSEvent) {
-    changeState(with: event)
-    guard isScrolling() else { return }
-    executeScrollAction(with: event)
-  }
-
-  func executeScrollAction(with event: NSEvent) {
-    guard let outputSlider else { return }
-
-    let delta = extractDelta(from: event)
-
-#if DEBUG
-    scrollSessionDeltaTotal += delta
-#endif
-
-    let doubleValue = outputSlider.doubleValue
-    let maxValue = outputSlider.maxValue
-    let minValue = outputSlider.minValue
-    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
-    // There can be a huge number of requests which don't change the existing value.
-    // Discard them for a large increase in performance:
-    guard valueChange != 0.0 else { return }
-
-    var newValue = doubleValue + valueChange
-
-    // Wrap around if slider is circular
-    if outputSlider.sliderType == .circular {
-      if newValue < minValue {
-        newValue = maxValue - abs(valueChange)
-      } else if newValue > maxValue {
-        newValue = minValue + abs(valueChange)
-      }
-    }
-
-    outputSlider.doubleValue = newValue
-    outputSlider.sendAction(outputSlider.action, to: outputSlider.target)
-  }
-
-
-  private func extractDelta(from event: NSEvent) -> CGFloat {
-    guard let outputSlider else { return 0.0 }
-
-    var delta: Double
-    // Allow horizontal scrolling on horizontal and circular sliders
-    if outputSlider.isVertical && outputSlider.sliderType == .linear {
-      delta = event.deltaY
-    } else if outputSlider.userInterfaceLayoutDirection == .rightToLeft {
-      delta = event.deltaY + event.deltaX
-    } else {
-      delta = event.deltaY - event.deltaX
-    }
-
-    // Account for natural scrolling
-    if event.isDirectionInvertedFromDevice {
-      delta *= -1
-    }
-    return delta
-  }
 }
