@@ -81,8 +81,8 @@ class CustomTitleBarViewController: NSViewController {
 
     if #available(macOS 11.0, *) {
       documentIconButton = NSWindow.standardWindowButton(.documentIconButton, for: .titled)
-      let suffix = windowController.player.info.currentURL?.pathExtension ?? ""
-      documentIconButton.image = NSImage.documentIcon(forSuffix: suffix, height: documentIconButton.frame.height)
+      documentIconButton.image = Utility.icon(for: windowController.player.info.currentURL,
+                                              optimizingForHeight: documentIconButton.frame.height)
     }
 
     let titleText = TitleTextView()

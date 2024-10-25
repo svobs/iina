@@ -3217,11 +3217,17 @@ class PlayerCore: NSObject {
 
   func sendOSD(_ msg: OSDMessage, autoHide: Bool = true, forcedTimeout: Double? = nil,
                accessoryViewController: NSViewController? = nil, external: Bool = false) {
+    if log.isVerboseEnabled, case .debug = msg {
+      log.verbose("DebugOSD: \(msg)")
+    }
+
     /// Check `isFileLoadedAndSized` early to prevent race condition
     let disableOSDForFileLoading: Bool = !info.isFileLoadedAndSized
     if disableOSDForFileLoading && !external {
       switch msg {
-      case .fileStart, .resumeFromWatchLater:
+      case .fileStart,
+          .resumeFromWatchLater,
+          .debug:
         break
       default:
         return

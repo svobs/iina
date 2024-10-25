@@ -595,16 +595,22 @@ class Utility {
     }
   }
 
-  static func icon(for url: URL) -> NSImage {
-    if #available(macOS 11.0, *) {
-      if let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
-        return NSWorkspace.shared.icon(for: uttype)
+  static func icon(for url: URL?, optimizingForHeight height: CGFloat) -> NSImage {
+    let baseIcon = icon(for: url)
+    return baseIcon.getBestRepresentation(height: height)
+  }
+
+  static func icon(for url: URL?) -> NSImage {
+    if let url {
+      if #available(macOS 11.0, *) {
+        if let uttype = UTType.types(tag: url.pathExtension, tagClass: .filenameExtension, conformingTo: nil).first {
+          return NSWorkspace.shared.icon(for: uttype)
+        }
       } else {
-        return NSWorkspace.shared.icon(for: .data)
+        return NSWorkspace.shared.icon(forFileType: url.pathExtension)
       }
-    } else {
-      return NSWorkspace.shared.icon(forFileType: url.pathExtension)
     }
+    return NSWorkspace.shared.icon(for: .data)
   }
 
   

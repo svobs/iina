@@ -30,6 +30,7 @@ enum OSDType {
 
 enum OSDMessage {
 
+  case debug(String)
   case fileStart(String, String)
 
   case pause(playbackPositionSec: Double?, playbackDurationSec: Double?)
@@ -119,6 +120,7 @@ enum OSDMessage {
   /// uses the OSD for its user interface. These messages must still be displayed when the OSD is disabled.
   var alwaysEnabled: Bool {
     switch self {
+    case .debug: fallthrough
     case .canceled: fallthrough
     case .cannotConnect: fallthrough
     case .cannotLogin: fallthrough
@@ -147,6 +149,8 @@ enum OSDMessage {
 
   func details() -> (String, OSDType) {
     switch self {
+    case .debug(let msg):
+      return (msg, .normal)
     case .fileStart(let filename, let detailMsg):
       if detailMsg.isEmpty {
         // Omit caption if there is nothing to display in it

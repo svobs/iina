@@ -1065,21 +1065,6 @@ extension CGImage {
 }
 
 extension NSImage {
-  @available(macOS 11.0, *)
-  static func documentIcon(forSuffix fileSuffix: String, height: CGFloat) -> NSImage {
-    var baseIcon: NSImage
-    if fileSuffix == "" {
-      baseIcon = NSWorkspace.shared.icon(for: .data)
-    } else {
-      if let uttype = UTType.types(tag: fileSuffix, tagClass: .filenameExtension, conformingTo: nil).first {
-        baseIcon = NSWorkspace.shared.icon(for: uttype)
-      } else {
-        baseIcon = NSWorkspace.shared.icon(for: .data)
-      }
-    }
-    return baseIcon.getBestRepresentation(height: height)
-  }
-
   /// Assuming this image is a file icon, gets the appropriate size with given height
   /// Thanks to "Sweeper" at https://stackoverflow.com/questions/62525921/how-to-get-a-high-resolution-app-icon-for-any-application-on-a-mac
   func getBestRepresentation(height: CGFloat) -> NSImage {
@@ -1790,6 +1775,9 @@ extension NSLayoutConstraint.Priority {
 }
 
 extension NSView {
+  var thisPlayer: PlayerCore? {
+    return (window?.windowController as? PlayerWindowController)?.player
+  }
 
   func suggestedRoundedCornerRadius() -> CGFloat {
     // Set corner radius to betwen 10 and 20
