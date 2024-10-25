@@ -114,7 +114,7 @@ class VideoView: NSView {
     guard player.windowController.loaded, player.isActive && !player.info.isRestoring else { return }
     updateDisplayLink()
     refreshContentsScale()
-    _refreshEdrMode()
+    refreshEdrMode()
   }
 
   // MARK: - Constraints
@@ -427,15 +427,21 @@ class VideoView: NSView {
 
   // MARK: - Color
 
-  func setICCProfile() {
+  private func setICCProfile() {
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
       logHDR.verbose("Configuring auto ICC profile (FIXME: commented out)")
       // This MUST be locked via openGLContext
-      // FIXME: this crashes!
-//      setRenderICCProfile(screenColorSpace)
+
+      guard player.mpv.lockAndSetOpenGLContext() else { return }
+      defer { player.mpv.unlockOpenGLContext() }
+      $isUninited.withLock() { [self] isUninited in
+        guard !isUninited else { return }
+        setRenderICCProfile(screenColorSpace)
+      }
+
     } else {
       logHDR.warn("Cannot set auto ICC profile; no screen color space")
     }
@@ -564,18 +570,8 @@ extension VideoView {
 
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
-    guard player.isActive else { return }
-    guard player.mpv.lockAndSetOpenGLContext() else { return }
-    defer { player.mpv.unlockOpenGLContext() }
-    $isUninited.withLock() { [self] isUninited in
-      guard !isUninited else { return }
-      _refreshEdrMode()
-    }
-  }
-
-  func _refreshEdrMode() {
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.isActive && !player.info.isRestoring else { return }
+    guard player.isActive, !player.info.isRestoring else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
