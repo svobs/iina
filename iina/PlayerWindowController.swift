@@ -2548,15 +2548,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - UI: Seek Time & Thumbnail Preview
 
-  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
-    let isOSCHidden = currentControlBar?.isHidden ?? false
-    guard !player.disableUI && !isOSCHidden && !osd.isShowingPersistentOSD && !isAnimatingLayoutTransition
-            && !currentLayout.isInteractiveMode else {
-      return false
-    }
-    return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
-  }
-
   /// Display time label & thumbnail when mouse over slider
   func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
     thumbDisplayTicketCounter += 1

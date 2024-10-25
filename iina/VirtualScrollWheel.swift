@@ -55,8 +55,8 @@ fileprivate enum ScrollState {
 /// state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events are received for
 /// `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
-  var outputSlider: NSSlider? = nil
 
+  var outputSlider: NSSlider? = nil
   var sensitivity: Double = 1.0
 
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
@@ -111,6 +111,8 @@ class VirtualScrollWheel {
   /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
   /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
   func endScrollSession() {
+    state = .notScrolling
+
 #if DEBUG
     outputSlider?.thisPlayer?.sendOSD(.debug("Δ ScrollWheel: \(scrollSessionDeltaTotal.string2FractionDigits)"))
 #endif
@@ -224,7 +226,7 @@ class VirtualScrollWheel {
         guard timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold else {
           return  // not yet reached
         }
-        Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollTimeThreshold \(Constants.TimeInterval.minScrollWheelTimeThreshold). Starting scroll")
+        Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
         state = .userScroll
         startScrollSession(with: event)
       case .userScroll:
@@ -263,7 +265,6 @@ class VirtualScrollWheel {
     case .momentumScrollJustEnded:
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
-        state = .notScrolling
         endScrollSession()
       default:
         state = .notScrolling
@@ -283,7 +284,7 @@ class VirtualScrollWheel {
   /// Executed when `scrollTimer` fires.
   @objc private func scrollDidTimeOut() {
     guard isScrolling() else { return }
-    Logger.log.verbose("Scroll timed out")
+    Logger.log.verbose("ScrollWheel timed out")
     state = .notScrolling
     endScrollSession()
   }
