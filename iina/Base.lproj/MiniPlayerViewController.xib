@@ -242,7 +242,7 @@
                         <action selector="muteButtonAction:" target="-1" id="jKh-Qf-tOV"/>
                     </connections>
                 </button>
-                <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ene-VG-UYY" userLabel="Volume Slider" customClass="VolumeSlider" customModule="IINA" customModuleProvider="target">
+                <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ene-VG-UYY" userLabel="Volume Slider" customClass="ScrollableSlider" customModule="IINA" customModuleProvider="target">
                     <rect key="frame" x="40" y="6" width="104" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="100" id="22P-mK-lYF"/>

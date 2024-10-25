@@ -384,45 +384,4 @@ extension PlayerWindowController {
     rotationHandler.handleRotationGesture(recognizer: recognizer)
   }
 
-  // MARK: - Scroll wheel
-
-  func scrollWheelDidStart(_ event: NSEvent) {
-    let scrollAction: Preference.ScrollAction
-    // determine scroll direction, and thus scroll action, based on cumulative scroll deltas
-    if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
-      log.verbose("Scroll direction is horizontal")
-      scrollAction = horizontalScrollAction
-    } else {
-      log.verbose("Scroll direction is vertical")
-      scrollAction = verticalScrollAction
-    }
-
-    switch scrollAction {
-    case .seek:
-      scrollActionSlider = playSlider
-    case .volume:
-      scrollActionSlider = volumeSlider
-    default:
-      scrollActionSlider = nil
-    }
-
-    scrollActionSlider?.scrollWheelDidStart(event)
-  }
-
-  func scrollWheelDidEnd() {
-    scrollActionSlider?.scrollWheelDidEnd()
-  }
-
-  override func scrollWheel(with event: NSEvent) {
-    guard !isInInteractiveMode else { return }
-
-    guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
-                                         titleBarView, subPopoverView]) else { return }
-
-    // This will call scrollWheelDidStart() when necessary
-    windowScrollWheel.changeState(with: event)
-    guard windowScrollWheel.isScrolling() else { return }
-    scrollActionSlider?.executeScrollAction(with: event, isNonAppleDevice: windowScrollWheel.isScrollingNonAppleDevice())
-  }
-
 }

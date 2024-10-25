@@ -41,18 +41,12 @@ final class PlaySlider: ScrollableSlider {
 
   private var abLoopBKnob: PlaySliderLoopKnob!
 
-  /** We need to pause the video when a user starts seeking by scrolling.
-   This property records whether the video is paused initially so we can
-   recover the status when scrolling finished. */
-  private var wasPlayingBeforeSeeking = false
-
   // MARK:- Initialization
 
   required init?(coder: NSCoder) {
     super.init(coder: coder)
     abLoopAKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop A")
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
-    updateSensitivity()
   }
 
   // MARK:- Drawing
@@ -93,39 +87,12 @@ final class PlaySlider: ScrollableSlider {
     needsDisplay = true
   }
 
-  func updateSensitivity() {
-    let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
-    sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
-    stepScrollSensitivity = sensitivity
-    Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity), stepScroll=\(stepScrollSensitivity)")
-  }
-
   func updateTo(percentage: Double) {
     let oldPercentage = doubleValue
     let delta = abs(percentage - oldPercentage) * 0.01
     let pxChange = frame.size.width * delta
     if pxChange >= PlaySlider.minPixelChangeThreshold {
       doubleValue = percentage
-    }
-  }
-
-  override func scrollWheelDidStart(_ event: NSEvent) {
-    let player = customCell.playerCore
-    player.log.verbose("PlaySlider scrollWheel seek began")
-    // pause video when seek begins
-    if player.info.isPlaying {
-      player.pause()
-      wasPlayingBeforeSeeking = true
-    }
-  }
-
-  override func scrollWheelDidEnd() {
-    let player = customCell.playerCore
-    player.log.verbose("PlaySlider scrollWheel seek ended")
-    // only resume playback when it was playing before seeking
-    if wasPlayingBeforeSeeking {
-      player.resume()
-      wasPlayingBeforeSeeking = false
     }
   }
 }

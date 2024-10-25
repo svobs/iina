@@ -383,8 +383,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
   internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
   internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
-  internal lazy var horizontalScrollAction: Preference.ScrollAction = Preference.enum(for: .horizontalScrollAction)
-  internal lazy var verticalScrollAction: Preference.ScrollAction = Preference.enum(for: .verticalScrollAction)
 
   static let observedPrefKeys: [Preference.Key] = [
     .enableAdvancedSettings,
@@ -403,8 +401,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     .volumeScrollAmount,
     .singleClickAction,
     .doubleClickAction,
-    .horizontalScrollAction,
-    .verticalScrollAction,
     .playlistShowMetadata,
     .playlistShowMetadataInMusicMode,
     .shortenFileGroupsInPlaylist,
@@ -490,9 +486,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         useExactSeek = Preference.SeekOption(rawValue: newValue)!
       }
     case .relativeSeekAmount:
-      playSlider.updateSensitivity()
+      playSliderScrollWheel.updateSensitivity()
     case .volumeScrollAmount:
-      volumeSlider.updateSensitivity()
+      volumeSliderScrollWheel.updateSensitivity()
     case .singleClickAction:
       if let newValue = newValue as? Int {
         singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
@@ -553,14 +549,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .showChapterPos:
       if let newValue = newValue as? Bool {
         playSlider.customCell.drawChapters = newValue
-      }
-    case .verticalScrollAction:
-      if let newValue = newValue as? Int {
-        verticalScrollAction = Preference.ScrollAction(rawValue: newValue)!
-      }
-    case .horizontalScrollAction:
-      if let newValue = newValue as? Int {
-        horizontalScrollAction = Preference.ScrollAction(rawValue: newValue)!
       }
     case .blackOutMonitor:
       if let newValue = newValue as? Bool {
@@ -789,7 +777,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var viewportView: ViewportView!
   let defaultAlbumArtView = NSView()
 
-  @IBOutlet weak var volumeSlider: VolumeSlider!
+  @IBOutlet weak var volumeSlider: ScrollableSlider!
   @IBOutlet weak var muteButton: NSButton!
   var playButton: NSButton!
   @IBOutlet weak var playSlider: PlaySlider!
@@ -800,15 +788,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var singleClickTimer: Timer?
   var mouseExitEnterCount = 0
 
-  /// Scroll wheel (see `PWin_MouseInput.swift`)
+  /// Scroll wheel (see `PWin_ScrollWheel.swift`)
 
-  /// The virtual scroll wheel which may result in either volume or playback time seeking depending on direction
-  let windowScrollWheel = VirtualScrollWheel()
-  /// One of `playSlider`, `volumeSlider`, or `nil`
-  var scrollActionSlider: ScrollableSlider? = nil
+  /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
+  var scrollWheel: PWinScrollWheel!
+
+  let playSliderScrollWheel = PlaySliderScrollWheel()
+  let volumeSliderScrollWheel = VolumeSliderScrollWheel()
 
   var isInScrollWheelSeek: Bool {
-    return windowScrollWheel.isScrolling() || playSlider.isScrolling() || volumeSlider.isScrolling()
+    return scrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
   }
 
   // Other state
