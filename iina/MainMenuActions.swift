@@ -302,8 +302,8 @@ extension MainMenuActionHandler {
   }
 
   @objc func menuChangeVolume(_ sender: NSMenuItem) {
-    if let volumeDelta = sender.representedObject as? Int {
-      let newVolume = Double(volumeDelta) + player.info.volume
+    if let volumeDelta = sender.representedObject as? Double {
+      let newVolume = volumeDelta + player.info.volume
       player.setVolume(newVolume)
     } else {
       Logger.log("sender.representedObject is not int in menuChangeVolume()", level: .error)

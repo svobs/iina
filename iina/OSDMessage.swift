@@ -36,7 +36,7 @@ enum OSDMessage {
   case pause
   case resume
   case seek(String, Double)  // text, percentage
-  case volume(Int)
+  case volume(Double)
   case speed(Double)
   case aspect(String)
   case crop(String)
@@ -148,8 +148,8 @@ enum OSDMessage {
 
     case .volume(let value):
       return (
-        String(format: NSLocalizedString("osd.volume", comment: "Volume: %i"), value),
-        .withProgress(Double(value) / Double(Preference.integer(for: .maxVolume)))
+        String(format: NSLocalizedString("osd.volume", comment: "Volume: %@"), value.string),
+        .withProgress(value / Double(Preference.integer(for: .maxVolume)))
       )
 
     case .speed(let value):
@@ -201,7 +201,13 @@ enum OSDMessage {
           .withProgress(0.5)
         )
       } else {
-        let str = value > 0 ? String(format: NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %fs Later"),abs(value)) : String(format: NSLocalizedString("osd.audio_delay.earlier", comment: "Audio Delay: %fs Earlier"), abs(value))
+        let format: String
+        if value > 0 {
+          format = NSLocalizedString("osd.audio_delay.later", comment: "Audio Delay: %@s Later")
+        } else {
+          format = NSLocalizedString("osd.audio_delay.earlier", comment: "Audio Delay: %@s Earlier")
+        }
+        let str = String(format: format, abs(value).string)
         return (str, .withProgress(toPercent(value, 10)))
       }
 
@@ -212,13 +218,19 @@ enum OSDMessage {
           .withProgress(0.5)
         )
       } else {
-        let str = value > 0 ? String(format: NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %fs Later"),abs(value)) : String(format: NSLocalizedString("osd.sub_second_delay.earlier", comment: "Secondary Subtitle Delay: %fs Earlier"), abs(value))
+        let format: String
+        if value > 0 {
+          format = NSLocalizedString("osd.sub_second_delay.later", comment: "Secondary Subtitle Delay: %@s Later")
+        } else {
+          format = NSLocalizedString("osd.sub_second_delay.earlier", comment: "Secondary Subtitle Delay: %@s Earlier")
+        }
+        let str = String(format: format, abs(value).string)
         return (str, .withProgress(toPercent(value, 10)))
       }
 
     case .secondSubPos(let value):
       return (
-        String(format: NSLocalizedString("osd.sub_second_pos", comment: "Secondary Subtitle Position: %f"), value),
+        String(format: NSLocalizedString("osd.sub_second_pos", comment: "Secondary Subtitle Position: %@"), value.string),
         .withProgress(value / 100)
       )
 
@@ -229,13 +241,19 @@ enum OSDMessage {
           .withProgress(0.5)
         )
       } else {
-        let str = value > 0 ? String(format: NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %fs Later"),abs(value)) : String(format: NSLocalizedString("osd.sub_delay.earlier", comment: "Subtitle Delay: %fs Earlier"), abs(value))
+        let format: String
+        if value > 0 {
+          format = NSLocalizedString("osd.sub_delay.later", comment: "Subtitle Delay: %@s Later")
+        } else {
+          format = NSLocalizedString("osd.sub_delay.earlier", comment: "Subtitle Delay: %@s Earlier")
+        }
+        let str = String(format: format, abs(value).string)
         return (str, .withProgress(toPercent(value, 10)))
       }
 
     case .subPos(let value):
       return (
-        String(format: NSLocalizedString("osd.subtitle_pos", comment: "Subtitle Position: %f"), value),
+        String(format: NSLocalizedString("osd.subtitle_pos", comment: "Subtitle Position: %@"), value.string),
         .withProgress(value / 100)
       )
 
@@ -313,7 +331,7 @@ enum OSDMessage {
 
     case .subScale(let value):
       return (
-        String(format: NSLocalizedString("osd.subtitle_scale", comment: "Subtitle Scale: %.2fx"), value),
+        String(format: NSLocalizedString("osd.subtitle_scale", comment: "Subtitle Scale: %@x"), value.string),
         .normal
       )
 

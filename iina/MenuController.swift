@@ -490,7 +490,7 @@ class MenuController: NSObject, NSMenuDelegate {
     fileLoop.state = loopMode == .file ? .on : .off
     playlistLoop.state = loopMode == .playlist ? .on : .off
     let speed = player.info.playSpeed.string
-    speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed:"), speed)
+    speedIndicator.title = String(format: NSLocalizedString("menu.speed", comment: "Speed: %@x"), speed)
   }
 
   private func updateVideoMenu() {
@@ -519,14 +519,16 @@ class MenuController: NSObject, NSMenuDelegate {
         Constants.String.audioPanel
     let volFmtString: String
     if player.info.isMuted {
-      volFmtString = NSLocalizedString("menu.volume_muted", comment: "Volume: (Muted)")
+      volFmtString = NSLocalizedString("menu.volume_muted", comment: "Volume: %@ (Muted)")
       mute.state = .on
     } else {
-      volFmtString = NSLocalizedString("menu.volume", comment: "Volume:")
+      volFmtString = NSLocalizedString("menu.volume", comment: "Volume: %@")
       mute.state = .off
     }
-    volumeIndicator.title = String(format: volFmtString, Int(player.info.volume))
-    audioDelayIndicator.title = String(format: NSLocalizedString("menu.audio_delay", comment: "Audio Delay:"), player.info.audioDelay)
+    volumeIndicator.title = String(format: volFmtString, player.info.volume.string)
+
+    let audioDelayFmt = NSLocalizedString("menu.audio_delay", comment: "Audio Delay: %@s")
+    audioDelayIndicator.title = String(format: audioDelayFmt, player.info.audioDelay.string)
   }
 
   private func updateAudioDevice() {
@@ -556,7 +558,7 @@ class MenuController: NSObject, NSMenuDelegate {
         Constants.String.showSubtitles
     hideSecondSubtitles.title = player.info.isSecondSubVisible ? Constants.String.hideSecondSubtitles :
         Constants.String.showSecondSubtitles
-    subDelayIndicator.title = String(format: NSLocalizedString("menu.sub_delay", comment: "Subtitle Delay:"), player.info.subDelay)
+    subDelayIndicator.title = String(format: NSLocalizedString("menu.sub_delay", comment: "Subtitle Delay: %@s"), player.info.subDelay.string)
 
     let encodingCode = player.info.subEncoding ?? "auto"
     for encoding in AppData.encodings {
@@ -949,7 +951,15 @@ class MenuController: NSObject, NSMenuDelegate {
       let valObj: CVarArg
       switch l10nKey {
       case "speed_up",
-        "speed_down":
+        "speed_down",
+        "audio_delay_up",
+        "audio_delay_down",
+        "sub_delay_up",
+        "sub_delay_down",
+        "seek_forward",
+        "seek_backward",
+        "volume_up",
+        "volume_down":
         // Title format expects arg type: String
         valObj = abs(value).string
       default:
