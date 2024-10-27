@@ -30,7 +30,7 @@ enum OSDType {
 
 enum OSDMessage {
 
-  case debug(String)
+  case debug(String, String)
   case fileStart(String, String)
 
   case pause(playbackPositionSec: Double?, playbackDurationSec: Double?)
@@ -149,8 +149,12 @@ enum OSDMessage {
 
   func details() -> (String, OSDType) {
     switch self {
-    case .debug(let msg):
-      return (msg, .normal)
+    case .debug(let msg, let detailMsg):
+      if detailMsg.isEmpty {
+        // Omit caption if there is nothing to display in it
+        return (msg, .normal)
+      }
+      return (msg, .withText(detailMsg))
     case .fileStart(let filename, let detailMsg):
       if detailMsg.isEmpty {
         // Omit caption if there is nothing to display in it

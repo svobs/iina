@@ -8,6 +8,10 @@
 
 import Foundation
 
+#if DEBUG
+fileprivate let enableDebugOSD = true
+#endif
+
 /// May need adjustment for optimal results
 fileprivate let stepScrollSessionTimeout: TimeInterval = 0.05
 
@@ -64,7 +68,7 @@ fileprivate enum ScrollState {
 ///
 /// The start of the qualifying scroll session, when determined by the logic above, is kicked off with a call to
 /// `beginScrollSession`. Its end is indicated by a call to `endScrollSession`, and between the two, any number of calls may be
-/// made to `executeScrollAction` to execute additional scroll traversal.
+/// made to `executeScroll` to execute additional scroll traversal.
 ///
 /// <h1>Step scrolling</h1>
 ///
@@ -84,7 +88,9 @@ class VirtualScrollWheel {
     /// Useful for debugging
     var deltaTotal: CGFloat = 0
     var totalEventCount: Int = 0
-    var actionEventCount: Int = 0
+    var actionCount: Int = 0
+
+    let startTime = Date()
   }
   /// Contains data for the current scroll session.
   ///
@@ -104,7 +110,7 @@ class VirtualScrollWheel {
   func scrollWheel(with event: NSEvent) {
     changeState(with: event)
     guard isScrolling() else { return }
-    executeScrollAction(with: event)
+    executeScroll(with: event)
   }
 
   // MARK: State API
@@ -118,10 +124,11 @@ class VirtualScrollWheel {
   /// - This will be at most once per scroll.
   /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
   func beginScrollSession(with event: NSEvent) {
-    if delegateSlider != nil {
-      for event in currentSession!.eventsBeforeStart {
-        executeScrollAction(with: event)
-      }
+    if let delegateSlider, let currentSession {
+      // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
+      let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue, { value, event in
+        computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)})
+      callAction(applyingNewValue: newValueReduced)
     }
   }
 
@@ -148,8 +155,15 @@ class VirtualScrollWheel {
     state = .notScrolling
 
 #if DEBUG
-    if let player = delegateSlider?.thisPlayer, let session = currentSession {
-      player.sendOSD(.debug("Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits), \(session.actionEventCount) / \(session.totalEventCount) events"))
+    if enableDebugOSD, let player = delegateSlider?.thisPlayer, let session = currentSession {
+      let totalTime = session.startTime.timeIntervalToNow
+      let actionsPerSec = CGFloat(session.actionCount) / totalTime
+      let msg = "Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits)\t\tActions/s: \(actionsPerSec.stringMaxFrac2)"
+      let detail = ["Actions total:\t\(session.actionCount)",
+                    "Events total:\t\(session.totalEventCount)",
+                    "Time total:\t\(totalTime.string2FractionDigits)s",
+      ].joined(separator: "\n")
+      player.sendOSD(.debug(msg, detail))
     }
 #endif
 
@@ -181,40 +195,55 @@ class VirtualScrollWheel {
 
   /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
   /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
-  func executeScrollAction(with event: NSEvent) {
+  func executeScroll(with event: NSEvent) {
     guard let delegateSlider else { return }
 
-    let delta = VirtualScrollWheel.extractLinearDelta(from: event, delegateSlider)
+    let newValue = computeNewValue(for: delegateSlider, from: event,
+                                   usingCurrentValue: delegateSlider.doubleValue)
+    callAction(applyingNewValue: newValue)
+  }
+
+  private func callAction(applyingNewValue newValue: CGFloat) {
+    guard let delegateSlider else { return }
+    // There can be a huge number of requests which don't change the existing value.
+    // But in the case of mpv seeks, these can cause noticeable slowdown.
+    // Discard them for a large increase in performance.
+    guard delegateSlider.doubleValue != newValue else { return }
+
+    currentSession?.actionCount += 1
+    delegateSlider.doubleValue = newValue
+    delegateSlider.sendAction(delegateSlider.action, to: delegateSlider.target)
+  }
+
+  /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
+  /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
+  private func computeNewValue(for slider: NSSlider, from event: NSEvent,
+                               usingCurrentValue currentValue: CGFloat) -> CGFloat {
+    let delta = VirtualScrollWheel.extractLinearDelta(from: event, slider)
+
     if let currentSession {
       currentSession.deltaTotal += delta
       currentSession.totalEventCount += 1
     }
 
     // Convert delta into valueChange
-    let maxValue = delegateSlider.maxValue
-    let minValue = delegateSlider.minValue
+    let maxValue = slider.maxValue
+    let minValue = slider.minValue
+
     let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
 
-    // There can be a huge number of requests which don't change the existing value.
-    // But in the case of mpv seeks, these can cause noticeable slowdown.
-    // Discard them for a large increase in performance.
-    guard valueChange != 0.0 else { return }
-
     // Compute & set new value for slider
-    var newValue = delegateSlider.doubleValue + valueChange
+    var newValue = currentValue + valueChange
     // Wrap around if slider is circular
-    if delegateSlider.sliderType == .circular {
+    if slider.sliderType == .circular {
       if newValue < minValue {
         newValue = maxValue - abs(valueChange)
       } else if newValue > maxValue {
         newValue = minValue + abs(valueChange)
       }
     }
-    guard delegateSlider.doubleValue != newValue else { return }
-    currentSession?.actionEventCount += 1
 
-    delegateSlider.doubleValue = newValue
-    delegateSlider.sendAction(delegateSlider.action, to: delegateSlider.target)
+    return newValue.clamped(to: minValue...maxValue)
   }
 
   /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta

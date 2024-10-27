@@ -753,6 +753,12 @@ extension FloatingPoint {
   }
 }
 
+extension Date {
+  var timeIntervalToNow: TimeInterval {
+    return Date().timeIntervalSince(self)
+  }
+}
+
 extension NSColor {
   var mpvColorString: String {
     get {

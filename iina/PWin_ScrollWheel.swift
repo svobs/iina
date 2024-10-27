@@ -65,10 +65,6 @@ class PWinScrollWheel: VirtualScrollWheel {
     self.wc = playerWindowController
   }
 
-  override func executeScrollAction(with event: NSEvent) {
-    delegate?.executeScrollAction(with: event)
-  }
-
   override func beginScrollSession(with event: NSEvent) {
     super.beginScrollSession(with: event)
 
@@ -107,6 +103,10 @@ class PWinScrollWheel: VirtualScrollWheel {
   override func endScrollSession() {
     super.endScrollSession()
     delegate?.endScrollSession()
+  }
+
+  override func executeScroll(with event: NSEvent) {
+    delegate?.executeScroll(with: event)
   }
 }
 
