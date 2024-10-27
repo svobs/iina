@@ -21,7 +21,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity))")
   }
 
-  override func scrollSessionWillBegin(with event: NSEvent) {
+  override func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
     guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
@@ -32,7 +32,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     }
   }
 
-  override func scrollSessionDidEnd() {
+  override func scrollSessionDidEnd(_ session: ScrollSession) {
     guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
@@ -63,19 +63,21 @@ class PWinScrollWheel: VirtualScrollWheel {
     self.wc = playerWindowController
   }
 
-  override func scrollSessionWillBegin(with event: NSEvent) {
-    let scrollAction: Preference.ScrollAction
-
-    // Determine scroll direction, and thus scroll action, based on cumulative scroll deltas.
-    // By using the sum
-    var deltaX: CGFloat = 0
-    var deltaY: CGFloat = 0
-    for event in currentSession!.eventsBeforeStart {
+  override func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
+    // Determine scroll direction, then scroll action, based on cumulative scroll deltas.
+    // Pick direction (X or Y) based on which coordinate the user scrolled farther in.
+    // For "step" scrolls, it's easy to pick because the delta should by all in either X or Y…
+    var deltaX: CGFloat = event.scrollingDeltaX
+    var deltaY: CGFloat = event.scrollingDeltaY
+    // For "smooth" scrolls, there is a small grace period before the this method is called. During that time,
+    // the session will collect pending scroll events. By summing the distances from all of these, we can make
+    // a more accurate determination for the user's intended direction.
+    for event in session.eventsBeforeStart {
       deltaX += event.scrollingDeltaX
       deltaY += event.scrollingDeltaY
     }
-    deltaX += event.scrollingDeltaX
-    deltaY += event.scrollingDeltaY
+
+    let scrollAction: Preference.ScrollAction
     if deltaX.magnitude > deltaY.magnitude {
       wc.player.log.verbose("Scroll direction is horizontal")
       scrollAction = Preference.enum(for: .horizontalScrollAction)
@@ -97,11 +99,11 @@ class PWinScrollWheel: VirtualScrollWheel {
     delegateSlider = delegate.delegateSlider
     sensitivity = delegate.sensitivity
 
-    delegate.scrollSessionWillBegin(with: event)
+    delegate.scrollSessionWillBegin(with: event, session)
   }
 
-  override func scrollSessionDidEnd() {
-    delegate?.scrollSessionDidEnd()
+  override func scrollSessionDidEnd(_ session: ScrollSession) {
+    delegate?.scrollSessionDidEnd(session)
   }
 }
 
@@ -113,6 +115,6 @@ extension PlayerWindowController {
     guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
                                          titleBarView, subPopoverView]) else { return }
 
-    scrollWheel.scrollWheel(with: event)
+    windowScrollWheel.scrollWheel(with: event)
   }
 }

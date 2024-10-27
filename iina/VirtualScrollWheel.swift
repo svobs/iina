@@ -90,7 +90,7 @@ class VirtualScrollWheel {
   /// Contains data for the current scroll session.
   ///
   /// Non-nil only while a scroll session is active. A new instance is created each time a new session starts.
-  var currentSession: ScrollSession? = nil
+  private var currentSession: ScrollSession? = nil
 
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
   /// from the underlying source of scroll wheel `NSEvent`s.
@@ -118,7 +118,7 @@ class VirtualScrollWheel {
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
   /// - This will be at most once per scroll.
   /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
-  func scrollSessionWillBegin(with event: NSEvent) {
+  func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
   }
 
 
@@ -126,38 +126,7 @@ class VirtualScrollWheel {
   ///
   /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
   /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
-  func scrollSessionDidEnd() {
-  }
-
-  private func beginScrollSession(with event: NSEvent) {
-    scrollSessionWillBegin(with: event)
-
-    if let delegateSlider, let currentSession {
-      // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
-      let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue, { value, event in
-        computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)})
-      callAction(applyingNewValue: newValueReduced)
-    }
-  }
-
-  private func endScrollSession() {
-    state = .notScrolling
-
-#if DEBUG
-    if enableDebugOSD, let player = delegateSlider?.thisPlayer, let session = currentSession {
-      let totalTime = session.startTime.timeIntervalToNow
-      let actionsPerSec = CGFloat(session.actionCount) / totalTime
-      let msg = "Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits)\t\tActions/s: \(actionsPerSec.stringMaxFrac2)"
-      let detail = ["Actions total:\t\(session.actionCount)",
-                    "Events total:\t\(session.totalEventCount)",
-                    "Time total:\t\(totalTime.string2FractionDigits)s",
-      ].joined(separator: "\n")
-      player.sendOSD(.debug(msg, detail))
-    }
-#endif
-
-    currentSession = nil
-    scrollSessionDidEnd()
+  func scrollSessionDidEnd(_ session: ScrollSession) {
   }
 
   /// Returns true if in one of the scrolling states (i.e. a scroll session is currently active)
@@ -257,6 +226,27 @@ class VirtualScrollWheel {
 
   // MARK: - Internal state machine
 
+  private func endScrollSession() {
+    guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
+    state = .notScrolling
+
+#if DEBUG
+    if enableDebugOSD, let player = delegateSlider?.thisPlayer {
+      let totalTime = session.startTime.timeIntervalToNow
+      let actionsPerSec = CGFloat(session.actionCount) / totalTime
+      let msg = "Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits)\t\tActions/s: \(actionsPerSec.stringMaxFrac2)"
+      let detail = ["Actions total:\t\(session.actionCount)",
+                    "Events total:\t\(session.totalEventCount)",
+                    "Time total:\t\(totalTime.string2FractionDigits)s",
+      ].joined(separator: "\n")
+      player.sendOSD(.debug(msg, detail))
+    }
+#endif
+
+    currentSession = nil
+    scrollSessionDidEnd(session)
+  }
+
   private func changeState(with event: NSEvent) {
     let newState = mapPhasesToScrollState(event)
 
@@ -277,25 +267,37 @@ class VirtualScrollWheel {
 
       // Starting (non-Apple) scroll
       state = .didStepScroll
-      currentSession = ScrollSession()
-      beginScrollSession(with: event)
+      let newSession = ScrollSession()
+      currentSession = newSession
+      scrollSessionWillBegin(with: event, newSession)
 
     case .smoothScrollMayBegin:
       state = newState
-      currentSession = ScrollSession()
+      let newSession = ScrollSession()
+      currentSession = newSession
       currentSession?.eventsBeforeStart.append(event)
 
     case .smoothScrolling:
       switch state {
       case .smoothScrollMayBegin(let intentStartTime):
+        guard let currentSession else { Logger.fatal("No current session for state \(state) → \(newState)") }
         let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
+
         if timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold {
-          Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
+          Logger.log.verbose("Time elapsed (\(timeElapsed)) ≥ minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
           state = .smoothScrolling
-          beginScrollSession(with: event)
+          scrollSessionWillBegin(with: event, currentSession)
+
+          // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
+          if let delegateSlider {
+            let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue, { value, event in
+              computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)})
+            callAction(applyingNewValue: newValueReduced)
+          }
+
         } else {
           // Minimum scroll time not yet reached. But keep track of scrolls for use when it is reached
-          currentSession?.eventsBeforeStart.append(event)
+          currentSession.eventsBeforeStart.append(event)
         }
       case .smoothScrolling:
         state = .smoothScrolling

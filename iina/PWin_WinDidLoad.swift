@@ -59,7 +59,7 @@ extension PlayerWindowController {
 
     // scroll wheel
 
-    scrollWheel = PWinScrollWheel(self)
+    windowScrollWheel = PWinScrollWheel(self)
 
     playSliderScrollWheel.delegateSlider = playSlider
     playSlider.scrollWheel = playSliderScrollWheel

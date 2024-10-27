@@ -791,13 +791,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Scroll wheel (see `PWin_ScrollWheel.swift`)
 
   /// The window's virtual scroll wheel which may result in either volume or playback time seeking depending on direction
-  var scrollWheel: PWinScrollWheel!
+  var windowScrollWheel: PWinScrollWheel!
 
   let playSliderScrollWheel = PlaySliderScrollWheel()
   let volumeSliderScrollWheel = VolumeSliderScrollWheel()
 
   var isInScrollWheelSeek: Bool {
-    return scrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
+    return windowScrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
   }
 
   // Other state
