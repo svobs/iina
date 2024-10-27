@@ -493,35 +493,35 @@ extension Double {
 
   func roundedTo1() -> Double {
     let scaledUp = self * 1e1
-    let scaledUpRounded = scaledUp.rounded(.down)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e1
     return finalVal
   }
 
   func roundedTo2() -> Double {
     let scaledUp = self * 1e2
-    let scaledUpRounded = scaledUp.rounded(.down)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e2
     return finalVal
   }
 
   func roundedTo3() -> Double {
     let scaledUp = self * 1e3
-    let scaledUpRounded = scaledUp.rounded(.down)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e3
     return finalVal
   }
 
   func roundedTo5() -> Double {
     let scaledUp = self * 1e5
-    let scaledUpRounded = scaledUp.rounded(.down)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e5
     return finalVal
   }
 
   func roundedTo6() -> Double {
     let scaledUp = self * 1e6
-    let scaledUpRounded = scaledUp.rounded(.down)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e6
     return finalVal
   }
@@ -1827,6 +1827,15 @@ extension NSView {
       subview.configureSubtreeForCoreAnimation()
     }
   }
+
+#if DEBUG
+  func configureSubtreeForClipping() {
+    self.clipsToBounds = true
+    for subview in self.subviews {
+      subview.configureSubtreeForClipping()
+    }
+  }
+#endif
 
   func addConstraintsToFillSuperview(v: Bool = true, h: Bool = true, priority: NSLayoutConstraint.Priority = .required) {
     guard let superview = superview else { return }
