@@ -28,6 +28,9 @@ class OSDState {
       lastDisplayedMsgTS = Date().timeIntervalSince1970
     }
   }
+  var currentlyDisplayedMsg: OSDMessage? {
+    return animationState == .shown ? lastDisplayedMsg : nil
+  }
   func didShowLastMsgRecently() -> Bool {
     return Date().timeIntervalSince1970 - lastDisplayedMsgTS < 0.25
   }
@@ -92,9 +95,10 @@ extension PlayerWindowController {
 
     if let newMessage {
       message = newMessage
-    } else if osd.animationState == .shown, let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec {
+    } else if let currentMsg = osd.currentlyDisplayedMsg,
+                let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec {
       // If the OSD is visible and is showing playback position, keep its displayed time up to date:
-      switch osd.lastDisplayedMsg {
+      switch currentMsg {
       case .pause:
         message = .pause(playbackPositionSec: pos, playbackDurationSec: duration)
       case .resume:
@@ -277,8 +281,16 @@ extension PlayerWindowController {
     guard player.canShowOSD() else { return }
 
     // Filter out unwanted OSDs first
-
     guard !osd.isShowingPersistentOSD || accessoryViewController != nil else { return }
+
+    // If showing debug OSD, do not allow any other OSD type to replace it
+    if case .debug = osd.currentlyDisplayedMsg {
+      if case .debug = msg {
+      } else {
+        log.verbose("Discarding OSD '\(msg)' because a debug msg is visible")
+        return
+      }
+    }
 
     var msg = msg
     switch msg {

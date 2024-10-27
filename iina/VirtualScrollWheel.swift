@@ -8,31 +8,38 @@
 
 import Foundation
 
+/// May need adjustment for optimal results
 fileprivate let stepScrollSessionTimeout: TimeInterval = 0.05
 
 /// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
 ///
-/// If this amount of time passes from when we receive a `userScrollJustEnded` event but do not receive a
+/// If this amount of time passes from when we receive a `smoothScrollJustEnded` event but do not receive a
 /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
 fileprivate let momentumStartTimeout: TimeInterval = 0.05
 
 /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
 /// But at least it will stay within this file. (See `state` variable vs `mapPhasesToScrollState()`)
 fileprivate enum ScrollState {
+  /// No scroll session is currently active
   case notScrolling
 
-  case didStepScroll  /// non-Apple devices are limited to this single state
+  // "Step" scrolling (non-Apple)
 
-  case scrollMayBegin(_ intentStartTime: TimeInterval)
-  case userScroll
-  case userScrollJustEnded
+  /// Non-Apple devices are limited to this single state
+  case didStepScroll
+
+  // "Smooth" Scrolling (Apple mouse / trackpad)
+
+  case smoothScrollMayBegin(_ intentStartTime: TimeInterval)
+  case smoothScrolling
+  case smoothScrollJustEnded
   case momentumScrollJustStarted
   case momentumScrolling
   case momentumScrollJustEnded
 
-  /// Only set by `startScrollSession()`. Equivalent of `didStepScroll` state.
+  /// Only set by `beginScrollSession()`. Equivalent of `didStepScroll` state.
   case stepScrollForced
-  /// Only set by `startScrollSession()`. Equivalent of `userScroll` state.
+  /// Only set by `beginScrollSession()`. Equivalent of `smoothScrolling` state.
   case userScrollForced
 }
 
@@ -42,30 +49,53 @@ fileprivate enum ScrollState {
 /// of each `NSEvent` (see `mapPhasesToScrollState`) which is received by the `scrollWheel` method of the view being scrolled,
 /// all of which is done by passing each event to the `changeState` method below.
 ///
-/// It's important to note that only Apple devices (Magic Mouse, Magic Trackpad) are supported for full smooth scrolling, which
+/// It's important to note that only Apple devices (Magic Mouse, Magic Trackpad) are supported for full "smooth" scrolling, which
 /// may also include a "momentum" component. Non-Apple devices can only execute coarser-grained "step"-type scrolling. This
 /// class does its best to execute value changes smoothly and consolidate all the various states into standard "start" & "end"
 /// events, between which queries to `isScrolling` will return `true`.
 ///
-/// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to ignore scroll
-/// sessions which are shorter than `Constants.TimeInterval.minScrollWheelTimeThreshold` to help avoid unwanted scrolling.
+/// <h1>Smooth scrolling</h1>
 ///
-/// The above is not a concern for non-Apple scroll wheels due to their more discrete "step"-like behavior, and lack of momentum.
-/// But this class tries to map them into the same model, by starting a scroll session when transitioning from the `notScrolling`
-/// state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events are received for
-/// `stepScrollSessionTimeout` seconds.
+/// For Apple devices, the out-of-the-box functionality is a bit too sensitive. So this class also add logic to measure the
+/// time the user is actively scrolling and ignore any potential scroll sessions which shorter than
+/// `Constants.TimeInterval.minScrollWheelTimeThreshold` to help avoid unwanted scrolling. Specifically, it starts the timer
+/// when a `.mayBegin` or `.began` state is seen in `.phase`, and if `.ended` or `.cancelled` is seen too soon, all remaining
+/// received events are discarded (including momentum scroll events) until the next `.mayBegin` or `.began` is seen for `.phase`.
+///
+/// The start of the qualifying scroll session, when determined by the logic above, is kicked off with a call to
+/// `beginScrollSession`. Its end is indicated by a call to `endScrollSession`, and between the two, any number of calls may be
+/// made to `executeScrollAction` to execute additional scroll traversal.
+///
+/// <h1>Step scrolling</h1>
+///
+/// Non-Apple scroll wheels are limited to a more discrete "step"-like behavior, and do not support momentum.
+/// But this class tries to map them into the same model as smooth scrolling, by starting a scroll session when transitioning
+/// from the `notScrolling` state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events
+/// are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
-
-  var outputSlider: NSSlider? = nil
+  var delegateSlider: NSSlider? = nil
   var sensitivity: Double = 1.0
+
+  class ScrollSession {
+    /// During the `minScrollWheelTimeThreshold` time period, no scroll is executed. But simply dropping any user input during
+    /// that time can feel laggy. For a much smoother user experience, this list holds the accumulated events until start, then
+    /// execute them as if they had started when the user started their scroll action.
+    var eventsBeforeStart: [NSEvent] = []
+    /// Useful for debugging
+    var deltaTotal: CGFloat = 0
+    var totalEventCount: Int = 0
+    var actionEventCount: Int = 0
+  }
+  /// Contains data for the current scroll session.
+  ///
+  /// Non-nil only while a scroll session is active. A new instance is created each time a new session starts.
+  var currentSession: ScrollSession? = nil
 
   /// This reflects the current logical/virtual scroll state of this `VirtualScrollWheel`, which may be completely different
   /// from the underlying source of scroll wheel `NSEvent`s.
   private var state: ScrollState = .notScrolling
-  private var scrollTimer: Timer? = nil
-#if DEBUG
-  private var scrollSessionDeltaTotal: CGFloat = 0
-#endif
+
+  private var scrollSessionTimer: Timer? = nil
 
   init() {
     updateSensitivity()
@@ -87,23 +117,27 @@ class VirtualScrollWheel {
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
   /// - This will be at most once per scroll.
   /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
-  func startScrollSession(with event: NSEvent) {
-    if !isScrolling() {
-      // If the state is not current, this method was likely called from outside of this class.
-      // Update to put it into the scrolling state so we don't break the model and/or confuse
-      // ourselves when debugging.
-      let newState = mapPhasesToScrollState(event)
-      if case .userScroll = newState {
-        state = .userScrollForced
-      } else {
-        state = .stepScrollForced
+  func beginScrollSession(with event: NSEvent) {
+    if delegateSlider != nil {
+      for event in currentSession!.eventsBeforeStart {
+        executeScrollAction(with: event)
       }
     }
+  }
 
-#if DEBUG
-    // Reset counters for start of session
-    scrollSessionDeltaTotal = 0
-#endif
+  /// Same as `beginScrollSession(with:NSevent)`, but overriding all current state from the given params.
+  func beginScrollSession(with event: NSEvent, usingSession sessionOverride: ScrollSession) {
+    currentSession = sessionOverride
+    // Update state to put it into the scrolling state so we don't break the model and/or confuse
+    // ourselves when debugging.
+    let newState = mapPhasesToScrollState(event)
+    if case .smoothScrolling = newState {
+      state = .userScrollForced
+    } else {
+      state = .stepScrollForced
+    }
+
+    beginScrollSession(with: event)
   }
 
   /// Called when scroll ends.
@@ -114,16 +148,21 @@ class VirtualScrollWheel {
     state = .notScrolling
 
 #if DEBUG
-    outputSlider?.thisPlayer?.sendOSD(.debug("Δ ScrollWheel: \(scrollSessionDeltaTotal.string2FractionDigits)"))
+    if let player = delegateSlider?.thisPlayer, let session = currentSession {
+      player.sendOSD(.debug("Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits), \(session.actionEventCount) / \(session.totalEventCount) events"))
+    }
 #endif
+
+    currentSession = nil
   }
 
   /// Returns true if in one of the scrolling states (i.e. a scroll session is currently active)
   func isScrolling() -> Bool {
     switch state {
-    case .notScrolling, .scrollMayBegin:
+    case .notScrolling, .smoothScrollMayBegin:
       return false
     default:
+      assert(currentSession != nil, "currentSession should not be nil for state \(state)")
       return true
     }
   }
@@ -140,47 +179,51 @@ class VirtualScrollWheel {
 
   // MARK: Scroll execution
 
+  /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
+  /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
   func executeScrollAction(with event: NSEvent) {
-    guard let outputSlider else { return }
+    guard let delegateSlider else { return }
 
-    let delta = extractDelta(from: event)
+    let delta = VirtualScrollWheel.extractLinearDelta(from: event, delegateSlider)
+    if let currentSession {
+      currentSession.deltaTotal += delta
+      currentSession.totalEventCount += 1
+    }
 
-#if DEBUG
-    scrollSessionDeltaTotal += delta
-#endif
-
-    let doubleValue = outputSlider.doubleValue
-    let maxValue = outputSlider.maxValue
-    let minValue = outputSlider.minValue
+    // Convert delta into valueChange
+    let maxValue = delegateSlider.maxValue
+    let minValue = delegateSlider.minValue
     let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
+
     // There can be a huge number of requests which don't change the existing value.
-    // Discard them for a large increase in performance:
+    // But in the case of mpv seeks, these can cause noticeable slowdown.
+    // Discard them for a large increase in performance.
     guard valueChange != 0.0 else { return }
 
-    var newValue = doubleValue + valueChange
-
+    // Compute & set new value for slider
+    var newValue = delegateSlider.doubleValue + valueChange
     // Wrap around if slider is circular
-    if outputSlider.sliderType == .circular {
+    if delegateSlider.sliderType == .circular {
       if newValue < minValue {
         newValue = maxValue - abs(valueChange)
       } else if newValue > maxValue {
         newValue = minValue + abs(valueChange)
       }
     }
+    guard delegateSlider.doubleValue != newValue else { return }
+    currentSession?.actionEventCount += 1
 
-    outputSlider.doubleValue = newValue
-    outputSlider.sendAction(outputSlider.action, to: outputSlider.target)
+    delegateSlider.doubleValue = newValue
+    delegateSlider.sendAction(delegateSlider.action, to: delegateSlider.target)
   }
 
-
-  private func extractDelta(from event: NSEvent) -> CGFloat {
-    guard let outputSlider else { return 0.0 }
-
+  /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta
+  private static func extractLinearDelta(from event: NSEvent, _ slider: NSSlider) -> CGFloat {
     var delta: Double
     // Allow horizontal scrolling on horizontal and circular sliders
-    if outputSlider.isVertical && outputSlider.sliderType == .linear {
+    if slider.isVertical && slider.sliderType == .linear {
       delta = event.deltaY
-    } else if outputSlider.userInterfaceLayoutDirection == .rightToLeft {
+    } else if slider.userInterfaceLayoutDirection == .rightToLeft {
       delta = event.deltaY + event.deltaX
     } else {
       delta = event.deltaY - event.deltaX
@@ -206,48 +249,54 @@ class VirtualScrollWheel {
     case .notScrolling:
       state = .notScrolling
 
-    case .didStepScroll:
-      resetScrollTimer(timeout: stepScrollSessionTimeout)
+    case .didStepScroll:  // Non-Apple device
+      resetScrollSessionTimer(timeout: stepScrollSessionTimeout)
       if case .didStepScroll = state {
-        // already started; nothing to do
-        return
+        // Continuing scroll session. No state changes needed
+        break
       }
 
+      // Starting (non-Apple) scroll
       state = .didStepScroll
-      startScrollSession(with: event)
+      currentSession = ScrollSession()
+      beginScrollSession(with: event)
 
-    case .scrollMayBegin:
+    case .smoothScrollMayBegin:
       state = newState
+      currentSession = ScrollSession()
+      currentSession?.eventsBeforeStart.append(event)
 
-    case .userScroll:
+    case .smoothScrolling:
       switch state {
-      case .scrollMayBegin(let intentStartTime):
+      case .smoothScrollMayBegin(let intentStartTime):
         let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
-        guard timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold else {
-          return  // not yet reached
+        if timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold {
+          Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
+          state = .smoothScrolling
+          beginScrollSession(with: event)
+        } else {
+          // Minimum scroll time not yet reached. But keep track of scrolls for use when it is reached
+          currentSession?.eventsBeforeStart.append(event)
         }
-        Logger.log.verbose("Time elapsed (\(timeElapsed)) >= minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
-        state = .userScroll
-        startScrollSession(with: event)
-      case .userScroll:
-        state = .userScroll
+      case .smoothScrolling:
+        state = .smoothScrolling
       default:
         state = .notScrolling
       }
 
-    case .userScrollJustEnded:
+    case .smoothScrollJustEnded:
       switch state {
-      case .userScroll:
-        state = .userScrollJustEnded
-        resetScrollTimer(timeout: momentumStartTimeout)
+      case .smoothScrolling:
+        state = .smoothScrollJustEnded
+        resetScrollSessionTimer(timeout: momentumStartTimeout)
       default:
         state = .notScrolling
       }
 
     case .momentumScrollJustStarted:
       switch state {
-      case .userScrollJustEnded:
-        scrollTimer?.invalidate()
+      case .smoothScrollJustEnded:
+        scrollSessionTimer?.invalidate()
         state = .momentumScrollJustStarted
       default:
         state = .notScrolling
@@ -256,7 +305,7 @@ class VirtualScrollWheel {
     case .momentumScrolling:
       switch state {
       case .momentumScrollJustStarted, .momentumScrolling:
-        scrollTimer?.invalidate()
+        scrollSessionTimer?.invalidate()
         state = .momentumScrolling
       default:
         state = .notScrolling
@@ -275,17 +324,16 @@ class VirtualScrollWheel {
     }
   }
 
-  private func resetScrollTimer(timeout: TimeInterval) {
-    scrollTimer?.invalidate()
-    scrollTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
-                                       selector: #selector(self.scrollDidTimeOut), userInfo: nil, repeats: false)
+  private func resetScrollSessionTimer(timeout: TimeInterval) {
+    scrollSessionTimer?.invalidate()
+    scrollSessionTimer = Timer.scheduledTimer(timeInterval: timeout, target: self,
+                                       selector: #selector(self.scrollSessionDidTimeOut), userInfo: nil, repeats: false)
   }
 
-  /// Executed when `scrollTimer` fires.
-  @objc private func scrollDidTimeOut() {
+  /// Executed when `scrollSessionTimer` fires.
+  @objc private func scrollSessionDidTimeOut() {
     guard isScrolling() else { return }
     Logger.log.verbose("ScrollWheel timed out")
-    state = .notScrolling
     endScrollSession()
   }
 
@@ -297,17 +345,17 @@ class VirtualScrollWheel {
       if phase.contains(.mayBegin) {
         /// This only happens for trackpad. It indicates user pressed down on it but did not change its value.
         /// Just treat it like a `began` event so that it starts the min threshold timer
-        return .scrollMayBegin(Date().timeIntervalSince1970)
+        return .smoothScrollMayBegin(Date().timeIntervalSince1970)
       } else if phase.contains(.began) {
-        if case .scrollMayBegin = state {
+        if case .smoothScrollMayBegin = state {
           /// This is valid if `mayBegin` was already encountered
-          return .userScroll
+          return .smoothScrolling
         }
-        return .scrollMayBegin(Date().timeIntervalSince1970)
+        return .smoothScrollMayBegin(Date().timeIntervalSince1970)
       } else if phase.contains(.changed) {
-        return .userScroll
+        return .smoothScrolling
       } else if phase.contains(.ended) || phase.contains(.cancelled) {
-        return .userScrollJustEnded
+        return .smoothScrollJustEnded
       } else if phase.isEmpty {
         return .didStepScroll
       }

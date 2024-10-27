@@ -23,6 +23,8 @@ fileprivate extension NSUserInterfaceItemIdentifier {
   static let contextMenu = NSUserInterfaceItemIdentifier("ContextMenu")
 }
 
+// FIXME: do not wait to load
+
 fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .lastPlayedDay: 60,
   .parentFolder: 145

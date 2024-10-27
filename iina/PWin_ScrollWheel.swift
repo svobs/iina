@@ -21,9 +21,9 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity))")
   }
 
-  override func startScrollSession(with event: NSEvent) {
-    super.startScrollSession(with: event)
-    guard let player = outputSlider?.thisPlayer else { return }
+  override func beginScrollSession(with event: NSEvent) {
+    super.beginScrollSession(with: event)
+    guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
     // pause video when seek begins
@@ -35,7 +35,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
 
   override func endScrollSession() {
     super.endScrollSession()
-    guard let player = outputSlider?.thisPlayer else { return }
+    guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
     // only resume playback when it was playing before seeking
@@ -57,8 +57,8 @@ class VolumeSliderScrollWheel: VirtualScrollWheel {
 
 
 class PWinScrollWheel: VirtualScrollWheel {
-  /// One of `playSlider`, `volumeSlider`, or `nil`
-  var scrollActionSlider: VirtualScrollWheel? = nil
+  /// One of `playSliderScrollWheel`, `volumeSliderScrollWheel`, or `nil`
+  private(set) var delegate: VirtualScrollWheel? = nil
   let wc: PlayerWindowController
 
   init(_ playerWindowController: PlayerWindowController) {
@@ -66,15 +66,25 @@ class PWinScrollWheel: VirtualScrollWheel {
   }
 
   override func executeScrollAction(with event: NSEvent) {
-    scrollActionSlider?.executeScrollAction(with: event)
+    delegate?.executeScrollAction(with: event)
   }
 
-  override func startScrollSession(with event: NSEvent) {
-    super.startScrollSession(with: event)
+  override func beginScrollSession(with event: NSEvent) {
+    super.beginScrollSession(with: event)
 
     let scrollAction: Preference.ScrollAction
-    // determine scroll direction, and thus scroll action, based on cumulative scroll deltas
-    if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+
+    // Determine scroll direction, and thus scroll action, based on cumulative scroll deltas.
+    // By using the sum
+    var deltaX: CGFloat = 0
+    var deltaY: CGFloat = 0
+    for event in currentSession!.eventsBeforeStart {
+      deltaX += event.scrollingDeltaX
+      deltaY += event.scrollingDeltaY
+    }
+    deltaX += event.scrollingDeltaX
+    deltaY += event.scrollingDeltaY
+    if deltaX.magnitude > deltaY.magnitude {
       wc.player.log.verbose("Scroll direction is horizontal")
       scrollAction = Preference.enum(for: .horizontalScrollAction)
     } else {
@@ -84,19 +94,19 @@ class PWinScrollWheel: VirtualScrollWheel {
 
     switch scrollAction {
     case .seek:
-      scrollActionSlider = wc.playSliderScrollWheel
+      delegate = wc.playSliderScrollWheel
     case .volume:
-      scrollActionSlider = wc.volumeSliderScrollWheel
+      delegate = wc.volumeSliderScrollWheel
     default:
-      scrollActionSlider = nil
+      delegate = nil
     }
 
-    scrollActionSlider?.startScrollSession(with: event)
+    delegate?.beginScrollSession(with: event, usingSession: currentSession!)
   }
 
   override func endScrollSession() {
     super.endScrollSession()
-    scrollActionSlider?.endScrollSession()
+    delegate?.endScrollSession()
   }
 }
 
@@ -105,10 +115,9 @@ extension PlayerWindowController {
 
   override func scrollWheel(with event: NSEvent) {
     guard !isInInteractiveMode else { return }
-
     guard !isMouseEvent(event, inAnyOf: [currentControlBar, leadingSidebarView, trailingSidebarView,
                                          titleBarView, subPopoverView]) else { return }
+
     scrollWheel.scrollWheel(with: event)
   }
-
 }
