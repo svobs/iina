@@ -427,12 +427,12 @@ class VideoView: NSView {
 
   // MARK: - Color
 
-  private func setICCProfile() {
+  func setICCProfile() {
     let screenColorSpace = player.windowController.window?.screen?.colorSpace
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
-      logHDR.verbose("Configuring auto ICC profile (FIXME: commented out)")
+      logHDR.verbose("Configuring auto ICC profile")
       // This MUST be locked via openGLContext
 
       guard player.mpv.lockAndSetOpenGLContext() else { return }
@@ -570,12 +570,13 @@ extension VideoView {
 
   func refreshEdrMode() {
     guard player.windowController.loaded else { return }
+    let isRestoring = player.info.isRestoring
     // Do not execute if hidden during restore! Some of these calls may cause the window to show
-    guard player.isActive, !player.info.isRestoring else { return }
+    guard player.isActive, !isRestoring else { return }
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
-    log.debug("Refreshing HDR for \(player.subsystem.rawValue) @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
+    log.debug("Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {

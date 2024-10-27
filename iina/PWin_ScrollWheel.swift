@@ -9,6 +9,7 @@
 import Foundation
 
 
+/// An instance of this is stored in the `PlayerWindowController` instance. Also see its `playSliderAction(_:)
 class PlaySliderScrollWheel: VirtualScrollWheel {
   /** We need to pause the video when a user starts seeking by scrolling.
    This property records whether the video is paused initially so we can
@@ -45,6 +46,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
 }
 
 
+/// An instance of this is stored in the `PlayerWindowController` instance. Also see its `volumeSliderAction(_:)
 class VolumeSliderScrollWheel: VirtualScrollWheel {
   override func updateSensitivity() {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)

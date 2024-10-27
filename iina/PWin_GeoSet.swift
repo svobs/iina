@@ -34,27 +34,26 @@ struct GeometrySet {
 }
 
 extension PlayerWindowController {
-  private func getLatestWindowFrameAndScreenID() -> (NSRect?, String?) {
+  private func getLatestWindowFrameAndScreenID() -> (NSRect, String)? {
     guard DispatchQueue.isExecutingIn(.main, logError: false) else {
       log.debug("Not executing in main queue; will use cached window frame & screenID")
-      return (nil, nil)
+      return nil
     }
     let currentPlayback = player.info.currentPlayback
     // Need to check state of current playback to avoid race conditions
-    if let window, window.isOpen,
-       player.state.isAtLeast(.started),
-       let currentPlayback, currentPlayback.state.isAtLeast(.loaded) {
-      return (window.frame, bestScreen.screenID)
-    } else {
-      return (nil, nil)
+    guard loaded, !player.info.isRestoring, player.state.isAtLeast(.started),
+       let currentPlayback, currentPlayback.state.isAtLeast(.loaded),
+          let window, window.isOpen else {
+      return nil
     }
+    return (window.frame, bestScreen.screenID)
   }
 
   func buildGeoSet(windowed: PWinGeometry? = nil, musicMode: MusicModeGeometry? = nil,
                    video: VideoGeometry? = nil, from inputLayout: LayoutState? = nil) -> GeometrySet {
     let geo = geo
 
-    let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
+    let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() ?? (nil, nil)
 
     let windowedNew: PWinGeometry
     if let windowed {
@@ -82,8 +81,8 @@ extension PlayerWindowController {
 
   func windowedGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> PWinGeometry {
     let geo = geo
-    if currentLayout.mode.isWindowed {
-      let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
+    if currentLayout.mode.isWindowed, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() {
+      log.verbose("Cloning windowed geometry in set with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID)")
       // If user moved the window recently, window frame might not be completely up to date. Update it & return:
       return geo.windowed.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
@@ -95,8 +94,8 @@ extension PlayerWindowController {
   /// See also `windowedGeoForCurrentFrame`
   func musicModeGeoForCurrentFrame(newVidGeo: VideoGeometry? = nil) -> MusicModeGeometry {
     let geo = geo
-    if currentLayout.mode == .musicMode {
-      let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID()
+    if currentLayout.mode == .musicMode, let (latestWindowFrame, latestScreenID) = getLatestWindowFrameAndScreenID() {
+      log.verbose("Cloning musicMode geometry in set with current windowFrame=\(latestWindowFrame), screenID=\(latestScreenID)")
       return geo.musicMode.clone(windowFrame: latestWindowFrame, screenID: latestScreenID, video: newVidGeo)
     }
     return geo.musicMode.clone(video: newVidGeo)

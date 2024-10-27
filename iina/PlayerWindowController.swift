@@ -953,7 +953,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         viewportView.addSubview(videoView, positioned: .below, relativeTo: defaultAlbumArtView)
       }
     }
-    // Screen may have changed. Refresh:
+    // Screen may have changed. Refresh. Do not keep the OpenGL lock because it is locked in here
     videoView.refreshAll()
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
@@ -1297,6 +1297,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
+        videoView.refreshEdrMode()
         forceDraw()  // needed if restoring while paused
       })
 
