@@ -61,11 +61,9 @@ extension PlayerWindowController {
 
     windowScrollWheel = PWinScrollWheel(self)
 
-    playSliderScrollWheel.delegateSlider = playSlider
-    playSlider.scrollWheel = playSliderScrollWheel
+    playSliderScrollWheel.configure(playSlider, log)
 
-    volumeSliderScrollWheel.delegateSlider = volumeSlider
-    volumeSlider.scrollWheel = volumeSliderScrollWheel
+    volumeSliderScrollWheel.configure(volumeSlider, log)
 
     playlistView.windowController = self
     quickSettingView.windowController = self

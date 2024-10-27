@@ -49,7 +49,7 @@ class VolumeSliderScrollWheel: VirtualScrollWheel {
   override func updateSensitivity() {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
     sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)
-    Logger.log.verbose("Updated VolumeSlider sensitivity=\(sensitivity)")
+    log.verbose("Updated VolumeSlider sensitivity=\(sensitivity)")
   }
 }
 
@@ -61,6 +61,8 @@ class PWinScrollWheel: VirtualScrollWheel {
 
   init(_ playerWindowController: PlayerWindowController) {
     self.wc = playerWindowController
+    super.init()
+    self.log = playerWindowController.player.log
   }
 
   override func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
@@ -78,11 +80,13 @@ class PWinScrollWheel: VirtualScrollWheel {
     }
 
     let scrollAction: Preference.ScrollAction
-    if deltaX.magnitude > deltaY.magnitude {
-      wc.player.log.verbose("Scroll direction is horizontal")
+    let distX = deltaX.magnitude
+    let distY = deltaY.magnitude
+    if distX > distY {
+      log.verbose("Scroll direction is horizontal: \(distX) > \(distY)")
       scrollAction = Preference.enum(for: .horizontalScrollAction)
     } else {
-      wc.player.log.verbose("Scroll direction is vertical")
+      log.verbose("Scroll direction is vertical: \(distX) ≤ \(distY)")
       scrollAction =  Preference.enum(for: .verticalScrollAction)
     }
 

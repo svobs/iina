@@ -80,7 +80,7 @@ fileprivate extension KeyMapping {
   func toDict() -> [String: Any] {
     return [
       "key": self.normalizedMpvKey,
-      "action": self.rawAction,
+      "action": self.rawAction ?? "",
       "isIINACommand": self.isIINACommand
     ]
   }
