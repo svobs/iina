@@ -21,8 +21,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity))")
   }
 
-  override func beginScrollSession(with event: NSEvent) {
-    super.beginScrollSession(with: event)
+  override func scrollSessionWillBegin(with event: NSEvent) {
     guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
@@ -33,8 +32,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     }
   }
 
-  override func endScrollSession() {
-    super.endScrollSession()
+  override func scrollSessionDidEnd() {
     guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
@@ -65,9 +63,7 @@ class PWinScrollWheel: VirtualScrollWheel {
     self.wc = playerWindowController
   }
 
-  override func beginScrollSession(with event: NSEvent) {
-    super.beginScrollSession(with: event)
-
+  override func scrollSessionWillBegin(with event: NSEvent) {
     let scrollAction: Preference.ScrollAction
 
     // Determine scroll direction, and thus scroll action, based on cumulative scroll deltas.
@@ -97,16 +93,15 @@ class PWinScrollWheel: VirtualScrollWheel {
       delegate = nil
     }
 
-    delegate?.beginScrollSession(with: event, usingSession: currentSession!)
+    guard let delegate else { return }
+    delegateSlider = delegate.delegateSlider
+    sensitivity = delegate.sensitivity
+
+    delegate.scrollSessionWillBegin(with: event)
   }
 
-  override func endScrollSession() {
-    super.endScrollSession()
-    delegate?.endScrollSession()
-  }
-
-  override func executeScroll(with event: NSEvent) {
-    delegate?.executeScroll(with: event)
+  override func scrollSessionDidEnd() {
+    delegate?.scrollSessionDidEnd()
   }
 }
 

@@ -40,11 +40,6 @@ fileprivate enum ScrollState {
   case momentumScrollJustStarted
   case momentumScrolling
   case momentumScrollJustEnded
-
-  /// Only set by `beginScrollSession()`. Equivalent of `didStepScroll` state.
-  case stepScrollForced
-  /// Only set by `beginScrollSession()`. Equivalent of `smoothScrolling` state.
-  case userScrollForced
 }
 
 /// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling.
@@ -118,12 +113,25 @@ class VirtualScrollWheel {
   /// Subclasses can override
   func updateSensitivity() { }
 
-  /// Called when scroll starts.
+  /// Called when scroll starts. Subclasses should override.
   ///
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
   /// - This will be at most once per scroll.
   /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
-  func beginScrollSession(with event: NSEvent) {
+  func scrollSessionWillBegin(with event: NSEvent) {
+  }
+
+
+  /// Called after scroll ends. Subclasses should override.
+  ///
+  /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
+  /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
+  func scrollSessionDidEnd() {
+  }
+
+  private func beginScrollSession(with event: NSEvent) {
+    scrollSessionWillBegin(with: event)
+
     if let delegateSlider, let currentSession {
       // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
       let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue, { value, event in
@@ -132,26 +140,7 @@ class VirtualScrollWheel {
     }
   }
 
-  /// Same as `beginScrollSession(with:NSevent)`, but overriding all current state from the given params.
-  func beginScrollSession(with event: NSEvent, usingSession sessionOverride: ScrollSession) {
-    currentSession = sessionOverride
-    // Update state to put it into the scrolling state so we don't break the model and/or confuse
-    // ourselves when debugging.
-    let newState = mapPhasesToScrollState(event)
-    if case .smoothScrolling = newState {
-      state = .userScrollForced
-    } else {
-      state = .stepScrollForced
-    }
-
-    beginScrollSession(with: event)
-  }
-
-  /// Called when scroll ends.
-  ///
-  /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
-  /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
-  func endScrollSession() {
+  private func endScrollSession() {
     state = .notScrolling
 
 #if DEBUG
@@ -168,6 +157,7 @@ class VirtualScrollWheel {
 #endif
 
     currentSession = nil
+    scrollSessionDidEnd()
   }
 
   /// Returns true if in one of the scrolling states (i.e. a scroll session is currently active)
@@ -184,7 +174,7 @@ class VirtualScrollWheel {
   /// Returns true if doing a step-type scroll, which non-Apple devices are limited to.
   func isScrollingNonAppleDevice() -> Bool {
     switch state {
-    case .didStepScroll, .stepScrollForced:
+    case .didStepScroll:
       return true
     default:
       return false
@@ -347,9 +337,6 @@ class VirtualScrollWheel {
       default:
         state = .notScrolling
       }
-    case .stepScrollForced, .userScrollForced:
-      // programmer error
-      Logger.fatal("Invalid state for changeState(): \(newState)")
     }
   }
 
