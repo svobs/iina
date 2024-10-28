@@ -161,15 +161,15 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   }
 
   private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
-    return Preference.UIState.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
+    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
   }
 
   private static func getHistorySearchTypeFromPrefs() -> Preference.HistorySearchType? {
-    return Preference.UIState.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableSearchType) : nil
+    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableSearchType) : nil
   }
 
   private static func getSearchStringFromPrefs() -> String? {
-    return Preference.UIState.isRestoreEnabled ? Preference.string(for: .uiHistoryTableSearchString) : nil
+    return UIState.shared.isRestoreEnabled ? Preference.string(for: .uiHistoryTableSearchString) : nil
   }
 
   // Change min width of "Played at" column
@@ -433,7 +433,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     // avoid reload if no change:
     guard searchString != sender.stringValue else { return }
     self.searchString = sender.stringValue
-    Preference.UIState.set(sender.stringValue, for: .uiHistoryTableSearchString)
+    UIState.shared.set(sender.stringValue, for: .uiHistoryTableSearchString)
     backgroundQueue.async { [self] in
       reloadData()
     }
@@ -511,7 +511,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     // avoid reload if no change:
     guard searchType != newValue else { return }
     searchType = newValue
-    Preference.UIState.set(newValue.rawValue, for: .uiHistoryTableSearchType)
+    UIState.shared.set(newValue.rawValue, for: .uiHistoryTableSearchType)
     backgroundQueue.async { [self] in
       reloadData()
     }

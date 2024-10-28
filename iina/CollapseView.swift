@@ -34,7 +34,7 @@ class CollapseView: NSStackView {
       }
       if let key = persistentUIStateKey {
         // Update persisted UI state
-        Preference.UIState.set(!folded, for: key)
+        UIState.shared.set(!folded, for: key)
       }
     }
   }
@@ -59,7 +59,7 @@ class CollapseView: NSStackView {
         let prefKeyRaw = triggerName.rawValue.replacingOccurrences(of: triggerIdentifier, with: "uiCollapseView")
         if let key = Preference.Key(rawValue: prefKeyRaw), key.isValid() {
           persistentUIStateKey = key
-          folded = !Preference.UIState.get(key)
+          folded = !UIState.shared.getSavedValue(for: key)
         }
       }
     }

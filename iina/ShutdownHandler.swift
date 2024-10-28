@@ -28,7 +28,7 @@ class ShutdownHandler {
     for playerWindowController in NSApplication.playerWindows {
       PlayerSaveState.saveSynchronously(playerWindowController.player)
     }
-    Preference.UIState.saveCurrentOpenWindowList()
+    UIState.shared.saveCurrentOpenWindowList()
 
     isTerminating = true
 
@@ -50,10 +50,10 @@ class ShutdownHandler {
       RemoteCommandController.disableAllCommands()
     }
 
-    if Preference.UIState.isSaveEnabled {
+    if UIState.shared.isSaveEnabled {
       // unlock for new launch
-      Logger.log("Updating lifecycle state of \(Preference.UIState.launchName.quoted) to 'done' in prefs", level: .verbose)
-      UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.done.rawValue, forKey: Preference.UIState.launchName)
+      Logger.log("Updating lifecycle state of \(UIState.shared.currentLaunchName.quoted) to 'done' in prefs", level: .verbose)
+      UserDefaults.standard.setValue(UIState.LaunchLifecycleState.done.rawValue, forKey: UIState.shared.currentLaunchName)
     }
 
     // The first priority was to shutdown any new input from the user. The second priority is to

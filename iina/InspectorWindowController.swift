@@ -142,7 +142,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     deleteButton.isEnabled = false
 
     // Restore tab selection
-    let selectTabIndex: Int = Preference.UIState.get(.uiInspectorWindowTabIndex)
+    let selectTabIndex: Int = UIState.shared.getSavedValue(for: .uiInspectorWindowTabIndex)
     tabButtonGroup.selectSegment(withTag: selectTabIndex)
     tabView.selectTabViewItem(at: selectTabIndex)
   }
@@ -581,7 +581,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   @IBAction func tabSwitched(_ sender: NSSegmentedControl) {
     tabView.selectTabViewItem(at: sender.selectedSegment)
-    Preference.UIState.set(sender.selectedSegment, for: .uiInspectorWindowTabIndex)
+    UIState.shared.set(sender.selectedSegment, for: .uiInspectorWindowTabIndex)
   }
 
   @IBAction func trackSwitched(_ sender: AnyObject) {

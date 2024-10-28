@@ -545,7 +545,7 @@ class PlayerCore: NSObject {
   }
 
   func clearSavedState() {
-    Preference.UIState.clearPlayerSaveState(forPlayerID: label)
+    UIState.shared.clearPlayerSaveState(forPlayerID: label)
   }
 
   /// Initiate shutdown of this player.

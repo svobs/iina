@@ -1644,7 +1644,7 @@ class IINAWindowController: NSWindowController {
     let windowName = window.savedStateName
     if !Preference.bool(for: .isRestoreInProgress), !windowName.isEmpty {
       /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
-      Preference.UIState.windowsOpen.insert(windowName)
+      UIState.shared.windowsOpen.insert(windowName)
     }
 
     window.postWindowIsReadyToShow()
@@ -1662,7 +1662,7 @@ extension NSScrollView {
   // This is because NSScrollViews containing NSTableViews can be screwy and
   // have some arbitrary negative value as their "no scroll".
   func restoreVerticalScroll(key: Preference.Key) -> Bool {
-    if Preference.UIState.isRestoreEnabled {
+    if UIState.shared.isRestoreEnabled {
       if let offsetY: Double = Preference.value(for: key) as? Double {
         Logger.log("Restoring vertical scroll to: \(offsetY)", level: .verbose)
         // Note: *MUST* use scroll(to:), not scroll(_)! Weird that the latter doesn't always work
@@ -1680,7 +1680,7 @@ extension NSScrollView {
       if let clipView = note.object as? NSClipView {
         let scrollOffsetY = clipView.bounds.origin.y
 //        Logger.log("Saving Y scroll offset \(key.rawValue.quoted): \(scrollOffsetY)", level: .verbose)
-        Preference.UIState.set(scrollOffsetY, for: key)
+        UIState.shared.set(scrollOffsetY, for: key)
       }
     }
     return observer
@@ -1689,7 +1689,7 @@ extension NSScrollView {
   // Combines the previous 2 functions into one
   func restoreAndObserveVerticalScroll(key: Preference.Key, defaultScrollAction: () -> Void) -> NSObjectProtocol {
     if !restoreVerticalScroll(key: key) {
-      Logger.log("Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(Preference.UIState.isRestoreEnabled)); will use default scroll action", level: .verbose)
+      Logger.log("Did not restore scroll (key: \(key.rawValue.quoted), isRestoreEnabled: \(UIState.shared.isRestoreEnabled)); will use default scroll action", level: .verbose)
       defaultScrollAction()
     }
     return addVerticalScrollObserver(key: key)

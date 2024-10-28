@@ -60,7 +60,7 @@ class BindingTableStateManager: NSObject {
   }
 
   static func initialState() -> BindingTableState {
-    let filterString = Preference.UIState.isRestoreEnabled ? Preference.string(for: .uiPrefBindingsTableSearchString) ?? "" : ""
+    let filterString = UIState.shared.isRestoreEnabled ? Preference.string(for: .uiPrefBindingsTableSearchString) ?? "" : ""
     let showAllBindings = Preference.bool(for: .showKeyBindingsFromAllSources)
     return BindingTableState(AppInputConfig.current, filterString: filterString, inputConfFile: ConfTableState.manager.loadConfFile(),
                              showAllBindings: showAllBindings)
@@ -161,7 +161,7 @@ class BindingTableStateManager: NSObject {
 
   // Not an undoable action; just a UI change (but possibly saved in UI state prefs)
   func applyFilter(newFilterString: String) {
-    Preference.UIState.set(newFilterString, for: .uiPrefBindingsTableSearchString)
+    UIState.shared.set(newFilterString, for: .uiPrefBindingsTableSearchString)
     applyStateUpdate(AppInputConfig.current, newFilterString: newFilterString)
     // Tell search field to update if needed:
     NotificationCenter.default.post(Notification(name: .iinaKeyBindingSearchFieldShouldUpdate, object: newFilterString))

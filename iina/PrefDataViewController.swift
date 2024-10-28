@@ -105,7 +105,7 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   }
 
   private func buildSavedLaunchSummary() -> (Bool, String) {
-    let launches = Preference.UIState.collectLaunchState()
+    let launches = UIState.shared.collectLaunchState()
     if !launches.isEmpty {
 
       // Aggregate all windows into set of unique windows
@@ -178,19 +178,19 @@ class PrefDataViewController: PreferenceViewController, PreferenceWindowEmbeddab
   // MARK: - IBActions
 
   @IBAction func clearSavedWindowDataBtnAction(_ sender: Any) {
-    guard !Preference.UIState.isSaveEnabled else {
+    guard !UIState.shared.isSaveEnabled else {
       Utility.showAlert("clear_saved_windows_while_enabled", sheetWindow: view.window)
       return
     }
 
     Utility.quickAskPanel("clear_saved_windows", sheetWindow: view.window) { respond in
       guard respond == .alertFirstButtonReturn else { return }
-      guard !Preference.UIState.isSaveEnabled else {
+      guard !UIState.shared.isSaveEnabled else {
         Logger.log("User chose to clear all saved window data, but save is still enabled!", level: .error)
         return
       }
       Logger.log("User chose to clear all saved window data")
-      Preference.UIState.clearAllSavedLaunches(force: true)
+      UIState.shared.clearAllSavedLaunches(force: true)
     }
   }
 

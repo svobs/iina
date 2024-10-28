@@ -34,7 +34,7 @@ class Logger: NSObject {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd-HH-mm-ss"
     let timeString  = formatter.string(from: Date())
-    let launchID = Preference.UIState.launchID
+    let launchID = UIState.shared.currentLaunchID
     return "\(timeString)_L\(launchID)"
   }()
 

@@ -10,7 +10,7 @@ import Cocoa
 
 struct AppData {
   static func label(forPlayerCore playerCoreCounter: Int) -> String {
-    return "\(Preference.UIState.launchID)c\(playerCoreCounter)"
+    return "\(UIState.shared.currentLaunchID)c\(playerCoreCounter)"
   }
 
   /** time interval to sync play pos & other UI */

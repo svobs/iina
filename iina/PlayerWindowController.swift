@@ -129,8 +129,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// as well as in the minimized or hidden states.
     /// Check against our internally tracked window state lists also:
     let savedStateName = window.savedStateName
-    let isVisible = window.isVisible || Preference.UIState.windowsOpen.contains(savedStateName)
-    let isMinimized = Preference.UIState.windowsMinimized.contains(savedStateName)
+    let isVisible = window.isVisible || UIState.shared.windowsOpen.contains(savedStateName)
+    let isMinimized = UIState.shared.windowsMinimized.contains(savedStateName)
     return isVisible || isMinimized
   }
 
@@ -979,9 +979,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     /// Do this *after* `restoreFromMiscWindowBools` call
     if window.isMiniaturized {
-      Preference.UIState.windowsMinimized.insert(window.savedStateName)
+      UIState.shared.windowsMinimized.insert(window.savedStateName)
     } else {
-      Preference.UIState.windowsOpen.insert(window.savedStateName)
+      UIState.shared.windowsOpen.insert(window.savedStateName)
     }
 
     if !player.info.isRestoring {
@@ -1027,7 +1027,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         player.saveState()
         // Especially need to save the updated windows list!
         // At launch, any unreferenced PWin entries will be deleted from prefs
-        Preference.UIState.saveCurrentOpenWindowList()
+        UIState.shared.saveCurrentOpenWindowList()
       })
 
       animationPipeline.submit(animationTasks)

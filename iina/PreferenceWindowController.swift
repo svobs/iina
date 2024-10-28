@@ -261,7 +261,7 @@ class PreferenceWindowController: IINAWindowController {
     // To restore selection properly, must set table to allow empty selection initially (in XIB).
     // Otherwise, it will automatically select the first value and trigger the selection notification.
     // Much safer to disable empty selection after selecting a row.
-    loadTab(at: Preference.UIState.get(.uiPrefWindowNavTableSelectionIndex))
+    loadTab(at: UIState.shared.getSavedValue(for: .uiPrefWindowNavTableSelectionIndex))
     tableView.allowsEmptySelection = false
     let observer = prefDetailScrollView.restoreAndObserveVerticalScroll(key: .uiPrefDetailViewScrollOffsetY, defaultScrollAction: {
       prefDetailScrollView.scroll(NSPoint())
@@ -347,7 +347,7 @@ class PreferenceWindowController: IINAWindowController {
       }
     }
 
-    Preference.UIState.set(index, for: .uiPrefWindowNavTableSelectionIndex)
+    UIState.shared.set(index, for: .uiPrefWindowNavTableSelectionIndex)
   }
 
   private func getLabelDict(inNibNamed name: String) -> [String: [String]] {

@@ -76,10 +76,11 @@ class PlayerCoreManager {
 
   // Attempt to exactly restore play state & UI from last run of IINA (for given player)
   func restoreFromPriorLaunch(playerID id: String) -> PlayerCore? {
-    Preference.UIState.log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+    let log = UIState.shared.log
+    log.debug("Creating new PlayerCore & restoring saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
 
-    guard let savedState = Preference.UIState.getPlayerSaveState(forPlayerID: id) else {
-      Preference.UIState.log.error("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
+    guard let savedState = UIState.shared.getPlayerSaveState(forPlayerID: id) else {
+      log.error("Cannot restore window: could not find saved state for \(WindowAutosaveName.playerWindow(id: id).string.quoted)")
       return nil
     }
 

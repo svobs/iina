@@ -490,7 +490,7 @@ struct Preference {
     /// 1. Enables save of IINA's UI state as it changes
     /// 2. Enables restore of previous launches when app is relaunched.
     ///
-    /// NOTE: Do not use this directly. Use `Preference.UIState.isRestoreEnabled()` so that runtime overrides work.
+    /// NOTE: Do not use this directly. Use `UIState.shared.isRestoreEnabled()` so that runtime overrides work.
     static let enableRestoreUIState = Key("enableRestoreUIState")
 
     static let alwaysAskBeforeRestoreAtLaunch = Key("alwaysAskBeforeRestoreAtLaunch")

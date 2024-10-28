@@ -114,13 +114,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
     guard let keyPath = keyPath, let change = change else { return }
 
-    if keyPath == Preference.UIState.launchName {
+    if keyPath == UIState.shared.currentLaunchName {
       if let newLaunchLifecycleState = change[.newKey] as? Int {
         guard !isTerminating else { return }
         guard newLaunchLifecycleState != 0 else { return }
         Logger.log("Detected change to this instance's lifecycle state pref (\(keyPath.quoted)). Probably a newer instance of IINA has started and is attempting to restore")
         Logger.log("Changing our lifecycle state back to 'stillRunning' so the other launch will skip this instance.")
-        UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
+        UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: keyPath)
         DispatchQueue.main.async { [self] in
           NotificationCenter.default.post(Notification(name: .savedWindowStateDidChange, object: self))
         }
@@ -292,7 +292,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     Logger.initLogging()
     logAllAppDetails()
 
-    Logger.log("App will launch. LaunchID: \(Preference.UIState.launchID)")
+    Logger.log("App will launch. LaunchID: \(UIState.shared.currentLaunchID)")
 
     // Start asynchronously gathering and caching information about the hardware decoding
     // capabilities of this Mac.
@@ -363,8 +363,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     menuController.refreshBuiltInMenuItemBindings()
 
     // Register to restore for successive launches. Set status to currently running so that it isn't restored immediately by the next launch
-    UserDefaults.standard.setValue(Preference.UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: Preference.UIState.launchName)
-    UserDefaults.standard.addObserver(self, forKeyPath: Preference.UIState.launchName, options: .new, context: nil)
+    UserDefaults.standard.setValue(UIState.LaunchLifecycleState.stillRunning.rawValue, forKey: UIState.shared.currentLaunchName)
+    UserDefaults.standard.addObserver(self, forKeyPath: UIState.shared.currentLaunchName, options: .new, context: nil)
 
     // Restore window state *before* hooking up the listener which saves state.
     restoreWindowsFromPreviousLaunch()
@@ -426,7 +426,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     observers.append(NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil,
                                                             queue: .main, using: self.windowWillClose))
 
-    if Preference.UIState.isSaveEnabled {
+    if UIState.shared.isSaveEnabled {
       // Save ordered list of open windows each time the order of windows changed.
       observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didBecomeMainNotification, object: nil,
                                                               queue: .main, using: self.windowDidBecomeMain))
@@ -464,18 +464,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
     let log = Logger.Subsystem.restore
 
-    guard Preference.UIState.isRestoreEnabled else {
+    guard UIState.shared.isRestoreEnabled else {
       log.debug("Restore is disabled. Wll not restore windows")
       return false
     }
 
     if commandLineStatus.isCommandLine && !(Preference.bool(for: .enableAdvancedSettings) && Preference.bool(for: .enableRestoreUIStateForCmdLineLaunches)) {
       log.debug("Restore is disabled for command-line launches. Wll not restore windows or save state for this launch")
-      Preference.UIState.disableSaveAndRestoreUntilNextLaunch()
+      UIState.shared.disableSaveAndRestoreUntilNextLaunch()
       return false
     }
 
-    let pastLaunches: [Preference.UIState.LaunchState] = Preference.UIState.collectLaunchStateForRestore()
+    let pastLaunches: [UIState.LaunchState] = UIState.shared.collectLaunchStateForRestore()
     log.verbose("Found \(pastLaunches.count) past launches to restore")
     if pastLaunches.isEmpty {
       return false
@@ -499,7 +499,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     if !isRestoreApproved {
       // Clear out old state. It may have been causing errors, or user wants to start new
       log.debug("User denied restore. Clearing all saved launch state.")
-      Preference.UIState.clearAllSavedLaunches()
+      UIState.shared.clearAllSavedLaunches()
       Preference.set(false, for: .isRestoreInProgress)
       return false
     }
@@ -508,10 +508,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     // Due to 1s delay in chosen strategy for verifying whether other instances are running, try not to repeat it twice.
     // Users who are quick with their user interface device probably know what they are doing and will be impatient.
     let pastLaunchesCache = stopwatch.secElapsed > Constants.TimeInterval.pastLaunchResponseTimeout ? nil : pastLaunches
-    let savedWindowsBackToFront = Preference.UIState.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
+    let savedWindowsBackToFront = UIState.shared.consolidateSavedWindowsFromPastLaunches(pastLaunches: pastLaunchesCache)
 
     guard !savedWindowsBackToFront.isEmpty else {
-      log.debug("Will not restore windows: stored window list empty")
+      log.debug("Nothing to restore: stored window list empty")
       return false
     }
 
@@ -520,7 +520,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       if onlyWindow == WindowAutosaveName.inspector {
         // Do not restore this on its own
-        log.verbose("Will not restore windows: only open window was Inspector")
+        log.verbose("Nothing to restore: only open window was Inspector")
         return false
       }
 
@@ -528,7 +528,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       if (onlyWindow == WindowAutosaveName.welcome && action == .welcomeWindow)
           || (onlyWindow == WindowAutosaveName.openURL && action == .openPanel)
           || (onlyWindow == WindowAutosaveName.playbackHistory && action == .historyWindow) {
-        log.verbose("Will not restore windows: the only open window was identical to launch action (\(action))")
+        log.verbose("Nothing to restore: the only open window was identical to launch action (\(action))")
         // Skip the prompts below because they are just unnecessary nagging
         return false
       }
@@ -592,17 +592,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // Rebuild window maps as we go:
       if savedWindow.isMinimized {
-        Preference.UIState.windowsMinimized.insert(savedWindow.saveName.string)
-      } else {
-        Preference.UIState.windowsOpen.insert(savedWindow.saveName.string)
-      }
-
-      if savedWindow.isMinimized {
-        // Don't need to wait for wc
+        // No need worry about partial draws while minimized, so no need to add to wcsToRestore
         wc.window?.miniaturize(self)
+        UIState.shared.windowsMinimized.insert(savedWindow.saveName.string)
       } else {
-        // Add to list of windows to wait for
+        // Add to list of windows to wait for, so we can show them all nicely
         startup.wcsToRestore.append(wc)
+        UIState.shared.windowsOpen.insert(savedWindow.saveName.string)
       }
     }
 
@@ -736,9 +732,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // Show all windows if ready
       showWindowsIfReady()
+    } else if window.isMiniaturized {
+      log.verbose("OpenWindow: demiseiniaturizing window \(window.savedStateName.quoted)")
+      // Need to call this instead of showWindow if minimized (otherwise there are visual glitches)
+      window.deminiaturize(self)
     } else {
       log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
-      // this will un-minimize if needed
       wc.showWindow(window)
     }
   }
@@ -763,7 +762,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
   /// Sheet window is opening. Track it like a regular window.
   ///
   /// The notification provides no way to actually know which sheet is being added.
-  /// So prior to opening the sheet, the caller must manually add it using `Preference.UIState.addOpenSheet`.
+  /// So prior to opening the sheet, the caller must manually add it using `UIState.shared.addOpenSheet`.
   private func windowWillBeginSheet(_ notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     let activeWindowName = window.savedStateName
@@ -773,13 +772,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       guard !isTerminating else {
         return
       }
-      guard let sheetNames = Preference.UIState.openSheetsDict[activeWindowName] else { return }
+      guard let sheetNames = UIState.shared.openSheetsDict[activeWindowName] else { return }
 
       for sheetName in sheetNames {
         Logger.log("Sheet opened: \(sheetName.quoted)", level: .verbose)
-        Preference.UIState.windowsOpen.insert(sheetName)
+        UIState.shared.windowsOpen.insert(sheetName)
       }
-      Preference.UIState.saveCurrentOpenWindowList()
+      UIState.shared.saveCurrentOpenWindowList()
     }
   }
 
@@ -796,15 +795,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // NOTE: not sure how to identify which sheet will end. In the future this could cause problems
       // if we use a window with multiple sheets. But for now we can assume that there is only one sheet,
       // so that is the one being closed.
-      guard let sheetNames = Preference.UIState.openSheetsDict[activeWindowName] else { return }
-      Preference.UIState.removeOpenSheets(fromWindow: activeWindowName)
+      guard let sheetNames = UIState.shared.openSheetsDict[activeWindowName] else { return }
+      UIState.shared.removeOpenSheets(fromWindow: activeWindowName)
 
       for sheetName in sheetNames {
         Logger.log("Sheet closed: \(sheetName.quoted)", level: .verbose)
-        Preference.UIState.windowsOpen.remove(sheetName)
+        UIState.shared.windowsOpen.remove(sheetName)
       }
 
-      Preference.UIState.saveCurrentOpenWindowList()
+      UIState.shared.saveCurrentOpenWindowList()
     }
   }
 
@@ -825,16 +824,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
-      if Preference.UIState.windowsMinimized.remove(activeWindowName) != nil {
+      if UIState.shared.windowsMinimized.remove(activeWindowName) != nil {
         Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
-        Preference.UIState.windowsOpen.insert(activeWindowName)
+        UIState.shared.windowsOpen.insert(activeWindowName)
       } else {
         // Do not process. Another listener will handle it
         Logger.log("Window became main: \(activeWindowName.quoted)", level: .verbose)
         return
       }
 
-      Preference.UIState.saveCurrentOpenWindowList()
+      UIState.shared.saveCurrentOpenWindowList()
     }
   }
 
@@ -849,9 +848,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log("Window did minimize; adding to minimized windows list: \(savedStateName.quoted)", level: .verbose)
-      Preference.UIState.windowsOpen.remove(savedStateName)
-      Preference.UIState.windowsMinimized.insert(savedStateName)
-      Preference.UIState.saveCurrentOpenWindowList()
+      UIState.shared.windowsOpen.remove(savedStateName)
+      UIState.shared.windowsMinimized.insert(savedStateName)
+      UIState.shared.saveCurrentOpenWindowList()
     }
   }
 
@@ -866,9 +865,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         return
       }
       Logger.log("App window did deminiaturize; removing from minimized windows list: \(savedStateName.quoted)", level: .verbose)
-      Preference.UIState.windowsOpen.insert(savedStateName)
-      Preference.UIState.windowsMinimized.remove(savedStateName)
-      Preference.UIState.saveCurrentOpenWindowList()
+      UIState.shared.windowsOpen.insert(savedStateName)
+      UIState.shared.windowsMinimized.remove(savedStateName)
+      UIState.shared.saveCurrentOpenWindowList()
     }
   }
 
@@ -888,8 +887,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     let windowName = window.savedStateName
     guard !windowName.isEmpty else { return }
 
-    let wasOpen = Preference.UIState.windowsOpen.remove(windowName) != nil
-    let wasMinimized = Preference.UIState.windowsMinimized.remove(windowName) != nil
+    let wasOpen = UIState.shared.windowsOpen.remove(windowName) != nil
+    let wasMinimized = UIState.shared.windowsMinimized.remove(windowName) != nil
 
     guard wasOpen || wasMinimized else {
       Logger.log("Window already closed, ignoring: \(windowName.quoted)", level: .verbose)
@@ -902,7 +901,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// Query for the list of open windows and save it (excluding the window which is about to close).
     /// Most cases are covered by saving when `windowDidBecomeMain` is called, but this covers the case where
     /// the user closes a window which is not in the foreground.
-    Preference.UIState.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
+    UIState.shared.saveCurrentOpenWindowList(excludingWindowName: window.savedStateName)
 
     if let player = (window.windowController as? PlayerWindowController)?.player {
       player.windowController.windowWillClose()
@@ -925,8 +924,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// Another case is when the welcome window is closed prior to a new player window opening.
     /// For these reasons we must keep a list of windows which meet our definition of "open", which
     /// may not match Apple's definition which is more closely tied to `window.isVisible`.
-    guard Preference.UIState.windowsOpen.isEmpty else {
-      Logger.log("App will not terminate: \(Preference.UIState.windowsOpen.count) windows are still in open list: \(Preference.UIState.windowsOpen)", level: .verbose)
+    guard UIState.shared.windowsOpen.isEmpty else {
+      Logger.log("App will not terminate: \(UIState.shared.windowsOpen.count) windows are still in open list: \(UIState.shared.windowsOpen)", level: .verbose)
       return false
     }
 
@@ -935,7 +934,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     if Preference.ActionWhenNoOpenWindow(key: .actionWhenNoOpenWindow) == .quit {
-      Preference.UIState.clearSavedLaunchForThisLaunch()
+      UIState.shared.clearSavedLaunchForThisLaunch()
       Logger.log("Last window was closed. App will quit due to configured pref", level: .verbose)
       return true
     }
@@ -969,7 +968,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         case .openFile:
           quitForAction = .openPanel
         case .welcome:
-          guard !Preference.UIState.windowsOpen.isEmpty else {
+          guard !UIState.shared.windowsOpen.isEmpty else {
             return
           }
           quitForAction = .welcomeWindow
@@ -997,7 +996,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     if shouldTerminate {
       Logger.log("Clearing all state for this launch because all windows have closed!")
-      Preference.UIState.clearSavedLaunchForThisLaunch()
+      UIState.shared.clearSavedLaunchForThisLaunch()
       NSApp.terminate(nil)
     }
   }

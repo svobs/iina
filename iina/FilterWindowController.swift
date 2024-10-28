@@ -156,7 +156,7 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
   func saveFilter(_ filter: MPVFilter) {
     guard let window else { return }
     currentFilter = filter
-    Preference.UIState.addOpenSheet(saveFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    UIState.shared.addOpenSheet(saveFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
     window.beginSheet(saveFilterSheet)
   }
 
@@ -188,8 +188,8 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
     guard let window else { return }
     saveFilterNameTextField.stringValue = ""
     keyRecordViewLabel.stringValue = ""
-    Preference.UIState.windowsOpen.insert(newFilterSheet.savedStateName)
-    Preference.UIState.addOpenSheet(newFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    UIState.shared.windowsOpen.insert(newFilterSheet.savedStateName)
+    UIState.shared.addOpenSheet(newFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
     window.beginSheet(newFilterSheet)
   }
 
@@ -314,7 +314,7 @@ class FilterWindowController: IINAWindowController, NSWindowDelegate {
     editFilterKeyRecordView.currentKey = currentSavedFilter!.shortcutKey
     editFilterKeyRecordView.currentKeyModifiers = currentSavedFilter!.shortcutKeyModifiers
     editFilterKeyRecordViewLabel.stringValue = currentSavedFilter!.readableShortCutKey
-    Preference.UIState.addOpenSheet(editFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
+    UIState.shared.addOpenSheet(editFilterSheet.savedStateName, toWindow: window.frameAutosaveName)
     window.beginSheet(editFilterSheet)
   }
 }

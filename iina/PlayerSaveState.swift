@@ -180,7 +180,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
     let buildNumber: Int = info.priorStateBuildNumber
     props[PropName.buildNumber.rawValue] = buildNumber
-    props[PropName.launchID.rawValue] = Preference.UIState.launchID
+    props[PropName.launchID.rawValue] = UIState.shared.currentLaunchID
 
     // - Window Layout & Geometry
 
@@ -324,7 +324,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
   // Saves this player's state asynchronously
   static func save(_ player: PlayerCore) {
-    guard Preference.UIState.isSaveEnabled else { return }
+    guard UIState.shared.isSaveEnabled else { return }
 
     var ticket: Int = 0
     player.$saveTicketCounter.withLock {
@@ -378,7 +378,7 @@ struct PlayerSaveState: CustomStringConvertible {
             if player.log.isTraceEnabled {
               player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
             }
-            Preference.UIState.saveState(forPlayerID: player.label, properties: properties)
+            UIState.shared.saveState(forPlayerID: player.label, properties: properties)
           }
         }
       }
@@ -404,7 +404,7 @@ struct PlayerSaveState: CustomStringConvertible {
       if player.log.isTraceEnabled {
         player.log.trace("Saving player state: \(properties)")
       }
-      Preference.UIState.saveState(forPlayerID: player.label, properties: properties)
+      UIState.shared.saveState(forPlayerID: player.label, properties: properties)
       player.log.debug("Done saving player state synchronously")
     }
   }
