@@ -334,7 +334,7 @@ struct PlayerSaveState: CustomStringConvertible {
 
     /// Runs asynchronously in background queue to avoid blocking UI.
     /// Cuts down on duplicate work via delay and ticket check.
-    saveQueue.asyncAfter(deadline: DispatchTime.now() + AppData.playerStateSaveDelay) {
+    saveQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.playerStateSaveDelay) {
       guard ticket == player.saveTicketCounter else {
         return
       }

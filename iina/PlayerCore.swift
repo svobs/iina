@@ -2362,7 +2362,7 @@ class PlayerCore: NSObject {
     $backgroundQueueTicket.withLock { $0 += 1 }
     let shouldAutoLoadFiles = info.shouldAutoLoadFiles
     let currentTicket = backgroundQueueTicket
-    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + AppData.autoLoadDelay) { [self] in
+    PlayerCore.backgroundQueue.asyncAfter(deadline: DispatchTime.now() + Constants.TimeInterval.autoLoadDelay) { [self] in
       fileLoaded_backgroundQueueWork(for: currentPlayback, currentTicket: currentTicket,
                                      shouldAutoLoadFiles: shouldAutoLoadFiles,
                                      isRestoring: isRestoring, priorState: priorState)
@@ -3270,7 +3270,7 @@ class PlayerCore: NSObject {
       log.debug("Cannot generate thumbnails: no file active")
       return
     }
-    DispatchQueue.main.asyncAfter(deadline: .now() + AppData.thumbnailRegenerationDelay) { [self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + Constants.TimeInterval.thumbnailRegenerationDelay) { [self] in
       guard !info.isNetworkResource, let url = info.currentURL, let mpvMD5 = info.mpvMd5 else {
         log.debug("Thumbnails reload stopped because cannot get file path")
         clearExistingThumbnails(for: currentPlayback)

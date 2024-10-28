@@ -72,14 +72,6 @@ struct AppData {
   static let seekAmountMapMouse = [0, 0.5, 1, 2, 4]
   static let volumeMap = [0, 0.25, 0.5, 0.75, 1]
 
-  // Time in seconds to wait before regenerating thumbnails.
-  // Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
-  // This should help cut down on unnecessary requests.
-  static let thumbnailRegenerationDelay = 0.5
-  static let playerStateSaveDelay = 0.2
-  // Delay before auto-loading playlist from files in the opened file's directory
-  static let autoLoadDelay = 1.0
-
   static let minThumbnailsPerFile = 1
 
   static let encodings = CharEncoding.list
@@ -173,6 +165,13 @@ struct Constants {
     static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
   }
   struct TimeInterval {
+    /// Time in seconds to wait before regenerating thumbnails.
+    /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
+    /// This should help cut down on unnecessary requests.
+    static let thumbnailRegenerationDelay = 0.5
+    static let playerStateSaveDelay = 0.2
+    /// Delay before auto-loading playlist from files in the opened file's directory
+    static let autoLoadDelay = 1.0
     static let pastLaunchResponseTimeout = 1.0
     static let seekTimeAndThumbnailHideTimeout = 0.2
     /// How long since the last window finished restoring
