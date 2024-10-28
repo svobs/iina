@@ -267,7 +267,7 @@ extension Preference {
           openWindowsSet.remove(windName)
         }
         // Add missing windows to end of list (front):
-        log.verbose("Assuming windows are still opening; appending to saved open windows list: \(openWindowsSet)")
+        log.verbose("Assuming windows are still opening; appending \(openWindowsSet) to saved windows list: \(openWindowNames)")
         for windName in openWindowsSet {
           openWindowNames.append(windName)
         }

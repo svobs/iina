@@ -324,6 +324,7 @@
 		D17B857B2C94C8B5002A8EDE /* movist-v2-default-input.conf in Copy Configs */ = {isa = PBXBuildFile; fileRef = D1F68E742C6ABC22003D1208 /* movist-v2-default-input.conf */; };
 		D17CBBA32CC8E37F006160AC /* PWin_WinDidLoad.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */; };
 		D17CBBA52CCC39D8006160AC /* PWin_ScrollWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */; };
+		D17CBBA82CCF64C2006160AC /* PWin_Observers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */; };
 		D18333BC2834CDF40060A4E9 /* RingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BB2834CDF40060A4E9 /* RingBuffer.swift */; };
 		D18333BE2834CE620060A4E9 /* PlayerBindingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */; };
 		D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188CB2128D6DE1900F166FD /* InputBinding.swift */; };
@@ -1839,6 +1840,7 @@
 		D17780D72CA0B680006B3B33 /* MediaMetaCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaMetaCache.swift; sourceTree = "<group>"; };
 		D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_WinDidLoad.swift; sourceTree = "<group>"; };
 		D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_ScrollWheel.swift; sourceTree = "<group>"; };
+		D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Observers.swift; sourceTree = "<group>"; };
 		D18333BB2834CDF40060A4E9 /* RingBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RingBuffer.swift; sourceTree = "<group>"; };
 		D18333BD2834CE620060A4E9 /* PlayerBindingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBindingController.swift; sourceTree = "<group>"; };
 		D188CB2128D6DE1900F166FD /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
@@ -2852,6 +2854,7 @@
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
 				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
 				D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */,
+				D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */,
 				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
@@ -3363,6 +3366,7 @@
 				E342832F20B7149800139865 /* Logger.swift in Sources */,
 				84F725561D4783EE000DEF1B /* VolumeSliderCell.swift in Sources */,
 				845040401E0ACADD0079C194 /* MPVNode.swift in Sources */,
+				D17CBBA82CCF64C2006160AC /* PWin_Observers.swift in Sources */,
 				84795C3A1E083EE30059A648 /* PrefControlViewController.swift in Sources */,
 				E38BA1C4254110BE000B551D /* JavascriptMessageHub.swift in Sources */,
 				D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */,

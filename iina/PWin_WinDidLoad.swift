@@ -14,17 +14,15 @@ extension PlayerWindowController {
   override func windowDidLoad() {
     log.verbose("PlayerWindow windowDidLoad starting")
     super.windowDidLoad()
+    guard let window else { return }
+    guard let contentView = window.contentView else { return }
 
     miniPlayer = MiniPlayerViewController()
     miniPlayer.windowController = self
 
     viewportView.player = player
 
-    co = CocoaObserver(observedPrefKeys: PlayerWindowController.observedPrefKeys, player.log,
-                       prefDidChange: self.prefDidChange)
-
-    guard let window = window else { return }
-    guard let contentView = window.contentView else { return }
+    co = buildObservers()
 
     /// Set base options for `collectionBehavior` here, and then insert/remove full screen options
     /// using `resetCollectionBehavior`. Do not mess with the base options again because doing so seems

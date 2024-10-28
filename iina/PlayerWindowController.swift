@@ -311,295 +311,13 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  // MARK: - Notification & user defaults observers
-
   var co: CocoaObserver!
-
-  private func addObservers() {
-    guard let window else { return }
-
-    co.initObservers()
-
-    co.addObserver(to: NSWorkspace.shared.notificationCenter, forName: NSWorkspace.activeSpaceDidChangeNotification) { [self] _ in
-      // FIXME: this is not ready for production yet! Need to fix issues with freezing video
-      guard Preference.bool(for: .togglePipWhenSwitchingSpaces) else { return }
-      if !window.isOnActiveSpace && pipStatus == .notInPIP {
-        animationPipeline.submitInstantTask({ [self] in
-          log.debug("Window is no longer in active space; entering PIP")
-          enterPIP(then: { [self] in
-            isWindowPipDueToInactiveSpace = true
-          })
-        })
-      } else if window.isOnActiveSpace && isWindowPipDueToInactiveSpace && pipStatus == .inPIP {
-        animationPipeline.submitInstantTask({ [self] in
-          log.debug("Window is in active space again; exiting PIP")
-          isWindowPipDueToInactiveSpace = false
-          exitPIP()
-        })
-      }
-    }
-
-    co.addObserver(to: .default, forName: NSScreen.colorSpaceDidChangeNotification) { [self] noti in
-      colorSpaceDidChange(noti)
-    }
-
-    co.addObserver(to: .default, forName: NSWindow.didChangeScreenNotification) { [self] noti in
-      windowDidChangeScreen(noti)
-    }
-
-    co.addObserver(to: .default, forName: .iinaMediaTitleChanged, object: player) { [self] _ in
-      updateTitle()
-    }
-
-    // This observer handles when the user connected a new screen or removed a screen, or shows/hides the Dock.
-    // This is legacy code which will not run in newer versions of MacOS.
-    co.addObserver(to: .default, forName: NSApplication.didChangeScreenParametersNotification) { [self] noti in
-      windowDidChangeScreenParameters(noti)
-    }
-
-    // Observe the loop knobs on the progress bar and update mpv when the knobs move.
-    co.addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [weak self] _ in
-      guard let self = self else { return }
-      let seconds = self.percentToSeconds(self.playSlider.abLoopA.doubleValue)
-      self.player.abLoopA = seconds
-      self.player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
-    }
-    co.addObserver(to: .default, forName: .iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [weak self] _ in
-      guard let self = self else { return }
-      let seconds = self.percentToSeconds(self.playSlider.abLoopB.doubleValue)
-      self.player.abLoopB = seconds
-      self.player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
-    }
-
-    co.addObserver(to: .default, forName: NSWorkspace.willSleepNotification) { [self] _ in
-      if Preference.bool(for: .pauseWhenGoesToSleep) {
-        self.player.pause()
-      }
-    }
-  }
 
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
   internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
   internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
   internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
-
-  static let observedPrefKeys: [Preference.Key] = [
-    .enableAdvancedSettings,
-    .enableToneMapping,
-    .toneMappingTargetPeak,
-    .loadIccProfile,
-    .toneMappingAlgorithm,
-    .keepOpenOnFileEnd,
-    .playlistAutoPlayNext,
-    .themeMaterial,
-    .playerWindowOpacity,
-    .showRemainingTime,
-    .maxVolume,
-    .useExactSeek,
-    .relativeSeekAmount,
-    .volumeScrollAmount,
-    .singleClickAction,
-    .doubleClickAction,
-    .playlistShowMetadata,
-    .playlistShowMetadataInMusicMode,
-    .shortenFileGroupsInPlaylist,
-    .autoSwitchToMusicMode,
-    .hideWindowsWhenInactive,
-    .enableControlBarAutoHide,
-    .osdAutoHideTimeout,
-    .osdTextSize,
-    .osdPosition,
-    .enableOSC,
-    .oscPosition,
-    .topBarPlacement,
-    .bottomBarPlacement,
-    .oscBarHeight,
-    .oscBarPlaybackIconSize,
-    .oscBarPlaybackIconSpacing,
-    .controlBarToolbarButtons,
-    .oscBarToolbarIconSize,
-    .oscBarToolbarIconSpacing,
-    .enableThumbnailPreview,
-    .enableThumbnailForRemoteFiles,
-    .enableThumbnailForMusicMode,
-    .thumbnailSizeOption,
-    .thumbnailFixedLength,
-    .thumbnailRawSizePercentage,
-    .thumbnailDisplayedSizePercentage,
-    .thumbnailBorderStyle,
-    .showChapterPos,
-    .arrowButtonAction,
-    .playSliderBarLeftColor,
-    .blackOutMonitor,
-    .useLegacyFullScreen,
-    .displayTimeAndBatteryInFullScreen,
-    .alwaysShowOnTopIcon,
-    .leadingSidebarPlacement,
-    .trailingSidebarPlacement,
-    .settingsTabGroupLocation,
-    .playlistTabGroupLocation,
-    .aspectRatioPanelPresets,
-    .cropPanelPresets,
-    .showLeadingSidebarToggleButton,
-    .showTrailingSidebarToggleButton,
-    .useLegacyWindowedMode,
-    .lockViewportToVideoSize,
-    .allowVideoToOverlapCameraHousing,
-  ]
-
-  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
-    guard isOpen else { return }  // do not want to respond to some things like blackOutOtherMonitors while closed!
-
-    switch key {
-    case .enableAdvancedSettings:
-      animationPipeline.submitTask({ [self] in
-        updateWindowBorderAndOpacity()
-        // may need to hide cropbox label and other advanced stuff
-        quickSettingView.reload()
-      })
-    case .enableToneMapping,
-      .toneMappingTargetPeak,
-      .loadIccProfile,
-      .toneMappingAlgorithm:
-      videoView.refreshEdrMode()
-    case .themeMaterial:
-      applyThemeMaterial()
-    case .playerWindowOpacity:
-      animationPipeline.submitTask({ [self] in
-        updateWindowBorderAndOpacity()
-      })
-    case .showRemainingTime:
-      if let newValue = newValue as? Bool {
-        rightLabel.mode = newValue ? .remaining : .duration
-      }
-    case .maxVolume:
-      if let newValue = newValue as? Int {
-        if player.mpv.getDouble(MPVOption.Audio.volume) > Double(newValue) {
-          player.mpv.setDouble(MPVOption.Audio.volume, Double(newValue))
-        } else {
-          updateVolumeUI()
-        }
-      }
-    case .useExactSeek:
-      if let newValue = newValue as? Int {
-        useExactSeek = Preference.SeekOption(rawValue: newValue)!
-      }
-    case .relativeSeekAmount:
-      playSliderScrollWheel.updateSensitivity()
-    case .volumeScrollAmount:
-      volumeSliderScrollWheel.updateSensitivity()
-    case .singleClickAction:
-      if let newValue = newValue as? Int {
-        singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
-      }
-    case .doubleClickAction:
-      if let newValue = newValue as? Int {
-        doubleClickAction = Preference.MouseClickAction(rawValue: newValue)!
-      }
-    case .playlistShowMetadata, .playlistShowMetadataInMusicMode, .shortenFileGroupsInPlaylist:
-      // Reload now, even if not visible. Don't nitpick.
-      player.windowController.playlistView.playlistTableView.reloadData()
-    case .autoSwitchToMusicMode:
-      player.overrideAutoMusicMode = false
-
-    case .keepOpenOnFileEnd, .playlistAutoPlayNext:
-      player.mpv.updateKeepOpenOptionFromPrefs()
-
-    case .enableOSC,
-      .oscPosition,
-      .topBarPlacement,
-      .bottomBarPlacement,
-      .oscBarHeight,
-      .oscBarPlaybackIconSize,
-      .oscBarPlaybackIconSpacing,
-      .oscBarToolbarIconSize,
-      .oscBarToolbarIconSpacing,
-      .showLeadingSidebarToggleButton,
-      .showTrailingSidebarToggleButton,
-      .controlBarToolbarButtons,
-      .allowVideoToOverlapCameraHousing,
-      .useLegacyWindowedMode,
-      .arrowButtonAction,
-      .playSliderBarLeftColor:
-
-      log.verbose("Calling updateTitleBarAndOSC in response to pref change: \(key.rawValue.quoted)")
-      updateTitleBarAndOSC()
-    case .lockViewportToVideoSize:
-      if let isLocked = newValue as? Bool, isLocked {
-        log.debug("Pref \(key.rawValue.quoted) changed to \(isLocked): resizing viewport to remove any excess space")
-        resizeViewport()
-      }
-    case .hideWindowsWhenInactive:
-      animationPipeline.submitInstantTask({ [self] in
-        refreshHidesOnDeactivateStatus()
-      })
-
-    case .thumbnailSizeOption,
-      .thumbnailFixedLength,
-      .thumbnailRawSizePercentage,
-      .enableThumbnailPreview,
-      .enableThumbnailForRemoteFiles,
-      .enableThumbnailForMusicMode:
-
-      log.verbose("Pref \(key.rawValue.quoted) changed: requesting thumbs regen")
-      // May need to remove thumbs or generate new ones: let method below figure it out:
-      player.reloadThumbnails(forMedia: player.info.currentPlayback)
-
-    case .showChapterPos:
-      if let newValue = newValue as? Bool {
-        playSlider.customCell.drawChapters = newValue
-      }
-    case .blackOutMonitor:
-      if let newValue = newValue as? Bool {
-        if isFullScreen {
-          newValue ? blackOutOtherMonitors() : removeBlackWindows()
-        }
-      }
-    case .useLegacyFullScreen:
-      updateUseLegacyFullScreen()
-    case .displayTimeAndBatteryInFullScreen:
-      if let newValue = newValue as? Bool {
-        if !newValue {
-          additionalInfoView.isHidden = true
-        }
-      }
-    case .alwaysShowOnTopIcon:
-      updateOnTopButton()
-    case .leadingSidebarPlacement, .trailingSidebarPlacement:
-      updateSidebarPlacements()
-    case .settingsTabGroupLocation:
-      if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
-        self.moveTabGroup(.settings, toSidebarLocation: newLocationID)
-      }
-    case .playlistTabGroupLocation:
-      if let newRawValue = newValue as? Int, let newLocationID = Preference.SidebarLocation(rawValue: newRawValue) {
-        self.moveTabGroup(.playlist, toSidebarLocation: newLocationID)
-      }
-    case .osdAutoHideTimeout, .enableControlBarAutoHide:
-      if let newTimeout = newValue as? Double {
-        if osd.animationState == .shown, let hideOSDTimer = osd.hideOSDTimer, hideOSDTimer.isValid {
-          // Reschedule timer to prevent prev long timeout from lingering
-          osd.hideOSDTimer = Timer.scheduledTimer(timeInterval: TimeInterval(newTimeout), target: self,
-                                                  selector: #selector(self.hideOSD), userInfo: nil, repeats: false)
-        }
-      }
-    case .osdPosition:
-      // If OSD is showing, it will move over as a neat animation:
-      animationPipeline.submitInstantTask {
-        self.updateOSDPosition()
-      }
-    case .osdTextSize:
-      animationPipeline.submitInstantTask { [self] in
-        updateOSDTextSize()
-        setOSDViews()
-      }
-    case .aspectRatioPanelPresets, .cropPanelPresets:
-      quickSettingView.updateSegmentLabels()
-    default:
-      return
-    }
-  }
 
   // MARK: - Outlets
 
@@ -925,7 +643,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// unknown this method will fallback to using the current playback position, if that is known. Otherwise this method will return zero.
   /// - Parameter percent: Position in the video as a percentage of the duration.
   /// - Returns: The position in the video the given percentage represents.
-  private func percentToSeconds(_ percent: Double) -> Double {
+  func percentToSeconds(_ percent: Double) -> Double {
     if let duration = player.info.playbackDurationSec {
       return duration * percent / 100
     } else if let position = player.info.playbackPositionSec {
@@ -1253,7 +971,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updateBufferIndicatorView()
     updateOSDPosition()
 
-    addObservers()
+    co.addAllObservers()
 
     if let priorState = player.info.priorState {
       restoreFromMiscWindowBools(priorState)
@@ -1297,7 +1015,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         // Need to call this here, or else when opening directly to fullscreen, window title is just "Window"
         updateTitle()
         window?.isExcludedFromWindowsMenu = false
-        videoView.refreshEdrMode()
+        videoView.refreshEdrMode()  // if restoring, this will have been prevented until now
         forceDraw()  // needed if restoring while paused
       })
 
@@ -1330,7 +1048,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       player.events.emit(.windowWillClose)
     }
 
-    co.removeObservers()
+    co.removeAllObservers()
 
     // Close PIP
     if pipStatus == .inPIP {
@@ -1678,7 +1396,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// • Menu bar visibility toggled
   /// • Adding or removing window style mask `.titled`
   /// • Sometimes called hundreds(!) of times while window is closing
-  private func windowDidChangeScreenParameters(_ notification: Notification) {
+  func windowDidChangeScreenParameters() {
     guard !isClosing else { return }
 
     var ticket: Int = 0

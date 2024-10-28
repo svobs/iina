@@ -9,30 +9,51 @@
 import Foundation
 
 typealias PrefDidChangeCallback = (_ key: Preference.Key, _ newValue: Any?) -> Void
+typealias NotiCenterCallback = (Notification) -> Void
 
 /// Convenience class for dealing with `NotificationCenter` notifications and `Preference` change observation
 class CocoaObserver: NSObject {
-  private var notificationCenterObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
+  struct NCObserver {
+    let name: Notification.Name
+    let object: Any?
+    let callback: NotiCenterCallback
+
+    init(_ name: Notification.Name, object: Any? = nil, _ callback: @escaping NotiCenterCallback) {
+      self.name = name
+      self.object = object
+      self.callback = callback
+    }
+  }
+  private var activeObservers: [NotificationCenter: [NSObjectProtocol]] = [:]
 
   private let observedPrefKeys: [Preference.Key]
   private let log: Logger.Subsystem
-  private let prefDidChangeCallback: PrefDidChangeCallback
+  private let prefDidChangeCallback: PrefDidChangeCallback?
   private let legacyPrefKeyObserver: NSObject?
+  private let ncObserverSpecs: [NotificationCenter: [NCObserver]]
 
-  init(observedPrefKeys: [Preference.Key], _ log: Logger.Subsystem,
-       prefDidChange: @escaping PrefDidChangeCallback,
-       legacyPrefKeyObserver: NSObject? = nil) {
+  init(_ observedPrefKeys: [Preference.Key], _ log: Logger.Subsystem,
+       prefDidChange: PrefDidChangeCallback? = nil,
+       legacyPrefKeyObserver: NSObject? = nil,
+       _ ncObserverSpecs: [NotificationCenter: [NCObserver]]) {
     self.observedPrefKeys = observedPrefKeys
     self.log = log
     self.prefDidChangeCallback = prefDidChange
     self.legacyPrefKeyObserver = legacyPrefKeyObserver
+    self.ncObserverSpecs = ncObserverSpecs
   }
 
-  func initObservers() {
-    removeObservers()
+  func addAllObservers() {
+    removeAllObservers()
 
     observedPrefKeys.forEach { key in
       UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
+    }
+
+    for (nc, specList) in ncObserverSpecs {
+      for spec in specList {
+        addObserver(to: nc, forName: spec.name, object: spec.object, using: spec.callback)
+      }
     }
   }
 
@@ -41,27 +62,31 @@ class CocoaObserver: NSObject {
     guard let keyPath, let key = PK(rawValue: keyPath), let change = change else { return }
     let newValue = change[.newKey]
 
-    prefDidChangeCallback(key, newValue)
+    if let prefDidChangeCallback {
+      prefDidChangeCallback(key, newValue)
+    }
     legacyPrefKeyObserver?.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
   }
 
   func addObserver(to notificationCenter: NotificationCenter, forName name: Notification.Name, object: Any? = nil,
-                   using block: @escaping (Notification) -> Void) {
-    let observer: NSObjectProtocol = notificationCenter.addObserver(forName: name, object: object, queue: .main, using: block)
-    var observers = notificationCenterObservers[notificationCenter] ?? []
+                   using callback: @escaping (Notification) -> Void) {
+    let observer: NSObjectProtocol = notificationCenter.addObserver(forName: name, object: object, queue: .main, using: callback)
+    var observers = activeObservers[notificationCenter] ?? []
     observers.append(observer)
-    notificationCenterObservers[notificationCenter] = observers
+    activeObservers[notificationCenter] = observers
   }
 
-  func removeObservers() {
+  func removeAllObservers() {
     ObjcUtils.silenced { [self] in
+      // Stop observing prefs
       for key in observedPrefKeys {
         UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
       }
 
-      let ncObservers = notificationCenterObservers
-      notificationCenterObservers = [:]
-      for (notificationCenter, observers) in ncObservers {
+      // Detach Notification Center observers
+      let activeObservers = activeObservers
+      self.activeObservers = [:]
+      for (notificationCenter, observers) in activeObservers {
         for observer in observers {
           notificationCenter.removeObserver(observer)
         }
