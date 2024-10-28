@@ -1196,17 +1196,20 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <customView autoresizesSubviews="NO" horizontalHuggingPriority="200" horizontalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="j85-rj-toQ" userLabel="AudioDelaySlider Container View">
-                                                                    <rect key="frame" x="19" y="264" width="321" height="47"/>
+                                                                    <rect key="frame" x="19" y="264" width="321" height="39"/>
                                                                     <subviews>
-                                                                        <slider horizontalHuggingPriority="1" verticalHuggingPriority="700" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="gJr-l6-WQ2" userLabel="AudioDelaySlider Horizontal Tick Slider">
-                                                                            <rect key="frame" x="-1" y="10" width="245" height="25"/>
-                                                                            <sliderCell key="cell" controlSize="small" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" minValue="-5" maxValue="5" tickMarkPosition="below" numberOfTickMarks="21" sliderType="linear" id="Xty-CC-H0Z"/>
+                                                                        <slider verticalHuggingPriority="700" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="700" translatesAutoresizingMaskIntoConstraints="NO" id="gJr-l6-WQ2" userLabel="AudioDelaySlider Horizontal Tick Slider">
+                                                                            <rect key="frame" x="-1" y="10" width="250" height="17"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="width" constant="246" id="Azt-jo-8zP"/>
+                                                                            </constraints>
+                                                                            <sliderCell key="cell" controlSize="mini" continuous="YES" refusesFirstResponder="YES" state="on" alignment="left" minValue="-3" maxValue="3" tickMarkPosition="below" numberOfTickMarks="121" sliderType="linear" id="Xty-CC-H0Z"/>
                                                                             <connections>
                                                                                 <action selector="audioDelayChangedAction:" target="-2" id="Rqw-fj-519"/>
                                                                             </connections>
                                                                         </slider>
                                                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="giU-Mo-tN9" userLabel="AudioDelaySliderIndicator Text Field">
-                                                                            <rect key="frame" x="109" y="34" width="24" height="13"/>
+                                                                            <rect key="frame" x="109" y="26" width="24" height="13"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="20" id="F50-i5-7bi"/>
                                                                             </constraints>
@@ -1216,36 +1219,36 @@
                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                             </textFieldCell>
                                                                         </textField>
-                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tGk-m1-Vjc" userLabel="-5s Text Field">
+                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tGk-m1-Vjc" userLabel="-3s Text Field">
                                                                             <rect key="frame" x="-1" y="0.0" width="20" height="11"/>
-                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="-5s" id="YCG-xK-eAs" userLabel="-5s">
+                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="-3s" id="YCG-xK-eAs" userLabel="-3s">
                                                                                 <font key="font" metaFont="label" size="9"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3GW-C1-d0g" userLabel="0s Text Field">
-                                                                            <rect key="frame" x="112" y="0.0" width="19" height="11"/>
+                                                                            <rect key="frame" x="115" y="0.0" width="19" height="11"/>
                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="0s" id="kan-bp-QDi">
                                                                                 <font key="font" metaFont="label" size="9"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                             </textFieldCell>
                                                                         </textField>
-                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MPz-pR-Ys8" userLabel="+5s Text Field">
-                                                                            <rect key="frame" x="223" y="0.0" width="21" height="11"/>
-                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="+5s" id="Kt8-Kg-i2O">
+                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MPz-pR-Ys8" userLabel="+3s Text Field">
+                                                                            <rect key="frame" x="228" y="0.0" width="21" height="11"/>
+                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="+3s" id="Kt8-Kg-i2O">
                                                                                 <font key="font" metaFont="label" size="9"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                             </textFieldCell>
                                                                         </textField>
-                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qiz-tS-aWT" userLabel="CustomAudioDelay Text Field">
-                                                                            <rect key="frame" x="250" y="12" width="60" height="21"/>
+                                                                        <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qiz-tS-aWT" userLabel="CustomAudioDelay Text Field">
+                                                                            <rect key="frame" x="255" y="7" width="55" height="24"/>
                                                                             <constraints>
-                                                                                <constraint firstAttribute="width" constant="60" id="gRx-xy-Pqs"/>
+                                                                                <constraint firstAttribute="height" constant="24" id="jIE-ME-foV"/>
                                                                             </constraints>
-                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="1" drawsBackground="YES" usesSingleLineMode="YES" id="EHa-PR-jHw" userLabel="CustomAudioDelay Text Field Cell" customClass="RoundedTextFieldCell" customModule="IINA" customModuleProvider="target">
+                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="0" usesSingleLineMode="YES" bezelStyle="round" id="EHa-PR-jHw" userLabel="CustomAudioDelay Text Field Cell">
                                                                                 <numberFormatter key="formatter" formatterBehavior="default10_4" numberStyle="decimal" minimumIntegerDigits="1" maximumIntegerDigits="2000000000" maximumFractionDigits="3" id="C53-E5-t2Z"/>
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1256,7 +1259,7 @@
                                                                             </connections>
                                                                         </textField>
                                                                         <textField focusRingType="none" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ImH-jg-Agp" userLabel="s">
-                                                                            <rect key="frame" x="308" y="15" width="15" height="16"/>
+                                                                            <rect key="frame" x="308" y="12" width="15" height="16"/>
                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="s" id="1VY-EN-1mi">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1266,7 +1269,6 @@
                                                                     </subviews>
                                                                     <constraints>
                                                                         <constraint firstAttribute="trailing" secondItem="ImH-jg-Agp" secondAttribute="trailing" id="0Hm-Fa-s2l"/>
-                                                                        <constraint firstItem="Qiz-tS-aWT" firstAttribute="height" relation="lessThanOrEqual" secondItem="gJr-l6-WQ2" secondAttribute="height" id="4pT-hs-YkF"/>
                                                                         <constraint firstItem="3GW-C1-d0g" firstAttribute="firstBaseline" secondItem="tGk-m1-Vjc" secondAttribute="firstBaseline" id="5Yt-IM-92q"/>
                                                                         <constraint firstItem="giU-Mo-tN9" firstAttribute="centerX" secondItem="gJr-l6-WQ2" secondAttribute="leading" priority="800" constant="120" id="5oB-ve-G3c"/>
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="centerY" secondItem="gJr-l6-WQ2" secondAttribute="centerY" id="EuL-BL-hNW"/>
@@ -1279,7 +1281,6 @@
                                                                         <constraint firstItem="tGk-m1-Vjc" firstAttribute="leading" secondItem="gJr-l6-WQ2" secondAttribute="leading" id="T4d-XW-ILF"/>
                                                                         <constraint firstItem="gJr-l6-WQ2" firstAttribute="top" secondItem="giU-Mo-tN9" secondAttribute="bottom" constant="1" id="VBE-Mf-Tzb"/>
                                                                         <constraint firstItem="MPz-pR-Ys8" firstAttribute="firstBaseline" secondItem="tGk-m1-Vjc" secondAttribute="firstBaseline" id="gIk-ck-vZB"/>
-                                                                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="300" id="gtm-1I-YqP"/>
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="trailing" secondItem="ImH-jg-Agp" secondAttribute="leading" id="nCE-1H-uD9"/>
                                                                         <constraint firstItem="Qiz-tS-aWT" firstAttribute="leading" secondItem="gJr-l6-WQ2" secondAttribute="trailing" constant="8" id="uSJ-g9-Azy"/>
                                                                         <constraint firstItem="ImH-jg-Agp" firstAttribute="firstBaseline" secondItem="Qiz-tS-aWT" secondAttribute="firstBaseline" id="vOx-Zo-ayO"/>

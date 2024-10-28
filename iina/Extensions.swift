@@ -330,7 +330,7 @@ extension Double {
 
   func roundedTo2Decimals() -> Double {
     let scaledUp = self * 1e2
-    let scaledUpRounded = scaledUp.rounded(.up)
+    let scaledUpRounded = scaledUp.rounded(.toNearestOrAwayFromZero)
     let finalVal = scaledUpRounded / 1e2
     return finalVal
   }

@@ -879,7 +879,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     if eventType == .leftMouseUp {
       sender.allowsTickMarkValuesOnly = false
     }
-    let sliderValue = sender.doubleValue
+    let sliderValue = sender.doubleValue.roundedTo2Decimals()
     customAudioDelayTextField.doubleValue = sliderValue
     redraw(indicator: audioDelaySliderIndicator, constraint: audioDelaySliderConstraint, slider: audioDelaySlider, value: "\(customAudioDelayTextField.stringValue)s")
     if let event = NSApp.currentEvent {
