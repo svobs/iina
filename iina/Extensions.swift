@@ -1641,9 +1641,9 @@ class IINAWindowController: NSWindowController {
       return
     }
 
-    /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
     let windowName = window.savedStateName
-    if !windowName.isEmpty {
+    if !Preference.bool(for: .isRestoreInProgress), !windowName.isEmpty {
+      /// Make sure `windowsOpen` is updated. This patches certain possible race conditions during launch
       Preference.UIState.windowsOpen.insert(windowName)
     }
 
