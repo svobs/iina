@@ -736,8 +736,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
       // Show all windows if ready
       showWindowsIfReady()
-    } else if !window.isMiniaturized {
+    } else {
       log.verbose("OpenWindow: showing window \(window.savedStateName.quoted)")
+      // this will un-minimize if needed
       wc.showWindow(window)
     }
   }
