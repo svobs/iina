@@ -2843,19 +2843,19 @@
 		D1A44D882A5E18B10089B283 /* PlayerWindow */ = {
 			isa = PBXGroup;
 			children = (
-				D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */,
 				E38BD4AE20054BD9007635FC /* PlayerWindow.swift */,
 				84A0BA9C1D2FAD4000BC8DA1 /* PlayerWindowController.swift */,
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
+				D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */,
+				D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */,
 				D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */,
+				D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */,
 				D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */,
-				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
 				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
-				D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */,
-				D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */,
 				D1C7410F2CB6475E00522FA7 /* PWin_PIP.swift */,
+				D1F64E8F2B2A655C0030E07E /* PWin_Resize.swift */,
 				D13E807D2C026A2700537954 /* PWin_GeoSet.swift */,
 				D1AD32592ACC078600F86EE8 /* LayoutState.swift */,
 				D1AD325B2ACC07E500F86EE8 /* LayoutTransition.swift */,

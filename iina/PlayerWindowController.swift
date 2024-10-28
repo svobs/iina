@@ -520,7 +520,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Other state
 
-  var mouseActionDisabledViews: [NSView?] {[leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]}
+  var mouseActionDisabledViews: [NSView?] {
+    [leadingSidebarView, trailingSidebarView, currentControlBar, titleBarView, oscTopMainView, subPopoverView]
+  }
 
   var isFullScreen: Bool {
     return currentLayout.isFullScreen
@@ -535,28 +537,22 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   var standardWindowButtons: [NSButton] {
-    get {
-      return ([.closeButton, .miniaturizeButton, .zoomButton, .documentIconButton] as [NSWindow.ButtonType]).compactMap {
-        window?.standardWindowButton($0)
-      }
+    return ([.closeButton, .miniaturizeButton, .zoomButton, .documentIconButton] as [NSWindow.ButtonType]).compactMap {
+      window?.standardWindowButton($0)
     }
   }
 
   var documentIconButton: NSButton? {
-    get {
-      window?.standardWindowButton(.documentIconButton)
-    }
+    window?.standardWindowButton(.documentIconButton)
   }
 
   var trafficLightButtons: [NSButton] {
-    get {
-      if let window, window.styleMask.contains(.titled) {
-        return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
-          window.standardWindowButton($0)
-        }
+    if let window, window.styleMask.contains(.titled) {
+      return ([.closeButton, .miniaturizeButton, .zoomButton] as [NSWindow.ButtonType]).compactMap {
+        window.standardWindowButton($0)
       }
-      return customTitleBar?.trafficLightButtons ?? []
     }
+    return customTitleBar?.trafficLightButtons ?? []
   }
 
   // Width of the 3 traffic light buttons
@@ -569,12 +565,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     return maxX
   }()
-
+  
   /** Get the `NSTextField` of widow's title. */
   var titleTextField: NSTextField? {
-    get {
-      return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
-    }
+    return window?.standardWindowButton(.closeButton)?.superview?.subviews.compactMap({ $0 as? NSTextField }).first
   }
 
   var leadingTitlebarAccesoryViewController: NSTitlebarAccessoryViewController?
