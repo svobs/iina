@@ -9,6 +9,10 @@
 import Cocoa
 import UniformTypeIdentifiers
 
+/// Set of import UTType identifiers which are unusual from IINA's other types. They must  be
+/// explicitly included because they are not a subtype of `audiovisual-content`.
+fileprivate let specialIdentifiers = ["io.iina.playlist", "io.iina.cue"]
+
 class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbeddable {
 
   override var nibName: NSNib.Name {
@@ -59,7 +63,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
     ]
 
     var utiTargetSet: Set<String> = []
-    for utiImportedType in utiImportedTypes {
+    for (importedTypeIndex, utiImportedType) in utiImportedTypes.enumerated() {
       guard
         let identifier = utiImportedType["UTTypeIdentifier"] as? String,
         let conformsTo = utiImportedType["UTTypeConformsTo"] as? [String],
@@ -74,11 +78,17 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
         continue
       }
 
-      Logger.log.verbose("UTImportedType: \(identifier.quoted) ➤ \(exts)")
+      Logger.log.verbose("\(importedTypeIndex). \(identifier):")
+      let requiredSupertype: UTType? = specialIdentifiers.contains(identifier) ? nil : .audiovisualContent
+
       for ext in exts {
         if #available(macOS 11.0, *) {
-          let uttypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: nil)
-          for uttype in uttypesForExt {
+          Logger.log.verbose("  \(ext):")
+
+          let subtypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: requiredSupertype)
+
+          for uttype in subtypesForExt {
+            Logger.log.verbose("    \(uttype.identifier) ⊂ \(uttype.supertypes.map{$0.identifier.deletingPrefix("public.")})")
             utiTargetSet.insert(uttype.identifier)
           }
         } else {
@@ -92,7 +102,7 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
     }
 
     for identifier in utiTargetSet {
-      Logger.log.verbose("Setting default for UTI: \(identifier.quoted)")
+      Logger.log.verbose("Setting as default for UTI: \(identifier.quoted)")
       let status = LSSetDefaultRoleHandlerForContentType(identifier as CFString, .all, cfBundleID)
       if status == kOSReturnSuccess {
         successCount += 1
