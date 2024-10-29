@@ -50,7 +50,7 @@ class CropBoxViewController: NSViewController {
     cropyFlippedForMac = min(max(0, Int(selectedRect.minY)), Int(cropBoxView.actualSize.height))
   }
 
-  func handleKeyDown(keySeq: String) {
+  func handleKeyDown(mpvKeyCode: String) {
     Logger.log("CropBoxViewController.handleKeyDown not overriden in subclass", level: .warning)
   }
 }

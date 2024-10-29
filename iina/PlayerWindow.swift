@@ -10,14 +10,24 @@ import Cocoa
 
 class PlayerWindow: NSWindow {
   private var useZeroDurationForNextResize = false
+  private var keyDownCount: Int = 0
+  private var keyUpCount: Int = 0
 
-  var playerWinController: PlayerWindowController? {
+  var pwc: PlayerWindowController? {
     return windowController as? PlayerWindowController
   }
 
   var log: Logger.Subsystem {
     return (windowController as! PlayerWindowController).player.log
   }
+
+  var isCustomWindowStyle: Bool {
+    return styleMask.contains(.titled)
+  }
+
+  private var isFullScreen: Bool { pwc?.isFullScreen ?? true }
+
+  // MARK: setFrame
 
   /**
    By default, `setFrame()` has its own implicit animation, and this can create an undesirable effect when combined with other animations.
@@ -27,7 +37,7 @@ class PlayerWindow: NSWindow {
    Note: if `notify` is `true`, a `windowDidEndLiveResize` event will be triggered, which is often not desirable!
    */
   func setFrameImmediately(_ geometry: PWinGeometry, updateVideoView: Bool = true, notify: Bool = true) {
-    playerWinController?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
+    pwc?.resizeSubviewsForWindowResize(using: geometry, updateVideoView: updateVideoView)
 
     guard !frame.equalTo(geometry.windowFrame) else {
       log.verbose("[setFrame] no change, skipping")
@@ -48,32 +58,57 @@ class PlayerWindow: NSWindow {
     return super.animationResizeTime(newFrame)
   }
 
+  // MARK: - Key event handling
+
   override func keyDown(with event: NSEvent) {
-    if let playerWinController {
-      if playerWinController.isInInteractiveMode, let cropController = playerWinController.cropSettingsView {
-        let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
-        if keySequence == "ESC" || keySequence == "ENTER" {
-          cropController.handleKeyDown(keySeq: keySequence)
-          return
-        }
-      }
-      playerWinController.updateUI()  // Call explicitly to make sure it gets attention
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    if !event.isARepeat {
+      keyDownCount += 1
     }
+    log.verbose("KEYDOWN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)")
+
+    guard let pwc else { log.fatalError("No pwc for PlayerWindow.keyDown()!") }
+
+    if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
+      let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
+      if keyCode == "ESC" || keyCode == "ENTER" {
+        cropController.handleKeyDown(mpvKeyCode: keyCode)
+        return
+      }
+    }
+    pwc.updateUI()  // Call explicitly to make sure it gets attention
 
     if menu?.performKeyEquivalent(with: event) == true {
+      log.verbose("KeyDown was handled by menu item; no more to do")
       return
     }
-    /// Forward all key events which the window receives to its controller.
+
+    /// Forward all other key events which the window receives to its controller.
     /// This allows `ESC` & `TAB` key bindings to work, instead of getting swallowed by
-    /// MacOS keyboard focus navigation (which we don't use).
-    if let playerWinController {
-      playerWinController.keyDown(with: event)
-    } else {
-      super.keyDown(with: event)
-    }
+    /// MacOS keyboard focus navigation (which PlayerWindow doesn't use).
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyDown, player: pwc.player,
+      arguments: keyEventArgs(event), handler: { [self] in
+        if let keyBinding = pwc.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+
+          guard !keyBinding.isIgnored else {
+            // if "ignore", just swallow the event. Do not forward; do not beep
+            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
+            return true
+          }
+
+          return pwc.handleKeyBinding(keyBinding)
+        }
+        return false
+      }, defaultHandler: {
+        // invalid key: beep if cmd failed
+        super.keyDown(with: event)
+      })
   }
 
   override func keyUp(with event: NSEvent) {
+    keyUpCount += 1
     // The user expects certain keys to end editing of text fields. But all the other controls in the sidebar refuse first responder
     // status, so we cannot rely on the key-view-loop to end editing. Need to do this explicitly.
     if let responder = firstResponder, let textView = responder as? NSTextView {
@@ -83,13 +118,34 @@ class PlayerWindow: NSWindow {
         return
       }
     }
+
+    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
+    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
+    log.verbose("KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)")
+
+    guard let pwc else { log.fatalError("No pwc for PlayerWindow.keyDown()!") }
+
+    PluginInputManager.handle(
+      input: normalizedKeyCode, event: .keyUp, player: pwc.player,
+      arguments: keyEventArgs(event), defaultHandler: {
+        // invalid key
+        super.keyUp(with: event)
+      })
+  }
+
+  private func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
+    return [[
+      "x": event.locationInWindow.x,
+      "y": event.locationInWindow.y,
+      "isRepeat": event.isARepeat
+    ] as [String : Any]]
   }
 
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
-    if let playerWinController, playerWinController.isInInteractiveMode, let cropController = playerWinController.cropSettingsView {
+    if let pwc, pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
       let keySequence: String = KeyCodeHelper.mpvKeyCode(from: event)
       if keySequence == "ESC" || keySequence == "ENTER" {
-        cropController.handleKeyDown(keySeq: keySequence)
+        cropController.handleKeyDown(mpvKeyCode: keySequence)
         return true
       }
     }
@@ -111,26 +167,26 @@ class PlayerWindow: NSWindow {
         break
       }
     }
-    playerWinController?.updateUI()  // Call explicitly to make sure it gets attention
+    pwc?.updateUI()  // Call explicitly to make sure it gets attention
 
     /// Need to check this to prevent a strange bug, where using `Ctrl+{key}` will activate a menu item which is mapped as `{key}`.
     /// MacOS quirk? Obscure feature? A user has also demonstrated a case where `Space` is ignored. It looks like bindings which don't
     /// use the command key are sometimes unreliable.
     /// Let's take all the bindings which don't include command and invert their precedence, so that the window is allowed to handle it
     /// before the menu.
-    if let playerWinController, !event.modifierFlags.contains(.command) {
+    if let pwc, !event.modifierFlags.contains(.command) {
       // FIXME: this doesn't go through PluginInputManager because it doesn't return synchronously. Need to refactor that!
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
       log.verbose("KEYDOWN (via keyEquiv): \(normalizedKeyCode.quoted)")
-      if let keyBinding = playerWinController.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+      if let keyBinding = pwc.player.bindingController.matchActiveKeyBinding(endingWith: event) {
         guard !keyBinding.isIgnored else {
           // if "ignore", just swallow the event. Do not forward; do not beep
           log.verbose("Binding is ignored for key: \(keyCode.quoted)")
           return true
         }
 
-        return playerWinController.handleKeyBinding(keyBinding)
+        return pwc.handleKeyBinding(keyBinding)
       }
     }
     let didHandle = super.performKeyEquivalent(with: event)
@@ -149,21 +205,15 @@ class PlayerWindow: NSWindow {
     return false
   }
 
+  // MARK: - Custom Window fixes
+
   override var canBecomeKey: Bool {
-    if !styleMask.contains(.titled) {
-      return true
-    }
-    return super.canBecomeKey
-  }
-  
-  override var canBecomeMain: Bool {
-    if !styleMask.contains(.titled) {
-      return true
-    }
-    return super.canBecomeMain
+    return !isCustomWindowStyle || super.canBecomeKey
   }
 
-  private var isFullScreen: Bool { playerWinController?.isFullScreen ?? true }
+  override var canBecomeMain: Bool {
+    return !isCustomWindowStyle || super.canBecomeMain
+  }
 
   /// Setting `alphaValue=0` for Close & Miniaturize (red & green traffic lights) buttons causes `File` > `Close`
   /// and `Window` > `Minimize` to be disabled as an unwanted side effect. This can cause key bindings to fail
@@ -209,6 +259,6 @@ class PlayerWindow: NSWindow {
   override func zoom(_ sender: Any?) {
     super.zoom(sender)
     // Need to update VideoView constraints and other things
-    playerWinController?.applyWindowResize()
+    pwc?.applyWindowResize()
   }
 }

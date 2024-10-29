@@ -769,45 +769,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // MARK: - Key events
 
-  override func keyDown(with event: NSEvent) {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYDOWN: \(normalizedKeyCode.quoted)")
-
-    PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyDown, player: player,
-      arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = player.bindingController.matchActiveKeyBinding(endingWith: event) {
-
-          guard !keyBinding.isIgnored else {
-            // if "ignore", just swallow the event. Do not forward; do not beep
-            log.verbose("Binding is ignored for key: \(keyCode.quoted)")
-            return true
-          }
-
-          return handleKeyBinding(keyBinding)
-        }
-        return false
-      }, defaultHandler: {
-        // invalid key: beep if cmd failed
-        super.keyDown(with: event)
-      })
-  }
-
-  // Note: If a KeyUp appears without a KeyDown, this indicates the keypress triggered a menu item!
-  override func keyUp(with event: NSEvent) {
-    let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
-    let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
-    log.verbose("KEYUP: \(normalizedKeyCode.quoted)")
-
-    PluginInputManager.handle(
-      input: normalizedKeyCode, event: .keyUp, player: player,
-      arguments: keyEventArgs(event), defaultHandler: {
-        // invalid key
-        super.keyUp(with: event)
-      })
-  }
-
   // Returns true if handled
   @discardableResult
   func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
@@ -830,7 +791,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if keyBinding.isIINACommand {
       // - IINA command
       if let iinaCommand = IINACommand(rawValue: rawAction) {
-        handleIINACommand(iinaCommand)
+        executeIINACommand(iinaCommand)
         return true
       } else {
         log.error("Unrecognized IINA command: \(rawAction.quoted)")
@@ -875,7 +836,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  private func handleIINACommand(_ cmd: IINACommand) {
+  private func executeIINACommand(_ cmd: IINACommand) {
     switch cmd {
     case .openFile:
       AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
@@ -896,14 +857,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     default:
       break
     }
-  }
-
-  fileprivate func keyEventArgs(_ event: NSEvent) -> [[String: Any]] {
-    return [[
-      "x": event.locationInWindow.x,
-      "y": event.locationInWindow.y,
-      "isRepeat": event.isARepeat
-    ] as [String : Any]]
   }
 
   // MARK: - Window delegate: Open / Close

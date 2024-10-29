@@ -303,8 +303,9 @@ class VirtualScrollWheel {
 
           // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
           if let delegateSlider {
-            let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue, { value, event in
-              computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)})
+            let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue) { value, event in
+              computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)
+            }
             callAction(applyingNewValue: newValueReduced)
           }
 

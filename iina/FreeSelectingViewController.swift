@@ -36,8 +36,8 @@ class FreeSelectingViewController: CropBoxViewController {
     windowController.exitInteractiveMode()
   }
 
-  override func handleKeyDown(keySeq: String) {
-    switch keySeq {
+  override func handleKeyDown(mpvKeyCode: String) {
+    switch mpvKeyCode {
     case "ESC":
       cancelBtnAction(self)
     case "ENTER":
