@@ -55,6 +55,7 @@ class ScrollSession {
   var totalEventCount: Int = 0
   var actionCount: Int = 0
   let startTime = Date()
+  var momentumStartTime: Date? = nil
 #endif
 
   func addPendingEvent(_ event: NSEvent) {
@@ -245,6 +246,14 @@ class VirtualScrollWheel {
 
   // MARK: - Internal state machine
 
+  private func notScrolling() {
+    if case .notScrolling = state {
+      // nothing to do
+      return
+    }
+    endScrollSession()
+  }
+
   private func endScrollSession() {
     guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
     state = .notScrolling
@@ -252,11 +261,21 @@ class VirtualScrollWheel {
 #if DEBUG
     if enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
       let totalTime = session.startTime.timeIntervalToNow
+      let timeInfo: String
+      if let momTime = session.momentumStartTime?.timeIntervalToNow {
+        let userTime = totalTime - momTime
+        timeInfo = "\(userTime.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(totalTime.string2FractionDigits)s"
+      } else {
+        timeInfo = "\(totalTime.string2FractionDigits)s"
+      }
       let actionsPerSec = CGFloat(session.actionCount) / totalTime
-      let msg = "Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits)\t\tActions/s: \(actionsPerSec.stringMaxFrac2)"
-      let detail = ["Actions total:\t\(session.actionCount)",
-                    "Events total:\t\(session.totalEventCount)",
-                    "Time total:\t\(totalTime.string2FractionDigits)s",
+      let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
+      let msg = "ScrollWheel Δ: \(session.deltaTotal.string2FractionDigits)    Actions/s: \(actionsPerSec.stringMaxFrac2)"
+      let detail = [
+        "Time: \t\(timeInfo)",
+        "Events: \t\(session.totalEventCount)",
+        "Actions: \t\(session.actionCount)",
+        "Action Ratio: \t\(actionRatio.stringMaxFrac2)",
       ].joined(separator: "\n")
       player.sendOSD(.debug(msg, detail))
     }
@@ -277,7 +296,7 @@ class VirtualScrollWheel {
 
     switch newState {
     case .notScrolling:
-      state = .notScrolling
+      notScrolling()
 
     case .didStepScroll:  // Non-Apple device
       resetScrollSessionTimer(timeout: stepScrollSessionTimeout)
@@ -316,7 +335,7 @@ class VirtualScrollWheel {
       case .smoothScrolling:
         state = .smoothScrolling
       default:
-        state = .notScrolling
+        notScrolling()
       }
 
     case .smoothScrollJustEnded:
@@ -325,7 +344,7 @@ class VirtualScrollWheel {
         state = .smoothScrollJustEnded
         resetScrollSessionTimer(timeout: momentumStartTimeout)
       default:
-        state = .notScrolling
+        notScrolling()
       }
 
     case .momentumScrollJustStarted:
@@ -333,8 +352,9 @@ class VirtualScrollWheel {
       case .smoothScrollJustEnded:
         scrollSessionTimer?.invalidate()
         state = .momentumScrollJustStarted
+        currentSession?.momentumStartTime = Date()
       default:
-        state = .notScrolling
+        notScrolling()
       }
 
     case .momentumScrolling:
@@ -343,7 +363,7 @@ class VirtualScrollWheel {
         scrollSessionTimer?.invalidate()
         state = .momentumScrolling
       default:
-        state = .notScrolling
+        notScrolling()
       }
 
     case .momentumScrollJustEnded:
@@ -351,12 +371,8 @@ class VirtualScrollWheel {
       case .momentumScrollJustStarted, .momentumScrolling:
         endScrollSession()
       default:
-        state = .notScrolling
+        notScrolling()
       }
-    }
-
-    if case .notScrolling = state {
-      currentSession = nil
     }
   }
 
