@@ -79,11 +79,11 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
       }
 
       Logger.log.verbose("\(importedTypeIndex). \(identifier):")
-      let requiredSupertype: UTType? = specialIdentifiers.contains(identifier) ? nil : .audiovisualContent
 
       for ext in exts {
         if #available(macOS 11.0, *) {
           Logger.log.verbose("  \(ext):")
+          let requiredSupertype: UTType? = specialIdentifiers.contains(identifier) ? nil : .audiovisualContent
 
           let subtypesForExt = UTType.types(tag: ext, tagClass: .filenameExtension, conformingTo: requiredSupertype)
 

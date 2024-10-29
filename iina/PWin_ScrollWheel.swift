@@ -16,13 +16,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
    recover the status when scrolling finished. */
   private var wasPlayingBeforeSeeking = false
 
-  override func updateSensitivity() {
-    let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
-    sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
-    Logger.log.verbose("Updated PlaySlider sensitivity=\(sensitivity))")
-  }
-
-  override func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
+  override func scrollSessionWillBegin(_ session: ScrollSession) {
     guard let player = delegateSlider?.thisPlayer else { return }
 
     player.log.verbose("PlaySlider scrollWheel seek began")
@@ -31,6 +25,9 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
       player.pause()
       wasPlayingBeforeSeeking = true
     }
+
+    let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
+    session.sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
@@ -48,10 +45,9 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
 
 /// An instance of this is stored in the `PlayerWindowController` instance. Also see its `volumeSliderAction(_:)
 class VolumeSliderScrollWheel: VirtualScrollWheel {
-  override func updateSensitivity() {
+  override func scrollSessionWillBegin(_ session: ScrollSession) {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
-    sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)
-    log.verbose("Updated VolumeSlider sensitivity=\(sensitivity)")
+    session.sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)
   }
 }
 
@@ -67,29 +63,31 @@ class PWinScrollWheel: VirtualScrollWheel {
     self.log = playerWindowController.player.log
   }
 
-  override func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
+  override func scrollSessionWillBegin(_ session: ScrollSession) {
+    var scrollAction: Preference.ScrollAction? = nil
     // Determine scroll direction, then scroll action, based on cumulative scroll deltas.
     // Pick direction (X or Y) based on which coordinate the user scrolled farther in.
     // For "step" scrolls, it's easy to pick because the delta should by all in either X or Y…
-    var deltaX: CGFloat = event.scrollingDeltaX
-    var deltaY: CGFloat = event.scrollingDeltaY
     // For "smooth" scrolls, there is a small grace period before the this method is called. During that time,
     // the session will collect pending scroll events. By summing the distances from all of these, we can make
     // a more accurate determination for the user's intended direction.
-    for event in session.eventsPending {
-      deltaX += event.scrollingDeltaX
-      deltaY += event.scrollingDeltaY
-    }
+    session.lock.withLock {
+      var deltaX: CGFloat = 0.0
+      var deltaY: CGFloat = 0.0
+      for event in session.eventsPending {
+        deltaX += event.scrollingDeltaX
+        deltaY += event.scrollingDeltaY
+      }
 
-    let scrollAction: Preference.ScrollAction
-    let distX = deltaX.magnitude
-    let distY = deltaY.magnitude
-    if distX > distY {
-      log.verbose("Scroll direction is horizontal: \(distX) > \(distY)")
-      scrollAction = Preference.enum(for: .horizontalScrollAction)
-    } else {
-      log.verbose("Scroll direction is vertical: \(distX) ≤ \(distY)")
-      scrollAction =  Preference.enum(for: .verticalScrollAction)
+      let distX = deltaX.magnitude
+      let distY = deltaY.magnitude
+      if distX > distY {
+        log.verbose("Scroll direction is horizontal: \(distX) > \(distY)")
+        scrollAction = Preference.enum(for: .horizontalScrollAction)
+      } else {
+        log.verbose("Scroll direction is vertical: \(distX) ≤ \(distY)")
+        scrollAction =  Preference.enum(for: .verticalScrollAction)
+      }
     }
 
     switch scrollAction {
@@ -103,9 +101,8 @@ class PWinScrollWheel: VirtualScrollWheel {
 
     guard let delegate else { return }
     delegateSlider = delegate.delegateSlider
-    sensitivity = delegate.sensitivity
 
-    delegate.scrollSessionWillBegin(with: event, session)
+    delegate.scrollSessionWillBegin(session)
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {

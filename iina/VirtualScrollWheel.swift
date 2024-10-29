@@ -42,6 +42,108 @@ fileprivate enum ScrollState {
   case momentumScrollJustEnded
 }
 
+class ScrollSession {
+  var sensitivity: CGFloat = 1.0
+  /// Lock for `eventsPending`
+  let lock = Lock()
+  /// During the `minScrollWheelTimeThreshold` time period, no scroll is executed. But simply dropping any user input during
+  /// that time can feel laggy. For a much smoother user experience, this list holds the accumulated events until start, then
+  /// execute them as if they had started when the user started their scroll action.
+  var eventsPending: [NSEvent] = []
+#if DEBUG
+  var deltaTotal: CGFloat = 0
+  var totalEventCount: Int = 0
+  var actionCount: Int = 0
+  let startTime = Date()
+#endif
+
+  func addPendingEvent(_ event: NSEvent) {
+    lock.withLock { [self] in
+      eventsPending.append(event)
+    }
+  }
+
+  /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
+  /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
+  func executeScroll(on delegateSlider: NSSlider) {
+
+    // All the pending events need to be applied immediately.
+    // Save CPU by adding them all together before calling action:
+    var newValue: CGFloat = 0.0
+    lock.withLock { [self] in
+      newValue = eventsPending.reduce(delegateSlider.doubleValue) { value, event in
+        computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)
+      }
+      eventsPending = []
+    }
+
+    callAction(on: delegateSlider, applyingNewValue: newValue)
+  }
+
+  /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
+  /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
+  func computeNewValue(for slider: NSSlider, from event: NSEvent,
+                       usingCurrentValue currentValue: CGFloat) -> CGFloat {
+    let delta = extractLinearDelta(from: event, slider)
+
+#if DEBUG
+    deltaTotal += delta
+    totalEventCount += 1
+#endif
+
+    // Convert delta into valueChange
+    let maxValue = slider.maxValue
+    let minValue = slider.minValue
+
+    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
+
+    // Compute & set new value for slider
+    var newValue = currentValue + valueChange
+    // Wrap around if slider is circular
+    if slider.sliderType == .circular {
+      if newValue < minValue {
+        newValue = maxValue - abs(valueChange)
+      } else if newValue > maxValue {
+        newValue = minValue + abs(valueChange)
+      }
+    }
+
+    return newValue.clamped(to: minValue...maxValue)
+  }
+
+  /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta
+  private func extractLinearDelta(from event: NSEvent, _ slider: NSSlider) -> CGFloat {
+    var delta: Double
+    // Allow horizontal scrolling on horizontal and circular sliders
+    if slider.isVertical && slider.sliderType == .linear {
+      delta = event.deltaY
+    } else if slider.userInterfaceLayoutDirection == .rightToLeft {
+      delta = event.deltaY + event.deltaX
+    } else {
+      delta = event.deltaY - event.deltaX
+    }
+
+    // Account for natural scrolling
+    if event.isDirectionInvertedFromDevice {
+      delta *= -1
+    }
+    return delta
+  }
+
+  private func callAction(on slider: NSSlider, applyingNewValue newValue: CGFloat) {
+    // There can be a huge number of requests which don't change the existing value.
+    // But in the case of mpv seeks, these can cause noticeable slowdown.
+    // Discard them for a large increase in performance.
+    guard slider.doubleValue != newValue else { return }
+
+#if DEBUG
+    actionCount += 1
+#endif
+    slider.doubleValue = newValue
+    slider.sendAction(slider.action, to: slider.target)
+  }
+}
+
 /// This class provides a wrapper API over Apple's APIs to simplify scroll wheel handling.
 ///
 /// Internally this class maintains its own state machine which it updates from the `phase` & `momentumPhase` properties
@@ -73,21 +175,8 @@ fileprivate enum ScrollState {
 /// are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
   var delegateSlider: NSSlider? = nil
-  var sensitivity: Double = 1.0
   var log: Logger.Subsystem = Logger.log
 
-  class ScrollSession {
-    /// During the `minScrollWheelTimeThreshold` time period, no scroll is executed. But simply dropping any user input during
-    /// that time can feel laggy. For a much smoother user experience, this list holds the accumulated events until start, then
-    /// execute them as if they had started when the user started their scroll action.
-    var eventsPending = LinkedList<NSEvent>()
-#if DEBUG
-    var deltaTotal: CGFloat = 0
-    var totalEventCount: Int = 0
-    var actionCount: Int = 0
-    let startTime = Date()
-#endif
-  }
   /// Contains data for the current scroll session.
   ///
   /// Non-nil only while a scroll session is active. A new instance is created each time a new session starts.
@@ -99,27 +188,22 @@ class VirtualScrollWheel {
 
   private var scrollSessionTimer: Timer? = nil
 
-  init() {
-    updateSensitivity()
-  }
-
   func scrollWheel(with event: NSEvent) {
+    currentSession?.addPendingEvent(event)
     changeState(with: event)
-    guard isScrolling() else { return }
-    executeScroll(with: event)
+    if let currentSession, let delegateSlider, isScrolling() {
+      currentSession.executeScroll(on: delegateSlider)
+    }
   }
 
   // MARK: State API
-
-  /// Subclasses can override
-  func updateSensitivity() { }
-
+  
   /// Called when scroll starts. Subclasses should override.
   ///
   /// - This is only called for scrolls originating from Magic Mouse or trackpad. Will never be called for non-Apple mice.
   /// - This will be at most once per scroll.
   /// - Will not be called if the user scroll duration is shorter than `minScrollWheelTimeThreshold`.
-  func scrollSessionWillBegin(with event: NSEvent, _ session: ScrollSession) {
+  func scrollSessionWillBegin(_ session: ScrollSession) {
   }
 
 
@@ -158,82 +242,6 @@ class VirtualScrollWheel {
   }
 
   // MARK: Scroll execution
-
-  /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
-  /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
-  private func executeScroll(with event: NSEvent) {
-    guard let delegateSlider else { return }
-
-    let newValue = computeNewValue(for: delegateSlider, from: event,
-                                   usingCurrentValue: delegateSlider.doubleValue)
-    callAction(applyingNewValue: newValue)
-  }
-
-  private func callAction(applyingNewValue newValue: CGFloat) {
-    guard let delegateSlider else { return }
-    // There can be a huge number of requests which don't change the existing value.
-    // But in the case of mpv seeks, these can cause noticeable slowdown.
-    // Discard them for a large increase in performance.
-    guard delegateSlider.doubleValue != newValue else { return }
-
-#if DEBUG
-    currentSession?.actionCount += 1
-#endif
-    delegateSlider.doubleValue = newValue
-    delegateSlider.sendAction(delegateSlider.action, to: delegateSlider.target)
-  }
-
-  /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
-  /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
-  private func computeNewValue(for slider: NSSlider, from event: NSEvent,
-                               usingCurrentValue currentValue: CGFloat) -> CGFloat {
-    let delta = VirtualScrollWheel.extractLinearDelta(from: event, slider)
-
-#if DEBUG
-    if let currentSession {
-      currentSession.deltaTotal += delta
-      currentSession.totalEventCount += 1
-    }
-#endif
-
-    // Convert delta into valueChange
-    let maxValue = slider.maxValue
-    let minValue = slider.minValue
-
-    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
-
-    // Compute & set new value for slider
-    var newValue = currentValue + valueChange
-    // Wrap around if slider is circular
-    if slider.sliderType == .circular {
-      if newValue < minValue {
-        newValue = maxValue - abs(valueChange)
-      } else if newValue > maxValue {
-        newValue = minValue + abs(valueChange)
-      }
-    }
-
-    return newValue.clamped(to: minValue...maxValue)
-  }
-
-  /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta
-  private static func extractLinearDelta(from event: NSEvent, _ slider: NSSlider) -> CGFloat {
-    var delta: Double
-    // Allow horizontal scrolling on horizontal and circular sliders
-    if slider.isVertical && slider.sliderType == .linear {
-      delta = event.deltaY
-    } else if slider.userInterfaceLayoutDirection == .rightToLeft {
-      delta = event.deltaY + event.deltaX
-    } else {
-      delta = event.deltaY - event.deltaX
-    }
-
-    // Account for natural scrolling
-    if event.isDirectionInvertedFromDevice {
-      delta *= -1
-    }
-    return delta
-  }
 
   // MARK: - Internal state machine
 
@@ -277,42 +285,34 @@ class VirtualScrollWheel {
         // Continuing scroll session. No state changes needed
         break
       }
-
-      // Starting (non-Apple) scroll
-      state = .didStepScroll
+      // Else: starting (non-Apple) scroll
+      state = newState
       let newSession = ScrollSession()
+      // No lock needed here, since we own the only reference
+      newSession.eventsPending.append(event)
       currentSession = newSession
-      scrollSessionWillBegin(with: event, newSession)
+
+      scrollSessionWillBegin(newSession)
 
     case .smoothScrollMayBegin:
       state = newState
       let newSession = ScrollSession()
+      // No lock needed here, since we own the only reference
+      newSession.eventsPending.append(event)
       currentSession = newSession
-      currentSession?.eventsPending.append(event)
 
     case .smoothScrolling:
       switch state {
       case .smoothScrollMayBegin(let intentStartTime):
         guard let currentSession else { Logger.fatal("No current session for state \(state) → \(newState)") }
-        let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
 
+        let timeElapsed = Date().timeIntervalSince1970 - intentStartTime
         if timeElapsed >= Constants.TimeInterval.minScrollWheelTimeThreshold {
           log.verbose("Time elapsed (\(timeElapsed.stringTrunc3f)) ≥ minScrollWheelTimeThreshold (\(Constants.TimeInterval.minScrollWheelTimeThreshold)): starting scroll session")
           state = .smoothScrolling
-          scrollSessionWillBegin(with: event, currentSession)
-
-          // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
-          if let delegateSlider {
-            let newValueReduced = currentSession.eventsPending.reduce(delegateSlider.doubleValue) { value, event in
-              computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)
-            }
-            callAction(applyingNewValue: newValueReduced)
-          }
-
-        } else {
-          // Minimum scroll time not yet reached. But keep track of scrolls for use when it is reached
-          currentSession.eventsPending.append(event)
+          scrollSessionWillBegin(currentSession)
         }
+        // Else: minimum scroll time not yet reached. But will keep track of scrolls for use when it is reached
       case .smoothScrolling:
         state = .smoothScrolling
       default:
@@ -353,6 +353,10 @@ class VirtualScrollWheel {
       default:
         state = .notScrolling
       }
+    }
+
+    if case .notScrolling = state {
+      currentSession = nil
     }
   }
 

@@ -27,8 +27,6 @@ extension PlayerWindowController {
       .showRemainingTime,
       .maxVolume,
       .useExactSeek,
-      .relativeSeekAmount,
-      .volumeScrollAmount,
       .singleClickAction,
       .doubleClickAction,
       .playlistShowMetadata,
@@ -164,10 +162,6 @@ extension PlayerWindowController {
       if let newValue = newValue as? Int {
         useExactSeek = Preference.SeekOption(rawValue: newValue)!
       }
-    case .relativeSeekAmount:
-      playSliderScrollWheel.updateSensitivity()
-    case .volumeScrollAmount:
-      volumeSliderScrollWheel.updateSensitivity()
     case .singleClickAction:
       if let newValue = newValue as? Int {
         singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
