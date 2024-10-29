@@ -9,7 +9,7 @@
 import Foundation
 
 #if DEBUG
-fileprivate let debugScrollWheel = true
+fileprivate let enableScrollWheelDebug = true
 #endif
 
 /// May need adjustment for optimal results
@@ -80,7 +80,7 @@ class VirtualScrollWheel {
     /// During the `minScrollWheelTimeThreshold` time period, no scroll is executed. But simply dropping any user input during
     /// that time can feel laggy. For a much smoother user experience, this list holds the accumulated events until start, then
     /// execute them as if they had started when the user started their scroll action.
-    var eventsBeforeStart: [NSEvent] = []
+    var eventsPending = LinkedList<NSEvent>()
 #if DEBUG
     var deltaTotal: CGFloat = 0
     var totalEventCount: Int = 0
@@ -242,7 +242,7 @@ class VirtualScrollWheel {
     state = .notScrolling
 
 #if DEBUG
-    if debugScrollWheel, let player = delegateSlider?.thisPlayer {
+    if enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
       let totalTime = session.startTime.timeIntervalToNow
       let actionsPerSec = CGFloat(session.actionCount) / totalTime
       let msg = "Δ ScrollWheel: \(session.deltaTotal.string2FractionDigits)\t\tActions/s: \(actionsPerSec.stringMaxFrac2)"
@@ -262,7 +262,7 @@ class VirtualScrollWheel {
     let newState = mapPhasesToScrollState(event)
 
 #if DEBUG
-    if debugScrollWheel {
+    if enableScrollWheelDebug {
       log.verbose("ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)")
     }
 #endif
@@ -288,7 +288,7 @@ class VirtualScrollWheel {
       state = newState
       let newSession = ScrollSession()
       currentSession = newSession
-      currentSession?.eventsBeforeStart.append(event)
+      currentSession?.eventsPending.append(event)
 
     case .smoothScrolling:
       switch state {
@@ -303,7 +303,7 @@ class VirtualScrollWheel {
 
           // All these events need to be applied immediately. Save CPU by adding them all together into a single action call:
           if let delegateSlider {
-            let newValueReduced = currentSession.eventsBeforeStart.reduce(delegateSlider.doubleValue) { value, event in
+            let newValueReduced = currentSession.eventsPending.reduce(delegateSlider.doubleValue) { value, event in
               computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)
             }
             callAction(applyingNewValue: newValueReduced)
@@ -311,7 +311,7 @@ class VirtualScrollWheel {
 
         } else {
           // Minimum scroll time not yet reached. But keep track of scrolls for use when it is reached
-          currentSession.eventsBeforeStart.append(event)
+          currentSession.eventsPending.append(event)
         }
       case .smoothScrolling:
         state = .smoothScrolling

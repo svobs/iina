@@ -76,7 +76,7 @@ class PWinScrollWheel: VirtualScrollWheel {
     // For "smooth" scrolls, there is a small grace period before the this method is called. During that time,
     // the session will collect pending scroll events. By summing the distances from all of these, we can make
     // a more accurate determination for the user's intended direction.
-    for event in session.eventsBeforeStart {
+    for event in session.eventsPending {
       deltaX += event.scrollingDeltaX
       deltaY += event.scrollingDeltaY
     }

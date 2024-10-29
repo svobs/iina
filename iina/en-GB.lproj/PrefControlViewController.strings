@@ -103,8 +103,8 @@
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "oOk-y6-lek"; */
 "oOk-y6-lek.title" = "None";
 
-/* Class = "NSTextFieldCell"; title = "Sensitivity for normal seek:"; ObjectID = "of2-ec-OkC"; */
-"of2-ec-OkC.title" = "Sensitivity for normal seek:";
+/* Class = "NSTextFieldCell"; title = "Sensitivity for scroll seek:"; ObjectID = "of2-ec-OkC"; */
+"of2-ec-OkC.title" = "Sensitivity for scroll seek:";
 
 /* Class = "NSMenuItem"; title = "None"; ObjectID = "unj-zt-RyU"; */
 "unj-zt-RyU.title" = "None";
