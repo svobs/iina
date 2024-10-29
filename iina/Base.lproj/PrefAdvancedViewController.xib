@@ -118,8 +118,8 @@
                     </connections>
                 </popUpButton>
                 <button identifier="FunctionalButtonShowLog" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XBa-zS-RVU">
-                    <rect key="frame" x="157" y="33" width="147" height="32"/>
-                    <buttonCell key="cell" type="push" title="Show log viewer" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Owx-92-Ogg">
+                    <rect key="frame" x="157" y="33" width="153" height="32"/>
+                    <buttonCell key="cell" type="push" title="Show Log Viewer" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Owx-92-Ogg">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -143,8 +143,8 @@
                     </connections>
                 </button>
                 <button identifier="FunctionalButtonLogDirectory" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="shz-CZ-kqM">
-                    <rect key="frame" x="157" y="1" width="147" height="32"/>
-                    <buttonCell key="cell" type="push" title="Open log directory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="JDA-g3-RNX">
+                    <rect key="frame" x="157" y="1" width="153" height="32"/>
+                    <buttonCell key="cell" type="push" title="Open Log Directory" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="JDA-g3-RNX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
@@ -394,8 +394,8 @@
                     </connections>
                 </button>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hbF-n4-jl3">
-                    <rect key="frame" x="338" y="28" width="148" height="32"/>
-                    <buttonCell key="cell" type="push" title="Choose directory…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MRT-u8-xTX">
+                    <rect key="frame" x="338" y="27" width="148" height="32"/>
+                    <buttonCell key="cell" type="push" title="Choose…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MRT-u8-xTX">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>
