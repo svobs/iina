@@ -1264,7 +1264,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func windowDidChangeOcclusionState(_ notification: Notification) {
-    log.verbose("WindowDidChangeOcclusionState received")
+    log.trace("WindowDidChangeOcclusionState received")
     assert(DispatchQueue.isExecutingIn(.main))
     forceDraw()
   }
@@ -1470,7 +1470,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       }
 
       let isKey = window.isKeyWindow
-      log.verbose("Window isKey: \(isKey.yn)")
+      log.verbose("Window isKey=\(isKey.yesno)")
       if isKey {
         PlayerCore.lastActive = player
 
@@ -2432,7 +2432,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
     guard loaded, player.isActive, player.info.isPaused || currentVideoTrack.isAlbumart else { return }
     guard !Preference.bool(for: .isRestoreInProgress) else { return }
-    log.verbose("Forcing video redraw")
+    log.trace("Forcing video redraw")
     // Does nothing if already active. Will restart idle timer if paused
     videoView.displayActive(temporary: player.info.isPaused)
     videoView.videoLayer.drawAsync(forced: true)

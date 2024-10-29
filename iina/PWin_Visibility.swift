@@ -362,7 +362,7 @@ extension PlayerWindowController {
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       return
     }
-    log.verbose("Hiding cursor")
+    log.trace("Hiding cursor")
     NSCursor.setHiddenUntilMouseMoves(true)
   }
 

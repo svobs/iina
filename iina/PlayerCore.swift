@@ -785,7 +785,6 @@ class PlayerCore: NSObject {
       }
       let useExact = forceExact ? true : Preference.bool(for: .useExactSeek)
       let seekMode = useExact ? "absolute-percent+exact" : "absolute-percent"
-      Logger.log("Seek \(percent) % (forceExact: \(forceExact), useExact: \(useExact) -> \(seekMode))", level: .verbose, subsystem: subsystem)
       mpv.command(.seek, args: ["\(percent)", seekMode], checkError: false)
     }
   }
@@ -793,7 +792,6 @@ class PlayerCore: NSObject {
   // Seek Relative
   func seek(relativeSecond: Double, option: Preference.SeekOption) {
     mpv.queue.async { [self] in
-      log.verbose("Seek \(relativeSecond)s (\(option.rawValue))")
       switch option {
 
       case .relative:
@@ -828,12 +826,10 @@ class PlayerCore: NSObject {
 
   func _seek(absoluteSecond: Double) {
     guard isActive else { return }
-    Logger.log("Seek \(absoluteSecond) absolute+exact", level: .verbose, subsystem: subsystem)
     mpv.command(.seek, args: ["\(absoluteSecond)", "absolute+exact"])
   }
 
   func frameStep(backwards: Bool) {
-    Logger.log("FrameStep (\(backwards ? "-" : "+"))", level: .verbose, subsystem: subsystem)
     // When playback is paused the display link is stopped in order to avoid wasting energy on
     // It must be running when stepping to avoid slowdowns caused by mpv waiting for IINA to call
     // mpv_render_report_swap.
@@ -2439,7 +2435,7 @@ class PlayerCore: NSObject {
         setTrack(priorS2ID, forType: .secondSub, silent: true)
       }
     }
-    log.debug("Done with auto load")
+    log.debug("Auto load done")
   }
 
   func fileEnded(dueToStopCommand: Bool) {

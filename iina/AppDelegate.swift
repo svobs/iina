@@ -825,11 +825,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
       // This notification can also happen after windowDidClose notification,
       // so make sure this a window which is recognized.
       if UIState.shared.windowsMinimized.remove(activeWindowName) != nil {
-        Logger.log("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)", level: .verbose)
+        Logger.log.verbose("Minimized window become main; adding to open windows list: \(activeWindowName.quoted)")
         UIState.shared.windowsOpen.insert(activeWindowName)
       } else {
         // Do not process. Another listener will handle it
-        Logger.log("Window became main: \(activeWindowName.quoted)", level: .verbose)
+        if Logger.isTraceEnabled {
+          Logger.log.trace("Window became main: \(activeWindowName.quoted)")
+        }
         return
       }
 

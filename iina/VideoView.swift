@@ -341,8 +341,10 @@ class VideoView: NSView {
     let displayId = screen.displayId
 
     // Do nothing if on the same display
-    if (currentDisplay == displayId) {
-      log.verbose("No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged")
+    guard currentDisplay != displayId else {
+      if log.isTraceEnabled {
+        log.trace("No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged")
+      }
       return
     }
     log.verbose("Updating DisplayLink for display: \(displayId)")

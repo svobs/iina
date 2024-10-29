@@ -429,7 +429,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     guard loaded else { return }
     if osd.animationState != .hidden {
-      log.verbose("Hiding OSD")
+      log.trace("Hiding OSD")
     }
     osd.animationState = .willHide
     osd.isShowingPersistentOSD = false

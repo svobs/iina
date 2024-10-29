@@ -68,7 +68,7 @@ class PlayerWindow: NSWindow {
     }
     log.verbose("KEYDOWN #\(keyDownCount)\(event.isARepeat ? " (repeat)" : ""): \(normalizedKeyCode.quoted)")
 
-    guard let pwc else { log.fatalError("No pwc for PlayerWindow.keyDown()!") }
+    guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
     if pwc.isInInteractiveMode, let cropController = pwc.cropSettingsView {
       let keyCode: String = KeyCodeHelper.mpvKeyCode(from: event)
@@ -123,7 +123,7 @@ class PlayerWindow: NSWindow {
     let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
     log.verbose("KEYUP #\(keyUpCount): \(normalizedKeyCode.quoted)")
 
-    guard let pwc else { log.fatalError("No pwc for PlayerWindow.keyDown()!") }
+    guard let pwc else { log.fatalError("No PlayerWindowController for PlayerWindow.keyDown()!") }
 
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyUp, player: pwc.player,

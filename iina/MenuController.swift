@@ -602,7 +602,7 @@ class MenuController: NSObject, NSMenuDelegate {
   }
 
   func updatePluginMenu() {
-    Logger.log("Updating Plugin menu", level: .verbose)
+    Logger.log.trace("Updating Plugin menu")
     pluginMenu.removeAllItems()
     pluginMenu.addItem(pluginErrorNotice)
     pluginErrorNotice.isHidden = true
