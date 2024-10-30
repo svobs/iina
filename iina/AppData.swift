@@ -406,3 +406,17 @@ struct Images {
     }
   }()
 }
+
+struct DebugConfig {
+
+  /// If `true`, add extra logging specific to input bindings build. Useful for debugging.
+  /// Can toggle at run time by updating boolean pref key `logKeyBindingsRebuild`.
+  static var logBindingsRebuild: Bool { Preference.bool(for: .logKeyBindingsRebuild) }
+
+#if DEBUG
+  /// Skip the Approve Restore prompt and retry restore if a failed previous restore was detected.
+  static let alwaysApproveRestore = true
+  static let enableScrollWheelDebug = true
+#endif
+}
+

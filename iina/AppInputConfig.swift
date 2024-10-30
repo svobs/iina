@@ -71,10 +71,6 @@ struct AppInputConfig {
 
   static private var lastStartedVersion: Int = 0
 
-  /// If `true`, add extra logging specific to input bindings build. Useful for debugging.
-  /// Can toggle at run time by updating boolean pref key `logKeyBindingsRebuild`.
-  static var logBindingsRebuild: Bool { Preference.bool(for: .logKeyBindingsRebuild) }
-
   /// The current instance. The app can only ever support one set of active key bindings at a time, so each time a change is made,
   /// the active bindings are rebuilt and the old set is discarded.
   static private(set) var current = AppInputConfig(version: 0, bindingCandidateList: [], resolverDict: [:], duplicateKeys: [],
@@ -86,7 +82,7 @@ struct AppInputConfig {
   /// as notifies the other callbacks supplied here as needed.
   static func rebuildCurrent(attaching userData: NotificationData? = nil) {
     let requestedVersion = AppInputConfig.lastStartedVersion + 1
-    if AppInputConfig.logBindingsRebuild {
+    if DebugConfig.logBindingsRebuild {
       log.verbose("Requesting AppInputConfig build v\(requestedVersion)")
     }
 
@@ -116,7 +112,7 @@ struct AppInputConfig {
 
       let notification = Notification(name: .iinaAppInputConfigDidChange,
                                       object: nil, userInfo: data)
-      if AppInputConfig.logBindingsRebuild {
+      if DebugConfig.logBindingsRebuild {
         log.verbose("Completed AppInputConfig v\(appInputConfigNew.version); posting notification: \(notification.name.rawValue.quoted)")
       }
       NotificationCenter.default.post(notification)
@@ -167,7 +163,7 @@ struct AppInputConfig {
   let duplicateKeys: Set<String>
 
   func logEnabledBindings() {
-    if AppInputConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
+    if DebugConfig.logBindingsRebuild, Logger.enabled && Logger.Level.preferred >= .verbose {
       let bindingList = bindingCandidateList.filter({ $0.isEnabled })
       AppInputConfig.log.verbose("Currently enabled bindings (\(bindingList.count)):\n\(bindingList.map { "\t\($0)" }.joined(separator: "\n"))")
     }

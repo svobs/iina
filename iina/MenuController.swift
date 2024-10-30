@@ -845,7 +845,7 @@ class MenuController: NSObject, NSMenuDelegate {
       menuItem.representedObject = filter.filterString
       menu.addItem(menuItem)
 
-      if AppInputConfig.logBindingsRebuild {
+      if DebugConfig.logBindingsRebuild {
         let readableKey = KeyCodeHelper.readableString(fromKey: filter.shortcutKey, modifiers: filter.shortcutKeyModifiers)
         Logger.log("Updating menuItem for \(isVideo ? "VF" : "AF") \(filter.name.quoted) with keyEquiv: \(readableKey.quoted)")
       }
@@ -955,7 +955,7 @@ class MenuController: NSObject, NSMenuDelegate {
         menuItem.keyEquivalent = kEqv
         menuItem.keyEquivalentModifierMask = kMdf
         binding.displayMessage = "This key binding will activate the menu item: \(menuItem.menuPathDescription)"
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           Logger.log("Set menu keyEquiv: \(mpvKey.quoted) → \(menuItem.menuPathDescription)", level: .verbose)
         }
       } else {
@@ -965,7 +965,7 @@ class MenuController: NSObject, NSMenuDelegate {
       // Conflict! Key binding already reserved
       menuItem.keyEquivalent = ""
       menuItem.keyEquivalentModifierMask = []
-      if AppInputConfig.logBindingsRebuild {
+      if DebugConfig.logBindingsRebuild {
         Logger.log("Unset menu keyEquiv: \(menuItem.title.quoted)", level: .verbose)
       }
     }

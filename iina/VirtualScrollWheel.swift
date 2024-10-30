@@ -8,10 +8,6 @@
 
 import Foundation
 
-#if DEBUG
-fileprivate let enableScrollWheelDebug = true
-#endif
-
 /// May need adjustment for optimal results
 fileprivate let stepScrollSessionTimeout: TimeInterval = 0.05
 
@@ -257,7 +253,7 @@ class VirtualScrollWheel {
     state = .notScrolling
 
 #if DEBUG
-    if enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
+    if DebugConfig.enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
       let timeTotal = session.startTime.timeIntervalToNow
       let timeUser: TimeInterval
       let timeMsg: String
@@ -292,7 +288,7 @@ class VirtualScrollWheel {
     let newState = mapPhasesToScrollState(event)
 
 #if DEBUG
-    if enableScrollWheelDebug {
+    if DebugConfig.enableScrollWheelDebug {
       log.verbose("ScrollWheel phases: \(event.phase.name)/\(event.momentumPhase.name) State: \(state) → \(newState)")
     }
 #endif

@@ -22,7 +22,7 @@ class AppInputConfigBuilder {
   }
 
   func build(version: Int) -> AppInputConfig {
-    if AppInputConfig.logBindingsRebuild {
+    if DebugConfig.logBindingsRebuild {
       log.verbose("Starting rebuild of AppInputConfig v\(version)")
     }
 
@@ -86,7 +86,7 @@ class AppInputConfigBuilder {
 
       // Iterate from bottom to the top of the "stack":
       for enabledSectionMeta in sectionStack.sectionsEnabled {
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           log.error("RebuildBindings: examining enabled section: \(enabledSectionMeta.name.quoted)")
         }
         guard let inputSection = sectionStack.sectionsDefined[enabledSectionMeta.name] else {
@@ -103,7 +103,7 @@ class AppInputConfigBuilder {
 
         addAllBindings(from: inputSection, to: &linkedList)
 
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           log.verbose("RebuildBindings: CandidateList in increasing priority: \(linkedList.map({$0.keyMapping.normalizedMpvKey}).joined(separator: ", "))")
         }
 
@@ -125,12 +125,12 @@ class AppInputConfigBuilder {
 
   private func addAllBindings(from inputSection: InputSection, to linkedList: inout LinkedList<InputBinding>) {
     if inputSection.keyMappingList.isEmpty {
-      if AppInputConfig.logBindingsRebuild {
+      if DebugConfig.logBindingsRebuild {
         log.verbose("RebuildBindings: skipping \(inputSection.name) as it has no bindings")
       }
     } else {
       if inputSection.isForce {
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           log.verbose("RebuildBindings: adding bindings from \(inputSection) to tail of list, level: .verbose)")
         }
         // Strong section: Iterate from top of section to bottom (increasing priority) and add to end of list
@@ -140,7 +140,7 @@ class AppInputConfigBuilder {
         }
       } else {
         // Weak section: Iterate from top of section to bottom (decreasing priority) and add backwards to beginning of list
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           log.verbose("RebuildBindings: adding bindings from \(inputSection) to head of list, in reverse order")
         }
         for keyMapping in inputSection.keyMappingList.reversed() {
@@ -165,7 +165,7 @@ class AppInputConfigBuilder {
 
     if let action = keyMapping.action {
       if keyMapping.rawKey == "default-bindings", action.count == 1 && action[0] == "start" {
-        if AppInputConfig.logBindingsRebuild {
+        if DebugConfig.logBindingsRebuild {
           log.verbose("Skipping line: \"default-bindings start\"")
         }
         displayMessage = "IINA does not support default-level (\"builtin\") bindings" // TODO: localize
@@ -190,7 +190,7 @@ class AppInputConfigBuilder {
       displayMessage = "This key binding was set by a Lua script or via mpv RPC"  // TODO: localize
     }
 
-    if AppInputConfig.logBindingsRebuild {
+    if DebugConfig.logBindingsRebuild {
       log.verbose("Adding binding for key: \(keyMapping.rawKey.quoted)")
     }
     return InputBinding(finalMapping, origin: section.origin, srcSectionName: section.name, isEnabled: isEnabled, displayMessage: displayMessage)
@@ -219,7 +219,7 @@ class AppInputConfigBuilder {
         }
       }
     }
-    if AppInputConfig.logBindingsRebuild {
+    if DebugConfig.logBindingsRebuild {
       log.verbose("Added \(addedCount) `ignored` bindings for partial key sequences")
     }
   }

@@ -56,7 +56,7 @@ class InputSectionStack {
     }
 
     for section in sections {
-      if AppInputConfig.logBindingsRebuild {
+      if DebugConfig.logBindingsRebuild {
         log.verbose("CreateStack: Adding initial enabled section: \(section.name.quoted)")
       }
       self.sectionsDefined[section.name] = section

@@ -483,23 +483,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     let stopwatch = Utility.Stopwatch()
 
-    let isRestoreApproved: Bool // false means delete restored state
-    if Preference.bool(for: .isRestoreInProgress) {
-#if DEBUG
-      isRestoreApproved = true  // skip approval to make testing easier
-#else
-      // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
-      // Let user decide whether to try again or delete saved state.
-      log.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
-      isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
-#endif
-    } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
-      log.verbose("Prompting user whether to restore app state, per pref")
-      isRestoreApproved = Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
-    } else {
-      isRestoreApproved = true
-    }
-
+    let isRestoreApproved = checkForRestoreApproval()
     if !isRestoreApproved {
       // Clear out old state. It may have been causing errors, or user wants to start new
       log.debug("User denied restore. Clearing all saved launch state.")
@@ -607,6 +591,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     return !startup.wcsToRestore.isEmpty
+  }
+
+  /// If this returns true, restore should be attempted using the saved launch state.
+  /// If false is returned, then the saved launch state should be deleted and app should launch fresh.
+  private func checkForRestoreApproval() -> Bool {
+#if DEBUG
+    if DebugConfig.alwaysApproveRestore {
+      // skip approval to make testing easier
+      return true
+    }
+#endif
+
+    if Preference.bool(for: .isRestoreInProgress) {
+      // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
+      // Let user decide whether to try again or delete saved state.
+      Logger.Subsystem.restore.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
+      return Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
+    }
+
+    if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
+      Logger.Subsystem.restore.verbose("Prompting user whether to restore app state, per pref")
+      return Utility.quickAskPanel("restore_confirm", useCustomButtons: true)
+    }
+    return true
   }
 
   @objc
