@@ -241,7 +241,7 @@ class TouchBarSupport: NSObject, NSTouchBarDelegate {
 
   func toggleTouchBarEsc(enteringFullScr: Bool) {
     // TODO: use key binding interceptor here instead
-    if enteringFullScr, player.bindingController.resolveMpvKey("ESC")?.readableAction == "set fullscreen no" {
+    if enteringFullScr, player.keyBindingContext.resolveMpvKey("ESC")?.readableAction == "set fullscreen no" {
       touchBar.escapeKeyReplacementItemIdentifier = .exitFullScr
     } else {
       touchBar.escapeKeyReplacementItemIdentifier = nil

@@ -122,7 +122,7 @@ class PlayerCore: NSObject {
   var mpv: MPVController!
   var videoView: VideoView!
 
-  var bindingController: PlayerBindingController!
+  var keyBindingContext: PlayerKeyBindingContext!
 
   var plugins: [JavascriptPluginInstance] = []
   private var pluginMap: [String: JavascriptPluginInstance] = [:]
@@ -267,7 +267,7 @@ class PlayerCore: NSObject {
     super.init()
     self.videoView = VideoView(player: self)
     self.mpv = MPVController(playerCore: self)
-    self.bindingController = PlayerBindingController(playerCore: self)
+    self.keyBindingContext = PlayerKeyBindingContext(playerCore: self)
     self.windowController = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
   }

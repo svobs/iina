@@ -98,11 +98,11 @@ struct AppInputConfig {
       AppInputConfig.lastStartedVersion = requestedVersion
 
       let player = PlayerCoreManager.shared.activePlayer ?? PlayerCoreManager.shared.getOrCreateDemo()
-      guard let activePlayerBindingController = player.bindingController else {
-        Logger.fatal("AppInputConfig.rebuildCurrent(): player has no bindingController!")  // should never happen
+      guard let activePlayerKeyBindingContext = player.keyBindingContext else {
+        Logger.fatal("AppInputConfig.rebuildCurrent(): player has no keyBindingContext!")  // should never happen
       }
 
-      let builder = activePlayerBindingController.makeAppInputConfigBuilder()
+      let builder = activePlayerKeyBindingContext.makeAppInputConfigBuilder()
       let appInputConfigNew = builder.build(version: requestedVersion)
 
       AppInputConfig.current = appInputConfigNew

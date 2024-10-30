@@ -71,7 +71,7 @@ class MPVLogScanner {
   }
 
   /**
-   Looks for key binding sections set in scripts; extracts them if found & sends them to relevant `PlayerBindingController`.
+   Looks for key binding sections set in scripts; extracts them if found & sends them to relevant `PlayerKeyBindingContext`.
    Expected to return `true` if parsed & handled, `false` otherwise
    */
   func processLogLine(prefix: String, level: String, msg: String) {
@@ -246,7 +246,7 @@ class MPVLogScanner {
       }
       Logger.log("Bindings for section \"\(section.name)\":\(bindingsString)", level: .verbose, subsystem: player.subsystem)
     }
-    player.bindingController.defineSection(section)
+    player.keyBindingContext.defineSection(section)
   }
 
   /*
@@ -268,7 +268,7 @@ class MPVLogScanner {
     let flags = parseFlags(String(msg[flagsRange]))
 
     Logger.log("Got 'enable-section' from mpv: \"\(name)\", flags=\(flags) ", subsystem: player.subsystem)
-    player.bindingController.enableSection(name, flags)
+    player.keyBindingContext.enableSection(name, flags)
     return
   }
 
@@ -288,7 +288,7 @@ class MPVLogScanner {
 
     let name = String(msg[nameRange])
     Logger.log("disable-section: \"\(name)\"", subsystem: player.subsystem)
-    player.bindingController.disableSection(name)
+    player.keyBindingContext.disableSection(name)
     return
   }
 }

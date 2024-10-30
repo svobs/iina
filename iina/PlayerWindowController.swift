@@ -690,24 +690,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  func updateUseLegacyFullScreen() {
-    let oldLayout = currentLayout
-    if !oldLayout.isFullScreen {
-      DispatchQueue.main.async { [self] in
-        resetCollectionBehavior()
-      }
-    }
-    // Exit from legacy FS only. Native FS will fail if not the active space
-    guard oldLayout.isLegacyFullScreen else { return }
-    let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
-    if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
-      DispatchQueue.main.async { [self] in
-        log.verbose("User toggled legacy FS pref to \(outputLayoutSpec.isLegacyStyle.yesno) while in FS. Will try to exit FS")
-        exitFullScreen()
-      }
-    }
-  }
-
   func updateTitleBarAndOSC() {
     animationPipeline.submitInstantTask { [self] in
       let oldLayout = currentLayout
@@ -1068,39 +1050,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  /// Hide menu bar & dock if current window is in legacy full screen.
-  /// Show menu bar & dock if current window is not in full screen (either legacy or native).
-  func updatePresentationOptionsForLegacyFullScreen(entering: Bool? = nil) {
-    assert(DispatchQueue.isExecutingIn(.main))
-
-    // Use currentLayout if not explicitly specified
-    var isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
-    if let window, window.isAnotherWindowInFullScreen {
-      isEnteringLegacyFS = true  // override if still in FS in another window
-    }
-
-    guard !NSApp.presentationOptions.contains(.fullScreen) else {
-      log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
-      return
-    }
-
-    log.verbose("Updating presentation options for legacyFS: \(isEnteringLegacyFS ? "entering" : "exiting")")
-    if isEnteringLegacyFS {
-      // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
-      // Fall back to checking this one
-      guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
-        log.error("Cannot add presentation options for legacy full screen: option .hideMenuBar already present! Will try to avoid crashing")
-        return
-      }
-      NSApp.presentationOptions.insert(.autoHideMenuBar)
-      NSApp.presentationOptions.insert(.autoHideDock)
-    } else {
-      NSApp.presentationOptions.remove(.autoHideMenuBar)
-      NSApp.presentationOptions.remove(.autoHideDock)
-    }
-  }
-
-  // MARK: - Window delegate: Full screen
+  // MARK: - Full Screen
 
   func customWindowsToEnterFullScreen(for window: NSWindow) -> [NSWindow]? {
     return [window]
@@ -1149,7 +1099,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         updateTitle()
       }
     }
-
   }
 
   // Animation: Exit Full Screen
@@ -1240,8 +1189,65 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       guard isActuallyNativeFullScreen else { return }
       window.toggleFullScreen(self)
     }
-
   }
+
+  /// Hide menu bar & dock if current window is in legacy full screen.
+  /// Show menu bar & dock if current window is not in full screen (either legacy or native).
+  func updatePresentationOptionsForLegacyFullScreen(entering: Bool? = nil) {
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    // Use currentLayout if not explicitly specified
+    var isEnteringLegacyFS = entering ?? currentLayout.isLegacyFullScreen
+    if let window, window.isAnotherWindowInFullScreen {
+      isEnteringLegacyFS = true  // override if still in FS in another window
+    }
+
+    guard !NSApp.presentationOptions.contains(.fullScreen) else {
+      log.error("Cannot add presentation options for legacy full screen: window is already in full screen!")
+      return
+    }
+
+    log.verbose("Updating presentation options for legacyFS: \(isEnteringLegacyFS ? "entering" : "exiting")")
+    if isEnteringLegacyFS {
+      // Unfortunately, the check for native FS can return false if the window is in full screen but not the active space.
+      // Fall back to checking this one
+      guard !NSApp.presentationOptions.contains(.hideMenuBar) else {
+        log.error("Cannot add presentation options for legacy full screen: option .hideMenuBar already present! Will try to avoid crashing")
+        return
+      }
+      NSApp.presentationOptions.insert(.autoHideMenuBar)
+      NSApp.presentationOptions.insert(.autoHideDock)
+    } else {
+      NSApp.presentationOptions.remove(.autoHideMenuBar)
+      NSApp.presentationOptions.remove(.autoHideDock)
+    }
+  }
+
+  func updateUseLegacyFullScreen() {
+    let oldLayout = currentLayout
+    if !oldLayout.isFullScreen {
+      DispatchQueue.main.async { [self] in
+        resetCollectionBehavior()
+      }
+    }
+    // Exit from legacy FS only. Native FS will fail if not the active space
+    guard oldLayout.isLegacyFullScreen else { return }
+    let outputLayoutSpec = LayoutSpec.fromPreferences(fillingInFrom: oldLayout.spec)
+    if oldLayout.spec.isLegacyStyle != outputLayoutSpec.isLegacyStyle {
+      DispatchQueue.main.async { [self] in
+        log.verbose("User toggled legacy FS pref to \(outputLayoutSpec.isLegacyStyle.yesno) while in FS. Will try to exit FS")
+        exitFullScreen()
+      }
+    }
+  }
+
+  func window(_ window: NSWindow, willUseFullScreenContentSize proposedSize: NSSize) -> NSSize {
+    let fsGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
+    log.verbose("Full screen content size proposed=\(proposedSize), returning=\(fsGeo.windowFrame.size)")
+    return fsGeo.windowFrame.size
+  }
+
+  // MARK: - Other NSWindowDelegate notifications
 
   /// Called after window is resized from (almost) any cause. Will be called many times during every call to `window.setFrame()`.
   /// Do not use `windowDidEndLiveResize`! It is unreliable. Use `windowDidResize` instead.
@@ -1386,7 +1392,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let oldGeo = windowedModeGeo
           let newGeo = oldGeo.refit()
           guard !newGeo.hasEqual(windowFrame: oldGeo.windowFrame, videoSize: oldGeo.videoSize) else {
-            log.verbose("WndDidChangeScreenParams: no change to windowFrame")
+            log.verbose("WndDidChangeScreenParams: in windowed mode; no change to windowFrame")
             return
           }
           log.verbose("WndDidChangeScreenParams: calling setFrame with wf=\(newGeo.windowFrame) vidSize=\(newGeo.videoSize)")

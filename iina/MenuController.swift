@@ -687,7 +687,7 @@ class MenuController: NSObject, NSMenuDelegate {
     menuItem.isEnabled = item.enabled
     menuItem.state = item.selected ? .on : .off
     if let rawKey = item.keyBinding {
-      // Store the item with its pair - the PlayerBindingController will set the binding & deal with conflicts
+      // Store the item with its pair - the PlayerKeyBindingContext will set the binding & deal with conflicts
       let actionString = "\(plugin.plugin.name) → \(menuItem.title)"
       keyMappings.append(MenuItemMapping(rawKey: rawKey, sourceName: plugin.plugin.name, menuItem: menuItem, actionDescription: actionString))
     }

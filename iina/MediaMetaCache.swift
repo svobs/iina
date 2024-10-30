@@ -46,18 +46,18 @@ struct MediaMeta {
 class MediaMetaCache {
   static let shared = MediaMetaCache()
 
+  private let log: Logger.Subsystem = Logger.makeSubsystem("metaCache")
   private let metaLock = Lock()
   private var cachedMeta: [URL: MediaMeta] = [:]
   private var cachedFFMeta: [URL: FFVideoMeta] = [:]
 
   func fillInVideoSizes(_ videoFiles: [FileInfo], onBehalfOf player: PlayerCore) {
-    let log = player.log
-    log.verbose("Filling in video sizes for \(videoFiles.count) files...")
+    log.verbose("Filling in video sizes for \(videoFiles.count) files for player \(player.label)...")
     let sw = Utility.Stopwatch()
     var updateCount = 0
     for fileInfo in videoFiles {
       guard player.state.isNotYet(.stopping) else {
-        log.verbose("Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player stopping")
+        log.verbose("Stopping after \(updateCount)/\(videoFiles.count) video sizes due to player \(player.label) stopping")
         return
       }
       if getCachedVideoMeta(forURL: fileInfo.url) == nil {
@@ -156,7 +156,7 @@ class MediaMetaCache {
       let newMeta = oldMeta.clone(duration: duration, progress: progress,
                                   title: title, album: album, artist: artist)
       cachedMeta[url] = newMeta
-      Logger.log.verbose("[reloadCachedMeta] Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
+      log.verbose("Reloaded URL \(Playback.path(from: url).pii.quoted) ≔ \(newMeta)")
       return newMeta
     }
   }
@@ -183,7 +183,7 @@ class MediaMetaCache {
     guard url.isFileURL else { return nil }
     guard url.absoluteString != "stdin" else { return nil }  // do not cache stdin!
     guard FileManager.default.fileExists(atPath: url.path) else {
-      Logger.log.verbose("Skipping ffMeta update, file does not exist: \(url.path.pii.quoted)")
+      log.verbose("Skipping ffMeta update, file does not exist: \(url.path.pii.quoted)")
       return nil
     }
 
@@ -192,14 +192,14 @@ class MediaMetaCache {
       metaLock.withLock {
         // Don't let this get too big
         if cachedFFMeta.count > Constants.SizeLimit.maxCachedVideoSizes {
-          Logger.log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...")
+          log.debug("Too many cached FF meta entries (count=\(cachedFFMeta.count); maximum=\(Constants.SizeLimit.maxCachedVideoSizes)). Clearing cached FF meta...")
           cachedFFMeta.removeAll()
         }
         cachedFFMeta[url] = ffMeta
       }
       return ffMeta
     } else {
-      Logger.log("Failed to read video size for file \(url.path.pii.quoted)", level: .error)
+      log.error("Failed to read video size for file \(url.path.pii.quoted)")
     }
     return nil
   }

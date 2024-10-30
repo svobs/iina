@@ -90,7 +90,7 @@ class PlayerWindow: NSWindow {
     PluginInputManager.handle(
       input: normalizedKeyCode, event: .keyDown, player: pwc.player,
       arguments: keyEventArgs(event), handler: { [self] in
-        if let keyBinding = pwc.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+        if let keyBinding = pwc.player.keyBindingContext.matchActiveKeyBinding(endingWith: event) {
 
           guard !keyBinding.isIgnored else {
             // if "ignore", just swallow the event. Do not forward; do not beep
@@ -179,7 +179,7 @@ class PlayerWindow: NSWindow {
       let keyCode = KeyCodeHelper.mpvKeyCode(from: event)
       let normalizedKeyCode = KeyCodeHelper.normalizeMpv(keyCode)
       log.verbose("KEYDOWN (via keyEquiv): \(normalizedKeyCode.quoted)")
-      if let keyBinding = pwc.player.bindingController.matchActiveKeyBinding(endingWith: event) {
+      if let keyBinding = pwc.player.keyBindingContext.matchActiveKeyBinding(endingWith: event) {
         guard !keyBinding.isIgnored else {
           // if "ignore", just swallow the event. Do not forward; do not beep
           log.verbose("Binding is ignored for key: \(keyCode.quoted)")
