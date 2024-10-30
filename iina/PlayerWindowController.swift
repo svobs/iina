@@ -315,7 +315,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
-  internal lazy var useExactSeek: Preference.SeekOption = Preference.enum(for: .useExactSeek)
   internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
   internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
 
@@ -2380,22 +2379,30 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     setWindowFloatingOnTop(!onTop)
   }
 
-  /// Called when `PlaySlider` changes value, either by clicking inside it, dragging inside it, or using scroll wheel (if configured).
+  /// Executes an absolute seek using `playSlider`'s current value.
+  ///
+  /// Called when `PlaySlider` changes value, either by:
+  /// - clicking inside it
+  /// - dragging inside it
+  /// - using scroll wheel (if configured).
   @IBAction func playSliderAction(_ sender: NSSlider) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
 
+    // Update player.info proactively
     let progressRatio = sender.doubleValue / sender.maxValue
-    let progressPercentage = 100 * progressRatio
-    player.info.playbackPositionSec = player.info.playbackDurationSec! * progressRatio
-    player.seek(percent: progressPercentage, forceExact: !followGlobalSeekTypeWhenAdjustSlider)
+    let absoluteSec = player.info.playbackDurationSec! * progressRatio
+    player.info.playbackPositionSec = absoluteSec
+    setOSDViews()
 
-    // Make fake point in window to pass to function
+    // Make fake point in window to pass to seek time & thumbnail
     let xOffsetInPlaySlider: CGFloat = max(0.0, progressRatio * (playSlider.frame.width - 6.0) + 3.0)
     let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
     let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
     refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
-    setOSDViews()
+
+    let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
+    player.seek(absoluteSecond: absoluteSec, forceExact: forceExactSeek)
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

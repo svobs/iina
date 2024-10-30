@@ -26,7 +26,6 @@ extension PlayerWindowController {
       .playerWindowOpacity,
       .showRemainingTime,
       .maxVolume,
-      .useExactSeek,
       .singleClickAction,
       .doubleClickAction,
       .playlistShowMetadata,
@@ -157,10 +156,6 @@ extension PlayerWindowController {
         } else {
           updateVolumeUI()
         }
-      }
-    case .useExactSeek:
-      if let newValue = newValue as? Int {
-        useExactSeek = Preference.SeekOption(rawValue: newValue)!
       }
     case .singleClickAction:
       if let newValue = newValue as? Int {

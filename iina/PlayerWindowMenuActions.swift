@@ -75,7 +75,7 @@ extension PlayerWindowController {
     if let args = sender.representedObject as? (Double, Preference.SeekOption) {
       player.seek(relativeSecond: args.0, option: args.1)
     } else {
-      player.seek(relativeSecond: 5, option: Preference.SeekOption.defaultValue)
+      player.seek(relativeSecond: 5, option: .defaultValue)
     }
   }
 

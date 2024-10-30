@@ -95,16 +95,18 @@ extension PlayerWindowController {
 
     if let newMessage {
       message = newMessage
+
     } else if let currentMsg = osd.currentlyDisplayedMsg,
-                let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec {
+              let position = player.info.playbackPositionSec,
+              let duration = player.info.playbackDurationSec {
       // If the OSD is visible and is showing playback position, keep its displayed time up to date:
       switch currentMsg {
       case .pause:
-        message = .pause(playbackPositionSec: pos, playbackDurationSec: duration)
+        message = .pause(playbackPositionSec: position, playbackDurationSec: duration)
       case .resume:
-        message = .resume(playbackPositionSec: pos, playbackDurationSec: duration)
+        message = .resume(playbackPositionSec: position, playbackDurationSec: duration)
       case .seek(_, _):
-        message = .seek(playbackPositionSec: pos, playbackDurationSec: duration)
+        message = .seek(playbackPositionSec: position, playbackDurationSec: duration)
       default:
         message = nil
       }

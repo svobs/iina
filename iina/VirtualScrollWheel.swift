@@ -242,8 +242,6 @@ class VirtualScrollWheel {
     slider.scrollWheel = self
   }
 
-  // MARK: Scroll execution
-
   // MARK: - Internal state machine
 
   private func notScrolling() {

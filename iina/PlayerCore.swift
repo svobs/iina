@@ -794,7 +794,7 @@ class PlayerCore: NSObject {
     mpv.queue.async { [self] in
       switch option {
 
-      case .relative:
+      case .useDefault:
         mpv.command(.seek, args: ["\(relativeSecond)", "relative"], checkError: false)
 
       case .exact:
@@ -818,15 +818,18 @@ class PlayerCore: NSObject {
   }
 
   // Seek Absolute
-  func seek(absoluteSecond: Double) {
+  func seek(absoluteSecond: Double, forceExact: Bool = true) {
     mpv.queue.async { [self] in
-      _seek(absoluteSecond: absoluteSecond)
+      _seek(absoluteSecond: absoluteSecond, forceExact: forceExact)
     }
   }
 
-  func _seek(absoluteSecond: Double) {
+  func _seek(absoluteSecond: Double, forceExact: Bool = true) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
-    mpv.command(.seek, args: ["\(absoluteSecond)", "absolute+exact"])
+    let useExact = forceExact ? true : Preference.bool(for: .useExactSeek)
+    var seekMode = useExact ? "absolute+exact" : "absolute"
+    mpv.command(.seek, args: ["\(absoluteSecond)", seekMode], checkError: false)
   }
 
   func frameStep(backwards: Bool) {

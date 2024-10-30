@@ -688,7 +688,7 @@ struct Preference {
   }
 
   enum SeekOption: Int, InitializingFromKey {
-    case relative = 0
+    case useDefault = 0
     case exact
     case auto
 
