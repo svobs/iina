@@ -79,7 +79,7 @@ extension PlayerWindowController {
       leadingSidebarToOSDSpaceConstraint = leadingSidebarView.trailingAnchor.constraint(equalTo: additionalInfoView.leadingAnchor, constant: -8.0)
       trailingSidebarToOSDSpaceConstraint = trailingSidebarView.leadingAnchor.constraint(equalTo: osdVisualEffectView.trailingAnchor, constant: 8.0)
     }
-
+    
     leadingSidebarToOSDSpaceConstraint.priority = .defaultHigh
     leadingSidebarToOSDSpaceConstraint.isActive = true
     trailingSidebarToOSDSpaceConstraint.isActive = true

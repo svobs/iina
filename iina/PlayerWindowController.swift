@@ -796,43 +796,43 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
         log.error("Unrecognized IINA command: \(rawAction.quoted)")
         return false
       }
-    } else {
-      // - mpv command
-      let returnValue: Int32
-      // execute the command
-      switch action.first! {
-
-      case MPVCommand.abLoop.rawValue:
-        player.abLoop()
-        returnValue = 0
-
-      case MPVCommand.quit.rawValue:
-        // Initiate application termination. AppKit requires this be done from the main thread,
-        // however the main dispatch queue must not be used to avoid blocking the queue as per
-        // instructions from Apple. IINA must support quitting being initiated by mpv as the user
-        // could use mpv's IPC interface to send the quit command directly to mpv. However the
-        // shutdown sequence is cleaner when initiated by IINA, so we do not send the quit command
-        // to mpv and instead trigger the normal app termination sequence.
-        RunLoop.main.perform(inModes: [.common]) {
-          if !AppDelegate.shared.isTerminating {
-            NSApp.terminate(nil)
-          }
-        }
-        returnValue = 0
-
-      case MPVCommand.screenshot.rawValue:
-        return player.screenshot(fromKeyBinding: keyBinding)
-        
-      default:
-        returnValue = player.mpv.command(rawString: rawAction)
-      }
-      if returnValue == 0 {
-        return true
-      } else {
-        log.error("Return value \(returnValue) when executing key command \(rawAction)")
-        return false
-      }
     }
+
+    // - mpv command
+    let returnValue: Int32
+    // execute the command
+    switch action.first! {
+
+    case MPVCommand.abLoop.rawValue:
+      player.abLoop()
+      returnValue = 0
+
+    case MPVCommand.quit.rawValue:
+      // Initiate application termination. AppKit requires this be done from the main thread,
+      // however the main dispatch queue must not be used to avoid blocking the queue as per
+      // instructions from Apple. IINA must support quitting being initiated by mpv as the user
+      // could use mpv's IPC interface to send the quit command directly to mpv. However the
+      // shutdown sequence is cleaner when initiated by IINA, so we do not send the quit command
+      // to mpv and instead trigger the normal app termination sequence.
+      RunLoop.main.perform(inModes: [.common]) {
+        if !AppDelegate.shared.isTerminating {
+          NSApp.terminate(nil)
+        }
+      }
+      returnValue = 0
+
+    case MPVCommand.screenshot.rawValue:
+      return player.screenshot(fromKeyBinding: keyBinding)
+
+    default:
+      returnValue = player.mpv.command(rawString: rawAction)
+    }
+
+    guard returnValue == 0 else {
+      log.error("Return value \(returnValue) when executing key command \(rawAction)")
+      return false
+    }
+    return true
   }
 
   private func executeIINACommand(_ cmd: IINACommand) {

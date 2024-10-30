@@ -83,7 +83,7 @@ class ScrollSession {
 
   /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
   /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
-  func computeNewValue(for slider: NSSlider, from event: NSEvent,
+  private func computeNewValue(for slider: NSSlider, from event: NSEvent,
                        usingCurrentValue currentValue: CGFloat) -> CGFloat {
     let delta = extractLinearDelta(from: event, slider)
 
@@ -96,7 +96,7 @@ class ScrollSession {
     let maxValue = slider.maxValue
     let minValue = slider.minValue
 
-    let valueChange = (maxValue - minValue) * delta * sensitivity / 100.0
+    let valueChange = /*(maxValue - minValue) / 100 * */delta //* sensitivity
 
     // Compute & set new value for slider
     var newValue = currentValue + valueChange
@@ -258,22 +258,27 @@ class VirtualScrollWheel {
 
 #if DEBUG
     if enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
-      let totalTime = session.startTime.timeIntervalToNow
-      let timeInfo: String
+      let timeTotal = session.startTime.timeIntervalToNow
+      let timeUser: TimeInterval
+      let timeMsg: String
       if let momTime = session.momentumStartTime?.timeIntervalToNow {
-        let userTime = totalTime - momTime
-        timeInfo = "\(userTime.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(totalTime.string2FractionDigits)s"
+        timeUser = timeTotal - momTime
+        timeMsg = "\(timeUser.string2FractionDigits)s user  +  \(momTime.string2FractionDigits)s inertia  =  \(timeTotal.string2FractionDigits)s"
       } else {
-        timeInfo = "\(totalTime.string2FractionDigits)s"
+        timeUser = timeTotal
+        timeMsg = "\(timeTotal.string2FractionDigits)s"
       }
-      let actionsPerSec = CGFloat(session.actionCount) / totalTime
+      let actionsPerSec = CGFloat(session.actionCount) / timeTotal
       let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
+      let deltaPerUserSec = session.deltaTotal / timeUser
+      let accelerationPerUserSec = deltaPerUserSec / timeUser
       let msg = "ScrollWheel Δ: \(session.deltaTotal.string2FractionDigits)    Actions/s: \(actionsPerSec.stringMaxFrac2)"
       let detail = [
-        "Time: \t\(timeInfo)",
+        "Time: \t\(timeMsg)",
         "Events: \t\(session.totalEventCount)",
-        "Actions: \t\(session.actionCount)",
-        "Action Ratio: \t\(actionRatio.stringMaxFrac2)",
+        "Actions: \t\(session.actionCount)    (ratio: \(actionRatio.stringMaxFrac2))",
+        "Avg Speed: \t\(deltaPerUserSec.stringMaxFrac2)/s",
+        "Accel: \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
       ].joined(separator: "\n")
       player.sendOSD(.debug(msg, detail))
     }
@@ -350,7 +355,9 @@ class VirtualScrollWheel {
       case .smoothScrollJustEnded:
         scrollSessionTimer?.invalidate()
         state = .momentumScrollJustStarted
+#if DEBUG
         currentSession?.momentumStartTime = Date()
+#endif
       default:
         notScrolling()
       }

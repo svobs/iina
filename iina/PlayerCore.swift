@@ -828,7 +828,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     guard isActive else { return }
     let useExact = forceExact ? true : Preference.bool(for: .useExactSeek)
-    var seekMode = useExact ? "absolute+exact" : "absolute"
+    let seekMode = useExact ? "absolute+exact" : "absolute"
     mpv.command(.seek, args: ["\(absoluteSecond)", seekMode], checkError: false)
   }
 
@@ -1452,6 +1452,7 @@ class PlayerCore: NSObject {
 
   func loadExternalSubFile(_ url: URL, delay: Bool = false) {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       if let track = info.findExternalSubTrack(withURL: url) {
         mpv.command(.subReload, args: [String(track.id)], checkError: false)
         return
@@ -1464,7 +1465,8 @@ class PlayerCore: NSObject {
       let urlPath = Playback.path(from: url)
       let code = mpv.command(.subAdd, args: [urlPath, "auto"], checkError: false)
       if code < 0 {
-        log.error("Failed to load sub (probably unsupported format): \(urlPath)")
+        let errorDesc = String(cString: mpv_error_string(code))
+        log.error("Failed to load sub (error \(code): \(errorDesc)) \(urlPath.pii.quoted)")
         // if another modal panel is shown, popping up an alert now will cause some infinite loop.
         if delay {
           DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
@@ -1481,6 +1483,7 @@ class PlayerCore: NSObject {
 
   func reloadAllSubs() {
     mpv.queue.async { [self] in
+      guard isActive else { return }
       let currentSubName = info.currentTrack(.sub)?.externalFilename
       for subTrack in info.subTracks {
         let code = mpv.command(.subReload, args: ["\(subTrack.id)"], checkError: false)

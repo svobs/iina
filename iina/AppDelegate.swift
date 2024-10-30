@@ -485,10 +485,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     let isRestoreApproved: Bool // false means delete restored state
     if Preference.bool(for: .isRestoreInProgress) {
+#if DEBUG
+      isRestoreApproved = true  // skip approval to make testing easier
+#else
       // If this flag is still set, the last restore probably failed. If it keeps failing, launch will be impossible.
       // Let user decide whether to try again or delete saved state.
       log.debug("Looks like there was a previous restore which didn't complete (pref \(Preference.Key.isRestoreInProgress.rawValue)=Y). Asking user whether to retry or skip")
       isRestoreApproved = Utility.quickAskPanel("restore_prev_error", useCustomButtons: true)
+#endif
     } else if Preference.bool(for: .alwaysAskBeforeRestoreAtLaunch) {
       log.verbose("Prompting user whether to restore app state, per pref")
       isRestoreApproved = Utility.quickAskPanel("restore_confirm", useCustomButtons: true)

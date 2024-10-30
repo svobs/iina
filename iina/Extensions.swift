@@ -574,73 +574,79 @@ extension Comparable {
   }
 }
 
-fileprivate let fmtDecimalMaxFractionDigits2Truncated: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 2
-  fmt.roundingMode = .floor
-  return fmt
-}()
+/// All the formatters here use "standardized" punctuation across locales. The formatted numbers:
+/// - Always use period (".") for the decimal separator.
+/// - Never use any punctuation to group large numbers.
+struct StandardizedDecimalFormatters {
+  /// Formats a number up to N digits after the decimal, truncated.
+  let truncate_maxFracDigits: [NumberFormatter]
+  /// Formats a number to exactly N digits after the decimal, truncated.
+  let truncate_exactFracDigits: [NumberFormatter]
 
-fileprivate let fmtDecimalMaxFractionDigits3Truncated: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 3
-  fmt.roundingMode = .floor
-  return fmt
-}()
+  /// Formats a number up to N digits after the decimal, rounded half down.
+  let roundHalfDown_maxFracDigits: [NumberFormatter]
 
-fileprivate let fmtDecimalMaxFractionDigits5Truncated: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 5
-  fmt.roundingMode = .floor
-  return fmt
-}()
+  /// Formats a number to exactly N digits after the decimal, rounded half down.
+  let roundHalfDown_exactFracDigits: [NumberFormatter]
 
-fileprivate let fmtDecimalMaxFractionDigits6Truncated: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 6
-  fmt.roundingMode = .floor
-  return fmt
-}()
+  init() {
+    let decimalSeparator = "."
+    var truncate_maxFracDigits: [NumberFormatter] = []
+    for i in 0...6 {
+      let fmt = NumberFormatter()
+      fmt.decimalSeparator = decimalSeparator
+      fmt.numberStyle = .decimal
+      fmt.maximumFractionDigits = i
+      fmt.usesGroupingSeparator = false
+      fmt.roundingMode = .floor  
+      truncate_maxFracDigits.append(fmt)
+    }
+    self.truncate_maxFracDigits = truncate_maxFracDigits
 
-/// Formats a number to exactly 2 digits after the decimal, rounded half down.
-/// No commas or other formatting for large numbers.
-fileprivate let fmtDecimalFractionDigitsEquals2: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.minimumFractionDigits = 2
-  fmt.maximumFractionDigits = 2
-  fmt.roundingMode = .halfDown
-  return fmt
-}()
+    var truncate_exactFracDigits: [NumberFormatter] = []
+    for i in 0...6 {
+      let fmt = NumberFormatter()
+      fmt.decimalSeparator = decimalSeparator
+      fmt.numberStyle = .decimal
+      fmt.minimumFractionDigits = i
+      fmt.maximumFractionDigits = i
+      fmt.usesGroupingSeparator = false
+      fmt.roundingMode = .floor
+      truncate_exactFracDigits.append(fmt)
+    }
+    self.truncate_exactFracDigits = truncate_exactFracDigits
 
-// Formats a number to max 2 digits after the decimal, rounded, but will omit trailing zeroes, and no commas or other formatting for large numbers
-fileprivate let fmtDecimalMaxFractionDigits2: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 2
-  return fmt
-}()
+    var roundHalfDown_exactFracDigits: [NumberFormatter] = []
+    for i in 0...6 {
+      let fmt = NumberFormatter()
+      fmt.decimalSeparator = decimalSeparator
+      fmt.numberStyle = .decimal
+      fmt.minimumFractionDigits = i
+      fmt.maximumFractionDigits = i
+      fmt.usesGroupingSeparator = false
+      fmt.roundingMode = .halfDown
+      roundHalfDown_exactFracDigits.append(fmt)
+    }
+    self.roundHalfDown_exactFracDigits = roundHalfDown_exactFracDigits
 
-// Formats a number to max 6 digits after the decimal, rounded, but will omit trailing zeroes, and no commas or other formatting for large numbers
-fileprivate let fmtDecimalMaxFractionDigits6: NumberFormatter = {
-  let fmt = NumberFormatter()
-  fmt.numberStyle = .decimal
-  fmt.usesGroupingSeparator = false
-  fmt.maximumFractionDigits = 6
-  return fmt
-}()
+    var roundHalfDown_maxFracDigits: [NumberFormatter] = []
+    for i in 0...6 {
+      let fmt = NumberFormatter()
+      fmt.decimalSeparator = decimalSeparator
+      fmt.numberStyle = .decimal
+      fmt.maximumFractionDigits = i
+      fmt.usesGroupingSeparator = false
+      fmt.roundingMode = .halfDown
+      roundHalfDown_maxFracDigits.append(fmt)
+    }
+    self.roundHalfDown_maxFracDigits = roundHalfDown_maxFracDigits
+  }
+}
 
-/// Applies to `Double`, `CGFloat`, ...
+fileprivate let fmtStdDecimal = StandardizedDecimalFormatters()
+
+/// Applies to `Double`, `CGFloat`. Formats a number to max 6 digits after the decimal, rounded, but will omit trailing zeroes, & omits commas or other punctation
+/// for large numbers.
 fileprivate let fmtDecimalMaxFractionDigits15: NumberFormatter = {
   let fmt = NumberFormatter()
   fmt.numberStyle = .decimal
@@ -711,39 +717,40 @@ extension FloatingPoint {
     }
   }
 
-  /// Formats as String, rounding the number to 2 digits after the decimal
+  /// Formats as String, rounding the number to 2 digits after the decimal.
+  /// Always displays 2 digits after the decimal.
   var string2FractionDigits: String {
-    return fmtDecimalFractionDigitsEquals2.string(for: self)!
+    return fmtStdDecimal.truncate_exactFracDigits[2].string(for: self)!
   }
 
   /// Formats as String, truncating the number to 2 digits after the decimal
   var stringTrunc2f: String {
-    return fmtDecimalMaxFractionDigits2Truncated.string(for: self)!
+    return fmtStdDecimal.truncate_maxFracDigits[2].string(for: self)!
   }
 
-  /// Formats as String, truncating the number to 3 digits after the decimal, and omitting any trailing zeroes
+  /// Formats as String, truncating the number to 3 digits after the decimal
   var stringTrunc3f: String {
-    return fmtDecimalMaxFractionDigits3Truncated.string(for: self)!
+    return fmtStdDecimal.truncate_maxFracDigits[3].string(for: self)!
   }
 
-  /// Formats as String, truncating the number to 5 digits after the decimal, and omitting any trailing zeroes
+  /// Formats as String, truncating the number to 5 digits after the decimal
   var stringTrunc5f: String {
-    return fmtDecimalMaxFractionDigits5Truncated.string(for: self)!
+    return fmtStdDecimal.truncate_maxFracDigits[5].string(for: self)!
   }
 
-  /// Formats as String, truncating the number to 6 digits after the decimal, and omitting any trailing zeroes
+  /// Formats as String, truncating the number to 6 digits after the decimal
   var stringTrunc6f: String {
-    return fmtDecimalMaxFractionDigits6Truncated.string(for: self)!
+    return fmtStdDecimal.truncate_maxFracDigits[6].string(for: self)!
   }
 
   /// Formats as String, rounding the number to 2 digits after the decimal
   var stringMaxFrac2: String {
-    return fmtDecimalMaxFractionDigits2.string(for: self)!
+    return fmtStdDecimal.roundHalfDown_maxFracDigits[2].string(for: self)!
   }
 
   /// Formats as String, rounding the number to 6 digits after the decimal
   var stringMaxFrac6: String {
-    return fmtDecimalMaxFractionDigits6.string(for: self)!
+    return fmtStdDecimal.roundHalfDown_maxFracDigits[6].string(for: self)!
   }
 
   /// Returns a "normalized" number string for the exclusive purpose of comparing two mpv aspect ratios while avoiding precision errors.
