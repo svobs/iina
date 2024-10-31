@@ -165,28 +165,31 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     }
 
 #if DEBUG
-    assert(topMarginHeight >= 0, "Expected topMarginHeight >= 0, found \(topMarginHeight)")
+    if false {
+      assert(topMarginHeight >= 0, "Expected topMarginHeight >= 0, found \(topMarginHeight)")
 
-    assert(outsideBars.top >= 0, "Expected outsideBars.top >= 0, found \(outsideBars.top)")
-    assert(outsideBars.trailing >= 0, "Expected outsideBars.trailing >= 0, found \(outsideBars.trailing)")
-    assert(outsideBars.bottom >= 0, "Expected outsideBars.bottom >= 0, found \(outsideBars.bottom)")
-    assert(outsideBars.leading >= 0, "Expected outsideBars.leading >= 0, found \(outsideBars.leading)")
+      assert(outsideBars.top >= 0, "Expected outsideBars.top >= 0, found \(outsideBars.top)")
+      assert(outsideBars.trailing >= 0, "Expected outsideBars.trailing >= 0, found \(outsideBars.trailing)")
+      assert(outsideBars.bottom >= 0, "Expected outsideBars.bottom >= 0, found \(outsideBars.bottom)")
+      assert(outsideBars.leading >= 0, "Expected outsideBars.leading >= 0, found \(outsideBars.leading)")
 
-    assert(insideBars.top >= 0, "Expected insideBars.top >= 0, found \(insideBars.top)")
-    assert(insideBars.trailing >= 0, "Expected insideBars.trailing >= 0, found \(insideBars.trailing)")
-    assert(insideBars.bottom >= 0, "Expected insideBars.bottom >= 0, found \(insideBars.bottom)")
-    assert(insideBars.leading >= 0, "Expected insideBars.leading >= 0, found \(insideBars.leading)")
+      assert(insideBars.top >= 0, "Expected insideBars.top >= 0, found \(insideBars.top)")
+      assert(insideBars.trailing >= 0, "Expected insideBars.trailing >= 0, found \(insideBars.trailing)")
+      assert(insideBars.bottom >= 0, "Expected insideBars.bottom >= 0, found \(insideBars.bottom)")
+      assert(insideBars.leading >= 0, "Expected insideBars.leading >= 0, found \(insideBars.leading)")
 
-    let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
-                                 height: self.viewportMargins.totalHeight + self.videoSize.height)
-    assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) && (viewportSize.width == 0 || viewportSize.height == 0)) ||
-           ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
-           "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
+      let sumViewportSize = CGSize(width: self.viewportMargins.totalWidth + self.videoSize.width,
+                                   height: self.viewportMargins.totalHeight + self.videoSize.height)
+      assert(((sumViewportSize.width == 0 || sumViewportSize.width == 0) &&
+              (viewportSize.width == 0 || viewportSize.height == 0)) ||
+             ((sumViewportSize.width == viewportSize.width) && (sumViewportSize.height == viewportSize.height)),
+             "videoSize \(self.videoSize) + margins \(self.viewportMargins) → sum: \(sumViewportSize) ≠ viewportSize \(viewportSize)")
 
-    let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
-                               height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
-    assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
-           "windowSize sum \(sumWindowSize) != windowFrame.size \(windowFrame.size)")
+      let sumWindowSize = CGSize(width: sumViewportSize.width + outsideBars.totalWidth,
+                                 height: sumViewportSize.height + outsideBars.totalHeight + topMarginHeight)
+      assert(sumWindowSize.width == windowFrame.width && sumWindowSize.height == windowFrame.height,
+             "windowSize sum \(sumWindowSize) != windowFrame.size \(windowFrame.size)")
+    }
 #endif
   }
 

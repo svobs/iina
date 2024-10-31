@@ -315,7 +315,8 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.videoFilters.rawValue] = player.mpv.getString(MPVProperty.vf)
     props[PropName.audioFilters.rawValue] = player.mpv.getString(MPVProperty.af)
 
-    props[PropName.videoFiltersDisabled.rawValue] = player.info.videoFiltersDisabled.values.map({$0.stringFormat}).joined(separator: ",")
+    let vfDisabledCSV = player.info.videoFiltersDisabled.values.map({$0.stringFormat}).joined(separator: ",")
+    props[PropName.videoFiltersDisabled.rawValue] = vfDisabledCSV
 
     props[PropName.loopPlaylist.rawValue] = player.mpv.getString(MPVOption.PlaybackControl.loopPlaylist)
     props[PropName.loopFile.rawValue] = player.mpv.getString(MPVOption.PlaybackControl.loopFile)
@@ -843,20 +844,27 @@ struct ScreenMeta {
   let backingScaleFactor: CGFloat
 
   func toCSV() -> String {
-    return [String(ScreenMeta.csvVersion), String(displayID), name,
-            frame.origin.x.stringMaxFrac2, frame.origin.y.stringMaxFrac2, frame.size.width.stringMaxFrac2, frame.size.height.stringMaxFrac2,
-            visibleFrame.origin.x.stringMaxFrac2, visibleFrame.origin.y.stringMaxFrac2, visibleFrame.size.width.stringMaxFrac2, visibleFrame.size.height.stringMaxFrac2,
-            nativeResolution.width.stringMaxFrac2, nativeResolution.height.stringMaxFrac2,
-            cameraHousingHeight.stringMaxFrac2,
-            backingScaleFactor.stringMaxFrac2
+    let csv = [String(ScreenMeta.csvVersion), String(displayID), name,
+               frame.origin.x.stringMaxFrac2, frame.origin.y.stringMaxFrac2,
+               frame.size.width.stringMaxFrac2, frame.size.height.stringMaxFrac2,
+               visibleFrame.origin.x.stringMaxFrac2, visibleFrame.origin.y.stringMaxFrac2,
+               visibleFrame.size.width.stringMaxFrac2, visibleFrame.size.height.stringMaxFrac2,
+               nativeResolution.width.stringMaxFrac2, nativeResolution.height.stringMaxFrac2,
+               cameraHousingHeight.stringMaxFrac2,
+               backingScaleFactor.stringMaxFrac2
     ].joined(separator: ",")
+    assert(csv.split(separator: ",").count == ScreenMeta.expectedCSVTokenCount,
+           "Invalid ScreenMeta CSV (expected \(ScreenMeta.expectedCSVTokenCount) tokens: \(csv.quoted)")
+    return csv
   }
 
   static func from(_ screen: NSScreen) -> ScreenMeta {
       // Can't store comma in CSV. Just convert to semicolon
     let name: String = screen.localizedName.replacingOccurrences(of: ",", with: ";")
-    return ScreenMeta(displayID: screen.displayId, name: name, frame: screen.frame, visibleFrame: screen.visibleFrame,
-                      nativeResolution: screen.nativeResolution ?? CGSizeZero, cameraHousingHeight: screen.cameraHousingHeight ?? 0,
+    return ScreenMeta(displayID: screen.displayId, name: name, frame: screen.frame,
+                      visibleFrame: screen.visibleFrame,
+                      nativeResolution: screen.nativeResolution ?? CGSizeZero,
+                      cameraHousingHeight: screen.cameraHousingHeight ?? 0,
                       backingScaleFactor: screen.backingScaleFactor)
   }
 
@@ -903,7 +911,9 @@ struct ScreenMeta {
     let frame = NSRect(x: frameX, y: frameY, width: frameW, height: frameH)
     let visibleFrame = NSRect(x: visibleFrameX, y: visibleFrameY, width: visibleFrameW, height: visibleFrameH)
     let nativeResolution = NSSize(width: nativeResW, height: nativeResH)
-    return ScreenMeta(displayID: displayID, name: name, frame: frame, visibleFrame: visibleFrame, nativeResolution: nativeResolution, cameraHousingHeight: cameraHousingHeight, backingScaleFactor: backingScaleFactor)
+    return ScreenMeta(displayID: displayID, name: name, frame: frame,
+                      visibleFrame: visibleFrame, nativeResolution: nativeResolution,
+                      cameraHousingHeight: cameraHousingHeight, backingScaleFactor: backingScaleFactor)
   }
 }
 
@@ -1009,6 +1019,7 @@ extension VideoGeometry {
 }
 
 extension MusicModeGeometry {
+  static let expectedCSVTokenCount = 9
 
   /// v2: `String` -> `MusicModeGeometry`
   /// v1: (`String`, `VideoGeometry`) -> `MusicModeGeometry`
@@ -1021,9 +1032,9 @@ extension MusicModeGeometry {
     }
 
     // Try v2 first.
-    let mmGeo: MusicModeGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: 9,
-                                         expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
-                                         targetObjName: "MusicModeGeometry(v2)") { errPreamble, iter in
+    let mmGeo: MusicModeGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: MusicModeGeometry.expectedCSVTokenCount,
+                                                             expectedVersion: PlayerSaveState.musicModeGeoPrefStringVersion,
+                                                             targetObjName: "MusicModeGeometry(v2)") { errPreamble, iter in
 
       guard let winOriginX = Double(iter.next()!),
             let winOriginY = Double(iter.next()!),
@@ -1093,46 +1104,53 @@ extension MusicModeGeometry {
 
   /// `MusicModeGeometry` -> `String`
   func toCSV() -> String {
-    return [PlayerSaveState.musicModeGeoPrefStringVersion,
-            self.windowFrame.origin.x.stringMaxFrac2,
-            self.windowFrame.origin.y.stringMaxFrac2,
-            self.windowFrame.width.stringMaxFrac2,
-            self.windowFrame.height.stringMaxFrac2,
-            self.isVideoVisible.yn,
-            self.isPlaylistVisible.yn,
-            self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
-            self.video.toEmbeddedCSV()
+    let csv = [PlayerSaveState.musicModeGeoPrefStringVersion,
+               self.windowFrame.origin.x.stringMaxFrac2,
+               self.windowFrame.origin.y.stringMaxFrac2,
+               self.windowFrame.width.stringMaxFrac2,
+               self.windowFrame.height.stringMaxFrac2,
+               self.isVideoVisible.yn,
+               self.isPlaylistVisible.yn,
+               self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
+               self.video.toEmbeddedCSV()
     ].joined(separator: ",")
+    assert(csv.split(separator: ",").count == MusicModeGeometry.expectedCSVTokenCount,
+           "Invalid MusicModeGeometry CSV (expected \(MusicModeGeometry.expectedCSVTokenCount) tokens: \(csv)")
+    return csv
   }
 }
 
 extension PWinGeometry {
+  static let expectedCSVTokenCount = 22
 
   /// `PWinGeometry` -> `String`
   func toCSV() -> String {
-    return [PlayerSaveState.windowGeometryPrefStringVersion,
-            self.topMarginHeight.stringMaxFrac2,
-            self.outsideBars.top.stringMaxFrac2,
-            self.outsideBars.trailing.stringMaxFrac2,
-            self.outsideBars.bottom.stringMaxFrac2,
-            self.outsideBars.leading.stringMaxFrac2,
-            self.insideBars.top.stringMaxFrac2,
-            self.insideBars.trailing.stringMaxFrac2,
-            self.insideBars.bottom.stringMaxFrac2,
-            self.insideBars.leading.stringMaxFrac2,
-            self.viewportMargins.top.stringMaxFrac2,
-            self.viewportMargins.trailing.stringMaxFrac2,
-            self.viewportMargins.bottom.stringMaxFrac2,
-            self.viewportMargins.leading.stringMaxFrac2,
-            self.windowFrame.origin.x.stringMaxFrac2,
-            self.windowFrame.origin.y.stringMaxFrac2,
-            self.windowFrame.width.stringMaxFrac2,
-            self.windowFrame.height.stringMaxFrac2,
-            String(self.fitOption.rawValue),
-            self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
-            String(self.mode.rawValue),
-            self.video.toEmbeddedCSV()
+    let csv = [PlayerSaveState.windowGeometryPrefStringVersion,
+               self.topMarginHeight.stringMaxFrac2,
+               self.outsideBars.top.stringMaxFrac2,
+               self.outsideBars.trailing.stringMaxFrac2,
+               self.outsideBars.bottom.stringMaxFrac2,
+               self.outsideBars.leading.stringMaxFrac2,
+               self.insideBars.top.stringMaxFrac2,
+               self.insideBars.trailing.stringMaxFrac2,
+               self.insideBars.bottom.stringMaxFrac2,
+               self.insideBars.leading.stringMaxFrac2,
+               self.viewportMargins.top.stringMaxFrac2,
+               self.viewportMargins.trailing.stringMaxFrac2,
+               self.viewportMargins.bottom.stringMaxFrac2,
+               self.viewportMargins.leading.stringMaxFrac2,
+               self.windowFrame.origin.x.stringMaxFrac2,
+               self.windowFrame.origin.y.stringMaxFrac2,
+               self.windowFrame.width.stringMaxFrac2,
+               self.windowFrame.height.stringMaxFrac2,
+               String(self.fitOption.rawValue),
+               self.screenID.replacingOccurrences(of: ",", with: ";"),  // ensure it's CSV-compatible
+               String(self.mode.rawValue),
+               self.video.toEmbeddedCSV()
     ].joined(separator: ",")
+    assert(csv.split(separator: ",").count == PWinGeometry.expectedCSVTokenCount,
+           "Invalid PWinGeometry CSV (expected \(PWinGeometry.expectedCSVTokenCount) tokens: \(csv.quoted)")
+    return csv
   }
 
   /// (`String`, `VideoGeometry`) -> `PWinGeometry`
@@ -1146,9 +1164,9 @@ extension PWinGeometry {
 
     /// Try v2 first.
     /// Version 2 removes `videoAspect` field and adds 6 `videoGeometry` fields.
-    let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: 22,
-                             expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
-                                           targetObjName: "PWinGeometry(v2)") { errPreamble, iter in
+    let pwinGeo: PWinGeometry? = PlayerSaveState.parseCSV(csv, expectedTokenCount: PWinGeometry.expectedCSVTokenCount,
+                                                          expectedVersion: PlayerSaveState.windowGeometryPrefStringVersion,
+                                                          targetObjName: "PWinGeometry(v2)") { errPreamble, iter in
 
       guard let topMarginHeight = Double(iter.next()!),
             let outsideTopBarHeight = Double(iter.next()!),
