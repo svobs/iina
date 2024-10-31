@@ -120,7 +120,7 @@ extension PlayerWindowController {
       ],
     ]
 
-    return CocoaObserver(observedPrefKeys, player.log, prefDidChange: self.prefDidChange, ncList)
+    return CocoaObserver(player.log, prefDidChange: prefDidChange, observedPrefKeys, ncList)
   }
 
   /// Called each time a pref `key`'s value is set

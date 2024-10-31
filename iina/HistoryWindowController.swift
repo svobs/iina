@@ -30,24 +30,22 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
-class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate, NSMenuItemValidation {
-  var log = HistoryController.shared.log
-
-  private let getKey: [Preference.HistoryGroupBy: (PlaybackHistory) -> String] = [
-    .lastPlayedDay: { DateFormatter.localizedString(from: $0.addedDate, dateStyle: .medium, timeStyle: .none) },
-    .parentFolder: { $0.url.deletingLastPathComponent().path }
-  ]
+class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
+                               NSMenuDelegate, NSMenuItemValidation {
 
   override var windowNibName: NSNib.Name {
     return NSNib.Name("HistoryWindowController")
   }
 
-  @Atomic var reloadTicketCounter: Int = 0
-
-  private var backgroundQueue = DispatchQueue(label: "HistoryWindowBackground", qos: .background)
-
   @IBOutlet weak var outlineView: NSOutlineView!
   @IBOutlet weak var historySearchField: NSSearchField!
+
+  private let log: Logger.Subsystem
+  private var co: CocoaObserver!
+
+  @Atomic private var reloadTicketCounter: Int = 0
+  private var backgroundQueue = DispatchQueue(label: "HistoryWindowBackground", qos: .background)
+  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
   var groupBy: Preference.HistoryGroupBy = HistoryWindowController.getGroupByFromPrefs() ?? Preference.HistoryGroupBy.defaultValue
   var searchType: Preference.HistorySearchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
@@ -57,50 +55,64 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   private var historyDataKeys: [String] = []
   private var fileExistsMap: [URL: Bool] = [:]
 
-  private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-
-  private var observedPrefKeys: [Preference.Key] = [
-    .uiHistoryTableGroupBy,
-    .uiHistoryTableSearchType,
-    .uiHistoryTableSearchString
-  ]
+  private var selectedEntries: [PlaybackHistory] = []
 
   init() {
-    super.init(window: nil)
-    self.windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
+    log = HistoryController.shared.log
 
-    observedPrefKeys.forEach { key in
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
+    super.init(window: nil)
+    windowFrameAutosaveName = WindowAutosaveName.playbackHistory.string
+
+    co = CocoaObserver(log, prefDidChange: prefDidChange, [
+      .uiHistoryTableGroupBy,
+      .uiHistoryTableSearchType,
+      .uiHistoryTableSearchString
+    ], [
+      .default: [
+
+        .init(.iinaHistoryUpdated) { [self] _ in
+          log.verbose("History window received iinaHistoryUpdated; will reload data")
+          // Force full status reload:
+          lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
+          reloadData()
+        },
+
+        .init(.iinaFileHistoryDidUpdate) { [self] note in
+          guard !AppDelegate.shared.isTerminating else { return }
+          guard let url = note.userInfo?["url"] as? URL else {
+            log.error("Cannot update file history: no url found in userInfo!")
+            return
+          }
+          log.verbose("History window got iinaFileHistoryDidUpdate; will reload watch-later for URL & possibly reload table")
+
+          backgroundQueue.async { [self] in
+            guard fileExistsMap.removeValue(forKey: url) != nil else { return }
+
+            reloadData()
+          }
+        }
+      ]
+    ])
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    ObjcUtils.silenced {
-      for key in self.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-    }
-  }
-
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath, change != nil else { return }
-
-    switch keyPath {
-    case PK.uiHistoryTableGroupBy.rawValue:
+  /// Called each time a pref `key`'s value is set
+  private func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case .uiHistoryTableGroupBy:
       guard let groupByNew = HistoryWindowController.getGroupByFromPrefs(), groupByNew != groupBy else { return }
       groupBy = groupByNew
-    case PK.uiHistoryTableSearchType.rawValue:
+    case .uiHistoryTableSearchType:
       guard let searchTypeNew = HistoryWindowController.getHistorySearchTypeFromPrefs(), searchTypeNew != searchType else { return }
       searchType = searchTypeNew
-    case PK.uiHistoryTableSearchString.rawValue:
+    case .uiHistoryTableSearchString:
       guard let searchStringNew = HistoryWindowController.getSearchStringFromPrefs(), searchStringNew != searchString else { return }
       searchString = searchStringNew
       historySearchField.stringValue = searchString
-      
+
     default:
       break
     }
@@ -108,31 +120,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       reloadData()
     }
   }
-  
+
   override func windowDidLoad() {
     super.windowDidLoad()
-
-    NotificationCenter.default.addObserver(forName: .iinaHistoryUpdated, object: nil, queue: .main) { [unowned self] _ in
-      log.verbose("History window received iinaHistoryUpdated; will reload data")
-      // Force full status reload:
-      lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
-      self.reloadData()
-    }
-
-    NotificationCenter.default.addObserver(forName: .iinaFileHistoryDidUpdate, object: nil, queue: .main) { [self] note in
-      guard !AppDelegate.shared.isTerminating else { return }
-      guard let url = note.userInfo?["url"] as? URL else {
-        log.error("Cannot update file history: no url found in userInfo!")
-        return
-      }
-      log.verbose("History window got iinaFileHistoryDidUpdate; will reload watch-later for URL & possibly reload table")
-
-      backgroundQueue.async { [self] in
-        guard fileExistsMap.removeValue(forKey: url) != nil else { return }
-
-        reloadData()
-      }
-    }
 
     historySearchField.stringValue = searchString
 
@@ -158,51 +148,14 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       // No need to reload data (it's an expensive operation)
       super.openWindow(sender)
     }
+
+    co.addAllObservers()
   }
 
-  private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
-    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
-  }
+  func windowWillClose(_ notification: Notification) {
+    log.verbose("History window will close")
 
-  private static func getHistorySearchTypeFromPrefs() -> Preference.HistorySearchType? {
-    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableSearchType) : nil
-  }
-
-  private static func getSearchStringFromPrefs() -> String? {
-    return UIState.shared.isRestoreEnabled ? Preference.string(for: .uiHistoryTableSearchString) : nil
-  }
-
-  // Change min width of "Played at" column
-  private func adjustTimeColumnMinWidth() {
-    guard let timeColumn = outlineView.tableColumn(withIdentifier: .time) else { return }
-    let newMinWidth = timeColMinWidths[groupBy]!
-    guard newMinWidth != timeColumn.minWidth else { return }
-    if timeColumn.width < newMinWidth {
-      if let filenameColumn = outlineView.tableColumn(withIdentifier: .filename) {
-        donateColWidth(to: timeColumn, targetWidth: newMinWidth, from: filenameColumn)
-      }
-      if timeColumn.width < timeColumn.minWidth {
-        if let progressColumn = outlineView.tableColumn(withIdentifier: .progress) {
-          donateColWidth(to: timeColumn, targetWidth: newMinWidth, from: progressColumn)
-        }
-      }
-    }
-    // Do not set this until after width has been adjusted! Otherwise AppKit will change its width property
-    // but will not actually resize it:
-    timeColumn.minWidth = newMinWidth
-    outlineView.layoutSubtreeIfNeeded()
-    log.verbose("Updated \(timeColumn.identifier.rawValue.quoted) col width: \(timeColumn.width), minWidth: \(timeColumn.minWidth)")
-  }
-
-  private func donateColWidth(to targetColumn: NSTableColumn, targetWidth: CGFloat, from donorColumn: NSTableColumn) {
-    let extraWidthNeeded = targetWidth - targetColumn.width
-    // Don't take more than needed, or more than possible:
-    let widthToDonate = min(extraWidthNeeded, max(donorColumn.width - donorColumn.minWidth, 0))
-    if widthToDonate > 0 {
-      log.verbose("Donating \(widthToDonate) pts width to col \(targetColumn.identifier.rawValue.quoted) from \(donorColumn.identifier.rawValue.quoted) width (\(donorColumn.width))")
-      donorColumn.width -= widthToDonate
-      targetColumn.width += widthToDonate
-    }
+    co.removeAllObservers()
   }
 
   private func reloadData() {
@@ -243,7 +196,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     var historyDataKeysUpdated: [String] = []
 
     for entry in historyList {
-      let key = getKey[groupBy]!(entry)
+      let key = getKey(entry)
 
       if historyDataUpdated[key] == nil {
         historyDataUpdated[key] = []
@@ -427,21 +380,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     }
   }
 
-  // MARK: - Searching
-
-  @IBAction func searchFieldAction(_ sender: NSSearchField) {
-    // avoid reload if no change:
-    guard searchString != sender.stringValue else { return }
-    self.searchString = sender.stringValue
-    UIState.shared.set(sender.stringValue, for: .uiHistoryTableSearchString)
-    backgroundQueue.async { [self] in
-      reloadData()
-    }
-  }
-
   // MARK: - Menu
-
-  private var selectedEntries: [PlaybackHistory] = []
 
   func menuNeedsUpdate(_ menu: NSMenu) {
     var indexSet = IndexSet()
@@ -516,6 +455,73 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       reloadData()
     }
   }
+
+  @IBAction func searchFieldAction(_ sender: NSSearchField) {
+    // avoid reload if no change:
+    guard searchString != sender.stringValue else { return }
+    self.searchString = sender.stringValue
+    UIState.shared.set(sender.stringValue, for: .uiHistoryTableSearchString)
+    backgroundQueue.async { [self] in
+      reloadData()
+    }
+  }
+
+  // MARK: Misc support functions
+
+  private static func getGroupByFromPrefs() -> Preference.HistoryGroupBy? {
+    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableGroupBy) : nil
+  }
+
+  private static func getHistorySearchTypeFromPrefs() -> Preference.HistorySearchType? {
+    return UIState.shared.isRestoreEnabled ? Preference.enum(for: .uiHistoryTableSearchType) : nil
+  }
+
+  private static func getSearchStringFromPrefs() -> String? {
+    return UIState.shared.isRestoreEnabled ? Preference.string(for: .uiHistoryTableSearchString) : nil
+  }
+
+  // Change min width of "Played at" column
+  private func adjustTimeColumnMinWidth() {
+    guard let timeColumn = outlineView.tableColumn(withIdentifier: .time) else { return }
+    let newMinWidth = timeColMinWidths[groupBy]!
+    guard newMinWidth != timeColumn.minWidth else { return }
+    if timeColumn.width < newMinWidth {
+      if let filenameColumn = outlineView.tableColumn(withIdentifier: .filename) {
+        donateColWidth(to: timeColumn, targetWidth: newMinWidth, from: filenameColumn)
+      }
+      if timeColumn.width < timeColumn.minWidth {
+        if let progressColumn = outlineView.tableColumn(withIdentifier: .progress) {
+          donateColWidth(to: timeColumn, targetWidth: newMinWidth, from: progressColumn)
+        }
+      }
+    }
+    // Do not set this until after width has been adjusted! Otherwise AppKit will change its width property
+    // but will not actually resize it:
+    timeColumn.minWidth = newMinWidth
+    outlineView.layoutSubtreeIfNeeded()
+    log.verbose("Updated \(timeColumn.identifier.rawValue.quoted) col width: \(timeColumn.width), minWidth: \(timeColumn.minWidth)")
+  }
+
+  private func donateColWidth(to targetColumn: NSTableColumn, targetWidth: CGFloat, from donorColumn: NSTableColumn) {
+    let extraWidthNeeded = targetWidth - targetColumn.width
+    // Don't take more than needed, or more than possible:
+    let widthToDonate = min(extraWidthNeeded, max(donorColumn.width - donorColumn.minWidth, 0))
+    if widthToDonate > 0 {
+      log.verbose("Donating \(widthToDonate) pts width to col \(targetColumn.identifier.rawValue.quoted) from \(donorColumn.identifier.rawValue.quoted) width (\(donorColumn.width))")
+      donorColumn.width -= widthToDonate
+      targetColumn.width += widthToDonate
+    }
+  }
+
+  private func getKey(_ entry: PlaybackHistory) -> String {
+    switch groupBy {
+    case .lastPlayedDay:
+      return DateFormatter.localizedString(from: entry.addedDate, dateStyle: .medium, timeStyle: .none)
+    case .parentFolder:
+      return entry.url.deletingLastPathComponent().path
+    }
+  }
+
 }
 
 

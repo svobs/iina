@@ -28,14 +28,15 @@ class CocoaObserver: NSObject {
 
   private let observedPrefKeys: [Preference.Key]
   private let log: Logger.Subsystem
-  private let prefDidChangeCallback: PrefDidChangeCallback?
+  var prefDidChangeCallback: PrefDidChangeCallback?
   private let legacyPrefKeyObserver: NSObject?
   private let ncObserverSpecs: [NotificationCenter: [NCObserver]]
 
-  init(_ observedPrefKeys: [Preference.Key], _ log: Logger.Subsystem,
+  init(_ log: Logger.Subsystem,
        prefDidChange: PrefDidChangeCallback? = nil,
        legacyPrefKeyObserver: NSObject? = nil,
-       _ ncObserverSpecs: [NotificationCenter: [NCObserver]]) {
+       _ observedPrefKeys: [Preference.Key],
+       _ ncObserverSpecs: [NotificationCenter: [NCObserver]] = [:]) {
     self.observedPrefKeys = observedPrefKeys
     self.log = log
     self.prefDidChangeCallback = prefDidChange
