@@ -30,6 +30,18 @@ fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
   .parentFolder: 145
 ]
 
+fileprivate class LoadingPlaceholder: PlaybackHistory {
+  init() {
+    super.init(url: URL(fileURLWithPath: "/dev/null"), duration: 0, name: "")
+  }
+
+  required init?(coder aDecoder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+}
+
+fileprivate let loadingKey = "Loading..."
+
 class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                NSMenuDelegate, NSMenuItemValidation {
 
@@ -44,15 +56,17 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
   private var co: CocoaObserver!
 
   @Atomic private var reloadTicketCounter: Int = 0
-  private var backgroundQueue = DispatchQueue(label: "HistoryWindowBackground", qos: .background)
+  private var isInitialLoadDone = false
+
+  private var backgroundQueue = DispatchQueue.newDQ(label: "HistoryWindow-BG", qos: .background)
   private var lastCompleteStatusReloadTime = Date(timeIntervalSince1970: 0)
 
   var groupBy: Preference.HistoryGroupBy = HistoryWindowController.getGroupByFromPrefs() ?? Preference.HistoryGroupBy.defaultValue
   var searchType: Preference.HistorySearchType = HistoryWindowController.getHistorySearchTypeFromPrefs() ?? Preference.HistorySearchType.defaultValue
   var searchString: String = HistoryWindowController.getSearchStringFromPrefs() ?? ""
 
-  private var historyData: [String: [PlaybackHistory]] = [:]
-  private var historyDataKeys: [String] = []
+  private var historyData: [String: [PlaybackHistory]] = [loadingKey: [LoadingPlaceholder()]]
+  private var historyDataKeys: [String] = [loadingKey]
   private var fileExistsMap: [URL: Bool] = [:]
 
   private var selectedEntries: [PlaybackHistory] = []
@@ -87,7 +101,6 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
           backgroundQueue.async { [self] in
             guard fileExistsMap.removeValue(forKey: url) != nil else { return }
-
             reloadData()
           }
         }
@@ -116,16 +129,13 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     default:
       break
     }
-    if isWindowLoaded {
-      reloadData()
-    }
+    guard isWindowLoaded else { return }
+    reloadData()
   }
 
   override func windowDidLoad() {
     super.windowDidLoad()
-
     historySearchField.stringValue = searchString
-
     outlineView.delegate = self
     outlineView.dataSource = self
     outlineView.menu?.delegate = self
@@ -138,47 +148,52 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     guard let _ = window else { return }  // load window
     assert(isWindowLoaded, "Expected History window to be loaded!")
 
-    let isInitialLoad = reloadTicketCounter == 0
-    if isInitialLoad {
-      /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with history load.
+    if !isInitialLoadDone {
+      // Expand to show loading placeholder
+      outlineView.expandItem(nil, expandChildren: true)
+
+      /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with initial history load.
       HistoryController.shared.async { [self] in
         self.reloadData()
       }
-    } else {
-      // No need to reload data (it's an expensive operation)
-      super.openWindow(sender)
     }
 
     co.addAllObservers()
+
+    // Reload may take a long time. Send signal to open right away, and refresh when load is done.
+    super.openWindow(sender)
   }
 
   func windowWillClose(_ notification: Notification) {
     log.verbose("History window will close")
-
     co.removeAllObservers()
   }
 
+  /// Can be called from any DispatchQueue
   private func reloadData() {
     // Reloads are expensive and many things can trigger them.
     // Use a counter + a delay to reduce duplicated work (except for initial load)
-    reloadTicketCounter += 1
-    let ticket = reloadTicketCounter
-    let isInitialLoad = reloadTicketCounter == 1
+    let ticket: Int = $reloadTicketCounter.withLock {
+      $0 += 1
+      return $0
+    }
 
-    if isInitialLoad {
-      backgroundQueue.async { [self] in
+    if isInitialLoadDone {
+      backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
+        guard ticket == reloadTicketCounter else { return }
         _reloadData(ticket: ticket)
       }
     } else {
-      backgroundQueue.asyncAfter(deadline: .now() + .seconds(1)) { [self] in
-        guard ticket == reloadTicketCounter else { return }
+      backgroundQueue.async { [self] in
         _reloadData(ticket: ticket)
       }
     }
   }
 
   private func _reloadData(ticket: Int) {
-    let isInitialLoad = ticket == 1
+    assert(DispatchQueue.isExecutingIn(backgroundQueue))
+
+    let isInitialLoad = !isInitialLoadDone
     // reconstruct data
     let sw = Utility.Stopwatch()
     let unfilteredHistory = HistoryController.shared.history
@@ -217,7 +232,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       self.log.verbose("Reloaded history table with \(historyList.count) entries, filtered=\((!self.searchString.isEmpty).yn) in \(sw.secElapsedString) (tkt \(self.reloadTicketCounter))")
 
       if isInitialLoad {
-        super.openWindow(self)
+        self.isInitialLoadDone = true
       }
     }
 
@@ -274,6 +289,13 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     }
   }
 
+  @objc func doubleAction() {
+    if let selected = outlineView.item(atRow: outlineView.clickedRow) as? PlaybackHistory {
+      let player = PlayerCoreManager.shared.getActiveOrCreateNew()
+      player.openURL(selected.url)
+    }
+  }
+
   // MARK: Key event
 
   override func keyDown(with event: NSEvent) {
@@ -298,11 +320,8 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   // MARK: NSOutlineViewDelegate
 
-  @objc func doubleAction() {
-    if let selected = outlineView.item(atRow: outlineView.clickedRow) as? PlaybackHistory {
-      let player = PlayerCoreManager.shared.getActiveOrCreateNew()
-      player.openURL(selected.url)
-    }
+  func outlineView(_ outlineView: NSOutlineView, shouldSelectItem item: Any) -> Bool {
+    return isInitialLoadDone
   }
 
   func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
@@ -331,7 +350,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
   func outlineView(_ outlineView: NSOutlineView, objectValueFor tableColumn: NSTableColumn?, byItem item: Any?) -> Any? {
     if let entry = item as? PlaybackHistory {
-      if tableColumn?.identifier == .time {
+      if item as? LoadingPlaceholder != nil {
+        return ""
+      } else if tableColumn?.identifier == .time {
         return getTimeString(from: entry)
       } else if tableColumn?.identifier == .progress {
         return VideoTime.string(from: entry.duration)
@@ -347,16 +368,28 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       if identifier == .filename {
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
-        filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
-        let fileExists = fileExistsMap[entry.url] ?? true
-        filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
-        filenameView.docImage.image = Utility.icon(for: entry.url)
+        if item as? LoadingPlaceholder != nil {
+          // Draw loading icon for initial load
+          filenameView.textField?.stringValue = ""
+          filenameView.textField?.textColor = .controlTextColor
+          if #available(macOS 11.0, *) {
+            filenameView.docImage.image = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
+          } else {
+            filenameView.docImage.image = Images.replay
+          }
+        } else {
+          filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
+          let fileExists = fileExistsMap[entry.url] ?? true
+          filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
+          filenameView.docImage.image = Utility.icon(for: entry.url)
+        }
       } else if identifier == .progress {
         // Progress cell
         let progressView = cell as! HistoryProgressCellView
         // Do not animate! Causes unneeded slowdown
         progressView.indicator.usesThreadedAnimation = false
-        if let progress = entry.mpvProgress {
+
+        if item as? LoadingPlaceholder == nil, let progress = entry.mpvProgress {
           progressView.textField?.stringValue = VideoTime.string(from: progress)
           progressView.indicator.isHidden = false
           progressView.indicator.doubleValue = progress / entry.duration

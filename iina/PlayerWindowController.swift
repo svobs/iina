@@ -1277,10 +1277,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Note: this gets triggered by many unnecessary situations, e.g. several times each time full screen is toggled.
   func windowDidChangeScreen(_ notification: Notification) {
-    var ticket: Int = 0
-    $screenChangedTicketCounter.withLock {
+    let ticket: Int = $screenChangedTicketCounter.withLock {
       $0 += 1
-      ticket = $0
+      return $0
     }
     // Do not allow MacOS to change the window size
     denyNextWindowResize = true
@@ -1347,10 +1346,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   func windowDidChangeScreenParameters() {
     guard !isClosing else { return }
 
-    var ticket: Int = 0
-    $screenParamsChangedTicketCounter.withLock {
+    let ticket: Int = $screenParamsChangedTicketCounter.withLock {
       $0 += 1
-      ticket = $0
+      return $0
     }
 
     // MacOS Sonoma sometimes blasts tons of these for unknown reasons. Attempt to prevent slowdown by de-duplicating
