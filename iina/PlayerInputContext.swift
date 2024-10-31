@@ -1,5 +1,5 @@
 //
-//  PlayerKeyBindingContext.swift
+//  PlayerInputContext.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2022.05.17.
@@ -13,7 +13,7 @@ let MP_MAX_KEY_DOWN = 4
 /**
  This class serves as a repository for all the active key bindings for a given player.
 
- A single `PlayerKeyBindingContext` instance should be associated with a single PlayerCore, and while the player window has focus ("is
+ A single `PlayerInputContext` instance should be associated with a single PlayerCore, and while the player window has focus ("is
  active"), the `keyDown` method of its `PlayerWindow` is expected to direct key presses to this class's `matchActiveKeyBinding` method.
  to match the user's key stroke(s) into recognized commands.
 
@@ -23,7 +23,7 @@ let MP_MAX_KEY_DOWN = 4
 
  This class also keeps track of any binidngs set by Lua scripts. It expects to be notified of new mpv "input sections" and updates to their
  states, via `defineSection()`, `enableSection()`, and `disableSection()`. In order to emulate mpv's algorithm for prioritizing input bindings
- which are set by Lua plugins via libmpv, each PlayerKeyBindingContext contains an `InputSectionStack` which approximates the stack-like structure
+ which are set by Lua plugins via libmpv, each PlayerInputContext contains an `InputSectionStack` which approximates the stack-like structure
  used by an mpv core. In it, input bindings are grouped into  "input sections", which in turn must be "defined" and then "enabled" in order to
  be made active, and their order of enablement as well as any flags (signifying that each section is "strong" or "weak" or "exclusive")
  determines the rules for setting each binding's priority relative to others which possess an identical key combination trigger.
@@ -66,10 +66,10 @@ let MP_MAX_KEY_DOWN = 4
  The maximum number of (non-modifier) keys for combinations is currently 4.
  ```
  Although IINA's active key bindings (as set in IINA's Preferences window) take effect immediately and apply to all player windows, each player
- window maintains independent state, and in keeping with this, each player's PlayerKeyBindingContext maintains a separate buffer of pressed keystrokes
+ window maintains independent state, and in keeping with this, each player's PlayerInputContext maintains a separate buffer of pressed keystrokes
  (going back as many as 4 keystrokes).
  */
-class PlayerKeyBindingContext {
+class PlayerInputContext {
 
   // MARK: - Single player instance
 

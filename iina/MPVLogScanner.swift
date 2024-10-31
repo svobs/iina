@@ -71,7 +71,7 @@ class MPVLogScanner {
   }
 
   /**
-   Looks for key binding sections set in scripts; extracts them if found & sends them to relevant `PlayerKeyBindingContext`.
+   Looks for key binding sections set in scripts; extracts them if found & sends them to relevant `PlayerInputContext`.
    Expected to return `true` if parsed & handled, `false` otherwise
    */
   func processLogLine(prefix: String, level: String, msg: String) {
