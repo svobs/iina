@@ -64,7 +64,6 @@ extension PlayerWindowController {
  
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
-      window.titleVisibility = .hidden
       hideBuiltInTitleBarViews(setAlpha: true)
 
       if #unavailable(macOS 10.14) {
@@ -393,7 +392,6 @@ extension PlayerWindowController {
 
       if transition.isExitingFullScreen {
         /// Setting `.titled` style will show buttons & title by default, but we don't want to show them until after panel open animation:
-        window.titleVisibility = .hidden
         hideBuiltInTitleBarViews(setAlpha: true)
       }
     }
@@ -412,10 +410,6 @@ extension PlayerWindowController {
     }
 
     if outputLayout.titleBar == .hidden || transition.isTopBarPlacementChanging {
-      /// Note: MUST use `titleVisibility` to guarantee that `documentIcon` & `titleTextField` are shown/hidden consistently.
-      /// Setting `isHidden=true` on `titleTextField` and `documentIcon` do not animate and do not always work.
-      /// We can use `alphaValue=0` to fade out in `fadeOutOldViews()`, but `titleVisibility` is needed to remove them.
-      window.titleVisibility = .hidden
       hideBuiltInTitleBarViews(setAlpha: true)
 
       if let customTitleBar {
@@ -691,9 +685,10 @@ extension PlayerWindowController {
     }
 
     if transition.outputLayout.isMusicMode {
-      window.titleVisibility = .hidden
       hideBuiltInTitleBarViews()
-    } else if transition.outputLayout.isWindowed && transition.outputLayout.spec.isLegacyStyle && LayoutSpec.enableTitleBarForLegacyWindow {
+    } else if transition.outputLayout.isWindowed,
+              transition.outputLayout.spec.isLegacyStyle,
+              LayoutSpec.enableTitleBarForLegacyWindow {
       if customTitleBar == nil {
         let titleBar = CustomTitleBarViewController()
         titleBar.windowController = self
@@ -1294,10 +1289,20 @@ extension PlayerWindowController {
     }
   }
 
+  /// Hides all the various buttons of the built-in title bar, some of which can have strange quirks.
+  ///
+  /// Note: there is an Apple bug (as of MacOS 13.3.1) where setting `alphaValue=0` on `miniaturizeButton` will
+  /// cause `window.performMiniaturize()` to be ignored. So to hide these, use `isHidden=true` + `alphaValue=1`
+  /// (except for temporary animations).
+  ///
+  /// Note 2: do not touch `titleVisibility` if at all possible. There seems to be no reliable way to toggle it
+  /// while also guaranteeing that `documentIcon` & `titleTextField` are shown/hidden consistently.
+  /// Setting `isHidden=true` on `titleTextField` and `documentIcon` do not animate and do not always work.
+  /// We can use `alphaValue=0` to fade out in `fadeOutOldViews()`, but `titleVisibility` is needed to remove them.
+  /// We can work around the problem by (1) inserting or removing `.titled` from the window's style mask, which
+  /// effectively swaps the whole title bar in or out), and (2) in native windowed mode, *always* show the title bar when
+  /// the mouse hovers over it, because even if we set the document icon's alpha to 0, the user can still click on it.
   func hideBuiltInTitleBarViews(setAlpha: Bool = false) {
-    /// Workaround for Apple bug (as of MacOS 13.3.1) where setting `alphaValue=0` on the "minimize" button will
-    /// cause `window.performMiniaturize()` to be ignored. So to hide these, use `isHidden=true` + `alphaValue=1`
-    /// (except for temporary animations).
     if setAlpha {
       documentIconButton?.alphaValue = 0
       titleTextField?.alphaValue = 0

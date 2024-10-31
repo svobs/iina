@@ -537,12 +537,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return currentLayout.isInteractiveMode
   }
 
-  var standardWindowButtons: [NSButton] {
-    return ([.closeButton, .miniaturizeButton, .zoomButton, .documentIconButton] as [NSWindow.ButtonType]).compactMap {
-      window?.standardWindowButton($0)
-    }
-  }
-
   var documentIconButton: NSButton? {
     window?.standardWindowButton(.documentIconButton)
   }
