@@ -87,7 +87,7 @@ extension PlayerWindowController {
       if restartFadeTimer {
         resetFadeTimer()
       } else {
-        destroyFadeTimer()
+        hideFadeableViewsTimer?.invalidate()
       }
       return tasks
     }
@@ -98,7 +98,7 @@ extension PlayerWindowController {
       guard fadeableViewsAnimationState == .hidden || fadeableViewsAnimationState == .shown else { return }
       fadeableViewsAnimationState = .willShow
       player.refreshSyncUITimer(logMsg: "Showing fadeable views ")
-      destroyFadeTimer()
+      hideFadeableViewsTimer?.invalidate()
 
       for v in fadeableViews {
         v.animator().alphaValue = 1
@@ -258,7 +258,7 @@ extension PlayerWindowController {
 
   func resetFadeTimer() {
     // If timer exists, destroy first
-    destroyFadeTimer()
+    hideFadeableViewsTimer?.invalidate()
 
     // The fade timer is only used if auto-hide is enabled
     guard Preference.bool(for: .enableControlBarAutoHide) else { return }
@@ -269,26 +269,25 @@ extension PlayerWindowController {
     if timeout < IINAAnimation.DefaultDuration {
       timeout = IINAAnimation.DefaultDuration
     }
-    hideFadeableViewsTimer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideFadeableViewsAndCursor), userInfo: nil, repeats: false)
-    hideFadeableViewsTimer?.tolerance = 0.05
+    let timer = Timer.scheduledTimer(timeInterval: TimeInterval(timeout), target: self, selector: #selector(self.hideFadeableViewsAndCursor), userInfo: nil, repeats: false)
+    timer.tolerance = 0.05
+    hideFadeableViewsTimer = timer
   }
 
-  private func destroyFadeTimer() {
-    if let hideFadeableViewsTimer = hideFadeableViewsTimer {
-      hideFadeableViewsTimer.invalidate()
-      self.hideFadeableViewsTimer = nil
-    }
+  func destroyFadeTimer() {
+    hideFadeableViewsTimer?.invalidate()
   }
 
   // MARK: - Seek Time & Thumbnail
 
   func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
-    let isOSCHidden = currentControlBar?.isHidden ?? true
-    guard !player.disableUI && !isOSCHidden && !osd.isShowingPersistentOSD && !isAnimatingLayoutTransition
-            && !currentLayout.isInteractiveMode else {
+    guard !player.disableUI,
+          !isAnimatingLayoutTransition,
+          !currentLayout.isInteractiveMode,
+          !osd.isShowingPersistentOSD,
+          currentLayout.hasOSC else {
       return false
     }
-
     return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
   }
 
@@ -320,6 +319,10 @@ extension PlayerWindowController {
         seekTimeAndThumbnailAnimationState = .willHide
         thumbnailPeekView.animator().alphaValue = 0
         timePositionHoverLabel.isHidden = true
+        if isShowingFadeableViewsForSeek {
+          isShowingFadeableViewsForSeek = false
+          resetFadeTimer()
+        }
       })
 
       tasks.append(IINAAnimation.Task(duration: 0) { [self] in

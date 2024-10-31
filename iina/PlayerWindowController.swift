@@ -116,6 +116,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var isLiveResizingWidth: Bool? = nil
   var isMagnifying = false
 
+  var isShowingFadeableViewsForSeek = false
+
   /// True if window is either visible, hidden, or minimized. False if window is closed.
   var isOpen: Bool {
     assert(DispatchQueue.isExecutingIn(.main))
@@ -685,7 +687,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Change to appearance above does not take effect until this task completes. Enqueue a new task to run after this one.
     DispatchQueue.main.async { [self] in
       (newAppearance ?? window.effectiveAppearance).applyAppearanceFor {
-        thumbnailPeekView.refreshColors()
+        thumbnailPeekView.updateColors()
       }
     }
   }
@@ -1936,7 +1938,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded else { return }
     guard player.state.isNotYet(.shuttingDown) else { return }
 
-    if !isInScrollWheelSeek {  // scroll wheel will set newer value; do not overwrite it until it is done
+    // scroll wheel will set newer value; do not overwrite it until it is done
+    if !isInScrollWheelSeek && !isDraggingPlaySlider {
       player.updatePlaybackTimeInfo()
     }
 
@@ -2226,17 +2229,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     DispatchQueue.main.async { [self] in
       guard currentTicket == thumbDisplayTicketCounter else { return }
-      refreshSeekTimeAndThumbnail(forPointInWindow: pointInWindow)
+
+      guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
+            let duration = player.info.playbackDurationSec else {
+        hideSeekTimeAndThumbnail()
+        return
+      }
+      showSeekTimeAndThumbnail(forPointInWindow: pointInWindow, mediaDuration: duration)
     }
   }
 
-  func refreshSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint) {
-    guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
-          let duration = player.info.playbackDurationSec else {
-      hideSeekTimeAndThumbnail()
-      return
-    }
-
+  /// Should only be called by `refreshSeekTimeAndThumbnailAsync`
+  private func showSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
     // - 1. Time Hover Label
 
     let xOffsetInPlaySlider = playSlider.convert(pointInWindow, from: nil).x
@@ -2244,7 +2248,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     timePositionHoverLabelHorizontalCenterConstraint.constant = xOffsetInPlaySlider
 
     let playbackPositionRatio = max(0, Double((xOffsetInPlaySlider - 3) / (playSlider.frame.width - 6)))
-    let previewTimeSec = duration * playbackPositionRatio
+    let previewTimeSec = mediaDuration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
     if timePositionHoverLabel.stringValue != stringRepresentation {
       timePositionHoverLabel.stringValue = stringRepresentation
@@ -2252,6 +2256,28 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     timePositionHoverLabel.isHidden = false
 
     // - 2. Thumbnail Preview
+
+    if isInScrollWheelSeek || isDraggingPlaySlider {
+      // Thumbnail preview during seek
+      guard Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek) else {
+        // Feature is disabled
+        thumbnailPeekView.isHidden = true
+        return
+      }
+      // Need to ensure OSC is displayed if showing thumbnail preview
+      let hasFadeableOSC = currentLayout.hasFadeableOSC
+      if hasFadeableOSC {
+        let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
+        let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
+        if isOSCHidden {
+          showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
+        } else {
+          hideFadeableViewsTimer?.invalidate()
+        }
+        // Set this to remind ourselves to restart the fade timer when seek is done
+        isShowingFadeableViewsForSeek = true
+      }
+    }
 
     guard let currentControlBar else {
       thumbnailPeekView.isHidden = true
@@ -2262,11 +2288,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       return
     }
 
-    let didHide = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
+    let didShow = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
                                                      currentControlBar: currentControlBar, geo.video,
                                                      viewportSize: viewportView.frame.size,
                                                      isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
-    guard didHide else { return }
+    guard didShow else { return }
     seekTimeAndThumbnailAnimationState = .shown
     // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
     // reliably, so using a timer works well as a failsafe.

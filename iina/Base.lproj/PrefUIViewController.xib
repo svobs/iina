@@ -3168,7 +3168,7 @@ For smoothest results, also enable custom full screen.</string>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="tmN-Bh-bO1">
                             <rect key="frame" x="-2" y="187" width="348" height="20"/>
-                            <buttonCell key="cell" type="check" title="Show seek preview during slider &amp; scroll wheel seeks" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LxA-rL-GWg">
+                            <buttonCell key="cell" type="check" title="Show preview while seeking with slider / scroll wheel" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LxA-rL-GWg">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>

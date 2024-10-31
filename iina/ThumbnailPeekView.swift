@@ -36,7 +36,7 @@ class ThumbnailPeekView: NSImageView {
     heightConstraint = heightAnchor.constraint(equalToConstant: dummyFrame.height)
     heightConstraint.isActive = true
 
-    refreshColors()
+    updateColors()
   }
 
   required init?(coder: NSCoder) {
@@ -98,7 +98,7 @@ class ThumbnailPeekView: NSImageView {
     return 1
   }
 
-  func refreshColors() {
+  func updateColors() {
     guard let layer = self.layer else { return }
 
     layer.borderColor = CGColor(gray: 0.6, alpha: 0.5)

@@ -13,30 +13,23 @@ class IINAAnimation {
 
   // MARK: Durations
 
-  static var DefaultDuration: CGFloat {
-    return CGFloat(Preference.float(for: .animationDurationDefault))
-  }
-  static var VideoReconfigDuration: CGFloat {
-    return DefaultDuration * 0.25
-  }
-  static var InitialVideoReconfigDuration: CGFloat {
-    return DefaultDuration
-  }
-  static var FullScreenTransitionDuration: CGFloat {
-    return CGFloat(Preference.float(for: .animationDurationFullScreen))
-  }
+  static var DefaultDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationDefault)) }
+  static var VideoReconfigDuration: CGFloat { DefaultDuration * 0.25 }
+  static var InitialVideoReconfigDuration: CGFloat { DefaultDuration }
+  static var FullScreenTransitionDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationFullScreen)) }
   static var NativeFullScreenTransitionDuration: CGFloat = 0.5
-  static var OSDAnimationDuration: CGFloat {
-    return CGFloat(Preference.float(for: .animationDurationOSD))
-  }
-  static var CropAnimationDuration: CGFloat {
-    CGFloat(Preference.float(for: .animationDurationCrop))
-  }
+  static var OSDAnimationDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationOSD)) }
+  static var CropAnimationDuration: CGFloat { CGFloat(Preference.float(for: .animationDurationCrop)) }
   static var MusicModeShowButtonsDuration: CGFloat = 0.2
 
-  // MARK: "Disable all" override switch
+  // MARK: Misc static stuff
 
+  /// "Disable all" override switch
   private static var disableAllAnimation = false
+
+  static var isAnimationEnabled: Bool {
+    return !disableAllAnimation && !AccessibilityPreferences.motionReductionEnabled
+  }
 
   // Wrap a block of code inside this function to disable its animations
   @discardableResult
@@ -51,14 +44,58 @@ class IINAAnimation {
     return try closure()
   }
 
-  static var isAnimationEnabled: Bool {
-    get {
-      return disableAllAnimation ? false : !AccessibilityPreferences.motionReductionEnabled
-    }
+  /// Convenience wrapper for chaining multiple tasks together via `NSAnimationContext.runAnimationGroup()`. Does not use pipeline.
+  static func runAsync(_ task: Task, then doAfter: TaskFunc? = nil) {
+    // Fail if not running on main thread:
+    assert(DispatchQueue.isExecutingIn(.main))
+
+    NSAnimationContext.runAnimationGroup({ context in
+      CATransaction.begin()
+      defer {
+        CATransaction.commit()
+      }
+      let disableAnimation = !isAnimationEnabled
+      if disableAnimation {
+        context.duration = 0
+      } else {
+        context.duration = task.duration
+      }
+      context.allowsImplicitAnimation = !disableAnimation
+
+      if let timingName = task.timingName {
+        context.timingFunction = CAMediaTimingFunction(name: timingName)
+      }
+      do {
+        try task.runFunc()
+      } catch IINAError.cancelAnimationTransaction {
+        Logger.log.debug("Animation pipeline: async task was cancelled")
+      } catch {
+        Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
+      }
+    }, completionHandler: {
+      if let doAfter = doAfter {
+        do {
+          try doAfter()
+        } catch {
+          Logger.log("Animation pipeline: unexpected error thrown by doAfter func: \(error)")
+        }
+      }
+    })
   }
 
-  // MARK: - IINAAnimation.Task
+  /// Convenience func for less verbose code
+  static func runAsync(duration: CGFloat? = nil, _ timingName: CAMediaTimingFunctionName? = nil,
+                         _ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+    runAsync(Task(duration: duration, timing: timingName, runFunc), then: doAfter)
+  }
 
+  /// Convenience func for running the giving closure in a transactional way
+  static func runInstantAsync(_ runFunc: @escaping TaskFunc, then doAfter: TaskFunc? = nil) {
+    runAsync(.instantTask(runFunc), then: doAfter)
+  }
+}
+
+extension IINAAnimation {
   struct Task {
     let duration: CGFloat
     let timingName: CAMediaTimingFunctionName?
@@ -81,11 +118,12 @@ class IINAAnimation {
   struct Transaction {
     let tasks: [Task]
   }
+}
 
-  // MARK: - IINAAnimation.Pipeline
-
+extension IINAAnimation {
   /// Serial queue which executes `Task`s one after another.
   class Pipeline {
+
     /// ID of the latest transaction to be generated, but not necessarily run.
     /// (Basically used for ID generation).
     private var newestTxID: Int = 0
@@ -200,45 +238,6 @@ class IINAAnimation {
         self.runTasks()
       })
     }
-  }
-
-  /// Convenience wrapper for chaining multiple tasks together via `NSAnimationContext.runAnimationGroup()`. Does not use pipeline.
-  static func runAsync(_ task: Task, then doAfter: TaskFunc? = nil) {
-    // Fail if not running on main thread:
-    assert(DispatchQueue.isExecutingIn(.main))
-    
-    NSAnimationContext.runAnimationGroup({ context in
-      CATransaction.begin()
-      defer {
-        CATransaction.commit()
-      }
-      let disableAnimation = !isAnimationEnabled
-      if disableAnimation {
-        context.duration = 0
-      } else {
-        context.duration = task.duration
-      }
-      context.allowsImplicitAnimation = !disableAnimation
-
-      if let timingName = task.timingName {
-        context.timingFunction = CAMediaTimingFunction(name: timingName)
-      }
-      do {
-        try task.runFunc()
-      } catch IINAError.cancelAnimationTransaction {
-        Logger.log.debug("Animation pipeline: async task was cancelled")
-      } catch {
-        Logger.log.error("Animation pipeline: unexpected error thrown by task: \(error)")
-      }
-    }, completionHandler: {
-      if let doAfter = doAfter {
-        do {
-          try doAfter()
-        } catch {
-          Logger.log("Animation pipeline: unexpected error thrown by doAfter func: \(error)")
-        }
-      }
-    })
   }
 }
 

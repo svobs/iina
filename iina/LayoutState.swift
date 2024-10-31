@@ -395,6 +395,7 @@ class LayoutState {
     return spec.mode == .musicMode
   }
 
+  /// Note: this does not account for music mode
   var enableOSC: Bool {
     return spec.enableOSC
   }
@@ -442,6 +443,16 @@ class LayoutState {
 
   var hasBottomOSC: Bool {
     return enableOSC && oscPosition == .bottom
+  }
+
+  var hasOSC: Bool {
+    return isMusicMode || enableOSC
+  }
+
+  var hasFadeableOSC: Bool {
+    return !isMusicMode && enableOSC && (oscPosition == .floating ||
+                                         (oscPosition == .top && topBarView.isFadeable) ||
+                                         (oscPosition == .bottom && bottomBarView.isFadeable))
   }
 
   var hasPermanentOSC: Bool {

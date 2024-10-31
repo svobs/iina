@@ -95,6 +95,15 @@ enum VisibilityMode {
   var isShowable: Bool {
     return self != .hidden
   }
+
+  var isFadeable: Bool {
+    switch self {
+    case .showFadeableTopBar, .showFadeableNonTopBar:
+      return true
+    default:
+      return false
+    }
+  }
 }
 
 
