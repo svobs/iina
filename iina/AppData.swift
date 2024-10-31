@@ -181,6 +181,15 @@ struct Constants {
     /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
     static let minScrollWheelTimeThreshold = 0.05
 
+    /// May need adjustment for optimal results
+    static let stepScrollSessionTimeout = 0.05
+
+    /// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
+    ///
+    /// If this amount of time passes from when we receive a `smoothScrollJustEnded` event but do not receive a
+    /// `momentumScrollJustStarted` event, the scroll session should be considered ended.
+    static let momentumScrollStartTimeout = 0.05
+
     static let historyTableCompleteFileStatusReload = 600.0
 
     /// Longest time to wait for asynchronous shutdown tasks to finish before giving up on waiting and proceeding with termination.
@@ -267,6 +276,9 @@ struct Constants {
 
     static let minOSCBarHeight: CGFloat = 24
     static let maxOSCBarHeight: CGFloat = 200
+
+    /// If OSC is shorter than this, never show the speed label
+    static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
     // matches spacing as of MacOS Sonoma (14.0)
     static let titleBarIconSpacingH: CGFloat = 6

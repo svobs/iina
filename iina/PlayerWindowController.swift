@@ -2062,7 +2062,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let oscGeo = ControlBarGeometry.current
     let playSpeed = player.info.playSpeed
-    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= ControlBarGeometry.minBarHeightForSpeedLabel
+    let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= Constants.Distance.minOSCBarHeightForSpeedLabel
 
     let hasLayoutChange = speedLabel.isHidden == showSpeedLabel
     let duration = hasLayoutChange ? IINAAnimation.OSDAnimationDuration : 0

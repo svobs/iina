@@ -8,15 +8,6 @@
 
 import Foundation
 
-/// May need adjustment for optimal results
-fileprivate let stepScrollSessionTimeout: TimeInterval = 0.05
-
-/// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
-///
-/// If this amount of time passes from when we receive a `smoothScrollJustEnded` event but do not receive a
-/// `momentumScrollJustStarted` event, the scroll session should be considered ended.
-fileprivate let momentumStartTimeout: TimeInterval = 0.05
-
 /// This is used for 2 different purposes, each using a different subset of states, which is a little sloppy.
 /// But at least it will stay within this file. (See `state` variable vs `mapPhasesToScrollState()`)
 fileprivate enum ScrollState {
@@ -48,6 +39,7 @@ class ScrollSession {
   var eventsPending: [NSEvent] = []
 #if DEBUG
   var deltaTotal: CGFloat = 0
+  var valueChangeTotal: CGFloat = 0
   var totalEventCount: Int = 0
   var actionCount: Int = 0
   let startTime = Date()
@@ -63,6 +55,8 @@ class ScrollSession {
   /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
   /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
   func executeScroll(on delegateSlider: NSSlider) {
+    assert(delegateSlider.minValue == 0.0,
+           "Expected slider to have a minValue of 0.0  but found \(delegateSlider.minValue)")
 
     // All the pending events need to be applied immediately.
     // Save CPU by adding them all together before calling action:
@@ -80,32 +74,32 @@ class ScrollSession {
   /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
   /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
   private func computeNewValue(for slider: NSSlider, from event: NSEvent,
-                       usingCurrentValue currentValue: CGFloat) -> CGFloat {
+                               usingCurrentValue currentValue: CGFloat) -> CGFloat {
     let delta = extractLinearDelta(from: event, slider)
-
-#if DEBUG
-    deltaTotal += delta
-    totalEventCount += 1
-#endif
 
     // Convert delta into valueChange
     let maxValue = slider.maxValue
-    let minValue = slider.minValue
 
-    let valueChange = /*(maxValue - minValue) / 100 * */delta //* sensitivity
+    let valueChange = delta * sensitivity
 
     // Compute & set new value for slider
     var newValue = currentValue + valueChange
     // Wrap around if slider is circular
     if slider.sliderType == .circular {
-      if newValue < minValue {
+      if newValue < 0 {
         newValue = maxValue - abs(valueChange)
       } else if newValue > maxValue {
-        newValue = minValue + abs(valueChange)
+        newValue = 0 + abs(valueChange)
       }
     }
 
-    return newValue.clamped(to: minValue...maxValue)
+#if DEBUG
+    deltaTotal += delta
+    valueChangeTotal += valueChange
+    totalEventCount += 1
+#endif
+
+    return newValue.clamped(to: 0...maxValue)
   }
 
   /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta
@@ -268,13 +262,14 @@ class VirtualScrollWheel {
       let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
       let deltaPerUserSec = session.deltaTotal / timeUser
       let accelerationPerUserSec = deltaPerUserSec / timeUser
-      let msg = "ScrollWheel Δ: \(session.deltaTotal.string2FractionDigits)    Actions/s: \(actionsPerSec.stringMaxFrac2)"
+      let msg = "ScrollWheel ΔRaw: \(session.deltaTotal.string2FractionDigits)   Actions/sec: \(actionsPerSec.stringMaxFrac2)"
       let detail = [
         "Time: \t\(timeMsg)",
         "Events: \t\(session.totalEventCount)",
         "Actions: \t\(session.actionCount)    (ratio: \(actionRatio.stringMaxFrac2))",
-        "Avg Speed: \t\(deltaPerUserSec.stringMaxFrac2)/s",
+        "AvgSpeed: \t\(deltaPerUserSec.stringMaxFrac2)/s",
         "Accel: \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
+        "ΔValue: \t\(session.valueChangeTotal.stringMaxFrac2) \t@ sensitivity: \(session.sensitivity.stringMaxFrac2)",
       ].joined(separator: "\n")
       player.sendOSD(.debug(msg, detail))
     }
@@ -298,7 +293,7 @@ class VirtualScrollWheel {
       notScrolling()
 
     case .didStepScroll:  // Non-Apple device
-      resetScrollSessionTimer(timeout: stepScrollSessionTimeout)
+      resetScrollSessionTimer(timeout: Constants.TimeInterval.stepScrollSessionTimeout)
       if case .didStepScroll = state {
         // Continuing scroll session. No state changes needed
         break
@@ -341,7 +336,7 @@ class VirtualScrollWheel {
       switch state {
       case .smoothScrolling:
         state = .smoothScrollJustEnded
-        resetScrollSessionTimer(timeout: momentumStartTimeout)
+        resetScrollSessionTimer(timeout: Constants.TimeInterval.momentumScrollStartTimeout)
       default:
         notScrolling()
       }

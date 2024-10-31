@@ -22,13 +22,11 @@ fileprivate let floatingPlayIconSize: CGFloat = 24
 fileprivate let floatingPlayIconSpacing: CGFloat = 24
 fileprivate let floatingVolumeIconSize: CGFloat = 18
 
-fileprivate let minMarginAbovePlayBtn: CGFloat = 16
+fileprivate let stepIconReductionRatio: CGFloat = 0.85
 
 // TODO: reimplement OSC title bar feature
 
 struct ControlBarGeometry {
-  static let minBarHeightForSpeedLabel: CGFloat = 30
-
   static var current = ControlBarGeometry() {
     didSet {
       Logger.log.verbose("ControlBarGeometry.current was updated")
@@ -112,7 +110,7 @@ struct ControlBarGeometry {
     let arrowButtonAction = arrowButtonAction ?? Preference.enum(for: .arrowButtonAction)
     let arrowIconHeight: CGFloat
     if arrowButtonAction == .seek {
-      arrowIconHeight = playIconSize * 0.75
+      arrowIconHeight = playIconSize * stepIconReductionRatio
     } else {
       arrowIconHeight = playIconSize
     }
