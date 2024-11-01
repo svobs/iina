@@ -42,7 +42,6 @@ class ScrollSession {
   var eventsPending: [NSEvent] = []
 #if DEBUG
   var rawDeltaTotal: CGFloat = 0
-  var adjustedDeltaTotal: CGFloat = 0
   var totalEventCount: Int = 0
   var actionCount: Int = 0
   let startTime = Date()
@@ -57,10 +56,7 @@ class ScrollSession {
 
   /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
   /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
-  func executeScroll(on delegateSlider: NSSlider) {
-    assert(delegateSlider.minValue == 0.0,
-           "Expected slider to have a minValue of 0.0  but found \(delegateSlider.minValue)")
-
+  func executeScroll(on delegateSlider: ScrollableSlider) {
     // All the pending events need to be applied immediately.
     // Save CPU by adding them all together before calling action:
     var newValue: CGFloat = 0.0
@@ -76,52 +72,20 @@ class ScrollSession {
 
   /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
   /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
-  private func computeNewValue(for slider: NSSlider, from event: NSEvent,
+  private func computeNewValue(for slider: ScrollableSlider, from event: NSEvent,
                                usingCurrentValue currentValue: CGFloat) -> CGFloat {
-    let delta = extractLinearDelta(from: event, slider)
-
-    // Convert delta into valueChange
-    let maxValue = slider.maxValue
-
+    let delta = slider.extractLinearDelta(from: event)
     let valueChange = delta * sensitivity
 
     // Compute & set new value for slider
-    var newValue = currentValue + valueChange
-    // Wrap around if slider is circular
-    if slider.sliderType == .circular {
-      if newValue < 0 {
-        newValue = maxValue - abs(valueChange)
-      } else if newValue > maxValue {
-        newValue = 0 + abs(valueChange)
-      }
-    }
+    let newValue = currentValue + valueChange
 
 #if DEBUG
     rawDeltaTotal += delta
-    adjustedDeltaTotal += valueChange
     totalEventCount += 1
 #endif
 
-    return newValue.clamped(to: 0...maxValue)
-  }
-
-  /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized +/- delta
-  private func extractLinearDelta(from event: NSEvent, _ slider: NSSlider) -> CGFloat {
-    var delta: Double
-    // Allow horizontal scrolling on horizontal and circular sliders
-    if slider.isVertical && slider.sliderType == .linear {
-      delta = event.deltaY
-    } else if slider.userInterfaceLayoutDirection == .rightToLeft {
-      delta = event.deltaY + event.deltaX
-    } else {
-      delta = event.deltaY - event.deltaX
-    }
-
-    // Account for natural scrolling
-    if event.isDirectionInvertedFromDevice {
-      delta *= -1
-    }
-    return delta
+    return newValue
   }
 
   private func callAction(on slider: NSSlider, applyingNewValue newValue: CGFloat) {
@@ -168,7 +132,7 @@ class ScrollSession {
 /// from the `notScrolling` state to the `didStepScroll` state, then keeping a `Timer` so that the session ends when no events
 /// are received for `stepScrollSessionTimeout` seconds.
 class VirtualScrollWheel {
-  var delegateSlider: NSSlider? = nil
+  var delegateSlider: ScrollableSlider? = nil
   var log: Logger.Subsystem = Logger.log
 
   /// Contains data for the current scroll session.

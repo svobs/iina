@@ -254,7 +254,7 @@ extension PlayerWindowController {
     return true
   }
 
-  // MARK: - Show / Hide Fadeable Views Timer
+  // MARK: - Fadeable Views Timer
 
   func resetFadeTimer() {
     // If timer exists, destroy first

@@ -2420,9 +2420,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     setOSDViews()
 
     // Make fake point in window to pass to seek time & thumbnail
-    let xOffsetInPlaySlider: CGFloat = max(0.0, slider.progressRatio * (slider.frame.width - 6.0) + 3.0)
-    let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
-    let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
+    let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: 0)
     refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
 
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)

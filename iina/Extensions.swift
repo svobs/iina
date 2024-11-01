@@ -35,7 +35,7 @@ extension NSSlider {
   var span: Double { maxValue - minValue }
 
   var progressRatio: Double {
-    doubleValue / maxValue
+    (doubleValue - minValue) / span
   }
 
   /**
@@ -55,8 +55,9 @@ extension NSSlider {
    ```
    */
   func centerOfKnobInWindowCoordX() -> CGFloat {
-    let knobPosX = frame.origin.x + centerOfKnobInSliderCoordX()
-    return knobPosX
+    let knobCenterInSliderCoordX = centerOfKnobInSliderCoordX()
+    let knobCenterInWindowCoordX = self.convert(NSPoint(x: knobCenterInSliderCoordX, y: 0), to: nil).x
+    return knobCenterInWindowCoordX
   }
 
   /// Returns the position of the knob's center point along the slider's track.
