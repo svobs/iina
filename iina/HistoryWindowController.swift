@@ -155,7 +155,12 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with initial history load.
       HistoryController.shared.async { [self] in
-        Thread.sleep(forTimeInterval: 5)
+#if DEBUG
+        if DebugConfig.addHistoryWindowLoadingDelay {
+          log.debug("Sleeping for 5 sec to test History window async loading...")
+          Thread.sleep(forTimeInterval: 5)
+        }
+      #endif
         self.reloadData()
       }
     }
