@@ -29,17 +29,15 @@ final class PlaySlider: ScrollableSlider {
   /// The slider's cell correctly typed for convenience.
   var customCell: PlaySliderCell { cell as! PlaySliderCell }
 
-  /// Range of values the slider is configured to return.
-  var range: ClosedRange<Double> { minValue...maxValue }
-
-  /// Span of the range of values the slider is configured to return.
-  var span: Double { maxValue - minValue }
-
   // MARK:- Private Properties
 
   private var abLoopAKnob: PlaySliderLoopKnob!
 
   private var abLoopBKnob: PlaySliderLoopKnob!
+
+  private var player: PlayerCore {
+    return customCell.playerCore
+  }
 
   // MARK:- Initialization
 
@@ -94,5 +92,9 @@ final class PlaySlider: ScrollableSlider {
     if pxChange >= PlaySlider.minPixelChangeThreshold {
       doubleValue = percentage
     }
+  }
+
+  var positionAbsoluteSec: Double {
+    return player.info.playbackDurationSec! * progressRatio
   }
 }

@@ -31,6 +31,8 @@ fileprivate enum ScrollState {
 
 class ScrollSession {
   var valueAtStart: Double? = nil
+  var modelValueAtStart: Double? = nil
+  var modelValueAtEnd: Double? = nil
   var sensitivity: CGFloat = 1.0
   /// Lock for `eventsPending`
   let lock = Lock()
@@ -247,6 +249,8 @@ class VirtualScrollWheel {
     guard let session = currentSession else { Logger.fatal("currentSession==nil for state \(state) → \(ScrollState.notScrolling)") }
     state = .notScrolling
 
+    scrollSessionDidEnd(session)
+
 #if DEBUG
     if DebugConfig.enableScrollWheelDebug, let player = delegateSlider?.thisPlayer {
       let timeTotal = session.startTime.timeIntervalToNow
@@ -267,23 +271,29 @@ class VirtualScrollWheel {
       if let valueAtStart = session.valueAtStart, let valueAtEnd = delegateSlider?.doubleValue {
         valueChange = (valueAtEnd - valueAtStart).stringMaxFrac2
       } else {
-        valueChange = "unknown"
+        valueChange = "??"
       }
-      let msg = "ScrollWheel Δ: ⏐ \(session.rawDeltaTotal.string2FractionDigits)  ᴿᴬᵂ  ⏐  \(session.adjustedDeltaTotal.stringMaxFrac2) ˢᶜᴬᴸᴱᴰ  ⏐  \(valueChange) ⱽᴬᴸᵁᴱ"
+      let modelValueChange: String
+      if let modelValueAtStart = session.modelValueAtStart, let modelValueAtEnd = session.modelValueAtEnd {
+        let change = modelValueAtEnd - modelValueAtStart
+        modelValueChange = "  ⏐ Δt:  \(change.stringMaxFrac4)s"
+      } else {
+        modelValueChange = ""
+      }
+      let msg = "ScrollWheel Δ: ⏐  \(session.rawDeltaTotal.string2FractionDigits) ᴿᴬᵂ  ⏐  \(valueChange) ⱽᴬᴸᵁᴱ\(modelValueChange)"
       let detail = [
         "Time:       \t\(timeMsg)",
         "Events:     \t\(session.totalEventCount)",
         "Actions:    \t\(session.actionCount)    (\(actionsPerSec.stringMaxFrac2)/s, \(actionRatio.stringMaxFrac2)/event)",
         "Sensitivity: \(session.sensitivity.stringMaxFrac2)",
-        "Avg.Speed:  \t\(deltaPerUserSec.stringMaxFrac2)/s",
+        "Avg.Speed:  \(deltaPerUserSec.stringMaxFrac2)/s",
         "Accel:      \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
       ].joined(separator: "\n")
       player.sendOSD(.debug(msg, detail))
     }
 #endif
-      
+
     currentSession = nil
-    scrollSessionDidEnd(session)
   }
 
   private func changeState(with event: NSEvent) {

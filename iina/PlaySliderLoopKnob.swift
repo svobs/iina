@@ -142,7 +142,7 @@ final class PlaySliderLoopKnob: NSView {
       // Round the X position for cleaner drawing
       drawing = NSMakeRect(round(rect.origin.x), adjustedY, cell.knobWidth, knobHeight)
     }
-    let path = NSBezierPath(roundedRect: drawing, xRadius: cell.knobRadius, yRadius: cell.knobRadius)
+    let path = NSBezierPath(roundedRect: drawing, xRadius: cell.knobStrokeRadius, yRadius: cell.knobStrokeRadius)
     knobColor().setFill()
     path.fill()
   }

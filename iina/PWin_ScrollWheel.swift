@@ -30,10 +30,13 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     session.sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
 
     session.valueAtStart = delegateSlider?.doubleValue
+    session.modelValueAtStart = (delegateSlider as! PlaySlider).positionAbsoluteSec
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
     guard let player = delegateSlider?.thisPlayer else { return }
+
+    session.modelValueAtEnd = (delegateSlider as! PlaySlider).positionAbsoluteSec
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
     // only resume playback when it was playing before seeking

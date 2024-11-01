@@ -27,8 +27,19 @@ extension Int {
 import CryptoKit
 
 extension NSSlider {
+
+  /// Range of values the slider is configured to return.
+  var range: ClosedRange<Double> { minValue...maxValue }
+
+  /// Span of the range of values the slider is configured to return.
+  var span: Double { maxValue - minValue }
+
+  var progressRatio: Double {
+    doubleValue / maxValue
+  }
+
   /**
-   Returns the position of the knob's center point along the slider's track.
+   Returns the position of the knob's center point along the slider's track in window coordinates.
 
    This method calculates the horizontal position of the center of the slider's knob based on the slider's current value (`doubleValue`), the minimum and maximum values, and the slider's dimensions. It can be useful for custom drawing, animations, or hit detection related to the knob's position.
 
@@ -39,16 +50,55 @@ extension NSSlider {
    Example usage:
    ```swift
    let slider = NSSlider(value: 50, minValue: 0, maxValue: 100, target: nil, action: nil)
-   let knobPosition = slider.knobPointPosition()
+   let knobPosition = slider.centerOfKnobInWindowCoordX()
    print("The knob is positioned at x-coordinate: \(knobPosition)")
    ```
    */
-  func knobPointPosition() -> CGFloat {
-    let sliderOrigin = frame.origin.x + knobThickness / 2
-    let sliderWidth = frame.width - knobThickness
+  func centerOfKnobInWindowCoordX() -> CGFloat {
+    let knobPosX = frame.origin.x + centerOfKnobInSliderCoordX()
+    return knobPosX
+  }
+
+  /// Returns the position of the knob's center point along the slider's track.
+  /// See also `centerOfKnobInWindowX()`.
+  func centerOfKnobInSliderCoordX() -> CGFloat {
+    // The knob must always be within the bounds of the slider. With respect to the center of the knob,
+    // this means that there is a space of (knobThickness / 2) at both sides where the center can never go.
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
     assert(maxValue > minValue)
-    let knobPos = sliderOrigin + sliderWidth * CGFloat((doubleValue - minValue) / (maxValue - minValue))
-    return knobPos
+    let knobPosX = knobCenterMinX + knobRangeWidth * CGFloat((doubleValue - minValue) / span)
+    assert(knobPosX.clamped(to: knobCenterMinX...(knobCenterMinX + knobRangeWidth)) == knobPosX,
+           "Invalid calculated centerOfKnobInSliderCoordX for slider: \(knobPosX)")
+    return knobPosX
+  }
+
+  func computeProgressRatioGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
+    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
+    // It's valid for the given X value to be in the (knobThickness / 2) regions near minX & maxX where the
+    // knob can't go. This can happen if the user clicks near in this area. Just check & clamp to valid values.
+    let centerOfKnobCorrected = centerOfKnobInSliderCoordX.clamped(to: knobCenterMinX...knobCenterMaxX)
+    let ratio = Double((centerOfKnobCorrected - knobCenterMinX) / knobRangeWidth)
+    assert(ratio.clamped(to: 0...1) == ratio, "Invalid calculated ratio for slider: \(ratio)")
+    return ratio
+  }
+
+  func computeValueGiven(centerOfKnobInSliderCoordX: CGFloat) -> CGFloat {
+    let ratio = computeProgressRatioGiven(centerOfKnobInSliderCoordX: centerOfKnobInSliderCoordX)
+    let val = (ratio * span) + minValue
+    assert(val.clamped(to: minValue...maxValue) == val,
+           "Invalid calculated value for slider: \(val)")
+    return val
+  }
+
+  func computeCenterOfKnobInSliderCoordXGiven(pointInWindow: NSPoint) -> CGFloat {
+    let xOffsetInSlider = convert(pointInWindow, from: nil).x
+    let knobCenterMinX = knobThickness / 2
+    let knobRangeWidth = frame.width - knobThickness
+    let knobCenterMaxX = knobCenterMinX + knobRangeWidth
+    return xOffsetInSlider.clamped(to: knobCenterMinX...knobCenterMaxX)
   }
 }
 
@@ -746,6 +796,11 @@ extension FloatingPoint {
   /// Formats as String, rounding the number to 2 digits after the decimal
   var stringMaxFrac2: String {
     return fmtStdDecimal.roundHalfDown_maxFracDigits[2].string(for: self)!
+  }
+
+  /// Formats as String, rounding the number to 4 digits after the decimal
+  var stringMaxFrac4: String {
+    return fmtStdDecimal.roundHalfDown_maxFracDigits[4].string(for: self)!
   }
 
   /// Formats as String, rounding the number to 6 digits after the decimal

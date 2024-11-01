@@ -25,8 +25,8 @@ class PlaySliderCell: NSSliderCell {
 
   var knobWidth: CGFloat = 3
   var knobHeight: CGFloat = 15
-  var knobRadius: CGFloat = 1
-  var barRadius: CGFloat = 1.5
+  var knobStrokeRadius: CGFloat = 1
+  var barStrokeRadius: CGFloat = 1.5
 
   private var knobColor = NSColor(named: .mainSliderKnob)!
   private var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
@@ -75,7 +75,7 @@ class PlaySliderCell: NSSliderCell {
                           knobRect.origin.y + 0.5 * (knobRect.height - knobHeight),
                           knobRect.width,
                           knobHeight)
-    let path = NSBezierPath(roundedRect: rect, xRadius: knobRadius, yRadius: knobRadius)
+    let path = NSBezierPath(roundedRect: rect, xRadius: knobStrokeRadius, yRadius: knobStrokeRadius)
     let fillColor = isHighlighted ? knobActiveColor : knobColor
 
     let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
@@ -162,7 +162,7 @@ class PlaySliderCell: NSSliderCell {
                        height: rect.height - 2)
     }
 
-    let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barRadius, yRadius: barRadius)
+    let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barStrokeRadius, yRadius: barStrokeRadius)
     if controlView!.window!.effectiveAppearance.isDark {
       // Clip where the knob will be, including 1px from left & right of the knob
       fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);

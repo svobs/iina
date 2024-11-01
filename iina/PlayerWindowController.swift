@@ -2235,11 +2235,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   private func showSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
     // - 1. Time Hover Label
 
-    let xOffsetInPlaySlider = playSlider.convert(pointInWindow, from: nil).x
+    let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
-    timePositionHoverLabelHorizontalCenterConstraint.constant = xOffsetInPlaySlider
+    timePositionHoverLabelHorizontalCenterConstraint.constant = knobCenterOffsetInPlaySlider
 
-    let playbackPositionRatio = max(0, Double((xOffsetInPlaySlider - 3) / (playSlider.frame.width - 6)))
+    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
+                                                                      knobCenterOffsetInPlaySlider)
     let previewTimeSec = mediaDuration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
     if timePositionHoverLabel.stringValue != stringRepresentation {
@@ -2409,18 +2410,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// - clicking inside it
   /// - dragging inside it
   /// - using scroll wheel (if configured).
-  @IBAction func playSliderAction(_ sender: NSSlider) {
+  @IBAction func playSliderAction(_ slider: PlaySlider) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
 
     // Update player.info proactively
-    let progressRatio = sender.doubleValue / sender.maxValue
-    let absoluteSec = player.info.playbackDurationSec! * progressRatio
+    let absoluteSec = slider.positionAbsoluteSec
     player.info.playbackPositionSec = absoluteSec
     setOSDViews()
 
     // Make fake point in window to pass to seek time & thumbnail
-    let xOffsetInPlaySlider: CGFloat = max(0.0, progressRatio * (playSlider.frame.width - 6.0) + 3.0)
+    let xOffsetInPlaySlider: CGFloat = max(0.0, slider.progressRatio * (slider.frame.width - 6.0) + 3.0)
     let pointInPlaySlider = CGPoint(x: xOffsetInPlaySlider, y: 0)
     let pointInWindow = playSlider.convert(pointInPlaySlider, to: nil)
     refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
