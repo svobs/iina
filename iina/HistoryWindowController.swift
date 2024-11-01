@@ -8,13 +8,6 @@
 
 import Cocoa
 
-fileprivate let MenuItemTagShowInFinder = 100
-fileprivate let MenuItemTagDelete = 101
-fileprivate let MenuItemTagSearchFilename = 200
-fileprivate let MenuItemTagSearchFullPath = 201
-fileprivate let MenuItemTagPlay = 300
-fileprivate let MenuItemTagPlayInNewWindow = 301
-
 fileprivate extension NSUserInterfaceItemIdentifier {
   static let time = NSUserInterfaceItemIdentifier("Time")
   static let filename = NSUserInterfaceItemIdentifier("Filename")
@@ -22,13 +15,6 @@ fileprivate extension NSUserInterfaceItemIdentifier {
   static let group = NSUserInterfaceItemIdentifier("Group")
   static let contextMenu = NSUserInterfaceItemIdentifier("ContextMenu")
 }
-
-// FIXME: do not wait to load
-
-fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
-  .lastPlayedDay: 60,
-  .parentFolder: 145
-]
 
 fileprivate class LoadingPlaceholder: PlaybackHistory {
   init() {
@@ -40,7 +26,22 @@ fileprivate class LoadingPlaceholder: PlaybackHistory {
   }
 }
 
+// MARK: Constants
+
 fileprivate let loadingKey = "Loading..."
+fileprivate let loadingPlaceholderLabel = ""  // displayed next to the loading spinner
+
+fileprivate let MenuItemTagShowInFinder = 100
+fileprivate let MenuItemTagDelete = 101
+fileprivate let MenuItemTagSearchFilename = 200
+fileprivate let MenuItemTagSearchFullPath = 201
+fileprivate let MenuItemTagPlay = 300
+fileprivate let MenuItemTagPlayInNewWindow = 301
+
+fileprivate let timeColMinWidths: [Preference.HistoryGroupBy: CGFloat] = [
+  .lastPlayedDay: 60,
+  .parentFolder: 145
+]
 
 class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOutlineViewDataSource,
                                NSMenuDelegate, NSMenuItemValidation {
@@ -154,6 +155,7 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
 
       /// Enquque in `HistoryController.shared.queue` to establish a happens-after relationship with initial history load.
       HistoryController.shared.async { [self] in
+        Thread.sleep(forTimeInterval: 5)
         self.reloadData()
       }
     }
@@ -365,31 +367,43 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
     if let identifier = tableColumn?.identifier {
       guard let cell: NSTableCellView = outlineView.makeView(withIdentifier: identifier, owner: nil) as? NSTableCellView else { return nil }
       guard let entry = item as? PlaybackHistory else { return cell }
+
       if identifier == .filename {
         // Filename cell
         let filenameView = cell as! HistoryFilenameCellView
+
         if item as? LoadingPlaceholder != nil {
-          // Draw loading icon for initial load
-          filenameView.textField?.stringValue = ""
+          // Loading placeholder for initial load
+          let font = filenameView.textField!.font!
+          let italicDescriptor: NSFontDescriptor = font.fontDescriptor.withSymbolicTraits(NSFontDescriptor.SymbolicTraits.italic)
+          let italicFont = NSFont(descriptor: italicDescriptor, size: font.pointSize)
+          let attrString =  NSMutableAttributedString(string: loadingPlaceholderLabel, attributes: [.font: italicFont!])
+          filenameView.textField?.attributedStringValue = attrString
           filenameView.textField?.textColor = .controlTextColor
-          if #available(macOS 11.0, *) {
-            filenameView.docImage.image = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
+          if #available(macOS 15.0, *) {
+            let spinImage = NSImage(systemSymbolName: "progress.indicator", accessibilityDescription: "Loading...")!
+            filenameView.docImage.setSymbolImage(spinImage, contentTransition: .automatic)
+            let effect = VariableColorSymbolEffect.variableColor.iterative.dimInactiveLayers.nonReversing
+            filenameView.docImage.addSymbolEffect(effect, options: .repeat(.continuous))
           } else {
-            filenameView.docImage.image = Images.replay
+            // Just show loading text
+            filenameView.docImage.image = nil
           }
+
         } else {
           filenameView.textField?.stringValue = entry.url.isFileURL ? entry.name : entry.url.absoluteString
           let fileExists = fileExistsMap[entry.url] ?? true
           filenameView.textField?.textColor = fileExists ? .controlTextColor : .disabledControlTextColor
           filenameView.docImage.image = Utility.icon(for: entry.url)
         }
+
       } else if identifier == .progress {
         // Progress cell
         let progressView = cell as! HistoryProgressCellView
         // Do not animate! Causes unneeded slowdown
         progressView.indicator.usesThreadedAnimation = false
 
-        if item as? LoadingPlaceholder == nil, let progress = entry.mpvProgress {
+        if let progress = entry.mpvProgress {
           progressView.textField?.stringValue = VideoTime.string(from: progress)
           progressView.indicator.isHidden = false
           progressView.indicator.doubleValue = progress / entry.duration
@@ -400,8 +414,9 @@ class HistoryWindowController: IINAWindowController, NSOutlineViewDelegate, NSOu
       }
       return cell
     } else {
-      // group columns
-      return outlineView.makeView(withIdentifier: .group, owner: nil)
+      // group header
+      guard let groupCell: NSTableCellView = outlineView.makeView(withIdentifier: .group, owner: nil) as? NSTableCellView else { return nil }
+      return groupCell
     }
   }
 

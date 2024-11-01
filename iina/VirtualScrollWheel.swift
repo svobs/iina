@@ -30,6 +30,7 @@ fileprivate enum ScrollState {
 }
 
 class ScrollSession {
+  var valueAtStart: Double? = nil
   var sensitivity: CGFloat = 1.0
   /// Lock for `eventsPending`
   let lock = Lock()
@@ -38,8 +39,8 @@ class ScrollSession {
   /// execute them as if they had started when the user started their scroll action.
   var eventsPending: [NSEvent] = []
 #if DEBUG
-  var deltaTotal: CGFloat = 0
-  var valueChangeTotal: CGFloat = 0
+  var rawDeltaTotal: CGFloat = 0
+  var adjustedDeltaTotal: CGFloat = 0
   var totalEventCount: Int = 0
   var actionCount: Int = 0
   let startTime = Date()
@@ -94,8 +95,8 @@ class ScrollSession {
     }
 
 #if DEBUG
-    deltaTotal += delta
-    valueChangeTotal += valueChange
+    rawDeltaTotal += delta
+    adjustedDeltaTotal += valueChange
     totalEventCount += 1
 #endif
 
@@ -260,21 +261,27 @@ class VirtualScrollWheel {
       }
       let actionsPerSec = CGFloat(session.actionCount) / timeTotal
       let actionRatio = CGFloat(session.actionCount) / CGFloat(session.totalEventCount)
-      let deltaPerUserSec = session.deltaTotal / timeUser
+      let deltaPerUserSec = session.rawDeltaTotal / timeUser
       let accelerationPerUserSec = deltaPerUserSec / timeUser
-      let msg = "ScrollWheel ΔRaw: \(session.deltaTotal.string2FractionDigits)   Actions/sec: \(actionsPerSec.stringMaxFrac2)"
+      let valueChange: String
+      if let valueAtStart = session.valueAtStart, let valueAtEnd = delegateSlider?.doubleValue {
+        valueChange = (valueAtEnd - valueAtStart).stringMaxFrac2
+      } else {
+        valueChange = "unknown"
+      }
+      let msg = "ScrollWheel Δ: ⏐ \(session.rawDeltaTotal.string2FractionDigits)  ᴿᴬᵂ  ⏐  \(session.adjustedDeltaTotal.stringMaxFrac2) ˢᶜᴬᴸᴱᴰ  ⏐  \(valueChange) ⱽᴬᴸᵁᴱ"
       let detail = [
-        "Time: \t\(timeMsg)",
-        "Events: \t\(session.totalEventCount)",
-        "Actions: \t\(session.actionCount)    (ratio: \(actionRatio.stringMaxFrac2))",
-        "AvgSpeed: \t\(deltaPerUserSec.stringMaxFrac2)/s",
-        "Accel: \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
-        "ΔValue: \t\(session.valueChangeTotal.stringMaxFrac2) \t@ sensitivity: \(session.sensitivity.stringMaxFrac2)",
+        "Time:       \t\(timeMsg)",
+        "Events:     \t\(session.totalEventCount)",
+        "Actions:    \t\(session.actionCount)    (\(actionsPerSec.stringMaxFrac2)/s, \(actionRatio.stringMaxFrac2)/event)",
+        "Sensitivity: \(session.sensitivity.stringMaxFrac2)",
+        "Avg.Speed:  \t\(deltaPerUserSec.stringMaxFrac2)/s",
+        "Accel:      \t\(accelerationPerUserSec.magnitude.stringMaxFrac2)/s²",
       ].joined(separator: "\n")
       player.sendOSD(.debug(msg, detail))
     }
 #endif
-
+      
     currentSession = nil
     scrollSessionDidEnd(session)
   }

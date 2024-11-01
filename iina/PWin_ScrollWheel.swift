@@ -28,6 +28,8 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
 
     let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
     session.sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
+
+    session.valueAtStart = delegateSlider?.doubleValue
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
@@ -48,6 +50,8 @@ class VolumeSliderScrollWheel: VirtualScrollWheel {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
     session.sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)
+
+    session.valueAtStart = delegateSlider?.doubleValue
   }
 }
 

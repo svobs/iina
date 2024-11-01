@@ -390,33 +390,23 @@ extension Notification.Name {
 }
 
 struct Images {
+  static func makeSymbol(named name: String, fallbackName: String? = nil, desc: String) -> NSImage {
+    if #available(macOS 11.0, *) {
+      if let sysImg = NSImage(systemSymbolName: name, accessibilityDescription: desc) {
+        return sysImg
+      }
+    }
+    let fallbackName = fallbackName ?? name
+    Logger.log("Falling back to asset image \(fallbackName) instead of \(name)")
+    return NSImage(named: name)!
+  }
+
   // Use single instance of each for efficiency
   static let play = NSImage(named: "play")!
   static let pause = NSImage(named: "pause")!
-  static let replay: NSImage = {
-    if #available(macOS 11.0, *) {
-      if let img = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: "Restart from beginning") {
-        return img
-      }
-    }
-    return NSImage(named: "arrow.counterclockwise")!
-  }()
-
-  static let stepForward10: NSImage = {
-    if #available(macOS 11.0, *) {
-      return NSImage(systemSymbolName: "goforward.10", accessibilityDescription: "Step Forward 10s")!
-    } else {
-      return #imageLiteral(resourceName: "speed")
-    }
-  }()
-
-  static let stepBackward10: NSImage = {
-    if #available(macOS 11.0, *) {
-      return NSImage(systemSymbolName: "gobackward.10", accessibilityDescription: "Step Backward 10s")!
-    } else {
-      return #imageLiteral(resourceName: "speedl")
-    }
-  }()
+  static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
+  static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s")
+  static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")
 }
 
 struct DebugConfig {
