@@ -50,10 +50,11 @@ class IINAAnimation {
     assert(DispatchQueue.isExecutingIn(.main))
 
     NSAnimationContext.runAnimationGroup({ context in
-      CATransaction.begin()
-      defer {
-        CATransaction.commit()
-      }
+      // TODO: consider removing entirely
+//      CATransaction.begin()
+//      defer {
+//        CATransaction.commit()
+//      }
       let disableAnimation = !isAnimationEnabled
       if disableAnimation {
         context.duration = 0
@@ -212,10 +213,11 @@ extension IINAAnimation {
       guard let nextTask = popNextValidTask() else { return }
 
       NSAnimationContext.runAnimationGroup({ context in
-        CATransaction.begin()
-        defer {
-          CATransaction.commit()
-        }
+        // TODO: probably remove CATransaction after more testing. Probably redundant?
+//        CATransaction.begin()
+//        defer {
+//          CATransaction.commit()
+//        }
         let disableAnimation = !isAnimationEnabled
         if disableAnimation {
           context.duration = 0
