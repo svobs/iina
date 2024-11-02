@@ -33,10 +33,47 @@ class PrefControlViewController: PreferenceViewController, PreferenceWindowEmbed
   @IBOutlet weak var forceTouchLabel: NSTextField!
   @IBOutlet weak var scrollVerticallyLabel: NSTextField!
 
+  @IBOutlet weak var seekScrollSensitivityLabel: NSTextField!
+  @IBOutlet weak var volumeScrollSensitivityLabel: NSTextField!
+
+  var co: CocoaObserver! = nil
+
   override func viewDidLoad() {
     super.viewDidLoad()
-
-    forceTouchLabel.widthAnchor.constraint(equalTo: scrollVerticallyLabel.widthAnchor, multiplier: 1).isActive = true
+    configureObservers()
   }
 
+  override func viewDidAppear() {
+    super.viewDidAppear()
+    co.addAllObservers()
+    updateLabels()
+  }
+
+  override func viewWillDisappear() {
+    co.removeAllObservers()
+  }
+
+  // MARK: Observers
+
+  private func configureObservers() {
+    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+      .relativeSeekAmount,
+      .volumeScrollAmount,
+    ])
+  }
+
+  /// Called each time a pref `key`'s value is set
+  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case PK.relativeSeekAmount, PK.volumeScrollAmount:
+      updateLabels()
+    default:
+      break
+    }
+  }
+
+  private func updateLabels() {
+    seekScrollSensitivityLabel.stringValue = Preference.seekScrollSensitivity().stringMaxFrac2 + "x"
+    volumeScrollSensitivityLabel.stringValue = Preference.volumeScrollSensitivity().stringMaxFrac2 + "x"
+  }
 }

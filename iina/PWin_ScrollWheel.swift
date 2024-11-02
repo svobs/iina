@@ -26,10 +26,8 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
       wasPlayingBeforeSeeking = true
     }
 
-    let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
-    session.sensitivity = pow(10.0, Double(seekTick) - 3)
-
-    session.valueAtStart = delegateSlider?.doubleValue
+    session.sensitivity = Preference.seekScrollSensitivity()
+    // Do not even bother to set session.valueAtStart - will only pollute logs with inaccuracies
     session.modelValueAtStart = player.info.playbackPositionSec
   }
 
@@ -59,9 +57,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
 /// An instance of this is stored in the `PlayerWindowController` instance. Also see its `volumeSliderAction(_:)
 class VolumeSliderScrollWheel: VirtualScrollWheel {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
-    let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
-    session.sensitivity = pow(10.0, Double(sensitivityTick) - 3.0)
-
+    session.sensitivity = Preference.volumeScrollSensitivity()
     session.valueAtStart = delegateSlider?.doubleValue
   }
 }  // end class

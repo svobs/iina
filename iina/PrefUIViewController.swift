@@ -34,9 +34,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   static var oscToolbarButtons: [Preference.ToolBarButton] {
-    get {
-      return (Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []).compactMap(Preference.ToolBarButton.init(rawValue:))
-    }
+    return (Preference.array(for: .controlBarToolbarButtons) as? [Int] ?? []).compactMap(Preference.ToolBarButton.init(rawValue:))
   }
 
   override var sectionViews: [NSView] {
@@ -44,7 +42,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
             sectionThumbnailView, sectionPictureInPictureView, sectionAccessibilityView]
   }
 
+  var disableObserversForOSC = false
+  var co: CocoaObserver! = nil
+
   private let toolbarSettingsSheetController = PrefOSCToolbarSettingsSheetController()
+
+  private var oscToolbarStackViewHeightConstraint: NSLayoutConstraint? = nil
+  private var oscToolbarStackViewWidthConstraint: NSLayoutConstraint? = nil
 
   @IBOutlet weak var toolIconSizeSlider: NSSlider!
   @IBOutlet weak var toolIconSpacingSlider: NSSlider!
@@ -124,62 +128,20 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBOutlet weak var pipHideWindow: NSButton!
   @IBOutlet weak var pipMinimizeWindow: NSButton!
 
-  var oscToolbarStackViewHeightConstraint: NSLayoutConstraint? = nil
-  var oscToolbarStackViewWidthConstraint: NSLayoutConstraint? = nil
-
-  private let observedPrefKeys: [Preference.Key] = [
-    .enableAdvancedSettings,
-    .showTopBarTrigger,
-    .topBarPlacement,
-    .bottomBarPlacement,
-    .enableOSC,
-    .oscPosition,
-    .themeMaterial,
-    .settingsTabGroupLocation,
-    .playlistTabGroupLocation,
-
-    .controlBarToolbarButtons,
-    .oscBarHeight,
-    .oscBarPlaybackIconSize,
-    .oscBarPlaybackIconSpacing,
-    .oscBarToolbarIconSize,
-    .oscBarToolbarIconSpacing,
-    .arrowButtonAction,
-
-    .useLegacyWindowedMode,
-    .aspectRatioPanelPresets,
-    .cropPanelPresets,
-  ]
-
-  var disableObserversForOSC = false
+  // MARK: Init
 
   override init(nibName nibNameOrNil: NSNib.Name?, bundle nibBundleOrNil: Bundle?) {
     super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-
-    observedPrefKeys.forEach { key in
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
-
-    // Set up key-value observing for changes to this view's properties:
-    addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    ObjcUtils.silenced {
-      for key in self.observedPrefKeys {
-        UserDefaults.standard.removeObserver(self, forKeyPath: key.rawValue)
-      }
-      UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
-    }
-  }
-
   override func viewDidLoad() {
     super.viewDidLoad()
 
+    configureObservers()
     updateAspectControlsFromPrefs()
     updateCropControlsFromPrefs()
 
@@ -210,41 +172,86 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   override func viewDidAppear() {
     super.viewDidAppear()
+    co.addAllObservers()
+    // Set up key-value observing for changes to this view's properties:
+    addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
     updateThumbnailCacheStat()
   }
 
-  override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
-    guard let keyPath = keyPath, let _ = change else { return }
+  override func viewWillDisappear() {
+    co.removeAllObservers()
+    ObjcUtils.silenced {
+      UserDefaults.standard.removeObserver(self, forKeyPath: #keyPath(view.effectiveAppearance))
+    }
+  }
 
-    switch keyPath {
-    case PK.aspectRatioPanelPresets.rawValue:
+  // MARK: Observers
+
+  private func configureObservers() {
+    co = CocoaObserver(Logger.log, prefDidChange: prefDidChange, [
+      .enableAdvancedSettings,
+      .showTopBarTrigger,
+      .topBarPlacement,
+      .bottomBarPlacement,
+      .enableOSC,
+      .oscPosition,
+      .themeMaterial,
+      .settingsTabGroupLocation,
+      .playlistTabGroupLocation,
+      .controlBarToolbarButtons,
+      .oscBarHeight,
+      .oscBarPlaybackIconSize,
+      .oscBarPlaybackIconSpacing,
+      .oscBarToolbarIconSize,
+      .oscBarToolbarIconSpacing,
+      .arrowButtonAction,
+      .useLegacyWindowedMode,
+      .aspectRatioPanelPresets,
+      .cropPanelPresets,
+    ])
+  }
+
+  /// Called each time a pref `key`'s value is set
+  func prefDidChange(_ key: Preference.Key, _ newValue: Any?) {
+    switch key {
+    case PK.aspectRatioPanelPresets:
       updateAspectControlsFromPrefs()
-  case PK.cropPanelPresets.rawValue:
+    case PK.cropPanelPresets:
       updateCropControlsFromPrefs()
-    case PK.showTopBarTrigger.rawValue,
-      PK.arrowButtonAction.rawValue,
-      PK.enableOSC.rawValue,
-      PK.topBarPlacement.rawValue,
-      PK.bottomBarPlacement.rawValue,
-      PK.oscPosition.rawValue,
-      PK.useLegacyWindowedMode.rawValue,
-      PK.themeMaterial.rawValue,
-      PK.enableAdvancedSettings.rawValue:
+    case PK.showTopBarTrigger,
+      PK.arrowButtonAction,
+      PK.enableOSC,
+      PK.topBarPlacement,
+      PK.bottomBarPlacement,
+      PK.oscPosition,
+      PK.useLegacyWindowedMode,
+      PK.themeMaterial,
+      PK.enableAdvancedSettings:
 
       refreshTitleBarAndOSCSection()
       updateGeometryUI()
-    case PK.settingsTabGroupLocation.rawValue, PK.playlistTabGroupLocation.rawValue:
+    case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation:
       updateSidebarSection()
-    case PK.oscBarHeight.rawValue,
-      PK.controlBarToolbarButtons.rawValue,
-      PK.oscBarPlaybackIconSize.rawValue,
-      PK.oscBarPlaybackIconSpacing.rawValue,
-      PK.oscBarToolbarIconSize.rawValue,
-      PK.oscBarToolbarIconSpacing.rawValue:
+    case PK.oscBarHeight,
+      PK.controlBarToolbarButtons,
+      PK.oscBarPlaybackIconSize,
+      PK.oscBarPlaybackIconSpacing,
+      PK.oscBarToolbarIconSize,
+      PK.oscBarToolbarIconSpacing:
 
       guard !disableObserversForOSC else { return }
       updateOSCToolbarPreview()
+    default:
+      break
+    }
+  }
+
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?,
+                             change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+    guard let keyPath = keyPath, let _ = change else { return }
+
+    switch keyPath {
     case #keyPath(view.effectiveAppearance):
       if Preference.enum(for: .themeMaterial) == Preference.Theme.system {
         // Refresh image in case dark mode changed
@@ -622,9 +629,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   private func normalizePercentage(_ string: String) -> String {
-    var sizeInt = Int(string) ?? 100
-    sizeInt = max(0, sizeInt)
-    sizeInt = min(sizeInt, 100)
+    let sizeInt = (Int(string) ?? 100).clamped(to: 0...100)
     return "\(sizeInt)%"
   }
 

@@ -1509,4 +1509,14 @@ struct Preference {
   static var isAdvancedEnabled: Bool {
     return Preference.bool(for: .enableAdvancedSettings)
   }
+
+  static func seekScrollSensitivity() -> Double {
+    let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
+    return pow(10.0, Double(seekTick) - 3)
+  }
+
+  static func volumeScrollSensitivity() -> Double {
+    let tick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
+    return pow(5.0, Double(tick) - 3)
+  }
 }

@@ -30,7 +30,9 @@ fileprivate enum ScrollState {
 }
 
 class ScrollSession {
+  /// Slider `doubleValue` at scroll start
   var valueAtStart: Double? = nil
+  /// Underlying model value at scroll start (or leave nil if model is same as `doubleValue`)
   var modelValueAtStart: Double? = nil
   var modelValueAtEnd: Double? = nil
   var sensitivity: CGFloat = 1.0
@@ -218,9 +220,9 @@ class VirtualScrollWheel {
       let accelerationPerUserSec = deltaPerUserSec / timeUser
       let valueChange: String
       if let valueAtStart = session.valueAtStart, let valueAtEnd = delegateSlider?.doubleValue {
-        valueChange = (valueAtEnd - valueAtStart).stringMaxFrac2
+        valueChange = "  ⏐  \((valueAtEnd - valueAtStart).stringMaxFrac2) ⱽᴬᴸᵁᴱ"
       } else {
-        valueChange = "??"
+        valueChange = ""
       }
       let modelValueChange: String
       if let modelValueAtStart = session.modelValueAtStart, let modelValueAtEnd = session.modelValueAtEnd {
@@ -229,7 +231,7 @@ class VirtualScrollWheel {
       } else {
         modelValueChange = ""
       }
-      let msg = "ScrollWheel Δ: ⏐  \(session.rawDeltaTotal.string2FractionDigits) ᴿᴬᵂ  ⏐  \(valueChange) ⱽᴬᴸᵁᴱ\(modelValueChange)"
+      let msg = "ScrollWheel Δ: ⏐  \(session.rawDeltaTotal.string2FractionDigits) ᴿᴬᵂ\(valueChange)\(modelValueChange)"
       let detail = [
         "Time:       \t\(timeMsg)",
         "Events:     \t\(session.totalEventCount)",
