@@ -364,7 +364,7 @@
 		D1DC673128ED682100C419CB /* RemainingRemovalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */; };
 		D1E1446C29E3971C005DCEA3 /* IINAAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */; };
 		D1E407B92CC1CA8B002A2F9B /* TableDragDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */; };
-		D1E407BB2CC392F9002A2F9B /* PWin_Visibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */; };
+		D1E407BB2CC392F9002A2F9B /* PWin_FadeableViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */; };
 		D1E407BD2CC39549002A2F9B /* PWin_MouseInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */; };
 		D1E407BF2CC7A685002A2F9B /* VirtualScrollWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
@@ -1880,7 +1880,7 @@
 		D1DC673028ED682100C419CB /* RemainingRemovalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemainingRemovalTracker.swift; sourceTree = "<group>"; };
 		D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IINAAnimation.swift; sourceTree = "<group>"; };
 		D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableDragDelegate.swift; sourceTree = "<group>"; };
-		D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Visibility.swift; sourceTree = "<group>"; };
+		D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_FadeableViews.swift; sourceTree = "<group>"; };
 		D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_MouseInput.swift; sourceTree = "<group>"; };
 		D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualScrollWheel.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
@@ -2850,7 +2850,7 @@
 				D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */,
 				D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */,
 				D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */,
-				D1E407BA2CC392EC002A2F9B /* PWin_Visibility.swift */,
+				D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */,
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
 				D1A8878D29D1696C000D1AE4 /* PWin_Sidebar.swift */,
 				D101635C2C197D4D00D1D663 /* PWin_OSD.swift */,
@@ -3317,7 +3317,7 @@
 				84D0FB7E1F5E519300C6A6A7 /* FreeSelectingViewController.swift in Sources */,
 				E3530702214935DE008FE492 /* JavascriptAPIConsole.swift in Sources */,
 				840D47A01DFEFC49000D9A64 /* KeyRecordView.swift in Sources */,
-				D1E407BB2CC392F9002A2F9B /* PWin_Visibility.swift in Sources */,
+				D1E407BB2CC392F9002A2F9B /* PWin_FadeableViews.swift in Sources */,
 				84791C8B1D405E9D0069E28A /* PlaybackInfo.swift in Sources */,
 				E322A4F820A8442E00C67D32 /* PlaylistPlaybackProgressView.swift in Sources */,
 				D17CBBA52CCC39D8006160AC /* PWin_ScrollWheel.swift in Sources */,

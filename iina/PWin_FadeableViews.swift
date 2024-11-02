@@ -1,5 +1,5 @@
 //
-//  PWin_Visibility.swift
+//  PWin_FadeableViews.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-10-19.
@@ -160,15 +160,6 @@ extension PlayerWindowController {
     return tasks
   }
 
-  /// Executed when `hideFadeableViewsTimer` fires
-  @objc func hideFadeableViewsAndCursor() {
-    // don't hide UI when dragging control bar
-    if controlBarFloating.isDragging { return }
-    if hideFadeableViews() {
-      hideCursor()
-    }
-  }
-
   @discardableResult
   func hideFadeableViews() -> Bool {
     guard pipStatus == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
@@ -254,6 +245,15 @@ extension PlayerWindowController {
     return true
   }
 
+  /// Executed when `hideFadeableViewsTimer` fires
+  @objc func hideFadeableViewsAndCursor() {
+    // don't hide UI when dragging control bar
+    if controlBarFloating.isDragging { return }
+    if hideFadeableViews() {
+      hideCursor()
+    }
+  }
+
   // MARK: - Fadeable Views Timer
 
   func resetFadeTimer() {
@@ -276,6 +276,45 @@ extension PlayerWindowController {
 
   func destroyFadeTimer() {
     hideFadeableViewsTimer?.invalidate()
+  }
+
+  // MARK: - Cursor visibility
+
+  func restartHideCursorTimer() {
+    hideCursorTimer?.invalidate()
+    hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
+  }
+
+  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
+  /// bounds of the window's real estate.
+  @objc func hideCursor() {
+    hideCursorTimer?.invalidate()
+    hideCursorTimer = nil
+    guard let window else { return }
+
+    switch currentLayout.mode {
+    case .windowed:
+      let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
+      guard isCursorInWindow else { return }
+    case .fullScreen:
+      let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
+      guard isCursorInScreen else { return }
+    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+      return
+    }
+    log.trace("Hiding cursor")
+    NSCursor.setHiddenUntilMouseMoves(true)
+  }
+
+  // MARK: - Default album art visibility
+
+  func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
+    assert(DispatchQueue.isExecutingIn(.main))
+    guard let showDefaultArt else { return }
+
+    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (state=\(player.info.currentPlayback?.state.description ?? "nil"))")
+    // Update default album art visibility:
+    defaultAlbumArtView.isHidden = !showDefaultArt
   }
 
   // MARK: - Seek Time & Thumbnail
@@ -341,43 +380,82 @@ extension PlayerWindowController {
     }
   }
 
-  // MARK: - Cursor visibility
+  /// Display time label & thumbnail when mouse over slider
+  func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
+    thumbDisplayTicketCounter += 1
+    let currentTicket = thumbDisplayTicketCounter
 
-  func restartHideCursorTimer() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = Timer.scheduledTimer(timeInterval: max(0, Preference.double(for: .cursorAutoHideTimeout)), target: self, selector: #selector(hideCursor), userInfo: nil, repeats: false)
+    DispatchQueue.main.async { [self] in
+      guard currentTicket == thumbDisplayTicketCounter else { return }
+
+      guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
+            let duration = player.info.playbackDurationSec else {
+        hideSeekTimeAndThumbnail()
+        return
+      }
+      showSeekTimeAndThumbnail(forPointInWindow: pointInWindow, mediaDuration: duration)
+    }
   }
 
-  /// Only hides cursor if in full screen or windowed (non-interactive) modes, and only if mouse is within
-  /// bounds of the window's real estate.
-  @objc func hideCursor() {
-    hideCursorTimer?.invalidate()
-    hideCursorTimer = nil
-    guard let window else { return }
+  /// Should only be called by `refreshSeekTimeAndThumbnailAsync`
+  private func showSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
+    // - 1. Time Hover Label
 
-    switch currentLayout.mode {
-    case .windowed:
-      let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
-      guard isCursorInWindow else { return }
-    case .fullScreen:
-      let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
-      guard isCursorInScreen else { return }
-    case .musicMode, .windowedInteractive, .fullScreenInteractive:
+    let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
+
+    timePositionHoverLabelHorizontalCenterConstraint.constant = knobCenterOffsetInPlaySlider
+
+    let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
+                                                                      knobCenterOffsetInPlaySlider)
+    let previewTimeSec = mediaDuration * playbackPositionRatio
+    let stringRepresentation = VideoTime.string(from: previewTimeSec)
+    if timePositionHoverLabel.stringValue != stringRepresentation {
+      timePositionHoverLabel.stringValue = stringRepresentation
+    }
+    timePositionHoverLabel.isHidden = false
+
+    // - 2. Thumbnail Preview
+
+    if isInScrollWheelSeek || isDraggingPlaySlider {
+      // Thumbnail preview during seek
+      guard Preference.bool(for: .enableThumbnailPreview) && Preference.bool(for: .showThumbnailDuringSliderSeek) else {
+        // Feature is disabled
+        thumbnailPeekView.isHidden = true
+        return
+      }
+      // Need to ensure OSC is displayed if showing thumbnail preview
+      let hasFadeableOSC = currentLayout.hasFadeableOSC
+      if hasFadeableOSC {
+        let hasTopBarFadeableOSC = currentLayout.oscPosition == .top && currentLayout.topBarView == .showFadeableTopBar
+        let isOSCHidden = hasTopBarFadeableOSC ? fadeableTopBarAnimationState == .hidden : fadeableViewsAnimationState == .hidden
+        if isOSCHidden {
+          showFadeableViews(thenRestartFadeTimer: false, duration: 0, forceShowTopBar: hasTopBarFadeableOSC)
+        } else {
+          hideFadeableViewsTimer?.invalidate()
+        }
+        // Set this to remind ourselves to restart the fade timer when seek is done
+        isShowingFadeableViewsForSeek = true
+      }
+    }
+
+    guard let currentControlBar else {
+      thumbnailPeekView.isHidden = true
       return
     }
-    log.trace("Hiding cursor")
-    NSCursor.setHiddenUntilMouseMoves(true)
-  }
+    guard !currentLayout.isMusicMode || (Preference.bool(for: .enableThumbnailForMusicMode) && musicModeGeo.isVideoVisible) else {
+      thumbnailPeekView.isHidden = true
+      return
+    }
 
-  // MARK: - Default album art visibility
-
-  func updateDefaultArtVisibility(to showDefaultArt: Bool?) {
-    assert(DispatchQueue.isExecutingIn(.main))
-    guard let showDefaultArt else { return }
-
-    log.verbose("\(showDefaultArt ? "Showing" : "Hiding") defaultAlbumArt (state=\(player.info.currentPlayback?.state.description ?? "nil"))")
-    // Update default album art visibility:
-    defaultAlbumArtView.isHidden = !showDefaultArt
+    let didShow = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
+                                                     currentControlBar: currentControlBar, geo.video,
+                                                     viewportSize: viewportView.frame.size,
+                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+    guard didShow else { return }
+    seekTimeAndThumbnailAnimationState = .shown
+    // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
+    // reliably, so using a timer works well as a failsafe.
+    resetSeekTimeAndThumbnailTimer()
   }
 
 }
