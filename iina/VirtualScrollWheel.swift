@@ -47,58 +47,33 @@ class ScrollSession {
   let startTime = Date()
   var momentumStartTime: Date? = nil
 #endif
-
+  
   func addPendingEvent(_ event: NSEvent) {
     lock.withLock { [self] in
       eventsPending.append(event)
     }
   }
-
-  /// Based on `ScrollableSlider.swift`, created by Nate Thompson on 10/24/17.
-  /// Original source code: https://github.com/thompsonate/Scrollable-NSSlider
-  func executeScroll(on delegateSlider: ScrollableSlider) {
+  
+  /// Extracts delta values from all pending events by interpreting them as scroll events to be
+  /// executed on `slider`. Clears events after. Returns their sum adjusted by `sensitivity`.
+  /// This number is independent of the slider's actual `doubleValue` and is open to interpretation.
+  func consumePendingEvents(for slider: ScrollableSlider) -> CGFloat {
     // All the pending events need to be applied immediately.
     // Save CPU by adding them all together before calling action:
-    var newValue: CGFloat = 0.0
-    lock.withLock { [self] in
-      newValue = eventsPending.reduce(delegateSlider.doubleValue) { value, event in
-        computeNewValue(for: delegateSlider, from: event, usingCurrentValue: value)
+    return lock.withLock { [self] in
+      let rawDeltaSum = eventsPending.reduce(0.0) { sum, event in
+        let rawDelta = slider.extractLinearDelta(from: event)
+        return sum + rawDelta
       }
+      
+#if DEBUG
+      rawDeltaTotal += rawDeltaSum
+      totalEventCount += eventsPending.count
+#endif
+      
       eventsPending = []
+      return rawDeltaSum * sensitivity
     }
-
-    callAction(on: delegateSlider, applyingNewValue: newValue)
-  }
-
-  /// Computes new `doubleValue` for `slider` assuming the given `currentValue` and returns it.
-  /// Uses some properties from `slider` but ignores `slider.doubleValue` entirely.
-  private func computeNewValue(for slider: ScrollableSlider, from event: NSEvent,
-                               usingCurrentValue currentValue: CGFloat) -> CGFloat {
-    let delta = slider.extractLinearDelta(from: event)
-    let valueChange = delta * sensitivity
-
-    // Compute & set new value for slider
-    let newValue = currentValue + valueChange
-
-#if DEBUG
-    rawDeltaTotal += delta
-    totalEventCount += 1
-#endif
-
-    return newValue
-  }
-
-  private func callAction(on slider: NSSlider, applyingNewValue newValue: CGFloat) {
-    // There can be a huge number of requests which don't change the existing value.
-    // But in the case of mpv seeks, these can cause noticeable slowdown.
-    // Discard them for a large increase in performance.
-    guard slider.doubleValue != newValue else { return }
-
-#if DEBUG
-    actionCount += 1
-#endif
-    slider.doubleValue = newValue
-    slider.sendAction(slider.action, to: slider.target)
   }
 }
 
@@ -150,7 +125,8 @@ class VirtualScrollWheel {
     currentSession?.addPendingEvent(event)
     changeState(with: event)
     if let currentSession, let delegateSlider, isScrolling() {
-      currentSession.executeScroll(on: delegateSlider)
+      let scrollDelta: CGFloat = currentSession.consumePendingEvents(for: delegateSlider)
+      scrollDidUpdate(valueDelta: scrollDelta, with: currentSession)
     }
   }
 
@@ -170,6 +146,15 @@ class VirtualScrollWheel {
   /// - Will not be called if `scrollWheelDidStart` does not fire first (see notes for that).
   /// - If the scroll has momentum, this will be called when that ends. Otherwise this will be called when user scroll ends.
   func scrollSessionDidEnd(_ session: ScrollSession) {
+  }
+
+  /// Called zero-to-many times after `scrollSessionWillBegin` & before `scrollSessionDidEnd`.
+  /// Subclasses should override.
+  func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
+    guard let slider = delegateSlider else { return }
+    let newValue = (slider.doubleValue + Double(valueDelta)).clamped(to: slider.range)
+    slider.doubleValue = newValue
+    slider.sendAction(slider.action, to: slider.target)
   }
 
   /// Returns true if in one of the scrolling states (i.e. a scroll session is currently active)
@@ -196,7 +181,7 @@ class VirtualScrollWheel {
   func configure(_ slider: ScrollableSlider, _ log: Logger.Subsystem) {
     self.log = log
     self.delegateSlider = slider
-    slider.scrollWheel = self
+    slider.scrollWheelDelegate = self
   }
 
   // MARK: - Internal state machine

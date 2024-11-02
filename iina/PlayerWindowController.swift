@@ -1973,21 +1973,22 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded, player.info.isFileLoaded || player.info.isRestoring else { return }
     // The mpv documentation for the duration property indicates mpv is not always able to determine
     // the video duration in which case the property is not available.
-    guard let duration = player.info.playbackDurationSec, let pos = player.info.playbackPositionSec else { return }
+    guard let duration = player.info.playbackDurationSec,
+          let position = player.info.playbackPositionSec else { return }
 
     // If the OSD is visible and is showing playback position, keep its displayed time up to date:
     setOSDViews()
 
     // Update playback position slider in OSC:
     for label in [leftLabel, rightLabel] {
-      label?.updateText(with: duration, given: pos)
+      label?.updateText(with: duration, given: position)
     }
-    let percentage = (pos / duration) * 100
-    playSlider.updateTo(percentage: percentage)
+    let percentage = (position / duration) * 100
+    playSlider.doubleValue = percentage
 
     // Touch bar
     player.touchBarSupport.touchBarPlaySlider?.setDoubleValueSafely(percentage)
-    player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: pos) }
+    player.touchBarSupport.touchBarPosLabels.forEach { $0.updateText(with: duration, given: position) }
   }
 
   func updateVolumeUI() {
@@ -2329,22 +2330,26 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Called when `PlaySlider` changes value, either by:
   /// - clicking inside it
   /// - dragging inside it
-  /// - using scroll wheel (if configured).
+  /// Scroll wheel seek should call `seekFromPlaySlider` directly.
   @IBAction func playSliderAction(_ slider: PlaySlider) {
+    // Update player.info & UI proactively
+    let absoluteSecond = slider.positionAbsoluteSec
+    seekFromPlaySlider(absoluteSecond: absoluteSecond)
+  }
+
+  func seekFromPlaySlider(absoluteSecond: CGFloat) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
 
-    // Update player.info proactively
-    let absoluteSec = slider.positionAbsoluteSec
-    player.info.playbackPositionSec = absoluteSec
-    setOSDViews()
-
+    // Update player.info & UI proactively
+    player.info.playbackPositionSec = absoluteSecond
+    updatePlaybackTimeUI()
     // Make fake point in window to pass to seek time & thumbnail
     let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: 0)
     refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
 
     let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
-    player.seek(absoluteSecond: absoluteSec, forceExact: forceExactSeek)
+    player.seek(absoluteSecond: absoluteSecond, forceExact: forceExactSeek)
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

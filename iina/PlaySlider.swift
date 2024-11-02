@@ -85,15 +85,6 @@ final class PlaySlider: ScrollableSlider {
     needsDisplay = true
   }
 
-  func updateTo(percentage: Double) {
-    let oldPercentage = doubleValue
-    let delta = abs(percentage - oldPercentage) * 0.01
-    let pxChange = frame.size.width * delta
-    if pxChange >= PlaySlider.minPixelChangeThreshold {
-      doubleValue = percentage
-    }
-  }
-
   var positionAbsoluteSec: Double {
     return player.info.playbackDurationSec! * progressRatio
   }

@@ -6,15 +6,13 @@
 
 import Foundation
 
-/// Adds scroll wheel support to `NSSlider`. Must set its `scrollWheel` property after init.
-///
-/// The logic for this class has moved. See `VirtualScrollWheel.executeScroll()`.
+/// Adds scroll wheel support to `NSSlider`. Must set its `scrollWheelDelegate` property after init.
 class ScrollableSlider: NSSlider {
-  var scrollWheel: VirtualScrollWheel?
+  var scrollWheelDelegate: VirtualScrollWheel?
 
   override func scrollWheel(with event: NSEvent) {
     guard isEnabled else { return }
-    scrollWheel?.scrollWheel(with: event)
+    scrollWheelDelegate?.scrollWheel(with: event)
   }
 
   /// Converts `deltaX` & `deltaY` from any type of `NSSlider` into a standardized 1-dimensional (+/-) delta

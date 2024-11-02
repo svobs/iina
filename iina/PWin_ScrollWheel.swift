@@ -27,16 +27,16 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     }
 
     let seekTick = Preference.integer(for: .relativeSeekAmount).clamped(to: 1...5)
-    session.sensitivity = pow(10.0, Double(seekTick) * 0.5 - 2)
+    session.sensitivity = pow(10.0, Double(seekTick) - 3)
 
     session.valueAtStart = delegateSlider?.doubleValue
-    session.modelValueAtStart = (delegateSlider as! PlaySlider).positionAbsoluteSec
+    session.modelValueAtStart = player.info.playbackPositionSec
   }
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
     guard let player = delegateSlider?.thisPlayer else { return }
 
-    session.modelValueAtEnd = (delegateSlider as! PlaySlider).positionAbsoluteSec
+    session.modelValueAtEnd = player.info.playbackPositionSec
 
     player.log.verbose("PlaySlider scrollWheel seek ended")
     // only resume playback when it was playing before seeking
@@ -45,18 +45,26 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
       wasPlayingBeforeSeeking = false
     }
   }
-}
+
+  override func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
+    guard let player = delegateSlider?.thisPlayer else { return }
+    guard let position = player.info.playbackPositionSec,
+          let duration = player.info.playbackDurationSec else { return }
+    let newAbsolutePosition = (position + Double(valueDelta)).clamped(to: 0.0...duration)
+    player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition)
+  }
+}  // end class
 
 
 /// An instance of this is stored in the `PlayerWindowController` instance. Also see its `volumeSliderAction(_:)
 class VolumeSliderScrollWheel: VirtualScrollWheel {
   override func scrollSessionWillBegin(_ session: ScrollSession) {
     let sensitivityTick = Preference.integer(for: .volumeScrollAmount).clamped(to: 1...4)
-    session.sensitivity = pow(10.0, Double(sensitivityTick) * 0.5 - 2.0)
+    session.sensitivity = pow(10.0, Double(sensitivityTick) - 3.0)
 
     session.valueAtStart = delegateSlider?.doubleValue
   }
-}
+}  // end class
 
 
 class PWinScrollWheel: VirtualScrollWheel {
@@ -114,6 +122,10 @@ class PWinScrollWheel: VirtualScrollWheel {
 
   override func scrollSessionDidEnd(_ session: ScrollSession) {
     delegate?.scrollSessionDidEnd(session)
+  }
+
+  override func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
+    delegate?.scrollDidUpdate(valueDelta: valueDelta, with: session)
   }
 }
 
