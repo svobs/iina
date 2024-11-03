@@ -420,7 +420,7 @@ struct DebugConfig {
 #if DEBUG
   /// Skip the Approve Restore prompt and retry restore if a failed previous restore was detected.
   static let alwaysApproveRestore = true
-  static let enableScrollWheelDebug = true
+  static let enableScrollWheelDebug = false
 
   static let addHistoryWindowLoadingDelay = false
 #endif
