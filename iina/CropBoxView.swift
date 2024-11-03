@@ -8,15 +8,7 @@
 
 import Cocoa
 
-fileprivate extension NSColor {
-  static let cropBoxFill = NSColor(named: .cropBoxFill)!
-  static let cropBoxBorder = NSColor.controlAccentColor
-}
-
 class CropBoxView: NSView {
-
-  private let boxStrokeColor = NSColor.cropBoxBorder
-  private let boxFillColor = NSColor.cropBoxFill
 
   weak var settingsViewController: CropBoxViewController!
 
@@ -202,8 +194,8 @@ class CropBoxView: NSView {
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
 
-    boxStrokeColor.setStroke()
-    boxFillColor.setFill()
+    NSColor.cropBoxStroke.setStroke()
+    NSColor.cropBoxFill.setFill()
 
     let path = NSBezierPath(rect: boxRect)
     path.lineWidth = 2

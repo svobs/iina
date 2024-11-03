@@ -45,9 +45,5 @@ extension NSColor.Name {
 }
 
 extension NSColor {
-  static let sidebarTabTint: NSColor = NSColor(named: .sidebarTabTint)!
-  static let sidebarTabTintActive: NSColor = NSColor(named: .sidebarTabTintActive)!
-
-  static let playlistProgressBarActive = NSColor(named: .playlistProgressBarActive)!
-  static let playlistProgressBarBackground = NSColor(named: .playlistProgressBarBackground)!
+  static let cropBoxStroke = NSColor.controlAccentColor
 }

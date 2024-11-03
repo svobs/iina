@@ -9,19 +9,17 @@
 import Cocoa
 
 class PlaylistPlaybackProgressView: NSView {
-  private static let playlistProgressBarBackground = NSColor.playlistProgressBarBackground
-  private static let playlistProgressBarActive = NSColor.playlistProgressBarActive
 
   /// The percentage from 0 to 1.
   var percentage: Double = 0
 
   override func draw(_ dirtyRect: NSRect) {
     let bgRect = NSRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
-    PlaylistPlaybackProgressView.playlistProgressBarBackground.setFill()
+    NSColor.playlistProgressBarBackground.setFill()
     NSBezierPath(rect: bgRect).fill()
 
     let fgRect = NSRect(x: 0, y: 0, width: bounds.width * CGFloat(percentage), height: bounds.height)
-    PlaylistPlaybackProgressView.playlistProgressBarActive.setFill()
+    NSColor.playlistProgressBarActive.setFill()
     NSBezierPath(rect: fgRect).fill()
   }
 
