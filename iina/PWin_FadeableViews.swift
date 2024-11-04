@@ -173,7 +173,7 @@ extension PlayerWindowController {
 
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:
-    let mustHideSeekTimeAndThumbnail = !currentLayout.hasPermanentOSC
+    let mustHideSeekTimeAndThumbnail = !currentLayout.hasPermanentControlBar
 
     if mustHideSeekTimeAndThumbnail {
       // Cancel timer now. Hide thumbnail with other views (below)
@@ -322,9 +322,8 @@ extension PlayerWindowController {
   func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     guard !player.disableUI,
           !isAnimatingLayoutTransition,
-          !currentLayout.isInteractiveMode,
           !osd.isShowingPersistentOSD,
-          currentLayout.hasOSC else {
+          currentLayout.hasControlBar else {
       return false
     }
     return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])

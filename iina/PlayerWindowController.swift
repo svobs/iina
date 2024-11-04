@@ -1918,8 +1918,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // MARK: - Sync UI with playback
 
   func isUITimerNeeded() -> Bool {
-    //    log.verbose("Checking if UITimer needed. hasPermanentOSC:\(currentLayout.hasPermanentOSC.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osd.animationState)")
-    if currentLayout.hasPermanentOSC {
+    //    log.verbose("Checking if UITimer needed. hasPermanentControlBar:\(currentLayout.hasPermanentControlBar.yn) fadeableViews:\(fadeableViewsAnimationState) topBar: \(fadeableTopBarAnimationState) OSD:\(osd.animationState)")
+    if currentLayout.hasPermanentControlBar {
       return true
     }
     let showingFadeableViews = fadeableViewsAnimationState == .shown || fadeableViewsAnimationState == .willShow

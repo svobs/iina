@@ -27,6 +27,7 @@ struct LayoutSpec {
   var leadingSidebarPlacement: Preference.PanelPlacement { return leadingSidebar.placement }
   var trailingSidebarPlacement: Preference.PanelPlacement { return trailingSidebar.placement }
 
+  /// Can only be `true` for `windowed` & `fullScreen` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
 
@@ -399,7 +400,9 @@ class LayoutState {
     return spec.mode == .musicMode
   }
 
-  /// Note: this does not account for music mode
+  /// Note: this is always `false` for music mode and interactive modes.
+  ///
+  /// To include possibility of music mode, see `hasControlBar()`.
   var enableOSC: Bool {
     return spec.enableOSC
   }
@@ -449,17 +452,17 @@ class LayoutState {
     return enableOSC && oscPosition == .bottom
   }
 
-  var hasOSC: Bool {
+  var hasControlBar: Bool {
     return isMusicMode || enableOSC
   }
 
   var hasFadeableOSC: Bool {
-    return !isMusicMode && enableOSC && (oscPosition == .floating ||
-                                         (oscPosition == .top && topBarView.isFadeable) ||
-                                         (oscPosition == .bottom && bottomBarView.isFadeable))
+    return enableOSC && (oscPosition == .floating ||
+                         (oscPosition == .top && topBarView.isFadeable) ||
+                         (oscPosition == .bottom && bottomBarView.isFadeable))
   }
 
-  var hasPermanentOSC: Bool {
+  var hasPermanentControlBar: Bool {
     if isMusicMode {
       return true
     }
