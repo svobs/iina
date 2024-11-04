@@ -183,17 +183,10 @@ extension PlayerWindowController {
       let currentVolume = player.info.volume
       let isMuted = player.info.isMuted
       isIconGrayedOut = isAudioDisabled
-      if isMuted {
-        icon = NSImage(systemSymbolName: "speaker.slash.fill", accessibilityDescription: "Audio is muted")!
-      } else if isAudioDisabled {
+      if isAudioDisabled {
         icon = NSImage(systemSymbolName: "speaker.fill", accessibilityDescription: "No audio track is selected")!
       } else {
-        if #available(macOS 13.0, *) {
-          // Vary icon slightly based on volume level
-          icon = NSImage(systemSymbolName: "speaker.wave.3.fill", variableValue: currentVolume, accessibilityDescription: "Sound is enabled")!
-        } else {
-          icon = NSImage(systemSymbolName: "speaker.wave.3.fill", accessibilityDescription: "Sound is enabled")!
-        }
+        icon = volumeIcon(volume: currentVolume, isMuted: isMuted)
       }
     } else {
       switch message {
