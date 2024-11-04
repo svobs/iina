@@ -134,11 +134,9 @@ struct ControlBarGeometry {
       arrowIconHeight = playIconSize
     }
     let leftArrowImage = ControlBarGeometry.leftArrowImage(given: arrowButtonAction)
-    let img = leftArrowImage.cgImage!
-    let imageAspect = CGFloat(img.width) / CGFloat(img.height)
     self.leftArrowImage = leftArrowImage
     self.rightArrowImage = ControlBarGeometry.rightArrowImage(given: arrowButtonAction)
-    self.arrowIconWidth = round(arrowIconHeight * imageAspect)
+    self.arrowIconWidth = leftArrowImage.deriveWidth(fromHeight: arrowIconHeight)
     self.arrowButtonAction = arrowButtonAction
     self.arrowIconHeight = arrowIconHeight
   }
@@ -151,12 +149,16 @@ struct ControlBarGeometry {
                               playIconSizeTicks: self.playIconSizeTicks, playIconSpacingTicks: self.playIconSpacingTicks)
   }
 
-  var volumeIconSize: CGFloat {
+  var volumeIconHeight: CGFloat {
     if position == .floating {
       return floatingVolumeIconSize
     } else {
       return playIconSize
     }
+  }
+
+  var volumeSliderWidth: CGFloat {
+    return 70
   }
 
   // MARK: Computed props: Playback Controls

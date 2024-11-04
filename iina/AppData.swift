@@ -412,8 +412,12 @@ struct Images {
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
 
-  static let volume = NSImage(named: "volume")!
+//  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Mute")
   static let mute = NSImage(named: "mute")!
+  static let volume0 = makeSymbol(named: "speaker.fill", fallbackName: "volume-0", desc: "Volume None")
+  static let volume1 = makeSymbol(named: "speaker.wave.1.fill", fallbackName: "volume-1", desc: "Volume 1 Wave")
+  static let volume2 = makeSymbol(named: "speaker.wave.2.fill", fallbackName: "volume-2", desc: "Volume 2 Waves")
+  static let volume3 = makeSymbol(named: "speaker.wave.3.fill", fallbackName: "volume", desc: "Volume Full")
 }
 
 struct DebugConfig {

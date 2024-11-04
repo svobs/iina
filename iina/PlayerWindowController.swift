@@ -405,7 +405,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
   @IBOutlet weak var timePositionHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
-  @IBOutlet weak var volumeIconSizeConstraint: NSLayoutConstraint!
+  var volumeIconHeightConstraint: NSLayoutConstraint!
+  var volumeIconWidthConstraint: NSLayoutConstraint!
 
   // - Outlets: Views
 
@@ -2012,7 +2013,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     muteButton.isEnabled = hasAudio
     muteButton.state = isMuted ? .on : .off
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
-    muteButton.image = volumeImage
+    if let volumeImage, volumeImage != muteButton.image {
+      let task = IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration, { [self] in
+        let volumeIconWidth = volumeImage.deriveWidth(fromHeight: volumeIconHeightConstraint.constant)
+        volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+      })
+      IINAAnimation.runAsync(task, then: { [self] in
+        muteButton.image = volumeImage
+      })
+    }
 
     // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
     // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
@@ -2026,16 +2035,18 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func volumeIcon(volume: Double, isMuted: Bool) -> NSImage? {
-    guard !isMuted else { return NSImage(named: "mute") }
+    if isMuted {
+      return Images.mute
+    }
     switch Int(volume) {
     case 0:
-      return NSImage(named: "volume-0")
+      return Images.volume0
     case 1...33:
-      return NSImage(named: "volume-1")
+      return Images.volume1
     case 34...66:
-      return NSImage(named: "volume-2")
+      return Images.volume2
     case 67...1000:
-      return NSImage(named: "volume")
+      return Images.volume3
     default:
       Logger.log("Volume level \(volume) is invalid", level: .error)
       return nil

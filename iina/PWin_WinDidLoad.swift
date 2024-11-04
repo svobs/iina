@@ -254,6 +254,7 @@ extension PlayerWindowController {
     playButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
     let playIconSize = oscGeo.playIconSize
     playBtnWidthConstraint = playButton.widthAnchor.constraint(equalToConstant: playIconSize)
+    playBtnWidthConstraint.identifier = .init("playBtnWidthConstraint")
     playBtnWidthConstraint.priority = .init(850)  // allow to shrink for animations or speedLabel
     playBtnWidthConstraint.isActive = true
     let playAspectConstraint = playButton.widthAnchor.constraint(equalTo: playButton.heightAnchor)
@@ -361,16 +362,18 @@ extension PlayerWindowController {
   }
 
   private func initVolumeView() {
-    let oscGeo = currentLayout.controlBarGeo
+    // We are early in the loading process. Don't trust cached ControlBarGeometry too much...
+    let oscGeo = ControlBarGeometry(mode: currentLayout.mode)
 
     // Volume view
     fragVolumeView.identifier = .init("fragVolumeView")
     fragVolumeView.translatesAutoresizingMaskIntoConstraints = false
+    fragVolumeView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
 
     // Mute button
     muteButton.identifier = .init("muteButton")
-    muteButton.image = Images.volume
-    muteButton.alternateImage = Images.mute
+    let image = Images.volume3
+    muteButton.image = image
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
     muteButton.setButtonType(.momentaryPushIn)
@@ -383,16 +386,22 @@ extension PlayerWindowController {
     muteButton.translatesAutoresizingMaskIntoConstraints = false
     fragVolumeView.addSubview(muteButton)
     muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
-    muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: 1.0).isActive = true
-    volumeIconSizeConstraint = muteButton.widthAnchor.constraint(equalToConstant: oscGeo.volumeIconSize)
-    volumeIconSizeConstraint.priority = .init(900)
-    volumeIconSizeConstraint.isActive = true
+    muteButton.centerYAnchor.constraint(equalTo: fragVolumeView.centerYAnchor).isActive = true
+    volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
+    volumeIconHeightConstraint.priority = .init(900)
+    volumeIconHeightConstraint.isActive = true
+    let volumeIconWidth = image.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
+    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalToConstant: volumeIconWidth)
+    volumeIconWidthConstraint.priority = .init(900)
+    volumeIconWidthConstraint.isActive = true
 
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)
+    volumeSlider.identifier = .init("volumeSlider")
     volumeSlider.controlSize = .mini
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
-    let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: 70)
+    let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: oscGeo.volumeSliderWidth)
+    volumeSliderWidthConstraint.identifier = .init("volumeSliderWidthConstraint")
     volumeSliderWidthConstraint.priority = .init(900)
     volumeSliderWidthConstraint.isActive = true
     volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
@@ -403,6 +412,7 @@ extension PlayerWindowController {
   }
 
   private func initAlbumArtView() {
+    defaultAlbumArtView.identifier = .init("defaultAlbumArtView")
     defaultAlbumArtView.isHidden = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
     viewportView.addSubview(defaultAlbumArtView)

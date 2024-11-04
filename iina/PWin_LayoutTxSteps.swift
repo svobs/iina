@@ -278,8 +278,12 @@ extension PlayerWindowController {
       // Reduce size of icons if they are smaller
       let oscGeo = outputLayout.controlBarGeo
 
-      if volumeIconSizeConstraint.constant > oscGeo.volumeIconSize {
-        volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
+      if volumeIconHeightConstraint.constant > oscGeo.volumeIconHeight {
+        volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
+        if let img = muteButton.image {
+          let volumeIconWidth = img.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
+          volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+        }
       }
 
       if arrowBtnWidthConstraint.constant > oscGeo.arrowIconHeight {
@@ -787,7 +791,12 @@ extension PlayerWindowController {
       // Increase size of icons if they are larger
       let oscGeo = outputLayout.controlBarGeo
 
-      volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
+      volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
+      if let img = muteButton.image {
+        let volumeIconWidth = img.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
+        volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+      }
+
       arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
       playBtnWidthConstraint.animateToConstant(oscGeo.playIconSize)
       fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)

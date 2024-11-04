@@ -1196,6 +1196,21 @@ extension NSImage {
     return self.cgImage(forProposedRect: &rect, context: nil, hints: nil)
   }
 
+  /// Derives a new width from the given height using this image's existing aspect.
+  func deriveWidth(fromHeight height: CGFloat) -> CGFloat {
+    return round(height * aspect)
+  }
+
+  var aspect: CGFloat {
+    if size.width > 0 && size.height > 0 {
+      let imageAspect = size.width / size.height
+      return imageAspect
+    }
+    let cgImage = self.cgImage
+    let imageAspect = CGFloat(cgImage!.width) / CGFloat(cgImage!.height)
+    return imageAspect
+  }
+
   // https://github.com/venj/Cocoa-blog-code/blob/master/Round%20Corner%20Image/Round%20Corner%20Image/NSImage%2BRoundCorner.m
   func roundCorners(withRadius radius: CGFloat) -> NSImage {
     let rect = NSRect(origin: NSPoint.zero, size: size)
