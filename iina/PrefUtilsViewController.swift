@@ -53,9 +53,6 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
 
     Logger.log("Setting this app as default")
 
-    var successCount = 0
-    var failedCount = 0
-
     let utiChecked = [
       "public.movie": setAsDefaultVideoCheckBox.state == .on,
       "public.audio": setAsDefaultAudioCheckBox.state == .on,
@@ -100,6 +97,9 @@ class PrefUtilsViewController: PreferenceViewController, PreferenceWindowEmbedda
         }
       }
     }
+
+    var successCount = 0
+    var failedCount = 0
 
     for identifier in utiTargetSet {
       let status = LSSetDefaultRoleHandlerForContentType(identifier as CFString, .all, cfBundleID)

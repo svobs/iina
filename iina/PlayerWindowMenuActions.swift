@@ -15,7 +15,8 @@ extension PlayerWindowController {
   }
 
   @objc func menuSavePlaylist(_ sender: NSMenuItem) {
-    Utility.quickSavePanel(title: "Save to playlist", types: ["m3u8"], sheetWindow: player.window) { [self] (url) in
+    Utility.quickSavePanel(title: "Save to playlist", allowedFileExtensions: ["m3u8"],
+                           sheetWindow: player.window) { [self] (url) in
       if url.isFileURL {
         let playlistItems = player.info.playlist
         var playlist = ""

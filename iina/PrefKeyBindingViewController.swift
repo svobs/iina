@@ -170,7 +170,7 @@ class PrefKeyBindingViewController: PreferenceViewController, PreferenceWindowEm
   }
 
   @IBAction func importConfBtnAction(_ sender: Any) {
-    Utility.quickOpenPanel(title: "Select Config File to Import", chooseDir: false, sheetWindow: view.window,
+    Utility.quickOpenPanel(title: "Select Conf File to Import", chooseDir: false, sheetWindow: view.window,
                            allowedFileTypes: [Constants.InputConf.fileExtension]) { url in
       guard url.isFileURL, url.lastPathComponent.hasSuffix(Constants.InputConf.fileExtension) else { return }
       self.confTableController?.importConfFiles([url.lastPathComponent])
