@@ -9,6 +9,7 @@
 import Foundation
 
 fileprivate let iconSizeBaseMultiplier: CGFloat = 0.5
+fileprivate let playIconSpacingScaleMultiplier: CGFloat = 2.0
 fileprivate let playIconSpacingMinScaleMultiplier: CGFloat = 0.1
 fileprivate let maxTicks: CGFloat = 4
 fileprivate let toolSpacingScaleMultiplier: CGFloat = 2.0
@@ -185,7 +186,7 @@ struct ControlBarGeometry {
   }
 
   var playIconSpacingTicks: Int {
-    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks
+    let ticksDouble = ((playIconSpacing / barHeight) - playIconSpacingMinScaleMultiplier) * maxTicks * playIconSpacingScaleMultiplier
     return Int(round(ticksDouble))
   }
 
@@ -241,7 +242,7 @@ struct ControlBarGeometry {
   private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    return barHeight * ((CGFloat(ticks) / maxTicks) + playIconSpacingMinScaleMultiplier)
+    return barHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
   }
 
   /// Prefs UI ticks → CGFloat
