@@ -412,8 +412,9 @@ extension PlayerWindowController {
 
   private func initAlbumArtView() {
     defaultAlbumArtView.identifier = .init("defaultAlbumArtView")
-    defaultAlbumArtView.isHidden = true
+    defaultAlbumArtView.wantsLayer = true
     defaultAlbumArtView.layer?.contents = #imageLiteral(resourceName: "default-album-art")
+    defaultAlbumArtView.isHidden = true
     viewportView.addSubview(defaultAlbumArtView)
 
     defaultAlbumArtView.translatesAutoresizingMaskIntoConstraints = false
