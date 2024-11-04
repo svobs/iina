@@ -427,6 +427,7 @@ extension PlayerWindowController {
       apply(visibility: outputLayout.topBarView, to: topBarView)
     }
 
+    // TODO: be smarter about this, so animations can be improved
     if !transition.inputLayout.hasFloatingOSC {
       // Always remove subviews from OSC - is inexpensive + easier than figuring out if anything has changed
       // (except for floating OSC, which doesn't change much and has animation glitches if removed & re-added)
@@ -535,6 +536,13 @@ extension PlayerWindowController {
       miniPlayer.loadIfNeeded()
       currentControlBar = miniPlayer.musicModeControlBarView
 
+      // move playback buttons
+      if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
+        miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
+        miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
+        miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+      }
+
     } else {  // No OSC & not music mode
       currentControlBar = nil
     }
@@ -544,7 +552,7 @@ extension PlayerWindowController {
         oscBottomMainView.removeFromSuperview()
       }
     } else {
-      updateArrowButtonImages()
+      updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
     }
 
@@ -582,6 +590,13 @@ extension PlayerWindowController {
       playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
       playSliderHeightConstraint.isActive = true
       playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
+
+      // move playback buttons
+      if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
+        miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
+        miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
+        miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+      }
 
       timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.topAnchor.constraint(equalTo: timePositionHoverLabel.superview!.topAnchor, constant: -1)
       timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
@@ -1359,34 +1374,19 @@ extension PlayerWindowController {
     let toolbarView = rebuildToolbar(transition)
     containerView.addView(toolbarView, in: .leading)
 
-    containerView.configureSubtreeForCoreAnimation()
-
     containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
     containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
     containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+  }
 
+  private func updateArrowButtons(oscGeo: ControlBarGeometry) {
+    leftArrowButton.image = oscGeo.leftArrowImage
+    rightArrowButton.image = oscGeo.rightArrowImage
     arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
-
     fragPlaybackBtnsWidthConstraint.animateToConstant(oscGeo.totalPlayControlsWidth)
     leftArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.leftArrowOffsetX)
     rightArrowBtnHorizOffsetConstraint.animateToConstant(oscGeo.rightArrowOffsetX)
-  }
-
-  private func updateArrowButtonImages() {
-    let oscGeo = currentLayout.controlBarGeo
-    leftArrowButton.image = oscGeo.leftArrowImage
-    rightArrowButton.image = oscGeo.rightArrowImage
-
-    if isInMiniPlayer {
-      miniPlayer.loadIfNeeded()
-      miniPlayer.leftArrowButton.image = oscGeo.leftArrowImage
-      miniPlayer.rightArrowButton.image = oscGeo.rightArrowImage
-
-      let spacing: CGFloat = oscGeo.arrowButtonAction == .seek ? 12 : 16
-      miniPlayer.leftArrowToPlayButtonSpaceConstraint.animateToConstant(spacing)
-      miniPlayer.playButtonToRightArrowSpaceConstraint.animateToConstant(spacing)
-    }
   }
 
   func addSpeedLabelToControlBar(_ transition: LayoutTransition) {

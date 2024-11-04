@@ -2069,8 +2069,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     IINAAnimation.runAsync(IINAAnimation.Task(duration: duration, { [self] in
       // Avoid race conditions between music mode & regular mode by just setting both sets of controls at the same time.
       // Also load music mode views ahead of time so that there are no delays when transitioning to/from it.
-      player.windowController.miniPlayer.loadIfNeeded()
-      player.windowController.miniPlayer.playButton.image = playPauseImage
       playButton.image = playPauseImage
 
       speedLabel.isHidden = !showSpeedLabel

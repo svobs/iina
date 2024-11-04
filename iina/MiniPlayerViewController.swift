@@ -21,10 +21,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   @IBOutlet weak var volumeSlider: ScrollableSlider!
   @IBOutlet weak var muteButton: NSButton!
-  @IBOutlet weak var playButton: NSButton!
-  @IBOutlet weak var leftArrowButton: NSButton!
-  @IBOutlet weak var rightArrowButton: NSButton!
-
+  
+  @IBOutlet weak var playbackBtnsWrapperView: NSView!
   @IBOutlet weak var positionSliderWrapperView: NSView!
 
   @IBOutlet weak var volumeButton: NSButton!
@@ -40,8 +38,6 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   @IBOutlet weak var volumeLabel: NSTextField!
   @IBOutlet weak var togglePlaylistButton: NSButton!
   @IBOutlet weak var toggleAlbumArtButton: NSButton!
-  @IBOutlet weak var leftArrowToPlayButtonSpaceConstraint: NSLayoutConstraint!
-  @IBOutlet weak var playButtonToRightArrowSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var volumeButtonLeadingConstraint: NSLayoutConstraint!
 
   private var hideVolumePopoverTimer: Timer?

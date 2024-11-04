@@ -146,6 +146,10 @@ struct LayoutSpec {
              controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil) -> LayoutSpec {
+
+    // make sure mode is consistent for self & controlBarGeo
+    let controlBarGeo = controlBarGeo ?? (mode == nil ? self.controlBarGeo : self.controlBarGeo.clone(mode: mode!))
+
     return LayoutSpec(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
                       trailingSidebar: trailingSidebar ?? self.trailingSidebar,
                       mode: mode ?? self.mode,
@@ -154,7 +158,7 @@ struct LayoutSpec {
                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                       enableOSC: enableOSC ?? self.enableOSC,
                       oscPosition: self.oscPosition,
-                      controlBarGeo: controlBarGeo ?? self.controlBarGeo,
+                      controlBarGeo: controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
   }

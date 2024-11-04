@@ -142,6 +142,14 @@ struct ControlBarGeometry {
     self.arrowIconHeight = arrowIconHeight
   }
 
+  func clone(mode: PlayerWindowMode) -> ControlBarGeometry {
+    return ControlBarGeometry(mode: mode, oscPosition: self.position,
+                              toolbarItems: self.toolbarItems, arrowButtonAction: self.arrowButtonAction,
+                              barHeight: self.barHeight,
+                              toolIconSizeTicks: self.toolIconSizeTicks, toolIconSpacingTicks: self.toolIconSpacingTicks,
+                              playIconSizeTicks: self.playIconSizeTicks, playIconSpacingTicks: self.playIconSpacingTicks)
+  }
+
   var volumeIconSize: CGFloat {
     if position == .floating {
       return floatingVolumeIconSize
