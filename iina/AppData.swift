@@ -409,6 +409,9 @@ struct Images {
   static let replay: NSImage = makeSymbol(named: "arrow.counterclockwise", desc: "Restart from beginning")
   static let stepForward10: NSImage = makeSymbol(named: "goforward.10", fallbackName: "speed", desc: "Step Forward 10s")
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")
+
+  static let volume = NSImage(named: "volume")!
+  static let mute = NSImage(named: "mute")!
 }
 
 struct DebugConfig {

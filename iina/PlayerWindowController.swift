@@ -449,8 +449,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var timePositionHoverLabel: NSTextField!
   var thumbnailPeekView = ThumbnailPeekView()
-  var leftArrowButton: NSButton!
-  var rightArrowButton: NSButton!
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
   @IBOutlet weak var leadingSidebarTrailingBorder: NSBox!  // shown if leading sidebar is "outside"
@@ -475,14 +473,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   let oscBottomMainView = NSStackView()
   @IBOutlet weak var oscTopMainView: NSStackView!
 
-  var fragToolbarView: NSStackView? = nil
-  @IBOutlet weak var fragVolumeView: NSView!
-  @IBOutlet var fragPositionSliderView: NSView!
-  let fragPlaybackBtnsView = ClickThroughView()
-
-  /// Speed indicator label, when playing at speeds other than 1x
-  let speedLabel = NSTextField()
-
   // OSD
   @IBOutlet weak var osdVisualEffectView: NSVisualEffectView!
   @IBOutlet weak var osdHStackView: NSStackView!
@@ -494,11 +484,27 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var pipOverlayView: NSVisualEffectView!
   @IBOutlet weak var viewportView: ViewportView!
+
   let defaultAlbumArtView = NSView()
 
-  @IBOutlet weak var volumeSlider: ScrollableSlider!
-  @IBOutlet weak var muteButton: NSButton!
+  /// Container for volume slider & mute button
+  var fragVolumeView = NSView()
+  let muteButton = NSButton()
+  let volumeSlider = ScrollableSlider()
+
+  /// Container for playback buttons
+  let fragPlaybackBtnsView = ClickThroughView()
+  /// Speed indicator label, when playing at speeds other than 1x
+  let speedLabel = NSTextField()
   var playButton: NSButton!
+  var leftArrowButton: NSButton!
+  var rightArrowButton: NSButton!
+
+  /// Toolbar
+  var fragToolbarView: NSStackView? = nil
+
+  /// Container for play slider & time indicator labels
+  @IBOutlet var fragPositionSliderView: NSView!
   @IBOutlet weak var playSlider: PlaySlider!
   @IBOutlet weak var rightLabel: DurationDisplayTextField!
   @IBOutlet weak var leftLabel: DurationDisplayTextField!

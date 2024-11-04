@@ -120,6 +120,7 @@ extension PlayerWindowController {
       initBottomBarView(in: contentView)
       initSpeedLabel()
       initPlaybackBtnsView()
+      initVolumeView()
       initAlbumArtView()
       fragPositionSliderView.userInterfaceLayoutDirection = .leftToRight
 
@@ -355,6 +356,48 @@ extension PlayerWindowController {
     leftArrowBtnVertOffsetConstraint.isActive = true
     let rightArrowBtnVertOffsetConstraint = rightArrowButton.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor)
     rightArrowBtnVertOffsetConstraint.isActive = true
+  }
+
+  private func initVolumeView() {
+    let oscGeo = ControlBarGeometry.current
+
+    // Volume view
+    fragVolumeView.identifier = .init("fragVolumeView")
+    fragVolumeView.translatesAutoresizingMaskIntoConstraints = false
+
+    // Mute button
+    muteButton.identifier = .init("muteButton")
+    muteButton.image = Images.volume
+    muteButton.alternateImage = Images.mute
+    muteButton.target = self
+    muteButton.action = #selector(muteButtonAction(_:))
+    muteButton.setButtonType(.toggle)
+    muteButton.isBordered = false
+    muteButton.maxAcceleratorLevel = 5
+    muteButton.bezelStyle = .regularSquare
+    muteButton.imagePosition = .imageOnly
+    muteButton.refusesFirstResponder = true
+    muteButton.imageScaling = .scaleProportionallyUpOrDown
+    muteButton.translatesAutoresizingMaskIntoConstraints = false
+    fragVolumeView.addSubview(muteButton)
+    muteButton.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 0)
+    muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: 1.0).isActive = true
+    volumeIconSizeConstraint = muteButton.widthAnchor.constraint(equalToConstant: oscGeo.volumeIconSize)
+    volumeIconSizeConstraint.priority = .init(900)
+    volumeIconSizeConstraint.isActive = true
+
+    // Volume slider
+    fragVolumeView.addSubview(volumeSlider)
+    volumeSlider.controlSize = .mini
+    volumeSlider.translatesAutoresizingMaskIntoConstraints = false
+    let volumeSliderWidthConstraint = volumeSlider.widthAnchor.constraint(equalToConstant: 70)
+    volumeSliderWidthConstraint.priority = .init(900)
+    volumeSliderWidthConstraint.isActive = true
+    volumeSlider.centerYAnchor.constraint(equalTo: muteButton.centerYAnchor).isActive = true
+    volumeSlider.leadingAnchor.constraint(equalTo: muteButton.trailingAnchor, constant: 4).isActive = true
+    volumeSlider.superview!.trailingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 6).isActive = true
+    volumeSlider.target = self
+    volumeSlider.action = #selector(volumeSliderAction(_:))
   }
 
   private func initAlbumArtView() {
