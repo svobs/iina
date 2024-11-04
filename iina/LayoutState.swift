@@ -16,10 +16,6 @@ import Foundation
 /// See also: `LayoutState.buildFrom()`, which compiles a `LayoutSpec` into a `LayoutState`.
 struct LayoutSpec {
 
-  /// WIP. Set this to `true` to continue working on recreating title bar in legacy windowed mode.
-  /// See `fakeLeadingTitleBarView`.
-  static let enableTitleBarForLegacyWindow = true
-
   let leadingSidebar: Sidebar
   let trailingSidebar: Sidebar
 
@@ -34,6 +30,8 @@ struct LayoutSpec {
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
 
+  let controlBarGeo: ControlBarGeometry
+
   /// The mode of the interactive mode. ONLY used if `mode==.windowedInteractive || mode==.fullScreenInteractive`
   let interactiveMode: InteractiveMode?
 
@@ -41,7 +39,9 @@ struct LayoutSpec {
 
   init(leadingSidebar: Sidebar, trailingSidebar: Sidebar, mode: PlayerWindowMode, isLegacyStyle: Bool,
        topBarPlacement: Preference.PanelPlacement, bottomBarPlacement: Preference.PanelPlacement,
-       enableOSC: Bool, oscPosition: Preference.OSCPosition, interactiveMode: InteractiveMode?,
+       enableOSC: Bool, oscPosition: Preference.OSCPosition,
+       controlBarGeo: ControlBarGeometry? = nil,
+       interactiveMode: InteractiveMode?,
        moreSidebarState: Sidebar.SidebarMiscState) {
 
     var mode = mode
@@ -73,6 +73,8 @@ struct LayoutSpec {
     self.isLegacyStyle = isLegacyStyle
     self.oscPosition = oscPosition
     self.moreSidebarState = moreSidebarState
+    // Should be ok to fill in most of ControlBarGeometry from prefs if not given
+    self.controlBarGeo = controlBarGeo ?? ControlBarGeometry(mode: mode, oscPosition: oscPosition)
   }
 
   /// Factory method. Matches what is shown in the XIB
@@ -135,11 +137,12 @@ struct LayoutSpec {
   func clone(leadingSidebar: Sidebar? = nil,
              trailingSidebar: Sidebar? = nil,
              mode: PlayerWindowMode? = nil,
+             isLegacyStyle: Bool? = nil,
              topBarPlacement: Preference.PanelPlacement? = nil,
              bottomBarPlacement: Preference.PanelPlacement? = nil,
              enableOSC: Bool? = nil,
              oscPosition: Preference.OSCPosition? = nil,
-             isLegacyStyle: Bool? = nil,
+             controlBarGeo: ControlBarGeometry? = nil,
              interactiveMode: InteractiveMode? = nil,
              moreSidebarState: Sidebar.SidebarMiscState? = nil) -> LayoutSpec {
     return LayoutSpec(leadingSidebar: leadingSidebar ?? self.leadingSidebar,
@@ -150,6 +153,7 @@ struct LayoutSpec {
                       bottomBarPlacement: bottomBarPlacement ?? self.bottomBarPlacement,
                       enableOSC: enableOSC ?? self.enableOSC,
                       oscPosition: self.oscPosition,
+                      controlBarGeo: controlBarGeo ?? self.controlBarGeo,
                       interactiveMode: interactiveMode ?? self.interactiveMode,
                       moreSidebarState: moreSidebarState ?? self.moreSidebarState)
   }
@@ -467,6 +471,10 @@ class LayoutState {
     return spec.mode
   }
 
+  var controlBarGeo: ControlBarGeometry {
+    return spec.controlBarGeo
+  }
+
   func sidebar(withID id: Preference.SidebarLocation) -> Sidebar {
     switch id {
     case .leadingSidebar:
@@ -510,7 +518,7 @@ class LayoutState {
 
       outputLayout.topBarView = visibleState
 
-      if !layoutSpec.isLegacyStyle || LayoutSpec.enableTitleBarForLegacyWindow {
+      if layoutSpec.isLegacyStyle {
         outputLayout.titleBar = visibleState
 
         outputLayout.trafficLightButtons = visibleState
@@ -550,10 +558,10 @@ class LayoutState {
 
         let visibility: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
         outputLayout.topBarView = visibility
-        outputLayout.topOSCHeight = ControlBarGeometry.current.barHeight
+        outputLayout.topOSCHeight = layoutSpec.controlBarGeo.barHeight
       case .bottom:
         outputLayout.bottomBarView = (outputLayout.bottomBarPlacement == .insideViewport) ? .showFadeableNonTopBar : .showAlways
-        outputLayout.bottomBarHeight = ControlBarGeometry.current.barHeight
+        outputLayout.bottomBarHeight = layoutSpec.controlBarGeo.barHeight
       }
     } else {  // No OSC
       if layoutSpec.mode == .musicMode || layoutSpec.isInteractiveMode {

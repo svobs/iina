@@ -18,7 +18,7 @@ class OSCToolbarButton: NSButton {
   }
 
   func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
-    let currentGeo = ControlBarGeometry.current
+    let currentGeo = ControlBarGeometry(mode: .windowed)
     let iconSize = iconSize ?? currentGeo.toolIconSize
     let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
     OSCToolbarButton.setStyle(of: self, buttonType: buttonType, iconSize: iconSize)
@@ -27,7 +27,7 @@ class OSCToolbarButton: NSButton {
   }
 
   static func setStyle(of toolbarButton: NSButton, buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil) {
-    let iconSize = iconSize ?? ControlBarGeometry.current.toolIconSize
+    let iconSize = iconSize ?? ControlBarGeometry(mode: .windowed).toolIconSize
 
     toolbarButton.translatesAutoresizingMaskIntoConstraints = false
     toolbarButton.bezelStyle = .regularSquare
@@ -52,6 +52,7 @@ class OSCToolbarButton: NSButton {
     // seems to be the only reliable way to get image size
     guard let imgReps = toolbarButton.image?.representations else { return nil }
     guard !imgReps.isEmpty else { return nil }
+    let iconSize = toolbarButton.iconSize
     let origImageSize = imgReps[0].size
     // Need to scale image manually, accounting for aspect ratio
     let dragImageSize: NSSize

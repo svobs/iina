@@ -2059,7 +2059,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       playPauseImage = Images.pause
     }
 
-    let oscGeo = ControlBarGeometry.current
+    let oscGeo = currentLayout.controlBarGeo
     let playSpeed = player.info.playSpeed
     let showSpeedLabel = player.info.shouldShowSpeedLabel && oscGeo.barHeight >= Constants.Distance.minOSCBarHeightForSpeedLabel
 

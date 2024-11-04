@@ -29,6 +29,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     return NSNib.Name("PrefOSCToolbarSettingsSheetController")
   }
 
+  var oscGeo = ControlBarGeometry(mode: .windowed)
   var currentButtonTypes: [Preference.ToolBarButton] = []
   private var itemViewControllers: [PrefOSCToolbarDraggingItemViewController] = []
 
@@ -37,7 +38,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
   private var currentItemsViewHeightConstraint: NSLayoutConstraint? = nil
 
   var previewIconSize: CGFloat {
-    ControlBarGeometry.current.toolIconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
+    return oscGeo.toolIconSize.clamped(to: minDisplayedIconSize...maxDisplayedIconSize)
   }
 
   var previewIconSpacing: CGFloat {
@@ -48,9 +49,19 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     super.windowDidLoad()
     currentItemsView.registerForDraggedTypes([.iinaOSCAvailableToolbarButtonType, .iinaOSCCurrentToolbarButtonType])
     currentItemsView.currentItemsViewDelegate = self
-    currentItemsView.initItems(fromItems: ControlBarGeometry.current.toolbarItems)
 
+    oscGeo = ControlBarGeometry(mode: .windowed)
+    currentItemsView.initItems(fromItems: oscGeo.toolbarItems)
     updateToolbarButtonHeight()
+  }
+
+  override func showWindow(_ sender: Any?) {
+    // Update geo in case prefs changed since last open
+    oscGeo = ControlBarGeometry(mode: .windowed)
+    currentItemsView.initItems(fromItems: oscGeo.toolbarItems)
+    updateToolbarButtonHeight()
+
+    super.showWindow(sender)
   }
 
   func updateToolbarButtonHeight() {
@@ -164,7 +175,7 @@ protocol PrefOSCToolbarCurrentItemsViewDelegate {
 
 class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
-  var currentItemsViewDelegate: PrefOSCToolbarCurrentItemsViewDelegate!
+  var currentItemsViewDelegate: PrefOSCToolbarSettingsSheetController!
 
   var itemBeingDragged: PrefOSCToolbarCurrentItem?
 
@@ -172,6 +183,10 @@ class PrefOSCToolbarCurrentItemsView: NSStackView, NSDraggingSource {
 
   private var placeholderView: NSView = NSView()
   private var dragDestIndex: Int = 0
+
+  var oscGeo: ControlBarGeometry {
+    return currentItemsViewDelegate.oscGeo
+  }
 
   func buildPlaceholderView() -> NSView {
     let view = NSView()

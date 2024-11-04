@@ -22,19 +22,21 @@ fileprivate let floatingPlayIconSize: CGFloat = 24
 fileprivate let floatingPlayIconSpacing: CGFloat = 24
 fileprivate let floatingVolumeIconSize: CGFloat = 18
 
+fileprivate let musicModeBarHeight: CGFloat = 48
+fileprivate let musicModePlayIconSize: CGFloat = 24
+fileprivate let musicModePlayIconSpacing: CGFloat = 16
+fileprivate let musicModeToolbarIconSize: CGFloat = 14
+fileprivate let musicModeToolbarIconSpacing: CGFloat = 12
+
+
 fileprivate let stepIconReductionRatio: CGFloat = 0.85
 
 // TODO: reimplement OSC title bar feature
 
 struct ControlBarGeometry {
-  static var current = ControlBarGeometry() {
-    didSet {
-      Logger.log.verbose("ControlBarGeometry.current was updated")
-    }
-  }
-
   // MARK: Stored properties
 
+  let mode: PlayerWindowMode
   let position: Preference.OSCPosition
 
   let arrowButtonAction: Preference.ArrowButtonAction
@@ -65,46 +67,60 @@ struct ControlBarGeometry {
   // MARK: Init
 
   /// All fields are optional. Any omitted fields will be filled in from preferences
-  init(oscPosition: Preference.OSCPosition? = nil, toolbarItems: [Preference.ToolBarButton]? = nil,
+  init(mode: PlayerWindowMode,
+       oscPosition: Preference.OSCPosition? = nil,
+       toolbarItems: [Preference.ToolBarButton]? = nil,
        arrowButtonAction: Preference.ArrowButtonAction? = nil,
-       barHeight: CGFloat? = nil,
+       barHeight desiredBarHeight: CGFloat? = nil,
        toolIconSizeTicks: Int? = nil, toolIconSpacingTicks: Int? = nil,
        playIconSizeTicks: Int? = nil, playIconSpacingTicks: Int? = nil) {
+    self.mode = mode
     self.toolbarItems = toolbarItems ?? ControlBarGeometry.oscToolbarItems
 
-    // First establish bar height
-    let desiredBarHeight = barHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
-    let barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
-    self.barHeight = barHeight
-
-    let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
-                                                          barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSize))
-    let desiredToolbarIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks,
-                                                                   barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSpacing))
-    let desiredPlayIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks,
-                                                          barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSize))
-    let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
-                                                                barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
-
     let oscPosition = oscPosition ?? Preference.enum(for: .oscPosition)
+
+    let barHeight: CGFloat
     let playIconSize: CGFloat
-    if oscPosition == .floating {
+    if mode == .musicMode {
+      barHeight = musicModeBarHeight
+      playIconSize = musicModePlayIconSize
+      self.toolIconSize = musicModeToolbarIconSize
+      self.toolIconSpacing = musicModeToolbarIconSpacing
+      self.playIconSpacing = musicModePlayIconSpacing
+
+    } else if oscPosition == .floating {
+      barHeight = 67  // not really useful here anyway
       self.toolIconSize = floatingToolbarIconSize
       self.toolIconSpacing = floatingToolbarIconSpacing
       playIconSize = floatingPlayIconSize
       self.playIconSpacing = floatingPlayIconSpacing
+
     } else {
+      // First establish bar height
+      let desiredBarHeight = desiredBarHeight ?? CGFloat(Preference.integer(for: .oscBarHeight))
+      barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
+
+      let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
+                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSize))
+      let desiredToolbarIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks,
+                                                                         barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSpacing))
+      let desiredPlayIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks,
+                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSize))
+      let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
+                                                                      barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
+
       // Reduce max button size so they don't touch edges or (if .top) icons above
       let maxBtnHeight = barHeight - (oscPosition == .top ? 4 : 2)
 
       self.toolIconSize = desiredToolIconSize.clamped(to: minToolBtnHeight...maxBtnHeight)
       self.toolIconSpacing = max(0, desiredToolbarIconSpacing)
-      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
       self.playIconSpacing = max(0, desiredPlayIconSpacing)
+      playIconSize = desiredPlayIconSize.clamped(to: minPlayBtnHeight...maxBtnHeight)
     }
 
-    self.position = oscPosition
+    self.barHeight = barHeight
     self.playIconSize = playIconSize
+    self.position = oscPosition
 
     // Compute size of arrow buttons
     let arrowButtonAction = arrowButtonAction ?? Preference.enum(for: .arrowButtonAction)

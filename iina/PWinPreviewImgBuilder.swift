@@ -39,9 +39,7 @@ class PWinPreviewImageBuilder {
   let appearance: NSAppearance
   let desktopWallpaperColor: NSColor
 
-  lazy var hasTitleBar: Bool = {
-    return !isLegacyWindow || LayoutSpec.enableTitleBarForLegacyWindow  // No title bar for legacy window
-  }()
+  let hasTitleBar = true
 
   lazy var hasTopBar: Bool = {
     return hasTitleBar || (oscEnabled && oscPosition == .top)

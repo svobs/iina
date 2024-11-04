@@ -229,7 +229,7 @@ extension PlayerWindowController {
   }
 
   private func initPlaybackBtnsView() {
-    let oscGeo = ControlBarGeometry.current
+    let oscGeo = currentLayout.controlBarGeo
 
     // Play button
     playButton = NSButton(image: Images.play, target: self,
@@ -359,7 +359,7 @@ extension PlayerWindowController {
   }
 
   private func initVolumeView() {
-    let oscGeo = ControlBarGeometry.current
+    let oscGeo = currentLayout.controlBarGeo
 
     // Volume view
     fragVolumeView.identifier = .init("fragVolumeView")

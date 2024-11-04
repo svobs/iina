@@ -20,6 +20,12 @@ fileprivate let maxToolbarPreviewBarHeight = 34.0
 
 @objcMembers
 class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable {
+  var oscGeo = ControlBarGeometry(mode: .windowed) {
+    didSet {
+      Logger.log.verbose("PrefUIViewController.oscGeo was updated")
+    }
+  }
+
 
   override var nibName: NSNib.Name {
     return NSNib.Name("PrefUIViewController")
@@ -142,24 +148,16 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     super.viewDidLoad()
 
     configureObservers()
-    updateAspectControlsFromPrefs()
-    updateCropControlsFromPrefs()
 
-    let geo = ControlBarGeometry.current
-    let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: geo.barHeight)
+    oscGeo = ControlBarGeometry(mode: .windowed)
+    let hConstraint = oscToolbarStackView.heightAnchor.constraint(equalToConstant: oscGeo.barHeight)
     hConstraint.isActive = true
     oscToolbarStackViewHeightConstraint = hConstraint
 
-    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: geo.totalToolbarWidth)
+    let wConstraint = oscToolbarStackView.widthAnchor.constraint(equalToConstant: oscGeo.totalToolbarWidth)
     wConstraint.priority = .defaultHigh  // avoid conflicting constraints
     wConstraint.isActive = true
     oscToolbarStackViewWidthConstraint = wConstraint
-
-    updateSidebarSection()
-    refreshTitleBarAndOSCSection(animate: false)
-    updateOSCToolbarPreview()
-    updateGeometryUI()
-    updatePipBehaviorRelatedControls()
 
     let removeThemeMenuItemWithTag = { (tag: Int) in
       if let item = self.themeMenu.item(withTag: tag) {
@@ -170,13 +168,23 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     removeThemeMenuItemWithTag(Preference.Theme.ultraDark.rawValue)
   }
 
-  override func viewDidAppear() {
-    super.viewDidAppear()
+  override func viewWillAppear() {
+    super.viewWillAppear()
+
     co.addAllObservers()
     // Set up key-value observing for changes to this view's properties:
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
+    oscGeo = ControlBarGeometry(mode: .windowed)
+    updateSidebarSection()
+    refreshTitleBarAndOSCSection(animate: false)
+    updateOSCToolbarPreview()
+    updateGeometryUI()
+    updatePipBehaviorRelatedControls()
+    
     updateThumbnailCacheStat()
+    updateAspectControlsFromPrefs()
+    updateCropControlsFromPrefs()
   }
 
   override func viewWillDisappear() {
@@ -229,6 +237,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       PK.themeMaterial,
       PK.enableAdvancedSettings:
 
+      oscGeo = ControlBarGeometry(mode: .windowed)
       refreshTitleBarAndOSCSection()
       updateGeometryUI()
     case PK.settingsTabGroupLocation, PK.playlistTabGroupLocation:
@@ -415,9 +424,9 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBAction func oscPositionAction(_ sender: NSPopUpButton) {
     guard let oscPosition = Preference.OSCPosition(rawValue: sender.selectedTag()) else { return }
-    let newGeo = ControlBarGeometry(oscPosition: oscPosition)
+    let newGeo = ControlBarGeometry(mode: .windowed, oscPosition: oscPosition)
     // need to update this immediately because it is referenced by player windows for icon sizes, spacing
-    ControlBarGeometry.current = newGeo
+    oscGeo = newGeo
     Preference.set(oscPosition.rawValue, for: .oscPosition)
   }
 
@@ -429,13 +438,13 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       let newItems = self.toolbarSettingsSheetController.currentButtonTypes
       let intArray = newItems.map { $0.rawValue }
       let toolbarItems = intArray.compactMap(Preference.ToolBarButton.init(rawValue:))
-      ControlBarGeometry.current = ControlBarGeometry(toolbarItems: toolbarItems)
+      self.oscGeo = ControlBarGeometry(mode: .windowed, toolbarItems: toolbarItems)
       Preference.set(intArray, for: .controlBarToolbarButtons)
     }
   }
 
   private func updateOSCToolbarPreview() {
-    let actualGeo = ControlBarGeometry.current
+    let actualGeo = oscGeo
     Logger.log.verbose("New OSC geometry from barHeight=\(actualGeo.barHeight): toolIconSize=\(actualGeo.toolIconSize), toolIconSpacing=\(actualGeo.toolIconSpacing) playIconSize=\(actualGeo.playIconSize) playIconSpacing=\(actualGeo.playIconSpacing)")
     let toolIconSizeTicks = actualGeo.toolIconSizeTicks
     let toolIconSpacingTicks = actualGeo.toolIconSpacingTicks
@@ -443,7 +452,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSpacingTicks = actualGeo.playIconSpacingTicks
 
     let previewBarHeight = min(maxToolbarPreviewBarHeight, actualGeo.barHeight)
-    let geo = ControlBarGeometry(barHeight: previewBarHeight,
+    let geo = ControlBarGeometry(mode: .windowed, barHeight: previewBarHeight,
                                  toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                  playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
 
@@ -487,14 +496,14 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   }
 
   @IBAction func oscBarHeightAction(_ sender: NSTextField) {
-    let oldGeo = ControlBarGeometry.current
+    let oldGeo = oscGeo
 
-    let geo = ControlBarGeometry(barHeight: sender.doubleValue,
+    let geo = ControlBarGeometry(mode: .windowed, barHeight: sender.doubleValue,
                                  toolIconSizeTicks: oldGeo.toolIconSizeTicks, toolIconSpacingTicks: oldGeo.toolIconSpacingTicks,
                                  playIconSizeTicks: oldGeo.playIconSizeTicks, playIconSpacingTicks: oldGeo.playIconSpacingTicks)
     Logger.log.verbose("New OSC geometry from barHeight=\(geo.barHeight): toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing) playIconSize=\(geo.playIconSize) playIconSpacing=\(geo.playIconSpacing)")
     disableObserversForOSC = true
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     Preference.set(geo.barHeight, for: .oscBarHeight)
     Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
     Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
@@ -506,41 +515,41 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
 
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
-    let geo = ControlBarGeometry(toolIconSizeTicks: ticks)
+    let geo = ControlBarGeometry(mode: .windowed, toolIconSizeTicks: ticks)
     Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(Preference.float(for: .oscBarToolbarIconSize)) -> \(geo.toolIconSize)")
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
   }
 
   @IBAction func toolIconSpacingAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
-    let geo = ControlBarGeometry(toolIconSpacingTicks: ticks)
+    let geo = ControlBarGeometry(mode: .windowed, toolIconSpacingTicks: ticks)
     Logger.log.verbose("Updating oscBarToolbarIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
   }
 
   @IBAction func playIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
-    let geo = ControlBarGeometry(playIconSizeTicks: ticks)
+    let geo = ControlBarGeometry(mode: .windowed, playIconSizeTicks: ticks)
     Logger.log.verbose("Updating oscBarPlaybackIconSize: \(ticks) ticks, \(geo.playIconSize)")
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
   }
 
   @IBAction func playIconSpacingAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
-    let geo = ControlBarGeometry(playIconSpacingTicks: ticks)
+    let geo = ControlBarGeometry(mode: .windowed, playIconSpacingTicks: ticks)
     Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
   }
 
   @IBAction func arrowButtonActionAction(_ sender: NSPopUpButton) {
     let arrowButtonAction: Preference.ArrowButtonAction = .init(rawValue: sender.selectedTag()) ?? .defaultValue
-    let geo = ControlBarGeometry(arrowButtonAction: arrowButtonAction)
+    let geo = ControlBarGeometry(mode: .windowed, arrowButtonAction: arrowButtonAction)
     Logger.log.verbose("Updating arrowButtonAction to: \(geo.arrowButtonAction)")
-    ControlBarGeometry.current = geo
+    oscGeo = geo
     let val = geo.arrowButtonAction.rawValue
     guard val != Preference.integer(for: .arrowButtonAction) else { return }
     Preference.set(val, for: .arrowButtonAction)
@@ -713,7 +722,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     mpvWindowSizeCollapseView.setCollapsed(!isUsingMpvSize, animated: true)
     mpvWindowPositionCollapseView.setCollapsed(!isUsingMpvPos, animated: true)
 
-    let geo = ControlBarGeometry()
+    let geo = oscGeo
     toolIconSizeSlider.intValue = Int32(geo.toolIconSizeTicks)
     toolIconSpacingSlider.intValue = Int32(geo.toolIconSpacingTicks)
     playIconSizeSlider.intValue = Int32(geo.playIconSizeTicks)

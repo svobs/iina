@@ -276,7 +276,7 @@ extension PlayerWindowController {
 
     if outputLayout.enableOSC {
       // Reduce size of icons if they are smaller
-      let oscGeo = ControlBarGeometry.current
+      let oscGeo = outputLayout.controlBarGeo
 
       if volumeIconSizeConstraint.constant > oscGeo.volumeIconSize {
         volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
@@ -467,7 +467,7 @@ extension PlayerWindowController {
 
     // [Re-]add OSC:
     if outputLayout.enableOSC {
-      let oscGeo = ControlBarGeometry.current
+      let oscGeo = outputLayout.controlBarGeo
       log.verbose("[\(transition.name)] Setting up control bar=\(outputLayout.oscPosition) playIconSize=\(oscGeo.playIconSize) playIconSpacing=\(oscGeo.playIconSpacing)")
 
       switch outputLayout.oscPosition {
@@ -687,8 +687,7 @@ extension PlayerWindowController {
     if transition.outputLayout.isMusicMode {
       hideBuiltInTitleBarViews()
     } else if transition.outputLayout.isWindowed,
-              transition.outputLayout.spec.isLegacyStyle,
-              LayoutSpec.enableTitleBarForLegacyWindow {
+              transition.outputLayout.spec.isLegacyStyle {
       if customTitleBar == nil {
         let titleBar = CustomTitleBarViewController()
         titleBar.windowController = self
@@ -771,7 +770,7 @@ extension PlayerWindowController {
 
     if outputLayout.enableOSC {
       // Increase size of icons if they are larger
-      let oscGeo = ControlBarGeometry.current
+      let oscGeo = outputLayout.controlBarGeo
 
       volumeIconSizeConstraint.animateToConstant(oscGeo.volumeIconSize)
       arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)
@@ -1375,7 +1374,7 @@ extension PlayerWindowController {
   }
 
   private func updateArrowButtonImages() {
-    let oscGeo = ControlBarGeometry.current
+    let oscGeo = currentLayout.controlBarGeo
     leftArrowButton.image = oscGeo.leftArrowImage
     rightArrowButton.image = oscGeo.rightArrowImage
 
@@ -1393,7 +1392,7 @@ extension PlayerWindowController {
   func addSpeedLabelToControlBar(_ transition: LayoutTransition) {
     guard transition.outputLayout.isMusicMode || transition.outputLayout.enableOSC else { return }
 
-    let oscGeo = ControlBarGeometry.current
+    let oscGeo = transition.outputLayout.controlBarGeo
     let speedLabelFontSize = oscGeo.speedLabelFontSize
     log.verbose("Updating speed label fontSize=\(speedLabelFontSize)")
     speedLabel.font = .messageFont(ofSize: speedLabelFontSize)
@@ -1401,14 +1400,14 @@ extension PlayerWindowController {
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
   private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView {
-    let geo = ControlBarGeometry.current
-    let buttonTypes = geo.toolbarItems
+    let oscGeo = transition.outputLayout.controlBarGeo
+    let buttonTypes = oscGeo.toolbarItems
     log.verbose("[\(transition.name)] Setting OSC toolbarItems to: [\(buttonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
     var toolButtons: [OSCToolbarButton] = []
     for buttonType in buttonTypes {
       let button = OSCToolbarButton()
-      button.setStyle(buttonType: buttonType, iconSize: geo.toolIconSize, iconSpacing: geo.toolIconSpacing)
+      button.setStyle(buttonType: buttonType, iconSize: oscGeo.toolIconSize, iconSpacing: oscGeo.toolIconSpacing)
       button.action = #selector(self.toolBarButtonAction(_:))
       toolButtons.append(button)
     }
