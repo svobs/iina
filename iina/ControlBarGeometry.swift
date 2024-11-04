@@ -109,7 +109,9 @@ struct ControlBarGeometry {
     // Compute size of arrow buttons
     let arrowButtonAction = arrowButtonAction ?? Preference.enum(for: .arrowButtonAction)
     let arrowIconHeight: CGFloat
-    if arrowButtonAction == .seek {
+    if arrowButtonAction == .unused {
+      arrowIconHeight = 0
+    } else if arrowButtonAction == .seek {
       arrowIconHeight = playIconSize * stepIconReductionRatio
     } else {
       arrowIconHeight = playIconSize
@@ -144,7 +146,7 @@ struct ControlBarGeometry {
 
   /// Width of left, right, play btns + their spacing
   var totalPlayControlsWidth: CGFloat {
-    let itemSizes = [arrowIconWidth, playIconSize, arrowIconWidth]
+    let itemSizes = self.arrowButtonAction == .unused ? [playIconSize] : [arrowIconWidth, playIconSize, arrowIconWidth]
     let totalIconSpace = itemSizes.reduce(0, +)
     let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count + 1)
     return totalIconSpace + totalInterIconSpace
@@ -229,7 +231,7 @@ struct ControlBarGeometry {
     switch arrowButtonAction {
     case .playlist:
       return #imageLiteral(resourceName: "nextl")
-    case .speed:
+    case .speed, .unused:
       return #imageLiteral(resourceName: "speedl")
     case .seek:
       return Images.stepBackward10
@@ -240,7 +242,7 @@ struct ControlBarGeometry {
     switch arrowButtonAction {
     case .playlist:
       return #imageLiteral(resourceName: "nextr")
-    case .speed:
+    case .speed, .unused:
       return #imageLiteral(resourceName: "speed")
     case .seek:
       return Images.stepForward10

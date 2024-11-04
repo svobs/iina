@@ -2268,6 +2268,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     let arrowBtnFunction: Preference.ArrowButtonAction = Preference.enum(for: .arrowButtonAction)
     switch arrowBtnFunction {
+    case .unused:
+      return
     case .playlist:
       guard didRelease else { return }
       player.mpv.command(left ? .playlistPrev : .playlistNext, checkError: false)

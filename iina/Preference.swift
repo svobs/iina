@@ -559,6 +559,7 @@ struct Preference {
     case speed = 0
     case playlist = 1
     case seek = 2
+    case unused = 3
 
     static var defaultValue = ArrowButtonAction.speed
 
