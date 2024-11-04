@@ -1348,11 +1348,12 @@ extension PlayerWindowController {
 
   func updateOnTopButton() {
     let onTopButtonVisibility = currentLayout.computeOnTopButtonVisibility(isOnTop: isOnTop)
-    onTopButton.state = isOnTop ? .on : .off
+    let image = isOnTop ? Images.onTopOn : Images.onTopOff
+    onTopButton.image = image
     apply(visibility: onTopButtonVisibility, to: onTopButton)
-
+    onTopButton.setButtonType(.momentaryPushIn)
     if let customTitleBar {
-      customTitleBar.onTopButton.state = isOnTop ? .on : .off
+      customTitleBar.onTopButton.image = image
       apply(visibility: onTopButtonVisibility, to: customTitleBar.onTopButton)
     }
 

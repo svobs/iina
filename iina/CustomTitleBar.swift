@@ -103,7 +103,6 @@ class CustomTitleBarViewController: NSViewController {
 
     onTopButton = makeTitleBarButton(imgName: "ontop_off",
                                         action: #selector(windowController.toggleOnTop(_:)))
-    onTopButton.setButtonType(.toggle)
     onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
 
     trailingSidebarToggleButton = makeTitleBarButton(imgName: "sidebar.trailing",

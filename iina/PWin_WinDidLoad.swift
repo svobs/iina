@@ -373,7 +373,7 @@ extension PlayerWindowController {
     muteButton.alternateImage = Images.mute
     muteButton.target = self
     muteButton.action = #selector(muteButtonAction(_:))
-    muteButton.setButtonType(.toggle)
+    muteButton.setButtonType(.momentaryPushIn)
     muteButton.isBordered = false
     muteButton.maxAcceleratorLevel = 5
     muteButton.bezelStyle = .regularSquare
