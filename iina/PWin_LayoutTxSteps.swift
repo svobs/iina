@@ -281,8 +281,10 @@ extension PlayerWindowController {
       if volumeIconHeightConstraint.constant > oscGeo.volumeIconHeight {
         volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
         if let img = muteButton.image {
-          let volumeIconWidth = img.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
-          volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+          volumeIconWidthConstraint.isActive = false
+          volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
+          volumeIconWidthConstraint.priority = .init(900)
+          volumeIconWidthConstraint.isActive = true
         }
       }
 
@@ -793,8 +795,10 @@ extension PlayerWindowController {
 
       volumeIconHeightConstraint.animateToConstant(oscGeo.volumeIconHeight)
       if let img = muteButton.image {
-        let volumeIconWidth = img.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
-        volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+        volumeIconWidthConstraint.isActive = false
+        volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: img.aspect)
+        volumeIconWidthConstraint.priority = .init(900)
+        volumeIconWidthConstraint.isActive = true
       }
 
       arrowBtnWidthConstraint.animateToConstant(oscGeo.arrowIconWidth)

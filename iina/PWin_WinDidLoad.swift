@@ -390,8 +390,7 @@ extension PlayerWindowController {
     volumeIconHeightConstraint = muteButton.heightAnchor.constraint(equalToConstant: oscGeo.volumeIconHeight)
     volumeIconHeightConstraint.priority = .init(900)
     volumeIconHeightConstraint.isActive = true
-    let volumeIconWidth = image.deriveWidth(fromHeight: oscGeo.volumeIconHeight)
-    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalToConstant: volumeIconWidth)
+    volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: image.aspect)
     volumeIconWidthConstraint.priority = .init(900)
     volumeIconWidthConstraint.isActive = true
 

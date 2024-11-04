@@ -2015,8 +2015,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let volumeImage = volumeIcon(volume: volume, isMuted: isMuted)
     if let volumeImage, volumeImage != muteButton.image {
       let task = IINAAnimation.Task(duration: IINAAnimation.VideoReconfigDuration, { [self] in
-        let volumeIconWidth = volumeImage.deriveWidth(fromHeight: volumeIconHeightConstraint.constant)
-        volumeIconWidthConstraint.animateToConstant(volumeIconWidth)
+        volumeIconWidthConstraint.isActive = false
+        volumeIconWidthConstraint = muteButton.widthAnchor.constraint(equalTo: muteButton.heightAnchor, multiplier: volumeImage.aspect)
+        volumeIconWidthConstraint.priority = .init(900)
+        volumeIconWidthConstraint.isActive = true
       })
       IINAAnimation.runAsync(task, then: { [self] in
         muteButton.image = volumeImage
