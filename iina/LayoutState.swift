@@ -524,27 +524,23 @@ class LayoutState {
       let visibleState: VisibilityMode = outputLayout.topBarPlacement == .insideViewport ? .showFadeableTopBar : .showAlways
 
       outputLayout.topBarView = visibleState
+      outputLayout.titleBar = visibleState
+      outputLayout.trafficLightButtons = visibleState
+      outputLayout.titleIconAndText = visibleState
+      // May be overridden depending on OSC layout anyway
+      outputLayout.titleBarHeight = PlayerWindowController.standardTitleBarHeight
 
-      if layoutSpec.isLegacyStyle {
-        outputLayout.titleBar = visibleState
+      outputLayout.titlebarAccessoryViewControllers = visibleState
 
-        outputLayout.trafficLightButtons = visibleState
-        outputLayout.titleIconAndText = visibleState
-        // May be overridden depending on OSC layout anyway
-        outputLayout.titleBarHeight = PlayerWindowController.standardTitleBarHeight
-
-        outputLayout.titlebarAccessoryViewControllers = visibleState
-
-        // LeadingSidebar toggle button
-        let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty
-        if hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) {
-          outputLayout.leadingSidebarToggleButton = visibleState
-        }
-        // TrailingSidebar toggle button
-        let hasTrailingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.trailingSidebar.tabGroups.isEmpty
-        if hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) {
-          outputLayout.trailingSidebarToggleButton = visibleState
-        }
+      // LeadingSidebar toggle button
+      let hasLeadingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.leadingSidebar.tabGroups.isEmpty
+      if hasLeadingSidebar && Preference.bool(for: .showLeadingSidebarToggleButton) {
+        outputLayout.leadingSidebarToggleButton = visibleState
+      }
+      // TrailingSidebar toggle button
+      let hasTrailingSidebar = !outputLayout.isInteractiveMode && !layoutSpec.trailingSidebar.tabGroups.isEmpty
+      if hasTrailingSidebar && Preference.bool(for: .showTrailingSidebarToggleButton) {
+        outputLayout.trailingSidebarToggleButton = visibleState
       }
 
     }
