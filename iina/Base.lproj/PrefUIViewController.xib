@@ -1256,7 +1256,7 @@ For smoothest results, also enable custom full screen.</string>
             <rect key="frame" x="0.0" y="0.0" width="578" height="1030"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
-                    <rect key="frame" x="-2" y="1068" width="124" height="32"/>
+                    <rect key="frame" x="-2" y="990" width="124" height="32"/>
                     <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Title Bar &amp; Controller:" id="g06-Ja-Ot8">
                         <font key="font" metaFont="systemBold"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1798,13 +1798,13 @@ For smoothest results, also enable custom full screen.</string>
                                                             </customView>
                                                             <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="SyB-0R-TLF" userLabel="Arrow-Button-Action Popup">
                                                                 <rect key="frame" x="212" y="11" width="171" height="25"/>
-                                                                <popUpButtonCell key="cell" type="push" title="Do Not Use" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" tag="3" imageScaling="proportionallyDown" inset="2" selectedItem="Ulm-67-WXp" id="8Ke-vJ-gp6" userLabel="Arrow-Button-Action Popup Button Cell">
+                                                                <popUpButtonCell key="cell" type="push" title="Do Not Use" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="3" imageScaling="proportionallyDown" inset="2" selectedItem="Ulm-67-WXp" id="8Ke-vJ-gp6" userLabel="Arrow-Button-Action Popup Button Cell">
                                                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                                                     <font key="font" metaFont="message"/>
                                                                     <menu key="menu" id="tw8-Om-zad">
                                                                         <items>
-                                                                            <menuItem title="Do Not Use" tag="3" id="Ulm-67-WXp"/>
-                                                                            <menuItem title="Speed" state="on" id="TWq-Xb-8Ee"/>
+                                                                            <menuItem title="Do Not Use" state="on" tag="3" id="Ulm-67-WXp"/>
+                                                                            <menuItem title="Speed" id="TWq-Xb-8Ee"/>
                                                                             <menuItem title="Previous / Next Media" tag="1" id="oJ8-74-L3z"/>
                                                                             <menuItem title="Seek -10s / +10s" tag="2" id="KJT-iG-2xc"/>
                                                                         </items>
@@ -2041,7 +2041,7 @@ For smoothest results, also enable custom full screen.</string>
                     </connections>
                 </textField>
                 <popUpButton horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="GbG-nw-ict" userLabel="Controller-Position Popup">
-                    <rect key="frame" x="436" y="697" width="88" height="25"/>
+                    <rect key="frame" x="436" y="619" width="88" height="25"/>
                     <popUpButtonCell key="cell" type="push" title="Top" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" tag="1" imageScaling="proportionallyDown" inset="2" selectedItem="se2-DE-pJk" id="XRT-QK-HPy" userLabel="Controller-Position Popup Button Cell">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -3185,8 +3185,7 @@ For smoothest results, also enable custom full screen.</string>
                                 <constraint firstAttribute="height" constant="18" id="nzf-aP-cI8"/>
                             </constraints>
                             <connections>
-                                <binding destination="lH7-Vv-0M1" name="enabled" keyPath="values.enableThumbnailPreview" id="3M8-xn-8NF"/>
-                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" previousBinding="3M8-xn-8NF" id="hZe-1F-ABZ">
+                                <binding destination="lH7-Vv-0M1" name="hidden" keyPath="values.enableThumbnailPreview" id="rur-AK-jNO">
                                     <dictionary key="options">
                                         <string key="NSValueTransformerName">NSNegateBoolean</string>
                                     </dictionary>
