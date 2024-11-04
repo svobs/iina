@@ -49,19 +49,14 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     super.windowDidLoad()
     currentItemsView.registerForDraggedTypes([.iinaOSCAvailableToolbarButtonType, .iinaOSCCurrentToolbarButtonType])
     currentItemsView.currentItemsViewDelegate = self
-
-    oscGeo = ControlBarGeometry(mode: .windowed)
-    currentItemsView.initItems(fromItems: oscGeo.toolbarItems)
-    updateToolbarButtonHeight()
+    updateFromPrefs()
   }
 
-  override func showWindow(_ sender: Any?) {
-    // Update geo in case prefs changed since last open
+  func updateFromPrefs() {
+    guard isWindowLoaded else { return }
     oscGeo = ControlBarGeometry(mode: .windowed)
     currentItemsView.initItems(fromItems: oscGeo.toolbarItems)
     updateToolbarButtonHeight()
-
-    super.showWindow(sender)
   }
 
   func updateToolbarButtonHeight() {

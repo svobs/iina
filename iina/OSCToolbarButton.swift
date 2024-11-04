@@ -12,6 +12,8 @@ import Foundation
 class OSCToolbarButton: NSButton {
   var iconSize: CGFloat = 0
   var iconSpacing: CGFloat = 0
+  var widthConstraint: NSLayoutConstraint? = nil
+  var heightConstraint: NSLayoutConstraint? = nil
 
   var buttonSize: CGFloat {
     return self.iconSize + (2 * self.iconSpacing)
@@ -21,29 +23,37 @@ class OSCToolbarButton: NSButton {
     let currentGeo = ControlBarGeometry(mode: .windowed)
     let iconSize = iconSize ?? currentGeo.toolIconSize
     let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
-    OSCToolbarButton.setStyle(of: self, buttonType: buttonType, iconSize: iconSize)
     self.iconSize = iconSize
     self.iconSpacing = iconSpacing
+
+    translatesAutoresizingMaskIntoConstraints = false
+    bezelStyle = .regularSquare
+    image = buttonType.image()
+    isBordered = false
+    tag = buttonType.rawValue
+    refusesFirstResponder = true
+    toolTip = buttonType.description()
+    imageScaling = .scaleProportionallyUpOrDown
+    if let widthConstraint, widthConstraint.isActive {
+      widthConstraint.animateToConstant(iconSize)
+    } else {
+      let constraint = widthAnchor.constraint(equalToConstant: iconSize)
+      constraint.priority = .defaultHigh
+      constraint.isActive = true
+      self.widthConstraint = constraint
+    }
+
+    if let heightConstraint, heightConstraint.isActive {
+      heightConstraint.animateToConstant(iconSize)
+    } else {
+      let constraint = heightAnchor.constraint(equalToConstant: iconSize)
+      constraint.priority = .defaultHigh
+      constraint.isActive = true
+      self.heightConstraint = constraint
+    }
   }
 
-  static func setStyle(of toolbarButton: NSButton, buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil) {
-    let iconSize = iconSize ?? ControlBarGeometry(mode: .windowed).toolIconSize
-
-    toolbarButton.translatesAutoresizingMaskIntoConstraints = false
-    toolbarButton.bezelStyle = .regularSquare
-    toolbarButton.image = buttonType.image()
-    toolbarButton.isBordered = false
-    toolbarButton.tag = buttonType.rawValue
-    toolbarButton.refusesFirstResponder = true
-    toolbarButton.toolTip = buttonType.description()
-    toolbarButton.imageScaling = .scaleProportionallyUpOrDown
-    let widthConstraint = toolbarButton.widthAnchor.constraint(equalToConstant: iconSize)
-    widthConstraint.priority = .defaultHigh
-    widthConstraint.isActive = true
-    let heightConstraint = toolbarButton.heightAnchor.constraint(equalToConstant: iconSize)
-    heightConstraint.priority = .defaultHigh
-    heightConstraint.isActive = true
-  }
+  // MARK: - Static
 
   static func buildDragItem(from toolbarButton: OSCToolbarButton, pasteboardWriter: NSPasteboardWriting,
                             buttonType: Preference.ToolBarButton, iconSize: CGFloat, iconSpacing: CGFloat,

@@ -187,6 +187,8 @@ extension PlayerWindowController {
     bottomBarTrailingSpaceConstraint.identifier = .init("bottomBarTrailingSpaceConstraint")
 
     oscBottomMainView.identifier = .init("oscBottomMainView")  // helps with debug logging
+    oscBottomMainView.setHuggingPriority(.init(500), for: .horizontal)
+    oscBottomMainView.setHuggingPriority(.init(500), for: .vertical)
     oscBottomMainView.spacing = 4
     oscBottomMainView.orientation = .horizontal
     oscBottomMainView.alignment = .centerY
