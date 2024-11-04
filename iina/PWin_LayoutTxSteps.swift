@@ -274,7 +274,7 @@ extension PlayerWindowController {
     let outputLayout = transition.outputLayout
     log.verbose("[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)")
 
-    if outputLayout.enableOSC {
+    if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller
       let oscGeo = outputLayout.controlBarGeo
 
@@ -789,7 +789,7 @@ extension PlayerWindowController {
     let bottomBarHeight = transition.outputLayout.bottomBarPlacement == .insideViewport ? transition.outputGeometry.insideBars.bottom : transition.outputGeometry.outsideBars.bottom
     updateBottomBarHeight(to: bottomBarHeight, bottomBarPlacement: transition.outputLayout.bottomBarPlacement)
 
-    if outputLayout.enableOSC {
+    if outputLayout.hasControlBar {
       // Increase size of icons if they are larger
       let oscGeo = outputLayout.controlBarGeo
 

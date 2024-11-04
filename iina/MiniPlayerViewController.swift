@@ -349,7 +349,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       /// Adjust to satisfy min & max width (height will be constrained in `init` when it is called by `clone`).
       /// Do not just return current windowFrame. While that will work smoother with BetterTouchTool (et al),
       /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
-      var requestedSize = requestedSize
+      var requestedSize = NSSize(width: requestedSize.width.rounded(), height: requestedSize.height.rounded())
       if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
         log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
         requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
