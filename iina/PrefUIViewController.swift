@@ -181,7 +181,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     updateOSCToolbarPreview()
     updateGeometryUI()
     updatePipBehaviorRelatedControls()
-    
+
     updateThumbnailCacheStat()
     updateAspectControlsFromPrefs()
     updateCropControlsFromPrefs()
@@ -451,8 +451,7 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     let playIconSizeTicks = actualGeo.playIconSizeTicks
     let playIconSpacingTicks = actualGeo.playIconSpacingTicks
 
-    let previewBarHeight = min(maxToolbarPreviewBarHeight, actualGeo.barHeight)
-    let geo = ControlBarGeometry(mode: .windowed, barHeight: previewBarHeight,
+    let geo = ControlBarGeometry(mode: .windowed, barHeight: actualGeo.barHeight,
                                  toolIconSizeTicks: toolIconSizeTicks, toolIconSpacingTicks: toolIconSpacingTicks,
                                  playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
 
@@ -482,16 +481,17 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       }
 
       let totalToolbarWidth = geo.totalToolbarWidth
-      Logger.log.verbose("Updating OSC toolbar preview (width=\(totalToolbarWidth) height=\(geo.barHeight))")
+      let previewBarHeight = min(maxToolbarPreviewBarHeight, geo.barHeight)
+      Logger.log.verbose("Updating OSC toolbar preview (width=\(totalToolbarWidth) height=\(previewBarHeight))")
 
-      oscToolbarStackViewHeightConstraint?.animateToConstant(geo.barHeight)
+      oscToolbarStackViewHeightConstraint?.animateToConstant(previewBarHeight)
       oscToolbarStackViewWidthConstraint?.animateToConstant(totalToolbarWidth)
 
       // Update sheet preview also (both available items & current items)
       toolbarSettingsSheetController.updateToolbarButtonHeight()
 
       oscToolbarStackViewHeightConstraint?.priority = .required
-      oscToolbarStackViewWidthConstraint?.priority = .required
+      // Do not set oscToolbarStackViewWidthConstraint to "required" - avoid constraint errors
     })
   }
 
