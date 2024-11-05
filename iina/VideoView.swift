@@ -434,7 +434,8 @@ class VideoView: NSView {
     if !Preference.bool(for: .loadIccProfile) {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
-      logHDR.verbose("Configuring auto ICC profile")
+      let name = screenColorSpace.localizedName ?? "unnamed"
+      logHDR.verbose("Using the ICC profile of the color space \(name)")
       // This MUST be locked via openGLContext
 
       guard player.mpv.lockAndSetOpenGLContext() else { return }
@@ -453,6 +454,7 @@ class VideoView: NSView {
       let name = sdrColorSpace.name as? String ?? screenColorSpace?.localizedName ?? "Unspecified"
       logHDR.debug("Setting layer color space to \(name)")
       videoLayer.colorspace = sdrColorSpace
+      videoLayer.wantsExtendedDynamicRangeContent = false
     }
 
     let useAutoICC = Preference.bool(for: .loadIccProfile) &&  screenColorSpace != nil
@@ -636,6 +638,7 @@ extension VideoView {
     guard player.info.hdrEnabled else { return nil }
 
     logHDR.debug("Using HDR color space instead of ICC profile (maxEDR=\(maxRangeEDR))")
+    videoLayer.wantsExtendedDynamicRangeContent = true
     videoLayer.colorspace = CGColorSpace(name: name)
     mpv.setFlag(MPVOption.GPURendererOptions.iccProfileAuto, false)
     mpv.setString(MPVOption.GPURendererOptions.targetPrim, primaries)
@@ -650,16 +653,16 @@ extension VideoView {
       if targetPeak == 0 {
         if let displayInfo = CoreDisplay_DisplayCreateInfoDictionary(currentDisplay!)?.takeRetainedValue() as? [String: AnyObject] {
           logHDR.debug("Successfully obtained information about the display")
-          // Prefer ReferencePeakHDRLuminance, which is reported by newer macOS versions.
-          if let hdrLuminance = displayInfo["ReferencePeakHDRLuminance"] as? Int {
-            logHDR.debug("Found ReferencePeakHDRLuminance: \(hdrLuminance)")
+          // Apple Silicon Macs use the key NonReferencePeakHDRLuminance.
+          if let hdrLuminance = displayInfo["NonReferencePeakHDRLuminance"] as? Int {
+            logHDR.debug("Found NonReferencePeakHDRLuminance: \(hdrLuminance)")
             targetPeak = hdrLuminance
           } else if let hdrLuminance = displayInfo["DisplayBacklight"] as? Int {
-            // We know macOS Catalina uses this key.
+            // Intel Macs use the key DisplayBacklight.
             logHDR.debug("Found DisplayBacklight: \(hdrLuminance)")
             targetPeak = hdrLuminance
           } else {
-            logHDR.debug("Didn't find ReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
+            logHDR.debug("Didn't find NonReferencePeakHDRLuminance or DisplayBacklight, assuming HDR400")
             logHDR.debug("Display info dictionary: \(displayInfo)")
             targetPeak = 400
           }

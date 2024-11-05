@@ -39,6 +39,10 @@ class JavascriptPlugin: NSObject {
     case cannotLoadPlugin
   }
 
+  static var hasYTDL: Bool {
+    return plugins.contains { $0.identifier == "io.iina.ytdl" }
+  }
+
   static var plugins = loadPlugins() {
     didSet {
       NotificationCenter.default.post(Notification(name: .iinaPluginChanged))
@@ -68,6 +72,7 @@ class JavascriptPlugin: NSObject {
   var identifier: String
   let version: String
   let desc: String?
+  /// The plugin is a symlink of an external folder, mainly by the CLI
   var isExternal: Bool = false
 
   var root: URL

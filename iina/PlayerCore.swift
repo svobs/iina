@@ -84,10 +84,23 @@ class PlayerCore: NSObject {
 
   private var subFileMonitor: FileMonitor? = nil
 
-  /// `true` if this Mac is known to have a touch bar.
+  /// `true` if this Mac is _known to_ have a  [Touch Bar](https://support.apple.com/guide/mac-help/use-the-touch-bar-mchlbfd5b039/mac).
   ///
-  /// - Note: This is set based on whether `AppKit` has called `MakeTouchBar`, therefore it can, for example, be `false` for
-  ///         a MacBook that has a touch bar if the touch bar is asleep because the Mac is in closed clamshell mode.
+  /// In order to adhere to energy efficiency best practices IINA should stop the timer that synchronizes the UI when it is not needed.
+  /// As one job of the timer is to update the Touch Bar on Macs that have one, IINA needs information such as:
+  /// - Does this host have a Touch Bar?
+  /// - Is the Touch Bar configured to show app controls?
+  /// - Is the Touch Bar awake?
+  /// - Is the host being operated in closed clamshell mode?
+  ///
+  /// This is the kind of information needed to avoid running the timer and updating controls that are not visible. Unfortunately in the
+  /// documentation for [NSTouchBar](https://developer.apple.com/documentation/appkit/nstouchbar) Apple
+  /// indicates "There’s no need, and no API, for your app to know whether or not there’s a Touch Bar available". So this property is
+  /// set based off whether `AppKit` has requested that a `NSTouchBar` object be created by calling
+  /// [MakeTouchBar](https://developer.apple.com/documentation/appkit/nsresponder/2544690-maketouchbar).
+  /// This property is used to avoid running the timer on Macs that do not have a Touch Bar. It also may avoid running the timer when a
+  /// MacBook with a Touch Bar is being operated in closed clamshell mode as `AppKit` will not call `MakeTouchBar` when the
+  /// Touch Bar is asleep.
   var needsTouchBar = false
 
   /// A dispatch queue for auto load feature.
@@ -270,6 +283,9 @@ class PlayerCore: NSObject {
     self.keyBindingContext = PlayerInputContext(playerCore: self)
     self.windowController = PlayerWindowController(playerCore: self)
     self.touchBarSupport = TouchBarSupport(playerCore: self)
+    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeFnModes)
+    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModeGlobal)
+    TouchBarSettings.shared.addObserver(self, forKey: .PresentationModePerApp)
   }
 
   // MARK: - Plugins
@@ -2983,9 +2999,15 @@ class PlayerCore: NSObject {
   // MARK: - Sync with UI in PlayerWindow
 
   var lastTimerSummary = ""  // for reducing log volume
+
+  /// Assess the need for the timer that synchronizes the UI and start or stop it as needed.
+  ///
   /// Call this when `syncUITimer` may need to be started, stopped, or needs its interval changed. It will figure out the correct action.
-  /// Just need to make sure that any state variables (e.g., `info.isPaused`, `isInMiniPlayer`, the vars checked by `windowController.isUITimerNeeded()`,
-  /// etc.) are set *before* calling this method, not after, so that it makes the correct decisions.
+  ///
+  /// This method is required to adhere to the best practices in the [Energy Efficiency Guide for Mac Apps](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/UsingEfficientGraphics.html#//apple_ref/doc/uid/TP40013929-CH27-SW1)
+  /// that call for an app to avoid needless energy use. [Minimizing Timer Usage](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/Timers.html#//apple_ref/doc/uid/TP40013929-CH5-SW1) is one of the recommended best practices.
+  /// - Important: Make sure that any state variables (e.g., `info.isPaused`, `isInMiniPlayer`,  etc.) are set *before*
+  ///     calling this method, not after, so that it makes the correct decisions.
   func refreshSyncUITimer(logMsg: String = "") {
     // Check if timer should start/restart
     assert(DispatchQueue.isExecutingIn(.main))
@@ -2998,21 +3020,12 @@ class PlayerCore: NSObject {
       // video is paused to avoid wasting energy with needless processing. If paused shutdown
       // the timer that synchronizes the UI and the high priority display link thread.
       useTimer = false
-    } else if needsTouchBar || isInMiniPlayer {
-      // Follow energy efficiency best practices and stop the timer that updates the OSC while it is
-      // hidden. However the timer can't be stopped if the mini player is being used as it always
-      // displays the OSC or the timer is also updating the information being displayed in the
-      // touch bar. Does this host have a touch bar? Is the touch bar configured to show app controls?
-      // Is the touch bar awake? Is the host being operated in closed clamshell mode? This is the kind
-      // of information needed to avoid running the timer and updating controls that are not visible.
-      // Unfortunately in the documentation for NSTouchBar Apple indicates "There’s no need, and no
-      // API, for your app to know whether or not there’s a Touch Bar available". So this code keys
-      // off whether AppKit has requested that a NSTouchBar object be created. This avoids running the
-      // timer on Macs that do not have a touch bar. It also may avoid running the timer when a
-      // MacBook with a touch bar is being operated in closed clameshell mode.
+    } else if needsTouchBar && TouchBarSettings.shared.showAppControls || isInMiniPlayer {
+      // The timer can't be stopped if the mini player is being used as it always displays the OSC
+      // or if the timer is updating the information being displayed in the Touch Bar.
       useTimer = true
     } else if info.isNetworkResource {
-      // May need to show, hide, or update buffering indicator at any time
+      // May need to show, hide, or update buffering indicator at any time.
       useTimer = true
     } else {
       useTimer = windowController.isUITimerNeeded()
@@ -3508,6 +3521,36 @@ class PlayerCore: NSObject {
     guard let url = info.currentURL else { return }
     let note = Notification(name: .iinaFileHistoryDidUpdate, object: nil, userInfo: ["url": url])
     HistoryController.shared.postNotification(note)
+  }
+
+  /// Observer for changes to the macOS Touch Bar settings.
+  /// - Parameters:
+  ///   - keyPath; The key path, relative to `object`, to the value that has changed.
+  ///   - object: The source object of the key path `keyPath`.
+  ///   - change: A dictionary that describes the changes that have been made to the value of the property at the key path
+  ///             `keyPath` relative to object. Entries are described in `Change Dictionary Keys`.
+  ///   - context: The value that was provided when the observer was registered to receive key-value observation notifications.
+  override func observeValue(forKeyPath keyPath: String?, of object: Any?,
+                             change: [NSKeyValueChangeKey: Any]?,
+                             context: UnsafeMutableRawPointer?) {
+    // The following guards are sanity checks and should never report an error.
+    guard let keyPath = keyPath else {
+      log.error("Observed key path is missing")
+      return
+    }
+    guard let key = TouchBarSettings.Key(rawValue: keyPath) else {
+      log.error("Observed key path is not a touch bar setting: \(keyPath)")
+      return
+    }
+    guard key == .PresentationModeFnModes || key == .PresentationModeGlobal ||
+          key == .PresentationModePerApp else {
+      log.error("Observed key path is unrecognized: \(keyPath)")
+      return
+    }
+    log.debug("Touch Bar \(key) setting has changed")
+    // The macOS settings that control what the Touch Bar displays has changed. May need to start or
+    // stop the timer that refreshes the UI.
+    refreshSyncUITimer()
   }
 
   // MARK: - Utils

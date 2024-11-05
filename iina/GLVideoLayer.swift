@@ -73,7 +73,6 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeLock = Lock()
     super.init()
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-    wantsExtendedDynamicRangeContent = true
     if bufferDepth > 8 {
       contentsFormat = .RGBA16Float
     }
@@ -88,7 +87,6 @@ class GLVideoLayer: CAOpenGLLayer {
     asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-    wantsExtendedDynamicRangeContent = true
     contentsFormat = previousLayer.contentsFormat
   }
 

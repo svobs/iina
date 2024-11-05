@@ -158,7 +158,7 @@ extension PlayerWindowController {
       osdVStackView.setVisibilityPriority(.mustHold, for: osdAccessoryText)
       osdVStackView.setVisibilityPriority(.notVisible, for: osdAccessoryProgress)
 
-      // data for mustache redering
+      // data for mustache rendering
       let osdData: [String: String] = [
         "duration": VideoTime.string(from: player.info.playbackDurationSec),
         "position": VideoTime.string(from: player.info.playbackPositionSec),
