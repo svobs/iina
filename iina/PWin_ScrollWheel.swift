@@ -49,6 +49,9 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     guard let position = player.info.playbackPositionSec,
           let duration = player.info.playbackDurationSec else { return }
     let newAbsolutePosition = (position + Double(valueDelta)).clamped(to: 0.0...duration)
+    // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests
+    guard session.modelValueAtEnd != newAbsolutePosition else { return }
+    session.modelValueAtEnd = newAbsolutePosition
     player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition)
   }
 }  // end class
