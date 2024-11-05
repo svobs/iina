@@ -102,13 +102,13 @@ struct ControlBarGeometry {
       barHeight = desiredBarHeight.clamped(to: Constants.Distance.minOSCBarHeight...Constants.Distance.maxOSCBarHeight)
 
       let desiredToolIconSize = ControlBarGeometry.iconSize(fromTicks: toolIconSizeTicks,
-                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSize))
+                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSize))
       let desiredToolbarIconSpacing = ControlBarGeometry.toolIconSpacing(fromTicks: toolIconSpacingTicks,
-                                                                         barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolbarIconSpacing))
+                                                                         barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarToolIconSpacing))
       let desiredPlayIconSize = ControlBarGeometry.iconSize(fromTicks: playIconSizeTicks,
-                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSize))
+                                                            barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSize))
       let desiredPlayIconSpacing = ControlBarGeometry.playIconSpacing(fromTicks: playIconSpacingTicks,
-                                                                      barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlaybackIconSpacing))
+                                                                      barHeight: barHeight) ?? CGFloat(Preference.float(for: .oscBarPlayIconSpacing))
 
       // Reduce max button size so they don't touch edges or (if .top) icons above
       let maxBtnHeight = barHeight - (oscPosition == .top ? 4 : 2)

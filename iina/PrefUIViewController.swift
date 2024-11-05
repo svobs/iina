@@ -212,10 +212,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       .playlistTabGroupLocation,
       .controlBarToolbarButtons,
       .oscBarHeight,
-      .oscBarPlaybackIconSize,
-      .oscBarPlaybackIconSpacing,
-      .oscBarToolbarIconSize,
-      .oscBarToolbarIconSpacing,
+      .oscBarPlayIconSize,
+      .oscBarPlayIconSpacing,
+      .oscBarToolIconSize,
+      .oscBarToolIconSpacing,
       .arrowButtonAction,
       .useLegacyWindowedMode,
       .aspectRatioPanelPresets,
@@ -247,10 +247,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
       updateSidebarSection()
     case PK.oscBarHeight,
       PK.controlBarToolbarButtons,
-      PK.oscBarPlaybackIconSize,
-      PK.oscBarPlaybackIconSpacing,
-      PK.oscBarToolbarIconSize,
-      PK.oscBarToolbarIconSpacing:
+      PK.oscBarPlayIconSize,
+      PK.oscBarPlayIconSpacing,
+      PK.oscBarToolIconSize,
+      PK.oscBarToolIconSpacing:
 
       guard !disableObserversForOSC else { return }
       updateOSCToolbarPreview()
@@ -530,10 +530,10 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
     disableObserversForOSC = true
     oscGeo = geo
     Preference.set(geo.barHeight, for: .oscBarHeight)
-    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
-    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
-    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
-    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
+    Preference.set(geo.toolIconSize, for: .oscBarToolIconSize)
+    Preference.set(geo.toolIconSpacing, for: .oscBarToolIconSpacing)
+    Preference.set(geo.playIconSize, for: .oscBarPlayIconSize)
+    Preference.set(geo.playIconSpacing, for: .oscBarPlayIconSpacing)
     disableObserversForOSC = false
     updateOSCToolbarPreview()
   }
@@ -541,33 +541,33 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
   @IBAction func toolIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowed, toolIconSizeTicks: ticks)
-    Logger.log.verbose("Updating oscBarToolbarIconSize: \(ticks) ticks, \(Preference.float(for: .oscBarToolbarIconSize)) -> \(geo.toolIconSize)")
+    Logger.log.verbose("Updating oscBarToolIconSize: \(ticks) ticks, \(Preference.float(for: .oscBarToolIconSize)) -> \(geo.toolIconSize)")
     oscGeo = geo
-    Preference.set(geo.toolIconSize, for: .oscBarToolbarIconSize)
+    Preference.set(geo.toolIconSize, for: .oscBarToolIconSize)
   }
 
   @IBAction func toolIconSpacingAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowed, toolIconSpacingTicks: ticks)
-    Logger.log.verbose("Updating oscBarToolbarIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
+    Logger.log.verbose("Updating oscBarToolIconSpacing: \(ticks) ticks, \(geo.toolIconSpacing)")
     oscGeo = geo
-    Preference.set(geo.toolIconSpacing, for: .oscBarToolbarIconSpacing)
+    Preference.set(geo.toolIconSpacing, for: .oscBarToolIconSpacing)
   }
 
   @IBAction func playIconSizeAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowed, playIconSizeTicks: ticks)
-    Logger.log.verbose("Updating oscBarPlaybackIconSize: \(ticks) ticks, \(geo.playIconSize)")
+    Logger.log.verbose("Updating oscBarPlayIconSize: \(ticks) ticks, \(geo.playIconSize)")
     oscGeo = geo
-    Preference.set(geo.playIconSize, for: .oscBarPlaybackIconSize)
+    Preference.set(geo.playIconSize, for: .oscBarPlayIconSize)
   }
 
   @IBAction func playIconSpacingAction(_ sender: NSSlider) {
     let ticks = sender.integerValue
     let geo = ControlBarGeometry(mode: .windowed, playIconSpacingTicks: ticks)
-    Logger.log.verbose("Updating oscBarPlaybackIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
+    Logger.log.verbose("Updating oscBarPlayIconSpacing: \(ticks) ticks, \(geo.playIconSpacing)")
     oscGeo = geo
-    Preference.set(geo.playIconSpacing, for: .oscBarPlaybackIconSpacing)
+    Preference.set(geo.playIconSpacing, for: .oscBarPlayIconSpacing)
   }
 
   @IBAction func arrowButtonActionAction(_ sender: NSPopUpButton) {

@@ -182,7 +182,7 @@ struct Constants {
     static let minScrollWheelTimeThreshold = 0.08
 
     /// May need adjustment for optimal results
-    static let stepScrollSessionTimeout = 0.08
+    static let stepScrollSessionTimeout = 0.1
 
     /// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
     ///

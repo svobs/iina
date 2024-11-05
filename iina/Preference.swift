@@ -163,12 +163,12 @@ struct Preference {
 
     // The following apply only to "bar"-type OSCs (i.e. not floating or title bar):
     static let oscBarHeight = Key("oscBarHeight")
-    static let oscBarPlaybackIconSize = Key("oscBarPlaybackIconSize")
-    static let oscBarPlaybackIconSpacing = Key("oscBarPlaybackIconSpacing")
+    static let oscBarPlayIconSize = Key("oscBarPlayIconSize")
+    static let oscBarPlayIconSpacing = Key("oscBarPlayIconSpacing")
     /// Size of one side of a (square) OSC toolbar button
-    static let oscBarToolbarIconSize = Key("oscBarToolbarIconSize")
+    static let oscBarToolIconSize = Key("oscBarToolIconSize")
     /// The space added around all the sides of each button
-    static let oscBarToolbarIconSpacing = Key("oscBarToolbarIconSpacing")
+    static let oscBarToolIconSpacing = Key("oscBarToolIconSpacing")
 
     /// OSC toolbar
     /// How close the floating OSC is allowed to get to the edges of its available space, in pixels
@@ -1148,15 +1148,15 @@ struct Preference {
     .showCachedRangesInSlider: true,
     .enableControlBarAutoHide: true,
     .controlBarToolbarButtons: [ToolBarButton.pip.rawValue, ToolBarButton.playlist.rawValue, ToolBarButton.settings.rawValue],
-    .oscBarToolbarIconSize: 18,
-    .oscBarToolbarIconSpacing: 5,  // spacing between icons is x2 this number
+    .oscBarToolIconSize: 18,
+    .oscBarToolIconSpacing: 5,  // spacing between icons is x2 this number
     .enableOSC: true,
     .showTopBarTrigger: ShowTopBarTrigger.windowHover.rawValue,
     .topBarPlacement: PanelPlacement.insideViewport.rawValue,
     .bottomBarPlacement: PanelPlacement.insideViewport.rawValue,
     .oscBarHeight: 44,
-    .oscBarPlaybackIconSize: 24,
-    .oscBarPlaybackIconSpacing: 16,
+    .oscBarPlayIconSize: 24,
+    .oscBarPlayIconSpacing: 16,
     .oscPosition: OSCPosition.floating.rawValue,
     .hideFadeableViewsWhenOutsideWindow: true,
     .playSliderBarLeftColor: SliderBarLeftColor.defaultValue.rawValue,
