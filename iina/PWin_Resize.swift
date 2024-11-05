@@ -180,7 +180,7 @@ extension PlayerWindowController {
       let codecRotation = (totalRotation - userRotation) %% 360
 
       if videoGeo.codecRotation != codecRotation {
-        log.error("Query from mpv returned a different codec rotation (\(codecRotation)°) than what we are using (\(videoGeo.codecRotation)°). Ignoring mpv rotation, but this might cause issues")
+        log.error("Expected codec rotation of \(videoGeo.codecRotation)° but got \(codecRotation)° from mpv! Will continue with new value")
       }
 
       // Sync video's raw dimensions from mpv.
@@ -222,6 +222,7 @@ extension PlayerWindowController {
       let videoGeo = videoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
                                     codecAspectLabel: codecAspect,
                                     userAspectLabel: userAspectLabelDerived,
+                                    codecRotation: codecRotation,
                                     userRotation: userRotation,
                                     log)
 
