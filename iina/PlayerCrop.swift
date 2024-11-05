@@ -20,21 +20,11 @@ extension PlayerCore {
         return nil
       }
       // Truncate to 2 decimal places precision for comparison.
-      let selectedAspect = (w / h).roundedTo2()
-      log.verbose("Determined aspect=\(selectedAspect) from filter \(filter.label?.quoted ?? "")")
-      if let segmentLabels = Preference.csvStringArray(for: .cropPanelPresets) {
-        // Resolve against built-in labels as well as user labels:
-        let allRecognizedAspects = AppData.aspectsInMenu + segmentLabels
-        for aspectCropLabel in allRecognizedAspects {
-          let tokens = aspectCropLabel.split(separator: ":")
-          if tokens.count == 2, let width = Double(tokens[0]), let height = Double(tokens[1]) {
-            let aspectRatio = (width / height).roundedTo2()
-            if aspectRatio == selectedAspect {
-              log.verbose("Filter \(filter.label?.quoted ?? "") matches known crop \(aspectCropLabel.quoted)")
-              return aspectCropLabel  // Known aspect-based crop
-            }
-          }
-        }
+      let selectedAspect = Aspect(size: NSSize(width: w, height: h))
+      log.verbose("Determined aspect=\(selectedAspect.value) from filter \(filter.label?.quoted ?? "")")
+      if let knownAspectLabel = Aspect.findLabelForAspectRatio(selectedAspect.value, strict: false) {
+        log.verbose("Filter \(filter.label?.quoted ?? "") matches known aspect label \(knownAspectLabel.quoted)")
+        return knownAspectLabel  // Known aspect-based crop
       }
       let customCropBoxLabel = MPVFilter.makeCropBoxParamString(from: NSSize(width: w, height: h))
       log.verbose("Unrecognized aspect-based crop for filter \(filter.label?.quoted ?? ""). Generated label: \(customCropBoxLabel.quoted)")

@@ -295,9 +295,9 @@ class MenuController: NSObject, NSMenuDelegate {
     alwaysOnTop.action = #selector(PlayerWindowController.menuAlwaysOnTop(_:))
 
     // -- aspect
-    let aspectRatioIdentifiers = [AppData.defaultAspectIdentifier] + AppData.aspectsInMenu
+    let aspectRatioIdentifiers = [Aspect.defaultIdentifier] + Aspect.aspectsInMenu
     /// we need to set the represented object separately, since `Constants.String.default` may be localized.
-    let aspectRatioMenuItemTitles = [Constants.String.default] + AppData.aspectsInMenu
+    let aspectRatioMenuItemTitles = [Constants.String.default] + Aspect.aspectsInMenu
     bind(menu: aspectMenu, withOptions: aspectRatioMenuItemTitles, objects: aspectRatioIdentifiers, objectMap: nil,
          action: #selector(PlayerWindowController.menuChangeAspect(_:))) {
       /// return `true` if menu item should be checked (i.e. if current aspect matches menu item)
@@ -305,14 +305,14 @@ class MenuController: NSObject, NSMenuDelegate {
     }
 
     // -- crop
-    let cropMenuItemTitles = [Constants.String.none] + AppData.aspectsInMenu + [Constants.String.custom]
+    let cropMenuItemTitles = [Constants.String.none] + Aspect.aspectsInMenu + [Constants.String.custom]
     // same as aspectList above.
-    let cropIdentifiers = [AppData.noneCropIdentifier] + AppData.aspectsInMenu + [AppData.customCropIdentifier]
+    let cropIdentifiers = [AppData.noneCropIdentifier] + Aspect.aspectsInMenu + [AppData.customCropIdentifier]
     bind(menu: cropMenu, withOptions: cropMenuItemTitles, objects: cropIdentifiers, objectMap: nil, action: #selector(PlayerWindowController.menuChangeCrop(_:))) {
       return PlayerCore.active?.videoGeo.selectedCropLabel == $0.representedObject as? String
     }
     // Separate "Custom..." from other crop sizes.
-    cropMenu.insertItem(NSMenuItem.separator(), at: 1 + AppData.aspectsInMenu.count)
+    cropMenu.insertItem(NSMenuItem.separator(), at: 1 + Aspect.aspectsInMenu.count)
 
     // -- rotation
     let rotationTitles = AppData.rotations.map { "\($0)\(Constants.String.degree)" }

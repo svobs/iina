@@ -187,8 +187,7 @@ extension AspectTokenField: NSTokenFieldDelegate {
     let currentTokens = Set(savedAspects.tokens)
     guard currentTokens.count < maxAspectCount else { return [] }
 
-    // TODO: use a much larger list instead of aspectsInMenu
-    let matches = AppData.aspectsInMenu.filter { aspect in
+    let matches = Aspect.allKnownLabels.filter { aspect in
       return !currentTokens.contains(aspect) && aspect.hasPrefix(substring)
     }
     if enableLookupLogging {

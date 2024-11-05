@@ -158,19 +158,15 @@ extension NSSize {
    - Returns: The aspect ratio of the size as a `CGFloat`.
    */
   var aspect: CGFloat {
-    get {
-      if width == 0 || height == 0 {
-        Logger.log("Returning 1 for NSSize aspectRatio because width or height is 0", level: .warning)
-        return 1
-      }
-      return width / height
+    if width == 0 || height == 0 {
+      Logger.log("Returning 1 for NSSize aspectRatio because width or height is 0", level: .warning)
+      return 1
     }
+    return width / height
   }
 
   var mpvAspect: CGFloat {
-    get {
-      return Aspect.mpvPrecision(of: aspect)
-    }
+    return Aspect.mpvPrecision(of: aspect)
   }
 
   /**

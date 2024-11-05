@@ -38,9 +38,6 @@ struct AppData {
   /// Lowest possible speed allowed by mpv (0.01x)
   static let mpvMinPlaybackSpeed = 0.01
 
-  /** generate aspect and crop options in menu */
-  static let aspects: [String] = ["4:3", "5:4", "16:9", "16:10", "1:1", "3:2", "2.21:1", "2.35:1", "2.39:1"]
-
   /** For Force Touch. */
   static let minimumPressDuration: TimeInterval = 0.5
 
@@ -56,14 +53,10 @@ struct AppData {
 
   static let mpvArgNone = "none"
 
-  // These are used internally to identify UI elements. They should not be displayed because they are not localized:
-  static let defaultAspectIdentifier = "Default"
+  // Used internally as identifiers when communicating with mpv. Should not be displayed because they are not localized:
   static let noneCropIdentifier = "None"
   static let customCropIdentifier = "Custom"
-  /// Used to generate aspect and crop options in menu. Does not include `Default`, `None`, or `Custom`
-  static let aspectsInMenu: [String] = ["4:3", "5:4", "16:9", "16:10", "1:1", "3:2", "2.21:1", "2.35:1", "2.39:1",
-                                        "3:4", "4:5", "9:16", "10:16", "2:3", "1:2.35", "1:2.39", "21:9"]
-
+  
   static let rotations: [Int] = [0, 90, 180, 270]
   static let scaleStep: CGFloat = 25
 

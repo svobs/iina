@@ -199,11 +199,11 @@ extension PlayerWindowController {
 
       // TODO: sync video-crop (actually, add support for video-crop...)
 
-      // FIXME: add full support for recognizing all values for video-params/aspect-name
+      // Try video-params/aspect-name first, for easier lookup. But always store as ratio or decimal number
       let mpvVideoParamsAspectName = player.mpv.getString(MPVProperty.videoParamsAspectName)
       var codecAspect: String?
       if let mpvVideoParamsAspectName, Aspect.isValid(mpvVideoParamsAspectName) {
-        codecAspect = mpvVideoParamsAspectName
+        codecAspect = Aspect.resolvingMpvName(mpvVideoParamsAspectName)
       } else {
         codecAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
       }

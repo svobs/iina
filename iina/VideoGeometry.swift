@@ -58,7 +58,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
       self.userAspectLabel = userAspectLabel
       self.aspectRatioOverride = aspectRatio.value
     } else {
-      self.userAspectLabel = AppData.defaultAspectIdentifier
+      self.userAspectLabel = Aspect.defaultIdentifier
       self.aspectRatioOverride = nil
     }
     self.codecRotation = codecRotation
@@ -205,11 +205,11 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// ```
   var videoSizeCA: CGSize {
     var size = videoSizeC
-    if let aspect = Aspect(string: codecAspectLabel) {
+    
+    if let codecAspect = Aspect(string: codecAspectLabel),
+       !Aspect.looselyEquals(codecAspect.value, videoSizeRaw.aspect) {
       // mpv uses some fuzzy matching here. Let's do the same
-      if (aspect.value - size.aspect).magnitude > 0.01 {
-        size = VideoGeometry.applyAspectOverride(aspect.value, to: size)
-      }
+      size = VideoGeometry.applyAspectOverride(codecAspect.value, to: size)
     }
     return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: size)
   }
