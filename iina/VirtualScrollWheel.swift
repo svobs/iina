@@ -155,6 +155,11 @@ class VirtualScrollWheel {
   func scrollDidUpdate(valueDelta: CGFloat, with session: ScrollSession) {
     guard let slider = delegateSlider else { return }
     let newValue = (slider.doubleValue + Double(valueDelta)).clamped(to: slider.range)
+    // Prevent very tiny gestures from activating the scroll action.
+    // Some actions (e.g. volume) should show an OSD even if slider.doubleValue doesn't change,
+    // like when they are at max, so that user receives feedback. A sizeable valueDelta.magnitude
+    // can indicate a user intent in this case.
+    guard newValue != slider.doubleValue || valueDelta.magnitude > 1.0 else { return }
     slider.doubleValue = newValue
     slider.sendAction(slider.action, to: slider.target)
   }

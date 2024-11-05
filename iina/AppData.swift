@@ -179,10 +179,10 @@ struct Constants {
 
     /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
     /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.
-    static let minScrollWheelTimeThreshold = 0.05
+    static let minScrollWheelTimeThreshold = 0.08
 
     /// May need adjustment for optimal results
-    static let stepScrollSessionTimeout = 0.05
+    static let stepScrollSessionTimeout = 0.08
 
     /// This is a workaround for limitations of the `NSEvent` API and shouldn't need changing.
     ///

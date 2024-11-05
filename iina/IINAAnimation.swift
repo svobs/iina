@@ -50,11 +50,6 @@ class IINAAnimation {
     assert(DispatchQueue.isExecutingIn(.main))
 
     NSAnimationContext.runAnimationGroup({ context in
-      // TODO: consider removing entirely
-//      CATransaction.begin()
-//      defer {
-//        CATransaction.commit()
-//      }
       let disableAnimation = !isAnimationEnabled
       if disableAnimation {
         context.duration = 0
