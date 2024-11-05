@@ -72,7 +72,8 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
     optionsTableView.selectNextRowAfterDelete = false
     refreshRemoveButton()
 
-    tableDragDelegate = TableDragDelegate<[String]>(optionsTableView,
+    tableDragDelegate = TableDragDelegate<[String]>("mpvOptions",
+                                                    optionsTableView,
                                                     acceptableDraggedTypes: [.string],
                                                     tableChangeNotificationName: .pendingUIChangeForMpvOptionsTable,
                                                     getFromPasteboardFunc: readOptionsListFromPasteboard,
@@ -213,7 +214,6 @@ class PrefAdvancedViewController: PreferenceViewController, PreferenceWindowEmbe
   @IBAction func chooseDirBtnAction(_ sender: AnyObject) {
     Utility.quickOpenPanel(title: "Choose config directory", chooseDir: true, sheetWindow: view.window) { url in
       Preference.set(url.path, for: .userDefinedConfDir)
-      UserDefaults.standard.synchronize()
     }
   }
 

@@ -109,7 +109,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     watchTableView.editableDelegate = self
     watchTableView.selectNextRowAfterDelete = false
 
-    tableDragDelegate = TableDragDelegate<String>(watchTableView,
+    tableDragDelegate = TableDragDelegate<String>("Watch", watchTableView,
                                                   acceptableDraggedTypes: [.string],
                                                   tableChangeNotificationName: .pendingUIChangeForInspectorTable,
                                                   getFromPasteboardFunc: { pb in pb.getStringItems() },
@@ -132,6 +132,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     tableHeightConstraint = watchTableContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: computeMinTableHeight())
     tableHeightConstraint!.isActive = true
+    watchTableView.translatesAutoresizingMaskIntoConstraints = false
     watchTableContainerView.layout()
 
     updateInfo()
@@ -464,6 +465,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ stringList: [String], at targetRowIndex: Int) {
+    let stringList = sanitizeRows(stringList)
     let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
                                                      completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
@@ -476,6 +478,10 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
     // Notify Watch table of update:
     watchTableView.post(tableUIChange)
+  }
+
+  private func sanitizeRows(_ stringList: [String]) -> [String] {
+    return stringList.compactMap { String($0.split(separator: "=").first!) }
   }
 
   func moveWatchRows(from rowIndexes: IndexSet, at targetRowIndex: Int) {
@@ -554,8 +560,9 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   /// overlapping the header (maybe only a problem for custom `NSTableHeaderCell`s which are not opaque), but looks quite ugly.
   private func computeMinTableHeight() -> CGFloat {
     /// Add `1` to `numberOfRows` because it will scroll if there is not at least 1 empty row
-    return watchTableView.headerView!.frame.height + CGFloat(
-      watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
+    let contentHeight = CGFloat(watchTableView.numberOfRows + 1) * (watchTableView.rowHeight + watchTableView.intercellSpacing.height)
+    let headerHeight = watchTableView.headerView!.frame.height
+    return contentHeight + headerHeight
   }
 
   // MARK: - IBActions

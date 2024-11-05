@@ -19,8 +19,10 @@ class TableDragDelegate<TableItem> {
   let moveRows: (_ from: IndexSet, _ toIndex: Int) -> Void
   let insertRows: ([TableItem], _ toIndex: Int) -> Void
   let removeRows: (_ indexes: IndexSet) -> Void
+  let tableLoggingName: String
 
-  init(_ targetTable: EditableTableView,
+  init(_ tableLoggingName: String,
+       _ targetTable: EditableTableView,
        acceptableDraggedTypes: [NSPasteboard.PasteboardType],
        tableChangeNotificationName: Notification.Name,
        getFromPasteboardFunc: @escaping (_: NSPasteboard) -> [TableItem],
@@ -28,6 +30,7 @@ class TableDragDelegate<TableItem> {
        moveFunc: @escaping (_: IndexSet, _: Int) -> Void,
        insertFunc: @escaping ([TableItem], _: Int) -> Void,
        removeFunc: @escaping (_: IndexSet) -> Void) {
+    self.tableLoggingName = tableLoggingName
     self.targetTable = targetTable
     self.getFromPasteboard = getFromPasteboardFunc
     self.getAllCurentRows = getAllCurentFunc
@@ -79,11 +82,11 @@ class TableDragDelegate<TableItem> {
 
     guard let (sequenceNumber, draggedRowIndexes) = self.draggedRowInfo,
           session.draggingSequenceNumber == sequenceNumber && itemList.count == draggedRowIndexes.count else {
-      Logger.log.error("Cancelling drop: dragged data does not match!")
+      Logger.log.error("Cancelling drop into \(tableLoggingName) table: dragged data does not match!")
       return
     }
     
-    Logger.log.verbose("User dragged to the trash: \(itemList)")
+    Logger.log.verbose("User dragged from \(tableLoggingName) to the trash: \(itemList)")
     // TODO: this is the wrong animation
     NSAnimationEffect.disappearingItemDefault.show(centeredAt: screenPoint, size: NSSize(width: 50.0, height: 50.0),
                                                    completionHandler: { [self] in
@@ -122,13 +125,9 @@ class TableDragDelegate<TableItem> {
       // Explicit copy is ok
       return .copy
     }
-    
+
     // Dragging table rows within same table?
-    if let dragSource = info.draggingSource as? NSTableView, dragSource == targetTable {
-      guard getLastDraggedRowsIfMatch(itemList, info, from: targetTable) != nil else {
-        Logger.log.error("Denying move within table: drag source is not same table!")
-        return []  // disallow any operation
-      }
+    if getDraggedRowIndexesIfDragFromSelf(itemList, info) != nil {
       return .move
     }
     // From outside of table -> only copy allowed
@@ -145,12 +144,12 @@ class TableDragDelegate<TableItem> {
                        dropOperation: NSTableView.DropOperation) -> Bool {
     
     guard dropOperation == .above else {
-      Logger.log.error("Watch Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
+      Logger.log.error("\(tableLoggingName) Table: expected dropOperaion==.above but got: \(dropOperation); aborting drop")
       return false
     }
     
     let itemList = getFromPasteboard(info.draggingPasteboard)
-    Logger.log.debug("User dropped \(itemList.count) text rows into table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
+    Logger.log.debug("User dropped \(itemList.count) text rows into \(tableLoggingName) table \(dropOperation == .on ? "on" : "above") rowIndex \(targetRowIndex)")
     guard !itemList.isEmpty else {
       return false
     }
@@ -163,31 +162,35 @@ class TableDragDelegate<TableItem> {
     if dragMask.contains(.every) || dragMask.contains(.generic) {
       dragMask = defaultDragOperation
     }
-    
+
+    if dragMask.contains(.move) {
+      if let draggedRowIndexes = getDraggedRowIndexesIfDragFromSelf(itemList, info) {
+        DispatchQueue.main.async { [self] in
+          moveRows(draggedRowIndexes, targetRowIndex)
+        }
+      } else {
+        // Not from same table? Can only do a copy
+        DispatchQueue.main.async { [self] in
+          insertRows(itemList, targetRowIndex)
+        }
+      }
+      return true
+    }
+
     // Return immediately, and import (or fail to) asynchronously
     if dragMask.contains(.copy) {
       DispatchQueue.main.async { [self] in
         insertRows(itemList, targetRowIndex)
       }
       return true
-    } else if dragMask.contains(.move) {
-      // Only allow drags from the same table
-      guard let draggedRowIndexes = getLastDraggedRowsIfMatch(itemList, info, from: targetTable) else {
-        Logger.log.error("Denying move within table: drag source is not same table!")
-        return false
-      }
-      DispatchQueue.main.async { [self] in
-        moveRows(draggedRowIndexes, targetRowIndex)
-      }
-      return true
-    } else {
-      Logger.log("Rejecting drop: got unexpected drag mask: \(dragMask)")
-      return false
     }
+    
+    Logger.log.debug("Rejecting drop into \(tableLoggingName) table: got unexpected drag mask: \(dragMask)")
+    return false
   }
   
-  private func getLastDraggedRowsIfMatch(_ itemList: [TableItem], _ dragInfo: NSDraggingInfo, from sourceTable: NSTableView) -> IndexSet? {
-    guard let dragSource = dragInfo.draggingSource as? NSTableView, dragSource == sourceTable,
+  private func getDraggedRowIndexesIfDragFromSelf(_ itemList: [TableItem], _ dragInfo: NSDraggingInfo) -> IndexSet? {
+    guard let dragSource = dragInfo.draggingSource as? NSTableView, dragSource == targetTable,
           let (sequenceNumber, draggedRowIndexes) = draggedRowInfo,
           sequenceNumber == dragInfo.draggingSequenceNumber, draggedRowIndexes.count == itemList.count else {
       return nil
