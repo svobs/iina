@@ -33,11 +33,11 @@ enum OSDMessage {
   case debug(String, String)
   case fileStart(String, String)
 
-  case pause(playbackPositionSec: Double?, playbackDurationSec: Double?)
-  case resume(playbackPositionSec: Double?, playbackDurationSec: Double?)
+  case pause(playbackPositionSec: Double, playbackDurationSec: Double)
+  case resume(playbackPositionSec: Double, playbackDurationSec: Double)
   case resumeFromWatchLater
   case seekRelative(step: String)
-  case seek(playbackPositionSec: Double?, playbackDurationSec: Double?)
+  case seek(playbackPositionSec: Double, playbackDurationSec: Double)
   case frameStep
   case frameStepBack
   case volume(Int)
@@ -166,14 +166,14 @@ enum OSDMessage {
         .resume(let playbackPositionSec, let playbackDurationSec),
         .seek(let playbackPositionSec, let playbackDurationSec):
       let posStr = VideoTime.string(from: playbackPositionSec)
+      guard playbackDurationSec > 0.0 else {
+        let text = "\(posStr)"
+        return (text, .normal)
+      }
       let durStr = VideoTime.string(from: playbackDurationSec)
       let text = "\(posStr) / \(durStr)"
       let percentage: Double
-      if let playbackPositionSec, let playbackDurationSec {
-        percentage = playbackPositionSec / playbackDurationSec
-      } else {
-        percentage = 1
-      }
+      percentage = playbackPositionSec / playbackDurationSec
       return (text, .withLeftToRightProgress(percentage))
 
     case .resumeFromWatchLater:

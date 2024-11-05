@@ -1194,9 +1194,11 @@ class PlayerCore: NSObject {
       }
       windowController.updatePlayButtonAndSpeedUI()
       refreshSyncUITimer() // needed to get latest playback position
-      let osdMsg: OSDMessage = paused ? .pause(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec) :
-        .resume(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec)
-      sendOSD(osdMsg)
+      if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
+        let osdMsg: OSDMessage = paused ? .pause(playbackPositionSec: pos, playbackDurationSec: dur) :
+          .resume(playbackPositionSec: pos, playbackDurationSec: dur)
+        sendOSD(osdMsg)
+      }
       saveState()  // record the pause state
       if paused {
         videoView.displayIdle()
@@ -2559,7 +2561,9 @@ class PlayerCore: NSObject {
       videoView.displayActive()
     }
 
-    sendOSD(.seek(playbackPositionSec: info.playbackPositionSec, playbackDurationSec: info.playbackDurationSec))
+    if let pos = info.playbackPositionSec, let dur = info.playbackDurationSec {
+      sendOSD(.seek(playbackPositionSec: pos, playbackDurationSec: dur))
+    }
   }
 
   func ontopChanged() {
