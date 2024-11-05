@@ -301,7 +301,7 @@ class ConfTableStateManager: NSObject {
   private func updateTableUI(old: ConfTableState, new: ConfTableState, completionHandler: TableUIChange.CompletionHandler?) {
 
     let tableUIChange = TableUIChangeBuilder.buildDiff(oldRows: old.confTableRows, newRows: new.confTableRows,
-                                                       completionHandler: completionHandler, overrideSingleRowMove: true)
+                                                       completionHandler: completionHandler)
     tableUIChange.reloadAllExistingRows = true
     if self.undoHelper.isUndoingOrRedoing() {
       tableUIChange.setUpFlashForChangedRows()

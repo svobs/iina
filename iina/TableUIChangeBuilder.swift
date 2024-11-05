@@ -86,7 +86,7 @@ class TableUIChangeBuilder {
 
   // MARK: Diff
 
-  /*
+  /**
    Creates a new `TableUIChange` and populates its `toRemove, `toInsert`, and `toMove` fields
    based on a diffing algorithm similar to Git's.
 
@@ -102,7 +102,7 @@ class TableUIChangeBuilder {
    https://swiftrocks.com/how-collection-diffing-works-internally-in-swift
    */
   static func buildDiff<R>(oldRows: Array<R>, newRows: Array<R>, completionHandler:
-                           TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = false) -> TableUIChange where R:Hashable {
+                           TableUIChange.CompletionHandler? = nil, overrideSingleRowMove: Bool = true) -> TableUIChange where R:Hashable {
 
     let diff = TableUIChange(.wholeTableDiff, completionHandler: completionHandler)
     diff.toRemove = IndexSet()
@@ -115,7 +115,8 @@ class TableUIChangeBuilder {
     let steps = newRows.difference(from: oldRows).steps
     Logger.log("Computing TableUIChange from diff: found \(steps.count) differences between \(oldRows.count) old & \(newRows.count) new rows")
 
-    // Override default behavior for single row: treat del + ins as move
+    // If overrideSingleRowMove==true, override default behavior for single row: treat del + ins as move.
+    // This results in a more pleasant animation in cases such as when an inline edit is finished.
     if overrideSingleRowMove && steps.count == 2 {
       switch steps[0] {
       case let .remove(_, indexToRemove):
