@@ -156,6 +156,8 @@ struct Constants {
   struct SizeLimit {
     static let maxCachedVideoSizes: Int = 100000
     static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
+    static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
+    static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
   }
   struct TimeInterval {
     /// Time in seconds to wait before regenerating thumbnails.

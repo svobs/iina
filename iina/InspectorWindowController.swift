@@ -112,7 +112,7 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
     tableDragDelegate = TableDragDelegate<String>("Watch", watchTableView,
                                                   acceptableDraggedTypes: [.string],
                                                   tableChangeNotificationName: .pendingUIChangeForInspectorTable,
-                                                  getFromPasteboardFunc: { pb in pb.getStringItems() },
+                                                  getFromPasteboardFunc: readWatchListFromPasteboard,
                                                   getAllCurentFunc: { self.watchProperties },
                                                   moveFunc: moveWatchRows,
                                                   insertFunc: insertWatchRows,
@@ -465,9 +465,8 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
   // MARK: - Watch Table CRUD
 
   func insertWatchRows(_ stringList: [String], at targetRowIndex: Int) {
-    let stringList = sanitizeRows(stringList)
     let (tableUIChange, allItemsNew) = watchTableView.buildInsert(of: stringList, at: targetRowIndex, in: watchProperties,
-                                                     completionHandler: { [self] _ in
+                                                                  completionHandler: { [self] _ in
       tableHeightConstraint?.constant = computeMinTableHeight()
       watchTableContainerView.layout()
     })
@@ -567,8 +566,18 @@ class InspectorWindowController: IINAWindowController, NSWindowDelegate, NSTable
 
   // MARK: - IBActions
 
+  private let optionNameValidator: Utility.InputValidator<String> = { input in
+    if input.isEmpty {
+      return .valueIsEmpty
+    }
+    if input.containsWhitespaceOrNewlines() {
+      return .custom("Value cannot contain whitespaces or newlines.")
+    }
+    return .ok
+  }
+
   @IBAction func addWatchAction(_ sender: AnyObject) {
-    Utility.quickPromptPanel("add_watch", sheetWindow: window) { [self] str in
+    Utility.quickPromptPanel("add_watch", validator: optionNameValidator, sheetWindow: window) { [self] str in
       self.watchProperties.append(str)
       self.saveWatchList()
 
@@ -627,4 +636,19 @@ extension InspectorWindowController: EditableTableViewDelegate {
   func doEditMenuDelete() {
     removeWatchRows(watchTableView.selectedRowIndexes)
   }
+}
+
+fileprivate func readWatchListFromPasteboard(_ pasteboard: NSPasteboard) -> [String] {
+  let stringItems = pasteboard.getStringItems()
+  guard stringItems.count <= Constants.SizeLimit.inspectorWatchTableMaxRowsPerOperation else { return [] }
+  // Strip values from args to support import from mpv Options table
+  let sanitizedItems = stringItems.compactMap { String($0.split(separator: "=").first!) }
+  // But if any key has a whitespace char or newline, reject entire drop as invalid
+  // (should help prevent 95% of accidental imports)
+  for stringItem in sanitizedItems {
+    guard !stringItem.containsWhitespaceOrNewlines() else {
+      return []
+    }
+  }
+  return sanitizedItems
 }

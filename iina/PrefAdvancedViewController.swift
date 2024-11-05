@@ -243,23 +243,38 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
     }
     let columnName = identifier.rawValue
 
-    guard row < optionsList.count else {
-      return nil
-    }
+    guard row < optionsList.count else { return nil }
 
+    let colIndex: Int
     switch columnName {
     case "Key":
-      setFormattedText(for: cell, to: optionsList[row][0], isEnabled: tableView.isEnabled)
-      return cell
+      colIndex = 0
 
     case "Value":
-      setFormattedText(for: cell, to: optionsList[row][1], isEnabled: tableView.isEnabled)
-      return cell
+      colIndex = 1
 
     default:
       Logger.log("Unrecognized column: '\(columnName)'", level: .error)
       return nil
     }
+
+    guard let textField = cell.textField else { return nil }
+
+    var useItalic = false
+    let textColor: NSColor
+    if !tableView.isEnabled {
+      textColor = .disabledControlTextColor
+    } else {
+      if isValidOptionName(optionsList[row][0]) {
+        textColor = .controlTextColor
+      } else {
+        textColor = .systemRed
+        useItalic = true
+      }
+    }
+    textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
+    textField.setFormattedText(stringValue: optionsList[row][colIndex], textColor: textColor, italic: useItalic)
+    return cell
   }
 
   func tableViewSelectionDidChange(_ notification: Notification) {
@@ -270,10 +285,8 @@ extension PrefAdvancedViewController: NSTableViewDelegate, NSTableViewDataSource
     removeButton.isHidden = optionsTableView.selectedRowIndexes.isEmpty
   }
 
-  private func setFormattedText(for cell: NSTableCellView, to stringValue: String, isEnabled: Bool) {
-    guard let textField = cell.textField else { return }
-    textField.font = .userFixedPitchFont(ofSize: tableCellFontSize)
-    textField.setFormattedText(stringValue: stringValue, textColor: isEnabled ? .controlTextColor : .disabledControlTextColor)
+  private func isValidOptionName(_ name: String) -> Bool {
+    return !name.isEmpty && !name.containsWhitespaceOrNewlines()
   }
 }
 
@@ -402,9 +415,11 @@ fileprivate func optionFromString(_ stringItem: String) -> [String] {
 /// Ouput item: `[key, val]`
 fileprivate func readOptionsListFromPasteboard(_ pasteboard: NSPasteboard) -> [[String]] {
   let stringItems = pasteboard.getStringItems()
+  guard stringItems.count <= Constants.SizeLimit.mpvOptionsTableMaxRowsPerOperation else { return [] }
   var optionPairs: [[String]] = []
   for stringItem in stringItems {
-    optionPairs.append(optionFromString(stringItem))
+    let option: [String] = optionFromString(stringItem)
+    optionPairs.append(option)
   }
   return optionPairs
 }
