@@ -598,6 +598,13 @@ extension Double {
   var string: String {
     return fmtDecimalMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
   }
+
+  /// Returns a "normalized" number string for the exclusive purpose of comparing two mpv aspect ratios while avoiding precision errors.
+  /// Not pretty to put this here, but need to make this searchable & don't have time for a larger refactor.
+  /// Addendum: we now assume 6 digits of precision.
+  var mpvAspectString: String {
+    return fmtStdDecimal.roundHalfDown_exactFracDigits[6].string(for: self)!
+  }
 }
 
 extension NSInteger {
@@ -807,12 +814,6 @@ extension FloatingPoint {
   /// Formats as String, rounding the number to 6 digits after the decimal
   var stringMaxFrac6: String {
     return fmtStdDecimal.roundHalfDown_maxFracDigits[6].string(for: self)!
-  }
-
-  /// Returns a "normalized" number string for the exclusive purpose of comparing two mpv aspect ratios while avoiding precision errors.
-  /// Not pretty to put this here, but need to make this searchable & don't have time for a larger refactor
-  var mpvAspectString: String {
-    return stringTrunc2f
   }
 }
 

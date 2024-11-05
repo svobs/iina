@@ -204,11 +204,8 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
   var videoSizeCA: CGSize {
-    var size = videoSizeC
-    if let aspect = Aspect(string: codecAspectLabel) {
-      size = VideoGeometry.applyAspectOverride(aspect.value, to: videoSizeC)
-    }
-    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: size)
+    let videoSizeC = videoSizeC
+    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSizeC)
   }
 
   // MARK: - TRANSFORMATION 3: Rotation
@@ -237,6 +234,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
 
   /// Like `videoSizeCA`, but after applying `totalRotation`.
   var videoSizeCAR: CGSize {
+    let videoSizeCA = videoSizeCA
     if isWidthSwappedWithHeightByRotation {
       return CGSize(width: videoSizeCA.height, height: videoSizeCA.width)
     }
@@ -335,7 +333,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
       // No aspect override
       return origSize
     }
-    let origAspect = origSize.mpvAspect
+    let origAspect = origSize.aspect
     if origAspect > newAspect {
       return CGSize(width: origSize.width, height: round(origSize.height * origAspect / newAspect))
     }

@@ -10,7 +10,9 @@ import Cocoa
 
 class Aspect: NSObject {
   static func mpvPrecision(of aspectRatio: CGFloat) -> CGFloat {
-    return CGFloat(round(aspectRatio * 100.0)) * 0.01
+    // Assume 6 digits of precision. We are motivated to use lower precision to improve the odds of
+    // matching a known aspect name, but we also don't want our calculations to stray too far from mpv's
+    return Double(aspectRatio).roundedTo6()
   }
 
   static func isValid(_ string: String) -> Bool {

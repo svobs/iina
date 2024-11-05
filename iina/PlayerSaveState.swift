@@ -969,7 +969,7 @@ extension VideoGeometry {
         return nil
       }
 
-      let codecAspectLabel = (Double(rawWidth) / Double(rawHeight)).mpvAspectString
+      let codecAspectLabel = Aspect.bestLabelFor((Double(rawWidth) / Double(rawHeight)).mpvAspectString)
 
       return VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
                            codecAspectLabel: codecAspectLabel, userAspectLabel: userAspectLabel,

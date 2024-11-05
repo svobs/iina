@@ -154,6 +154,7 @@ extension PlayerWindowController {
     }
   }
 
+  // MARK: - Applying Video Geometry
 
   /// If current media is file, this should be called after it is done loading.
   /// If current media is network resource, should be called immediately & show buffering msg.
@@ -175,6 +176,12 @@ extension PlayerWindowController {
 
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
       let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
+      let totalRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
+      let codecRotation = (totalRotation - userRotation) %% 360
+
+      if videoGeo.codecRotation != codecRotation {
+        log.error("Query from mpv returned a different codec rotation (\(codecRotation)°) than what we are using (\(videoGeo.codecRotation)°). Ignoring mpv rotation, but this might cause issues")
+      }
 
       // Sync video's raw dimensions from mpv.
       // This is especially important for streaming videos, which won't have cached ffMeta
@@ -192,9 +199,17 @@ extension PlayerWindowController {
 
       // TODO: sync video-crop (actually, add support for video-crop...)
 
-      // FIXME: add support for video-params/aspect-name, use it instead
-      //    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
-      let mpvVideoParamsAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
+      // FIXME: add full support for recognizing all values for video-params/sar-name
+      let mpvVideoParamsSarName = player.mpv.getString(MPVProperty.videoParamsSarName)
+      var codecAspect: String?
+      if let mpvVideoParamsSarName, Aspect.isValid(mpvVideoParamsSarName) {
+        codecAspect = mpvVideoParamsSarName
+      } else {
+        codecAspect = player.mpv.getString(MPVProperty.videoParamsSar)  // will be nil if no video track
+      }
+
+      let dwidth = player.mpv.getInt(MPVProperty.dwidth)
+      let dheight = player.mpv.getInt(MPVProperty.dheight)
 
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
       var userAspectLabelDerived = ""
@@ -208,10 +223,15 @@ extension PlayerWindowController {
 
       // If opening window, videoGeo may still have the global (default) log. Update it
       let videoGeo = videoGeo.clone(rawWidth: rawWidth, rawHeight: rawHeight,
-                                    codecAspectLabel: mpvVideoParamsAspect,
+                                    codecAspectLabel: codecAspect,
                                     userAspectLabel: userAspectLabelDerived,
                                     userRotation: userRotation,
                                     log)
+
+      let ours = videoGeo.videoSizeCA
+      if (Int(ours.width).magnitude != dwidth) || (Int(ours.height).magnitude != dheight) {
+        player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours)")
+      }
 
       if let ffMeta {
         log.debug("[applyVideoGeo FileOpen] Substituting ffMeta \(ffMeta) into videoGeo \(videoGeo)")
@@ -650,7 +670,7 @@ extension PlayerWindowController {
     }
   }
 
-  // MARK: - Apply Geometry
+  // MARK: - Apply PWinGeometry
 
   /// Use for actively resizing the window (i.e., not in response to WindowWillResize).
   ///

@@ -1137,59 +1137,6 @@ class MPVController: NSObject {
     return ""
   }
 
-  /// Makes calls to mpv to get the latest video params, then returns them.
-  func getVideoGeometryFromProperties() -> VideoGeometry? {
-    // If loading file, video reconfig can return 0 width and height
-    guard let currentPlayback = player.info.currentPlayback else {
-      log.verbose("Cannot get videoGeo from mpv: currentPlayback is nil")
-      return nil
-    }
-    guard currentPlayback.isFileLoaded else {
-      log.verbose("Cannot get videoGeo from mpv: file not loaded")
-      return nil
-    }
-    // Will crash if querying mpv after stop command started
-    guard player.isActive else {
-      log.verbose("Cannot get videoGeo: player.state=\(player.state)")
-      return nil
-    }
-
-    let rawWidth = getInt(MPVProperty.width)
-    let rawHeight = getInt(MPVProperty.height)
-
-    let mpvVideoParamsAspect = getString(MPVProperty.videoParamsAspect)!
-    // FIXME: add support for video-params/aspect-name, use it instead
-//    let mpvVideoParamsAspectName = getString(MPVProperty.videoParamsAspectName)
-//    let mpvVideoAspectOverride = getDouble(MPVOption.Video.videoAspectOverride)
-
-    let mpvVideoParamsRotate = getInt(MPVProperty.videoParamsRotate)
-    let mpvVideoRotate = getInt(MPVOption.Video.videoRotate)
-
-    if rawWidth == 0 && rawHeight == 0 && getFlag(MPVProperty.coreIdle) {
-      // this indicates that video load is not complete, or mpv is shutting down, or other in-between state
-      player.log.verbose("Cannot get videoGeo: core idle & mpv's video width or height is 0")
-      return nil
-    }
-
-    let codecRotation = (mpvVideoParamsRotate - mpvVideoRotate) %% 360
-    let vidGeo = VideoGeometry(rawWidth: rawWidth, rawHeight: rawHeight,
-                               codecAspectLabel: mpvVideoParamsAspect,
-                               userAspectLabel: player.videoGeo.userAspectLabel,
-                               codecRotation: codecRotation, userRotation: mpvVideoRotate,
-                               selectedCropLabel: player.videoGeo.selectedCropLabel, log: player.log)
-
-    player.log.verbose("Latest videoGeo after syncing from mpv: \(vidGeo), media: \(currentPlayback.path)")
-
-    let dwidth = getInt(MPVProperty.dwidth)
-    let dheight = getInt(MPVProperty.dheight)
-    // Allow 1px clearance for each dimension here. Seems that we & mpv are not 100% identical in our rounding
-    let videoSizeC = vidGeo.videoSizeC
-    if (abs(Int(videoSizeC.width) - dwidth) > 1) || (abs(Int(videoSizeC.height) - dheight) > 1) {
-      player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != cached videoSizeC \(videoSizeC)")
-    }
-    return vidGeo
-  }
-
   /// For mpv, window size is always the same as video size, but this is not always true with IINA due to exterior panels.
   /// Also, mpv uses `backingScaleFactor` for calcalations. IINA Advance does not, because that has no correlation with the
   /// screen's actual scale factor and is at best an oversimplification which is less wrong on average. It is like assuming
