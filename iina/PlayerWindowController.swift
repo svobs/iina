@@ -2353,10 +2353,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBAction func playSliderAction(_ slider: PlaySlider) {
     // Update player.info & UI proactively
     let absoluteSecond = slider.positionAbsoluteSec
-    seekFromPlaySlider(absoluteSecond: absoluteSecond)
+    let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
+    seekFromPlaySlider(absoluteSecond: absoluteSecond, forceExactSeek: forceExactSeek)
   }
 
-  func seekFromPlaySlider(absoluteSecond: CGFloat) {
+  func seekFromPlaySlider(absoluteSecond: CGFloat, forceExactSeek: Bool) {
     guard player.info.isFileLoaded else { return }
     guard !isInInteractiveMode else { return }
 
@@ -2367,8 +2368,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: 0)
     refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
 
-    let forceExactSeek = !Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
-    player.seek(absoluteSecond: absoluteSecond, forceExact: forceExactSeek)
+    let option: Preference.SeekOption = forceExactSeek ? .exact : Preference.enum(for: .useExactSeek)
+    player.seek(absoluteSecond: absoluteSecond, option: option)
   }
 
   @objc func toolBarButtonAction(_ sender: NSButton) {

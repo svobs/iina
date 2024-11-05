@@ -77,7 +77,7 @@ class JavascriptAPICore: JavascriptAPI, JavascriptAPICoreExportable {
   }
 
   func seek(_ seconds: Double, _ exact: Bool) {
-    player!.seek(relativeSecond: seconds, option: exact ? .exact : .useDefault)
+    player!.seek(relativeSecond: seconds, option: exact ? .exact : .keyframes)
   }
 
   func seekTo(_ seconds: Double) {

@@ -689,7 +689,7 @@ struct Preference {
   }
 
   enum SeekOption: Int, InitializingFromKey {
-    case useDefault = 0
+    case keyframes = 0
     case exact
     case auto
 

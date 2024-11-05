@@ -679,7 +679,7 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
     // Restart playback when reached EOF
     if mpv.getFlag(MPVProperty.eofReached) && Preference.bool(for: .resumeFromEndRestartsPlayback) {
-      _seek(absoluteSecond: 0)
+      _seek(0, absolute: true, option: .exact)
     }
     mpv.setFlag(MPVOption.PlaybackControl.pause, false)
   }
@@ -791,45 +791,50 @@ class PlayerCore: NSObject {
 
   // Seek Relative
   func seek(relativeSecond: Double, option: Preference.SeekOption) {
+    seek(relativeSecond, absolute: false, option: option)
+  }
+
+  private func seek(_ time: Double, absolute: Bool, option: Preference.SeekOption) {
     mpv.queue.async { [self] in
-      switch option {
+      _seek(time, absolute: absolute, option: option)
+    }
+  }
 
-      case .useDefault:
-        mpv.command(.seek, args: ["\(relativeSecond)", "relative"], checkError: false)
+  private func _seek(_ time: Double, absolute: Bool, option: Preference.SeekOption) {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+    guard isActive else { return }
+    let kind = absolute ? "absolute" : "relative"
 
-      case .exact:
-        mpv.command(.seek, args: ["\(relativeSecond)", "relative+exact"], checkError: false)
+    switch option {
+    case .keyframes:
+      mpv.command(.seek, args: ["\(time)", "\(kind)+keyframes"], checkError: false)
 
-      case .auto:
-        // for each file , try use exact and record interval first
-        if !triedUsingExactSeekForCurrentFile {
-          mpv.recordedSeekTimeListener = { [unowned self] interval in
-            // if seek time < 0.05, then can use exact
-            self.useExactSeekForCurrentFile = interval < 0.05
-          }
-          mpv.needRecordSeekTime = true
-          triedUsingExactSeekForCurrentFile = true
+    case .exact:
+      mpv.command(.seek, args: ["\(time)", "\(kind)+exact"], checkError: false)
+
+    case .auto:
+      // for each file , try use exact and record interval first
+      if !triedUsingExactSeekForCurrentFile {
+        mpv.recordedSeekTimeListener = { [unowned self] interval in
+          // if seek time < 0.05, then can use exact
+          self.useExactSeekForCurrentFile = interval < 0.05
         }
-        let seekMode = useExactSeekForCurrentFile ? "relative+exact" : "relative"
-        mpv.command(.seek, args: ["\(relativeSecond)", seekMode], checkError: false)
-
+        mpv.needRecordSeekTime = true
+        triedUsingExactSeekForCurrentFile = true
       }
+      let seekMode = useExactSeekForCurrentFile ? "\(kind)+exact" : kind
+      mpv.command(.seek, args: ["\(time)", seekMode], checkError: false)
     }
   }
 
   // Seek Absolute
   func seek(absoluteSecond: Double, forceExact: Bool = true) {
-    mpv.queue.async { [self] in
-      _seek(absoluteSecond: absoluteSecond, forceExact: forceExact)
-    }
+    let useExact = forceExact ? true : Preference.bool(for: .useExactSeek)
+    seek(absoluteSecond, absolute: true, option: useExact ? .exact : .defaultValue)
   }
 
-  func _seek(absoluteSecond: Double, forceExact: Bool = true) {
-    assert(DispatchQueue.isExecutingIn(mpv.queue))
-    guard isActive else { return }
-    let useExact = forceExact ? true : Preference.bool(for: .useExactSeek)
-    let seekMode = useExact ? "absolute+exact" : "absolute"
-    mpv.command(.seek, args: ["\(absoluteSecond)", seekMode], checkError: false)
+  func seek(absoluteSecond: Double, option: Preference.SeekOption) {
+    seek(absoluteSecond, absolute: true, option: option)
   }
 
   func frameStep(backwards: Bool) {

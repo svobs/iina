@@ -52,7 +52,7 @@ class PlaySliderScrollWheel: VirtualScrollWheel {
     // Use modelValueAtEnd to keep track of last seek, to prevent sending duplicate seek requests
     guard session.modelValueAtEnd != newAbsolutePosition else { return }
     session.modelValueAtEnd = newAbsolutePosition
-    player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition)
+    player.windowController.seekFromPlaySlider(absoluteSecond: newAbsolutePosition, forceExactSeek: false)
   }
 }  // end class
 
