@@ -88,7 +88,7 @@ class Aspect: NSObject {
 
   var value: CGFloat {
     get {
-      return Aspect.mpvPrecision(of: size.width / size.height)
+      return size.aspect
     }
   }
 

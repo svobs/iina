@@ -204,8 +204,14 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   /// These have the same values as video-out-params/dw and video-out-params/dh.
   /// ```
   var videoSizeCA: CGSize {
-    let videoSizeC = videoSizeC
-    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: videoSizeC)
+    var size = videoSizeC
+    if let aspect = Aspect(string: codecAspectLabel) {
+      // mpv uses some fuzzy matching here. Let's do the same
+      if (aspect.value - size.aspect).magnitude > 0.01 {
+        size = VideoGeometry.applyAspectOverride(aspect.value, to: size)
+      }
+    }
+    return VideoGeometry.applyAspectOverride(aspectRatioOverride, to: size)
   }
 
   // MARK: - TRANSFORMATION 3: Rotation
@@ -331,6 +337,9 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   static func applyAspectOverride(_ newAspect: Double?, to origSize: CGSize) -> CGSize {
     guard let newAspect else {
       // No aspect override
+      return origSize
+    }
+    if origSize.mpvAspect == Aspect.mpvPrecision(of: newAspect) {
       return origSize
     }
     let origAspect = origSize.aspect

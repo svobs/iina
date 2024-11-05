@@ -199,17 +199,14 @@ extension PlayerWindowController {
 
       // TODO: sync video-crop (actually, add support for video-crop...)
 
-      // FIXME: add full support for recognizing all values for video-params/sar-name
-      let mpvVideoParamsSarName = player.mpv.getString(MPVProperty.videoParamsSarName)
+      // FIXME: add full support for recognizing all values for video-params/aspect-name
+      let mpvVideoParamsAspectName = player.mpv.getString(MPVProperty.videoParamsAspectName)
       var codecAspect: String?
-      if let mpvVideoParamsSarName, Aspect.isValid(mpvVideoParamsSarName) {
-        codecAspect = mpvVideoParamsSarName
+      if let mpvVideoParamsAspectName, Aspect.isValid(mpvVideoParamsAspectName) {
+        codecAspect = mpvVideoParamsAspectName
       } else {
-        codecAspect = player.mpv.getString(MPVProperty.videoParamsSar)  // will be nil if no video track
+        codecAspect = player.mpv.getString(MPVProperty.videoParamsAspect)  // will be nil if no video track
       }
-
-      let dwidth = player.mpv.getInt(MPVProperty.dwidth)
-      let dheight = player.mpv.getInt(MPVProperty.dheight)
 
       // Sync video-aspect-override. This does get synced from an mpv notification, but there is a noticeable delay
       var userAspectLabelDerived = ""
@@ -228,9 +225,15 @@ extension PlayerWindowController {
                                     userRotation: userRotation,
                                     log)
 
-      let ours = videoGeo.videoSizeCA
-      if (Int(ours.width).magnitude != dwidth) || (Int(ours.height).magnitude != dheight) {
-        player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours)")
+      if !currentMediaAudioStatus.isAudio {
+        let dwidth = player.mpv.getInt(MPVProperty.dwidth)
+        let dheight = player.mpv.getInt(MPVProperty.dheight)
+
+        let ours = videoGeo.videoSizeCA
+        // Apparently mpv can sometimes add a pixel. Not our fault...
+        if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
+          player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours)")
+        }
       }
 
       if let ffMeta {
