@@ -1176,18 +1176,6 @@ extension NSImage {
     return image
   }
 
-  func rounded() -> NSImage {
-    let image = NSImage(size: size)
-    image.lockFocus()
-
-    let frame = NSRect(origin: .zero, size: size)
-    NSBezierPath(ovalIn: frame).addClip()
-    draw(at: .zero, from: frame, operation: .sourceOver, fraction: 1)
-
-    image.unlockFocus()
-    return image
-  }
-
   var cgImage: CGImage? {
     var rect = CGRect.init(origin: .zero, size: self.size)
     return self.cgImage(forProposedRect: &rect, context: nil, hints: nil)
@@ -1208,20 +1196,27 @@ extension NSImage {
     return imageAspect
   }
 
-  // https://github.com/venj/Cocoa-blog-code/blob/master/Round%20Corner%20Image/Round%20Corner%20Image/NSImage%2BRoundCorner.m
+  func clipToCircle() -> NSImage {
+    return roundCorners(cornerWidth: size.width * 0.5, cornerHeight: size.height * 0.5)
+  }
+
   func roundCorners(withRadius radius: CGFloat) -> NSImage {
+    return roundCorners(cornerWidth: radius, cornerHeight: radius)
+  }
+
+  // https://github.com/venj/Cocoa-blog-code/blob/master/Round%20Corner%20Image/Round%20Corner%20Image/NSImage%2BRoundCorner.m
+  func roundCorners(cornerWidth: CGFloat, cornerHeight: CGFloat) -> NSImage {
     let rect = NSRect(origin: NSPoint.zero, size: size)
-    if
-      let cgImage = self.cgImage,
-      let context = CGContext(data: nil,
-                              width: Int(size.width),
-                              height: Int(size.height),
-                              bitsPerComponent: 8,
-                              bytesPerRow: 4 * Int(size.width),
-                              space: CGColorSpaceCreateDeviceRGB(),
-                              bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
+    if let cgImage,
+       let context = CGContext(data: nil,
+                               width: Int(size.width),
+                               height: Int(size.height),
+                               bitsPerComponent: 8,
+                               bytesPerRow: 4 * Int(size.width),
+                               space: CGColorSpaceCreateDeviceRGB(),
+                               bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
       context.beginPath()
-      context.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+      context.addPath(CGPath(roundedRect: rect, cornerWidth: cornerWidth, cornerHeight: cornerHeight, transform: nil))
       context.closePath()
       context.clip()
       context.draw(cgImage, in: rect)

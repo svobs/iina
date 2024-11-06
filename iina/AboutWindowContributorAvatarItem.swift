@@ -33,7 +33,7 @@ class AboutWindowContributorAvatarItem: NSCollectionViewItem {
       } else {
         Just.get(url, asyncCompletionHandler: { respond in
           guard let data = respond.content, var image = NSImage(data: data) else { return }
-          image = image.rounded()
+          image = image.clipToCircle()
           DispatchQueue.main.async {
             self.imageView!.image = image
           }

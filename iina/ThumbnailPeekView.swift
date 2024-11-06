@@ -11,6 +11,8 @@ import Cocoa
 fileprivate let thumbnailExtraOffsetX = Constants.Distance.Thumbnail.extraOffsetX
 fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffsetY
 
+fileprivate let outlineBorderWidth: CGFloat = 1
+
 class ThumbnailPeekView: NSImageView {
 
   var widthConstraint: NSLayoutConstraint!
@@ -54,11 +56,11 @@ class ThumbnailPeekView: NSImageView {
       layer.shadowRadius = 0
       cornerRadius = 0
     case .outlineSharpCorners:
-      layer.borderWidth = outlineRoundedCornersWidth()
+      layer.borderWidth = outlineBorderWidth
       layer.shadowRadius = 0
       cornerRadius = 0
     case .outlineRoundedCorners:
-      layer.borderWidth = outlineRoundedCornersWidth()
+      layer.borderWidth = outlineBorderWidth
       layer.shadowRadius = 0
       cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     case .shadowSharpCorners:
@@ -70,11 +72,11 @@ class ThumbnailPeekView: NSImageView {
       layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
       cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     case .outlinePlusShadowSharpCorners:
-      layer.borderWidth = outlineRoundedCornersWidth()
+      layer.borderWidth = outlineBorderWidth
       layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
       cornerRadius = 0
     case .outlinePlusShadowRoundedCorners:
-      layer.borderWidth = outlineRoundedCornersWidth()
+      layer.borderWidth = outlineBorderWidth
       layer.shadowRadius = shadowRadius(forHeight: thumbHeight)
       cornerRadius = roundedCornerRadius(forHeight: thumbHeight)
     }
@@ -92,10 +94,6 @@ class ThumbnailPeekView: NSImageView {
     // Set shadow radius to between 0 and 10 based on frame height
     // shadow is set in xib
     return min(10, 2 + (frameHeight * 0.005))
-  }
-
-  private func outlineRoundedCornersWidth() -> CGFloat {
-    return 1
   }
 
   func updateColors() {
