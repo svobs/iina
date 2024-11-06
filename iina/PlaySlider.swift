@@ -36,7 +36,7 @@ final class PlaySlider: ScrollableSlider {
   private var abLoopBKnob: PlaySliderLoopKnob!
 
   private var player: PlayerCore {
-    return customCell.playerCore
+    return customCell.player
   }
 
   // MARK:- Initialization
@@ -73,6 +73,11 @@ final class PlaySlider: ScrollableSlider {
     guard #unavailable(macOS 14) else { return }
     abLoopA.draw(dirtyRect)
     abLoopB.draw(dirtyRect)
+  }
+
+  override func setFrameSize(_ newSize: NSSize) {
+    player.log.verbose("Slider frame size changed to: \(newSize)")
+    super.setFrameSize(newSize)
   }
 
   override func viewDidUnhide() {

@@ -520,14 +520,12 @@ extension PlayerWindowController {
         playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: barHeight)
         playSliderHeightConstraint.isActive = true
 
+        // Knob height > 24 is not supported
         switch barHeight {
         case 60...:
           timeLabelFontSize = NSFont.systemFontSize
-          knobHeight = 30
+          knobHeight = 24
         case 48...:
-          timeLabelFontSize = NSFont.systemFontSize
-          knobHeight = outputLayout.oscPosition == .bottom ? 24 : 18
-        case 32...:
           timeLabelFontSize = NSFont.systemFontSize
           knobHeight = outputLayout.oscPosition == .bottom ? 18 : 15
         default:

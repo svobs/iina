@@ -1145,6 +1145,123 @@ extension CGImage {
     }
     return true
   }
+
+  // https://github.com/venj/Cocoa-blog-code/blob/master/Round%20Corner%20Image/Round%20Corner%20Image/NSImage%2BRoundCorner.m
+  func roundCorners(cornerWidth: CGFloat, cornerHeight: CGFloat) -> CGImage {
+    let size = CGSize(width: width, height: height)
+    let rect = CGRect(origin: NSPoint.zero, size: size)
+    if let context = CGContext(data: nil,
+                             width: Int(size.width),
+                             height: Int(size.height),
+                             bitsPerComponent: 8,
+                             bytesPerRow: 4 * Int(size.width),
+                             space: CGColorSpaceCreateDeviceRGB(),
+                               bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
+      context.beginPath()
+      context.addPath(CGPath(roundedRect: rect, cornerWidth: cornerWidth, cornerHeight: cornerHeight, transform: nil))
+      context.closePath()
+      context.clip()
+      context.draw(self, in: rect)
+
+      if let composedImage = context.makeImage() {
+        return composedImage
+      }
+    }
+    return self
+  }
+
+  /// This uses CoreGraphics calls, which in tests was ~5x faster than using `NSAffineTransform` on `NSImage` directly
+  func rotated(degrees: Int) -> CGImage {
+    let imgRect = CGRect(origin: CGPointZero, size: CGSize(width: width, height: height))
+
+    let angleRadians = degToRad(CGFloat(degrees))
+    let imgRotateTransform = rotateTransformRectAroundCenter(rect: imgRect, angle: angleRadians)
+    let rotatedImgFrame = CGRectApplyAffineTransform(imgRect, imgRotateTransform)
+
+
+    let drawingCalls: (CGContext) -> Void = { [self] cgContext in
+      let rotateContext = rotateTransformRectAroundCenter(rect: rotatedImgFrame, angle: angleRadians)
+      cgContext.concatenate(rotateContext)
+      cgContext.draw(self, in: imgRect)
+    }
+    return CGImage.buildBitmapImage(width: Int(rotatedImgFrame.size.width), height: Int(rotatedImgFrame.size.height), drawingCalls: drawingCalls)!
+  }
+
+  private func degToRad(_ degrees: CGFloat) -> CGFloat {
+    return degrees * CGFloat.pi / 180
+  }
+
+  /// `cornerRadius`: if greater than 0, round the corners by this radius
+  func resized(newWidth: Int, newHeight: Int, cornerRadius: CGFloat = 0) -> CGImage {
+    guard newWidth != width || newHeight != height else {
+      return self
+    }
+
+    guard newWidth > 0, newHeight > 0 else {
+      Logger.fatal("NSImage.resized: invalid width (\(newWidth)) or height (\(newHeight)) - both must be greater than 0")
+    }
+
+    // Use raw CoreGraphics calls instead of their NS equivalents. They are > 10x faster, and only downside is that the image's
+    // dimensions must be integer values instead of decimals.
+    let newImage = CGImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: { cgContext in
+      let outputRect = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+      if cornerRadius > 0.0 {
+        cgContext.beginPath()
+        cgContext.addPath(CGPath(roundedRect: outputRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
+        cgContext.closePath()
+        cgContext.clip()
+      }
+      cgContext.draw(self, in: outputRect)
+    })
+
+    guard let newImage else { return self }
+    return newImage
+  }
+
+  /// Builds a bitmap image efficiently using CoreGraphics APIs.
+  ///
+  /// If it's found useful for any more situations, should put in its own class
+  static func buildBitmapImage(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> CGImage? {
+
+    guard let compositeImageRep = CGImage.makeNewImgRep(width: width, height: height) else {
+      Logger.log("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!", level: .error)
+      return nil
+    }
+
+    guard let context = NSGraphicsContext(bitmapImageRep: compositeImageRep) else {
+      Logger.log("DrawImageInBitmapImageContext: Failed to create NSGraphicsContext!", level: .error)
+      return nil
+    }
+
+    drawingCalls(context.cgContext)
+
+    return compositeImageRep.cgImage
+  }
+
+  /// Creates RGB image with alpha channel
+  private static func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
+    return NSBitmapImageRep(
+      bitmapDataPlanes: nil,
+      pixelsWide: width,
+      pixelsHigh: height,
+      bitsPerSample: 8,
+      samplesPerPixel: 4,
+      hasAlpha: true,
+      isPlanar: false,
+      colorSpaceName: NSColorSpaceName.calibratedRGB,
+      bytesPerRow: 0,
+      bitsPerPixel: 0)
+  }
+
+  /// returns the transform equivalent of rotating a rect around its center
+  private func rotateTransformRectAroundCenter(rect:CGRect, angle:CGFloat) -> CGAffineTransform {
+    let t = CGAffineTransformConcat(
+      CGAffineTransformMakeTranslation(-rect.origin.x-rect.size.width*0.5, -rect.origin.y-rect.size.height*0.5),
+      CGAffineTransformMakeRotation(angle)
+    )
+    return CGAffineTransformConcat(t, CGAffineTransformMakeTranslation(rect.size.width*0.5, rect.size.height*0.5))
+  }
+
 }
 
 extension NSImage {
@@ -1204,147 +1321,34 @@ extension NSImage {
     return roundCorners(cornerWidth: radius, cornerHeight: radius)
   }
 
-  // https://github.com/venj/Cocoa-blog-code/blob/master/Round%20Corner%20Image/Round%20Corner%20Image/NSImage%2BRoundCorner.m
   func roundCorners(cornerWidth: CGFloat, cornerHeight: CGFloat) -> NSImage {
-    let rect = NSRect(origin: NSPoint.zero, size: size)
-    if let cgImage,
-       let context = CGContext(data: nil,
-                               width: Int(size.width),
-                               height: Int(size.height),
-                               bitsPerComponent: 8,
-                               bytesPerRow: 4 * Int(size.width),
-                               space: CGColorSpaceCreateDeviceRGB(),
-                               bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) {
-      context.beginPath()
-      context.addPath(CGPath(roundedRect: rect, cornerWidth: cornerWidth, cornerHeight: cornerHeight, transform: nil))
-      context.closePath()
-      context.clip()
-      context.draw(cgImage, in: rect)
-
-      if let composedImage = context.makeImage() {
-        return NSImage(cgImage: composedImage, size: size)
-      }
+    if let cgImageNew = cgImage?.roundCorners(cornerWidth: cornerWidth, cornerHeight: cornerHeight) {
+      return NSImage(cgImage: cgImageNew, size: self.size)
     }
-
     return self
   }
 
   /// This uses CoreGraphics calls, which in tests was ~5x faster than using `NSAffineTransform` on `NSImage` directly
   func rotated(degrees: Int) -> NSImage {
-    let currentImage = self.cgImage!
-    let imgRect = CGRect(origin: CGPointZero, size: CGSize(width: currentImage.width, height: currentImage.height))
-
-    let angleRadians = degToRad(CGFloat(degrees))
-    let imgRotateTransform = rotateTransformRectAroundCenter(rect: imgRect, angle: angleRadians)
-    let rotatedImgFrame = CGRectApplyAffineTransform(imgRect, imgRotateTransform)
-
-
-    let drawingCalls: (CGContext) -> Void = { [self] cgContext in
-      let rotateContext = rotateTransformRectAroundCenter(rect: rotatedImgFrame, angle: angleRadians)
-      cgContext.concatenate(rotateContext)
-      cgContext.draw(currentImage, in: imgRect)
+    if let cgImageNew = cgImage?.rotated(degrees: degrees) {
+      return NSImage(cgImage: cgImageNew, size: size)
     }
-    return NSImage.buildBitmapImage(width: Int(rotatedImgFrame.size.width), height: Int(rotatedImgFrame.size.height), drawingCalls: drawingCalls)!
-  }
-
-  private func degToRad(_ degrees: CGFloat) -> CGFloat {
-    return degrees * CGFloat.pi / 180
-  }
-
-  /// returns the transform equivalent of rotating a rect around its center
-  private func rotateTransformRectAroundCenter(rect:CGRect, angle:CGFloat) -> CGAffineTransform {
-    let t = CGAffineTransformConcat(
-      CGAffineTransformMakeTranslation(-rect.origin.x-rect.size.width*0.5, -rect.origin.y-rect.size.height*0.5),
-      CGAffineTransformMakeRotation(angle)
-    )
-    return CGAffineTransformConcat(t, CGAffineTransformMakeTranslation(rect.size.width*0.5, rect.size.height*0.5))
+    return self
   }
 
   func cropped(normalizedCropRect: NSRect) -> NSImage {
-    let cropOrigin = NSPoint(x: round(size.width * normalizedCropRect.origin.x), y: round(size.height * normalizedCropRect.origin.y))
-    let cropSize = NSSize(width: round(size.width * normalizedCropRect.size.width), height: round(size.height * normalizedCropRect.size.height))
-    let cropRect = CGRect(origin: cropOrigin, size: cropSize)
-
-    if Logger.isTraceEnabled {
-      Logger.log("Cropping image size \(size) using cropRect \(cropRect)", level: .verbose)
+    if let croppedImage = cgImage?.cropping(to: normalizedCropRect) {
+      return NSImage(cgImage: croppedImage, size: normalizedCropRect.size)
     }
-    guard let currentImage = self.cgImage else {
-      Logger.log("Failed to crop image: could not get cgImage", level: .error)
-      return self
-    }
-    let croppedImage = currentImage.cropping(to: cropRect)!
-    return NSImage(cgImage: croppedImage, size: cropSize)
+    return self
   }
 
   /// `cornerRadius`: if greater than 0, round the corners by this radius
   func resized(newWidth: Int, newHeight: Int, cornerRadius: CGFloat = 0) -> NSImage {
-    guard CGFloat(newWidth) != self.size.width || CGFloat(newHeight) != self.size.height else {
-      return self
+    if let cgImageNew = cgImage?.resized(newWidth: newWidth, newHeight: newHeight, cornerRadius: cornerRadius) {
+      return NSImage(cgImage: cgImageNew, size: NSSize(width: newWidth, height: newHeight))
     }
-
-    guard newWidth > 0, newHeight > 0 else {
-      Logger.fatal("NSImage.resized: invalid width (\(newWidth)) or height (\(newHeight)) - both must be greater than 0")
-    }
-
-    // Use raw CoreGraphics calls instead of their NS equivalents. They are > 10x faster, and only downside is that the image's
-    // dimensions must be integer values instead of decimals.
-    guard let currentImage = self.cgImage else {
-      Logger.log("Failed to resize image: could not get cgImage", level: .error)
-      return self
-    }
-
-    let newImage = NSImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: { cgContext in
-      let outputRect = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
-      if cornerRadius > 0.0 {
-        cgContext.beginPath()
-        cgContext.addPath(CGPath(roundedRect: outputRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
-        cgContext.closePath()
-        cgContext.clip()
-      }
-      cgContext.draw(currentImage, in: outputRect)
-    })
-
-    guard let newImage else { return self }
-    return newImage
-  }
-
-  /// Builds a bitmap image efficiently using CoreGraphics APIs.
-  ///
-  /// If it's found useful for any more situations, should put in its own class
-  static func buildBitmapImage(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> NSImage? {
-
-    guard let compositeImageRep = NSImage.makeNewImgRep(width: width, height: height) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!", level: .error)
-      return nil
-    }
-
-    guard let context = NSGraphicsContext(bitmapImageRep: compositeImageRep) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSGraphicsContext!", level: .error)
-      return nil
-    }
-
-    drawingCalls(context.cgContext)
-
-    let outputImage = NSImage(size: CGSize(width: width, height: height))
-    // Create the CGImage from the contents of the bitmap context.
-    outputImage.addRepresentation(compositeImageRep)
-
-    return outputImage
-  }
-
-  /// Creates RGB image with alpha channel
-  private static func makeNewImgRep(width: Int, height: Int) -> NSBitmapImageRep? {
-    return NSBitmapImageRep(
-      bitmapDataPlanes: nil,
-      pixelsWide: width,
-      pixelsHigh: height,
-      bitsPerSample: 8,
-      samplesPerPixel: 4,
-      hasAlpha: true,
-      isPlanar: false,
-      colorSpaceName: NSColorSpaceName.calibratedRGB,
-      bytesPerRow: 0,
-      bitsPerPixel: 0)
+    return self
   }
 
   /// Try to find a SF Symbol. This function will iterate through the provided list of SF Symbol name list to and return the

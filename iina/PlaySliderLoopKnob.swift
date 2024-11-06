@@ -134,7 +134,6 @@ final class PlaySliderLoopKnob: NSView {
   override func draw(_ dirtyRect: NSRect) {
     guard !isHiddenOrHasHiddenAncestor else { return }
     let rect = knobRect()
-    let knobHeight = knobHeight
     // The frame is taller than the drawn knob. Adjust the y coordinate accordingly.
     let adjustedY = rect.origin.y + (rect.height - knobHeight) / 2
     let drawing: NSRect
@@ -149,17 +148,17 @@ final class PlaySliderLoopKnob: NSView {
     path.fill()
   }
 
+  private func knobRect() -> NSRect {
+    let rect = cell.knobRect(flipped: isFlipped)
+    return NSMakeRect(x, rect.origin.y, rect.width, rect.height)
+  }
+
   private func drawGraphic(_ drawFunc: () -> Void) {
     NSGraphicsContext.saveGraphicsState()
 
     drawFunc()
 
     NSGraphicsContext.restoreGraphicsState()
-  }
-
-  private func knobRect() -> NSRect {
-    let rect = cell.knobRect(flipped: isFlipped)
-    return NSMakeRect(x, rect.origin.y, rect.width, rect.height)
   }
 
   // MARK:- Mouse Events

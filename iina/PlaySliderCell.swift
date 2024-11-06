@@ -9,13 +9,13 @@
 import Cocoa
 
 class PlaySliderCell: NSSliderCell {
-  unowned var _playerCore: PlayerCore!
-  var playerCore: PlayerCore {
-    if let player = _playerCore { return player }
+  unowned var _player: PlayerCore!
+  var player: PlayerCore {
+    if let player = _player { return player }
 
     let windowController = self.controlView!.window!.windowController
     let player = (windowController as! PlayerWindowController).player
-    _playerCore = player
+    _player = player
     return player
   }
 
@@ -75,9 +75,9 @@ class PlaySliderCell: NSSliderCell {
                           knobRect.origin.y + 0.5 * (knobRect.height - knobHeight),
                           knobRect.width,
                           knobHeight)
+
     let path = NSBezierPath(roundedRect: rect, xRadius: knobStrokeRadius, yRadius: knobStrokeRadius)
-    let fillColor = isHighlighted ? knobActiveColor : knobColor
-    fillColor.setFill()
+    (isHighlighted ? knobActiveColor : knobColor).setFill()
     path.fill()
     return path
   }
@@ -128,9 +128,9 @@ class PlaySliderCell: NSSliderCell {
   }
 
   override func drawBar(inside rect: NSRect, flipped: Bool) {
-    let chapters = playerCore.info.chapters
-    let durationSec = (playerCore.info.playbackDurationSec ?? 0.0)
-    let cacheTime = playerCore.info.cacheTime
+    let chapters = player.info.chapters
+    let durationSec = (player.info.playbackDurationSec ?? 0.0)
+    let cacheTime = player.info.cacheTime
 
     let slider = self.controlView as! NSSlider
     let sliderValueTotal = slider.maxValue - slider.minValue
@@ -241,23 +241,23 @@ class PlaySliderCell: NSSliderCell {
   // MARK:- Tracking the Mouse
 
   override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
-    playerCore.log.verbose("PlaySlider drag-to-seek began")
-    playerCore.windowController.isDraggingPlaySlider = true
-    isPausedBeforeSeeking = playerCore.info.isPaused
+    player.log.verbose("PlaySlider drag-to-seek began")
+    player.windowController.isDraggingPlaySlider = true
+    isPausedBeforeSeeking = player.info.isPaused
     let result = super.startTracking(at: startPoint, in: controlView)
     if result {
-      playerCore.pause()
+      player.pause()
     }
     return result
   }
 
   override func stopTracking(last lastPoint: NSPoint, current stopPoint: NSPoint, in controlView: NSView, mouseIsUp flag: Bool) {
-    playerCore.log.verbose("PlaySlider drag-to-seek ended")
+    player.log.verbose("PlaySlider drag-to-seek ended")
     super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
-    guard let wc = playerCore.windowController else { return }
+    guard let wc = player.windowController else { return }
     wc.isDraggingPlaySlider = false
     if !isPausedBeforeSeeking {
-      playerCore.resume()
+      player.resume()
     }
   }
 }
