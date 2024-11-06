@@ -72,6 +72,7 @@ class GLVideoLayer: CAOpenGLLayer {
     cglContext = GLVideoLayer.createContext(cglPixelFormat)
     asychronousModeLock = Lock()
     super.init()
+    isOpaque = true
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
     if bufferDepth > 8 {
       contentsFormat = .RGBA16Float
@@ -86,6 +87,7 @@ class GLVideoLayer: CAOpenGLLayer {
     videoView = previousLayer.videoView
     asychronousModeLock = previousLayer.asychronousModeLock
     super.init()
+    isOpaque = true
     autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
     contentsFormat = previousLayer.contentsFormat
   }

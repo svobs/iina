@@ -523,8 +523,11 @@ extension PlayerWindowController {
         switch barHeight {
         case 60...:
           timeLabelFontSize = NSFont.systemFontSize
-          knobHeight = 24
+          knobHeight = 30
         case 48...:
+          timeLabelFontSize = NSFont.systemFontSize
+          knobHeight = outputLayout.oscPosition == .bottom ? 24 : 18
+        case 32...:
           timeLabelFontSize = NSFont.systemFontSize
           knobHeight = outputLayout.oscPosition == .bottom ? 18 : 15
         default:

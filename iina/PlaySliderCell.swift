@@ -77,17 +77,6 @@ class PlaySliderCell: NSSliderCell {
                           knobHeight)
     let path = NSBezierPath(roundedRect: rect, xRadius: knobStrokeRadius, yRadius: knobStrokeRadius)
     let fillColor = isHighlighted ? knobActiveColor : knobColor
-
-    let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
-
-    if isLightTheme {
-      NSGraphicsContext.saveGraphicsState()
-      let shadow = NSShadow()
-      shadow.shadowBlurRadius = 1
-      shadow.shadowOffset = NSSize(width: 0, height: -0.5)
-      shadow.set()
-    }
-
     fillColor.setFill()
     path.fill()
     return path

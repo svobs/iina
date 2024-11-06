@@ -93,6 +93,8 @@ final class PlaySliderLoopKnob: NSView {
     // The frame is calculated and set once the superclass is initialized.
     super.init(frame: NSZeroRect)
     self.toolTip = toolTip
+    // It gets called to be redrawn by the parent slider anyway
+    layerContentsRedrawPolicy = .never
     // This knob is hidden unless the mpv A-B loop feature is activated.
     isHidden = true
     // Set the size of the frame to match the size of the slider's knob. The frame origin will be

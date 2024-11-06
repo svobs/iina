@@ -165,6 +165,9 @@ extension PlayerWindowController {
       bottomBarView.blendingMode = .withinWindow
       bottomBarView.material = .sidebar
       bottomBarView.state = .active
+    } else {
+      bottomBarView.wantsLayer = true
+      bottomBarView.layer?.backgroundColor = .clear
     }
     bottomBarView.identifier = .init("bottomBarView")  // helps with debug logging
     bottomBarView.isHidden = true
@@ -194,6 +197,8 @@ extension PlayerWindowController {
     oscBottomMainView.alignment = .centerY
     oscBottomMainView.distribution = .gravityAreas
     oscBottomMainView.translatesAutoresizingMaskIntoConstraints = false
+    oscBottomMainView.wantsLayer = true
+    oscBottomMainView.layer?.backgroundColor = .clear
 
     bottomBarTopBorder.identifier = .init("bottomBarTopBorder")  // helps with debug logging
     bottomBarTopBorder.boxType = .custom
