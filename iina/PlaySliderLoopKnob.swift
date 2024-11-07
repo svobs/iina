@@ -125,6 +125,18 @@ final class PlaySliderLoopKnob: NSView {
     return NSColor(named: .mainSliderLoopKnob)!
   }
 
+  struct KnobImage {
+    let image: CGImage
+    let isDarkMode: Bool
+    let knobWidth: CGFloat
+    let knobHeight: CGFloat
+    static let scaleFactor: CGFloat = 2.0
+    static let imgMarginRadius: CGFloat = 1.0
+    static let scaledMarginRadius = imgMarginRadius * scaleFactor
+  }
+
+  var cachedKnob: KnobImage? = nil
+
   /// Draw the knob.
   ///
   /// If IINA is running under macOS Ventura or earlier this method is called directly by `PlaySlider.draw`. This workaround
@@ -133,19 +145,58 @@ final class PlaySliderLoopKnob: NSView {
   /// longer required and the drawing origin is relative to this view's frame. See `PlaySlider.draw` for more details.
   override func draw(_ dirtyRect: NSRect) {
     guard !isHiddenOrHasHiddenAncestor else { return }
-    let rect = knobRect()
+    guard let window else { return }
+    let isDarkMode = window.effectiveAppearance.isDark
+    let knobWidth = cell.knobWidth
+    let knobImageSize = CGSize(width: knobWidth + (2 * KnobImage.scaledMarginRadius), height: knobHeight + (2 * KnobImage.scaledMarginRadius))
+
+    let knob: KnobImage
+    if let cachedKnob, cachedKnob.isDarkMode == isDarkMode, cachedKnob.knobWidth == knobWidth, cachedKnob.knobHeight == knobHeight {
+      knob = cachedKnob
+    } else {
+      let scaleFactor = KnobImage.scaleFactor
+
+      let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSize.width * scaleFactor),
+                                               height: Int(knobImageSize.height * scaleFactor),
+                                               drawingCalls: { cgContext in
+        cgContext.interpolationQuality = .high
+
+        // Round the X position for cleaner drawing
+        let pathRect = NSMakeRect(KnobImage.scaledMarginRadius,
+                                  KnobImage.scaledMarginRadius,
+                                  knobWidth * scaleFactor,
+                                  knobHeight * scaleFactor)
+        let path = CGPath(roundedRect: pathRect, cornerWidth: PlaySliderCell.knobStrokeRadius * scaleFactor,
+                          cornerHeight: PlaySliderCell.knobStrokeRadius * scaleFactor, transform: nil)
+
+        cgContext.beginPath()
+        cgContext.addPath(path)
+
+        let fillColor = knobColor()
+        cgContext.setFillColor(fillColor.cgColor)
+        cgContext.fillPath()
+        cgContext.closePath()
+      })!
+
+      knob = KnobImage(image: knobImage, isDarkMode: isDarkMode, knobWidth: knobWidth, knobHeight: knobHeight)
+      cachedKnob = knob
+    }
+
+    let knobRect = knobRect()
     // The frame is taller than the drawn knob. Adjust the y coordinate accordingly.
-    let adjustedY = rect.origin.y + (rect.height - knobHeight) / 2
-    let drawing: NSRect
+    let adjustedY = knobRect.origin.y + (knobRect.height - knobHeight) / 2
+    let x: CGFloat
     if #available(macOS 14, *) {
-      drawing = NSMakeRect(0, adjustedY, cell.knobWidth, knobHeight)
+      x = 0
     } else {
       // Round the X position for cleaner drawing
-      drawing = NSMakeRect(round(rect.origin.x), adjustedY, cell.knobWidth, knobHeight)
+      x = round(knobRect.origin.x)
     }
-    let path = NSBezierPath(roundedRect: drawing, xRadius: cell.knobStrokeRadius, yRadius: cell.knobStrokeRadius)
-    knobColor().setFill()
-    path.fill()
+
+    let drawRect = NSRect(x: x - KnobImage.imgMarginRadius,
+                          y: adjustedY - KnobImage.imgMarginRadius,
+                          width: knobImageSize.width, height: knobImageSize.height)
+    NSGraphicsContext.current!.cgContext.draw(knob.image, in: drawRect)
   }
 
   private func knobRect() -> NSRect {

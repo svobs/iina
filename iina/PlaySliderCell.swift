@@ -27,11 +27,11 @@ class PlaySliderCell: NSSliderCell {
 
   var knobWidth: CGFloat = 3
   var knobHeight: CGFloat = 15
-  var knobStrokeRadius: CGFloat = 1
-  var barStrokeRadius: CGFloat = 1.5
+  static let knobStrokeRadius: CGFloat = 1
+  static let barStrokeRadius: CGFloat = 1.5
 
-  private var knobColor = NSColor(named: .mainSliderKnob)!
-  private var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
+  private static var knobColor = NSColor(named: .mainSliderKnob)!
+  private static var knobActiveColor = NSColor(named: .mainSliderKnobActive)!
   private var barColorLeft = NSColor.controlAccentColor
   private var barColorLeftGlow = NSColor.controlAccentColor
   private var barColorPreCache = NSColor(named: .mainSliderBarPreCache)!
@@ -62,51 +62,92 @@ class PlaySliderCell: NSSliderCell {
   // MARK:- Displaying the Cell
 
   override func drawKnob(_ knobRect: NSRect) {
-    let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
-    drawKnob(knobRect: knobRect, withShadow: isLightTheme)
+    let isDarkMode = controlView!.window!.effectiveAppearance.isDark
+    drawKnob(knobRect: knobRect, dark: isDarkMode)
   }
 
-  private func drawKnob(knobRect: NSRect, withShadow: Bool) {
-    let knobImageSize = CGSize(width: knobWidth + 4, height: knobHeight + 4)
-    let imgMarginRadius: CGFloat = 1.0
-    let scaleFactor: CGFloat = 2.0
-    let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSize.width * scaleFactor), height: Int(knobImageSize.height * scaleFactor), drawingCalls: { cgContext in
-      cgContext.interpolationQuality = .high
+  struct KnobImage {
+    let imageActive: CGImage
+    let imageNormal: CGImage
+    let isDarkMode: Bool
+    let knobWidth: CGFloat
+    let knobHeight: CGFloat
+    static let scaleFactor: CGFloat = 2.0
+    /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
+    static let imgMarginRadius: CGFloat = 1.0
+    static let scaledMarginRadius = imgMarginRadius * scaleFactor
 
-      // Round the X position for cleaner drawing
-      let pathRect = NSMakeRect(imgMarginRadius * scaleFactor,
-                                imgMarginRadius * scaleFactor,
-                                knobWidth * scaleFactor,
-                                knobHeight * scaleFactor)
-      let path = CGPath(roundedRect: pathRect, cornerWidth: knobStrokeRadius * scaleFactor, cornerHeight: knobStrokeRadius * scaleFactor, transform: nil)
+    init(isDarkMode: Bool, knobWidth: CGFloat, knobHeight: CGFloat) {
+      self.imageActive = KnobImage.createImage(highlighted: true, isDarkMode: isDarkMode, knobWidth: knobWidth, knobHeight: knobHeight)
+      self.imageNormal = KnobImage.createImage(highlighted: false, isDarkMode: isDarkMode, knobWidth: knobWidth, knobHeight: knobHeight)
+      self.isDarkMode = isDarkMode
+      self.knobWidth = knobWidth
+      self.knobHeight = knobHeight
+    }
 
-      if withShadow {
-        cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadowColor)
-      }
-      cgContext.beginPath()
-      cgContext.addPath(path)
+    static func createImage(highlighted: Bool, isDarkMode: Bool, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
+      let scaleFactor = KnobImage.scaleFactor
+      let knobImageSize = KnobImage.knobImageSize(knobWidth: knobWidth, knobHeight: knobHeight)
+      let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSize.width * scaleFactor),
+                                               height: Int(knobImageSize.height * scaleFactor),
+                                               drawingCalls: { cgContext in
+        cgContext.interpolationQuality = .high
 
-      let fillColor = isHighlighted ? knobActiveColor : knobColor
-      cgContext.setFillColor(fillColor.cgColor)
-      cgContext.fillPath()
-      cgContext.closePath()
+        // Round the X position for cleaner drawing
+        let pathRect = NSMakeRect(KnobImage.scaledMarginRadius,
+                                  KnobImage.scaledMarginRadius,
+                                  knobWidth * scaleFactor,
+                                  knobHeight * scaleFactor)
+        let path = CGPath(roundedRect: pathRect, cornerWidth: knobStrokeRadius * scaleFactor,
+                          cornerHeight: knobStrokeRadius * scaleFactor, transform: nil)
 
-      if withShadow {
-        /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
+        if !isDarkMode {
+          cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadowColor)
+        }
         cgContext.beginPath()
         cgContext.addPath(path)
-        cgContext.setLineWidth(0.4 * scaleFactor)
-        cgContext.setStrokeColor(shadowColor)
-        cgContext.strokePath()
-        cgContext.closePath()
-      }
-      player.log.debug("Drawing knob (\(knobWidth) x \(knobHeight)), imgSize=\(knobImageSize) in knobRect=\(knobRect), pathRect=\(pathRect)")
-    })!
 
-    let drawRect = NSRect(x: round(knobRect.origin.x) - imgMarginRadius,
-                          y: knobRect.origin.y - imgMarginRadius + (0.5 * (knobRect.height - knobHeight)),
+        let fillColor = highlighted ? PlaySliderCell.knobActiveColor : PlaySliderCell.knobColor
+        cgContext.setFillColor(fillColor.cgColor)
+        cgContext.fillPath()
+        cgContext.closePath()
+
+        if !isDarkMode {
+          /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
+          cgContext.beginPath()
+          cgContext.addPath(path)
+          cgContext.setLineWidth(0.4 * scaleFactor)
+          cgContext.setStrokeColor(shadowColor)
+          cgContext.strokePath()
+          cgContext.closePath()
+        }
+      })!
+      return knobImage
+    }
+
+    static func knobImageSize(knobWidth: CGFloat, knobHeight: CGFloat) -> CGSize {
+      return CGSize(width: knobWidth + (2 * KnobImage.scaledMarginRadius), height: knobHeight + (2 * KnobImage.scaledMarginRadius))
+    }
+  }
+
+  var cachedKnob: KnobImage? = nil
+
+  func drawKnob(knobRect: NSRect, dark isDarkMode: Bool) {
+    let knobImageSize = CGSize(width: knobWidth + (2 * KnobImage.scaledMarginRadius), height: knobHeight + (2 * KnobImage.scaledMarginRadius))
+
+    let knob: KnobImage
+    if let cachedKnob, cachedKnob.isDarkMode == isDarkMode, cachedKnob.knobWidth == knobWidth, cachedKnob.knobHeight == knobHeight {
+      knob = cachedKnob
+    } else {
+      knob = KnobImage(isDarkMode: isDarkMode, knobWidth: knobWidth, knobHeight: knobHeight)
+      cachedKnob = knob
+    }
+
+    let drawRect = NSRect(x: round(knobRect.origin.x) - KnobImage.imgMarginRadius,
+                          y: knobRect.origin.y - KnobImage.imgMarginRadius + (0.5 * (knobRect.height - knob.knobHeight)),
                           width: knobImageSize.width, height: knobImageSize.height)
-    NSGraphicsContext.current!.cgContext.draw(knobImage, in: drawRect)
+    let image = isHighlighted ? knob.imageActive : knob.imageNormal
+    NSGraphicsContext.current!.cgContext.draw(image, in: drawRect)
   }
 
   override func knobRect(flipped: Bool) -> NSRect {
@@ -159,7 +200,7 @@ class PlaySliderCell: NSSliderCell {
                        height: rect.height - 2)
     }
 
-    let fullPath = NSBezierPath(roundedRect: barRect, xRadius: barStrokeRadius, yRadius: barStrokeRadius)
+    let fullPath = NSBezierPath(roundedRect: barRect, xRadius: PlaySliderCell.barStrokeRadius, yRadius: PlaySliderCell.barStrokeRadius)
     if controlView!.window!.effectiveAppearance.isDark {
       // Clip where the knob will be, including 1px from left & right of the knob
       fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
