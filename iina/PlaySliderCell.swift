@@ -8,6 +8,8 @@
 
 import Cocoa
 
+fileprivate let shadowColor = NSShadow().shadowColor!.cgColor
+
 class PlaySliderCell: NSSliderCell {
   unowned var _player: PlayerCore!
   var player: PlayerCore {
@@ -61,44 +63,50 @@ class PlaySliderCell: NSSliderCell {
 
   override func drawKnob(_ knobRect: NSRect) {
     let isLightTheme = !controlView!.window!.effectiveAppearance.isDark
-    if isLightTheme {
-      drawKnobWithShadow(knobRect: knobRect)
-    } else {
-      drawKnobOnly(knobRect: knobRect)
-    }
+    drawKnob(knobRect: knobRect, withShadow: isLightTheme)
   }
 
-  @discardableResult
-  private func drawKnobOnly(knobRect: NSRect) -> NSBezierPath {
-    // Round the X position for cleaner drawing
-    let rect = NSMakeRect(round(knobRect.origin.x),
-                          knobRect.origin.y + 0.5 * (knobRect.height - knobHeight),
-                          knobRect.width,
-                          knobHeight)
+  private func drawKnob(knobRect: NSRect, withShadow: Bool) {
+    let knobImageSize = CGSize(width: knobWidth + 4, height: knobHeight + 4)
+    let imgMarginRadius: CGFloat = 1.0
+    let scaleFactor: CGFloat = 2.0
+    let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSize.width * scaleFactor), height: Int(knobImageSize.height * scaleFactor), drawingCalls: { cgContext in
+      cgContext.interpolationQuality = .high
 
-    let path = NSBezierPath(roundedRect: rect, xRadius: knobStrokeRadius, yRadius: knobStrokeRadius)
-    (isHighlighted ? knobActiveColor : knobColor).setFill()
-    path.fill()
-    return path
-  }
+      // Round the X position for cleaner drawing
+      let pathRect = NSMakeRect(imgMarginRadius * scaleFactor,
+                                imgMarginRadius * scaleFactor,
+                                knobWidth * scaleFactor,
+                                knobHeight * scaleFactor)
+      let path = CGPath(roundedRect: pathRect, cornerWidth: knobStrokeRadius * scaleFactor, cornerHeight: knobStrokeRadius * scaleFactor, transform: nil)
 
-  private func drawKnobWithShadow(knobRect: NSRect) {
-    NSGraphicsContext.saveGraphicsState()
+      if withShadow {
+        cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadowColor)
+      }
+      cgContext.beginPath()
+      cgContext.addPath(path)
 
-    let shadow = NSShadow()
-    shadow.shadowBlurRadius = 1
-    shadow.shadowOffset = NSSize(width: 0, height: -0.5)
-    shadow.set()
+      let fillColor = isHighlighted ? knobActiveColor : knobColor
+      cgContext.setFillColor(fillColor.cgColor)
+      cgContext.fillPath()
+      cgContext.closePath()
 
-    let path = drawKnobOnly(knobRect: knobRect)
+      if withShadow {
+        /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
+        cgContext.beginPath()
+        cgContext.addPath(path)
+        cgContext.setLineWidth(0.4 * scaleFactor)
+        cgContext.setStrokeColor(shadowColor)
+        cgContext.strokePath()
+        cgContext.closePath()
+      }
+      player.log.debug("Drawing knob (\(knobWidth) x \(knobHeight)), imgSize=\(knobImageSize) in knobRect=\(knobRect), pathRect=\(pathRect)")
+    })!
 
-    /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
-    if let shadowColor = shadow.shadowColor {
-      path.lineWidth = 0.4
-      shadowColor.setStroke()
-      path.stroke()
-    }
-    NSGraphicsContext.restoreGraphicsState()
+    let drawRect = NSRect(x: round(knobRect.origin.x) - imgMarginRadius,
+                          y: knobRect.origin.y - imgMarginRadius + (0.5 * (knobRect.height - knobHeight)),
+                          width: knobImageSize.width, height: knobImageSize.height)
+    NSGraphicsContext.current!.cgContext.draw(knobImage, in: drawRect)
   }
 
   override func knobRect(flipped: Bool) -> NSRect {
