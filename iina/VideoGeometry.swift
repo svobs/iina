@@ -217,6 +217,7 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
   // MARK: - TRANSFORMATION 3: Rotation
   // (Crop + Aspect + Rotation)
 
+  /// codecRotation = (totalRotation - userRotation) %% 360
   let codecRotation: Int
 
   /// `MPVProperty.videoRotate`.

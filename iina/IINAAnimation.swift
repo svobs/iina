@@ -208,11 +208,6 @@ extension IINAAnimation {
       guard let nextTask = popNextValidTask() else { return }
 
       NSAnimationContext.runAnimationGroup({ context in
-        // TODO: probably remove CATransaction after more testing. Probably redundant?
-//        CATransaction.begin()
-//        defer {
-//          CATransaction.commit()
-//        }
         let disableAnimation = !isAnimationEnabled
         if disableAnimation {
           context.duration = 0
