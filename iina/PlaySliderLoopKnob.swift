@@ -37,16 +37,10 @@ final class PlaySliderLoopKnob: NSView {
 
   private var isDragging: Bool = false
 
-  private var knobHeight: CGFloat {
-    guard let cell else { return 0 }
-    // We want loop knobs to be shorter than the primary knob.
-    return round(cell.knobHeight * PlaySliderLoopKnob.knobHeightAdjustment)
-  }
-
   /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
   ///
   /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
-  private static let knobHeightAdjustment: CGFloat = 0.75
+  static let knobHeightAdjustment: CGFloat = 0.75
 
   // The x coordinate of the last mouse location when dragging.
   private var lastDragLocation: CGFloat = 0
@@ -121,22 +115,6 @@ final class PlaySliderLoopKnob: NSView {
 
   // MARK:- Drawing
 
-  private func knobColor() -> NSColor {
-    return NSColor(named: .mainSliderLoopKnob)!
-  }
-
-  struct KnobImage {
-    let image: CGImage
-    let isDarkMode: Bool
-    let knobWidth: CGFloat
-    let knobHeight: CGFloat
-    static let scaleFactor: CGFloat = 2.0
-    static let imgMarginRadius: CGFloat = 1.0
-    static let scaledMarginRadius = imgMarginRadius * scaleFactor
-  }
-
-  var cachedKnob: KnobImage? = nil
-
   /// Draw the knob.
   ///
   /// If IINA is running under macOS Ventura or earlier this method is called directly by `PlaySlider.draw`. This workaround
@@ -145,58 +123,16 @@ final class PlaySliderLoopKnob: NSView {
   /// longer required and the drawing origin is relative to this view's frame. See `PlaySlider.draw` for more details.
   override func draw(_ dirtyRect: NSRect) {
     guard !isHiddenOrHasHiddenAncestor else { return }
-    guard let window else { return }
-    let isDarkMode = window.effectiveAppearance.isDark
-    let knobWidth = cell.knobWidth
-    let knobImageSize = CGSize(width: knobWidth + (2 * KnobImage.scaledMarginRadius), height: knobHeight + (2 * KnobImage.scaledMarginRadius))
 
-    let knob: KnobImage
-    if let cachedKnob, cachedKnob.isDarkMode == isDarkMode, cachedKnob.knobWidth == knobWidth, cachedKnob.knobHeight == knobHeight {
-      knob = cachedKnob
-    } else {
-      let scaleFactor = KnobImage.scaleFactor
-
-      let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSize.width * scaleFactor),
-                                               height: Int(knobImageSize.height * scaleFactor),
-                                               drawingCalls: { cgContext in
-        cgContext.interpolationQuality = .high
-
-        // Round the X position for cleaner drawing
-        let pathRect = NSMakeRect(KnobImage.scaledMarginRadius,
-                                  KnobImage.scaledMarginRadius,
-                                  knobWidth * scaleFactor,
-                                  knobHeight * scaleFactor)
-        let path = CGPath(roundedRect: pathRect, cornerWidth: PlaySliderCell.knobStrokeRadius * scaleFactor,
-                          cornerHeight: PlaySliderCell.knobStrokeRadius * scaleFactor, transform: nil)
-
-        cgContext.beginPath()
-        cgContext.addPath(path)
-
-        let fillColor = knobColor()
-        cgContext.setFillColor(fillColor.cgColor)
-        cgContext.fillPath()
-        cgContext.closePath()
-      })!
-
-      knob = KnobImage(image: knobImage, isDarkMode: isDarkMode, knobWidth: knobWidth, knobHeight: knobHeight)
-      cachedKnob = knob
-    }
-
-    let knobRect = knobRect()
-    // The frame is taller than the drawn knob. Adjust the y coordinate accordingly.
-    let adjustedY = knobRect.origin.y + (knobRect.height - knobHeight) / 2
-    let x: CGFloat
+    var knobRect = knobRect()
     if #available(macOS 14, *) {
-      x = 0
-    } else {
-      // Round the X position for cleaner drawing
-      x = round(knobRect.origin.x)
+      knobRect.origin.x = 0
     }
 
-    let drawRect = NSRect(x: x - KnobImage.imgMarginRadius,
-                          y: adjustedY - KnobImage.imgMarginRadius,
-                          width: knobImageSize.width, height: knobImageSize.height)
-    NSGraphicsContext.current!.cgContext.draw(knob.image, in: drawRect)
+    guard let appearance = window?.contentView?.iinaAppearance else { return }
+    appearance.applyAppearanceFor {
+      RenderCache.shared.drawKnob(.loopKnob, in: knobRect, darkMode: appearance.isDark, knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight)
+    }
   }
 
   private func knobRect() -> NSRect {
