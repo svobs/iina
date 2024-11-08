@@ -21,10 +21,6 @@ struct AppData {
   static let syncTimerConfig = SyncTimerConfig(interval: 0.1, tolerance: 0.02)
 //  static let syncTimerPreciseConfig = SyncTimerConfig(interval: 0.04, tolerance: 0.01)
 
-  /// If state save is enabled and video is playing, make sure player is saved every this number of secs
-  static let playTimeSaveStateIntervalSec: TimeInterval = 10.0
-  static let asynchronousModeTimeIntervalSec: TimeInterval = 2.0
-
   /** speed values when clicking left / right arrow button */
 
 //  static let availableSpeedValues: [Double] = [-32, -16, -8, -4, -2, -1, 1, 2, 4, 8, 16, 32]
@@ -37,17 +33,6 @@ struct AppData {
 
   /// Lowest possible speed allowed by mpv (0.01x)
   static let mpvMinPlaybackSpeed = 0.01
-
-  /** For Force Touch. */
-  static let minimumPressDuration: TimeInterval = 0.5
-
-  /// Minimum value to set a mpv loop point to.
-  ///
-  /// Setting a loop point to zero disables looping, so when loop points are being adjusted IINA must ensure the mpv property is not
-  /// set to zero. However using `Double.leastNonzeroMagnitude` as the minimum value did not work because mpv truncates
-  /// the value when storing the A-B loop points in the watch later file. As a result the state of the A-B loop feature is not properly
-  /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue. 
-  static let minLoopPointTime = 0.000001
 
   static let osdSeekSubSecPrecisionComparison: Double = 1000000
 
@@ -96,14 +81,12 @@ struct AppData {
   static let gainAdjustmentHelpLink = "https://mpv.io/manual/stable/#options-replaygain"
   static let audioDriverHellpLink = "https://mpv.io/manual/stable/#audio-output-drivers-coreaudio"
 
-  // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
-  static let maxConfFileLinesAccepted = 10000
-
   /// Absolute minimum allowed rendered video size. Does not include viewport or any other panels which are outside the video.
   static let minVideoSize = NSMakeSize(8, 8)
 }
 
 typealias Str = String
+typealias TimeInt = TimeInterval
 struct Constants {
   struct BuildNumber {
     static let V1_0 = 1
@@ -158,8 +141,21 @@ struct Constants {
     static let maxWindowNamesInRestoreTimeoutAlert: Int = 8
     static let mpvOptionsTableMaxRowsPerOperation: Int = 1000
     static let inspectorWatchTableMaxRowsPerOperation: Int = 1000
+
+    // Max allowed lines when reading a single input config file, or reading them from the Clipboard.
+    static let maxConfFileLinesAccepted = 10000
   }
+  /// All values are in seconds unless explicitly named differently
   struct TimeInterval {
+
+    /// Minimum value to set a mpv loop point to.
+    ///
+    /// Setting a loop point to zero disables looping, so when loop points are being adjusted IINA must ensure the mpv property is not
+    /// set to zero. However using `Double.leastNonzeroMagnitude` as the minimum value did not work because mpv truncates
+    /// the value when storing the A-B loop points in the watch later file. As a result the state of the A-B loop feature is not properly
+    /// restored when the media is played again. Using the following value as the minimum for loop points avoids this issue.
+    static let minLoopPointTime = 0.000001
+
     /// Time in seconds to wait before regenerating thumbnails.
     /// Each character the user types into the thumbnailWidth text field triggers a new thumb regen request.
     /// This should help cut down on unnecessary requests.
@@ -171,6 +167,13 @@ struct Constants {
     static let seekTimeAndThumbnailHideTimeout = 0.2
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
+
+    /// For Force Touch.
+    static let minimumPressDuration: TimeInt = 0.5
+
+    /// If state save is enabled and video is playing, make sure player is saved every this number of secs
+    static let playTimeSaveStateFrequency: TimeInt = 10.0
+    static let asynchronousModeTimeout: TimeInt = 2.0
 
     /// For each scroll, how long the scroll wheel needs to be active for the scroll to be enabled.
     /// Set to a larger value to better avoid triggering accidental scrolls while making other trackpad gestures.

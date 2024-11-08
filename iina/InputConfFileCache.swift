@@ -222,8 +222,8 @@ fileprivate func loadFile(at filePath: String, isReadOnly: Bool = true, confName
 
   var lines: [String] = []
   while let rawLine: String = reader.nextLine() {
-    guard lines.count < AppData.maxConfFileLinesAccepted else {
-      Logger.log("Maximum number of lines (\(AppData.maxConfFileLinesAccepted)) exceeded: stopping load of file: \(filePath.pii.quoted)")
+    guard lines.count < Constants.SizeLimit.maxConfFileLinesAccepted else {
+      Logger.log("Maximum number of lines (\(Constants.SizeLimit.maxConfFileLinesAccepted)) exceeded: stopping load of file: \(filePath.pii.quoted)")
 
       // TODO: more appropriate error msg
       let alertInfo = Utility.AlertInfo(key: "keybinding_config.error", args: [filePath])

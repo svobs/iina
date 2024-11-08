@@ -2298,7 +2298,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       if didRelease { // Released
         if maxPressure == 1 &&
             ((left ? currentSpeedIndex < indexSpeed1x - 1 : currentSpeedIndex > indexSpeed1x + 1) ||
-             Date().timeIntervalSince(lastClick) < AppData.minimumPressDuration) { // Single click ended
+             Date().timeIntervalSince(lastClick) < Constants.TimeInterval.minimumPressDuration) { // Single click ended
           newSpeedIndex = oldSpeedValueIndex + directionUnit
         } else { // Force Touch or long press ended
           newSpeedIndex = indexSpeed1x

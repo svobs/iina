@@ -193,14 +193,14 @@ class GLVideoLayer: CAOpenGLLayer {
       isAsynchronous = true
 
       asychronousModeTimer = Timer.scheduledTimer(
-        timeInterval: AppData.asynchronousModeTimeIntervalSec,
+        timeInterval: Constants.TimeInterval.asynchronousModeTimeout,
         target: self,
         selector: #selector(self.exitAsynchronousMode),
         userInfo: nil,
         repeats: false
       )
       /// Save some CPU by making this less strict, because we don't really care that much
-      asychronousModeTimer?.tolerance = AppData.asynchronousModeTimeIntervalSec * 0.1
+      asychronousModeTimer?.tolerance = Constants.TimeInterval.asynchronousModeTimeout * 0.1
     }
   }
 

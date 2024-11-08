@@ -242,7 +242,7 @@ class PlayerCore: NSObject {
     /// - Note: The value of the A loop point is not required by mpv to be before the B loop point.
     set {
       guard info.abLoopStatus == .aSet || info.abLoopStatus == .bSet else { return }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, max(AppData.minLoopPointTime, newValue))
+      mpv.setDouble(MPVOption.PlaybackControl.abLoopA, max(Constants.TimeInterval.minLoopPointTime, newValue))
     }
   }
 
@@ -262,7 +262,7 @@ class PlayerCore: NSObject {
     /// - Note: The value of the B loop point is not required by mpv to be after the A loop point.
     set {
       guard info.abLoopStatus == .bSet else { return }
-      mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(AppData.minLoopPointTime, newValue))
+      mpv.setDouble(MPVOption.PlaybackControl.abLoopB, max(Constants.TimeInterval.minLoopPointTime, newValue))
     }
   }
 
@@ -3077,16 +3077,16 @@ class PlayerCore: NSObject {
       }
     }
 
+    if !wasTimerRunning {
+      // Do not wait for first redraw
+      windowController.updateUI()
+    }
+
     guard useTimer && (timerRestartNeeded || !wasTimerRunning) else {
       return
     }
 
     // Timer will start
-
-    if !wasTimerRunning {
-      // Do not wait for first redraw
-      windowController.updateUI()
-    }
 
     log.verbose("Scheduling SyncUITimer")
     syncUITimer = Timer.scheduledTimer(
@@ -3172,9 +3172,9 @@ class PlayerCore: NSObject {
     // Ensure user can resume playback by periodically saving
     let now = Date().timeIntervalSince1970
     let secSinceLastSave = now - lastSaveTime
-    if secSinceLastSave >= AppData.playTimeSaveStateIntervalSec {
+    if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
       if log.isTraceEnabled {
-        log.trace("Another \(AppData.playTimeSaveStateIntervalSec)s has passed: saving player state")
+        log.trace("Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")
       }
       saveState()
       lastSaveTime = now
