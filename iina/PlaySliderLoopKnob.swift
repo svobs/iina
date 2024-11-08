@@ -35,7 +35,7 @@ final class PlaySliderLoopKnob: NSView {
 
   private unowned var cell: PlaySliderCell!
 
-  private var isDragging: Bool = false
+  var isDragging: Bool = false
 
   /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
   ///
@@ -127,6 +127,8 @@ final class PlaySliderLoopKnob: NSView {
     var knobRect = knobRect()
     if #available(macOS 14, *) {
       knobRect.origin.x = 0
+    } else {
+      knobRect.origin.x = round(knobRect.origin.x)
     }
 
     guard let appearance = window?.contentView?.iinaAppearance else { return }
@@ -140,14 +142,6 @@ final class PlaySliderLoopKnob: NSView {
     return NSMakeRect(x, rect.origin.y, rect.width, rect.height)
   }
 
-  private func drawGraphic(_ drawFunc: () -> Void) {
-    NSGraphicsContext.saveGraphicsState()
-
-    drawFunc()
-
-    NSGraphicsContext.restoreGraphicsState()
-  }
-
   // MARK:- Mouse Events
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -158,6 +152,7 @@ final class PlaySliderLoopKnob: NSView {
   /// Begin dragging the knob.
   /// - Parameter event: An object encapsulating information about the mouse-down event initiating the drag.
   func beginDragging(with event: NSEvent) {
+    isDragging = true
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
   }

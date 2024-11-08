@@ -69,6 +69,10 @@ extension PlayerWindowController {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)")
     }
+    guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]) else {
+      super.mouseDragged(with: event)
+      return
+    }
     if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       controlBarFloating.mouseDown(with: event)
       return
@@ -95,6 +99,16 @@ extension PlayerWindowController {
 
   override func mouseDragged(with event: NSEvent) {
     hideCursorTimer?.invalidate()
+    if isMouseEvent(event, inAnyOf: [playSlider]) {
+      if playSlider.abLoopA.isDragging {
+        playSlider.abLoopA.mouseDragged(with: event)
+      } else if playSlider.abLoopB.isDragging {
+        playSlider.abLoopB.mouseDragged(with: event)
+      } else {
+        playSlider.mouseDragged(with: event)
+      }
+      return
+    }
     if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, controlBarFloating.isDragging {
       controlBarFloating.mouseDragged(with: event)
       return
@@ -135,6 +149,8 @@ extension PlayerWindowController {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
     }
+    playSlider.abLoopA.isDragging = false
+    playSlider.abLoopB.isDragging = false
 
     restartHideCursorTimer()
     mousePosRelatedToWindow = nil

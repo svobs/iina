@@ -70,7 +70,6 @@ final class PlaySlider: ScrollableSlider {
     super.draw(dirtyRect)
     abLoopA.needsDisplay = true
     abLoopB.needsDisplay = true
-    guard #unavailable(macOS 14) else { return }
     abLoopA.draw(dirtyRect)
     abLoopB.draw(dirtyRect)
   }
@@ -92,5 +91,9 @@ final class PlaySlider: ScrollableSlider {
 
   var positionAbsoluteSec: Double {
     return player.info.playbackDurationSec! * progressRatio
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    player.windowController.mouseUp(with: event)
   }
 }
