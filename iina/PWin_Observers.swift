@@ -83,7 +83,7 @@ extension PlayerWindowController {
         .init(.iinaMediaTitleChanged, object: player) { _ in self.updateTitle() },
         .init(NSApplication.didChangeScreenParametersNotification) { _ in self.windowDidChangeScreenParameters() },
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopA) { [self] _ in
-          let seconds = percentToSeconds(playSlider.abLoopA.doubleValue)
+          let seconds = percentToSeconds(playSlider.abLoopA.posInSliderPercent)
           player.abLoopA = seconds
           player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
         },

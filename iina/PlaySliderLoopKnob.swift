@@ -14,14 +14,14 @@ import Cocoa
 /// loop feature when that feature is in use. When the feature is not being used the thumbs are hidden.
 /// - Requires: The custom slider provided by `PlaySlider` must be used with this class.
 /// - Note: This class is derived from `NSView` in part to gain support for help tags (tool tips).
-final class PlaySliderLoopKnob: NSView {
+final class PlaySliderLoopKnob: NSImageView {
 
   /// The location of this knob as a slider value.
   ///
   /// The value is always greater than or equal to the slider's `minValue` and less than or equal to the slider's `maxValue`.
-  var doubleValue: Double = 0 {
+  var posInSliderPercent: Double = 0 {
     didSet {
-      doubleValue = doubleValue.clamped(to: slider.range)
+      posInSliderPercent = posInSliderPercent.clamped(to: slider.range)
       slider.needsDisplay = true
     }
   }
@@ -32,15 +32,6 @@ final class PlaySliderLoopKnob: NSView {
   override var isFlipped: Bool { slider.isFlipped }
 
   // MARK:- Private Properties
-
-  private unowned var cell: PlaySliderCell!
-
-  var isDragging: Bool = false
-
-  /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
-  ///
-  /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
-  static let knobHeightAdjustment: CGFloat = 0.75
 
   // The x coordinate of the last mouse location when dragging.
   private var lastDragLocation: CGFloat = 0
@@ -55,10 +46,10 @@ final class PlaySliderLoopKnob: NSView {
   /// though the value has remained constant.
   private var x: CGFloat {
     get {
-      let bar = cell.barRect(flipped: isFlipped)
+      let bar = slider.customCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - cell.knobWidth
-      let percentage = CGFloat(doubleValue / slider.span)
+      let effectiveWidth = bar.width - slider.customCell.knobWidth
+      let percentage = CGFloat(posInSliderPercent / slider.span)
       let calculatedX = constrainX(bar.origin.x + percentage * effectiveWidth)
       setFrameOrigin(NSPoint(x: calculatedX, y: frame.origin.y))
       return calculatedX
@@ -66,11 +57,11 @@ final class PlaySliderLoopKnob: NSView {
     set {
       let constrainedX = constrainX(newValue)
       // Calculate the value selected by the new location.
-      let bar = cell.barRect(flipped: isFlipped)
+      let bar = slider.customCell.barRect(flipped: isFlipped)
       // The usable width of the bar is reduced by the width of the knob.
-      let effectiveWidth = bar.width - cell.knobWidth
+      let effectiveWidth = bar.width - slider.customCell.knobWidth
       let percentage = Double((constrainedX - bar.origin.x) / effectiveWidth)
-      doubleValue = percentage * slider.span
+      posInSliderPercent = percentage * slider.span
     }
   }
 
@@ -83,7 +74,6 @@ final class PlaySliderLoopKnob: NSView {
   ///   - toolTip: The help tag to display for this thumb.
   init(slider: PlaySlider, toolTip: String) {
     self.slider = slider
-    self.cell = slider.customCell
     // The frame is calculated and set once the superclass is initialized.
     super.init(frame: NSZeroRect)
     self.toolTip = toolTip
@@ -93,7 +83,7 @@ final class PlaySliderLoopKnob: NSView {
     isHidden = true
     // Set the size of the frame to match the size of the slider's knob. The frame origin will be
     // adjusted when the knob is unhidden.
-    let rect = cell.knobRect(flipped: isFlipped)
+    let rect = slider.customCell.knobRect(flipped: isFlipped)
     setFrameSize(NSSize(width: rect.width, height: rect.height))
     slider.addSubview(self)
   }
@@ -104,9 +94,9 @@ final class PlaySliderLoopKnob: NSView {
   /// - Parameter x: The proposed x coordinate.
   /// - Returns: The given x coordinate constrained to keep the knob within the bar.
   private func constrainX(_ x: CGFloat) -> CGFloat {
-    let bar = cell.barRect(flipped: isFlipped)
+    let bar = slider.customCell.barRect(flipped: isFlipped)
     // The coordinate must be short of the end of the bar to keep the knob within the bar.
-    let maxX = bar.maxX - cell.knobWidth
+    let maxX = bar.maxX - slider.customCell.knobWidth
     guard bar.minX <= maxX else {
       return bar.minX
     }
@@ -133,12 +123,12 @@ final class PlaySliderLoopKnob: NSView {
 
     guard let appearance = window?.contentView?.iinaAppearance else { return }
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawKnob(.loopKnob, in: knobRect, darkMode: appearance.isDark, knobWidth: cell.knobWidth, mainKnobHeight: cell.knobHeight)
+      RenderCache.shared.drawKnob(.loopKnob, in: knobRect, darkMode: appearance.isDark, knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
     }
   }
 
   private func knobRect() -> NSRect {
-    let rect = cell.knobRect(flipped: isFlipped)
+    let rect = slider.customCell.knobRect(flipped: isFlipped)
     return NSMakeRect(x, rect.origin.y, rect.width, rect.height)
   }
 
@@ -152,7 +142,7 @@ final class PlaySliderLoopKnob: NSView {
   /// Begin dragging the knob.
   /// - Parameter event: An object encapsulating information about the mouse-down event initiating the drag.
   func beginDragging(with event: NSEvent) {
-    isDragging = true
+    slider.customCell.player.windowController.currentDragObject = self
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
   }

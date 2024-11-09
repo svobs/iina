@@ -25,7 +25,9 @@ class FloatingControlBarView: NSVisualEffectView {
   var mousePosRelatedToView: CGPoint?
   var mousePosRelatedToWindow: CGPoint?
 
-  var isDragging: Bool = false
+  var isDragging: Bool {
+    return playerWindowController?.currentDragObject == self
+  }
 
   private var isAlignFeedbackSent = false
 
@@ -145,7 +147,8 @@ class FloatingControlBarView: NSVisualEffectView {
       if Logger.enabled && Logger.Level.preferred >= .verbose {
         playerWindowController.log.verbose("FloatingOSC mouseDrag: minimum dragging distance was met")
       }
-      isDragging = true
+      // drag start
+      playerWindowController.currentDragObject = self
     }
     guard isDragging else { return }
 
@@ -176,8 +179,8 @@ class FloatingControlBarView: NSVisualEffectView {
   }
 
   override func mouseUp(with event: NSEvent) {
-    isDragging = false
     guard let playerWindowController, let viewportView = playerWindowController.viewportView else { return }
+    playerWindowController.log.verbose("FloatingOSC mouseUp")
 
     let geometry = FloatingControlBarGeometry(windowLayout: playerWindowController.currentLayout, viewportSize: viewportView.frame.size)
 

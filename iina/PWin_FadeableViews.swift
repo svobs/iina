@@ -248,7 +248,7 @@ extension PlayerWindowController {
   /// Executed when `hideFadeableViewsTimer` fires
   @objc func hideFadeableViewsAndCursor() {
     // don't hide UI when dragging control bar
-    if controlBarFloating.isDragging { return }
+    if currentDragObject != nil { return }
     if hideFadeableViews() {
       hideCursor()
     }

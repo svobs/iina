@@ -45,6 +45,11 @@ class RenderCache {
     static let knobStrokeRadius: CGFloat = 1
     static let shadowColor = NSShadow().shadowColor!.cgColor
 
+    /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
+    ///
+    /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
+    static let loopKnobHeightAdjustment: CGFloat = 0.75
+
     let images: [ImageType: CGImage]
     let isDarkMode: Bool
     let knobWidth: CGFloat
@@ -109,7 +114,7 @@ class RenderCache {
 
     static func loopKnobHeight(mainKnobHeight: CGFloat) -> CGFloat {
       // We want loop knobs to be shorter than the primary knob.
-      return round(mainKnobHeight * PlaySliderLoopKnob.knobHeightAdjustment)
+      return round(mainKnobHeight * Knob.loopKnobHeightAdjustment)
     }
 
     static func imageSize(knobWidth: CGFloat, knobHeight: CGFloat) -> CGSize {

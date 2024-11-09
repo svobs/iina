@@ -20,7 +20,6 @@ extension PlayerWindowController {
   /// PRE TRANSITION
   func doPreTransitionWork(_ transition: LayoutTransition) {
     log.verbose("[\(transition.name)] DoPreTransitionWork")
-    controlBarFloating.isDragging = false
     isAnimatingLayoutTransition = true
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.

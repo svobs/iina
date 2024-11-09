@@ -70,10 +70,10 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)")
     }
     guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]) else {
-      super.mouseDragged(with: event)
+      super.mouseDown(with: event)
       return
     }
-    if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
+    if let controlBarFloating, !controlBarFloating.isHidden, isMouseEvent(event, inAnyOf: [controlBarFloating]) {
       controlBarFloating.mouseDown(with: event)
       return
     }
@@ -91,30 +91,20 @@ extension PlayerWindowController {
 
     PluginInputManager.handle(
       input: PluginInputManager.Input.mouse, event: .mouseDown,
-      player: player, arguments: mouseEventArgs(event)
+      player: player, arguments: mouseEventArgs(event),
+      defaultHandler: {
+        self.mouseDragged(with: event)
+      }
     )
     // we don't call super here because before adding the plugin system,
     // PlayerWindowController didn't call super at all
   }
 
   override func mouseDragged(with event: NSEvent) {
+    log.verbose("PlayerWindow mouseDragged @ \(event.locationInWindow)")
     hideCursorTimer?.invalidate()
-    if isMouseEvent(event, inAnyOf: [playSlider]) {
-      if playSlider.abLoopA.isDragging {
-        playSlider.abLoopA.mouseDragged(with: event)
-      } else if playSlider.abLoopB.isDragging {
-        playSlider.abLoopB.mouseDragged(with: event)
-      } else {
-        playSlider.mouseDragged(with: event)
-      }
-      return
-    }
-    if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden, controlBarFloating.isDragging {
-      controlBarFloating.mouseDragged(with: event)
-      return
-    }
-    if let cropSettingsView, cropSettingsView.cropBoxView.isDraggingToResize || cropSettingsView.cropBoxView.isDraggingNew {
-      cropSettingsView.cropBoxView.mouseDragged(with: event)
+    if let currentDragObject {
+      currentDragObject.mouseDragged(with: event)
       return
     }
     let didResizeSidebar = resizeSidebar(with: event)
@@ -122,24 +112,19 @@ extension PlayerWindowController {
       return
     }
 
-    if !isFullScreen && !controlBarFloating.isDragging {
-      if let mousePosRelatedToWindow = mousePosRelatedToWindow {
-        if !isDragging {
-          /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
-          /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
-          /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
-          /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
-          if mousePosRelatedToWindow.distance(to: event.locationInWindow) <= Constants.Distance.windowControllerMinInitialDragThreshold {
-            return
-          }
-          if Logger.enabled && Logger.Level.preferred >= .verbose {
-            log.verbose("PlayerWindow mouseDrag: minimum dragging distance was met")
-          }
-          isDragging = true
-        }
-        window?.performDrag(with: event)
-        informPluginMouseDragged(with: event)
+    if !isFullScreen, let mousePosRelatedToWindow {
+      if !isDragging {
+        /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
+        /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
+        /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
+        /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
+        let dragDistance = mousePosRelatedToWindow.distance(to: event.locationInWindow)
+        guard dragDistance > Constants.Distance.windowControllerMinInitialDragThreshold else { return }
+        log.verbose("PlayerWindow mouseDrag: minimum dragging distance was met")
+        isDragging = true
       }
+      window?.performDrag(with: event)
+      informPluginMouseDragged(with: event)
     }
   }
 
@@ -149,20 +134,16 @@ extension PlayerWindowController {
     if Logger.enabled && Logger.Level.preferred >= .verbose {
       log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
     }
-    playSlider.abLoopA.isDragging = false
-    playSlider.abLoopB.isDragging = false
+    if let currentDragObject {
+      self.currentDragObject = nil
+      currentDragObject.mouseUp(with: event)
+      return
+    }
 
     restartHideCursorTimer()
     mousePosRelatedToWindow = nil
 
-    if let cropSettingsView, cropSettingsView.cropBoxView.isDraggingToResize || cropSettingsView.cropBoxView.isDraggingNew {
-      log.verbose("PlayerWindow mouseUp: finishing cropBoxView selection drag")
-      cropSettingsView.cropBoxView.mouseUp(with: event)
-    } else if let controlBarFloating = controlBarFloating, !controlBarFloating.isHidden,
-              controlBarFloating.isDragging || isMouseEvent(event, inAnyOf: [controlBarFloating]) {
-      log.verbose("PlayerWindow mouseUp: finished drag of floating OSC")
-      controlBarFloating.mouseUp(with: event)
-    } else if isDragging {
+    if isDragging {
       // if it's a mouseup after dragging window
       log.verbose("PlayerWindow mouseUp: finished drag of window")
       isDragging = false
@@ -314,7 +295,7 @@ extension PlayerWindowController {
       isMouseInWindow = true
       showFadeableViews(duration: 0)
     case .playSlider:
-      if controlBarFloating.isDragging { return }
+      if currentDragObject != nil { return }
 
       refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
@@ -333,7 +314,7 @@ extension PlayerWindowController {
     switch area {
     case .playerWindow:
       isMouseInWindow = false
-      if controlBarFloating.isDragging { return }
+      if currentDragObject != nil { return }
       if !isAnimating && Preference.bool(for: .hideFadeableViewsWhenOutsideWindow) {
         hideFadeableViews()
       } else {

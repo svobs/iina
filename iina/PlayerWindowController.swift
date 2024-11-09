@@ -113,6 +113,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Set only for PiP
   var isWindowHidden = false
   var isDragging: Bool = false
+  var currentDragObject: NSView? = nil
   var isLiveResizingWidth: Bool? = nil
   var isMagnifying = false
 
@@ -2100,9 +2101,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     DispatchQueue.main.async { [self] in
       playSlider.abLoopA.isHidden = a == 0
-      playSlider.abLoopA.doubleValue = secondsToPercent(a)
+      playSlider.abLoopA.posInSliderPercent = secondsToPercent(a)
       playSlider.abLoopB.isHidden = b == 0
-      playSlider.abLoopB.doubleValue = secondsToPercent(b)
+      playSlider.abLoopB.posInSliderPercent = secondsToPercent(b)
       playSlider.needsDisplay = true
     }
   }

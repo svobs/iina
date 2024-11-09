@@ -128,6 +128,9 @@ class CropBoxView: NSView {
     } else {
       super.mouseDown(with: event)
     }
+    if isDraggingToResize || isDraggingNew {
+      settingsViewController.windowController.currentDragObject = self
+    }
     Logger.log("CropBoxView mouseDown, isDraggingToResize=\(isDraggingToResize.yn) isDraggingNew=\(isDraggingNew.yn)", level: .verbose)
   }
 
