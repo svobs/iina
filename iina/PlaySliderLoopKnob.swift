@@ -22,7 +22,6 @@ final class PlaySliderLoopKnob: NSImageView {
   var posInSliderPercent: Double = 0 {
     didSet {
       posInSliderPercent = posInSliderPercent.clamped(to: slider.range)
-      slider.needsDisplay = true
     }
   }
 
@@ -37,6 +36,7 @@ final class PlaySliderLoopKnob: NSImageView {
   private var lastDragLocation: CGFloat = 0
 
   private var slider: PlaySlider!
+  private var centerXConstraint: NSLayoutConstraint!
 
   /// The knob's x coordinate associated with the current value.
   ///
@@ -51,7 +51,6 @@ final class PlaySliderLoopKnob: NSImageView {
       let effectiveWidth = bar.width - slider.customCell.knobWidth
       let percentage = CGFloat(posInSliderPercent / slider.span)
       let calculatedX = constrainX(bar.origin.x + percentage * effectiveWidth)
-      setFrameOrigin(NSPoint(x: calculatedX, y: frame.origin.y))
       return calculatedX
     }
     set {
@@ -62,6 +61,7 @@ final class PlaySliderLoopKnob: NSImageView {
       let effectiveWidth = bar.width - slider.customCell.knobWidth
       let percentage = Double((constrainedX - bar.origin.x) / effectiveWidth)
       posInSliderPercent = percentage * slider.span
+      updateHorizontalPosition()
     }
   }
 
@@ -83,9 +83,23 @@ final class PlaySliderLoopKnob: NSImageView {
     isHidden = true
     // Set the size of the frame to match the size of the slider's knob. The frame origin will be
     // adjusted when the knob is unhidden.
-    let rect = slider.customCell.knobRect(flipped: isFlipped)
-    setFrameSize(NSSize(width: rect.width, height: rect.height))
     slider.addSubview(self)
+    translatesAutoresizingMaskIntoConstraints = false
+    centerYAnchor.constraint(equalTo: slider.centerYAnchor).isActive = true
+    centerXConstraint = centerXAnchor.constraint(equalTo: slider.leadingAnchor,
+                                                 constant: slider.customCell.knobWidth * 0.5)
+    centerXConstraint.isActive = true
+
+    let knob = RenderCache.shared.getKnob(darkMode: slider.iinaAppearance.isDark,
+                                                    knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
+    let knobImage = knob.images[.loopKnob]!
+    let imgSize = knob.imageSize(.loopKnob)  // unscaled
+    image = NSImage(cgImage: knobImage, size: imgSize)
+    imageAlignment = .alignCenter
+    imageScaling = .scaleNone
+    widthAnchor.constraint(equalToConstant: imgSize.width).isActive = true
+    heightAnchor.constraint(equalToConstant: imgSize.height).isActive = true
+    setFrameSize(imgSize)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -97,10 +111,11 @@ final class PlaySliderLoopKnob: NSImageView {
     let bar = slider.customCell.barRect(flipped: isFlipped)
     // The coordinate must be short of the end of the bar to keep the knob within the bar.
     let maxX = bar.maxX - slider.customCell.knobWidth
-    guard bar.minX <= maxX else {
-      return bar.minX
-    }
     return x.clamped(to: bar.minX...maxX)
+  }
+
+  private func updateHorizontalPosition() {
+    centerXConstraint.constant = x
   }
 
   // MARK:- Drawing
@@ -112,19 +127,8 @@ final class PlaySliderLoopKnob: NSImageView {
   /// [NSSlider](https://developer.apple.com/documentation/appkit/nsslider) changed and the workaround is no
   /// longer required and the drawing origin is relative to this view's frame. See `PlaySlider.draw` for more details.
   override func draw(_ dirtyRect: NSRect) {
-    guard !isHiddenOrHasHiddenAncestor else { return }
-
-    var knobRect = knobRect()
-    if #available(macOS 14, *) {
-      knobRect.origin.x = 0
-    } else {
-      knobRect.origin.x = round(knobRect.origin.x)
-    }
-
-    guard let appearance = window?.contentView?.iinaAppearance else { return }
-    appearance.applyAppearanceFor {
-      RenderCache.shared.drawKnob(.loopKnob, in: knobRect, darkMode: appearance.isDark, knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
-    }
+    updateHorizontalPosition()
+    super.draw(dirtyRect)
   }
 
   private func knobRect() -> NSRect {

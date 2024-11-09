@@ -16,7 +16,7 @@ class RenderCache {
     case loopKnob
   }
 
-  func drawKnob(_ knobType: ImageType, in knobRect: NSRect, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+  func getKnob(darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
     let knob: Knob
     if let cachedKnob, cachedKnob.isDarkMode == darkMode, cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight {
       knob = cachedKnob
@@ -24,6 +24,16 @@ class RenderCache {
       knob = Knob(isDarkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
       cachedKnob = knob
     }
+    return knob
+  }
+
+  func getKnobImage(_ knobType: ImageType, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> CGImage {
+    let knob = getKnob(darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+    return knob.images[knobType]!
+  }
+
+  func drawKnob(_ knobType: ImageType, in knobRect: NSRect, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+    let knob = getKnob(darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
 
     let image = knob.images[knobType]!
 
@@ -110,6 +120,16 @@ class RenderCache {
 
     var loopKnobHeight: CGFloat {
       Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
+    }
+
+    func imageSize(_ knobType: ImageType) -> CGSize {
+      switch knobType {
+      case .mainKnob, .mainKnobSelected:
+        return Knob.imageSize(knobWidth: knobWidth, knobHeight: mainKnobHeight)
+      case .loopKnob:
+        let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
+        return Knob.imageSize(knobWidth: knobWidth, knobHeight: loopKnobHeight)
+      }
     }
 
     static func loopKnobHeight(mainKnobHeight: CGFloat) -> CGFloat {

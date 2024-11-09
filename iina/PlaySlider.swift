@@ -68,8 +68,6 @@ final class PlaySlider: ScrollableSlider {
   override func draw(_ dirtyRect: NSRect) {
     guard !isHiddenOrHasHiddenAncestor else { return }
     super.draw(dirtyRect)
-    abLoopA.needsDisplay = true
-    abLoopB.needsDisplay = true
     abLoopA.draw(dirtyRect)
     abLoopB.draw(dirtyRect)
   }
