@@ -88,7 +88,7 @@ extension PlayerWindowController {
           player.sendOSD(.abLoopUpdate(.aSet, VideoTime(seconds).stringRepresentation))
         },
         .init(.iinaPlaySliderLoopKnobChanged, object: playSlider.abLoopB) { [self] _ in
-          let seconds = percentToSeconds(playSlider.abLoopB.doubleValue)
+          let seconds = percentToSeconds(playSlider.abLoopB.posInSliderPercent)
           player.abLoopB = seconds
           player.sendOSD(.abLoopUpdate(.bSet, VideoTime(seconds).stringRepresentation))
         },

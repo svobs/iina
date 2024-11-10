@@ -91,7 +91,7 @@ final class PlaySliderLoopKnob: NSImageView {
     centerXConstraint.isActive = true
 
     let knob = RenderCache.shared.getKnob(darkMode: slider.iinaAppearance.isDark,
-                                                    knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
+                                          knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
     let knobImage = knob.images[.loopKnob]!
     let imgSize = knob.imageSize(.loopKnob)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
@@ -114,7 +114,7 @@ final class PlaySliderLoopKnob: NSImageView {
     return x.clamped(to: bar.minX...maxX)
   }
 
-  private func updateHorizontalPosition() {
+  func updateHorizontalPosition() {
     centerXConstraint.constant = x
   }
 

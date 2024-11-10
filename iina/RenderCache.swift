@@ -14,6 +14,7 @@ class RenderCache {
     case mainKnob = 1
     case mainKnobSelected
     case loopKnob
+    case loopKnobSelected
   }
 
   func getKnob(darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
@@ -72,7 +73,9 @@ class RenderCache {
                 .mainKnob:
                   Knob.makeImage(fill: Knob.mainKnobColor, shadow: !isDarkMode, knobWidth: knobWidth, knobHeight: mainKnobHeight),
                 .loopKnob:
-                  Knob.makeImage(fill: NSColor(named: .mainSliderLoopKnob)!, shadow: false, knobWidth: knobWidth, knobHeight: loopKnobHeight)
+                  Knob.makeImage(fill: NSColor(named: .mainSliderLoopKnob)!, shadow: false, knobWidth: knobWidth, knobHeight: loopKnobHeight),
+                .loopKnobSelected:
+                  Knob.makeImage(fill: Knob.mainKnobActiveColor, shadow: false, knobWidth: knobWidth, knobHeight: loopKnobHeight)
       ]
       self.isDarkMode = isDarkMode
       self.knobWidth = knobWidth
@@ -126,7 +129,7 @@ class RenderCache {
       switch knobType {
       case .mainKnob, .mainKnobSelected:
         return Knob.imageSize(knobWidth: knobWidth, knobHeight: mainKnobHeight)
-      case .loopKnob:
+      case .loopKnob, .loopKnobSelected:
         let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
         return Knob.imageSize(knobWidth: knobWidth, knobHeight: loopKnobHeight)
       }

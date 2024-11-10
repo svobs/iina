@@ -66,10 +66,9 @@ final class PlaySlider: ScrollableSlider {
   /// `super.draw` and that has now been corrected. As a workaround on earlier versions of macOS the loop knob `draw` method
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
-    guard !isHiddenOrHasHiddenAncestor else { return }
     super.draw(dirtyRect)
-    abLoopA.draw(dirtyRect)
-    abLoopB.draw(dirtyRect)
+    abLoopA.updateHorizontalPosition()
+    abLoopB.updateHorizontalPosition()
   }
 
   override func setFrameSize(_ newSize: NSSize) {
