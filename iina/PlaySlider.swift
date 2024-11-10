@@ -47,6 +47,8 @@ final class PlaySlider: ScrollableSlider {
     abLoopBKnob = PlaySliderLoopKnob(slider: self, toolTip: "A-B loop B")
   }
 
+  var isDarkMode: Bool = false
+
   // MARK:- Drawing
 
   /// Draw the slider.
@@ -67,6 +69,12 @@ final class PlaySlider: ScrollableSlider {
   /// is called directly.
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
+    let isDark = customCell.controlView?.window?.contentView?.iinaAppearance.isDark ?? false
+    if isDark != isDarkMode {
+      isDarkMode = isDark
+      abLoopA.updateKnobImage(to: .loopKnob)
+      abLoopB.updateKnobImage(to: .loopKnob)
+    }
     abLoopA.updateHorizontalPosition()
     abLoopB.updateHorizontalPosition()
   }
