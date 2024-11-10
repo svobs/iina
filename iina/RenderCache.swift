@@ -49,12 +49,14 @@ class RenderCache {
   struct Knob {
     private static var mainKnobColor = NSColor(named: .mainSliderKnob)!
     private static var mainKnobActiveColor = NSColor(named: .mainSliderKnobActive)!
+    private static var loopKnobColor = NSColor(named: .mainSliderLoopKnob)!
     static let scaleFactor: CGFloat = 2.0
     /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
     static let imgMarginRadius: CGFloat = 1.0
     static let scaledMarginRadius = imgMarginRadius * scaleFactor
     static let knobStrokeRadius: CGFloat = 1
     static let shadowColor = NSShadow().shadowColor!.cgColor
+    static let glowColor = NSColor.white.withAlphaComponent(1.0/3.0).cgColor
 
     /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
     ///
@@ -68,21 +70,24 @@ class RenderCache {
 
     init(isDarkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
       let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
+      let shadowColor = isDarkMode ? Knob.glowColor : Knob.shadowColor
       images = [.mainKnobSelected:
-                  Knob.makeImage(fill: Knob.mainKnobActiveColor, shadow: !isDarkMode, knobWidth: knobWidth, knobHeight: mainKnobHeight),
+                  Knob.makeImage(fill: Knob.mainKnobActiveColor, shadow: shadowColor, knobWidth: knobWidth, knobHeight: mainKnobHeight),
                 .mainKnob:
-                  Knob.makeImage(fill: Knob.mainKnobColor, shadow: !isDarkMode, knobWidth: knobWidth, knobHeight: mainKnobHeight),
+                  Knob.makeImage(fill: Knob.mainKnobColor, shadow: isDarkMode ? nil : shadowColor, knobWidth: knobWidth, knobHeight: mainKnobHeight),
                 .loopKnob:
-                  Knob.makeImage(fill: NSColor(named: .mainSliderLoopKnob)!, shadow: false, knobWidth: knobWidth, knobHeight: loopKnobHeight),
+                  Knob.makeImage(fill: Knob.loopKnobColor, shadow: nil, knobWidth: knobWidth, knobHeight: loopKnobHeight),
                 .loopKnobSelected:
-                  Knob.makeImage(fill: Knob.mainKnobActiveColor, shadow: false, knobWidth: knobWidth, knobHeight: loopKnobHeight)
+                  isDarkMode ?
+                Knob.makeImage(fill: Knob.mainKnobActiveColor, shadow: shadowColor, knobWidth: knobWidth, knobHeight: loopKnobHeight) :
+                  Knob.makeImage(fill: Knob.loopKnobColor, shadow: nil, knobWidth: knobWidth, knobHeight: loopKnobHeight)
       ]
       self.isDarkMode = isDarkMode
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
     }
 
-    static func makeImage(fill: NSColor, shadow: Bool, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
+    static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
       let scaleFactor = Knob.scaleFactor
       let knobImageSizeScaled = Knob.imageSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
       let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSizeScaled.width),
@@ -98,8 +103,8 @@ class RenderCache {
         let path = CGPath(roundedRect: pathRect, cornerWidth: knobStrokeRadius * scaleFactor,
                           cornerHeight: knobStrokeRadius * scaleFactor, transform: nil)
 
-        if shadow {
-          cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadowColor)
+        if let shadow {
+          cgContext.setShadow(offset: CGSize(width: 0, height: 0.5 * scaleFactor), blur: 1 * scaleFactor, color: shadow)
         }
         cgContext.beginPath()
         cgContext.addPath(path)
@@ -108,12 +113,12 @@ class RenderCache {
         cgContext.fillPath()
         cgContext.closePath()
 
-        if shadow {
+        if let shadow {
           /// According to Apple's docs for `NSShadow`: `The default shadow color is black with an alpha of 1/3`
           cgContext.beginPath()
           cgContext.addPath(path)
           cgContext.setLineWidth(0.4 * scaleFactor)
-          cgContext.setStrokeColor(shadowColor)
+          cgContext.setStrokeColor(shadow)
           cgContext.strokePath()
           cgContext.closePath()
         }

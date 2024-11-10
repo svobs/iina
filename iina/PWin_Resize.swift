@@ -176,7 +176,6 @@ extension PlayerWindowController {
 
       // Sync from mpv's rotation. This is essential when restoring from watch-later, which can include video geometries.
       let userRotation = player.mpv.getInt(MPVOption.Video.videoRotate)
-      let totalRotation = player.mpv.getInt(MPVProperty.videoParamsRotate)
 
       // Sync video's raw dimensions from mpv.
       // This is especially important for streaming videos, which won't have cached ffMeta

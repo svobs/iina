@@ -88,8 +88,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   }
 
   private var distObservers: [NSObjectProtocol] = []  // For DistributedNotificationCenter
-  internal var observedPrefKeys: [Preference.Key] = [
-  ]
 
   var playlistChangeObserver: NSObjectProtocol?
   var fileHistoryUpdateObserver: NSObjectProtocol?
@@ -100,6 +98,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     switch keyPath {
     case #keyPath(view.effectiveAppearance):
       /// This indicates light/dark mode was toggled. But this won't be sent when `controlAccentColor` changes...
+      /// For that, we follow `appleColorPreferencesChangedNotification`
       if cachedEffectiveAppearanceName == view.effectiveAppearance.name.rawValue {
         return
       }
@@ -172,9 +171,6 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
     updateVerticalConstraints()
 
-    observedPrefKeys.forEach { key in
-      UserDefaults.standard.addObserver(self, forKeyPath: key.rawValue, options: .new, context: nil)
-    }
     addObserver(self, forKeyPath: #keyPath(view.effectiveAppearance), options: [.old, .new], context: nil)
 
     distObservers.append(DistributedNotificationCenter.default().addObserver(forName: .appleColorPreferencesChangedNotification, object: nil, queue: .main, using: self.systemColorSettingsDidChange))

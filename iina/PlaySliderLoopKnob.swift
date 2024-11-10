@@ -90,16 +90,9 @@ final class PlaySliderLoopKnob: NSImageView {
                                                  constant: slider.customCell.knobWidth * 0.5)
     centerXConstraint.isActive = true
 
-    let knob = RenderCache.shared.getKnob(darkMode: slider.iinaAppearance.isDark,
-                                          knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
-    let knobImage = knob.images[.loopKnob]!
-    let imgSize = knob.imageSize(.loopKnob)  // unscaled
-    image = NSImage(cgImage: knobImage, size: imgSize)
+    updateKnobImage(to: .loopKnob, initConstraints: true)
     imageAlignment = .alignCenter
     imageScaling = .scaleNone
-    widthAnchor.constraint(equalToConstant: imgSize.width).isActive = true
-    heightAnchor.constraint(equalToConstant: imgSize.height).isActive = true
-    setFrameSize(imgSize)
   }
 
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -120,15 +113,17 @@ final class PlaySliderLoopKnob: NSImageView {
 
   // MARK:- Drawing
 
-  /// Draw the knob.
-  ///
-  /// If IINA is running under macOS Ventura or earlier this method is called directly by `PlaySlider.draw`. This workaround
-  /// requires this method to use the knob position within the slider as the x-coordinate when drawing. In macOS Sonoma
-  /// [NSSlider](https://developer.apple.com/documentation/appkit/nsslider) changed and the workaround is no
-  /// longer required and the drawing origin is relative to this view's frame. See `PlaySlider.draw` for more details.
-  override func draw(_ dirtyRect: NSRect) {
-    updateHorizontalPosition()
-    super.draw(dirtyRect)
+  private func updateKnobImage(to knobType: RenderCache.ImageType, initConstraints: Bool = false) {
+    let knob = RenderCache.shared.getKnob(darkMode: slider.iinaAppearance.isDark,
+                                          knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
+    let knobImage = knob.images[knobType]!
+    let imgSize = knob.imageSize(knobType)  // unscaled
+    image = NSImage(cgImage: knobImage, size: imgSize)
+    if initConstraints {
+      widthAnchor.constraint(equalToConstant: imgSize.width).isActive = true
+      heightAnchor.constraint(equalToConstant: imgSize.height).isActive = true
+      setFrameSize(imgSize)
+    }
   }
 
   private func knobRect() -> NSRect {
@@ -149,6 +144,7 @@ final class PlaySliderLoopKnob: NSImageView {
     slider.customCell.player.windowController.currentDragObject = self
     let clickLocation = slider.convert(event.locationInWindow, from: nil)
     lastDragLocation = constrainX(clickLocation.x)
+    updateKnobImage(to: .loopKnobSelected)
   }
 
   /// The user has pressed the left mouse button within the frame of this knob.
@@ -187,5 +183,9 @@ final class PlaySliderLoopKnob: NSImageView {
     x += newDragLocation.x - lastDragLocation
     lastDragLocation = constrainX(newDragLocation.x)
     NotificationCenter.default.post(Notification(name: .iinaPlaySliderLoopKnobChanged, object: self))
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    updateKnobImage(to: .loopKnob)
   }
 }
