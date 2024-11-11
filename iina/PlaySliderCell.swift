@@ -79,16 +79,11 @@ class PlaySliderCell: NSSliderCell {
   override func drawBar(inside rect: NSRect, flipped: Bool) {
     let chapters = player.info.chapters
     let durationSec = player.info.playbackDurationSec ?? 0.0
-    let cacheTime = player.info.cacheTime
 
     let slider = self.controlView as! NSSlider
-    let sliderValueTotal = slider.maxValue - slider.minValue
 
     /// The position of the knob, rounded for cleaner drawing
     let knobPos: CGFloat = round(knobRect(flipped: flipped).origin.x);
-
-    /// How far progressed the current video is, used for drawing the bar background
-    let progress = knobPos;
 
     guard let appearance = controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
@@ -98,40 +93,12 @@ class PlaySliderCell: NSSliderCell {
                                  durationSec: durationSec, chapters: chaptersToDraw)
     }
 
-//
-//    let fullPath = NSBezierPath(roundedRect: barRect,
-//                                xRadius: RenderCache.shared.barStrokeRadius,
-//                                yRadius: RenderCache.shared.barStrokeRadius)
-//    if controlView!.window!.effectiveAppearance.isDark {
-//      // Clip where the knob will be, including 1px from left & right of the knob
-//      fullPath.append(NSBezierPath(rect: NSRect(x: knobPos - 1, y: barRect.origin.y, width: knobWidth + 2, height: barRect.height)).reversed);
-//    }
-//
-//
-//    let leftBarRect = NSRect(x: barRect.origin.x,
-//                             y: barRect.origin.y,
-//                             width: progress,
-//                             height: barRect.height)
-//
-//    let rightBarRect = NSRect(x: barRect.origin.x + progress,
-//                              y: barRect.origin.y,
-//                              width: barRect.width - progress,
-//                              height: barRect.height)
-//
-//    // Draw LEFT (the "finished" section of the progress bar)
-//    drawGraphic {
-//      NSBezierPath(rect: leftBarRect).addClip();
-//
-//      RenderCache.shared.barColorLeft.setFill()
-//      fullPath.fill()
-//    }
-//
 //    /* FIXME: 
 //    // Draw LEFT glow
 //    drawGraphic {
 //      let leftBarGlowRect = NSRect(x: barRect.origin.x,
 //                               y: barRect.origin.y - 4,
-//                               width: progress,
+//                               width: knobPos,
 //                               height: barRect.height + 4 + 4)
 //      let leftBarGlowPath = NSBezierPath(rect: leftBarGlowRect)
 //      leftBarGlowPath.append(NSBezierPath(rect: leftBarRect).reversed)
@@ -141,12 +108,13 @@ class PlaySliderCell: NSSliderCell {
 //    }
 //     */
 //
+//    let cacheTime = player.info.cacheTime
 //    // Draw cached sections (if applicable), drawing over the unfinished span:
 //    // FIXME: draw *all* cached sections
 //    if cacheTime > 0, durationSec > 0 {
 //      drawGraphic {
 //        let cachePercentage = cacheTime / durationSec * 100
-//        let cacheWidth = round(rect.width * CGFloat(cachePercentage / (sliderValueTotal))) + 2;
+//        let cacheWidth = round(rect.width * CGFloat(cachePercentage / (slider.span))) + 2;
 //
 //        let cacheRect = NSRect(x: barRect.origin.x,
 //                               y: barRect.origin.y,
@@ -156,34 +124,6 @@ class PlaySliderCell: NSSliderCell {
 //
 //        RenderCache.shared.barColorPreCache.setFill()
 //        fullPath.fill()
-//      }
-//    }
-//
-//
-//    // Draw RIGHT (the "unfinished" section of the progress bar)
-//    drawGraphic {
-//      let rightPath = NSBezierPath(rect: rightBarRect)
-//      rightPath.addClip();
-//      RenderCache.shared.barColorRight.setFill()
-//      fullPath.fill()
-//    }
-//
-//    // Draw chapters (if configured)
-//    if drawChapters, durationSec > 0, chapters.count > 1 {
-//      drawGraphic {
-//        let isRetina = controlView?.window?.screen?.backingScaleFactor ?? 1.0 > 1.0
-//        let scaleFactor = controlView?.window?.screen?.screenScaleFactor ?? 1
-//        let lineWidth = round(1 + 1 / (isRetina ? (scaleFactor * 0.5) : scaleFactor))
-//
-//        RenderCache.shared.chapterStrokeColor.setStroke()
-//        for chapter in chapters[1...] {
-//          let chapPos = chapter.startTime / durationSec * barRect.width
-//          let linePath = NSBezierPath()
-//          linePath.lineWidth = lineWidth
-//          linePath.move(to: NSPoint(x: chapPos, y: barRect.origin.y))
-//          linePath.line(to: NSPoint(x: chapPos, y: barRect.origin.y + barRect.height))
-//          linePath.stroke()
-//        }
 //      }
 //    }
   }
