@@ -1233,6 +1233,8 @@ extension CGImage {
       return nil
     }
 
+    context.cgContext.interpolationQuality = .high
+
     drawingCalls(context.cgContext)
 
     return compositeImageRep.cgImage
