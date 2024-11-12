@@ -491,7 +491,8 @@ extension PlayerWindowController {
 
         if !bottomBarView.subviews.contains(oscBottomMainView) {
           bottomBarView.addSubview(oscBottomMainView, positioned: .below, relativeTo: bottomBarTopBorder)
-          oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: 8, trailing: 8)
+          // Match leading/trailing spacing of title bar icons above
+          oscBottomMainView.addConstraintsToFillSuperview(top: 0, bottom: 0, leading: Constants.Distance.titleBarIconSpacingH, trailing: Constants.Distance.titleBarIconSpacingH)
         }
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
@@ -1442,8 +1443,8 @@ extension PlayerWindowController {
     if !toolButtons.isEmpty {
       let button = toolButtons[0]
       toolbarView.spacing = 2 * button.iconSpacing
-      toolbarView.edgeInsets = .init(top: button.iconSpacing, left: button.iconSpacing,
-                                     bottom: button.iconSpacing, right: Constants.Distance.titleBarIconSpacingH)
+      toolbarView.edgeInsets = .init(top: button.iconSpacing, left: max(0, button.iconSpacing - 4),
+                                     bottom: button.iconSpacing, right: 0)
       log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     }
     return toolbarView

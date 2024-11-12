@@ -175,6 +175,9 @@ struct ControlBarGeometry {
   var totalPlayControlsWidth: CGFloat {
     let itemSizes = self.arrowButtonAction == .unused ? [playIconSize] : [arrowIconWidth, playIconSize, arrowIconWidth]
     let totalIconSpace = itemSizes.reduce(0, +)
+    if itemSizes.count <= 1 {
+      return totalIconSpace + playIconSpacing
+    }
     let totalInterIconSpace = playIconSpacing * CGFloat(itemSizes.count + 1)
     return totalIconSpace + totalInterIconSpace
   }
