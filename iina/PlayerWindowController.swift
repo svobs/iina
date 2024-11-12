@@ -2054,11 +2054,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard loaded else { return }
 
     if player.info.isNetworkResource {
+      if bufferIndicatorView.isHidden {
+        log.verbose("Showing bufferIndicatorView for network stream")
+      }
       bufferIndicatorView.isHidden = false
       bufferSpin.startAnimation(self)
       bufferProgressLabel.stringValue = NSLocalizedString("main.opening_stream", comment:"Opening stream…")
       bufferDetailLabel.stringValue = ""
     } else {
+      if !bufferIndicatorView.isHidden {
+        log.verbose("Hiding bufferIndicatorView: not a network stream")
+      }
       bufferIndicatorView.isHidden = true
     }
   }
@@ -2077,6 +2083,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
       let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheSpeed)
       let bufferingState = player.info.bufferingState
+      log.verbose("Showing bufferIndicatorView: \(usedStr)B (\(speedStr)/s), bufState: \(bufferingState)")
       bufferIndicatorView.isHidden = false
       bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %d%%"), bufferingState)
       bufferDetailLabel.stringValue = "\(usedStr)B (\(speedStr)/s)"

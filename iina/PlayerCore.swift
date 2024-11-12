@@ -3022,7 +3022,10 @@ class PlayerCore: NSObject {
       // Follow energy efficiency best practices and ensure IINA is absolutely idle when the
       // video is paused to avoid wasting energy with needless processing. If paused shutdown
       // the timer that synchronizes the UI and the high priority display link thread.
-      useTimer = false
+
+      // If showing OSC for streaming media, even while paused the cache may still be filling,
+      // which will change the duration continuously.
+      useTimer = info.isNetworkResource && windowController.isUITimerNeeded()
     } else if needsTouchBar && TouchBarSettings.shared.showAppControls || isInMiniPlayer {
       // The timer can't be stopped if the mini player is being used as it always displays the OSC
       // or if the timer is updating the information being displayed in the Touch Bar.
@@ -3144,30 +3147,8 @@ class PlayerCore: NSObject {
     info.playbackPositionSec = playbackPositionSec
 
     info.constrainVideoPosition()
-    if isNetworkStream {
-      // Update cache info
-      info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
-      if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
-        if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
-          for seekableRange in seekableRanges {
-            if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
-              if playbackPositionSec >= rangeStart && playbackPositionSec <= rangeEnd {
-                // TODO: display these regions in the bar
-//                Logger.log("SEEKABLE! YAY")
-              }
-            }
-          }
-
-        }
-        if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
-          info.cacheUsed = cacheUsed
-        }
-      }
-      info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
-      info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
-      info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
-    } else if Preference.bool(for: .showCachedRangesInSlider) {
-      info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
+    if isNetworkStream || Preference.bool(for: .showCachedRangesInSlider) {
+      updateCacheInfo()
     } else {
       info.cacheTime = 0
     }
@@ -3182,6 +3163,30 @@ class PlayerCore: NSObject {
       saveState()
       lastSaveTime = now
     }
+  }
+
+  func updateCacheInfo() {
+    var cachedRanges: [(Double, Double)] = []
+    info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
+    if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
+      if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
+        log.verbose("Buffer underrun!")
+      }
+      if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
+        for seekableRange in seekableRanges {
+          if let rangeStart = seekableRange["start"] as? Double, let rangeEnd = seekableRange["end"] as? Double {
+            cachedRanges.append((rangeStart, rangeEnd))
+          }
+        }
+      }
+      if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
+        info.cacheUsed = cacheUsed
+      }
+    }
+//    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
+    info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)
+    info.cacheTime = mpv.getDouble(MPVProperty.demuxerCacheTime)
+    info.bufferingState = mpv.getInt(MPVProperty.cacheBufferingState)
   }
 
   // difficult to use option set

@@ -219,6 +219,7 @@ extension PlayerWindowController {
                                     userRotation: userRotation,
                                     log)
 
+      // FIXME: currentMediaAudioStatus==notAudio for playlist which auto-plays audio
       if !currentMediaAudioStatus.isAudio {
         let dwidth = player.mpv.getInt(MPVProperty.dwidth)
         let dheight = player.mpv.getInt(MPVProperty.dheight)
@@ -226,7 +227,7 @@ extension PlayerWindowController {
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
         if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-          player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours)")
+          player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours), audioStatus=\(currentMediaAudioStatus)")
         }
       }
 
