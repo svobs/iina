@@ -68,28 +68,17 @@ class PlaySliderCell: NSSliderCell {
     return NSMakeRect(pos, rect.origin.y, knobWidth, height)
   }
 
-  private func drawGraphic(_ drawFunc: () -> Void) {
-    NSGraphicsContext.saveGraphicsState()
-
-    drawFunc()
-
-    NSGraphicsContext.restoreGraphicsState()
-  }
-
   override func drawBar(inside rect: NSRect, flipped: Bool) {
     let chapters = player.info.chapters
     let durationSec = player.info.playbackDurationSec ?? 0.0
-
-//    let slider = self.controlView as! NSSlider
-
     /// The position of the knob, rounded for cleaner drawing
-    let knobPos: CGFloat = round(knobRect(flipped: flipped).origin.x);
+    let knobPosX: CGFloat = round(knobRect(flipped: flipped).origin.x);
 
     guard let appearance = controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters && durationSec > 0 && chapters.count > 1 ? chapters : nil
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobPosX: knobPos, knobWidth: knobWidth,
+      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobPosX: knobPosX, knobWidth: knobWidth,
                                  durationSec: durationSec, chapters: chaptersToDraw)
     }
 
