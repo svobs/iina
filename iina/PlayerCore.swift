@@ -1735,6 +1735,9 @@ class PlayerCore: NSObject {
     }
     let chapter = chapters[pos]
     mpv.queue.async { [self] in
+      // Update playbackPositionSec preemptively, so UI doesn't flash
+      // to prev chapter and back
+      info.playbackPositionSec = chapter.startTime
       mpv.command(.seek, args: ["\(chapter.startTime)", "absolute"])
       _resume()
     }
@@ -2518,7 +2521,7 @@ class PlayerCore: NSObject {
     guard isActive else { return }
     let chapter = Int(mpv.getInt(MPVProperty.chapter))
     info.chapter = chapter
-    log.verbose("Δ mpv prop: `chapter` = \(info.chapter)")
+    log.verbose("Δ mpv prop: 'chapter' = \(info.chapter)")
     syncUI(.chapterList)
     postNotification(.iinaMediaTitleChanged)
   }
@@ -3502,6 +3505,9 @@ class PlayerCore: NSObject {
                                startTime: mpv.getDouble(MPVProperty.chapterListNTime(index)),
                                index:     index)
       chapters.append(chapter)
+    }
+    if log.isTraceEnabled {
+      log.trace("Chapters: \(chapters)")
     }
     // Instead of modifying existing list, overwrite reference to prev list.
     // This will avoid concurrent modification crashes

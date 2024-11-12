@@ -8,13 +8,11 @@
 
 import Foundation
 
-class MPVChapter {
+class MPVChapter: CustomStringConvertible {
 
   private var privTitle: String?
   var title: String {
-    get {
-      return privTitle ?? "\(Constants.String.chapter) \(index)"
-    }
+    return privTitle ?? "\(Constants.String.chapter) \(index)"
   }
   var startTime: Double
   var index: Int
@@ -27,6 +25,10 @@ class MPVChapter {
     self.privTitle = title
     self.startTime = startTime
     self.index = index
+  }
+
+  var description: String {
+    return "Ch\(index < 10 ? "0" : "")\(index): \(VideoTime.string(from: startTime, precision: 3)) \(privTitle?.quoted ?? "")"
   }
 
 }
