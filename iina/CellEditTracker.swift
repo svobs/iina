@@ -108,6 +108,7 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
     textField.isEditable = true
     textField.isSelectable = true
     textField.selectText(nil)  // creates editor
+    textField.textColor = .controlTextColor // Reset any custom coloring
     textField.needsDisplay = true
   }
 
@@ -154,6 +155,9 @@ class CellEditTracker: NSObject, NSTextFieldDelegate {
       textField.isSelectable = false
       textField.needsDisplay = true
     }
+
+    // Load custom color or other cell changes based on new value:
+    parentTable.reloadRow(current.row)
 
     return shouldContinue
   }
