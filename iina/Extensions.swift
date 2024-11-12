@@ -731,6 +731,9 @@ extension CGSize: @retroactive CustomStringConvertible {
     return "(\(width.strMin) x \(height.strMin))"
   }
 
+  var widthInt: Int { Int(width) }
+  var heightInt: Int { Int(height) }
+
   /// Finds the smallest box whose size matches the given `aspect` but with width >= `minWidth` & height >= `minHeight`.
   /// Note: `minWidth` & `minHeight` can be any positive integers. They do not need to match `aspect`.
   static func computeMinSize(withAspect aspect: CGFloat, minWidth: CGFloat, minHeight: CGFloat) -> CGSize {

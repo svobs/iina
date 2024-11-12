@@ -108,8 +108,8 @@ class RenderCache {
     static func makeImage(fill: NSColor, shadow: CGColor?, knobWidth: CGFloat, knobHeight: CGFloat) -> CGImage {
       let scaleFactor = RenderCache.scaleFactor
       let knobImageSizeScaled = Knob.imageSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
-      let knobImage = CGImage.buildBitmapImage(width: Int(knobImageSizeScaled.width),
-                                               height: Int(knobImageSizeScaled.height),
+      let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
+                                               height: knobImageSizeScaled.heightInt,
                                                drawingCalls: { cgContext in
 
         // Round the X position for cleaner drawing
@@ -216,26 +216,21 @@ class RenderCache {
     static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, knobPosX: CGFloat, knobWidth: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter]?) -> CGImage {
       let scaleFactor = RenderCache.scaleFactor
-      let barWidthScaled = barWidth * scaleFactor
-      let barHeightScaled = RenderCache.shared.barHeight * scaleFactor
       let imageSizeScaled = Bar.imageSizeScaled(barWidth, scaleFactor: scaleFactor)
-      let knobPosScaledX = knobPosX * scaleFactor
-      let barImage = CGImage.buildBitmapImage(width: Int(imageSizeScaled.width),
-                                              height: Int(imageSizeScaled.height),
+
+      return CGImage.buildBitmapImage(width: imageSizeScaled.widthInt,
+                                              height: imageSizeScaled.heightInt,
                                               drawingCalls: { cgContext in
 
-        let  strokeRadiusScaled = RenderCache.shared.barStrokeRadius * scaleFactor
+        // - Set up calculations
 
+        let barWidthScaled = barWidth * scaleFactor
+        let barHeightScaled = RenderCache.shared.barHeight * scaleFactor
+        let strokeRadiusScaled = RenderCache.shared.barStrokeRadius * scaleFactor
+        let knobPosScaledX = knobPosX * scaleFactor
 
-        let leftBarRect = NSRect(x: Bar.scaledMarginRadius,
-                                 y: Bar.scaledMarginRadius,
-                                 width: knobPosScaledX - Bar.scaledMarginRadius,
-                                 height: barHeightScaled)
-
-        let rightBarRect = NSRect(x: Bar.scaledMarginRadius + knobPosScaledX,
-                                  y: Bar.scaledMarginRadius,
-                                  width: Bar.scaledMarginRadius + barWidthScaled - knobPosScaledX,
-                                  height: barHeightScaled)
+        // Set up clipping regions
+        var clipSegments: [(CGFloat, CGFloat)] = []
 
         // Clip where the knob will be
         let knobClipStartX = Bar.scaledMarginRadius + (knobPosX - 2) * scaleFactor
@@ -243,53 +238,56 @@ class RenderCache {
         var didIncludeKnob = false
 
         var segmentStartX = 0.0
-        var inverseClip: [(CGFloat, CGFloat)] = []
         if let chapters, durationSec > 0, chapters.count > 1 {
           let screenScaleFactor = screen.screenScaleFactor
-          let chMarkerWidth = Bar.baseChapterWidth * max(1.0, screenScaleFactor * 2.0 / 3.0)
+          let chMarkerWidth = Bar.baseChapterWidth * max(1.0, screenScaleFactor * 0.5)
 
-          RenderCache.shared.chapterStrokeColor.setStroke()
           for chapter in chapters[1...] {
             /// chapter start == segment end
             var segmentEndX = Bar.scaledMarginRadius + (chapter.startTime / durationSec * barWidthScaled) - chMarkerWidth
             if segmentEndX <= knobClipStartX {
               if !didIncludeKnob && segmentEndX + chMarkerWidth > knobClipStartX {
-                inverseClip.append((segmentStartX, knobClipStartX))
-                segmentStartX = knobClipEndX  // next loop
                 didIncludeKnob = true
+                clipSegments.append((segmentStartX, knobClipStartX))  // knob
+                segmentStartX = knobClipEndX  // next loop
               } else {
-                inverseClip.append((segmentStartX, segmentEndX))
+                clipSegments.append((segmentStartX, segmentEndX))
                 segmentStartX = segmentEndX + chMarkerWidth  // next loop
               }
             } else if !didIncludeKnob {
-              // knob
-              inverseClip.append((segmentStartX, knobClipStartX))
-              segmentStartX = knobClipEndX  // next loop
               didIncludeKnob = true
+              clipSegments.append((segmentStartX, knobClipStartX))  // knob
+              segmentStartX = knobClipEndX  // next loop
             }
-            guard segmentEndX > knobClipEndX else { continue }
-            inverseClip.append((segmentStartX, segmentEndX))
-            segmentStartX = segmentEndX + chMarkerWidth  // next loop
-            segmentEndX = knobClipStartX
+            
+            if segmentEndX > knobClipEndX {
+              clipSegments.append((segmentStartX, segmentEndX))
+              segmentStartX = segmentEndX + chMarkerWidth  // next loop
+              segmentEndX = knobClipStartX
+            }
           }
         }
 
         if !didIncludeKnob {
-          // knob
-          inverseClip.append((segmentStartX, knobClipStartX))
-          segmentStartX = knobClipEndX  // next loop
           didIncludeKnob = true
+          clipSegments.append((segmentStartX, knobClipStartX))  // knob
+          segmentStartX = knobClipEndX  // next loop
         }
         let barEndX = imageSizeScaled.width
         if segmentStartX < barEndX {
-          inverseClip.append((segmentStartX, barEndX))
+          clipSegments.append((segmentStartX, barEndX))
         }
 
-        // Clip knob & chapters
-        let segments = inverseClip.map{ NSRect(x: $0.0, y: Bar.scaledMarginRadius, width: $0.1 - $0.0, height: barHeightScaled) }
-        cgContext.clip(to: segments)
+        // Apply clip to exclude knob & chapter markers
+        let clipRects = clipSegments.map{ NSRect(x: $0.0, y: Bar.scaledMarginRadius, width: $0.1 - $0.0, height: barHeightScaled) }
+        cgContext.clip(to: clipRects)
 
         // LEFT
+
+        let leftBarRect = NSRect(x: Bar.scaledMarginRadius,
+                                 y: Bar.scaledMarginRadius,
+                                 width: knobPosScaledX - Bar.scaledMarginRadius,
+                                 height: barHeightScaled)
 
         // Draw LEFT (the "finished" section of the progress bar)
         cgContext.beginPath()
@@ -299,6 +297,11 @@ class RenderCache {
 
         // RIGHT
 
+        let rightBarRect = NSRect(x: Bar.scaledMarginRadius + knobPosScaledX,
+                                  y: Bar.scaledMarginRadius,
+                                  width: Bar.scaledMarginRadius + barWidthScaled - knobPosScaledX,
+                                  height: barHeightScaled)
+
         cgContext.beginPath()
         // Draw RIGHT (the "unfinished" section of the progress bar)
         cgContext.addPath(CGPath(roundedRect: rightBarRect, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
@@ -306,7 +309,6 @@ class RenderCache {
         cgContext.fillPath()
 
       })!
-      return barImage
     }
 
     static func imageRect(in drawRect: CGRect) -> CGRect {
