@@ -191,7 +191,8 @@ class RenderCache {
                         width: drawRect.width,
                         height: drawRect.height - 2)
     }
-    let bar = Bar(darkMode: darkMode, barSize: barRect.size, screen: screen, knobPosX: knobPosX, knobWidth: knobWidth, durationSec: durationSec, chapters: chapters)
+    let bar = Bar(darkMode: darkMode, barSize: barRect.size, screen: screen, knobPosX: knobPosX, knobWidth: knobWidth,
+                  durationSec: durationSec, chapters: chapters)
     NSLog("BARSIZE: \(barRect),   RECT: \(drawRect)")
     NSGraphicsContext.current!.cgContext.draw(bar.image, in: drawRect)
   }

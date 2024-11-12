@@ -69,7 +69,7 @@ extension PlayerWindowController {
         let initialLayoutSpec: LayoutSpec
         if priorLayoutSpec.isNativeFullScreen {
           // Special handling for native fullscreen. Rely on mpv to put us in FS when it is ready
-          initialLayoutSpec = priorLayoutSpec.clone(mode: .windowed)
+          initialLayoutSpec = priorLayoutSpec.clone(mode: .windowedNormal)
           needsNativeFullScreen = true
         } else {
           initialLayoutSpec = priorLayoutSpec
@@ -77,7 +77,7 @@ extension PlayerWindowController {
         initialLayout = LayoutState.buildFrom(initialLayoutSpec)
       } else {
         log.error("[applyVideoGeo FileOpen] Failed to read LayoutSpec object for restore! Will try to assemble window from prefs instead")
-        let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
+        let layoutSpecFromPrefs = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
         initialLayout = LayoutState.buildFrom(layoutSpecFromPrefs)
       }
 
@@ -92,7 +92,7 @@ extension PlayerWindowController {
       guard let window = self.window else { return (initialLayout, []) }
 
       /// `windowFrame` may be slightly off; update it
-      if initialLayout.mode == .windowed {
+      if initialLayout.mode == .windowedNormal {
         /// Set this so that `applyVideoGeoTransform` will use the correct default window frame if it looks for it.
         /// Side effect: future opened windows may use this size even if this window wasn't closed. Should be ok?
         PlayerWindowController.windowedModeGeoLastClosed = initialLayout.buildGeometry(windowFrame: window.frame,
@@ -109,7 +109,7 @@ extension PlayerWindowController {
 
     case .notOpen:
       log.verbose("[applyVideoGeo FileOpen] Transitioning to initial layout from app prefs")
-      var mode: PlayerWindowMode = .windowed
+      var mode: PlayerWindowMode = .windowedNormal
 
       if Preference.bool(for: .autoSwitchToMusicMode) && currentMediaAudioStatus.isAudio {
         log.debug("[applyVideoGeo FileOpen] Opened media is audio: will auto-switch to music mode")
@@ -119,7 +119,7 @@ extension PlayerWindowController {
         let useLegacyFS = Preference.bool(for: .useLegacyFullScreen)
         log.debug("[applyVideoGeo] Changing to \(useLegacyFS ? "legacy " : "")fullscreen because \(Preference.Key.fullScreenWhenOpen.rawValue)==Y")
         if useLegacyFS {
-          mode = .fullScreen
+          mode = .fullScreenNormal
         } else {
           needsNativeFullScreen = true
         }
@@ -228,7 +228,7 @@ extension PlayerWindowController {
       }
 
       if !isRestoringFromPrevLaunch {
-        if outputLayout.mode == .windowed {
+        if outputLayout.mode == .windowedNormal {
           player.info.intendedViewportSize = initialTransition.outputGeometry.viewportSize
 
           // Set window opacity to 0 initially to start fade-in effect

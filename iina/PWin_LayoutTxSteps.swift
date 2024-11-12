@@ -37,9 +37,9 @@ extension PlayerWindowController {
 
     /// Set this here because we are setting `currentLayout`
     switch transition.outputLayout.mode {
-    case .windowed, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive:
       windowedModeGeo = transition.outputGeometry
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       break  // Not applicable
     case .musicMode:
       // TODO: extend musicModeGeo from PWinGeometry and then use outputGeo instead of musicModeGeo reference
@@ -852,7 +852,7 @@ extension PlayerWindowController {
     }
 
     switch transition.outputLayout.mode {
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
         log.verbose("[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)")
@@ -889,7 +889,7 @@ extension PlayerWindowController {
     case .musicMode:
       // Especially needed when applying initial layout:
       applyMusicModeGeo(musicModeGeo)
-    case .windowed, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(transition.outputGeometry.windowFrame)")
       player.window.setFrameImmediately(transition.outputGeometry)
     }

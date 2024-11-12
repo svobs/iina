@@ -8,7 +8,8 @@
 
 import Foundation
 
-// Mouse, Trackpad, Keyboard event handling
+/// Mouse, Trackpad, Keyboard event handling.
+/// For scroll wheel, see `PWin_ScrollWheel`.
 extension PlayerWindowController {
 
   // MARK: - Keyboard event handling

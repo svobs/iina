@@ -384,7 +384,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   static func minViewportSize(mode: PlayerWindowMode, videoAspect: CGFloat, insideBars: MarginQuad) -> NSSize {
     var viewportMinW: CGFloat
     switch mode {
-    case .windowed, .fullScreen:
+    case .windowedNormal, .fullScreenNormal:
       viewportMinW = Constants.WindowedMode.minViewportSize.width
       // Take sidebars into account:
       viewportMinW = max(viewportMinW, insideBars.totalWidth + Constants.Sidebar.minWidthBetweenInsideSidebars)
@@ -529,7 +529,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     var unusedWidth = max(0, viewportSize.width - videoSize.width)
     if unusedWidth > 0 {
 
-      if mode == .fullScreen {
+      if mode == .fullScreenNormal {
         leadingMargin += (unusedWidth * 0.5)
         trailingMargin += (unusedWidth * 0.5)
       } else {
@@ -1031,7 +1031,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       return self
     }
     let maxWindowSize = screenFrame.size
-    let minWindowSize = minWindowSize(mode: .windowed)
+    let minWindowSize = minWindowSize(mode: .windowedNormal)
 
     var newWindowSize = desiredWindowSize
     var isWidthSet = false
@@ -1172,7 +1172,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // Transition windowed mode geometry to Interactive Mode geometry. Note that this is not a direct conversion; it will modify the view sizes
   func toInteractiveMode() -> PWinGeometry {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
-    assert(mode == .windowed)
+    assert(mode == .windowedNormal)
     // TODO: preserve window size better when lockViewportToVideoSize==false
     let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
@@ -1193,7 +1193,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     assert(fitOption != .legacyFullScreen && fitOption != .nativeFullScreen)
     assert(mode == .windowedInteractive)
     /// Close the sidebars. Top and bottom bars are resized for interactive mode controls.
-    let resizedGeo = withResizedBars(mode: .windowed,
+    let resizedGeo = withResizedBars(mode: .windowedNormal,
                                      outsideTop: 0, outsideTrailing: 0,
                                      outsideBottom: 0, outsideLeading: 0,
                                      insideTop: 0, insideTrailing: 0,

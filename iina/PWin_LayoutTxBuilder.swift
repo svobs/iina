@@ -285,12 +285,12 @@ extension PlayerWindowController {
                                   windowedModeScreen: NSScreen) -> PWinGeometry {
     // Restore window size & position
     switch inputLayout.mode {
-    case .windowed:
+    case .windowedNormal:
       return geo.windowed
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       return inputLayout.buildFullScreenGeometry(in: windowedModeScreen, video: geo.video)
     case .windowedInteractive:
-      /// `geo.windowed` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
+      /// `.geo.windowed` should already be correct for interactiveWindowed mode, but it is easy enough to derive it
       /// from a small number of variables, and safer to do that than assume it is correct:
       return PWinGeometry.buildInteractiveModeWindow(windowFrame: geo.windowed.windowFrame, screenID: geo.windowed.screenID,
                                                      video: geo.windowed.video)
@@ -307,7 +307,7 @@ extension PlayerWindowController {
                                    outputLayout: LayoutState, _ geo: GeometrySet, isWindowInitialLayout: Bool) -> PWinGeometry {
 
     switch outputLayout.mode {
-    case .windowed:
+    case .windowedNormal:
       let prevWindowedGeo: PWinGeometry
       if inputGeometry.mode == .windowedInteractive {
         /// `windowedInteractive` -> `windowed`
@@ -336,7 +336,7 @@ extension PlayerWindowController {
       /// Entering interactive mode: convert from `windowed` to `windowedInteractive`
       return inputGeometry.toInteractiveMode()
 
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       // Full screen always uses same screen as windowed mode
       return outputLayout.buildFullScreenGeometry(inScreenID: inputGeometry.screenID, video: geo.video)
 
@@ -372,7 +372,7 @@ extension PlayerWindowController {
         let newWindowFrame = NSRect(origin: NSPoint(x: videoFrame.origin.x - (extraWidthNeeded * 0.5), y: videoFrame.origin.y),
                                     size: CGSize(width: videoFrame.width + extraWidthNeeded, height: videoFrame.height + outsideTopBarHeight))
         let resizedGeo = PWinGeometry(windowFrame: newWindowFrame, screenID: transition.outputGeometry.screenID,
-                                      fitOption: transition.outputGeometry.fitOption, mode: .windowed, topMarginHeight: 0,
+                                      fitOption: transition.outputGeometry.fitOption, mode: .windowedNormal, topMarginHeight: 0,
                                       outsideBars: MarginQuad(top: outsideTopBarHeight),
                                       insideBars: MarginQuad.zero,
                                       video: transition.outputGeometry.video)

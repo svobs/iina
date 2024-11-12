@@ -293,10 +293,10 @@ extension PlayerWindowController {
     guard let window else { return }
 
     switch currentLayout.mode {
-    case .windowed:
+    case .windowedNormal:
       let isCursorInWindow = NSPointInRect(NSEvent.mouseLocation, window.frame)
       guard isCursorInWindow else { return }
-    case .fullScreen:
+    case .fullScreenNormal:
       let isCursorInScreen = NSPointInRect(NSEvent.mouseLocation, bestScreen.visibleFrame)
       guard isCursorInScreen else { return }
     case .musicMode, .windowedInteractive, .fullScreenInteractive:

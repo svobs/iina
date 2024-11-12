@@ -29,7 +29,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
     return NSNib.Name("PrefOSCToolbarSettingsSheetController")
   }
 
-  var oscGeo = ControlBarGeometry(mode: .windowed)
+  var oscGeo = ControlBarGeometry(mode: .windowedNormal)
   var currentButtonTypes: [Preference.ToolBarButton] = []
   private var itemViewControllers: [PrefOSCToolbarDraggingItemViewController] = []
 
@@ -54,7 +54,7 @@ class PrefOSCToolbarSettingsSheetController: NSWindowController, PrefOSCToolbarC
 
   func updateFromPrefs() {
     guard isWindowLoaded else { return }
-    oscGeo = ControlBarGeometry(mode: .windowed)
+    oscGeo = ControlBarGeometry(mode: .windowedNormal)
     currentItemsView.initItems(fromItems: oscGeo.toolbarItems)
     updateToolbarButtonHeight()
   }

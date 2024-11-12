@@ -1316,7 +1316,7 @@ class PlayerCore: NSObject {
   }
 
   func updateMPVWindowScale(using windowGeo: PWinGeometry) {
-    guard windowGeo.mode == .windowed || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
+    guard windowGeo.mode == .windowedNormal || (windowGeo.mode == .musicMode && windowGeo.videoSize.height > 0) else {
       return
     }
     mpv.queue.async { [self] in

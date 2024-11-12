@@ -20,7 +20,7 @@ class OSCToolbarButton: NSButton {
   }
 
   func setStyle(buttonType: Preference.ToolBarButton, iconSize: CGFloat? = nil, iconSpacing: CGFloat? = nil) {
-    let currentGeo = ControlBarGeometry(mode: .windowed)
+    let currentGeo = ControlBarGeometry(mode: .windowedNormal)
     let iconSize = iconSize ?? currentGeo.toolIconSize
     let iconSpacing = iconSpacing ?? currentGeo.toolIconSpacing
     self.iconSize = iconSize

@@ -27,7 +27,7 @@ struct LayoutSpec {
   var leadingSidebarPlacement: Preference.PanelPlacement { return leadingSidebar.placement }
   var trailingSidebarPlacement: Preference.PanelPlacement { return trailingSidebar.placement }
 
-  /// Can only be `true` for `windowed` & `fullScreen` modes!
+  /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
 
@@ -49,12 +49,12 @@ struct LayoutSpec {
     if (mode == .windowedInteractive || mode == .fullScreenInteractive) && interactiveMode == nil {
       Logger.log("Cannot enter interactive mode (\(mode)) because its mode field is nil! Falling back to windowed mode")
       // Prevent invalid mode from crashing IINA. Just go to windowed instead
-      mode = .windowed
+      mode = .windowedNormal
     }
     self.mode = mode
 
     switch mode {
-    case .windowed, .fullScreen:
+    case .windowedNormal, .fullScreenNormal:
       self.leadingSidebar = leadingSidebar
       self.trailingSidebar = trailingSidebar
       self.topBarPlacement = topBarPlacement
@@ -89,7 +89,7 @@ struct LayoutSpec {
     let moreSidebarState = Sidebar.SidebarMiscState.fromDefaultPrefs()
     return LayoutSpec(leadingSidebar: leadingSidebar,
                       trailingSidebar: trailingSidebar,
-                      mode: .windowed,
+                      mode: .windowedNormal,
                       isLegacyStyle: false,
                       topBarPlacement:.insideViewport,
                       bottomBarPlacement: .insideViewport,
@@ -381,7 +381,7 @@ class LayoutState {
   }
 
   var canEnterInteractiveMode: Bool {
-    return spec.mode == .windowed || spec.mode == .fullScreen
+    return spec.mode == .windowedNormal || spec.mode == .fullScreenNormal
   }
 
   var isFullScreen: Bool {
@@ -440,7 +440,7 @@ class LayoutState {
   }
 
   var canShowSidebars: Bool {
-    return spec.mode == .windowed || spec.mode == .fullScreen
+    return spec.mode == .windowedNormal || spec.mode == .fullScreenNormal
   }
 
   /// Only windowed & full screen modes can have floating OSC, and OSC must be enabled
@@ -640,11 +640,11 @@ class LayoutState {
                      windowFrame: NSRect, screenID: String, video: VideoGeometry) -> PWinGeometry {
     let mode = modeOverride ?? mode
     switch mode {
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       return buildFullScreenGeometry(inScreenID: screenID, video: video)
     case .windowedInteractive:
       return PWinGeometry.buildInteractiveModeWindow(windowFrame: windowFrame, screenID: screenID, video: video)
-    case .windowed:
+    case .windowedNormal:
       let geo = PWinGeometry(windowFrame: windowFrame, screenID: screenID, fitOption: .stayInside,
                              mode: mode,
                              topMarginHeight: 0,  // is only nonzero when in legacy FS

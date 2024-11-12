@@ -57,7 +57,7 @@ extension PlayerWindowController {
 
     let isLiveResizingWidth = isLiveResizingWidth ?? true
     switch currentLayout.mode {
-    case .windowed, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive:
       let inLiveResize = window.inLiveResize
 
       let currentLayout = currentLayout
@@ -78,7 +78,7 @@ extension PlayerWindowController {
 
       log.verbose("WinWillResize isLive:\(inLiveResize.yn) req:\(requestedSize) lockViewport:\(lockViewportToVideoSize.yn) currWinSize:\(currentGeo.windowFrame.size) returning:\(newGeometry.windowFrame.size)")
 
-      if currentLayout.mode == .windowed && inLiveResize {
+      if currentLayout.mode == .windowedNormal && inLiveResize {
         // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
         player.info.intendedViewportSize = newGeometry.viewportSize
       }
@@ -112,7 +112,7 @@ extension PlayerWindowController {
 
       return newGeometry.windowFrame.size
 
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       if currentLayout.isLegacyFullScreen {
         let newGeometry = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
         IINAAnimation.disableAnimation { [self] in
@@ -399,7 +399,7 @@ extension PlayerWindowController {
     pip.aspectRatio = newVidGeo.videoSizeCAR
 
     switch newLayout.mode {
-    case .windowed:
+    case .windowedNormal:
 
       let newGeo: PWinGeometry
       switch windowState {
@@ -438,7 +438,7 @@ extension PlayerWindowController {
       log.debug("[applyVideoGeo Apply] Applying windowed result (newOpenedFile=\(windowState), showDefaultArt=\(showDefaultArt?.yn ?? "nil")): \(newGeo)")
       return buildApplyWindowGeoTasks(newGeo, duration: duration, timing: timing, showDefaultArt: showDefaultArt)
 
-    case .fullScreen:
+    case .fullScreenNormal:
       let newWinGeo = windowedGeoForCurrentFrame().resizeMinimally(forNewVideoGeo: newVidGeo,
                                                                    intendedViewportSize: player.info.intendedViewportSize)
       let fsGeo = newLayout.buildFullScreenGeometry(inScreenID: newWinGeo.screenID, video: newVidGeo)
@@ -548,7 +548,7 @@ extension PlayerWindowController {
   func setVideoScale(_ desiredVideoScale: Double) {
     assert(DispatchQueue.isExecutingIn(.main))
     // Not supported in music mode at this time. Need to resolve backing scale bugs
-    guard currentLayout.mode == .windowed else { return }
+    guard currentLayout.mode == .windowedNormal else { return }
     guard desiredVideoScale > 0.0 else {
       log.verbose("SetVideoScale: requested scale is invalid: \(desiredVideoScale)")
       return
@@ -583,10 +583,10 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
 
     switch currentLayout.mode {
-    case .windowed, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive:
       let newGeoUnconstrained = windowedGeoForCurrentFrame().scaleViewport(to: desiredViewportSize,
                                                                            fitOption: .noConstraints)
-      if currentLayout.mode == .windowed {
+      if currentLayout.mode == .windowedNormal {
         // User has actively resized the video. Assume this is the new preferred resolution
         player.info.intendedViewportSize = newGeoUnconstrained.viewportSize
       }
@@ -610,7 +610,7 @@ extension PlayerWindowController {
     assert(DispatchQueue.isExecutingIn(.main))
     let currentViewportSize: NSSize
     switch currentLayout.mode {
-    case .windowed:
+    case .windowedNormal:
       currentViewportSize = windowedGeoForCurrentFrame().viewportSize
     case .musicMode:
       guard let viewportSize = musicModeGeoForCurrentFrame().viewportSize else { return }
@@ -706,7 +706,7 @@ extension PlayerWindowController {
       // Do not cache supplied geometry. Assume caller will handle it.
       if !isFullScreen && !isTransientResize {
         player.saveState()
-        if currentLayout.mode == .windowed {
+        if currentLayout.mode == .windowedNormal {
           log.verbose("ApplyWindowResize: calling updateMPVWindowScale")
           player.updateMPVWindowScale(using: windowedModeGeo)
         }

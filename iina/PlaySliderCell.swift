@@ -80,7 +80,7 @@ class PlaySliderCell: NSSliderCell {
     let chapters = player.info.chapters
     let durationSec = player.info.playbackDurationSec ?? 0.0
 
-    let slider = self.controlView as! NSSlider
+//    let slider = self.controlView as! NSSlider
 
     /// The position of the knob, rounded for cleaner drawing
     let knobPos: CGFloat = round(knobRect(flipped: flipped).origin.x);

@@ -864,9 +864,9 @@ extension PlayerWindowController {
 
     let oldGeo: PWinGeometry
     switch currentLayout.mode {
-    case .windowed:
+    case .windowedNormal:
       oldGeo = windowedModeGeo
-    case .fullScreen:
+    case .fullScreenNormal:
       oldGeo = currentLayout.buildFullScreenGeometry(inScreenID: windowedModeGeo.screenID, video: geo.video)
     case .musicMode, .windowedInteractive, .fullScreenInteractive:
       Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")
@@ -893,10 +893,10 @@ extension PlayerWindowController {
         applyWindowResize(usingGeometry: newGeo)
 
         switch currentLayout.mode {
-        case .windowed:
+        case .windowedNormal:
           // Need to update this for future operations
           windowedModeGeo = newGeo
-        case .fullScreen:
+        case .fullScreenNormal:
           break
         case .musicMode, .windowedInteractive, .fullScreenInteractive:
           Logger.fatal("ResizeSidebar: current mode unexpected: \(currentLayout.mode)")

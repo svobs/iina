@@ -223,7 +223,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.defaultLayout()) {
     didSet {
-      if currentLayout.mode == .windowed {
+      if currentLayout.mode == .windowedNormal {
         lastWindowedLayoutSpec = currentLayout.spec
       }
     }
@@ -983,7 +983,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   private func animateEntryIntoFullScreen(withDuration duration: TimeInterval, isLegacy: Bool) {
     let oldLayout = currentLayout
 
-    let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreen
+    let newMode: PlayerWindowMode = oldLayout.mode == .windowedInteractive ? .fullScreenInteractive : .fullScreenNormal
     log.verbose("Animating \(duration)s entry from \(oldLayout.mode) → \(isLegacy ? "legacy " : "")\(newMode)")
     // May be in interactive mode, with some panels hidden. Honor existing layout but change value of isFullScreen
     let fullscreenLayout = LayoutSpec.fromPreferences(andMode: newMode, isLegacyStyle: isLegacy, fillingInFrom: oldLayout.spec)
@@ -1030,7 +1030,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     if oldLayout.mode == .fullScreenInteractive {
       nextMode = .windowedInteractive
     } else {
-      nextMode = .windowed
+      nextMode = .windowedNormal
     }
     let windowedLayoutSpec = LayoutSpec.fromPreferences(andMode: nextMode, fillingInFrom: oldLayout.spec)
 
@@ -1058,9 +1058,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     let layout = currentLayout
 
     switch layout.mode {
-    case .windowed, .windowedInteractive:
+    case .windowedNormal, .windowedInteractive:
       enterFullScreen()
-    case .fullScreen, .fullScreenInteractive:
+    case .fullScreenNormal, .fullScreenInteractive:
       exitFullScreen()
     case .musicMode:
       enterFullScreen()
@@ -1244,7 +1244,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           // Update screenID at least, so that window won't go back to other screen when exiting FS
           windowedModeGeo = windowedModeGeo.clone(screenID: screenID)
           player.saveState()
-        } else if currentLayout.mode == .windowed {
+        } else if currentLayout.mode == .windowedNormal {
           // Update windowedModeGeo with new window position & screen (but preserve previous size)
           let newWindowFrame = NSRect(origin: window.frame.origin, size: windowedModeGeo.windowFrame.size)
           windowedModeGeo = windowedModeGeo.clone(windowFrame: newWindowFrame, screenID: screenID)
@@ -1295,7 +1295,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           log.verbose("WndDidChangeScreenParams: updating legacy full screen window")
           let fsGeo = layout.buildFullScreenGeometry(in: bestScreen, video: geo.video)
           applyLegacyFSGeo(fsGeo)
-        } else if layout.mode == .windowed {
+        } else if layout.mode == .windowedNormal {
           /// In certain corner cases (e.g., exiting legacy full screen after changing screens while in full screen),
           /// the screen's `visibleFrame` can change after `transition.outputGeometry` was generated and won't be known until the end.
           /// By calling `refit()` here, we can make sure the window is constrained to the up-to-date `visibleFrame`.
@@ -1588,7 +1588,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
           let newVideoAspect = videoSizeRaw.mpvAspect
 
           switch currentLayout.mode {
-          case .windowed, .fullScreen:
+          case .windowedNormal, .fullScreenNormal:
             let oldVideoAspect = prevCropBox.size.mpvAspect
             // Scale viewport to roughly match window size
             let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize)
@@ -1625,7 +1625,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
             }
             log.verbose("EnterInteractiveMode: Generated uncroppedGeo: \(uncroppedClosedBarsGeo)")
 
-            if currentLayout.mode == .windowed {
+            if currentLayout.mode == .windowedNormal {
               // TODO: integrate this task into LayoutTransition build
               let uncropDuration = IINAAnimation.CropAnimationDuration * 0.1
               tasks.append(IINAAnimation.Task(duration: uncropDuration, timing: .easeInEaseOut) { [self] in
@@ -1652,10 +1652,10 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   }
 
   func buildTransitionToEnterInteractiveMode(_ mode: InteractiveMode, _ geo: GeometrySet? = nil) -> [IINAAnimation.Task] {
-    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreen ? .fullScreenInteractive : .windowedInteractive
+    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenNormal ? .fullScreenInteractive : .windowedInteractive
     let interactiveModeLayout = currentLayout.spec.clone(mode: newMode, interactiveMode: mode)
     let startDuration = IINAAnimation.CropAnimationDuration * 0.5
-    let endDuration = currentLayout.mode == .fullScreen ? startDuration * 0.5 : startDuration
+    let endDuration = currentLayout.mode == .fullScreenNormal ? startDuration * 0.5 : startDuration
     let transition = buildLayoutTransition(named: "EnterInteractiveMode", from: currentLayout, to: interactiveModeLayout,
                                            totalStartingDuration: startDuration, totalEndingDuration: endDuration, geo)
     return transition.tasks
@@ -1728,7 +1728,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
 
     // Build exit animation
-    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreen : .windowed
+    let newMode: PlayerWindowMode = currentLayout.mode == .fullScreenInteractive ? .fullScreenNormal : .windowedNormal
     let lastSpec = currentLayout.mode == .fullScreenInteractive ? currentLayout.spec : lastWindowedLayoutSpec
     log.verbose("Exiting interactive mode, newMode: \(newMode)")
     let newLayoutSpec = LayoutSpec.fromPreferences(andMode: newMode, fillingInFrom: lastSpec)
@@ -1775,7 +1775,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
       /// Start by hiding OSC and/or "outside" panels, which aren't needed and might mess up the layout.
       /// We can do this by creating a `LayoutSpec`, then using it to build a `LayoutTransition` and executing its animation.
       let oldLayout = currentLayout
-      let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowed, fillingInFrom: lastWindowedLayoutSpec)
+      let windowedLayout = LayoutSpec.fromPreferences(andMode: .windowedNormal, fillingInFrom: lastWindowedLayoutSpec)
       let geo = buildGeoSet(video: newVidGeo, from: oldLayout)
       buildLayoutTransition(named: "ExitMusicMode", from: oldLayout, to: windowedLayout, thenRun: true, geo)
     }

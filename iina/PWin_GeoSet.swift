@@ -8,8 +8,11 @@
 
 import Foundation
 
+/// Describes the current panel sizes & locations for all modes of a unique `PlayerWindow`.
 struct GeometrySet {
-  /// If in full screen, this is actually the prior windowed geometry. Can be regular or interactive mode.
+  /// The window geometry, whether in regular  or interactive mode.
+  ///
+  /// (Full screen geometry is not
   let windowed: PWinGeometry
   let musicMode: MusicModeGeometry
   let video: VideoGeometry

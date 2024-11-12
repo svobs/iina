@@ -37,8 +37,9 @@ extension PlayerWindowController {
 
 
 enum PlayerWindowMode: Int {
-  case windowed = 1
-  case fullScreen
+  /// Note: both `windowed` & `windowedInteractive` modes are considered windowed"
+  case windowedNormal = 1
+  case fullScreenNormal
   case musicMode
   case windowedInteractive
   case fullScreenInteractive
@@ -47,26 +48,26 @@ enum PlayerWindowMode: Int {
     switch self {
     case .musicMode:
       return true
-    case .fullScreen, .windowed, .windowedInteractive, .fullScreenInteractive:
+    case .fullScreenNormal, .windowedNormal, .windowedInteractive, .fullScreenInteractive:
       return false
     }
   }
 
   var neverLockViewportToVideoSize: Bool {
     switch self {
-    case .fullScreen:
+    case .fullScreenNormal:
       return true
-    case .musicMode, .windowedInteractive, .fullScreenInteractive, .windowed:
+    case .musicMode, .windowedInteractive, .fullScreenInteractive, .windowedNormal:
       return false
     }
   }
 
   var isWindowed: Bool {
-    return self == .windowed || self == .windowedInteractive
+    return self == .windowedNormal || self == .windowedInteractive
   }
 
   var isFullScreen: Bool {
-    return self == .fullScreen || self == .fullScreenInteractive
+    return self == .fullScreenNormal || self == .fullScreenInteractive
   }
 
   var isInteractiveMode: Bool {
