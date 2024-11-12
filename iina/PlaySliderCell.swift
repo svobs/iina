@@ -76,7 +76,7 @@ class PlaySliderCell: NSSliderCell {
 
     guard let appearance = controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
-    let chaptersToDraw = drawChapters && durationSec > 0 && chapters.count > 1 ? chapters : nil
+    let chaptersToDraw = drawChapters ? chapters : []
     appearance.applyAppearanceFor {
       RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobPosX: knobPosX, knobWidth: knobWidth,
                                  durationSec: durationSec, chapters: chaptersToDraw)

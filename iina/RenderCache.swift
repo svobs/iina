@@ -191,7 +191,7 @@ class RenderCache {
   }
 
   func drawBar(in barRect: NSRect, darkMode: Bool, screen: NSScreen, knobPosX: CGFloat, knobWidth: CGFloat,
-               durationSec: CGFloat, chapters: [MPVChapter]?) {
+               durationSec: CGFloat, chapters: [MPVChapter]) {
     var drawRect = Bar.imageRect(in: barRect)
     if #unavailable(macOS 11) {
       drawRect = NSRect(x: drawRect.origin.x,
@@ -212,13 +212,13 @@ class RenderCache {
 
     /// `barWidth` does not include added leading or trailing margin
     init(darkMode: Bool, barWidth: CGFloat, screen: NSScreen, knobPosX: CGFloat, knobWidth: CGFloat,
-         durationSec: CGFloat, chapters: [MPVChapter]?) {
+         durationSec: CGFloat, chapters: [MPVChapter]) {
       image = Bar.makeImage(barWidth, screen: screen, darkMode: darkMode, knobPosX: knobPosX, knobWidth: knobWidth,
                             durationSec: durationSec, chapters)
     }
 
     static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, knobPosX: CGFloat, knobWidth: CGFloat,
-                          durationSec: CGFloat, _ chapters: [MPVChapter]?) -> CGImage {
+                          durationSec: CGFloat, _ chapters: [MPVChapter]) -> CGImage {
       let scaleFactor = RenderCache.scaleFactor
       let imageSizeScaled = Bar.imageSizeScaled(barWidth, scaleFactor: scaleFactor)
 
@@ -236,17 +236,14 @@ class RenderCache {
         let knobClipStartX = Bar.scaledMarginRadius + (knobPosX - 2) * scaleFactor
         assert(strokeRadiusScaled * 2 <= knobWidth * scaleFactor, "BarStrokeRadius too thick to clip around knob!")
         let knobClipEndX = knobClipStartX + (knobWidth * scaleFactor)
-        var didIncludeKnob = false
+        var isRightOfKnob = false
         // Apply clip
         let barClipLeft = CGRect(x: 0, y: 0, width: knobClipStartX, height: imageSizeScaled.height)
         let barClipRight = CGRect(x: knobClipEndX, y: 0, width: imageSizeScaled.width - knobClipEndX, height: imageSizeScaled.height)
         cgContext.clip(to: [barClipLeft, barClipRight])
 
         // Draw bar segments, with gaps to exclude knob & chapter markers
-        let leftBarColor = RenderCache.shared.barColorLeft.cgColor
-        let rightBarColor = RenderCache.shared.barColorRight.cgColor
         func drawSegment(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat) {
-          // Draw LEFT (the "finished" section of the progress bar)
           cgContext.beginPath()
           let segment = CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled)
           cgContext.addPath(CGPath(roundedRect: segment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
@@ -254,34 +251,38 @@ class RenderCache {
           cgContext.fillPath()
         }
 
-        var segmentStartX = 0.0
-        if let chapters, durationSec > 0, chapters.count > 1 {
-          let screenScaleFactor = screen.screenScaleFactor
-          let chMarkerWidth = Bar.baseChapterWidth * max(1.0, screenScaleFactor * 0.5)
+        let leftColor = RenderCache.shared.barColorLeft.cgColor
+        let rightColor = RenderCache.shared.barColorRight.cgColor
+        let chapterGapWidth = Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)
 
-          var endSegmentsX: [Double] = chapters[1...].map{ Bar.scaledMarginRadius + ($0.startTime / durationSec * barWidthScaled) - chMarkerWidth }
-          let barEndX = imageSizeScaled.width
-          endSegmentsX.append(barEndX)
-          for segmentEndX in endSegmentsX {
-            /// chapter start == segment end
-            if didIncludeKnob {
-              drawSegment(rightBarColor, minX: segmentStartX, maxX: segmentEndX)
-              segmentStartX = segmentEndX + chMarkerWidth  // for next loop
-            } else if segmentEndX + chMarkerWidth > knobClipStartX {
-              // Knob at least partially overlaps segment. Chop off segment at start of knob
-              didIncludeKnob = true
-              drawSegment(leftBarColor, minX: segmentStartX, maxX: knobClipStartX + strokeRadiusScaled)
-              segmentStartX = knobClipEndX - scaleFactor  // for below
+        var endSegmentsX: [Double]
+        if chapters.count > 0, durationSec > 0 {
+          endSegmentsX = chapters[1...].map{ Bar.scaledMarginRadius + ($0.startTime / durationSec * barWidthScaled) - chapterGapWidth }
+        } else {
+          endSegmentsX = []
+        }
+        endSegmentsX.append(imageSizeScaled.width)  // add right end of bar
 
-              // Any segment left over after the knob?
-              if segmentEndX > knobClipEndX {
-                drawSegment(rightBarColor, minX: segmentStartX, maxX: segmentEndX)
-                segmentStartX = segmentEndX + chMarkerWidth  // for next loop
-              }
-            } else {
-              drawSegment(leftBarColor, minX: segmentStartX, maxX: segmentEndX)
-              segmentStartX = segmentEndX + chMarkerWidth  // for next loop
+        var segStartX = 0.0
+        for segEndX in endSegmentsX {
+          /// chapter start == segment end
+          if isRightOfKnob {
+            drawSegment(rightColor, minX: segStartX, maxX: segEndX)
+            segStartX = segEndX + chapterGapWidth  // for next loop
+          } else if segEndX + chapterGapWidth > knobClipStartX {
+            // Knob at least partially overlaps segment. Chop off segment at start of knob
+            isRightOfKnob = true
+            drawSegment(leftColor, minX: segStartX, maxX: knobClipStartX + strokeRadiusScaled)
+            segStartX = knobClipEndX - scaleFactor  // for below
+
+            // Any segment left over after the knob?
+            if segEndX > knobClipEndX {
+              drawSegment(rightColor, minX: segStartX, maxX: segEndX)
+              segStartX = segEndX + chapterGapWidth  // for next loop
             }
+          } else {
+            drawSegment(leftColor, minX: segStartX, maxX: segEndX)
+            segStartX = segEndX + chapterGapWidth  // for next loop
           }
         }
 
