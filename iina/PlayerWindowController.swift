@@ -2079,14 +2079,16 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     videoView.isHidden = needShowIndicator && isNotYetLoaded
 
     if needShowIndicator {
-      // FIXME: cacheUsed always returns 0
       let usedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheUsed, prefixedBy: .ki)
       let speedStr = FloatingPointByteCountFormatter.string(fromByteCount: player.info.cacheSpeed)
       let bufferingState = player.info.bufferingState
-      log.verbose("Showing bufferIndicatorView: \(usedStr)B (\(speedStr)/s), bufState: \(bufferingState)")
+      // mpv usually hangs at 0% the entire time. Do not show any progress if we do not have progress to show.
+      let showNumbers = bufferingState > 0
+      let bufStateString = showNumbers ? "\(bufferingState)%" : ""
+      log.verbose("Showing bufferIndicatorView (\(bufferingState)%, \(usedStr)B, \(speedStr)/s)")
       bufferIndicatorView.isHidden = false
-      bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %d%%"), bufferingState)
-      bufferDetailLabel.stringValue = "\(usedStr)B (\(speedStr)/s)"
+      bufferProgressLabel.stringValue = String(format: NSLocalizedString("main.buffering_indicator", comment:"Buffering... %@"), bufStateString)
+      bufferDetailLabel.stringValue = showNumbers ? "\(usedStr)B (\(speedStr)/s)" : ""
       if !isNotYetLoaded && player.info.cacheSpeed == 0 {
         bufferSpin.stopAnimation(self)
       } else {

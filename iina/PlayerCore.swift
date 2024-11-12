@@ -3165,12 +3165,20 @@ class PlayerCore: NSObject {
     }
   }
 
+  var isBufferUnderrun = false
+
   func updateCacheInfo() {
     var cachedRanges: [(Double, Double)] = []
     info.pausedForCache = mpv.getFlag(MPVProperty.pausedForCache)
     if let demuxerCacheState = mpv.getNode(MPVProperty.demuxerCacheState) as? [String: Any] {
       if let underrun = demuxerCacheState["underrun"] as? Bool, underrun {
-        log.verbose("Buffer underrun!")
+        if !isBufferUnderrun {
+          log.verbose("Buffer underrun")
+          isBufferUnderrun = true
+        }
+      } else if isBufferUnderrun {
+        log.verbose("Buffer OK")
+        isBufferUnderrun = false
       }
       if let seekableRanges = demuxerCacheState["seekable-ranges"] as? [[String: Any]] {
         for seekableRange in seekableRanges {
