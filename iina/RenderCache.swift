@@ -84,7 +84,7 @@ class RenderCache {
   }
 
   struct Bar {
-    static let baseChapterWidth: CGFloat = 1.5
+    static let baseChapterWidth: CGFloat = 2.0
     static let imgMarginRadius: CGFloat = 1.0
     static let scaledMarginRadius = imgMarginRadius * RenderCache.scaleFactor
     let image: CGImage
@@ -116,9 +116,9 @@ class RenderCache {
                                   width: Bar.scaledMarginRadius + (barSize.width * scaleFactor) - knobPosScaledX,
                                   height: barSize.height * scaleFactor)
 
-        // Clip where the knob will be, including 1px from left & right of the knob
-        let knobClipStartX = Bar.scaledMarginRadius + (knobPosX - 3) * scaleFactor
-        let knobClipEndX = knobClipStartX + (knobWidth + 2) * scaleFactor
+        // Clip where the knob will be
+        let knobClipStartX = Bar.scaledMarginRadius + (knobPosX - 2) * scaleFactor
+        let knobClipEndX = knobClipStartX + (knobWidth) * scaleFactor
         var didIncludeKnob = false
 
         var segmentStartX = 0.0
