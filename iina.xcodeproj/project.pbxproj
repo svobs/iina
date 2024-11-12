@@ -367,7 +367,7 @@
 		D1E1446C29E3971C005DCEA3 /* IINAAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */; };
 		D1E407B92CC1CA8B002A2F9B /* TableDragDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */; };
 		D1E407BB2CC392F9002A2F9B /* PWin_FadeableViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */; };
-		D1E407BD2CC39549002A2F9B /* PWin_MouseInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */; };
+		D1E407BD2CC39549002A2F9B /* PWin_Input.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BC2CC39544002A2F9B /* PWin_Input.swift */; };
 		D1E407BF2CC7A685002A2F9B /* VirtualScrollWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */; };
 		D1EAF5E528E6B5DD0023BACF /* EditableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */; };
 		D1EAF5E728E6B6780023BACF /* TableUIChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EAF5E628E6B6780023BACF /* TableUIChange.swift */; };
@@ -1885,7 +1885,7 @@
 		D1E1446B29E3971C005DCEA3 /* IINAAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IINAAnimation.swift; sourceTree = "<group>"; };
 		D1E407B82CC1CA73002A2F9B /* TableDragDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableDragDelegate.swift; sourceTree = "<group>"; };
 		D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_FadeableViews.swift; sourceTree = "<group>"; };
-		D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_MouseInput.swift; sourceTree = "<group>"; };
+		D1E407BC2CC39544002A2F9B /* PWin_Input.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_Input.swift; sourceTree = "<group>"; };
 		D1E407BE2CC7A67D002A2F9B /* VirtualScrollWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualScrollWheel.swift; sourceTree = "<group>"; };
 		D1EAF5E428E6B5DD0023BACF /* EditableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableTextField.swift; sourceTree = "<group>"; };
 		D1EAF5E628E6B6780023BACF /* TableUIChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableUIChange.swift; sourceTree = "<group>"; };
@@ -2854,7 +2854,7 @@
 				8400D5C81E1AB2F1006785F5 /* PlayerWindowController.xib */,
 				D17CBBA22CC8E377006160AC /* PWin_WinDidLoad.swift */,
 				D17CBBA72CCF64BE006160AC /* PWin_Observers.swift */,
-				D1E407BC2CC39544002A2F9B /* PWin_MouseInput.swift */,
+				D1E407BC2CC39544002A2F9B /* PWin_Input.swift */,
 				D17CBBA42CCC39CD006160AC /* PWin_ScrollWheel.swift */,
 				D1E407BA2CC392EC002A2F9B /* PWin_FadeableViews.swift */,
 				D1C741112CB6503100522FA7 /* PWin_Enums.swift */,
@@ -3292,7 +3292,7 @@
 				840D479B1DFEF649000D9A64 /* KeyRecordViewController.swift in Sources */,
 				D101635D2C197D4D00D1D663 /* PWin_OSD.swift in Sources */,
 				E3965E1A2487C99900607EB4 /* JavascriptPluginSubtitle.swift in Sources */,
-				D1E407BD2CC39549002A2F9B /* PWin_MouseInput.swift in Sources */,
+				D1E407BD2CC39549002A2F9B /* PWin_Input.swift in Sources */,
 				84F5D4951E44D5230060A838 /* KeyBindingCriterion.swift in Sources */,
 				D17504A629167ACF005C3DD0 /* CascadingMenuItemBuilder.swift in Sources */,
 				846121BD1F35FCA500ABB39C /* DraggingDetect.swift in Sources */,

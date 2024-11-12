@@ -1,5 +1,5 @@
 //
-//  PWin_Mouse.swift
+//  PWin_Input.swift
 //  iina
 //
 //  Created by Matt Svoboda on 2024-10-19.
@@ -8,7 +8,101 @@
 
 import Foundation
 
+// Mouse, Trackpad, Keyboard event handling
 extension PlayerWindowController {
+
+  // MARK: - Keyboard event handling
+
+  /// Returns true if handled
+  @discardableResult
+  func handleKeyBinding(_ keyBinding: KeyMapping) -> Bool {
+    if let menuItem = keyBinding.menuItem, let action = menuItem.action {
+      log.verbose("Key binding is attached to menu item: \(menuItem.title.quoted) but was not handled by MenuController. Call it manually")
+      NSApp.sendAction(action, to: self, from: menuItem)
+      return true
+    }
+
+    guard let rawAction = keyBinding.rawAction, let action = keyBinding.action else {
+      log.error("Expected key binding to have an mpv action, aborting: \(keyBinding)")
+      return false
+    }
+
+    // Some script bindings will draw to the video area. We don't know which will, but
+    // if the DisplayLink is not active the updates will not be displayed.
+    // So start the DisplayLink temporily if not already running:
+    forceDraw()
+
+    if keyBinding.isIINACommand {
+      // - IINA command
+      if let iinaCommand = IINACommand(rawValue: rawAction) {
+        executeIINACommand(iinaCommand)
+        return true
+      } else {
+        log.error("Unrecognized IINA command: \(rawAction.quoted)")
+        return false
+      }
+    }
+
+    // - mpv command
+    let returnValue: Int32
+    // execute the command
+    switch action.first! {
+
+    case MPVCommand.abLoop.rawValue:
+      player.abLoop()
+      returnValue = 0
+
+    case MPVCommand.quit.rawValue:
+      // Initiate application termination. AppKit requires this be done from the main thread,
+      // however the main dispatch queue must not be used to avoid blocking the queue as per
+      // instructions from Apple. IINA must support quitting being initiated by mpv as the user
+      // could use mpv's IPC interface to send the quit command directly to mpv. However the
+      // shutdown sequence is cleaner when initiated by IINA, so we do not send the quit command
+      // to mpv and instead trigger the normal app termination sequence.
+      RunLoop.main.perform(inModes: [.common]) {
+        if !AppDelegate.shared.isTerminating {
+          NSApp.terminate(nil)
+        }
+      }
+      returnValue = 0
+
+    case MPVCommand.screenshot.rawValue:
+      return player.screenshot(fromKeyBinding: keyBinding)
+
+    default:
+      returnValue = player.mpv.command(rawString: rawAction)
+    }
+
+    guard returnValue == 0 else {
+      log.error("Return value \(returnValue) when executing key command \(rawAction)")
+      return false
+    }
+    return true
+  }
+
+  private func executeIINACommand(_ cmd: IINACommand) {
+    switch cmd {
+    case .openFile:
+      AppDelegate.shared.showOpenFileWindow(isAlternativeAction: false)
+    case .openURL:
+      AppDelegate.shared.openURL(self)
+    case .flip:
+      menuToggleFlip(.dummy)
+    case .mirror:
+      menuToggleMirror(.dummy)
+    case .saveCurrentPlaylist:
+      menuSavePlaylist(.dummy)
+    case .deleteCurrentFile:
+      menuDeleteCurrentFile(.dummy)
+    case .findOnlineSubs:
+      menuFindOnlineSub(.dummy)
+    case .saveDownloadedSub:
+      saveDownloadedSub(.dummy)
+    default:
+      break
+    }
+  }
+
   // MARK: - Mouse / Trackpad event handling
 
   /// This method is provided soly for invoking plugin input handlers.
