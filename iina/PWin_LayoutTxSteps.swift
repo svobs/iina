@@ -561,6 +561,19 @@ extension PlayerWindowController {
     } else {
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
+
+      let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
+      playButton.contentTintColor = contentTintColor
+      leftArrowButton.contentTintColor = contentTintColor
+      rightArrowButton.contentTintColor = contentTintColor
+      muteButton.contentTintColor = contentTintColor
+
+      // Default alpha for these is 0.5. They don't change their text color.
+      let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
+      leftLabel.alphaValue = textAlpha
+      rightLabel.alphaValue = textAlpha
+      RenderCache.shared.mainKnobColor = contentTintColor == nil ? .white : RenderCache.shared.mainKnobColorDefault
+      RenderCache.shared.cachedKnob = nil  // force rebuild of knob image
     }
 
     // Sidebars: finish closing (if closing)
@@ -1417,12 +1430,15 @@ extension PlayerWindowController {
   private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView {
     let oscGeo = transition.outputLayout.controlBarGeo
     let buttonTypes = oscGeo.toolbarItems
+    let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
+
     log.verbose("[\(transition.name)] Setting OSC toolbarItems to: [\(buttonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
     var toolButtons: [OSCToolbarButton] = []
     for buttonType in buttonTypes {
       let button = OSCToolbarButton()
       button.setStyle(buttonType: buttonType, iconSize: oscGeo.toolIconSize, iconSpacing: oscGeo.toolIconSpacing)
+      button.contentTintColor = contentTintColor
       button.action = #selector(self.toolBarButtonAction(_:))
       toolButtons.append(button)
     }

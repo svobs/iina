@@ -19,6 +19,7 @@ class RenderCache {
     case loopKnobSelected
   }
 
+  // Bar
   let barHeight: CGFloat = 3.0
   let barStrokeRadius: CGFloat = 1.5
   var barColorLeft = NSColor.controlAccentColor
@@ -27,9 +28,12 @@ class RenderCache {
   var barColorRight = NSColor(named: .mainSliderBarRight)!
   var chapterStrokeColor = NSColor(named: .mainSliderBarChapterStroke)!
 
-  private var mainKnobColor = NSColor(named: .mainSliderKnob)!
-  private var mainKnobActiveColor = NSColor(named: .mainSliderKnobActive)!
-  private var loopKnobColor = NSColor(named: .mainSliderLoopKnob)!
+  // Knob
+  let mainKnobColorDefault = NSColor(named: .mainSliderKnob)!
+  let mainKnobActiveColorDefault = NSColor(named: .mainSliderKnobActive)!
+  var mainKnobColor = NSColor(named: .mainSliderKnob)!
+  var mainKnobActiveColor = NSColor(named: .mainSliderKnobActive)!
+  var loopKnobColor = NSColor(named: .mainSliderLoopKnob)!
   /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
   let scaledMarginRadius = RenderCache.imgMarginRadius * RenderCache.scaleFactor
   let knobStrokeRadius: CGFloat = 1
@@ -259,7 +263,7 @@ class RenderCache {
               clipSegments.append((segmentStartX, knobClipStartX))  // knob
               segmentStartX = knobClipEndX  // next loop
             }
-            
+
             if segmentEndX > knobClipEndX {
               clipSegments.append((segmentStartX, segmentEndX))
               segmentStartX = segmentEndX + chMarkerWidth  // next loop
