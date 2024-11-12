@@ -231,86 +231,77 @@ class RenderCache {
         let barWidthScaled = barWidth * scaleFactor
         let barHeightScaled = RenderCache.shared.barHeight * scaleFactor
         let strokeRadiusScaled = RenderCache.shared.barStrokeRadius * scaleFactor
-        let knobPosScaledX = knobPosX * scaleFactor
-
-        // Set up clipping regions
-        var clipSegments: [(CGFloat, CGFloat)] = []
 
         // Clip where the knob will be
         let knobClipStartX = Bar.scaledMarginRadius + (knobPosX - 2) * scaleFactor
-        let knobClipEndX = knobClipStartX + (knobWidth) * scaleFactor
+        assert(strokeRadiusScaled * 2 <= knobWidth * scaleFactor, "BarStrokeRadius too thick to clip around knob!")
+        let knobClipEndX = knobClipStartX + (knobWidth * scaleFactor)
         var didIncludeKnob = false
+        // Apply clip
+        let barClipLeft = CGRect(x: 0, y: 0, width: knobClipStartX, height: imageSizeScaled.height)
+        let barClipRight = CGRect(x: knobClipEndX, y: 0, width: imageSizeScaled.width - knobClipEndX, height: imageSizeScaled.height)
+        cgContext.clip(to: [barClipLeft, barClipRight])
+
+        // Set up bar segments, with gaps to exclude knob & chapter markers
+        var leftSegments: [CGRect] = []
+        var rightSegments: [CGRect] = []
+        func addLeftSegment(minX: CGFloat, maxX: CGFloat) {
+          leftSegments.append(CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled) )
+        }
+        func addRightSegment(minX: CGFloat, maxX: CGFloat) {
+          rightSegments.append(CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled) )
+        }
 
         var segmentStartX = 0.0
         if let chapters, durationSec > 0, chapters.count > 1 {
           let screenScaleFactor = screen.screenScaleFactor
           let chMarkerWidth = Bar.baseChapterWidth * max(1.0, screenScaleFactor * 0.5)
 
-          for chapter in chapters[1...] {
+          var endSegmentsX: [Double] = chapters[1...].map{ Bar.scaledMarginRadius + ($0.startTime / durationSec * barWidthScaled) - chMarkerWidth }
+          let barEndX = imageSizeScaled.width
+          endSegmentsX.append(barEndX)
+          for segmentEndX in endSegmentsX {
             /// chapter start == segment end
-            var segmentEndX = Bar.scaledMarginRadius + (chapter.startTime / durationSec * barWidthScaled) - chMarkerWidth
-            if segmentEndX <= knobClipStartX {
-              if !didIncludeKnob && segmentEndX + chMarkerWidth > knobClipStartX {
-                didIncludeKnob = true
-                clipSegments.append((segmentStartX, knobClipStartX))  // knob
-                segmentStartX = knobClipEndX  // next loop
-              } else {
-                clipSegments.append((segmentStartX, segmentEndX))
-                segmentStartX = segmentEndX + chMarkerWidth  // next loop
-              }
-            } else if !didIncludeKnob {
+            if didIncludeKnob {
+              addRightSegment(minX: segmentStartX, maxX: segmentEndX)
+              segmentStartX = segmentEndX + chMarkerWidth  // for next loop
+            } else if segmentEndX + chMarkerWidth > knobClipStartX {
+              // Knob at least partially overlaps segment. Chop off segment at start of knob
               didIncludeKnob = true
-              clipSegments.append((segmentStartX, knobClipStartX))  // knob
-              segmentStartX = knobClipEndX  // next loop
-            }
+              addLeftSegment(minX: segmentStartX, maxX: knobClipStartX + strokeRadiusScaled)  // knob
+              segmentStartX = knobClipEndX - scaleFactor  // for below
 
-            if segmentEndX > knobClipEndX {
-              clipSegments.append((segmentStartX, segmentEndX))
-              segmentStartX = segmentEndX + chMarkerWidth  // next loop
-              segmentEndX = knobClipStartX
+              // Any segment left over after the knob?
+              if segmentEndX > knobClipEndX {
+                addRightSegment(minX: segmentStartX, maxX: segmentEndX)
+                segmentStartX = segmentEndX + chMarkerWidth  // for next loop
+              }
+            } else {
+              addLeftSegment(minX: segmentStartX, maxX: segmentEndX)
+              segmentStartX = segmentEndX + chMarkerWidth  // for next loop
             }
           }
         }
 
-        if !didIncludeKnob {
-          didIncludeKnob = true
-          clipSegments.append((segmentStartX, knobClipStartX))  // knob
-          segmentStartX = knobClipEndX  // next loop
-        }
-        let barEndX = imageSizeScaled.width
-        if segmentStartX < barEndX {
-          clipSegments.append((segmentStartX, barEndX))
-        }
-
-        // Apply clip to exclude knob & chapter markers
-        let clipRects = clipSegments.map{ NSRect(x: $0.0, y: Bar.scaledMarginRadius, width: $0.1 - $0.0, height: barHeightScaled) }
-        cgContext.clip(to: clipRects)
-
         // LEFT
 
-        let leftBarRect = NSRect(x: Bar.scaledMarginRadius,
-                                 y: Bar.scaledMarginRadius,
-                                 width: knobPosScaledX - Bar.scaledMarginRadius,
-                                 height: barHeightScaled)
-
-        // Draw LEFT (the "finished" section of the progress bar)
-        cgContext.beginPath()
-        cgContext.addPath(CGPath(roundedRect: leftBarRect, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
-        cgContext.setFillColor(RenderCache.shared.barColorLeft.cgColor)
-        cgContext.fillPath()
+        for leftSegment in leftSegments {
+          // Draw LEFT (the "finished" section of the progress bar)
+          cgContext.beginPath()
+          cgContext.addPath(CGPath(roundedRect: leftSegment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
+          cgContext.setFillColor(RenderCache.shared.barColorLeft.cgColor)
+          cgContext.fillPath()
+        }
 
         // RIGHT
 
-        let rightBarRect = NSRect(x: Bar.scaledMarginRadius + knobPosScaledX,
-                                  y: Bar.scaledMarginRadius,
-                                  width: Bar.scaledMarginRadius + barWidthScaled - knobPosScaledX,
-                                  height: barHeightScaled)
-
-        cgContext.beginPath()
-        // Draw RIGHT (the "unfinished" section of the progress bar)
-        cgContext.addPath(CGPath(roundedRect: rightBarRect, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
-        cgContext.setFillColor(RenderCache.shared.barColorRight.cgColor)
-        cgContext.fillPath()
+        for rightSegment in rightSegments {
+          cgContext.beginPath()
+          // Draw RIGHT (the "unfinished" section of the progress bar)
+          cgContext.addPath(CGPath(roundedRect: rightSegment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
+          cgContext.setFillColor(RenderCache.shared.barColorRight.cgColor)
+          cgContext.fillPath()
+        }
 
       })!
     }
