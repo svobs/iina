@@ -242,14 +242,16 @@ class RenderCache {
         let barClipRight = CGRect(x: knobClipEndX, y: 0, width: imageSizeScaled.width - knobClipEndX, height: imageSizeScaled.height)
         cgContext.clip(to: [barClipLeft, barClipRight])
 
-        // Set up bar segments, with gaps to exclude knob & chapter markers
-        var leftSegments: [CGRect] = []
-        var rightSegments: [CGRect] = []
-        func addLeftSegment(minX: CGFloat, maxX: CGFloat) {
-          leftSegments.append(CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled) )
-        }
-        func addRightSegment(minX: CGFloat, maxX: CGFloat) {
-          rightSegments.append(CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled) )
+        // Draw bar segments, with gaps to exclude knob & chapter markers
+        let leftBarColor = RenderCache.shared.barColorLeft.cgColor
+        let rightBarColor = RenderCache.shared.barColorRight.cgColor
+        func drawSegment(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat) {
+          // Draw LEFT (the "finished" section of the progress bar)
+          cgContext.beginPath()
+          let segment = CGRect(x: minX, y: Bar.scaledMarginRadius, width: maxX - minX, height: barHeightScaled)
+          cgContext.addPath(CGPath(roundedRect: segment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
+          cgContext.setFillColor(barColor)
+          cgContext.fillPath()
         }
 
         var segmentStartX = 0.0
@@ -263,44 +265,24 @@ class RenderCache {
           for segmentEndX in endSegmentsX {
             /// chapter start == segment end
             if didIncludeKnob {
-              addRightSegment(minX: segmentStartX, maxX: segmentEndX)
+              drawSegment(rightBarColor, minX: segmentStartX, maxX: segmentEndX)
               segmentStartX = segmentEndX + chMarkerWidth  // for next loop
             } else if segmentEndX + chMarkerWidth > knobClipStartX {
               // Knob at least partially overlaps segment. Chop off segment at start of knob
               didIncludeKnob = true
-              addLeftSegment(minX: segmentStartX, maxX: knobClipStartX + strokeRadiusScaled)  // knob
+              drawSegment(leftBarColor, minX: segmentStartX, maxX: knobClipStartX + strokeRadiusScaled)
               segmentStartX = knobClipEndX - scaleFactor  // for below
 
               // Any segment left over after the knob?
               if segmentEndX > knobClipEndX {
-                addRightSegment(minX: segmentStartX, maxX: segmentEndX)
+                drawSegment(rightBarColor, minX: segmentStartX, maxX: segmentEndX)
                 segmentStartX = segmentEndX + chMarkerWidth  // for next loop
               }
             } else {
-              addLeftSegment(minX: segmentStartX, maxX: segmentEndX)
+              drawSegment(leftBarColor, minX: segmentStartX, maxX: segmentEndX)
               segmentStartX = segmentEndX + chMarkerWidth  // for next loop
             }
           }
-        }
-
-        // LEFT
-
-        for leftSegment in leftSegments {
-          // Draw LEFT (the "finished" section of the progress bar)
-          cgContext.beginPath()
-          cgContext.addPath(CGPath(roundedRect: leftSegment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
-          cgContext.setFillColor(RenderCache.shared.barColorLeft.cgColor)
-          cgContext.fillPath()
-        }
-
-        // RIGHT
-
-        for rightSegment in rightSegments {
-          cgContext.beginPath()
-          // Draw RIGHT (the "unfinished" section of the progress bar)
-          cgContext.addPath(CGPath(roundedRect: rightSegment, cornerWidth:  strokeRadiusScaled, cornerHeight:  strokeRadiusScaled, transform: nil))
-          cgContext.setFillColor(RenderCache.shared.barColorRight.cgColor)
-          cgContext.fillPath()
         }
 
       })!
