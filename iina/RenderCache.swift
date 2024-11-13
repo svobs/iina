@@ -24,9 +24,7 @@ class RenderCache {
   let barCornerRadius_Scaled: CGFloat = 1.5 * scaleFactor
   var barColorLeft = NSColor.controlAccentColor
   var barColorLeftGlow = NSColor.controlAccentColor
-  var barColorPreCache = NSColor(named: .mainSliderBarPreCache)!
   var barColorRight = NSColor(named: .mainSliderBarRight)!
-  var chapterStrokeColor = NSColor(named: .mainSliderBarChapterStroke)!
 
   // Knob
   let mainKnobColorDefault = NSColor(named: .mainSliderKnob)!
