@@ -322,8 +322,8 @@ class PWinPreviewImageBuilder {
       }
     }  // drawingCalls
 
-    let previewImage = CGImage.buildBitmapImage(width: outputImgWidth, height: outputImgHeight, drawingCalls: drawingCalls)
-    return NSImage(cgImage: previewImage!, size: NSSize(width: outputImgWidth, height: outputImgHeight))
+    let previewImage = CGImage.buildBitmapImage(width: outputImgWidth, height: outputImgHeight, drawingCalls)
+    return NSImage(cgImage: previewImage, size: NSSize(width: outputImgWidth, height: outputImgHeight))
   }
 
   private func addAlpha(_ alpha: CGFloat, to color: NSColor) -> CGColor {

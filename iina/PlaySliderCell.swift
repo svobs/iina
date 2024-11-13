@@ -82,40 +82,6 @@ class PlaySliderCell: NSSliderCell {
       RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
                                  durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
     }
-
-//    /* FIXME: 
-//    // Draw LEFT glow
-//    drawGraphic {
-//      let leftBarGlowRect = NSRect(x: barRect.origin.x,
-//                               y: barRect.origin.y - 4,
-//                               width: knobPos,
-//                               height: barRect.height + 4 + 4)
-//      let leftBarGlowPath = NSBezierPath(rect: leftBarGlowRect)
-//      leftBarGlowPath.append(NSBezierPath(rect: leftBarRect).reversed)
-//
-//      barColorLeftGlow.setFill()
-//      leftBarGlowRect.fill()
-//    }
-//     */
-//
-//    let cacheTime = player.info.cacheTime
-//    // Draw cached sections (if applicable), drawing over the unfinished span:
-//    // FIXME: draw *all* cached sections
-//    if cacheTime > 0, durationSec > 0 {
-//      drawGraphic {
-//        let cachePercentage = cacheTime / durationSec * 100
-//        let cacheWidth = round(rect.width * CGFloat(cachePercentage / (slider.span))) + 2;
-//
-//        let cacheRect = NSRect(x: barRect.origin.x,
-//                               y: barRect.origin.y,
-//                               width: cacheWidth,
-//                               height: barRect.height)
-//        NSBezierPath(rect: cacheRect).addClip();
-//
-//        RenderCache.shared.barColorPreCache.setFill()
-//        fullPath.fill()
-//      }
-//    }
   }
 
   // MARK:- Tracking the Mouse

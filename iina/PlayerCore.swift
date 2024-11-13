@@ -71,6 +71,9 @@ class PlayerCore: NSObject {
   // At launch, wait until all windows are open before resuming video
   var pendingResumeWhenShowingWindow: Bool = false
 
+  var isBufferUnderrun = false
+  var cachedRanges: [(Double, Double)] = []
+
   @Atomic var saveTicketCounter: Int = 0
   @Atomic private var thumbnailReloadTicketCounter: Int = 0
 
@@ -3164,9 +3167,6 @@ class PlayerCore: NSObject {
       lastSaveTime = now
     }
   }
-
-  var isBufferUnderrun = false
-  var cachedRanges: [(Double, Double)] = []
 
   func updateCacheInfo() {
     var cachedRanges: [(Double, Double)] = []

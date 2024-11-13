@@ -1187,7 +1187,7 @@ extension CGImage {
       cgContext.concatenate(rotateContext)
       cgContext.draw(self, in: imgRect)
     }
-    return CGImage.buildBitmapImage(width: Int(rotatedImgFrame.size.width), height: Int(rotatedImgFrame.size.height), drawingCalls: drawingCalls)!
+    return CGImage.buildBitmapImage(width: rotatedImgFrame.size.widthInt, height: rotatedImgFrame.size.heightInt, drawingCalls)
   }
 
   private func degToRad(_ degrees: CGFloat) -> CGFloat {
@@ -1206,7 +1206,7 @@ extension CGImage {
 
     // Use raw CoreGraphics calls instead of their NS equivalents. They are > 10x faster, and only downside is that the image's
     // dimensions must be integer values instead of decimals.
-    let newImage = CGImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight), drawingCalls: { cgContext in
+    let newImage = CGImage.buildBitmapImage(width: Int(newWidth), height: Int(newHeight)) { cgContext in
       let outputRect = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
       if cornerRadius > 0.0 {
         cgContext.beginPath()
@@ -1215,32 +1215,27 @@ extension CGImage {
         cgContext.clip()
       }
       cgContext.draw(self, in: outputRect)
-    })
+    }
 
-    guard let newImage else { return self }
     return newImage
   }
 
   /// Builds a bitmap image efficiently using CoreGraphics APIs.
   ///
   /// If it's found useful for any more situations, should put in its own class
-  static func buildBitmapImage(width: Int, height: Int, drawingCalls: (CGContext) -> Void) -> CGImage? {
-
+  static func buildBitmapImage(width: Int, height: Int, _ drawingCalls: (CGContext) -> Void) -> CGImage {
     guard let compositeImageRep = CGImage.makeNewImgRep(width: width, height: height) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!", level: .error)
-      return nil
+      Logger.fatal("DrawImageInBitmapImageContext: Failed to create NSBitmapImageRep!")
     }
 
     guard let context = NSGraphicsContext(bitmapImageRep: compositeImageRep) else {
-      Logger.log("DrawImageInBitmapImageContext: Failed to create NSGraphicsContext!", level: .error)
-      return nil
+      Logger.fatal("DrawImageInBitmapImageContext: Failed to create NSGraphicsContext!")
     }
 
     context.cgContext.interpolationQuality = .high
-
     drawingCalls(context.cgContext)
 
-    return compositeImageRep.cgImage
+    return compositeImageRep.cgImage!
   }
 
   /// Creates RGB image with alpha channel

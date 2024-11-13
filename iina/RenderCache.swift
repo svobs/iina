@@ -113,8 +113,7 @@ class RenderCache {
       let scaleFactor = RenderCache.scaleFactor
       let knobImageSizeScaled = Knob.imgSizeScaled(knobWidth: knobWidth, knobHeight: knobHeight, scaleFactor: scaleFactor)
       let knobImage = CGImage.buildBitmapImage(width: knobImageSizeScaled.widthInt,
-                                               height: knobImageSizeScaled.heightInt,
-                                               drawingCalls: { cgContext in
+                                               height: knobImageSizeScaled.heightInt) { cgContext in
 
         // Round the X position for cleaner drawing
         let pathRect = NSMakeRect(RenderCache.shared.scaledMarginRadius,
@@ -141,7 +140,7 @@ class RenderCache {
           cgContext.setStrokeColor(shadow)
           cgContext.strokePath()
         }
-      })!
+      }
       return knobImage
     }
 
@@ -219,57 +218,50 @@ class RenderCache {
 
     static func makeImage(_ barWidth: CGFloat, screen: NSScreen, darkMode: Bool, knobMinX: CGFloat, knobWidth: CGFloat,
                           durationSec: CGFloat, _ chapters: [MPVChapter], cachedRanges: [(Double, Double)]) -> CGImage {
+      // - Set up calculations
       let scaleFactor = RenderCache.scaleFactor
       let imgSizeScaled = Bar.imgSizeScaled(barWidth, scaleFactor: scaleFactor)
+      let barWidth_Scaled = barWidth * scaleFactor
+      let barHeight_Scaled = RenderCache.shared.barHeight * scaleFactor
+      let cornerRadius_Scaled = RenderCache.shared.barCornerRadius_Scaled
+      let leftColor = RenderCache.shared.barColorLeft.cgColor
+      let rightColor = RenderCache.shared.barColorRight.cgColor
+      let chapterGapWidth = Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)
+      let halfChapterGapWidth: CGFloat = chapterGapWidth * 0.5
 
-      return CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
-                                      height: imgSizeScaled.heightInt,
-                                      drawingCalls: { cgc in
+      // - Will clip out the knob
+      let leftClipMaxX = knobMinX * scaleFactor
+      let rightClipMinX = leftClipMaxX + (knobWidth - 2.0) * scaleFactor
+      assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor,
+             "Play bar corner radius is too width to clip using knob!")
 
-        // - Set up calculations
-        let barWidth_Scaled = barWidth * scaleFactor
-        let barHeight_Scaled = RenderCache.shared.barHeight * scaleFactor
-        let cornerRadius_Scaled = RenderCache.shared.barCornerRadius_Scaled
-        let leftColor = RenderCache.shared.barColorLeft.cgColor
-        let rightColor = RenderCache.shared.barColorRight.cgColor
-        let chapterGapWidth = Bar.baseChapterWidth * max(1.0, screen.screenScaleFactor * 0.5)
-        let halfChapterGapWidth = chapterGapWidth * 0.5
-//        let baseChapterStartOffset = (chapterGapWidth * 0.5)
-//        let baseChapterEndOffset = (chapterGapWidth * 0.5)
+      let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
+                                            height: imgSizeScaled.heightInt) { cgc in
 
-//        var cachedRects: [CGRect] = []
-//        for cachedRange in cachedRanges {
-//          let startX = baseChapterStartOffset + (cachedRange.0 / durationSec * barWidth_Scaled)
-//          let endX = baseChapterEndOffset + (cachedRange.1 / durationSec * barWidth_Scaled)
-//          cachedRects.append(CGRect(x: startX, y: Bar.scaledMarginRadius, width: endX - startX, height: barHeight_Scaled))
-//        }
-
-        // Clip where the knob will be
-        let leftClipMaxX = knobMinX * scaleFactor
-        let knobWidth_Scaled = knobWidth * scaleFactor
-        let rightClipMinX = leftClipMaxX + knobWidth_Scaled - (2 * scaleFactor)
-        assert(cornerRadius_Scaled * 2 <= knobWidth_Scaled, "BarStrokeRadius too thick to clip around knob!")
         var isRightOfKnob = false
         // Apply clip (pixel whitelist)
-        let barClipLeft = CGRect(x: 0, y: 0,
-                                 width: leftClipMaxX, height: imgSizeScaled.height)
-        let barClipRight = CGRect(x: rightClipMinX, y: 0,
-                                  width: imgSizeScaled.width - rightClipMinX, height: imgSizeScaled.height)
-        cgc.clip(to: [barClipLeft, barClipRight])
+        let leftClip = CGRect(x: 0, y: 0,
+                              width: leftClipMaxX,
+                              height: imgSizeScaled.height)
+        let rightClip = CGRect(x: rightClipMinX, y: 0,
+                               width: imgSizeScaled.width - rightClipMinX,
+                               height: imgSizeScaled.height)
+        cgc.clip(to: [leftClip, rightClip])
 
         // Draw bar segments, with gaps to exclude knob & chapter markers
         func drawSeg(_ barColor: CGColor, minX: CGFloat, maxX: CGFloat) {
           cgc.beginPath()
-          let adjMinX = minX + halfChapterGapWidth
-          let adjMaxX = maxX - halfChapterGapWidth
-          let segment = CGRect(x: adjMinX, y: Bar.scaledMarginRadius, width: adjMaxX - adjMinX, height: barHeight_Scaled)
+          let adjMinX: CGFloat = minX + halfChapterGapWidth
+          let adjMaxX: CGFloat = maxX - halfChapterGapWidth
+          let segment = CGRect(x: adjMinX, y: Bar.scaledMarginRadius,
+                               width: adjMaxX - adjMinX, height: barHeight_Scaled)
           cgc.addPath(CGPath(roundedRect: segment, cornerWidth:  cornerRadius_Scaled, cornerHeight:  cornerRadius_Scaled, transform: nil))
           cgc.setFillColor(barColor)
           cgc.fillPath()
         }
 
-        // Note that nothing is drawn in leading or trailing Bar.scaledMarginRadius in image.
-        // This is done only to make image offset calculations consistent (thus easier) between knob & bar images.
+        // Note that nothing is drawn for leading Bar.scaledMarginRadius or trailing Bar.scaledMarginRadius.
+        // The empty space exists to make image offset calculations consistent (thus easier) between knob & bar images.
         var segsMaxX: [Double]
         if chapters.count > 0, durationSec > 0 {
           segsMaxX = chapters[1...].map{ $0.startTime / durationSec * barWidth_Scaled }
@@ -300,18 +292,72 @@ class RenderCache {
             segMinX = segMaxX  // for next loop
           }
         }
+      }
 
-        cgc.setBlendMode(.sourceAtop)
-//        cgc.setBlendMode(.multiply)
+      guard !cachedRanges.isEmpty else { return barImg }
 
-//        for cachedRect in cachedRects {
-//          cgc.beginPath()
-//          cgc.addPath(CGPath(rect: cachedRect, transform: nil))
-//
-//          cgc.setFillColor(RenderCache.shared.barColorPreCache.cgColor)
-//          cgc.fillPath()
-//        }
-      })!
+      // Show cached ranges (if enabled)
+      // Not sure how efficient this is...
+
+      let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
+                                              height: imgSizeScaled.heightInt) { cgc in
+
+        let leftCachedColor = exaggerateColor(leftColor)
+        let rightCachedColor = exaggerateColor(rightColor)
+
+        var isRightOfKnob = false
+        var rectsLeft: [NSRect] = []
+        var rectsRight: [NSRect] = []
+        for cachedRange in cachedRanges {
+          let startX: CGFloat = cachedRange.0 / durationSec * barWidth_Scaled
+          let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
+          if isRightOfKnob || startX > leftClipMaxX {
+            isRightOfKnob = true
+            rectsRight.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+                                     width: endX - startX, height: barHeight_Scaled))
+          } else if endX > leftClipMaxX {
+            isRightOfKnob = true
+            rectsLeft.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+                                    width: leftClipMaxX - startX, height: barHeight_Scaled))
+
+            let start2ndX = leftClipMaxX
+            rectsRight.append(CGRect(x: start2ndX, y: Bar.scaledMarginRadius,
+                                     width: endX - start2ndX, height: barHeight_Scaled))
+          } else {
+            rectsLeft.append(CGRect(x: startX, y: Bar.scaledMarginRadius,
+                                    width: endX - startX, height: barHeight_Scaled))
+          }
+        }
+
+        cgc.setFillColor(leftCachedColor)
+        cgc.fill(rectsLeft)
+        cgc.setFillColor(rightCachedColor)
+        cgc.fill(rectsRight)
+
+        cgc.setBlendMode(.destinationIn)
+        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
+      }
+
+      let compositeImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
+                                                  height: imgSizeScaled.heightInt) { cgc in
+        cgc.setBlendMode(.normal)
+        cgc.draw(barImg, in: CGRect(origin: .zero, size: imgSizeScaled))
+        cgc.setBlendMode(.overlay)
+        cgc.draw(cacheImg, in: CGRect(origin: .zero, size: imgSizeScaled))
+        cgc.setBlendMode(.normal)
+      }
+      return compositeImg
+    }
+
+    private static func exaggerateColor(_ baseColor: CGColor) -> CGColor {
+      var leftCacheComps: [CGFloat] = []
+      let numComponents = min(baseColor.numberOfComponents, 3)
+      for i in 0..<numComponents {
+        leftCacheComps.append(min(1.0, baseColor.components![i] * 1.5))
+      }
+      leftCacheComps.append(1.0)
+      let colorSpace = baseColor.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+      return CGColor(colorSpace: colorSpace, components: leftCacheComps)!
     }
 
     static func imageRect(in drawRect: CGRect) -> CGRect {
