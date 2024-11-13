@@ -308,7 +308,7 @@ class RenderCache {
         var isRightOfKnob = false
         var rectsLeft: [NSRect] = []
         var rectsRight: [NSRect] = []
-        for cachedRange in cachedRanges {
+        for cachedRange in cachedRanges.sorted(by: { $0.0 < $1.0 }) {
           let startX: CGFloat = cachedRange.0 / durationSec * barWidth_Scaled
           let endX: CGFloat = cachedRange.1 / durationSec * barWidth_Scaled
           if isRightOfKnob || startX > leftClipMaxX {

@@ -79,11 +79,6 @@ final class PlaySlider: ScrollableSlider {
     abLoopB.updateHorizontalPosition()
   }
 
-  override func setFrameSize(_ newSize: NSSize) {
-    player.log.verbose("Slider frame size changed to: \(newSize)")
-    super.setFrameSize(newSize)
-  }
-
   override func viewDidUnhide() {
     super.viewDidUnhide()
     // When IINA is not the application being used and the onscreen controller is hidden if the
