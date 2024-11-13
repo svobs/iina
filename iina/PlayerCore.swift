@@ -3166,6 +3166,7 @@ class PlayerCore: NSObject {
   }
 
   var isBufferUnderrun = false
+  var cachedRanges: [(Double, Double)] = []
 
   func updateCacheInfo() {
     var cachedRanges: [(Double, Double)] = []
@@ -3190,6 +3191,7 @@ class PlayerCore: NSObject {
       if let cacheUsed = demuxerCacheState["fw-bytes"] as? Int {
         info.cacheUsed = cacheUsed
       }
+      self.cachedRanges = cachedRanges
     }
 //    NSLog("   *** CACHED RANGES: \(cachedRanges.count): \(cachedRanges)")
     info.cacheSpeed = mpv.getInt(MPVProperty.cacheSpeed)

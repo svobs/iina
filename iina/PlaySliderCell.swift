@@ -72,14 +72,15 @@ class PlaySliderCell: NSSliderCell {
     let chapters = player.info.chapters
     let durationSec = player.info.playbackDurationSec ?? 0.0
     /// The position of the knob, rounded for cleaner drawing
-    let knobPosX: CGFloat = round(knobRect(flipped: flipped).origin.x);
+    let knobMinX: CGFloat = round(knobRect(flipped: flipped).origin.x);
+    let cachedRanges = player.cachedRanges
 
     guard let appearance = controlView?.window?.contentView?.iinaAppearance,
     let screen = controlView?.window?.screen else { return }
     let chaptersToDraw = drawChapters ? chapters : []
     appearance.applyAppearanceFor {
-      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobPosX: knobPosX, knobWidth: knobWidth,
-                                 durationSec: durationSec, chapters: chaptersToDraw)
+      RenderCache.shared.drawBar(in: rect, darkMode: appearance.isDark, screen: screen, knobMinX: knobMinX, knobWidth: knobWidth,
+                                 durationSec: durationSec, chapters: chaptersToDraw, cachedRanges: cachedRanges)
     }
 
 //    /* FIXME: 
