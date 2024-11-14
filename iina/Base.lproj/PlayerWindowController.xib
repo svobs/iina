@@ -642,7 +642,7 @@
                     </connections>
                 </slider>
                 <textField identifier="Playback-Position-LeftLabel" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="501" verticalHuggingPriority="750" horizontalCompressionResistancePriority="501" alphaValue="0.5" mirrorLayoutDirectionWhenInternationalizing="never" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NBD-MV-OuG" userLabel="Left Label" customClass="DurationDisplayTextField" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="-8" y="13" width="43" height="16"/>
+                    <rect key="frame" x="-18" y="13" width="53" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="right" title="--:--" id="6mL-0A-eq2">
                         <font key="font" usesAppearanceFont="YES"/>
                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -680,7 +680,7 @@
                 <constraint firstItem="qOq-6a-7j7" firstAttribute="top" secondItem="BE1-yC-oJL" secondAttribute="top" constant="2" identifier="timePositionHoverLabelVerticalSpaceConstraint" id="ZlC-qT-aez"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerY" secondItem="NBD-MV-OuG" secondAttribute="centerY" id="dX4-4l-aJM"/>
                 <constraint firstItem="qOq-6a-7j7" firstAttribute="centerX" secondItem="eBP-6g-bAT" secondAttribute="left" constant="200" identifier="timePositionHoverLabelHorizontalCenterConstraint" id="ekV-Sh-cEZ"/>
-                <constraint firstItem="NBD-MV-OuG" firstAttribute="leading" secondItem="BE1-yC-oJL" secondAttribute="leading" constant="-6" id="fcm-ao-T7h"/>
+                <constraint firstItem="NBD-MV-OuG" firstAttribute="leading" secondItem="BE1-yC-oJL" secondAttribute="leading" constant="-16" id="fcm-ao-T7h"/>
                 <constraint firstAttribute="trailing" secondItem="GgV-Cc-sk0" secondAttribute="trailing" constant="4" id="plE-qU-XZt"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="leading" secondItem="NBD-MV-OuG" secondAttribute="trailing" constant="4" id="uHE-D2-HgP"/>
                 <constraint firstItem="GgV-Cc-sk0" firstAttribute="leading" secondItem="eBP-6g-bAT" secondAttribute="trailing" constant="4" id="vzW-0s-yR6"/>

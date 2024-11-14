@@ -696,11 +696,26 @@ class PlayerCore: NSObject {
 
   private func _resume() {
     assert(DispatchQueue.isExecutingIn(mpv.queue))
-    // Restart playback when reached EOF
-    if mpv.getFlag(MPVProperty.eofReached) && Preference.bool(for: .resumeFromEndRestartsPlayback) {
+    if shouldRestartFromEOF() {
       _seek(0, absolute: true, option: .exact)
     }
     mpv.setFlag(MPVOption.PlaybackControl.pause, false)
+  }
+
+  /// Restart playback if at EOF & feature is enabled.
+  /// If auto-play next track in playlist is enabled, must be last track to restart.
+  private func shouldRestartFromEOF() -> Bool {
+    assert(DispatchQueue.isExecutingIn(mpv.queue))
+
+    guard mpv.getFlag(MPVProperty.eofReached) && Preference.bool(for: .resumeFromEndRestartsPlayback) else {
+      return false
+    }
+    if Preference.bool(for: .playlistAutoPlayNext) {
+      let playlistPos = mpv.getInt(MPVProperty.playlistPos)
+      let playlistCount = mpv.getInt(MPVProperty.playlistCount)
+      return playlistPos == playlistCount - 1
+    }
+    return true
   }
 
   func resume() {
