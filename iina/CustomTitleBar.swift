@@ -8,6 +8,10 @@
 
 import Foundation
 
+// Try to roughly match Apple's title bar colors:
+fileprivate let activeControlOpacity: CGFloat = 1.0
+fileprivate let inactiveControlOpacity: CGFloat = 0.40
+
 /// For legacy windowed mode. Manual reconstruction of title bar is needed when not using `titled` window style.
 class CustomTitleBarViewController: NSViewController {
   var windowController: PlayerWindowController!
@@ -91,7 +95,7 @@ class CustomTitleBarViewController: NSViewController {
     titleText.alignment = .center
 
     titleText.font = NSFont.titleBarFont(ofSize: NSFont.systemFontSize(for: .regular))
-    titleText.textColor = NSColor.windowFrameTextColor
+    titleText.textColor = .labelColor
     self.titleText = titleText
 
     // - Trailing views
@@ -186,16 +190,14 @@ class CustomTitleBarViewController: NSViewController {
     let drawAsKeyWindow = titleText.window?.isKeyWindow ?? false
 
     // FIXME: apply colors to buttons in inactive windows when toggling fadeable views!
-    let controlTintColor: NSColor? = drawAsKeyWindow ? nil : .controlColor
-    // Currently it is assuming they are active.
-    for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton] {
+    let alphaValue = drawAsKeyWindow ? activeControlOpacity : inactiveControlOpacity
+
+    for view in [leadingSidebarToggleButton, documentIconButton, trailingSidebarToggleButton, onTopButton,
+                 titleText] {
       // Skip buttons which are not visible
       guard let view, view.alphaValue > 0.0 else { continue }
-      view.contentTintColor = controlTintColor
+      view.alphaValue = alphaValue
     }
-
-    // This seems to work well at effectively "graying out" the title as needed
-    titleText.textColor = drawAsKeyWindow ? .labelColor : .secondaryLabelColor
 
     // - Update title text content
     
