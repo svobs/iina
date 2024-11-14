@@ -291,8 +291,13 @@ extension PlayerWindowController {
       return
     }
 
-    guard currentPlayback.state.isAtLeast(.loaded) else {
-      log.verbose("[applyVideoGeo \(transformName)] Aborting: playbackState=\(currentPlayback.state), isNetwork=\(currentPlayback.isNetworkResource.yn)")
+    // Need to load file before we can know its video geometry
+    // ...Unless we are restoring. But then we still want to wait until all windows have finished loading,
+    // so that we can open them all at once
+    // ...But streaming files can often fail to connect. So reopen those right away if restoring, since we already
+    // have their saved geometry anyway.
+    guard currentPlayback.state.isAtLeast(.loaded) || (isRestoring && currentPlayback.isNetworkResource) else {
+      log.verbose("[applyVideoGeo \(transformName)] Aborting: playbackState=\(currentPlayback.state) restoring=\(isRestoring) network=\(currentPlayback.isNetworkResource.yn)")
       abortedInMpvQueue = true
       return
     }
