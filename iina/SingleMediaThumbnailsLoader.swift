@@ -164,6 +164,8 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
   // MARK: - FFmpegControllerDelegate implementation
 
   func didUpdate(_ thumbnails: [FFThumbnail]?, forFile filename: String, thumbWidth width: Int32, withProgress progress: Int) {
+    // quick & dirty workaround for indexing method discrepancy: just add 1
+    let progress = progress + 1
     guard !isCancelled else {
       log.debug("Discarding thumbnails update (\(width)px width, progress \(progress)) due to cancel")
       return
@@ -172,7 +174,7 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
       log.warn("Discarding thumbnails update (\(width)px width, progress \(progress)): either sourcePath or thumbnailWidth does not match expected")
       return
     }
-    let targetCount = ffmpegController.thumbnailCount
+    let targetCount = ffmpegController.thumbnailCount + 1
     PlayerCore.thumbnailQueue.async { [self] in
       guard queueTicket == player.thumbnailQueueTicket else {
         isCancelled = true
