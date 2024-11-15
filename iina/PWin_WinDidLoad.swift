@@ -401,6 +401,7 @@ extension PlayerWindowController {
 
     // Volume slider
     fragVolumeView.addSubview(volumeSlider)
+    volumeSlider.cell = VolumeSliderCell()
     volumeSlider.identifier = .init("volumeSlider")
     volumeSlider.controlSize = .mini
     volumeSlider.translatesAutoresizingMaskIntoConstraints = false
