@@ -562,18 +562,20 @@ extension PlayerWindowController {
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
 
-      let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
-      playButton.contentTintColor = contentTintColor
-      leftArrowButton.contentTintColor = contentTintColor
-      rightArrowButton.contentTintColor = contentTintColor
-      muteButton.contentTintColor = contentTintColor
+      if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
+        let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
+        playButton.contentTintColor = contentTintColor
+        leftArrowButton.contentTintColor = contentTintColor
+        rightArrowButton.contentTintColor = contentTintColor
+        muteButton.contentTintColor = contentTintColor
 
-      // Default alpha for these is 0.5. They don't change their text color.
-      let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
-      leftLabel.alphaValue = textAlpha
-      rightLabel.alphaValue = textAlpha
-      RenderCache.shared.mainKnobColor = contentTintColor == nil ? .white : RenderCache.shared.mainKnobColorDefault
-      RenderCache.shared.cachedKnob = nil  // force rebuild of knob image
+        // Default alpha for these is 0.5. They don't change their text color.
+        let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
+        leftLabel.alphaValue = textAlpha
+        rightLabel.alphaValue = textAlpha
+        RenderCache.shared.mainKnobColor = transition.outputLayout.spec.oscBackgroundIsClear ? .white : RenderCache.shared.mainKnobColorDefault
+        RenderCache.shared.cachedKnob = nil  // force rebuild of knob image
+      }
     }
 
     // Sidebars: finish closing (if closing)
