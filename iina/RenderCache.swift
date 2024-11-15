@@ -228,22 +228,18 @@ class RenderCache {
       let halfChapterGapWidth: CGFloat = chapterGapWidth * 0.5
 
       // - Will clip out the knob
-      let leftClipMaxX = knobMinX * scaleFactor
-      let rightClipMinX = leftClipMaxX + (knobWidth - 2.0) * scaleFactor
-      assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor,
-             "Play bar corner radius is too width to clip using knob!")
+      let leftClipMaxX = (knobMinX - 1) * scaleFactor
+      let rightClipMinX = leftClipMaxX + (knobWidth * scaleFactor)
+      assert(cornerRadius_Scaled * 2 <= knobWidth * scaleFactor, "Play bar corner radius is too wide: cannot clip using knob")
+      let leftClip = CGRect(x: 0, y: 0,
+                            width: leftClipMaxX,
+                            height: imgSizeScaled.height)
+      let rightClip = CGRect(x: rightClipMinX, y: 0,
+                             width: imgSizeScaled.width - rightClipMinX,
+                             height: imgSizeScaled.height)
 
-      let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
-                                            height: imgSizeScaled.heightInt) { cgc in
-
-        var isRightOfKnob = false
+      let barImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
         // Apply clip (pixel whitelist)
-        let leftClip = CGRect(x: 0, y: 0,
-                              width: leftClipMaxX,
-                              height: imgSizeScaled.height)
-        let rightClip = CGRect(x: rightClipMinX, y: 0,
-                               width: imgSizeScaled.width - rightClipMinX,
-                               height: imgSizeScaled.height)
         cgc.clip(to: [leftClip, rightClip])
 
         // Draw bar segments, with gaps to exclude knob & chapter markers
@@ -268,15 +264,16 @@ class RenderCache {
         }
         segsMaxX.append(imgSizeScaled.width)  // add right end of bar
 
+        var isRightOfKnob = false
         var segMinX = Bar.scaledMarginRadius
         for segMaxX in segsMaxX {
           if isRightOfKnob {
             drawSeg(rightColor, minX: segMinX, maxX: segMaxX)
             segMinX = segMaxX  // for next loop
-          } else if segMaxX > leftClipMaxX {
+          } else if segMaxX > knobMinX {
             // Knob at least partially overlaps segment. Chop off segment at start of knob
             isRightOfKnob = true
-            drawSeg(leftColor, minX: segMinX, maxX: leftClipMaxX + scaleFactor)
+            drawSeg(leftColor, minX: segMinX, maxX: leftClipMaxX + scaleFactor + scaleFactor)
             segMinX = leftClipMaxX // for below
 
             // Any segment left over after the knob?
@@ -297,8 +294,9 @@ class RenderCache {
       // Show cached ranges (if enabled)
       // Not sure how efficient this is...
 
-      let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt,
-                                              height: imgSizeScaled.heightInt) { cgc in
+      let cacheImg = CGImage.buildBitmapImage(width: imgSizeScaled.widthInt, height: imgSizeScaled.heightInt) { cgc in
+        // Apply clip (pixel whitelist)
+        cgc.clip(to: [leftClip, rightClip])
 
         let leftCachedColor = exaggerateColor(leftColor)
         let rightCachedColor = exaggerateColor(rightColor)
