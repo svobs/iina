@@ -197,7 +197,7 @@ class CropBoxView: NSView {
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
 
-    NSColor.cropBoxStroke.setStroke()
+    NSColor.controlAccentColor.setStroke()
     NSColor.cropBoxFill.setFill()
 
     let path = NSBezierPath(rect: boxRect)

@@ -113,10 +113,10 @@ final class PlaySliderLoopKnob: NSImageView {
 
   // MARK:- Drawing
 
-  func updateKnobImage(to knobType: RenderCache.ImageType, initConstraints: Bool = false) {
-    let knob = RenderCache.shared.getKnob(darkMode: slider.iinaAppearance.isDark,
+  func updateKnobImage(to knobType: RenderCache.KnobType, initConstraints: Bool = false) {
+    let knob = RenderCache.shared.getKnob(knobType, darkMode: slider.iinaAppearance.isDark,
                                           knobWidth: slider.customCell.knobWidth, mainKnobHeight: slider.customCell.knobHeight)
-    let knobImage = knob.images[knobType]!
+    let knobImage = knob.image
     let imgSize = knob.imageSize(knobType)  // unscaled
     image = NSImage(cgImage: knobImage, size: imgSize)
     if initConstraints {

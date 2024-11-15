@@ -12,11 +12,13 @@ class RenderCache {
   static let scaleFactor: CGFloat = 2.0
   static let imgMarginRadius: CGFloat = 1.0
 
-  enum ImageType: Int {
-    case mainKnob = 1
+  enum KnobType: Int {
+    case mainKnob = 0
     case mainKnobSelected
     case loopKnob
     case loopKnobSelected
+    case volumeKnob
+    case volumeKnobSelected
   }
 
   // Bar
@@ -24,14 +26,12 @@ class RenderCache {
   let barCornerRadius_Scaled: CGFloat = 1.5 * scaleFactor
   var barColorLeft = NSColor.controlAccentColor
   var barColorLeftGlow = NSColor.controlAccentColor
-  var barColorRight = NSColor(named: .mainSliderBarRight)!
+  var barColorRight = NSColor.mainSliderBarRight
 
   // Knob
-  let mainKnobColorDefault = NSColor(named: .mainSliderKnob)!
-  let mainKnobActiveColorDefault = NSColor(named: .mainSliderKnobActive)!
-  var mainKnobColor = NSColor(named: .mainSliderKnob)!
-  var mainKnobActiveColor = NSColor(named: .mainSliderKnobActive)!
-  var loopKnobColor = NSColor(named: .mainSliderLoopKnob)!
+  var mainKnobColor = NSColor.mainSliderKnob
+  var mainKnobActiveColor = NSColor.mainSliderKnobActive
+  var loopKnobColor = NSColor.mainSliderLoopKnob
   /// Need a tiny amount of margin on all sides to allow for shadow and/or antialiasing
   let scaledMarginRadius = RenderCache.imgMarginRadius * RenderCache.scaleFactor
   let knobCornerRadius: CGFloat = 1
@@ -40,28 +40,27 @@ class RenderCache {
 
   // MARK: - Knob
 
-  func getKnob(darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
-    let knob: Knob
-    if let cachedKnob, cachedKnob.isDarkMode == darkMode, cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight {
-      knob = cachedKnob
-    } else {
-      knob = Knob(isDarkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
-      cachedKnob = knob
+  func getKnob(_ knobType: KnobType, darkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) -> Knob {
+    if let cachedKnob = cachedKnobs[knobType.rawValue], cachedKnob.isDarkMode == darkMode,
+       cachedKnob.knobWidth == knobWidth, cachedKnob.mainKnobHeight == mainKnobHeight {
+      return cachedKnob
     }
+    // There may some minor loss due to races, but it will settle quickly. Don't need lousy locksss
+    let knob = Knob(knobType, isDarkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+    cachedKnobs[knobType.rawValue] = knob
     return knob
   }
 
-  func getKnobImage(_ knobType: ImageType, darkMode: Bool,
+  func getKnobImage(_ knobType: KnobType, darkMode: Bool,
                     knobWidth: CGFloat, mainKnobHeight: CGFloat) -> CGImage {
-    let knob = getKnob(darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
-    return knob.images[knobType]!
+    return getKnob(knobType, darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight).image
   }
 
-  func drawKnob(_ knobType: ImageType, in knobRect: NSRect, darkMode: Bool,
+  func drawKnob(_ knobType: KnobType, in knobRect: NSRect, darkMode: Bool,
                 knobWidth: CGFloat, mainKnobHeight: CGFloat) {
-    let knob = getKnob(darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
+    let knob = getKnob(knobType, darkMode: darkMode, knobWidth: knobWidth, mainKnobHeight: mainKnobHeight)
 
-    let image = knob.images[knobType]!
+    let image = knob.image
 
     let knobHeightAdj = knobType == .loopKnob ? knob.loopKnobHeight : knob.mainKnobHeight
     let knobImageSize = Knob.imageSize(knobWidth: knobWidth, knobHeight: knobHeightAdj)
@@ -71,6 +70,14 @@ class RenderCache {
     NSGraphicsContext.current!.cgContext.draw(image, in: drawRect)
   }
 
+  // count should equal number of KnobTypes
+  var cachedKnobs = [Knob?](repeating: nil, count: 6)
+  func invalidateCachedKnobs() {
+    for i in 0..<cachedKnobs.count {
+      cachedKnobs[i] = nil
+    }
+  }
+
   struct Knob {
 
     /// Percentage of the height of the primary knob to use for the loop knobs when drawing.
@@ -78,30 +85,31 @@ class RenderCache {
     /// The height of loop knobs is reduced in order to give prominence to the slider's knob that controls the playback position.
     static let loopKnobHeightAdjustment: CGFloat = 0.75
 
-    let images: [ImageType: CGImage]
     let isDarkMode: Bool
     let knobWidth: CGFloat
     let mainKnobHeight: CGFloat
+    let image: CGImage
 
-    init(isDarkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
+    init(_ knobType: KnobType, isDarkMode: Bool, knobWidth: CGFloat, mainKnobHeight: CGFloat) {
       let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
       let shadowColor = isDarkMode ? RenderCache.shared.glowColor : RenderCache.shared.shadowColor
-      images = [.mainKnobSelected:
-                  Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
-                                 knobWidth: knobWidth, knobHeight: mainKnobHeight),
-                .mainKnob:
-                  Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: isDarkMode ? nil : shadowColor,
-                                 knobWidth: knobWidth, knobHeight: mainKnobHeight),
-                .loopKnob:
-                  Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                                 knobWidth: knobWidth, knobHeight: loopKnobHeight),
-                .loopKnobSelected:
-                  isDarkMode ?
-                Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
-                               knobWidth: knobWidth, knobHeight: loopKnobHeight) :
-                  Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
-                                 knobWidth: knobWidth, knobHeight: loopKnobHeight)
-      ]
+      switch knobType {
+      case .mainKnobSelected, .volumeKnobSelected:
+        image = Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
+                                knobWidth: knobWidth, knobHeight: mainKnobHeight)
+      case .mainKnob, .volumeKnob:
+        image = Knob.makeImage(fill: RenderCache.shared.mainKnobColor, shadow: isDarkMode ? nil : shadowColor,
+                                   knobWidth: knobWidth, knobHeight: mainKnobHeight)
+      case .loopKnob:
+        image = Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
+                                         knobWidth: knobWidth, knobHeight: loopKnobHeight)
+      case .loopKnobSelected:
+        image = isDarkMode ?
+        Knob.makeImage(fill: RenderCache.shared.mainKnobActiveColor, shadow: shadowColor,
+                       knobWidth: knobWidth, knobHeight: loopKnobHeight) :
+        Knob.makeImage(fill: RenderCache.shared.loopKnobColor, shadow: nil,
+                       knobWidth: knobWidth, knobHeight: loopKnobHeight)
+      }
       self.isDarkMode = isDarkMode
       self.knobWidth = knobWidth
       self.mainKnobHeight = mainKnobHeight
@@ -146,9 +154,9 @@ class RenderCache {
       Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
     }
 
-    func imageSize(_ knobType: ImageType) -> CGSize {
+    func imageSize(_ knobType: KnobType) -> CGSize {
       switch knobType {
-      case .mainKnob, .mainKnobSelected:
+      case .mainKnob, .mainKnobSelected, .volumeKnob, .volumeKnobSelected:
         return Knob.imageSize(knobWidth: knobWidth, knobHeight: mainKnobHeight)
       case .loopKnob, .loopKnobSelected:
         let loopKnobHeight = Knob.loopKnobHeight(mainKnobHeight: mainKnobHeight)
@@ -172,15 +180,13 @@ class RenderCache {
     }
   }  // end struct Knob
 
-  var cachedKnob: Knob? = nil
-
   // MARK: - Bar
 
   func updateBarColorsFromPrefs() {
     let userSetting: Preference.SliderBarLeftColor = Preference.enum(for: .playSliderBarLeftColor)
     switch userSetting {
     case .gray:
-      barColorLeft = NSColor(named: .mainSliderBarLeft)!
+      barColorLeft = NSColor.mainSliderBarLeft
     default:
       barColorLeft = NSColor.controlAccentColor
     }

@@ -573,8 +573,9 @@ extension PlayerWindowController {
         let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
         leftLabel.alphaValue = textAlpha
         rightLabel.alphaValue = textAlpha
-        RenderCache.shared.mainKnobColor = transition.outputLayout.spec.oscBackgroundIsClear ? .white : RenderCache.shared.mainKnobColorDefault
-        RenderCache.shared.cachedKnob = nil  // force rebuild of knob image
+        RenderCache.shared.mainKnobColor = transition.outputLayout.spec.oscBackgroundIsClear ? NSColor.controlForClearBG : NSColor.mainSliderKnob
+        // invalidate all cached knob images
+        RenderCache.shared.invalidateCachedKnobs()
       }
     }
 

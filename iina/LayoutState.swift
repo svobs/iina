@@ -30,7 +30,7 @@ struct LayoutSpec {
   /// Can only be `true` for `windowedNormal` & `fullScreenNormal` modes!
   let enableOSC: Bool
   let oscPosition: Preference.OSCPosition
-  let oscBackgroundIsClear = false // TODO: still WIP
+  let oscBackgroundIsClear = true // TODO: still WIP
 
   let controlBarGeo: ControlBarGeometry
 
@@ -479,7 +479,7 @@ class LayoutState {
     if isMusicMode {
       return nil
     }
-    return spec.oscBackgroundIsClear ? .white : nil
+    return spec.oscBackgroundIsClear ? .controlForClearBG : nil
   }
 
   var mode: PlayerWindowMode {

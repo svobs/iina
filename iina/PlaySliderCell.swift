@@ -53,10 +53,9 @@ class PlaySliderCell: NSSliderCell {
   override func knobRect(flipped: Bool) -> NSRect {
     let slider = self.controlView as! NSSlider
     let barRect = barRect(flipped: flipped)
-    let percentage = slider.doubleValue / (slider.maxValue - slider.minValue)
     // The usable width of the bar is reduced by the width of the knob.
     let effectiveBarWidth = barRect.width - knobWidth
-    let pos = barRect.origin.x + CGFloat(percentage) * effectiveBarWidth
+    let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
     let rect = super.knobRect(flipped: flipped)
 
     let height: CGFloat

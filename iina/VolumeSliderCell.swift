@@ -8,7 +8,11 @@
 
 import Cocoa
 
+/// See also: `PlaySliderCell`
 class VolumeSliderCell: NSSliderCell {
+
+  var knobWidth: CGFloat = 3
+  var knobHeight: CGFloat = 15
 
   override var acceptsFirstResponder: Bool {
     return false
@@ -19,8 +23,11 @@ class VolumeSliderCell: NSSliderCell {
     maxValue = Double(Preference.integer(for: .maxVolume))
   }
 
+  override var knobThickness: CGFloat {
+    return knobWidth
+  }
+
   override func drawBar(inside rect: NSRect, flipped: Bool) {
-    NSGraphicsContext.saveGraphicsState()
     if maxValue > 100 {
       // round this value to obtain a pixel perfect clip line
       let x = round(rect.minX + rect.width * CGFloat(100 / maxValue))
@@ -29,7 +36,31 @@ class VolumeSliderCell: NSSliderCell {
       clipPath.setClip()
     }
     super.drawBar(inside: rect, flipped: flipped)
-    NSGraphicsContext.restoreGraphicsState()
+  }
+
+  override func drawKnob(_ knobRect: NSRect) {
+    guard let appearance = controlView?.window?.contentView?.iinaAppearance else { return }
+    appearance.applyAppearanceFor {
+      RenderCache.shared.drawKnob(isHighlighted ? .volumeKnobSelected : .volumeKnob, in: knobRect,
+                                  darkMode: appearance.isDark, knobWidth: knobWidth, mainKnobHeight: knobHeight)
+    }
+  }
+
+  override func knobRect(flipped: Bool) -> NSRect {
+    let slider = self.controlView as! NSSlider
+    let barRect = barRect(flipped: flipped)
+    // The usable width of the bar is reduced by the width of the knob.
+    let effectiveBarWidth = barRect.width - knobWidth
+    let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
+    let rect = super.knobRect(flipped: flipped)
+
+    let height: CGFloat
+    if #available(macOS 11, *) {
+      height = (barRect.origin.y - rect.origin.y) * 2 + barRect.height
+    } else {
+      height = rect.height
+    }
+    return NSMakeRect(pos, rect.origin.y, knobWidth, height)
   }
 
 }

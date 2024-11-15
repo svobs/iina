@@ -282,7 +282,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
     }
 
     // colors
-    withAllTableViews { tableView, _ in tableView.backgroundColor = NSColor(named: .sidebarTableBackground)! }
+    withAllTableViews { tableView, _ in tableView.backgroundColor = NSColor.sidebarTableBackground }
 
     setupPluginTabs()
     if pendingSwitchRequest == nil {

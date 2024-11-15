@@ -161,9 +161,8 @@ extension PlayerWindowController {
   override func mouseDown(with event: NSEvent) {
     guard event.eventNumber != lastMouseDownEventID else { return }
     lastMouseDownEventID = event.eventNumber
-    if Logger.enabled && Logger.Level.preferred >= .verbose {
-      log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)")
-    }
+    if log.isVerboseEnabled { log.verbose("PlayerWindow mouseDown @ \(event.locationInWindow)") }
+    
     guard !isMouseEvent(event, inAnyOf: [playSlider, volumeSlider]) else {
       super.mouseDown(with: event)
       return
@@ -196,7 +195,8 @@ extension PlayerWindowController {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    log.verbose("PlayerWindow mouseDragged @ \(event.locationInWindow)")
+    if log.isTraceEnabled { log.trace("PlayerWindow mouseDragged @ \(event.locationInWindow)") }
+
     hideCursorTimer?.invalidate()
     if let currentDragObject {
       currentDragObject.mouseDragged(with: event)
@@ -226,7 +226,7 @@ extension PlayerWindowController {
   override func mouseUp(with event: NSEvent) {
     guard event.eventNumber != lastMouseUpEventID else { return }
     lastMouseUpEventID = event.eventNumber
-    if Logger.enabled && Logger.Level.preferred >= .verbose {
+    if log.isVerboseEnabled {
       log.verbose("PlayerWindow mouseUp @ \(event.locationInWindow), dragging: \(isDragging.yn), clickCount: \(event.clickCount): eventNum: \(event.eventNumber)")
     }
     if let currentDragObject {
