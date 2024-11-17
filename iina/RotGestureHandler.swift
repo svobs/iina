@@ -117,9 +117,7 @@ class RotationGestureHandler {
     let toRadians = degToRad(toDegrees)
 
     guard fromDegrees != toDegrees else {
-      if player.log.isTraceEnabled {
-        player.log.trace("No rotation needed; already at \(fromDegrees)°")
-      }
+      player.log.trace{"No rotation needed; already at \(fromDegrees)°"}
       return
     }
 

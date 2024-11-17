@@ -108,7 +108,7 @@ class PlaybackInfo {
     didSet {
       if log.isTraceEnabled {
         if let newValue = intendedViewportSize {
-          log.trace("Updated intendedViewportSize to \(newValue)")
+          log.trace{"Updated intendedViewportSize to \(newValue)"}
         } else {
           log.trace("Updated intendedViewportSize to nil")
         }

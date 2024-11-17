@@ -271,21 +271,19 @@ class UIState {
         openWindowsSet.remove(windName)
       }
       // Add missing windows to end of list (front):
-      log.verbose("Assuming windows are still opening; appending \(openWindowsSet) to saved windows list: \(openWindowNames)")
+      log.verbose{"Assuming windows are still opening; appending \(openWindowsSet) to saved windows list: \(openWindowNames)"}
       for windName in openWindowsSet {
         openWindowNames.append(windName)
       }
     }
-    if log.isTraceEnabled {
-      log.trace("Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)")
-    }
+    log.trace{"Saving window list: open=\(openWindowNames), minimized=\(minimizedWindowNames)"}
     let minimizedStrings = minimizedWindowNames.map({ "\(SavedWindow.minimizedPrefix)\($0)" })
     saveOpenWindowList(windowNamesBackToFront: minimizedStrings + openWindowNames)
 
     if UserDefaults.standard.integer(forKey: currentLaunchName) != LaunchLifecycleState.stillRunning.rawValue {
       // The entry will be missing if the user cleared saved state but then re-enabled save in the same launch.
       // We can easily add the missing lifecycleState again.
-      log.debug("Pref entry for \(currentLaunchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)")
+      log.debug{"Pref entry for \(currentLaunchName.quoted) was missing or incorrect. Setting it to \(LaunchLifecycleState.stillRunning.rawValue)"}
       UserDefaults.standard.setValue(LaunchLifecycleState.stillRunning.rawValue, forKey: currentLaunchName)
     }
   }
@@ -567,9 +565,7 @@ class UIState {
             // If player window is from a past launch, need to remove it from that launch's list so that it is not seen as orphan
             if let prevLaunch = launchDict[playerLaunchID],
                let playerKeyFromPrev = prevLaunch.playerKeys.remove(savedWindow.saveName.string) {
-              if log.isTraceEnabled {
-                log.trace("Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)")
-              }
+              log.trace{"Player window \(savedWindow.saveName.string) is from prior launch \(playerLaunchID) but is now part of launch \(launch.id)"}
               launch.playerKeys.insert(playerKeyFromPrev)
             }
           }
@@ -591,9 +587,7 @@ class UIState {
     }
 
     let culledLaunches = launchesNewestToOldest.filter{ $0.hasAnyData }
-    if log.isVerboseEnabled {
-      log.verbose("Found saved launches (current=\(currentLaunchID)): \(culledLaunches)")
-    }
+    log.verbose{"Found saved launches (current=\(currentLaunchID)): \(culledLaunches)"}
     return culledLaunches
   }
 

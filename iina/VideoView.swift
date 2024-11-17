@@ -220,7 +220,7 @@ class VideoView: NSView {
     let eqPriority: NSLayoutConstraint.Priority = .init(499)
 
     if let geometry {
-      if log.isTraceEnabled { log.trace("VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)") }
+      log.verbose{"VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)"}
 
       margins = geometry.viewportMargins
       videoAspect = geometry.videoAspect
@@ -342,12 +342,10 @@ class VideoView: NSView {
 
     // Do nothing if on the same display
     guard currentDisplay != displayId else {
-      if log.isTraceEnabled {
-        log.trace("No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged")
-      }
+      log.trace{"No need to update DisplayLink; currentDisplayID (\(displayId)) is unchanged"}
       return
     }
-    log.verbose("Updating DisplayLink for display: \(displayId)")
+    log.verbose{"Updating DisplayLink for display: \(displayId)"}
     currentDisplay = displayId
 
     checkResult(CVDisplayLinkSetCurrentCGDisplay(link, displayId), "CVDisplayLinkSetCurrentCGDisplay")

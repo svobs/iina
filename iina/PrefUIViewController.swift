@@ -438,10 +438,8 @@ class PrefUIViewController: PreferenceViewController, PreferenceWindowEmbeddable
                                  playIconSizeTicks: playIconSizeTicks, playIconSpacingTicks: playIconSpacingTicks)
     let previewTotalToolbarWidth = geo.totalToolbarWidth
 
-    if Logger.log.isTraceEnabled {
-      Logger.log.trace("OSC geometry: barHeight=\(oscGeo.barHeight) toolIconSizeTicks=\(oscGeo.toolIconSizeTicks) toolIconSpacingTicks=\(oscGeo.toolIconSpacingTicks) playIconSizeTicks=\(oscGeo.playIconSizeTicks) playIconSpacingTicks=\(oscGeo.playIconSpacingTicks)")
-      Logger.log.trace("OSC geometry preview: barHeight=\(previewBarHeight) toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing)")
-    }
+    Logger.log.trace{"OSC geometry: barHeight=\(oscGeo.barHeight) toolIconSizeTicks=\(oscGeo.toolIconSizeTicks) toolIconSpacingTicks=\(oscGeo.toolIconSpacingTicks) playIconSizeTicks=\(oscGeo.playIconSizeTicks) playIconSpacingTicks=\(oscGeo.playIconSpacingTicks)"}
+    Logger.log.trace{"OSC geometry preview: barHeight=\(previewBarHeight) toolIconSize=\(geo.toolIconSize), toolIconSpacing=\(geo.toolIconSpacing)"}
 
     NSAnimationContext.runAnimationGroup({context in
       context.timingFunction = CAMediaTimingFunction(name: .linear)

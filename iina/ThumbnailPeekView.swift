@@ -254,9 +254,7 @@ class ThumbnailPeekView: NSImageView {
     let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
     frame.origin = NSPoint(x: thumbOriginX, y: thumbOriginY)
 
-    if log.isTraceEnabled {
-      log.trace("Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(frame.size)")
-    }
+    log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(frame.size)"}
     alphaValue = 1.0
     isHidden = false
     return true

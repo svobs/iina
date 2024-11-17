@@ -1147,13 +1147,20 @@ extension PlayerWindowController {
         let isWrongWinSize = (winSizeE.width != winSizeA.width) || (winSizeE.height != winSizeA.height)
 
         if isWrongVidSize || isWrongWinSize {
+          /// Now that the transition is done and layout is complete, it is useful to check that our calculations are consistent with the result.
+          /// In AppKit, `NSWindow` is the root object for the view hierarchy, so its size is easiest to get right. We start our calculations with
+          /// the outermost panels & build inward (see `PWinGeometry`), so errors accumulate along the way & will result in `videoView.frame.size`
+          /// (i.e. actual video size) since it is innermost.
+          /// NOTE: this verifies (A) the AppKit NSView hierarchy with (B) `VideoGeometry` & `PWinGeometry`' layout calculations, but does not
+          /// verify them against (C) mpv's internal video size calculations. Those are checked in `PWin_Resize.swift`
+          /// (search for another instance of the UTF "X" like the one below).
           let wrong = "ⓧ"
           let lines = ["[\(transition.name)] ❌ Sanity check failed!",
-                       "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect)",
+                       "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",
-                       "  VPmargins: \(transition.outputGeometry.viewportMargins)",
+                       "  VidMargins: \(transition.outputGeometry.viewportMargins)",  // Size should == viewport - video. (Unless video is wrong)
                        ]
           log.error(lines.joined(separator: "\n"))
         }

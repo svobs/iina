@@ -84,7 +84,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let extraWidthNeeded = Constants.Distance.MusicMode.minWindowWidth - windowFrame.width
     if extraWidthNeeded > 0 {
       if log.isTraceEnabled {
-        log.trace("MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)")
+        log.trace{"MusicModeGeoInit: width too small; adding: \(extraWidthNeeded)"}
       }
       windowFrame = NSRect(origin: windowFrame.origin, size: CGSize(width: windowFrame.width + extraWidthNeeded, height: windowFrame.height))
     }
@@ -92,18 +92,14 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     if isPlaylistVisible {
       let extraHeightNeeded = Constants.Distance.MusicMode.minPlaylistHeight - playlistHeight
       if extraHeightNeeded > 0 {
-        if log.isTraceEnabled {
-          log.trace("MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)")
-        }
+        log.trace{"MusicModeGeoInit: height too small for playlist; adding: \(extraHeightNeeded)"}
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }
     } else {
       let extraHeightNeeded = -playlistHeight
       if extraHeightNeeded != 0 {
-        if log.isTraceEnabled {
-          log.trace("MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)")
-        }
+        log.trace{"MusicModeGeoInit: height is invalid; adding: \(extraHeightNeeded)"}
         windowFrame = NSRect(x: windowFrame.origin.x, y: windowFrame.origin.y - extraHeightNeeded,
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }

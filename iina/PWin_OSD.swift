@@ -214,9 +214,7 @@ extension PlayerWindowController {
     let isIconVisible = icon != nil
     // Need this only for OSD messages which use the icon
     osdIconImageView.isHidden = !isIconVisible
-    if log.isTraceEnabled {
-      log.trace("OSD icon=\(isIconVisible.yn) for msg: \(message)")
-    }
+    log.trace{"OSD icon=\(isIconVisible.yn) for msg: \(message)"}
   }
 
   /// If `position` and `duration` are different than their previously cached values, overwrites the cached values and

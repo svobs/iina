@@ -602,9 +602,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
     }
 
-    if Logger.isTraceEnabled {
+    Logger.log.trace {
       let remainingWidthForVideo = viewportSize.width - (leadingMargin + trailingMargin)
-      Logger.log("[geo] Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
+      return "[geo] Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)"
     }
     let unusedHeight = viewportSize.height - videoSize.height
     var topMargin = (unusedHeight * 0.5).rounded()
@@ -754,9 +754,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let minViewportSize = minViewportSize(mode: mode)
 
     var newViewportSize = desiredSize ?? viewportSize
-    if log.isTraceEnabled {
-      log.verbose("[geo] ScaleViewport start, newViewportSize=\(newViewportSize), lockViewport=\(lockViewportToVideoSize.yn)")
-    }
+    log.trace{"[geo] ScaleViewport start, newViewportSize=\(newViewportSize), lockViewport=\(lockViewportToVideoSize.yn)"}
 
     // -- Viewport size calculation
 
@@ -808,11 +806,9 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       if newFitOption == .centerInside {
         newWindowFrame = newWindowFrame.size.centeredRect(in: containerFrame)
       }
-      if log.isTraceEnabled {
-        log.trace("[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(newWindowFrame)")
-      }
-    } else if log.isTraceEnabled {
-      log.trace("[geo] ScaleViewport: → windowFrame=\(newWindowFrame)")
+      log.trace{"[geo] ScaleViewport: constrainedIn=\(containerFrame) → windowFrame=\(newWindowFrame)"}
+    } else {
+      log.trace{"[geo] ScaleViewport: → windowFrame=\(newWindowFrame)"}
     }
 
     return self.clone(windowFrame: newWindowFrame, screenID: newScreenID, fitOption: newFitOption, mode: mode)
@@ -826,15 +822,13 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
     let mode = mode ?? self.mode
     let lockViewportToVideoSize = lockViewportToVideoSize ?? Preference.bool(for: .lockViewportToVideoSize) || mode.alwaysLockViewportToVideoSize
-    if log.isTraceEnabled {
-      log.trace("[geo] ScaleVideo start, desiredVideoSize: \(desiredVideoSize), videoAspect: \(videoAspect), lockViewportToVideoSize: \(lockViewportToVideoSize)")
-    }
+    log.trace{"[geo] ScaleVideo start, desiredVideoSize: \(desiredVideoSize), videoAspect: \(videoAspect), lockViewportToVideoSize: \(lockViewportToVideoSize)"}
 
     // do not center in screen again unless explicitly requested
     var newFitOption = fitOption ?? (self.fitOption == .centerInside ? .stayInside : self.fitOption)
     if newFitOption == .legacyFullScreen || newFitOption == .nativeFullScreen {
       // Programmer screwed up
-      log.error("[geo] ScaleVideo: invalid fit option: \(newFitOption). Defaulting to 'none'")
+      log.error{"[geo] ScaleVideo: invalid fit option: \(newFitOption). Defaulting to 'none'"}
       newFitOption = .noConstraints
     }
 

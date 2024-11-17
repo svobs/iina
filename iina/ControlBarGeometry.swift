@@ -240,21 +240,24 @@ struct ControlBarGeometry {
     let baseHeight = barHeight * iconSizeBaseMultiplier
     let adjustableHeight = barHeight - baseHeight
 
-    return baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+    let height = baseHeight + (adjustableHeight * (CGFloat(ticks) / maxTicks))
+    return height.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
   private static func playIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    return barHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
+    let spacing = barHeight * (((CGFloat(ticks) / maxTicks) / playIconSpacingScaleMultiplier) + playIconSpacingMinScaleMultiplier)
+    return spacing.rounded()
   }
 
   /// Prefs UI ticks → CGFloat
   private static func toolIconSpacing(fromTicks ticks: Int?, barHeight: CGFloat) -> CGFloat? {
     guard let ticks else { return nil }
 
-    return barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
+    let spacing = barHeight * CGFloat(ticks) / maxTicks / toolSpacingScaleMultiplier
+    return spacing.rounded()
   }
 
   static func leftArrowImage(given arrowButtonAction: Preference.ArrowButtonAction) -> NSImage {

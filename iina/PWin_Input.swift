@@ -195,7 +195,7 @@ extension PlayerWindowController {
   }
 
   override func mouseDragged(with event: NSEvent) {
-    if log.isTraceEnabled { log.trace("PlayerWindow mouseDragged @ \(event.locationInWindow)") }
+    log.trace{"PlayerWindow mouseDragged @ \(event.locationInWindow)"}
 
     hideCursorTimer?.invalidate()
     if let currentDragObject {

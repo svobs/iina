@@ -191,9 +191,7 @@ class AutoFileMatcher {
 
     for video in videoFiles {
       var matchedSubs = Set<FileInfo>()
-      if log.isTraceEnabled {
-        log.trace("Matching for \(video.filename.pii.quoted)")
-      }
+      log.trace{"Matching for \(video.filename.pii.quoted)"}
 
       // match video and sub if both are the closest one to each other
       if subAutoLoadOption.shouldLoadSubsMatchedByIINA() {
@@ -210,7 +208,7 @@ class AutoFileMatcher {
               nameMatched = vn == sn
             }
             if nameMatched {
-              log.verbose("Matched by IINA: \(video.filename.pii.quoted) (\(vn)) & \(sub.filename.pii.quoted) (\(sn)) ...")
+              log.verbose{"Matched by IINA: \(video.filename.pii.quoted) (\(vn)) & \(sub.filename.pii.quoted) (\(sn)) ..."}
               video.relatedSubs.append(sub)
               if sub.prefix == matchedSubPrefix {
                 try checkTicket()
@@ -231,7 +229,7 @@ class AutoFileMatcher {
           $0.filename.contains(video.filename) && !$0.isMatched
         }.forEach { sub in
           try checkTicket()
-          log.verbose("Matched by name: \(sub.filename.pii.quoted) & \(video.filename.pii.quoted)")
+          log.verbose{"Matched by name: \(sub.filename.pii.quoted) & \(video.filename.pii.quoted)"}
           player.info.$matchedSubs.withLock { $0[video.path, default: []].append(sub.url) }
           sub.isMatched = true
           matchedSubs.insert(sub)
@@ -241,10 +239,10 @@ class AutoFileMatcher {
 
       // if no match
       if matchedSubs.isEmpty {
-        log.debug("No matched subs for \(video.filename.pii.quoted)")
+        log.debug{"No matched subs for \(video.filename.pii.quoted)"}
         unmatchedVideos.append(video)
       } else {
-        log.debug("Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)")
+        log.debug{"Matched \(matchedSubs.count) subtitles for \(video.filename.pii.quoted)"}
       }
 
       // move the sub to front if it contains priority strings
@@ -263,12 +261,13 @@ class AutoFileMatcher {
           }
         }
         try player.info.$matchedSubs.withLock { subs in
+          let urls = subs[video.path]!
           try matchedSubs
             .filter { $0.priorityStringOccurrences > minOccurrences }  // eliminate false positives in filenames
-            .compactMap { subs[video.path]!.firstIndex(of: $0.url) }   // get index
+            .compactMap { urls.firstIndex(of: $0.url) }   // get index
             .forEach { // move the sub with index to first
               try checkTicket()
-              log.verbose("Move \(subs[video.path]![$0].absoluteString.pii.quoted) to front")
+              log.verbose("Move \(urls[$0].absoluteString.pii.quoted) to front")
               if let s = subs[video.path]?.remove(at: $0) {
                 subs[video.path]!.insert(s, at: 0)
               }
@@ -289,7 +288,7 @@ class AutoFileMatcher {
       return
     }
 
-    log.verbose("Force matching unmatched videos, video=\(unmatchedVideos.count), sub=\(unmatchedSubs.count)...")
+    log.verbose{"Force matching unmatched videos, video=\(unmatchedVideos.count), sub=\(unmatchedSubs.count)..."}
     if unmatchedSubs.count > 0 && unmatchedVideos.count > 0 {
       // calculate edit distance
       log.debug("Calculating edit distance...")

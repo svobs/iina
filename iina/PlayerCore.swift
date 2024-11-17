@@ -3175,9 +3175,7 @@ class PlayerCore: NSObject {
     let now = Date().timeIntervalSince1970
     let secSinceLastSave = now - lastSaveTime
     if secSinceLastSave >= Constants.TimeInterval.playTimeSaveStateFrequency {
-      if log.isTraceEnabled {
-        log.trace("Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state")
-      }
+      log.trace{"Another \(Constants.TimeInterval.playTimeSaveStateFrequency)s has passed: saving player state"}
       saveState()
       lastSaveTime = now
     }
@@ -3536,9 +3534,7 @@ class PlayerCore: NSObject {
                                index:     index)
       chapters.append(chapter)
     }
-    if log.isTraceEnabled {
-      log.trace("Chapters: \(chapters)")
-    }
+    log.trace{"Chapters: \(chapters)"}
     // Instead of modifying existing list, overwrite reference to prev list.
     // This will avoid concurrent modification crashes
     info.chapters = chapters

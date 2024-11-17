@@ -341,15 +341,11 @@ struct PlayerSaveState: CustomStringConvertible {
       }
 
       guard player.windowController.loaded else {
-        if player.log.isTraceEnabled {
-          player.log.trace("Skipping player state save: player window is not loaded")
-        }
+        player.log.trace{"Skipping player state save: player window is not loaded"}
         return
       }
       guard !player.info.isRestoring else {
-        if player.log.isTraceEnabled {
-          player.log.trace("Skipping player state save: still restoring previous state")
-        }
+        player.log.trace{"Skipping player state save: still restoring previous state"}
         return
       }
       guard !player.isShuttingDown else {
@@ -376,9 +372,7 @@ struct PlayerSaveState: CustomStringConvertible {
             guard !player.isShuttingDown else { return }
 
             let properties = generatePropDict(from: player, geo)
-            if player.log.isTraceEnabled {
-              player.log.trace("Saving player state (tkt \(ticket)): \(properties)")
-            }
+            player.log.trace{"Saving player state (tkt \(ticket)): \(properties)"}
             UIState.shared.saveState(forPlayerID: player.label, properties: properties)
           }
         }
@@ -402,9 +396,7 @@ struct PlayerSaveState: CustomStringConvertible {
     /// Using `sync` here should delay shutdown & makes sure any existing async saves aren't killed mid-write!
     saveQueue.sync {
       let properties = generatePropDict(from: player, geo)
-      if player.log.isTraceEnabled {
-        player.log.trace("Saving player state: \(properties)")
-      }
+      player.log.trace{"Saving player state: \(properties)"}
       UIState.shared.saveState(forPlayerID: player.label, properties: properties)
       player.log.debug("Done saving player state synchronously")
     }

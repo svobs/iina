@@ -1063,9 +1063,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
   }
 
   private func findProfileFromSliders() -> (String, EQProfile)? {
-    if player.log.isTraceEnabled {
-      player.log.trace("EQ Sliders: \(eqSliders.map{String($0.doubleValue.truncatedTo1())}.joined(separator: " "))")
-    }
+    player.log.trace{"EQ Sliders: \(eqSliders.map{String($0.doubleValue.truncatedTo1())}.joined(separator: " "))"}
     for presetProfile in presetEQs {
       if matchesSliders(presetProfile.name, presetProfile) {
         return (presetProfile.name, presetProfile)
@@ -1083,9 +1081,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   private func matchesSliders(_ profileName: String, _ profile: EQProfile) -> Bool {
     for (slider, gain) in zip(eqSliders, profile.gains) {
-      if player.log.isTraceEnabled {
-        player.log.trace("Matching EQ profile \(profileName.quoted): \(gain.roundedTo2()) v \(slider.doubleValue.roundedTo2())")
-      }
+      player.log.trace{"Matching EQ profile \(profileName.quoted): \(gain.roundedTo2()) v \(slider.doubleValue.roundedTo2())"}
       if slider.doubleValue.roundedTo2() != gain.roundedTo2() {
         return false
       }

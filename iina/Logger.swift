@@ -108,9 +108,15 @@ class Logger: NSObject {
       return Logger.isVerboseEnabled
     }
 
+    var isDebugEnabled: Bool {
+      return Logger.isDebugEnabled
+    }
+
     required init(rawValue: String) {
       self.rawValue = rawValue
     }
+
+    // MARK: - String arg variants
 
     func trace(_ rawMessage: String) {
       guard isTraceEnabled else { return }
@@ -140,6 +146,47 @@ class Logger: NSObject {
 
     func log(_ rawMessage: String, level: Level = .debug) {
       Logger.log(rawMessage, level: level, subsystem: self)
+    }
+
+    // MARK: - Closure arg variants
+
+    /// Provide a `LogMsgFunc` as arg instead of a `String` to get a small performance improvement when logging is
+    /// disabled.
+    ///
+    /// By using a closure, the effort to format the string will be delayed until after checking for enablement,
+    /// and thus will be skipped if not needed. If only using a static string with no dynamic formatting, using
+    /// these is probably unnecessary.
+    ///
+    /// To use, just use brackets instead of parentheses when calling each logging variant. Example:
+    /// ```
+    /// log.verbose{"Something happened!"}
+    /// ```
+    typealias LogMsgFunc = () -> String
+
+    func trace(_ msgFunc: LogMsgFunc) {
+      guard Logger.isTraceEnabled else { return }
+      /// trace is not a "real" level yet. Just use `verbose` for now
+      Logger.log(msgFunc(), level: .verbose, subsystem: self)
+    }
+
+    func verbose(_ msgFunc: LogMsgFunc) {
+      guard Logger.isVerboseEnabled else { return }
+      Logger.log(msgFunc(), level: .verbose, subsystem: self)
+    }
+
+    func debug(_ msgFunc: LogMsgFunc) {
+      guard Logger.isDebugEnabled else { return }
+      Logger.log(msgFunc(), level: .debug, subsystem: self)
+    }
+
+    func warn(_ msgFunc: LogMsgFunc) {
+      guard Logger.enabled else { return }
+      Logger.log(msgFunc(), level: .warning, subsystem: self)
+    }
+
+    func error(_ msgFunc: LogMsgFunc) {
+      guard Logger.enabled else { return }
+      Logger.log(msgFunc(), level: .error, subsystem: self)
     }
   }
 
