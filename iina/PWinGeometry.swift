@@ -514,7 +514,6 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     return videoSize
   }
 
-  // FIXME: this is not always correct! Also, clean up so it's less confusing
   static func computeBestViewportMargins(viewportSize: NSSize, videoSize: NSSize, insideBars: MarginQuad, mode: PlayerWindowMode) -> MarginQuad {
     guard viewportSize.width > 0 && viewportSize.height > 0 else {
       return MarginQuad.zero
@@ -595,8 +594,12 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       }
 
       // Round to integers for a smoother animation
-      leadingMargin = leadingMargin.rounded(.down)
-      trailingMargin = trailingMargin.rounded(.up)
+      leadingMargin = leadingMargin.rounded()
+      trailingMargin = trailingMargin.rounded()
+      let excessWidth = leadingMargin + trailingMargin - unusedWidth
+      if excessWidth != 0 {
+        leadingMargin -= excessWidth
+      }
     }
 
     if Logger.isTraceEnabled {
@@ -604,8 +607,15 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
       Logger.log("[geo] Viewport: Sidebars=[lead:\(insideBars.leading), trail:\(insideBars.trailing)] leadMargin: \(leadingMargin), trailMargin: \(trailingMargin), remainingWidthForVideo: \(remainingWidthForVideo), videoWidth: \(videoSize.width)")
     }
     let unusedHeight = viewportSize.height - videoSize.height
-    let computedMargins = MarginQuad(top: (unusedHeight * 0.5).rounded(.down), trailing: trailingMargin,
-                                  bottom: (unusedHeight * 0.5).rounded(.up), leading: leadingMargin)
+    var topMargin = (unusedHeight * 0.5).rounded()
+    let btmMargin = topMargin
+    let excessHeight = topMargin + btmMargin - unusedHeight
+    if excessHeight != 0 {
+      topMargin -= excessHeight
+    }
+    let computedMargins = MarginQuad(top: topMargin, trailing: trailingMargin,
+                                  bottom: btmMargin, leading: leadingMargin)
+    assert(videoSize.height + computedMargins.top + computedMargins.bottom == viewportSize.height, "Bad math! VideoSize=\(videoSize) + Margins=\(computedMargins) != ViewportSize=\(viewportSize)")
     return computedMargins
   }
 

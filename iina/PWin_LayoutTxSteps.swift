@@ -1152,7 +1152,8 @@ extension PlayerWindowController {
                        "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect)",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
-                       "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")"
+                       "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",
+                       "  VPmargins: \(transition.outputGeometry.viewportMargins)",
                        ]
           log.error(lines.joined(separator: "\n"))
         }
