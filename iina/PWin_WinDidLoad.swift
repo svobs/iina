@@ -47,7 +47,7 @@ extension PlayerWindowController {
     rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
     // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    timePositionHoverLabel.nextResponder = playSlider
+    seekTimeHoverLabel.nextResponder = playSlider
 
     // gesture recognizers
     rotationHandler.windowController = self

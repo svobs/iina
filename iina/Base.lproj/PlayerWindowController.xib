@@ -65,9 +65,9 @@
                 <outlet property="playSlider" destination="eBP-6g-bAT" id="lGv-18-YeQ"/>
                 <outlet property="playSliderHeightConstraint" destination="VU5-c1-ivd" id="NEQ-Hc-xay"/>
                 <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
-                <outlet property="timePositionHoverLabel" destination="qOq-6a-7j7" id="ngM-1f-G5D"/>
-                <outlet property="timePositionHoverLabelHorizontalCenterConstraint" destination="ekV-Sh-cEZ" id="zYq-k1-B2g"/>
-                <outlet property="timePositionHoverLabelVerticalSpaceConstraint" destination="ZlC-qT-aez" id="3PF-D3-K9o"/>
+                <outlet property="seekTimeHoverLabel" destination="qOq-6a-7j7" id="ngM-1f-G5D"/>
+                <outlet property="seekTimeHoverLabelHorizontalCenterConstraint" destination="ekV-Sh-cEZ" id="zYq-k1-B2g"/>
+                <outlet property="seekTimeHoverLabelVerticalSpaceConstraint" destination="ZlC-qT-aez" id="3PF-D3-K9o"/>
                 <outlet property="titleBarHeightConstraint" destination="fcC-MX-fmN" id="3FJ-wZ-oVK"/>
                 <outlet property="titleBarView" destination="WaC-08-utU" id="Ahh-93-k7q"/>
                 <outlet property="topBarBottomBorder" destination="iA3-pt-6Jm" id="RD4-8v-bHB"/>
@@ -677,9 +677,9 @@
                 <constraint firstItem="GgV-Cc-sk0" firstAttribute="centerY" secondItem="NBD-MV-OuG" secondAttribute="centerY" id="N3P-Qk-arP"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerX" secondItem="BE1-yC-oJL" secondAttribute="centerX" id="VDD-aU-mmP"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerY" secondItem="BE1-yC-oJL" secondAttribute="centerY" id="XFh-GC-Pub"/>
-                <constraint firstItem="qOq-6a-7j7" firstAttribute="top" secondItem="BE1-yC-oJL" secondAttribute="top" constant="2" identifier="timePositionHoverLabelVerticalSpaceConstraint" id="ZlC-qT-aez"/>
+                <constraint firstItem="qOq-6a-7j7" firstAttribute="top" secondItem="BE1-yC-oJL" secondAttribute="top" constant="2" identifier="seekTimeHoverLabelVerticalSpaceConstraint" id="ZlC-qT-aez"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerY" secondItem="NBD-MV-OuG" secondAttribute="centerY" id="dX4-4l-aJM"/>
-                <constraint firstItem="qOq-6a-7j7" firstAttribute="centerX" secondItem="eBP-6g-bAT" secondAttribute="left" constant="200" identifier="timePositionHoverLabelHorizontalCenterConstraint" id="ekV-Sh-cEZ"/>
+                <constraint firstItem="qOq-6a-7j7" firstAttribute="centerX" secondItem="eBP-6g-bAT" secondAttribute="left" constant="200" identifier="seekTimeHoverLabelHorizontalCenterConstraint" id="ekV-Sh-cEZ"/>
                 <constraint firstItem="NBD-MV-OuG" firstAttribute="leading" secondItem="BE1-yC-oJL" secondAttribute="leading" constant="-16" id="fcm-ao-T7h"/>
                 <constraint firstAttribute="trailing" secondItem="GgV-Cc-sk0" secondAttribute="trailing" constant="4" id="plE-qU-XZt"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="leading" secondItem="NBD-MV-OuG" secondAttribute="trailing" constant="4" id="uHE-D2-HgP"/>

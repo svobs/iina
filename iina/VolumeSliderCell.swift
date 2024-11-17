@@ -50,7 +50,7 @@ class VolumeSliderCell: NSSliderCell {
     let slider = self.controlView as! NSSlider
     let barRect = barRect(flipped: flipped)
     // The usable width of the bar is reduced by the width of the knob.
-    let effectiveBarWidth = barRect.width - knobWidth
+    let effectiveBarWidth = barRect.width - knobThickness
     let pos = barRect.origin.x + slider.progressRatio * effectiveBarWidth
     let rect = super.knobRect(flipped: flipped)
 

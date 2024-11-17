@@ -209,7 +209,7 @@ extension PlayerWindowController {
       if mustHideSeekTimeAndThumbnail {
         seekTimeAndThumbnailAnimationState = .willHide
         thumbnailPeekView.animator().alphaValue = 0
-        timePositionHoverLabel.isHidden = true
+        seekTimeHoverLabel.isHidden = true
       }
     })
 
@@ -237,7 +237,7 @@ extension PlayerWindowController {
       if mustHideSeekTimeAndThumbnail, seekTimeAndThumbnailAnimationState == .willHide {
         seekTimeAndThumbnailAnimationState = .hidden
         thumbnailPeekView.isHidden = true
-        timePositionHoverLabel.isHidden = true
+        seekTimeHoverLabel.isHidden = true
       }
     })
 
@@ -356,7 +356,7 @@ extension PlayerWindowController {
         // Don't hide overlays when in PIP or when they are not actually shown
         seekTimeAndThumbnailAnimationState = .willHide
         thumbnailPeekView.animator().alphaValue = 0
-        timePositionHoverLabel.isHidden = true
+        seekTimeHoverLabel.isHidden = true
         if isShowingFadeableViewsForSeek {
           isShowingFadeableViewsForSeek = false
           resetFadeTimer()
@@ -368,13 +368,13 @@ extension PlayerWindowController {
         guard seekTimeAndThumbnailAnimationState == .willHide else { return }
         seekTimeAndThumbnailAnimationState = .hidden
         thumbnailPeekView.isHidden = true
-        timePositionHoverLabel.isHidden = true
+        seekTimeHoverLabel.isHidden = true
       })
 
       animationPipeline.submit(tasks)
     } else {
       thumbnailPeekView.isHidden = true
-      timePositionHoverLabel.isHidden = true
+      seekTimeHoverLabel.isHidden = true
       seekTimeAndThumbnailAnimationState = .hidden
     }
   }
@@ -402,16 +402,16 @@ extension PlayerWindowController {
 
     let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
-    timePositionHoverLabelHorizontalCenterConstraint.constant = knobCenterOffsetInPlaySlider
+    seekTimeHoverLabelHorizontalCenterConstraint.constant = knobCenterOffsetInPlaySlider
 
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
                                                                       knobCenterOffsetInPlaySlider)
     let previewTimeSec = mediaDuration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
-    if timePositionHoverLabel.stringValue != stringRepresentation {
-      timePositionHoverLabel.stringValue = stringRepresentation
+    if seekTimeHoverLabel.stringValue != stringRepresentation {
+      seekTimeHoverLabel.stringValue = stringRepresentation
     }
-    timePositionHoverLabel.isHidden = false
+    seekTimeHoverLabel.isHidden = false
 
     // - 2. Thumbnail Preview
 

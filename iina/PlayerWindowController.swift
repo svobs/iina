@@ -403,8 +403,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   @IBOutlet weak var topOSCHeightConstraint: NSLayoutConstraint!
 
-  @IBOutlet weak var timePositionHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
-  @IBOutlet weak var timePositionHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
+  @IBOutlet weak var seekTimeHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
+  @IBOutlet weak var seekTimeHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
   @IBOutlet weak var playSliderHeightConstraint: NSLayoutConstraint!
   var volumeIconHeightConstraint: NSLayoutConstraint!
   var volumeIconWidthConstraint: NSLayoutConstraint!
@@ -449,7 +449,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
 
-  @IBOutlet weak var timePositionHoverLabel: NSTextField!
+  @IBOutlet weak var seekTimeHoverLabel: NSTextField!
   var thumbnailPeekView = ThumbnailPeekView()
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!

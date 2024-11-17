@@ -458,8 +458,8 @@ extension PlayerWindowController {
       playSliderHeightConstraint.isActive = false
     }
 
-    if let timePositionHoverLabelVerticalSpaceConstraint {
-      timePositionHoverLabelVerticalSpaceConstraint.isActive = false
+    if let seekTimeHoverLabelVerticalSpaceConstraint {
+      seekTimeHoverLabelVerticalSpaceConstraint.isActive = false
     }
 
     if transition.isTogglingMusicMode {
@@ -483,8 +483,8 @@ extension PlayerWindowController {
         addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
         // Subtract height of slider bar (4), then divide by 2 to get total bottom space, then subtract time label height to get total margin
-        let timeLabelOffset = max(0, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4)
-        timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -timeLabelOffset)
+        let timeLabelOffset = max(0, (((oscGeo.barHeight - 4) / 2) - seekTimeHoverLabel.frame.height) / 4)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.bottomAnchor, constant: -timeLabelOffset)
 
       case .bottom:
         currentControlBar = bottomBarView
@@ -497,11 +497,11 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
 
-        let timeLabelOffset = max(-1, (((oscGeo.barHeight - 4) / 2) - timePositionHoverLabel.frame.height) / 4 - 2)
-        timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.topAnchor.constraint(equalTo: timePositionHoverLabel.superview!.topAnchor, constant: timeLabelOffset)
+        let timeLabelOffset = max(-1, (((oscGeo.barHeight - 4) / 2) - seekTimeHoverLabel.frame.height) / 4 - 2)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: timeLabelOffset)
 
       case .floating:
-        timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.bottomAnchor.constraint(equalTo: timePositionHoverLabel.superview!.bottomAnchor, constant: -2)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.bottomAnchor, constant: -2)
 
         let toolbarView = rebuildToolbar(transition)
         oscFloatingUpperView.addView(toolbarView, in: .trailing)
@@ -534,8 +534,9 @@ extension PlayerWindowController {
         }
       }
       playSlider.customCell.knobHeight = knobHeight
-      timePositionHoverLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
-      timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
+      (volumeSlider.cell as? VolumeSliderCell)?.knobHeight = knobHeight
+      seekTimeHoverLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
+      seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
 
     } else if outputLayout.isMusicMode {
 
@@ -621,9 +622,9 @@ extension PlayerWindowController {
         miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
       }
 
-      timePositionHoverLabelVerticalSpaceConstraint = timePositionHoverLabel.topAnchor.constraint(equalTo: timePositionHoverLabel.superview!.topAnchor, constant: -1)
-      timePositionHoverLabelVerticalSpaceConstraint?.isActive = true
-      timePositionHoverLabel.font = NSFont.systemFont(ofSize: 9)
+      seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: -1)
+      seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
+      seekTimeHoverLabel.font = NSFont.systemFont(ofSize: 9)
 
       // Decrease font size of time labels
       leftLabel.font = NSFont.labelFont(ofSize: 9)
