@@ -24,17 +24,18 @@ extension PlayerWindowController {
     guard !isAnimatingLayoutTransition else { return requestedSize }
 
     let currentLayout = currentLayout
-    log.verbose("Win-WILL-Resize mode=\(currentLayout.mode) RequestedSize=\(requestedSize) isAnimatingTx=\(isAnimatingLayoutTransition.yn) denyNext=\(denyNextWindowResize.yn)")
+    let inLiveResize = window.inLiveResize
+    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
+    log.verbose{"WinWillResize Mode=\(currentLayout.mode) Curr=\(window.frame.size) Req=\(requestedSize) inLiveResize=\(inLiveResize.yn) isAnimatingTx=\(isAnimatingLayoutTransition.yn) lockViewPort=\(lockViewportToVideoSize.yn) denyNext=\(denyNextWindowResize.yn)"}
     videoView.videoLayer.enterAsynchronousMode()
 
     if !currentLayout.isFullScreen && denyNextWindowResize {
-      log.verbose("WinWillResize: denying this resize; will stay at \(window.frame.size)")
+      log.verbose{"WinWillResize: denying this resize. Will stay at \(window.frame.size)"}
       denyNextWindowResize = false
       return window.frame.size
     }
 
-    let lockViewportToVideoSize = Preference.bool(for: .lockViewportToVideoSize) || currentLayout.mode.alwaysLockViewportToVideoSize
-    if lockViewportToVideoSize && window.inLiveResize {
+    if lockViewportToVideoSize && inLiveResize {
       /// Notes on the trickiness of live window resize:
       /// 1. We need to decide whether to (A) keep the width fixed, and resize the height, or (B) keep the height fixed, and resize the width.
       /// "A" works well when the user grabs the top or bottom sides of the window, but will not allow resizing if the user grabs the left
@@ -52,13 +53,12 @@ extension PlayerWindowController {
           isLiveResizingWidth = true
         }
       }
-      log.verbose("WinWillResize: PREV:\(window.frame.size), REQ:\(requestedSize) choseWidth:\(isLiveResizingWidth?.yesno ?? "nil")")
+      log.verbose("WinWillResize: choseWidth:\(isLiveResizingWidth?.yn ?? "nil")")
     }
 
     let isLiveResizingWidth = isLiveResizingWidth ?? true
     switch currentLayout.mode {
     case .windowedNormal, .windowedInteractive:
-      let inLiveResize = window.inLiveResize
 
       let currentLayout = currentLayout
       guard currentLayout.isWindowed else {
@@ -66,7 +66,7 @@ extension PlayerWindowController {
         return windowedModeGeo.windowFrame.size
       }
       guard !player.info.isRestoring else {
-        log.error("WinWillResize was fired before restore was complete! Returning existing geometry: \(windowedModeGeo.windowFrame.size)")
+        log.error{"WinWillResize was fired while restoring! Returning existing geometry: \(windowedModeGeo.windowFrame.size)"}
         return windowedModeGeo.windowFrame.size
       }
       let currentGeo = windowedGeoForCurrentFrame()
@@ -76,7 +76,7 @@ extension PlayerWindowController {
       let newGeometry = currentGeo.resizeWindow(to: requestedSize, lockViewportToVideoSize: lockViewportToVideoSize,
                                                 inLiveResize: inLiveResize, isLiveResizingWidth: isLiveResizingWidth)
 
-      log.verbose("WinWillResize isLive:\(inLiveResize.yn) req:\(requestedSize) lockViewport:\(lockViewportToVideoSize.yn) currWinSize:\(currentGeo.windowFrame.size) returning:\(newGeometry.windowFrame.size)")
+      log.verbose("WinWillResize will return \(newGeometry.windowFrame.size)")
 
       if currentLayout.mode == .windowedNormal && inLiveResize {
         // User has resized the video. Assume this is the new preferred resolution until told otherwise. Do not constrain.
@@ -911,8 +911,8 @@ extension PlayerWindowController {
       return geometry
     }
 
-    /// Make sure to call `apply` AFTER `updateVideoViewVisibilityConstraints`:
-    miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: geometry.isVideoVisible)
+    /// Make sure to call `apply` AFTER `updateVideoViewHeightConstraint`:
+    miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: geometry.isVideoVisible)
     updateBottomBarHeight(to: geometry.bottomBarHeight, bottomBarPlacement: .outsideViewport)
     let convertedGeo = geometry.toPWinGeometry()
 

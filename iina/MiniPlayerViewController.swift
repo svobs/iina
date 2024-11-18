@@ -397,7 +397,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     windowController.closeButtonView.isHidden = true
 
     // Make sure to restore video
-    updateVideoViewVisibilityConstraints(isVideoVisible: true)
+    updateVideoViewHeightConstraint(isVideoVisible: true)
     windowController.viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
 
     windowController.leftLabel.font = NSFont.messageFont(ofSize: 11)
@@ -408,7 +408,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     hideControllerButtons()
   }
 
-  func updateVideoViewVisibilityConstraints(isVideoVisible: Bool) {
+  func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
     log.verbose("Applying videoView visibility constraints, using visible=\(isVideoVisible.yn)")
 
     if isVideoVisible {
@@ -423,6 +423,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         heightConstraint.isActive = true
       } else {
         let heightConstraint = windowController.viewportView.heightAnchor.constraint(equalToConstant: 0)
+        heightConstraint.identifier = .init("viewportViewHeightContraint")
         heightConstraint.isActive = true
         windowController.viewportViewHeightContraint = heightConstraint
       }

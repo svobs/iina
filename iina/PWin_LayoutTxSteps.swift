@@ -791,7 +791,8 @@ extension PlayerWindowController {
     }
 
     if transition.isEnteringMusicMode {
-      miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: musicModeGeo.isVideoVisible)
+      // this may not have been set
+      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: musicModeGeo.isVideoVisible)
       miniPlayer.resetScrollingLabels()
     }
 

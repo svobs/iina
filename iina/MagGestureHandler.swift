@@ -97,10 +97,8 @@ class MagnificationGestureHandler: NSMagnificationGestureRecognizer {
     case .began:
       windowController.isMagnifying = true
 
-      guard let window = windowController.window else { return }
-      let screenID = NSScreen.getOwnerOrDefaultScreenID(forViewRect: window.frame)
       if windowController.currentLayout.isMusicMode {
-        windowController.musicModeGeo = windowController.musicModeGeo.clone(windowFrame: window.frame, screenID: screenID)
+        windowController.musicModeGeo = windowController.musicModeGeoForCurrentFrame()
       } else {
         windowController.windowedModeGeo = windowController.windowedGeoForCurrentFrame()
       }

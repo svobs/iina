@@ -35,7 +35,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   /// Will be 0 if playlist is not visible.
   /// Derived from other properties.
   var playlistHeight: CGFloat {
-    return round(windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight)
+    return round(windowFrame.height - Constants.Distance.MusicMode.oscHeight - videoHeight)
   }
 
   /// Indicates height of video / album art when it is visible, or what the height should be even if
@@ -78,7 +78,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   init(windowFrame: NSRect, screenID: String, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) {
     var windowFrame = NSRect(origin: windowFrame.origin, size:
                               CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
-    let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible)
+    let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     let log = video.log
 
@@ -212,7 +212,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
     }
     let fittedGeo = self.clone(windowFrame: newWindowFrame)
-    log.verbose("Refitted \(fittedGeo), from requestedSize: \(requestedSize)")
+    log.verbose("Refitted \(fittedGeo), from reqSize: \(requestedSize)")
     return fittedGeo
   }
 
@@ -230,28 +230,38 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!
 
-    // Window height should not change. Only video size should be scaled
-    let windowHeight = min(containerFrame.height, windowFrame.height)
-
     // Constrain desired width within min and max allowed, then recalculate height from new value
     newVideoWidth = max(newVideoWidth, Constants.Distance.MusicMode.minWindowWidth)
     newVideoWidth = min(newVideoWidth, MiniPlayerViewController.maxWindowWidth)
-    newVideoWidth = min(newVideoWidth, containerFrame.width)
+    newVideoWidth = min(newVideoWidth.rounded(), containerFrame.width)
+
+    // Window height should not change. Only video size should be scaled
+    let windowHeight = min(containerFrame.height, windowFrame.height)
 
     var newVideoHeight: CGFloat = 0
     if isVideoVisible {
       let videoAspect = video.videoViewAspect
-      newVideoHeight = newVideoWidth / videoAspect
+      newVideoHeight = (newVideoWidth / videoAspect).rounded()
 
+      let maxVideoHeight: CGFloat
       if isPlaylistVisible {
         // If playlist is visible, keep the window height fixed.
         // The video will only be able to expand until the playlist is at its min height
-        let minBottomBarHeight: CGFloat = Constants.Distance.MusicMode.oscHeight + Constants.Distance.MusicMode.minPlaylistHeight
-        let maxVideoHeight = windowHeight - minBottomBarHeight
-        if newVideoHeight > maxVideoHeight {
-          newVideoHeight = maxVideoHeight
-          newVideoWidth = newVideoHeight * videoAspect
-        }
+        maxVideoHeight = windowHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight
+      } else {
+        maxVideoHeight = containerFrame.height - Constants.Distance.MusicMode.oscHeight
+      }
+      /// Due to rounding errors and the fact that both `videoHeight` & `playlistHeight` are calculated
+      /// (kind of backed into a corner with this one. Oops...) need to make sure that the calculation of
+      /// `videoHeight` from `window.frame.width` & video aspect will not result in 1 too many pixels.
+      /// This only appears to show up when scaling video to fill the screen & playlist is shown.
+      /// Don't want to just distort the video for even 1 pixel to make it fit, as that will cause a
+      /// validation error in various sanity checks.
+      var trialHeight: CGFloat = newVideoHeight
+      while newVideoHeight > maxVideoHeight {
+        trialHeight = min(maxVideoHeight, trialHeight - 1)
+        newVideoWidth = (trialHeight * videoAspect).rounded()
+        newVideoHeight = (newVideoWidth / videoAspect).rounded()
       }
     }
 
@@ -279,22 +289,25 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeometry(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.strMin)" : "videoHidden") aspect:\(video.videoViewAspect.mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.strMin)" : "pListHidden") btmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
+    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.strMin)" : "videoHidden") aspect:\(video.videoViewAspect.mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.strMin)" : "pListHidden") btmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
   }
 
   static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
     guard isPlaylistVisible else {
       return 0
     }
-    let videoHeight = videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible)
+    let videoHeight = videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible, isPlaylistVisible: isPlaylistVisible)
     return windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
   }
 
-  static func videoHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool) -> CGFloat {
+  static func videoHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
     guard isVideoVisible else {
       return 0
     }
-    return round(windowFrame.width / video.videoViewAspect)
+    let vidHeight = (windowFrame.width / video.videoViewAspect).rounded()
+//    windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - (isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
+//    assert(windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight >= 0)
+    return vidHeight
   }
 
   static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {

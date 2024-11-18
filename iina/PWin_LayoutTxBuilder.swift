@@ -195,7 +195,8 @@ extension PlayerWindowController {
     // Extra task when entering or exiting music mode: move & resize video frame
     if transition.isTogglingMusicMode && !transition.isWindowInitialLayout {
       transition.tasks.append(IINAAnimation.Task(duration: closeOldPanelsDuration, timing: .easeInEaseOut) { [self] in
-        log.verbose("[\(transition.name)] Moving & resizing window")
+        let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
+        log.verbose{"[\(transition.name)] Moving & resizing window to intermediate windowFrame=\(intermediateWindowFrame)"}
 
         let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords,
                                                               topMarginHeight: 0,
@@ -203,7 +204,7 @@ extension PlayerWindowController {
         player.window.setFrameImmediately(intermediateGeo)
         if transition.isEnteringMusicMode && !musicModeGeo.isVideoVisible {
           // Entering music mode when album art is hidden
-          miniPlayer.updateVideoViewVisibilityConstraints(isVideoVisible: false)
+          miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: false)
         }
       })
     }
