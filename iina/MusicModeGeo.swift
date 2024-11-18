@@ -76,7 +76,8 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   init(windowFrame: NSRect, screenID: String, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) {
-    var windowFrame = windowFrame
+    var windowFrame = NSRect(origin: windowFrame.origin, size:
+                              CGSize(width: windowFrame.width.rounded(), height: windowFrame.height.rounded()))
     let videoHeight = MusicModeGeometry.videoHeight(windowFrame: windowFrame, video: video, isVideoVisible: isVideoVisible)
     let playlistHeight = windowFrame.height - videoHeight - Constants.Distance.MusicMode.oscHeight
     let log = video.log
@@ -104,6 +105,8 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                              width: windowFrame.width, height: windowFrame.height + extraHeightNeeded)
       }
     }
+    assert(windowFrame.origin.x.isInteger && windowFrame.origin.y.isInteger && windowFrame.width.isInteger && windowFrame.height.isInteger,
+          "All windowFrame dimensions must be integers: \(windowFrame)")
     self.windowFrame = windowFrame
     self.screenID = screenID
     self.isVideoVisible = isVideoVisible

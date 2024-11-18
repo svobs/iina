@@ -265,7 +265,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   }
 
   var videoAspect: CGFloat {
-    return video.videoAspectCAR
+    return video.videoViewAspect
   }
 
   let videoSize: NSSize
@@ -317,12 +317,10 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
 
   var videoFrameInWindowCoords: NSRect {
     let viewportSize = viewportSize
-    assert(viewportSize.width - videoSize.width >= 0)
-    assert(viewportSize.height - videoSize.height >= 0)
-    let leadingBlackSpace = (viewportSize.width - videoSize.width) * 0.5
-    let bottomBlackSpace = (viewportSize.height - videoSize.height) * 0.5
-    let origin = CGPoint(x: outsideBars.leading + leadingBlackSpace,
-                         y: outsideBars.bottom + bottomBlackSpace)
+    assert(viewportSize.width - videoSize.width >= 0 && viewportSize.height - videoSize.height >= 0,
+           "viewportSize \(viewportSize) is smaller than videoSize \(videoSize)")
+    let origin = CGPoint(x: outsideBars.leading + viewportMargins.leading,
+                         y: outsideBars.bottom + viewportMargins.bottom)
     return NSRect(origin: origin, size: videoSize)
   }
 
@@ -461,7 +459,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
                   height: windowFrame.height - outsideBars.top - outsideBars.bottom - topMarginHeight)
   }
 
-  /// Snap `value` to `otherValue` if they are less than or equal to 2 px apart. If it can't snap, the number is
+  /// Snap `value` to `otherValue` if they are less than or equal to 1 px apart. If it can't snap, the number is
   /// rounded to the nearest integer.
   ///
   /// This helps smooth out division imprecision. The goal is to end up with whole numbers in calculation results
@@ -470,7 +468,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   ///
   /// It is the requestor's responsibility to ensure that `otherValue` is already a whole number.
   static func snap(_ value: CGFloat, to otherValue: CGFloat) -> CGFloat {
-    if abs(value - otherValue) <= 2 {
+    if abs(value - otherValue) <= 1 {
       return otherValue
     } else {
       return round(value)

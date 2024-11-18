@@ -365,7 +365,7 @@ extension PlayerWindowController {
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
       if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
-        log.debug("[\(transition.name)] Calling setFrame from closeOldPanels with \(middleGeo.windowFrame)")
+        log.debug("[\(transition.name)] Calling setFrame from closeOldPanels with middleGeo \(middleGeo.windowFrame)")
         player.window.setFrameImmediately(middleGeo, updateVideoView: !transition.isExitingInteractiveMode)
       }
     }
@@ -907,7 +907,7 @@ extension PlayerWindowController {
       // Especially needed when applying initial layout:
       applyMusicModeGeo(musicModeGeo)
     case .windowedNormal, .windowedInteractive:
-      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with \(transition.outputGeometry.windowFrame)")
+      log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
       player.window.setFrameImmediately(transition.outputGeometry)
     }
 
@@ -1156,7 +1156,7 @@ extension PlayerWindowController {
           /// (search for another instance of the UTF "X" like the one below).
           let wrong = "ⓧ"
           let lines = ["[\(transition.name)] ❌ Sanity check failed!",
-                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect)",
+                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.string ?? "nil")",
                        "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",

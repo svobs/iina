@@ -134,6 +134,10 @@ class VideoView: NSView {
     let aspectRatio: NSLayoutConstraint
   }
 
+  var aspectMultiplier: CGFloat? {
+    return videoViewConstraints?.aspectRatio.multiplier
+  }
+
   private func addOrUpdate(_ existingConstraint: NSLayoutConstraint?,
                    _ attr: NSLayoutConstraint.Attribute, _ relation: NSLayoutConstraint.Relation, _ constant: CGFloat,
                    _ priority: NSLayoutConstraint.Priority) -> NSLayoutConstraint {
@@ -220,13 +224,12 @@ class VideoView: NSView {
     let eqPriority: NSLayoutConstraint.Priority = .init(499)
 
     if let geometry {
-      log.verbose{"VideoView: updating viewportMargin constraints to \(geometry.viewportMargins)"}
-
       margins = geometry.viewportMargins
       videoAspect = geometry.videoAspect
 
+      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
     } else {
-      log.trace("VideoView: zeroing out viewportMargin constraints")
+      log.verbose("VideoView: zeroing out viewportMargin constraints")
 
       margins = .zero
       videoAspect = -1

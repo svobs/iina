@@ -454,9 +454,11 @@ extension NSMenu {
 
 extension CGFloat {
   var unifiedDouble: Double {
-    get {
-      return Double(copysign(1, self))
-    }
+    return Double(copysign(1, self))
+  }
+
+  var string: String {
+    return Double(self).string
   }
 
   var isInteger: Bool {
