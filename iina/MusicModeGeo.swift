@@ -56,7 +56,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var videoAspect: CGFloat {
-    return video.videoViewAspect
+    return video.videoAspectCAR
   }
 
   var videoScale: Double {
@@ -171,7 +171,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     /// and the control bar (`musicModeControlBarView`) and playlist are pushed down.
     /// Calculate the maximum width/height the art can grow to so that `musicModeControlBarView` is not pushed off the screen.
     let minPlaylistHeight = isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
-    let videoAspect = video.videoViewAspect
+    let videoAspect = video.videoAspectCAR
 
     var maxWidth: CGFloat
     if isVideoVisible {
@@ -240,7 +240,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
 
     var newVideoHeight: CGFloat = 0
     if isVideoVisible {
-      let videoAspect = video.videoViewAspect
+      let videoAspect = video.videoAspectCAR
       newVideoHeight = (newVideoWidth / videoAspect).rounded()
 
       let maxVideoHeight: CGFloat
@@ -289,7 +289,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.strMin)" : "videoHidden") aspect:\(video.videoViewAspect.mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.strMin)" : "pListHidden") btmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
+    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.strMin)" : "videoHidden") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.strMin)" : "pListHidden") btmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
   }
 
   static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {
@@ -304,14 +304,14 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
     guard isVideoVisible else {
       return 0
     }
-    let vidHeight = (windowFrame.width / video.videoViewAspect).rounded()
+    let vidHeight = (windowFrame.width / video.videoAspectCAR).rounded()
 //    windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - (isPlaylistVisible ? Constants.Distance.MusicMode.minPlaylistHeight : 0
 //    assert(windowFrame.height - vidHeight - Constants.Distance.MusicMode.oscHeight - Constants.Distance.MusicMode.minPlaylistHeight >= 0)
     return vidHeight
   }
 
   static func videoHeightWhenVisible(windowFrame: CGRect, video: VideoGeometry) -> CGFloat {
-    return round(windowFrame.width / video.videoViewAspect)
+    return round(windowFrame.width / video.videoAspectCAR)
   }
 
 }

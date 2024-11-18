@@ -225,7 +225,7 @@ class VideoView: NSView {
 
     if let geometry {
       margins = geometry.viewportMargins
-      videoAspect = geometry.videoAspect
+      videoAspect = geometry.videoViewAspect
 
       log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
     } else {

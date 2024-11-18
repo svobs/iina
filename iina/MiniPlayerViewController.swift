@@ -336,11 +336,11 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       if isLiveResizingWidth {
         // Option A: resize height based on requested width
         let resizedWidthViewportSize = NSSize(width: requestedViewportSize.width,
-                                              height: round(requestedViewportSize.width / currentGeo.videoAspect))
+                                              height: round(requestedViewportSize.width / currentGeo.video.videoAspectCAR))
         newGeo = currentGeo.scaleViewport(to: resizedWidthViewportSize)!
       } else {
         // Option B: resize width based on requested height
-        let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.videoAspect),
+        let resizedHeightViewportSize = NSSize(width: round(requestedViewportSize.height * currentGeo.video.videoAspectCAR),
                                                height: requestedViewportSize.height)
         newGeo = currentGeo.scaleViewport(to: resizedHeightViewportSize)!
       }
@@ -436,7 +436,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     let isVideoVisible = Preference.bool(for: .musicModeShowAlbumArt)
     let desiredPlaylistHeight = CGFloat(Preference.float(for: .musicModePlaylistHeight))
     let desiredWindowWidth = Constants.Distance.MusicMode.defaultWindowWidth
-    let desiredVideoHeight = isVideoVisible ? round(desiredWindowWidth / video.videoViewAspect) : 0
+    let desiredVideoHeight = isVideoVisible ? round(desiredWindowWidth / video.videoAspectCAR) : 0
     let desiredWindowHeight = desiredVideoHeight + Constants.Distance.MusicMode.oscHeight + (isPlaylistVisible ? desiredPlaylistHeight : 0)
 
     let screenFrame = screen.visibleFrame

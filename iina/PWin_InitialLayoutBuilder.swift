@@ -311,7 +311,7 @@ extension PlayerWindowController {
     } else {
       /// Use `minVideoSize` at first when a new window is opened, so that when `applyVideoGeoTransform()` is called shortly after,
       /// it expands and creates a nice zooming effect. But try to start with video's correct aspect, if available
-      let viewportSize = CGSize.computeMinSize(withAspect: videoGeo.videoViewAspect,
+      let viewportSize = CGSize.computeMinSize(withAspect: videoGeo.videoAspectCAR,
                                                minWidth: Constants.WindowedMode.minViewportSize.width,
                                                minHeight: Constants.WindowedMode.minViewportSize.height)
       let intendedWindowSize = NSSize(width: viewportSize.width + initialLayout.outsideLeadingBarWidth + initialLayout.outsideTrailingBarWidth,
@@ -325,7 +325,7 @@ extension PlayerWindowController {
       let initialGeo = initialLayout.buildGeometry(windowFrame: windowFrame, screenID: mouseLocScreenID, video: videoGeo).refit(.stayInside)
       let windowSize = initialGeo.windowFrame.size
       let windowOrigin = NSPoint(x: round(mouseLoc.x - (windowSize.width * 0.5)), y: round(mouseLoc.y - (windowSize.height * 0.5)))
-      log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoGeo.videoViewAspect), windowSize=\(windowSize)")
+      log.verbose("Initial layout: starting with tiny window, videoAspect=\(videoGeo.videoAspectCAR), windowSize=\(windowSize)")
       windowedModeGeo = initialGeo.clone(windowFrame: NSRect(origin: windowOrigin, size: windowSize)).refit(.stayInside)
     }
 

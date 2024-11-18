@@ -198,7 +198,7 @@ extension PlayerWindowController {
         let intermediateWindowFrame = transition.outputGeometry.videoFrameInScreenCoords
         log.verbose{"[\(transition.name)] Moving & resizing window to intermediate windowFrame=\(intermediateWindowFrame)"}
 
-        let intermediateGeo = transition.outputGeometry.clone(windowFrame: transition.outputGeometry.videoFrameInScreenCoords,
+        let intermediateGeo = transition.outputGeometry.clone(windowFrame: intermediateWindowFrame,
                                                               topMarginHeight: 0,
                                                               outsideBars: MarginQuad.zero, insideBars: MarginQuad.zero)
         player.window.setFrameImmediately(intermediateGeo)

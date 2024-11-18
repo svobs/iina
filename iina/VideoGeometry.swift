@@ -248,15 +248,13 @@ struct VideoGeometry: Equatable, CustomStringConvertible {
     return videoSizeCA
   }
 
+  /// Final aspect ratio which takes into account pixel aspect, aspect override, crop, and rotation (scale-invariant).
+  ///
+  /// The aspect constraint in `videoView` should attempt to come as close to this as possible (but usually cannot because the view's
+  /// dimensions are limited to whole numbers).
+  /// If displaying album art, this will be `1` (square).
   var videoAspectCAR: Double {
     return videoSizeCAR.mpvAspect
-  }
-
-  /// Final aspect ratio of `videoView`. If displaying album art, will be `1` (square).
-  /// Otherwise should match `videoGeo.videoAspectCAR`, which should match the aspect of the currently displayed `videoView`.
-  /// Final aspect ratio of `videoView`, equal to `videoAspectCAR`. Takes into account aspect override, crop, and rotation (scale-invariant).
-  var videoViewAspect: Double {
-    return videoAspectCAR
   }
 
   // MARK: - Protocol conformance

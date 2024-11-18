@@ -227,7 +227,7 @@ extension PlayerWindowController {
         let ours = videoGeo.videoSizeCA
         // Apparently mpv can sometimes add a pixel. Not our fault...
         if (Int(ours.width) - dwidth).magnitude > 1 || (Int(ours.height) - dheight).magnitude > 1 {
-          player.log.error("❌ VideoGeometry sanity check failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours), audioStatus=\(currentMediaAudioStatus)")
+          player.log.error("❌ Sanity check for VideoGeometry failed: mpv dsize (\(dwidth) x \(dheight)) != our videoSizeCA \(ours), audioStatus=\(currentMediaAudioStatus)")
         }
       }
 
