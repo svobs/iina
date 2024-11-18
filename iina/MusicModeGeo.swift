@@ -212,7 +212,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
       newWindowFrame = newWindowFrame.constrain(in: containerFrame)
     }
     let fittedGeo = self.clone(windowFrame: newWindowFrame)
-    log.verbose("Refitted \(fittedGeo), from reqSize: \(requestedSize)")
+    log.verbose("Refitted \(fittedGeo), from reqSize=\(requestedSize)")
     return fittedGeo
   }
 
@@ -225,7 +225,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
                   screenID: String? = nil) -> MusicModeGeometry? {
 
     var newVideoWidth = desiredWidth ?? windowFrame.width
-    log.verbose("Scaling MusicMode video to desiredWidth: \(newVideoWidth)")
+    log.verbose("Scaling MusicMode video to desiredWidth \(newVideoWidth)")
 
     let newScreenID = screenID ?? self.screenID
     let containerFrame: NSRect = PWinGeometry.getContainerFrame(forScreenID: newScreenID, fitOption: .stayInside)!
@@ -289,7 +289,7 @@ struct MusicModeGeometry: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.strMin)" : "videoHidden") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.strMin)" : "pListHidden") btmBarH:\(bottomBarHeight.strMin) windowFrame:\(windowFrame))"
+    return "MusicModeGeo(\(screenID.quoted) \(isVideoVisible ? "videoH:\(videoHeight.logStr)" : "videoHidden") aspect:\(Double(videoAspect).mpvAspectString) \(isPlaylistVisible ? "pListH:\(playlistHeight.logStr)" : "pListHidden") btmBarH:\(bottomBarHeight.logStr) windowFrame:\(windowFrame))"
   }
 
   static func playlistHeight(windowFrame: CGRect, video: VideoGeometry, isVideoVisible: Bool, isPlaylistVisible: Bool) -> CGFloat {

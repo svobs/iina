@@ -28,7 +28,7 @@ struct MarginQuad: Equatable, CustomStringConvertible {
   }
 
   var description: String {
-    return "(↑:\(top.strMin) →:\(trailing.strMin) ↓:\(bottom.strMin) ←:\(leading.strMin))"
+    return "(↑:\(top.logStr) →:\(trailing.logStr) ↓:\(bottom.logStr) ←:\(leading.logStr))"
   }
 
   init(top: CGFloat = 0, trailing: CGFloat = 0, bottom: CGFloat = 0, leading: CGFloat = 0) {

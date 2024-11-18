@@ -409,7 +409,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
-    log.verbose("Applying videoView visibility constraints, using visible=\(isVideoVisible.yn)")
+    log.verbose("Updating viewportViewHeightContraint using visible=\(isVideoVisible.yn)")
 
     if isVideoVisible {
       // Remove zero-height constraint

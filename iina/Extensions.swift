@@ -453,21 +453,17 @@ extension NSMenu {
 }
 
 extension CGFloat {
-  var unifiedDouble: Double {
-    return Double(copysign(1, self))
-  }
-
   var string: String {
     return Double(self).string
   }
 
-  var isInteger: Bool {
-    return CGFloat(Int(self)) == self
+  /// Formats the decimal for logging. Omits trailing zeroes & grouping separator.
+  var logStr: String {
+    return Double(self).logStr
   }
 
-  /// Do not use trailing zeros
-  var strMin: String {
-    fmtDecimalOmitTrailingZeroes.string(for: self)!
+  var isInteger: Bool {
+    return CGFloat(Int(self)) == self
   }
 }
 
@@ -594,7 +590,11 @@ extension Double {
   /// actually is. An attempt to set it equal to `NSIntegerMax` seemed to result in it being silently set to
   /// `6` instead.)
   var string: String {
-    return fmtDecimalMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
+    return fmtDecimalGroupingMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
+  }
+
+  var logStr: String {
+    return fmtDecimalNoGroupingMaxFractionDigits15.string(from: self as NSNumber) ?? "NaN"
   }
 
   /// Returns a "normalized" number string for the exclusive purpose of comparing two mpv aspect ratios while avoiding precision errors.
@@ -701,9 +701,11 @@ struct StandardizedDecimalFormatters {
 
 fileprivate let fmtStdDecimal = StandardizedDecimalFormatters()
 
-/// Applies to `Double`, `CGFloat`. Formats a number to max 6 digits after the decimal, rounded, but will omit trailing zeroes, & omits commas or other punctation
-/// for large numbers.
-fileprivate let fmtDecimalMaxFractionDigits15: NumberFormatter = {
+/// Formatter for `Double`, `CGFloat`.
+/// - Displays up to 15 digits after the decimal before rounding.
+/// - Omits trailing zeroes.
+/// - Uses grouping separator (e.g. comma) for large numbers.
+fileprivate let fmtDecimalGroupingMaxFractionDigits15: NumberFormatter = {
   let fmt = NumberFormatter()
   fmt.numberStyle = .decimal
   fmt.usesGroupingSeparator = true
@@ -714,23 +716,30 @@ fileprivate let fmtDecimalMaxFractionDigits15: NumberFormatter = {
   return fmt
 }()
 
-// Formats a decimal number but will omit trailing zeroes, and will not use commas or other formatting for large numbers
-fileprivate let fmtDecimalOmitTrailingZeroes: NumberFormatter = {
+/// Formatter for `Double`, `CGFloat`. Similar to `fmtDecimalGroupingMaxFractionDigits15` but no gropuing separator.
+/// - Displays up to 15 digits after the decimal before rounding.
+/// - Omits trailing zeroes.
+/// - Does not use grouping separator (e.g. comma) for large numbers.
+fileprivate let fmtDecimalNoGroupingMaxFractionDigits15: NumberFormatter = {
   let fmt = NumberFormatter()
   fmt.numberStyle = .decimal
   fmt.usesGroupingSeparator = false
+  fmt.maximumSignificantDigits = 25
+  fmt.minimumFractionDigits = 0
+  fmt.maximumFractionDigits = 15
+  fmt.usesSignificantDigits = false
   return fmt
 }()
 
 extension CGRect: @retroactive CustomStringConvertible {
   public var description: String {
-    return "(\(origin.x.strMin), \(origin.y.strMin), \(size.width.strMin) x \(size.height.strMin))"
+    return "(\(origin.x.logStr), \(origin.y.logStr), \(size.width.logStr)x\(size.height.logStr))"
   }
 }
 
 extension CGSize: @retroactive CustomStringConvertible {
   public var description: String {
-    return "(\(width.strMin) x \(height.strMin))"
+    return "(\(width.logStr)x\(height.logStr))"
   }
 
   var widthInt: Int { Int(width) }

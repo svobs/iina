@@ -1157,7 +1157,7 @@ extension PlayerWindowController {
           /// (search for another instance of the UTF "X" like the one below).
           let wrong = "ⓧ"
           let lines = ["[\(transition.name)] ❌ Sanity check failed!",
-                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.string ?? "nil")",
+                       "  VidAspect: Expect=\(vidSizeE.mpvAspect) Actual=\(vidSizeA.mpvAspect) Constraint=\(videoView.aspectMultiplier?.logStr ?? "nil")",
                        "  VideoSize: Expect=\(vidSizeE) Actual=\(vidSizeA)  \(isWrongVidSize ? wrong : "")",
                        "  Viewport:  Expect=\(viewportSizeE) Actual=\(viewportSizeA)",
                        "  WinFrame:  Expect=\(transition.outputGeometry.windowFrame) Actual=\(window.frame)  \(isWrongWinSize ? wrong : "")",

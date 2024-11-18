@@ -248,7 +248,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
   // MARK: - Computed properties
 
   var description: String {
-    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.strMin) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) windowFrame=\(windowFrame) video=\(video))"
+    return "PWinGeometry(\(screenID.quoted) \(mode) \(fitOption) notchH=\(topMarginHeight.logStr) outBars=\(outsideBars) inBars=\(insideBars) viewportMargins=\(viewportMargins) windowFrame=\(windowFrame) video=\(video))"
   }
 
   var log: Logger.Subsystem { video.log }
@@ -990,7 +990,7 @@ struct PWinGeometry: Equatable, CustomStringConvertible {
     let ΔOutsideWidth = geo.outsideBarsTotalWidth - outsideBarsTotalWidth
     let ΔOutsideHeight = geo.outsideBarsTotalHeight - outsideBarsTotalHeight
 
-    log.debug("[ResizeBars] ΔW:\(ΔOutsideWidth.strMin) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight.strMin) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
+    log.debug("[ResizeBars] ΔW:\(ΔOutsideWidth.logStr) fsW:\(isFullScreenWidth.yn) ΔH:\(ΔOutsideHeight.logStr) fsH:\(isFullScreenHeight.yn) keepInScreen:\(geo.fitOption.shouldMoveWindowToKeepInContainer.yesno)")
 
     let resizedViewport: NSSize
     // If window already fills screen width, do not shrink window width when collapsing outside sidebars.
