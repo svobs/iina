@@ -501,7 +501,7 @@ class LayoutState {
 
   func computeOnTopButtonVisibility(isOnTop: Bool) -> VisibilityMode {
     let showOnTopStatus = Preference.bool(for: .alwaysShowOnTopIcon) || isOnTop
-    if isFullScreen || !showOnTopStatus {
+    if isFullScreen || isMusicMode || !showOnTopStatus {
       return .hidden
     }
 
