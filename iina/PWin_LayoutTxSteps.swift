@@ -1320,16 +1320,12 @@ extension PlayerWindowController {
       leadingTitlebarAccesoryViewController = controller
       controller.view = leadingTitleBarAccessoryView
       controller.layoutAttribute = .leading
-
-      leadingTitleBarAccessoryView.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
     }
     if trailingTitlebarAccesoryViewController == nil {
       let controller = NSTitlebarAccessoryViewController()
       trailingTitlebarAccesoryViewController = controller
       controller.view = trailingTitleBarAccessoryView
       controller.layoutAttribute = .trailing
-
-      trailingTitleBarAccessoryView.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
     }
     if window.styleMask.contains(.titled) && window.titlebarAccessoryViewControllers.isEmpty {
       window.addTitlebarAccessoryViewController(leadingTitlebarAccesoryViewController!)

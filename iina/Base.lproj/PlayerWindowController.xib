@@ -3,7 +3,6 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
-        <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -34,14 +33,9 @@
                 <outlet property="customWindowBorderTopHighlightBox" destination="IeW-QK-xIO" id="6In-Z5-KJw"/>
                 <outlet property="fragPositionSliderView" destination="BE1-yC-oJL" id="KXu-MZ-mx8"/>
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
-                <outlet property="leadingSidebarToggleButton" destination="zkB-jk-l3c" id="lcY-wv-u4x"/>
                 <outlet property="leadingSidebarTrailingBorder" destination="b0r-Lt-vGM" id="XL3-cZ-Idp"/>
                 <outlet property="leadingSidebarView" destination="XBs-34-TIm" id="Jqt-cB-r2i"/>
-                <outlet property="leadingTitleBarAccessoryView" destination="LFL-4a-93B" id="2gm-1u-SgO"/>
-                <outlet property="leadingTitleBarLeadingSpaceConstraint" destination="8Ry-mq-mNQ" id="abn-rz-U1P"/>
-                <outlet property="leadingTitleBarTrailingSpaceConstraint" destination="ckY-Xn-Az9" id="2Sw-bW-ZKj"/>
                 <outlet property="leftLabel" destination="NBD-MV-OuG" id="7xb-a1-6NR"/>
-                <outlet property="onTopButton" destination="Ztc-Kn-fxI" id="xCA-hX-VpW"/>
                 <outlet property="oscFloatingLowerView" destination="hb6-oe-rHm" id="ZKe-zm-evE"/>
                 <outlet property="oscFloatingPlayButtonsContainerView" destination="hDm-KI-3o4" id="ITm-fa-cWL"/>
                 <outlet property="oscFloatingUpperView" destination="Unr-Y6-JoM" id="URb-3v-Gzc"/>
@@ -77,11 +71,7 @@
                 <outlet property="topOSCHeightConstraint" destination="wwB-Bd-YpC" id="Xei-hb-Zwh"/>
                 <outlet property="trailingSidebarLeadingBorder" destination="exJ-CB-MoS" id="jY1-pX-sXL"/>
                 <outlet property="trailingSidebarToOSDSpaceConstraint" destination="zbm-D9-epN" id="TdE-wQ-5Me"/>
-                <outlet property="trailingSidebarToggleButton" destination="VTu-Ac-dgn" id="CQd-j7-xZg"/>
                 <outlet property="trailingSidebarView" destination="epo-S6-QVB" id="efz-TR-rAa"/>
-                <outlet property="trailingTitleBarAccessoryView" destination="maF-Zr-K8w" id="H6b-g2-qRx"/>
-                <outlet property="trailingTitleBarLeadingSpaceConstraint" destination="c8g-qm-Vdc" id="m15-JQ-OEe"/>
-                <outlet property="trailingTitleBarTrailingSpaceConstraint" destination="Tf8-XK-IVw" id="cwJ-tX-keD"/>
                 <outlet property="viewportBtmOffsetFromContentViewBtmConstraint" destination="4gm-o8-h98" id="GyQ-e0-oLf"/>
                 <outlet property="viewportLeadingOffsetFromContentViewLeadingConstraint" destination="vZs-ut-z4j" id="E4F-6L-B6v"/>
                 <outlet property="viewportLeadingOffsetFromLeadingSidebarLeadingConstraint" destination="PMP-ks-GY2" id="SCL-aE-ECP"/>
@@ -686,141 +676,12 @@
             </constraints>
             <point key="canvasLocation" x="230" y="471"/>
         </customView>
-        <customView identifier="Leading-TitleBarAccessoryView" wantsLayer="YES" id="LFL-4a-93B" userLabel="Leading Title Bar Accessory View">
-            <rect key="frame" x="0.0" y="0.0" width="28" height="50"/>
-            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-            <subviews>
-                <stackView identifier="Leading-TitleBarAccessory-HorizontalStackView" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="QL8-sC-ql6" userLabel="Leading-Title-Bar Horizontal Stack View">
-                    <rect key="frame" x="0.0" y="0.0" width="28" height="50"/>
-                    <subviews>
-                        <customView identifier="LeadingTitleBarAcc-LeadingSpacer" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MEn-aG-818" userLabel="Leading Spacer View">
-                            <rect key="frame" x="0.0" y="0.0" width="0.0" height="50"/>
-                            <constraints>
-                                <constraint firstAttribute="width" identifier="leadingTitleBarLeadingSpaceConstraint" id="8Ry-mq-mNQ"/>
-                            </constraints>
-                        </customView>
-                        <button identifier="LeadingSidebarToggleButton" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zkB-jk-l3c" userLabel="ToggleLeadingSidebar Square Button">
-                            <rect key="frame" x="0.0" y="15" width="20" height="20"/>
-                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" imagePosition="only" alignment="center" refusesFirstResponder="YES" state="on" inset="2" id="htR-nK-U9W">
-                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                <font key="font" metaFont="system" size="17"/>
-                                <imageReference key="image" image="sidebar.leading" symbolScale="large"/>
-                            </buttonCell>
-                            <constraints>
-                                <constraint firstAttribute="width" secondItem="zkB-jk-l3c" secondAttribute="height" multiplier="1:1" id="8CN-7h-GtN"/>
-                            </constraints>
-                            <connections>
-                                <action selector="toggleLeadingSidebarVisibility:" target="-2" id="TeX-P0-1v4"/>
-                            </connections>
-                        </button>
-                        <customView identifier="LeadingTitleBarAcc-TrailingSpacer" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7ck-d3-1hv" userLabel="Trailing Spacer View">
-                            <rect key="frame" x="20" y="0.0" width="8" height="50"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="8" identifier="leadingTitleBarTrailingSpaceConstraint" id="ckY-Xn-Az9"/>
-                            </constraints>
-                        </customView>
-                    </subviews>
-                    <visibilityPriorities>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                    </visibilityPriorities>
-                    <customSpacing>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                    </customSpacing>
-                </stackView>
-            </subviews>
-            <constraints>
-                <constraint firstAttribute="trailing" secondItem="QL8-sC-ql6" secondAttribute="trailing" id="3Co-Il-FeA"/>
-                <constraint firstItem="QL8-sC-ql6" firstAttribute="top" secondItem="LFL-4a-93B" secondAttribute="top" id="g3m-af-oHN"/>
-                <constraint firstItem="QL8-sC-ql6" firstAttribute="leading" secondItem="LFL-4a-93B" secondAttribute="leading" id="pbD-ED-Iaw"/>
-                <constraint firstAttribute="bottom" secondItem="QL8-sC-ql6" secondAttribute="bottom" id="rsV-6z-5yD"/>
-            </constraints>
-            <point key="canvasLocation" x="-84" y="-193"/>
-        </customView>
-        <customView identifier="Trailing-TitleBarAccessoryView" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="maF-Zr-K8w" userLabel="Trailing Title Bar Accessory View">
-            <rect key="frame" x="0.0" y="0.0" width="28" height="50"/>
-            <subviews>
-                <stackView identifier="Trailing-TitleBar-Horizontal-Stack-View" wantsLayer="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WSW-ov-e8M" userLabel="Trailing-Title-Bar Horizontal Stack View">
-                    <rect key="frame" x="0.0" y="0.0" width="28" height="50"/>
-                    <subviews>
-                        <customView identifier="TrailingTitleBarAcc-LeadingSpacer" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iXQ-as-PYC" userLabel="Leading Spacer View">
-                            <rect key="frame" x="0.0" y="0.0" width="0.0" height="50"/>
-                            <constraints>
-                                <constraint firstAttribute="width" identifier="trailingTitleBarLeadingSpaceConstraint" id="c8g-qm-Vdc"/>
-                            </constraints>
-                        </customView>
-                        <button identifier="TrailingSidebarToggleButton" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VTu-Ac-dgn" userLabel="ToggleTrailingSidebar Square Button">
-                            <rect key="frame" x="0.0" y="15" width="20" height="20"/>
-                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" imagePosition="only" alignment="center" refusesFirstResponder="YES" state="on" inset="2" id="WJX-cV-vij">
-                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                <font key="font" metaFont="system" size="17"/>
-                                <imageReference key="image" image="sidebar.trailing" symbolScale="large"/>
-                            </buttonCell>
-                            <constraints>
-                                <constraint firstAttribute="width" secondItem="VTu-Ac-dgn" secondAttribute="height" multiplier="1:1" id="4KR-kO-iO1"/>
-                            </constraints>
-                            <connections>
-                                <action selector="toggleTrailingSidebarVisibility:" target="-2" id="npz-Db-uzI"/>
-                            </connections>
-                        </button>
-                        <button identifier="OnTop-Square-Button" hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ztc-Kn-fxI" userLabel="OnTop Square Button">
-                            <rect key="frame" x="0.0" y="30" width="20" height="20"/>
-                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="ontop_off" imagePosition="only" alignment="center" alternateImage="ontop" refusesFirstResponder="YES" state="on" inset="2" id="jAf-Be-kY3">
-                                <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
-                                <font key="font" metaFont="system"/>
-                            </buttonCell>
-                            <constraints>
-                                <constraint firstAttribute="width" secondItem="Ztc-Kn-fxI" secondAttribute="height" multiplier="1:1" id="aKF-M3-oax"/>
-                            </constraints>
-                            <connections>
-                                <action selector="toggleOnTop:" target="-2" id="4pa-eu-aT5"/>
-                            </connections>
-                        </button>
-                        <customView identifier="TrailingTitleBarAcc-TrailingSpacer" wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pu6-TO-IhT" userLabel="Trailing Spacer View">
-                            <rect key="frame" x="20" y="0.0" width="8" height="50"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="8" identifier="trailingTitleBarTrailingSpaceConstraint" id="Tf8-XK-IVw"/>
-                            </constraints>
-                        </customView>
-                    </subviews>
-                    <constraints>
-                        <constraint firstItem="VTu-Ac-dgn" firstAttribute="width" secondItem="Ztc-Kn-fxI" secondAttribute="width" id="hYM-Zu-l6q"/>
-                    </constraints>
-                    <visibilityPriorities>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                        <integer value="1000"/>
-                    </visibilityPriorities>
-                    <customSpacing>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                        <real value="3.4028234663852886e+38"/>
-                    </customSpacing>
-                </stackView>
-            </subviews>
-            <constraints>
-                <constraint firstItem="WSW-ov-e8M" firstAttribute="leading" secondItem="maF-Zr-K8w" secondAttribute="leading" id="237-4K-Y1z"/>
-                <constraint firstAttribute="trailing" secondItem="WSW-ov-e8M" secondAttribute="trailing" id="FeA-o4-GzC"/>
-                <constraint firstAttribute="bottom" secondItem="WSW-ov-e8M" secondAttribute="bottom" id="VF9-tA-dEf"/>
-                <constraint firstItem="WSW-ov-e8M" firstAttribute="top" secondItem="maF-Zr-K8w" secondAttribute="top" id="msD-VG-w6j"/>
-            </constraints>
-            <point key="canvasLocation" x="502" y="-193"/>
-        </customView>
     </objects>
     <resources>
         <image name="backward" width="11" height="11"/>
         <image name="battery" width="57" height="30"/>
         <image name="close" width="11" height="11"/>
-        <image name="ontop" width="16" height="14"/>
-        <image name="ontop_off" width="16" height="14"/>
         <image name="playing-in-pip" width="87" height="68"/>
-        <image name="sidebar.leading" width="15" height="12"/>
-        <image name="sidebar.trailing" width="15" height="12"/>
         <image name="▶️" width="128" height="128"/>
         <namedColor name="CustomWindowBorder">
             <color red="1" green="1" blue="1" alpha="0.44999998807907104" colorSpace="custom" customColorSpace="displayP3"/>

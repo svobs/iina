@@ -278,8 +278,7 @@ struct Constants {
     /// If OSC is shorter than this, never show the speed label
     static let minOSCBarHeightForSpeedLabel: CGFloat = 30
 
-    // matches spacing as of MacOS Sonoma (14.0)
-    static let titleBarIconSpacingH: CGFloat = 6
+    static let titleBarIconSpacingH: CGFloat = 8
 
     struct Thumbnail {
       static let minHeight: CGFloat = 24

@@ -33,6 +33,7 @@ class CustomTitleBarViewController: NSViewController {
   /// Use `loadView` instead of `viewDidLoad` because controller is not using storyboard
   override func loadView() {
     view = NSView()
+    let builder = CustomTitleBar.shared
 
     // - Leading views
 
@@ -40,8 +41,8 @@ class CustomTitleBarViewController: NSViewController {
     let btnTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
     trafficLightButtons = btnTypes.compactMap{ NSWindow.standardWindowButton($0, for: .titled) }
 
-    leadingSidebarToggleButton = makeTitleBarButton(imgName: "sidebar.leading",
-                                                    action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
+    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading", target: windowController,
+                                                            action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
     leadingStackView.layer?.backgroundColor = .clear
@@ -100,12 +101,12 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Trailing views
 
-    onTopButton = makeTitleBarButton(imgName: "ontop_off",
-                                        action: #selector(windowController.toggleOnTop(_:)))
+    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off", target: windowController,
+                                             action: #selector(windowController.toggleOnTop(_:)))
     onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
 
-    trailingSidebarToggleButton = makeTitleBarButton(imgName: "sidebar.trailing",
-                                                     action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
+    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing", target: windowController,
+                                                             action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
     trailingStackView.layer?.backgroundColor = .clear
     trailingStackView.orientation = .horizontal
@@ -145,25 +146,6 @@ class CustomTitleBarViewController: NSViewController {
     trailingStackView.leadingAnchor.constraint(equalTo: titleText.trailingAnchor).isActive = true
 
     view.configureSubtreeForCoreAnimation()
-  }
-
-  func makeTitleBarButton(imgName: String, action: Selector) -> NSButton {
-    let btnImage = NSImage(imageLiteralResourceName: imgName)
-    let button = NSButton(image: btnImage, target: windowController, action: action)
-    button.setButtonType(.momentaryPushIn)
-    button.bezelStyle = .smallSquare
-    button.isBordered = false
-    button.imagePosition = .imageOnly
-    button.refusesFirstResponder = true
-    button.imageScaling = .scaleNone
-    button.font = NSFont.systemFont(ofSize: 17)
-    button.isHidden = true
-    // Never expand in size, even if there is extra space:
-    button.setContentHuggingPriority(.required, for: .horizontal)
-    button.setContentHuggingPriority(.required, for: .vertical)
-    button.setContentCompressionResistancePriority(.required, for: .horizontal)
-    button.setContentCompressionResistancePriority(.required, for: .vertical)
-    return button
   }
 
   // Add to [different] superview
@@ -265,5 +247,28 @@ class TitleTextView: NSTextView {
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     return Preference.bool(for: .videoViewAcceptsFirstMouse)
+  }
+}
+
+class CustomTitleBar {
+  static let shared = CustomTitleBar()
+
+  func makeTitleBarButton(imgName: String, target: AnyObject, action: Selector) -> NSButton {
+    let btnImage = NSImage(imageLiteralResourceName: imgName)
+    let button = NSButton(image: btnImage, target: target, action: action)
+    button.setButtonType(.momentaryPushIn)
+    button.bezelStyle = .smallSquare
+    button.isBordered = false
+    button.imagePosition = .imageOnly
+    button.refusesFirstResponder = true
+    button.imageScaling = .scaleNone
+    button.font = NSFont.systemFont(ofSize: 17)
+    button.isHidden = true
+    // Never expand in size, even if there is extra space:
+    button.setContentHuggingPriority(.required, for: .horizontal)
+    button.setContentHuggingPriority(.required, for: .vertical)
+    button.setContentCompressionResistancePriority(.required, for: .horizontal)
+    button.setContentCompressionResistancePriority(.required, for: .vertical)
+    return button
   }
 }

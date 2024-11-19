@@ -328,12 +328,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var viewportViewHeightContraint: NSLayoutConstraint? = nil
 
   // Spacers in left title bar accessory view:
-  @IBOutlet weak var leadingTitleBarLeadingSpaceConstraint: NSLayoutConstraint!
-  @IBOutlet weak var leadingTitleBarTrailingSpaceConstraint: NSLayoutConstraint!
+  var leadingTitleBarLeadingSpaceConstraint: NSLayoutConstraint? = nil
+  var leadingTitleBarTrailingSpaceConstraint: NSLayoutConstraint? = nil
 
   // Spacers in right title bar accessory view:
-  @IBOutlet weak var trailingTitleBarLeadingSpaceConstraint: NSLayoutConstraint!
-  @IBOutlet weak var trailingTitleBarTrailingSpaceConstraint: NSLayoutConstraint!
+  var trailingTitleBarLeadingSpaceConstraint: NSLayoutConstraint? = nil
+  var trailingTitleBarTrailingSpaceConstraint: NSLayoutConstraint? = nil
 
   // - Top bar (title bar and/or top OSC) constraints
   @IBOutlet weak var viewportTopOffsetFromTopBarBottomConstraint: NSLayoutConstraint!
@@ -425,12 +425,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   @IBOutlet weak var closeButtonBox: NSButton!
   @IBOutlet weak var backButtonBox: NSButton!
 
-  @IBOutlet var leadingTitleBarAccessoryView: NSView!
-  @IBOutlet var trailingTitleBarAccessoryView: NSView!
+  let leadingTitleBarAccessoryView = NSStackView()
+  let trailingTitleBarAccessoryView = NSStackView()
   /// "Pin to Top" icon in title bar, if configured to  be shown
-  @IBOutlet weak var onTopButton: NSButton!
-  @IBOutlet weak var leadingSidebarToggleButton: NSButton!
-  @IBOutlet weak var trailingSidebarToggleButton: NSButton!
+  var onTopButton: NSButton!
+  var leadingSidebarToggleButton: NSButton!
+  var trailingSidebarToggleButton: NSButton!
 
   /// Panel at top of window. May be `insideViewport` or `outsideViewport`. May contain `titleBarView` and/or `controlBarTop`
   /// depending on configuration.
@@ -813,19 +813,22 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
     co.addAllObservers()
 
-    if let priorState = player.info.priorState {
-      restoreFromMiscWindowBools(priorState)
-    }
-
-    /// Do this *after* `restoreFromMiscWindowBools` call
-    if window.isMiniaturized {
-      UIState.shared.windowsMinimized.insert(window.savedStateName)
-    } else {
-      UIState.shared.windowsOpen.insert(window.savedStateName)
-    }
-
     if !player.info.isRestoring {
       AppDelegate.shared.initialWindow.closePriorToOpeningPlayerWindow()
+    }
+
+    /// Enqueue this in case `windowDidLoad` is not yet done
+    animationPipeline.submitInstantTask{ [self] in
+      if let priorState = player.info.priorState {
+        restoreFromMiscWindowBools(priorState)
+      }
+
+      /// Do this *after* `restoreFromMiscWindowBools` call
+      if window.isMiniaturized {
+        UIState.shared.windowsMinimized.insert(window.savedStateName)
+      } else {
+        UIState.shared.windowsOpen.insert(window.savedStateName)
+      }
     }
 
     log.verbose("PlayerWindow openWindow done")

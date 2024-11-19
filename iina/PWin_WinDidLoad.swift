@@ -100,8 +100,6 @@ extension PlayerWindowController {
       // Update this here to reduce animation jitter on older versions of MacOS:
       viewportTopOffsetFromTopBarTopConstraint.constant = PlayerWindowController.standardTitleBarHeight
 
-      addTitleBarAccessoryViews()
-
       // Work around a bug in macOS Ventura where HDR content becomes dimmed when playing in full
       // screen mode once overlaying views are fully hidden (issue #3844). After applying this
       // workaround another bug in Ventura where an external monitor goes black could not be
@@ -117,6 +115,7 @@ extension PlayerWindowController {
       contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: osdVisualEffectView)
       thumbnailPeekView.identifier = .init("thumbnailPeekView")
       thumbnailPeekView.isHidden = true
+      initTitleBarAccessories()
       initBottomBarView(in: contentView)
       initSpeedLabel()
       initPlaybackBtnsView()
@@ -156,6 +155,90 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
+  }
+
+  private func initTitleBarAccessories() {
+    let builder = CustomTitleBar.shared
+    // - LEADING
+
+    let leadingTB = leadingTitleBarAccessoryView
+    leadingTB.translatesAutoresizingMaskIntoConstraints = false
+
+    leadingTB.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    let leadingSpacerLeading = NSView()
+    leadingSpacerLeading.identifier = .init("leadingTitleBarLeadingSpacer")
+    leadingTitleBarLeadingSpaceConstraint = leadingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
+    leadingTitleBarLeadingSpaceConstraint?.isActive = true
+
+    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading", target: self,
+                                                            action: #selector(toggleLeadingSidebarVisibility(_:)))
+    leadingSidebarToggleButton.identifier = .init("leadingSidebarToggleButton")  // helps with debug logging
+    leadingSidebarToggleButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    let leadingSpacerTrailing = NSView()
+    leadingSpacerTrailing.identifier = .init("leadingTitleBarTrailingSpacer")
+    leadingTitleBarTrailingSpaceConstraint = leadingSpacerTrailing.widthAnchor.constraint(equalToConstant: 0)
+    leadingTitleBarTrailingSpaceConstraint?.isActive = true
+
+    leadingTB.orientation = .horizontal
+    leadingTB.alignment = .centerY
+    leadingTB.distribution = .fill
+    leadingTB.spacing = 0
+    leadingTB.detachesHiddenViews = true
+    leadingTB.setHuggingPriority(.required, for: .horizontal)
+    leadingTB.translatesAutoresizingMaskIntoConstraints = false
+
+    leadingTB.addArrangedSubview(leadingSpacerLeading)
+    leadingTB.addArrangedSubview(leadingSidebarToggleButton)
+    leadingTB.addArrangedSubview(leadingSpacerTrailing)
+
+    leadingTB.addConstraintsToFillSuperview()
+
+    // - TRAILING
+
+    let trailingTB = trailingTitleBarAccessoryView
+    trailingTB.translatesAutoresizingMaskIntoConstraints = false
+
+    let trailingSpacerLeading = NSView()
+    trailingSpacerLeading.identifier = .init("trailingTitleBarLeadingSpacer")
+    trailingTitleBarLeadingSpaceConstraint = trailingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
+    trailingTitleBarLeadingSpaceConstraint?.isActive = true
+
+    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off", target: self,
+                                             action: #selector(toggleOnTop(_:)))
+    onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
+    onTopButton.identifier = .init("onTopButton")
+    onTopButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing", target: self,
+                                                             action: #selector(toggleTrailingSidebarVisibility(_:)))
+    trailingSidebarToggleButton.identifier = .init("trailingSidebarToggleButton")
+    trailingSidebarToggleButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    let trailingSpacerTrailing = NSView()
+    trailingSpacerTrailing.identifier = .init("trailingTitleBarTrailingSpacer")
+    trailingTitleBarTrailingSpaceConstraint = trailingSpacerTrailing.widthAnchor.constraint(equalToConstant: 0)
+    trailingTitleBarTrailingSpaceConstraint?.isActive = true
+
+    trailingTB.translatesAutoresizingMaskIntoConstraints = false
+    trailingTB.addConstraintsToFillSuperview()
+    trailingTitleBarAccessoryView.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
+
+    trailingTB.orientation = .horizontal
+    trailingTB.alignment = .centerY
+    trailingTB.distribution = .fill
+    trailingTB.spacing = 0
+    trailingTB.detachesHiddenViews = true
+
+    trailingTB.addArrangedSubview(trailingSpacerLeading)
+    trailingTB.addArrangedSubview(trailingSidebarToggleButton)
+    trailingTB.addArrangedSubview(onTopButton)
+    trailingTB.addArrangedSubview(trailingSpacerTrailing)
+
+    // - Controllers
+
+    addTitleBarAccessoryViews()
   }
 
   private func initBottomBarView(in contentView: NSView) {
