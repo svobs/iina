@@ -31,7 +31,7 @@ class VideoView: NSView {
 
   private var videoViewConstraints: VideoViewConstraints? = nil
 
-  private lazy var logHDR = Logger.makeSubsystem("hdr\(player.label)")
+  private lazy var logHDR = Logger.makeSubsystem("hdr-\(player.label)")
 
   static let SRGB = CGColorSpaceCreateDeviceRGB()
 
@@ -224,15 +224,19 @@ class VideoView: NSView {
     let eqPriority: NSLayoutConstraint.Priority = .init(499)
 
     if let geometry {
-      margins = geometry.viewportMargins
-      videoAspect = geometry.videoViewAspect
-
-      log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
+      if !geometry.isVideoVisible {
+        margins = .zero
+        videoAspect = -1
+        log.verbose("VideoView: zeroing out constraints (video is not visible)")
+      } else {
+        margins = geometry.viewportMargins
+        videoAspect = geometry.videoViewAspect
+        log.verbose{"VideoView: updating constraints to margins=\(margins), aspect=\(videoAspect)"}
+      }
     } else {
-      log.verbose("VideoView: zeroing out viewportMargin constraints")
-
       margins = .zero
       videoAspect = -1
+      log.verbose("VideoView: zeroing out constraints")
     }
 
     rebuildConstraints(top: margins.top,
@@ -431,7 +435,7 @@ class VideoView: NSView {
       logHDR.verbose("Not using ICC profile due to user preference")
     } else if let screenColorSpace {
       let name = screenColorSpace.localizedName ?? "unnamed"
-      logHDR.verbose("Using the ICC profile of the color space \(name)")
+      logHDR.verbose("Using the ICC profile of color space \(name.quoted)")
       // This MUST be locked via openGLContext
 
       guard player.mpv.lockAndSetOpenGLContext() else { return }
@@ -576,7 +580,7 @@ extension VideoView {
     guard player.info.isFileLoaded else { return }
     guard let displayId = currentDisplay else { return }
 
-    log.debug("Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil"): ")
+    log.debug("Refreshing HDR @ screen \(NSScreen.forDisplayID(displayId)?.screenID.quoted ?? "nil")")
     let edrEnabled = requestEdrMode()
     let edrAvailable = edrEnabled != false
     if player.info.hdrAvailable != edrAvailable {

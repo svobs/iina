@@ -652,7 +652,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   /// When entering "windowed" mode (either from initial load, PIP, or music mode), call this to add/return `videoView`
   /// to this window. Will do nothing if it's already there.
-  func addVideoViewToWindow() {
+  func addVideoViewToWindow(using geo: MusicModeGeometry? = nil) {
     guard let window else { return }
     do {
       let hasOpenGL = player.mpv.lockAndSetOpenGLContext()
@@ -673,7 +673,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     /// Add constraints. These get removed each time `videoView` changes superviews.
     videoView.translatesAutoresizingMaskIntoConstraints = false
     if !player.info.isRestoring {  // this can mess up music mode restore
-      let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
+      let geo = currentLayout.mode == .musicMode ? (geo ?? musicModeGeo).toPWinGeometry() : windowedModeGeo
       videoView.apply(geo)
     }
   }

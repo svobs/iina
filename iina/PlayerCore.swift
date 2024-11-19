@@ -2824,12 +2824,12 @@ class PlayerCore: NSObject {
     }
 
     /// This will refresh album art display.
-    /// Do this first, before `applyVideoVisibility`, for a nicer animation.
+    /// Do this first, before `changeVideoViewVisibleState`, for a nicer animation.
     DispatchQueue.main.async { [self] in
       windowController.animationPipeline.submitInstantTask { [self] in
         if isShowVideoPendingInMiniPlayer {
           isShowVideoPendingInMiniPlayer = false
-          windowController.miniPlayer.applyVideoVisibility(to: true, showDefaultArt: showDefaultArt)
+          windowController.miniPlayer.changeVideoViewVisibleState(to: true, showDefaultArt: showDefaultArt)
 
         } else if let showDefaultArt {
           log.verbose("Video track changed to \(vid): calling showDefaultArt=\(showDefaultArt.yn)")
@@ -2859,11 +2859,12 @@ class PlayerCore: NSObject {
     assert(DispatchQueue.isExecutingIn(.main))
     log.verbose("Setting video track enabled=\(enable.yesno), showMiniPlayerVideo=\(showMiniPlayerVideo.yesno)")
 
+    // Remove these. They screw up PIP drag
     if enable {
       if info.isVideoTrackSelected {
         if showMiniPlayerVideo {
           // Don't wait; execute now
-          windowController.miniPlayer.applyVideoVisibility(to: true, showDefaultArt: false)
+          windowController.miniPlayer.changeVideoViewVisibleState(to: true, showDefaultArt: false)
         }
       } else {
         // No video track selected. Change to first video track found:

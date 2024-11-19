@@ -628,11 +628,11 @@
             </connections>
             <point key="canvasLocation" x="207" y="109.5"/>
         </window>
-        <customView identifier="OSC-Fragment-Playback-Position" wantsLayer="YES" horizontalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="BE1-yC-oJL" userLabel="OSC Fragment: Playback Position Slider" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
+        <customView identifier="OSC-Fragment-Playback-Position" wantsLayer="YES" horizontalHuggingPriority="249" horizontalCompressionResistancePriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="BE1-yC-oJL" userLabel="OSC Fragment: Playback Position Slider" customClass="ClickThroughView" customModule="IINA" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="500" height="42"/>
             <subviews>
-                <slider horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="500" mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="eBP-6g-bAT" userLabel="Playback Slider" customClass="PlaySlider" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="35" y="5" width="430" height="28"/>
+                <slider horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="249" mirrorLayoutDirectionWhenInternationalizing="never" translatesAutoresizingMaskIntoConstraints="NO" id="eBP-6g-bAT" userLabel="Playback Slider" customClass="PlaySlider" customModule="IINA" customModuleProvider="target">
+                    <rect key="frame" x="31" y="5" width="438" height="28"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" identifier="playSliderHeightConstraint" id="VU5-c1-ivd"/>
                     </constraints>
@@ -642,7 +642,7 @@
                     </connections>
                 </slider>
                 <textField identifier="Playback-Position-LeftLabel" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="501" verticalHuggingPriority="750" horizontalCompressionResistancePriority="501" alphaValue="0.5" mirrorLayoutDirectionWhenInternationalizing="never" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="NBD-MV-OuG" userLabel="Left Label" customClass="DurationDisplayTextField" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="-18" y="13" width="53" height="16"/>
+                    <rect key="frame" x="-2" y="13" width="33" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="right" title="--:--" id="6mL-0A-eq2">
                         <font key="font" usesAppearanceFont="YES"/>
                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -653,7 +653,7 @@
                     </connections>
                 </textField>
                 <textField identifier="Playback-Position-RightLabel" wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="749" alphaValue="0.5" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GgV-Cc-sk0" userLabel="Right Label" customClass="DurationDisplayTextField" customModule="IINA" customModuleProvider="target">
-                    <rect key="frame" x="465" y="13" width="33" height="16"/>
+                    <rect key="frame" x="469" y="13" width="33" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="left" title="--:--" id="1XQ-Mt-jmZ">
                         <font key="font" usesAppearanceFont="YES"/>
                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -664,7 +664,7 @@
                     </connections>
                 </textField>
                 <textField identifier="Playback-Seek-Time-Label" hidden="YES" wantsLayer="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" alphaValue="0.5" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qOq-6a-7j7">
-                    <rect key="frame" x="218" y="27" width="39" height="13"/>
+                    <rect key="frame" x="214" y="27" width="39" height="13"/>
                     <textFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="center" title="-:--:--" id="Pw8-rd-mUu">
                         <font key="font" metaFont="system" size="10"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -675,13 +675,12 @@
             <constraints>
                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="E6z-SF-UDn"/>
                 <constraint firstItem="GgV-Cc-sk0" firstAttribute="centerY" secondItem="NBD-MV-OuG" secondAttribute="centerY" id="N3P-Qk-arP"/>
-                <constraint firstItem="eBP-6g-bAT" firstAttribute="centerX" secondItem="BE1-yC-oJL" secondAttribute="centerX" id="VDD-aU-mmP"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerY" secondItem="BE1-yC-oJL" secondAttribute="centerY" id="XFh-GC-Pub"/>
                 <constraint firstItem="qOq-6a-7j7" firstAttribute="top" secondItem="BE1-yC-oJL" secondAttribute="top" constant="2" identifier="seekTimeHoverLabelVerticalSpaceConstraint" id="ZlC-qT-aez"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="centerY" secondItem="NBD-MV-OuG" secondAttribute="centerY" id="dX4-4l-aJM"/>
                 <constraint firstItem="qOq-6a-7j7" firstAttribute="centerX" secondItem="eBP-6g-bAT" secondAttribute="left" constant="200" identifier="seekTimeHoverLabelHorizontalCenterConstraint" id="ekV-Sh-cEZ"/>
-                <constraint firstItem="NBD-MV-OuG" firstAttribute="leading" secondItem="BE1-yC-oJL" secondAttribute="leading" constant="-16" id="fcm-ao-T7h"/>
-                <constraint firstAttribute="trailing" secondItem="GgV-Cc-sk0" secondAttribute="trailing" constant="4" id="plE-qU-XZt"/>
+                <constraint firstItem="NBD-MV-OuG" firstAttribute="leading" secondItem="BE1-yC-oJL" secondAttribute="leading" id="fcm-ao-T7h"/>
+                <constraint firstAttribute="trailing" secondItem="GgV-Cc-sk0" secondAttribute="trailing" id="plE-qU-XZt"/>
                 <constraint firstItem="eBP-6g-bAT" firstAttribute="leading" secondItem="NBD-MV-OuG" secondAttribute="trailing" constant="4" id="uHE-D2-HgP"/>
                 <constraint firstItem="GgV-Cc-sk0" firstAttribute="leading" secondItem="eBP-6g-bAT" secondAttribute="trailing" constant="4" id="vzW-0s-yR6"/>
             </constraints>

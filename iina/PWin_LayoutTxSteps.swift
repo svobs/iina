@@ -19,7 +19,7 @@ extension PlayerWindowController {
   /// -------------------------------------------------
   /// PRE TRANSITION
   func doPreTransitionWork(_ transition: LayoutTransition) {
-    log.verbose("[\(transition.name)] DoPreTransitionWork")
+    log.verbose{"[\(transition.name)] DoPreTransitionWork"}
     isAnimatingLayoutTransition = true
 
     /// Some methods where reference `currentLayout` get called as a side effect of the transition animations.
@@ -59,8 +59,8 @@ extension PlayerWindowController {
 
     if transition.isEnteringFullScreen {
       /// `windowedModeGeo` should already be kept up to date. Might be hard to track down bugs...
-      log.verbose("[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)")
- 
+      log.verbose{"[\(transition.name)] Entering full screen; priorWindowedGeometry = \(windowedModeGeo)"}
+
       // Hide traffic light buttons & title during the animation.
       // Do not move this block. It needs to go here.
       hideBuiltInTitleBarViews(setAlpha: true)
@@ -80,7 +80,7 @@ extension PlayerWindowController {
 
       if transition.outputLayout.isLegacyFullScreen {
         // stylemask
-        log.verbose("[\(transition.name)] Entering legacy FS; removing window styleMask.titled")
+        log.verbose{"[\(transition.name)] Entering legacy FS; removing window styleMask.titled"}
         if #available(macOS 10.16, *) {
           window.styleMask.remove(.titled)
           window.styleMask.insert(.borderless)
@@ -160,7 +160,7 @@ extension PlayerWindowController {
   /// FADE OUT OLD VIEWS
   func fadeOutOldViews(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    log.verbose("[\(transition.name)] FadeOutOldViews")
+    log.verbose{"[\(transition.name)] FadeOutOldViews"}
 
     // Title bar & title bar accessories:
 
@@ -271,7 +271,7 @@ extension PlayerWindowController {
   /// This step is not always executed (e.g., for full screen toggle)
   func closeOldPanels(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    log.verbose("[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)")
+    log.verbose{"[\(transition.name)] CloseOldPanels: title_H=\(outputLayout.titleBarHeight), topOSC_H=\(outputLayout.topOSCHeight)"}
 
     if outputLayout.hasControlBar {
       // Reduce size of icons if they are smaller
@@ -336,7 +336,7 @@ extension PlayerWindowController {
       } else {
         cameraOffset = transition.outputGeometry.topMarginHeight
       }
-      log.verbose("[\(transition.name)] Applying middleGeo: topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)")
+      log.verbose{"[\(transition.name)] Applying middleGeo: topBarHeight=\(topBarHeight), cameraOffset=\(cameraOffset)"}
       updateTopBarHeight(to: topBarHeight, topBarPlacement: transition.inputLayout.topBarPlacement, cameraHousingOffset: cameraOffset)
 
       if !transition.isExitingMusicMode && !transition.isExitingInteractiveMode {  // don't do this too soon when exiting Music Mode
@@ -365,7 +365,7 @@ extension PlayerWindowController {
       // Also do not apply when toggling fullscreen because it is not relevant at this stage and will look glitchy because the
       // animation has zero duration.
       if !transition.isWindowInitialLayout && (transition.isTogglingMusicMode || !transition.isTogglingFullScreen) {
-        log.debug("[\(transition.name)] Calling setFrame from closeOldPanels with middleGeo \(middleGeo.windowFrame)")
+        log.debug{"[\(transition.name)] Calling setFrame from closeOldPanels with middleGeo \(middleGeo.windowFrame)"}
         player.window.setFrameImmediately(middleGeo, updateVideoView: !transition.isExitingInteractiveMode)
       }
     }
@@ -380,7 +380,7 @@ extension PlayerWindowController {
   func updateHiddenViewsAndConstraints(_ transition: LayoutTransition) {
     guard let window = window else { return }
     let outputLayout = transition.outputLayout
-    log.verbose("[\(transition.name)] UpdateHiddenViewsAndConstraints")
+    log.verbose{"[\(transition.name)] UpdateHiddenViewsAndConstraints"}
 
     if transition.outputLayout.spec.isLegacyStyle {
       // Set legacy style
@@ -468,6 +468,9 @@ extension PlayerWindowController {
 
       if transition.isExitingMusicMode {
         miniPlayer.cleanUpForMusicModeExit()
+        if !transition.inputGeometry.isVideoVisible {
+          addVideoViewToWindow()
+        }
       }
     }
 
@@ -680,10 +683,10 @@ extension PlayerWindowController {
           case .crop:
             if let prevCropFilter = player.info.videoFiltersDisabled[Constants.FilterLabel.crop] {
               selectedRect = prevCropFilter.cropRect(origVideoSize: videoSizeRaw, flipY: true)
-              log.verbose("Setting crop box selection from prevFilter: \(selectedRect)")
+              log.verbose{"Setting crop box selection from prevFilter: \(selectedRect)"}
             } else {
               selectedRect = NSRect(origin: .zero, size: videoSizeRaw)
-              log.verbose("Setting crop box selection to default entire video size: \(selectedRect)")
+              log.verbose{"Setting crop box selection to default entire video size: \(selectedRect)"}
             }
           case .freeSelecting, .none:
             selectedRect = .zero
@@ -783,17 +786,11 @@ extension PlayerWindowController {
   /// OPEN PANELS & FINALIZE OFFSETS
   func openNewPanelsAndFinalizeOffsets(_ transition: LayoutTransition) {
     let outputLayout = transition.outputLayout
-    log.verbose("[\(transition.name)] OpenNewPanels. TitleBar_H: \(outputLayout.titleBarHeight), TopOSC_H: \(outputLayout.topOSCHeight)")
+    log.verbose{"[\(transition.name)] OpenNewPanels. TitleBar_H: \(outputLayout.titleBarHeight), TopOSC_H: \(outputLayout.topOSCHeight)"}
 
     if transition.isExitingLegacyFullScreen {
       /// Seems this needs to be called before the final `setFrame` call, or else the window can end up incorrectly sized at the end
       updatePresentationOptionsForLegacyFullScreen(entering: false)
-    }
-
-    if transition.isEnteringMusicMode {
-      // this may not have been set
-      miniPlayer.updateVideoViewHeightConstraint(isVideoVisible: musicModeGeo.isVideoVisible)
-      miniPlayer.resetScrollingLabels()
     }
 
     // Update heights to their final values:
@@ -873,7 +870,7 @@ extension PlayerWindowController {
     case .fullScreenNormal, .fullScreenInteractive:
       if transition.outputLayout.isNativeFullScreen {
         // Native Full Screen: set frame not including camera housing because it looks better with the native animation
-        log.verbose("[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)")
+        log.verbose{"[\(transition.name)] Calling setFrame to animate into nativeFS, to: \(transition.outputGeometry.windowFrame)"}
         player.window.setFrameImmediately(transition.outputGeometry)
       } else if transition.outputLayout.isLegacyFullScreen {
         let screen = NSScreen.getScreenOrDefault(screenID: transition.outputGeometry.screenID)
@@ -906,7 +903,7 @@ extension PlayerWindowController {
       }
     case .musicMode:
       // Especially needed when applying initial layout:
-      applyMusicModeGeo(musicModeGeo)
+      applyMusicModeGeo(musicModeGeo, updateCache: false)
     case .windowedNormal, .windowedInteractive:
       log.verbose("[\(transition.name)] Calling setFrame from OpenNewPanels with output windowFrame=\(transition.outputGeometry.windowFrame)")
       player.window.setFrameImmediately(transition.outputGeometry)
@@ -1184,7 +1181,7 @@ extension PlayerWindowController {
   // - Top bar
 
   func updateTopBarHeight(to topBarHeight: CGFloat, topBarPlacement: Preference.PanelPlacement, cameraHousingOffset: CGFloat) {
-    log.verbose("Updating topBar height: \(topBarHeight), placement: \(topBarPlacement), cameraOffset: \(cameraHousingOffset)")
+    log.verbose{"Updating topBar height: \(topBarHeight), placement: \(topBarPlacement), cameraOffset: \(cameraHousingOffset)"}
 
     switch topBarPlacement {
     case .insideViewport:
@@ -1217,14 +1214,14 @@ extension PlayerWindowController {
         }
       }
     }
-    log.verbose("Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)")
+    log.verbose{"Updating osdTopToTopBarConstraint to: \(newOffsetFromTop)"}
     osdTopToTopBarConstraint.animateToConstant(newOffsetFromTop)
   }
 
   // - Bottom bar
 
   private func updateBottomBarPlacement(placement: Preference.PanelPlacement) {
-    log.verbose("Updating bottomBar placement to: \(placement)")
+    log.verbose{"Updating bottomBar placement to: \(placement)"}
     guard let window = window, let contentView = window.contentView else { return }
     contentView.removeConstraint(bottomBarLeadingSpaceConstraint)
     contentView.removeConstraint(bottomBarTrailingSpaceConstraint)
@@ -1244,7 +1241,7 @@ extension PlayerWindowController {
   }
 
   func updateBottomBarHeight(to bottomBarHeight: CGFloat, bottomBarPlacement: Preference.PanelPlacement) {
-    log.verbose("Updating bottomBar height to: \(bottomBarHeight), placement: \(bottomBarPlacement)")
+    log.verbose{"Updating bottomBar height to: \(bottomBarHeight), placement: \(bottomBarPlacement)"}
 
     switch bottomBarPlacement {
     case .insideViewport:

@@ -279,7 +279,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     windowController.applyMusicModeGeoInAnimationPipeline(from: currentMusicModeGeo, to: newMusicModeGeometry)
   }
 
-  @IBAction func toggleVideoView(_ sender: Any) {
+  @IBAction func toggleVideoViewVisibleState(_ sender: Any) {
     windowController.animationPipeline.submitInstantTask({ [self] in
       let showVideoView = !isVideoVisible
       log.verbose("Toggling videoView visibility from \((!showVideoView).yn) to \(showVideoView.yn)")
@@ -289,7 +289,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
         player.setVideoTrackEnabled(true, showMiniPlayerVideo: true)
       } else {
         /// If hiding video, do animations first, then call `setVideoTrackEnabled(false)`.
-        applyVideoVisibility(to: false, showDefaultArt: nil)
+        changeVideoViewVisibleState(to: false, showDefaultArt: nil)
       }
     })
   }
@@ -304,18 +304,18 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   // TODO: develop a nice sliding animation if possible
-  func applyVideoVisibility(to showVideo: Bool, showDefaultArt: Bool?) {
+  func changeVideoViewVisibleState(to visible: Bool, showDefaultArt: Bool?) {
     windowController.animationPipeline.submitInstantTask{ [self] in
-      log.verbose("MusicMode: applying videoView visibility: \((!showVideo).yesno) → \(showVideo.yesno)")
       let currentGeo = windowController.musicModeGeoForCurrentFrame()
-      let newGeo = currentGeo.withVideoViewVisible(showVideo)
+      log.verbose{"MusicMode: applying videoView visibility: \(currentGeo.isVideoVisible.yesno) → \(visible.yesno)"}
+      let newGeo = currentGeo.withVideoViewVisible(visible)
 
       guard windowController.isInMiniPlayer, currentGeo.isVideoVisible != newGeo.isVideoVisible else {
-        log.debug("Cancelling toggle of videoView visibility; isMiniPlayer=\(windowController.isInMiniPlayer.yn), current=\(currentGeo.isVideoVisible.yesno), new=\(newGeo.isVideoVisible.yesno)")
+        log.debug{"Cancelling toggle of videoView visibility; isMiniPlayer=\(windowController.isInMiniPlayer.yn), current=\(currentGeo.isVideoVisible.yesno), new=\(newGeo.isVideoVisible.yesno)"}
         return
       }
 
-      log.verbose("MusicMode: setting videoViewVisible=\(showVideo.yn), videoHeight=\(newGeo.videoHeight)")
+      log.verbose{"MusicMode: setting videoView visible=\(visible.yn), H=\(newGeo.videoHeight)"}
       windowController.applyMusicModeGeoInAnimationPipeline(from: currentGeo, to: newGeo, showDefaultArt: showDefaultArt)
     }
   }
@@ -351,10 +351,10 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
       /// it will cause the window to get "hung up" at arbitrary sizes instead of exact min or max, which is annoying.
       var requestedSize = NSSize(width: requestedSize.width.rounded(), height: requestedSize.height.rounded())
       if requestedSize.width < Constants.Distance.MusicMode.minWindowWidth {
-        log.verbose("WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)")
+        log.verbose{"WindowWillResize: constraining to min width \(Constants.Distance.MusicMode.minWindowWidth)"}
         requestedSize = NSSize(width: Constants.Distance.MusicMode.minWindowWidth, height: requestedSize.height)
       } else if requestedSize.width > MiniPlayerViewController.maxWindowWidth {
-        log.verbose("WindowWillResize: constraining to max width \(MiniPlayerViewController.maxWindowWidth)")
+        log.verbose{"WindowWillResize: constraining to max width \(MiniPlayerViewController.maxWindowWidth)"}
         requestedSize = NSSize(width: MiniPlayerViewController.maxWindowWidth, height: requestedSize.height)
       }
 
@@ -382,7 +382,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     guard playlistHeight >= Constants.Distance.MusicMode.minPlaylistHeight else { return }
 
     // save playlist height
-    log.verbose("Saving playlist height: \(playlistHeight)")
+    log.verbose{"Saving playlist height: \(playlistHeight)"}
     Preference.set(Int(playlistHeight), for: .musicModePlaylistHeight)
   }
 
@@ -409,7 +409,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
   }
 
   func updateVideoViewHeightConstraint(isVideoVisible: Bool) {
-    log.verbose("Updating viewportViewHeightContraint using visible=\(isVideoVisible.yn)")
+    log.verbose{"Updating viewportViewHeightContraint using visible=\(isVideoVisible.yn)"}
 
     if isVideoVisible {
       // Remove zero-height constraint

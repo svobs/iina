@@ -110,7 +110,7 @@
                                         <constraint firstAttribute="height" constant="14" id="5wi-g6-Mhb"/>
                                     </constraints>
                                     <connections>
-                                        <action selector="toggleVideoView:" target="-2" id="VCP-Vw-Kfh"/>
+                                        <action selector="toggleVideoViewVisibleState:" target="-2" id="VCP-Vw-Kfh"/>
                                     </connections>
                                 </button>
                             </subviews>
