@@ -41,7 +41,9 @@ class CustomTitleBarViewController: NSViewController {
     let btnTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
     trafficLightButtons = btnTypes.compactMap{ NSWindow.standardWindowButton($0, for: .titled) }
 
-    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading", target: windowController,
+    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading",
+                                                            identifier: "leadingSidebarToggleButton",
+                                                            target: windowController,
                                                             action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
 
     let leadingStackView = TitleBarButtonsContainerView(views: trafficLightButtons + [leadingSidebarToggleButton])
@@ -101,11 +103,15 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Trailing views
 
-    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off", target: windowController,
+    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off",
+                                             identifier: "onTopButton",
+                                             target: windowController,
                                              action: #selector(windowController.toggleOnTop(_:)))
     onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
 
-    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing", target: windowController,
+    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing",
+                                                             identifier: "trailingSidebarToggleButton",
+                                                             target: windowController,
                                                              action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
     let trailingStackView = NSStackView(views: [trailingSidebarToggleButton, onTopButton])
     trailingStackView.layer?.backgroundColor = .clear
@@ -253,9 +259,10 @@ class TitleTextView: NSTextView {
 class CustomTitleBar {
   static let shared = CustomTitleBar()
 
-  func makeTitleBarButton(imgName: String, target: AnyObject, action: Selector) -> NSButton {
+  func makeTitleBarButton(imgName: String, identifier: String, target: AnyObject, action: Selector) -> NSButton {
     let btnImage = NSImage(imageLiteralResourceName: imgName)
     let button = NSButton(image: btnImage, target: target, action: action)
+    button.identifier = .init(identifier)
     button.setButtonType(.momentaryPushIn)
     button.bezelStyle = .smallSquare
     button.isBordered = false
@@ -269,6 +276,7 @@ class CustomTitleBar {
     button.setContentHuggingPriority(.required, for: .vertical)
     button.setContentCompressionResistancePriority(.required, for: .horizontal)
     button.setContentCompressionResistancePriority(.required, for: .vertical)
+    button.translatesAutoresizingMaskIntoConstraints = false
     return button
   }
 }
