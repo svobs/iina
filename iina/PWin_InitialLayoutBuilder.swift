@@ -166,7 +166,7 @@ extension PlayerWindowController {
         volumeSlider.isEnabled = false
       }
 
-      hideSeekTimeAndThumbnail()
+      hideSeekPreview()
       quickSettingView.reload()
       updateTitle()
       playlistView.scrollPlaylistToCurrentItem()

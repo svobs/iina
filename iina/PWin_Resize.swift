@@ -693,7 +693,7 @@ extension PlayerWindowController {
       log.verbose{"ApplyWindowResize: fs=\(isFullScreen.yn) newGeo=\(newGeometry?.description ?? "nil")"}
 
       // These may no longer be aligned correctly. Just hide them
-      hideSeekTimeAndThumbnail()
+      hideSeekPreview()
 
       // Update floating control bar position if applicable
       updateFloatingOSCAfterWindowDidResize(usingGeometry: newGeometry)
@@ -763,7 +763,7 @@ extension PlayerWindowController {
       log.verbose{"ApplyWindowGeo: windowFrame=\(newGeometry.windowFrame) showDefaultArt=\(showDefaultArt?.yn ?? "nil") video=\(newGeometry)"}
       assert(currentLayout.spec.mode.isWindowed, "applyWindowGeo called outside windowed mode! (found: \(currentLayout.spec.mode))")
 
-      hideSeekTimeAndThumbnail()
+      hideSeekPreview()
       updateDefaultArtVisibility(to: showDefaultArt)
       resetRotationPreview()
     })
@@ -833,7 +833,7 @@ extension PlayerWindowController {
         /// Temporarily hide window buttons. Using `isHidden` will conveniently override its alpha value
         closeButtonView.isHidden = true
 
-        hideSeekTimeAndThumbnail()
+        hideSeekPreview()
       }
       resetRotationPreview()
     })

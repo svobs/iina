@@ -164,7 +164,7 @@ struct Constants {
     /// Delay before auto-loading playlist from files in the opened file's directory
     static let autoLoadDelay = 1.0
     static let pastLaunchResponseTimeout = 1.0
-    static let seekTimeAndThumbnailHideTimeout = 0.2
+    static let seekPreviewHideTimeout = 0.2
     /// How long since the last window finished restoring
     static let restoreWindowsTimeout = 5.0
 

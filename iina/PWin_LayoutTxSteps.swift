@@ -262,7 +262,7 @@ extension PlayerWindowController {
     }
 
     if transition.isTopBarPlacementChanging || transition.isBottomBarPlacementChanging || transition.isTogglingVisibilityOfAnySidebar {
-      hideSeekTimeAndThumbnail()
+      hideSeekPreview()
     }
   }
 
@@ -456,8 +456,8 @@ extension PlayerWindowController {
 
     playSliderHeightConstraint?.isActive = false
 
-    seekTimeHoverLabelVerticalSpaceConstraint?.isActive = false
-    seekTimeHoverLabelHorizontalCenterConstraint?.isActive = false
+    seekTimeLabelVerticalSpaceConstraint?.isActive = false
+    seekTimeLabelHorizontalCenterConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -482,7 +482,8 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
+        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
+        seekTimeLabelVerticalSpaceConstraint?.isActive = true
 
       case .bottom:
         currentControlBar = bottomBarView
@@ -495,11 +496,10 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
 
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+        seekTimeLabelVerticalSpaceConstraint?.isActive = true
 
       case .floating:
-        // same as `.bottom`:
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
 
         if let toolbarView = rebuildToolbar(transition) {
           oscFloatingUpperView.addView(toolbarView, in: .trailing)
@@ -534,8 +534,7 @@ extension PlayerWindowController {
       }
       playSlider.customCell.knobHeight = knobHeight
       (volumeSlider.cell as? VolumeSliderCell)?.knobHeight = knobHeight
-      seekTimeHoverLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
-      seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
+      seekTimeLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
 
@@ -564,10 +563,12 @@ extension PlayerWindowController {
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
 
-      // Yes, left, not leading!
-      seekTimeHoverLabelHorizontalCenterConstraint = seekTimeHoverLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-      seekTimeHoverLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-      seekTimeHoverLabelHorizontalCenterConstraint.isActive = true
+      if !outputLayout.hasFloatingOSC {  // floating case will be handled in later step
+        // Yes, left, not leading!
+        seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+        seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+        seekTimeLabelHorizontalCenterConstraint.isActive = true
+      }
 
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
@@ -615,10 +616,10 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 2)
+        seekTimeLabelVerticalSpaceConstraint?.isActive = true
 
-        seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
-        seekTimeHoverLabel.font = NSFont.systemFont(ofSize: 9)
+        seekTimeLabel.font = NSFont.systemFont(ofSize: 9)
 
         // Decrease font size of time labels
         leftLabel.font = NSFont.labelFont(ofSize: 9)
@@ -866,6 +867,15 @@ extension PlayerWindowController {
         controlBarFloating.addMarginConstraints()
       }
       addSpeedLabelToControlBar(transition)
+
+      // same as `.bottom`:
+      seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+      seekTimeLabelVerticalSpaceConstraint?.isActive = true
+
+      // Yes, left, not leading!
+      seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+      seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+      seekTimeLabelHorizontalCenterConstraint.isActive = true
 
       // Update floating control bar position
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,
@@ -1540,7 +1550,7 @@ extension PlayerWindowController {
     // needless processing. It must be running while transitioning to/from full screen mode.
     videoView.displayActive()
 
-    hideSeekTimeAndThumbnail()
+    hideSeekPreview()
   }
 
   private func updatePanelBlendingModes(to outputLayout: LayoutState) {

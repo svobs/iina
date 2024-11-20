@@ -2642,7 +2642,7 @@ class PlayerCore: NSObject {
       }
 
       // End of seeking? Set short timer to hide seek time & thumbnail
-      windowController.resetSeekTimeAndThumbnailTimer()
+      windowController.resetSeekPreviewlTimer()
     }
 
     saveState()

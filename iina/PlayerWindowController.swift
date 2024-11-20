@@ -190,8 +190,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   // Is non-nil if within the activation rect of one of the sidebars
   var sidebarResizeCursor: NSCursor? = nil
 
-  var isDraggingPlaySlider = false
-
   // - Fadeable Views
 
   /// Views that will show/hide when cursor moving in/out of the window
@@ -205,9 +203,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Other visibility
   var hideCursorTimer: Timer?
-  var seekTimeAndThumbnailAnimationState: UIAnimationState = .shown
+  var seekPreviewAnimationState: UIAnimationState = .shown
   /// For auto hiding seek time & thumbnail after a timeout.
-  var hideSeekTimeAndThumbnailTimer: Timer?
+  var hideSeekPreviewTimer: Timer?
 
   // - OSD
 
@@ -447,9 +445,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
 
-  let seekTimeHoverLabel = NSTextField()
-  var seekTimeHoverLabelHorizontalCenterConstraint: NSLayoutConstraint!
-  var seekTimeHoverLabelVerticalSpaceConstraint: NSLayoutConstraint!
+  /// Seek Preview: time label
+  let seekTimeLabel = NSTextField()
+  var seekTimeLabelHorizontalCenterConstraint: NSLayoutConstraint!
+  var seekTimeLabelVerticalSpaceConstraint: NSLayoutConstraint!
+  /// Seek Preview: thumbnail
   let thumbnailPeekView = ThumbnailPeekView()
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
@@ -522,6 +522,12 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   let playSliderScrollWheel = PlaySliderScrollWheel()
   let volumeSliderScrollWheel = VolumeSliderScrollWheel()
+
+  var isDraggingPlaySlider = false
+
+  var isInPreviewEligibleSeek: Bool {
+    isInScrollWheelSeek || isDraggingPlaySlider
+  }
 
   var isInScrollWheelSeek: Bool {
     return windowScrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
@@ -2285,7 +2291,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     updatePlaybackTimeUI()
     // Make fake point in window to pass to seek time & thumbnail
     let pointInWindow = CGPoint(x: playSlider.centerOfKnobInWindowCoordX(), y: 0)
-    refreshSeekTimeAndThumbnailAsync(forPointInWindow: pointInWindow)
+    refreshSeekPreviewAsync(forPointInWindow: pointInWindow)
 
     let option: Preference.SeekOption = forceExactSeek ? .exact : Preference.enum(for: .useExactSeek)
     player.seek(absoluteSecond: absoluteSecond, option: option)

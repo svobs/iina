@@ -392,7 +392,7 @@ extension PlayerWindowController {
     case .playSlider:
       if currentDragObject != nil { return }
 
-      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseEntered(with: event)
     }
@@ -417,7 +417,7 @@ extension PlayerWindowController {
         resetFadeTimer()
       }
     case .playSlider:
-      hideSeekTimeAndThumbnail()
+      hideSeekPreview()
     case .customTitleBar:
       customTitleBar?.leadingTitleBarView.mouseExited(with: event)
     }
@@ -442,9 +442,9 @@ extension PlayerWindowController {
     }
 
     if isPoint(event.locationInWindow, inAnyOf: [playSlider]) {
-      refreshSeekTimeAndThumbnailAsync(forPointInWindow: event.locationInWindow)
+      refreshSeekPreviewAsync(forPointInWindow: event.locationInWindow)
     } else {
-      hideSeekTimeAndThumbnail(animated: false)
+      hideSeekPreview(animated: false)
     }
 
     let isTopBarHoverEnabled = Preference.isAdvancedEnabled && Preference.enum(for: .showTopBarTrigger) == Preference.ShowTopBarTrigger.topBarHover

@@ -109,7 +109,7 @@ extension PlayerWindowController {
         contentView.addSubview(view)
       }
 
-      initSeekTimeAndThumbnail(in: contentView)
+      initSeekPreview(in: contentView)
       initTitleBarAccessories()
       initBottomBarView(in: contentView)
       initSpeedLabel()
@@ -152,29 +152,29 @@ extension PlayerWindowController {
     }
   }
 
-  private func initSeekTimeAndThumbnail(in contentView: NSView) {
-    contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: osdVisualEffectView)
+  private func initSeekPreview(in contentView: NSView) {
+    seekTimeLabel.identifier = .init("SeekTimeLabel")
+    seekTimeLabel.controlSize = .large
+    contentView.addSubview(seekTimeLabel, positioned: .below, relativeTo: osdVisualEffectView)
+    seekTimeLabel.translatesAutoresizingMaskIntoConstraints = false
+    seekTimeLabel.isBordered = false
+    seekTimeLabel.drawsBackground = false
+    seekTimeLabel.isBezeled = false
+    seekTimeLabel.isEditable = false
+    seekTimeLabel.isSelectable = false
+    seekTimeLabel.isEnabled = true
+    seekTimeLabel.refusesFirstResponder = true
+    seekTimeLabel.alignment = .center
+    seekTimeLabel.setContentHuggingPriority(.required, for: .horizontal)
+    seekTimeLabel.setContentHuggingPriority(.required, for: .vertical)
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    seekTimeLabel.nextResponder = playSlider
+
+    contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: seekTimeLabel)
     thumbnailPeekView.identifier = .init("ThumbnailPeekView")
     thumbnailPeekView.isHidden = true
 
-    seekTimeHoverLabel.identifier = .init("SeekTimeHoverLabel")
-    seekTimeHoverLabel.controlSize = .large
-    contentView.addSubview(seekTimeHoverLabel, positioned: .below, relativeTo: thumbnailPeekView)
-    seekTimeHoverLabel.translatesAutoresizingMaskIntoConstraints = false
-    seekTimeHoverLabel.isBordered = false
-    seekTimeHoverLabel.drawsBackground = false
-    seekTimeHoverLabel.isBezeled = false
-    seekTimeHoverLabel.isEditable = false
-    seekTimeHoverLabel.isSelectable = false
-    seekTimeHoverLabel.isEnabled = true
-    seekTimeHoverLabel.refusesFirstResponder = true
-    seekTimeHoverLabel.alignment = .center
-    seekTimeHoverLabel.setContentHuggingPriority(.required, for: .horizontal)
-    seekTimeHoverLabel.setContentHuggingPriority(.required, for: .vertical)
-    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    seekTimeHoverLabel.nextResponder = playSlider
-
-    seekTimeHoverLabel.isHidden = true
+    seekTimeLabel.isHidden = true
   }
 
   private func initTitleBarAccessories() {

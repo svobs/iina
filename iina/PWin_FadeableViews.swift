@@ -173,11 +173,11 @@ extension PlayerWindowController {
 
     // Seek time & thumbnail can only be shown if the OSC is visible.
     // Need to hide them because the OSC is being hidden:
-    let mustHideSeekTimeAndThumbnail = !currentLayout.hasPermanentControlBar
+    let mustHideSeekPreview = !currentLayout.hasPermanentControlBar
 
-    if mustHideSeekTimeAndThumbnail {
+    if mustHideSeekPreview {
       // Cancel timer now. Hide thumbnail with other views (below)
-      hideSeekTimeAndThumbnailTimer?.invalidate()
+      hideSeekPreviewTimer?.invalidate()
     }
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
@@ -206,10 +206,10 @@ extension PlayerWindowController {
         }
       }
 
-      if mustHideSeekTimeAndThumbnail {
-        seekTimeAndThumbnailAnimationState = .willHide
+      if mustHideSeekPreview {
+        seekPreviewAnimationState = .willHide
         thumbnailPeekView.animator().alphaValue = 0
-        seekTimeHoverLabel.isHidden = true
+        seekTimeLabel.isHidden = true
       }
     })
 
@@ -234,10 +234,10 @@ extension PlayerWindowController {
         }
       }
 
-      if mustHideSeekTimeAndThumbnail, seekTimeAndThumbnailAnimationState == .willHide {
-        seekTimeAndThumbnailAnimationState = .hidden
+      if mustHideSeekPreview, seekPreviewAnimationState == .willHide {
+        seekPreviewAnimationState = .hidden
         thumbnailPeekView.isHidden = true
-        seekTimeHoverLabel.isHidden = true
+        seekTimeLabel.isHidden = true
       }
     })
 
@@ -317,9 +317,9 @@ extension PlayerWindowController {
     defaultAlbumArtView.isHidden = !showDefaultArt
   }
 
-  // MARK: - Seek Time & Thumbnail
+  // MARK: - Seek Preview (Time & Thumbnail)
 
-  func shouldSeekTimeAndThumbnailBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
+  func shouldSeekPreviewBeVisible(forPointInWindow pointInWindow: NSPoint) -> Bool {
     guard !player.disableUI,
           !isAnimatingLayoutTransition,
           !osd.isShowingPersistentOSD,
@@ -329,34 +329,34 @@ extension PlayerWindowController {
     return isInScrollWheelSeek || isDraggingPlaySlider || isPoint(pointInWindow, inAnyOf: [playSlider])
   }
 
-  func resetSeekTimeAndThumbnailTimer() {
-    guard seekTimeAndThumbnailAnimationState == .shown else { return }
-    hideSeekTimeAndThumbnailTimer?.invalidate()
-    hideSeekTimeAndThumbnailTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.seekTimeAndThumbnailHideTimeout,
-                                                         target: self, selector: #selector(self.seekTimeAndThumbnailTimeout),
+  func resetSeekPreviewlTimer() {
+    guard seekPreviewAnimationState == .shown else { return }
+    hideSeekPreviewTimer?.invalidate()
+    hideSeekPreviewTimer = Timer.scheduledTimer(timeInterval: Constants.TimeInterval.seekPreviewHideTimeout,
+                                                         target: self, selector: #selector(self.seekPreviewTimeout),
                                                          userInfo: nil, repeats: false)
   }
 
-  @objc private func seekTimeAndThumbnailTimeout() {
+  @objc private func seekPreviewTimeout() {
     let pointInWindow = window!.convertPoint(fromScreen: NSEvent.mouseLocation)
-    guard !shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow) else {
-      resetSeekTimeAndThumbnailTimer()
+    guard !shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow) else {
+      resetSeekPreviewlTimer()
       return
     }
-    hideSeekTimeAndThumbnail(animated: true)
+    hideSeekPreview(animated: true)
   }
 
-  @objc func hideSeekTimeAndThumbnail(animated: Bool = false) {
-    hideSeekTimeAndThumbnailTimer?.invalidate()
+  @objc func hideSeekPreview(animated: Bool = false) {
+    hideSeekPreviewTimer?.invalidate()
 
     if animated {
       var tasks: [IINAAnimation.Task] = []
 
       tasks.append(IINAAnimation.Task(duration: IINAAnimation.OSDAnimationDuration * 0.5) { [self] in
         // Don't hide overlays when in PIP or when they are not actually shown
-        seekTimeAndThumbnailAnimationState = .willHide
+        seekPreviewAnimationState = .willHide
         thumbnailPeekView.animator().alphaValue = 0
-        seekTimeHoverLabel.isHidden = true
+        seekTimeLabel.isHidden = true
         if isShowingFadeableViewsForSeek {
           isShowingFadeableViewsForSeek = false
           resetFadeTimer()
@@ -365,53 +365,53 @@ extension PlayerWindowController {
 
       tasks.append(IINAAnimation.Task(duration: 0) { [self] in
         // if no interrupt then hide animation
-        guard seekTimeAndThumbnailAnimationState == .willHide else { return }
-        seekTimeAndThumbnailAnimationState = .hidden
+        guard seekPreviewAnimationState == .willHide else { return }
+        seekPreviewAnimationState = .hidden
         thumbnailPeekView.isHidden = true
-        seekTimeHoverLabel.isHidden = true
+        seekTimeLabel.isHidden = true
       })
 
       animationPipeline.submit(tasks)
     } else {
       thumbnailPeekView.isHidden = true
-      seekTimeHoverLabel.isHidden = true
-      seekTimeAndThumbnailAnimationState = .hidden
+      seekTimeLabel.isHidden = true
+      seekPreviewAnimationState = .hidden
     }
   }
 
   /// Display time label & thumbnail when mouse over slider
-  func refreshSeekTimeAndThumbnailAsync(forPointInWindow pointInWindow: NSPoint) {
+  func refreshSeekPreviewAsync(forPointInWindow pointInWindow: NSPoint) {
     thumbDisplayTicketCounter += 1
     let currentTicket = thumbDisplayTicketCounter
 
     DispatchQueue.main.async { [self] in
       guard currentTicket == thumbDisplayTicketCounter else { return }
 
-      guard shouldSeekTimeAndThumbnailBeVisible(forPointInWindow: pointInWindow),
+      guard shouldSeekPreviewBeVisible(forPointInWindow: pointInWindow),
             let duration = player.info.playbackDurationSec else {
-        hideSeekTimeAndThumbnail()
+        hideSeekPreview()
         return
       }
-      showSeekTimeAndThumbnail(forPointInWindow: pointInWindow, mediaDuration: duration)
+      showSeekPreview(forPointInWindow: pointInWindow, mediaDuration: duration)
     }
   }
 
-  /// Should only be called by `refreshSeekTimeAndThumbnailAsync`
-  private func showSeekTimeAndThumbnail(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
+  /// Should only be called by `refreshSeekPreviewAsync`
+  private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
     // - 1. Time Hover Label
 
     let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
-    seekTimeHoverLabelHorizontalCenterConstraint?.constant = knobCenterOffsetInPlaySlider
+    seekTimeLabelHorizontalCenterConstraint?.constant = knobCenterOffsetInPlaySlider
 
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
                                                                       knobCenterOffsetInPlaySlider)
     let previewTimeSec = mediaDuration * playbackPositionRatio
     let stringRepresentation = VideoTime.string(from: previewTimeSec)
-    if seekTimeHoverLabel.stringValue != stringRepresentation {
-      seekTimeHoverLabel.stringValue = stringRepresentation
+    if seekTimeLabel.stringValue != stringRepresentation {
+      seekTimeLabel.stringValue = stringRepresentation
     }
-    seekTimeHoverLabel.isHidden = false
+    seekTimeLabel.isHidden = false
 
     // - 2. Thumbnail Preview
 
@@ -451,10 +451,10 @@ extension PlayerWindowController {
                                                      viewportSize: viewportView.frame.size,
                                                      isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
     guard didShow else { return }
-    seekTimeAndThumbnailAnimationState = .shown
+    seekPreviewAnimationState = .shown
     // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
     // reliably, so using a timer works well as a failsafe.
-    resetSeekTimeAndThumbnailTimer()
+    resetSeekPreviewlTimer()
   }
 
 }
