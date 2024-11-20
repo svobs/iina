@@ -529,7 +529,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="d9m-Hf-6wE" secondAttribute="trailing" id="ofv-rX-MTT"/>
                 <constraint firstAttribute="bottom" secondItem="d9m-Hf-6wE" secondAttribute="bottom" constant="8" id="zrl-6c-0VQ"/>
             </constraints>
-            <point key="canvasLocation" x="17" y="-411"/>
+            <point key="canvasLocation" x="19" y="-874"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="lH7-Vv-0M1"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="D77-Iw-nrY" userLabel="Prefs &gt; UI &gt; Window Geometry" propertyAccessControl="all">
@@ -1252,7 +1252,7 @@ For smoothest results, also enable custom full screen.</string>
             </constraints>
             <point key="canvasLocation" x="5" y="-727"/>
         </customView>
-        <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="none">
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="gjB-It-iFS" userLabel="Prefs &gt; UI &gt; Title Bar &amp; Controller" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="578" height="1030"/>
             <subviews>
                 <textField identifier="SectionTitleOSC" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4XH-GU-VhV">
@@ -2172,7 +2172,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="0eU-xI-byi" firstAttribute="top" secondItem="6ml-Xj-nVX" secondAttribute="bottom" constant="4" id="wjF-MV-3US"/>
                 <constraint firstItem="6ml-Xj-nVX" firstAttribute="leading" secondItem="0eU-xI-byi" secondAttribute="leading" id="zS7-aO-rrc"/>
             </constraints>
-            <point key="canvasLocation" x="18" y="134"/>
+            <point key="canvasLocation" x="18" y="-219"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="c8m-G4-or8" userLabel="Prefs &gt; UI &gt; OSD" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="500" height="279"/>
@@ -2657,7 +2657,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstAttribute="trailing" secondItem="tw5-VT-L9M" secondAttribute="trailing" constant="8" id="vw0-T4-cYz"/>
                 <constraint firstItem="zyi-J3-lSp" firstAttribute="top" secondItem="c8m-G4-or8" secondAttribute="top" constant="8" id="wfr-Ab-w5u"/>
             </constraints>
-            <point key="canvasLocation" x="-19" y="742"/>
+            <point key="canvasLocation" x="-18" y="563"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="iZa-Jl-fXs" userLabel="Prefs &gt; UI &gt; Sidebars" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="571" height="320"/>
@@ -3114,7 +3114,7 @@ For smoothest results, also enable custom full screen.</string>
                 <constraint firstItem="E6K-jW-Lzn" firstAttribute="top" secondItem="iZa-Jl-fXs" secondAttribute="top" constant="8" id="gKH-FL-rHR"/>
                 <constraint firstItem="kog-j2-kGH" firstAttribute="leading" secondItem="iZa-Jl-fXs" secondAttribute="leading" constant="120" id="l2c-o1-o6t"/>
             </constraints>
-            <point key="canvasLocation" x="-20" y="1073"/>
+            <point key="canvasLocation" x="-20" y="976"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="3uJ-UU-1zw" userLabel="Prefs &gt; UI &gt; Thumbnail Preview" propertyAccessControl="all">
             <rect key="frame" x="0.0" y="0.0" width="500" height="300"/>
@@ -3176,7 +3176,7 @@ For smoothest results, also enable custom full screen.</string>
                             </connections>
                         </button>
                         <button translatesAutoresizingMaskIntoConstraints="NO" id="tmN-Bh-bO1">
-                            <rect key="frame" x="-2" y="187" width="344" height="20"/>
+                            <rect key="frame" x="-2" y="187" width="361" height="20"/>
                             <buttonCell key="cell" type="check" title="Show thumbnail during seeks with slider or scroll wheel" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="LxA-rL-GWg">
                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                 <font key="font" metaFont="system"/>

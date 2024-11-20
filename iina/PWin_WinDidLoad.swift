@@ -112,9 +112,7 @@ extension PlayerWindowController {
         contentView.addSubview(view)
       }
 
-      contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: osdVisualEffectView)
-      thumbnailPeekView.identifier = .init("thumbnailPeekView")
-      thumbnailPeekView.isHidden = true
+      initSeekTimeAndThumbnail(in: contentView)
       initTitleBarAccessories()
       initBottomBarView(in: contentView)
       initSpeedLabel()
@@ -155,6 +153,40 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
+  }
+
+  private func initSeekTimeAndThumbnail(in contentView: NSView) {
+    contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: osdVisualEffectView)
+    thumbnailPeekView.identifier = .init("ThumbnailPeekView")
+    thumbnailPeekView.isHidden = true
+
+    seekTimeHoverLabel.identifier = .init("SeekTimeHoverLabel")
+    seekTimeHoverLabel.controlSize = .large
+    fragPositionSliderView.addSubview(seekTimeHoverLabel)
+//    contentView.addSubview(seekTimeHoverLabel, positioned: .below, relativeTo: thumbnailPeekView)
+    seekTimeHoverLabel.translatesAutoresizingMaskIntoConstraints = false
+    seekTimeHoverLabel.isBordered = false
+    seekTimeHoverLabel.drawsBackground = false
+    seekTimeHoverLabel.isBezeled = false
+    seekTimeHoverLabel.isEditable = false
+    seekTimeHoverLabel.isSelectable = false
+    seekTimeHoverLabel.isEnabled = true
+    seekTimeHoverLabel.refusesFirstResponder = true
+    seekTimeHoverLabel.alignment = .center
+    seekTimeHoverLabel.setContentHuggingPriority(.required, for: .horizontal)
+    seekTimeHoverLabel.setContentHuggingPriority(.required, for: .vertical)
+
+
+    seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: fragPositionSliderView.topAnchor, constant: 2)
+    seekTimeHoverLabelVerticalSpaceConstraint.isActive = true
+    seekTimeHoverLabelVerticalSpaceConstraint.identifier = .init("SeekTimeHoverLabelVSpaceConstraint")
+
+    // Yes, left, not leading!
+    seekTimeHoverLabelHorizontalCenterConstraint = seekTimeHoverLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+    seekTimeHoverLabelHorizontalCenterConstraint.isActive = true
+    seekTimeHoverLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+
+    seekTimeHoverLabel.isHidden = true
   }
 
   private func initTitleBarAccessories() {

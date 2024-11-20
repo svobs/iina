@@ -454,13 +454,9 @@ extension PlayerWindowController {
     let showBottomBarTopBorder = transition.outputGeometry.outsideBars.bottom > 0 && outputLayout.bottomBarPlacement == .outsideViewport && !outputLayout.isMusicMode
     bottomBarTopBorder.isHidden = !showBottomBarTopBorder
 
-    if let playSliderHeightConstraint {
-      playSliderHeightConstraint.isActive = false
-    }
+    playSliderHeightConstraint?.isActive = false
 
-    if let seekTimeHoverLabelVerticalSpaceConstraint {
-      seekTimeHoverLabelVerticalSpaceConstraint.isActive = false
-    }
+    seekTimeHoverLabelVerticalSpaceConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -563,6 +559,8 @@ extension PlayerWindowController {
         oscBottomMainView.removeFromSuperview()
       }
     } else {
+      // Has OSC, or music mode
+
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
 
@@ -581,64 +579,86 @@ extension PlayerWindowController {
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
       }
-    }
 
-    // Sidebars: finish closing (if closing)
-    if transition.isHidingLeadingSidebar, let visibleTab = transition.inputLayout.leadingSidebar.visibleTab {
-      /// Remove `tabGroupView` from its parent (also removes constraints):
-      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
-      viewController.view.removeFromSuperview()
-    }
-    if transition.isHidingTrailingSidebar, let visibleTab = transition.inputLayout.trailingSidebar.visibleTab {
-      /// Remove `tabGroupView` from its parent (also removes constraints):
-      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
-      viewController.view.removeFromSuperview()
-    }
+      if transition.isEnteringMusicMode {
+        // Entering music mode
+        bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
+        miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
 
-    if transition.isEnteringMusicMode {
-      // Entering music mode
-      bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
-      miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
+        let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
+        bottomConstraint.priority = .defaultHigh
+        bottomConstraint.isActive = true
 
-      let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
-      bottomConstraint.priority = .defaultHigh
-      bottomConstraint.isActive = true
+        // move playist view
+        let playlistView = playlistView.view
+        playlistView.removeFromSuperview()
+        miniPlayer.playlistWrapperView.addSubview(playlistView)
+        playlistView.addConstraintsToFillSuperview()
 
-      // move playist view
-      let playlistView = playlistView.view
-      playlistView.removeFromSuperview()
-      miniPlayer.playlistWrapperView.addSubview(playlistView)
-      playlistView.addConstraintsToFillSuperview()
+        // move playback position slider
+        miniPlayer.positionSliderWrapperView.addSubview(fragPositionSliderView)
+        fragPositionSliderView.addConstraintsToFillSuperview()
+        // Expand slider bounds so that hovers are more likely to register
+        playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
+        playSliderHeightConstraint.isActive = true
+        playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
 
-      // move playback position slider
-      miniPlayer.positionSliderWrapperView.addSubview(fragPositionSliderView)
-      fragPositionSliderView.addConstraintsToFillSuperview()
-      // Expand slider bounds so that hovers are more likely to register
-      playSliderHeightConstraint = playSlider.heightAnchor.constraint(equalToConstant: miniPlayer.positionSliderWrapperView.frame.height - 4)
-      playSliderHeightConstraint.isActive = true
-      playSlider.customCell.knobHeight = Constants.Distance.MusicMode.playSliderKnobHeight
+        // move playback buttons
+        if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
+          miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
+          miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
+          miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+        }
 
-      // move playback buttons
-      if !miniPlayer.playbackBtnsWrapperView.subviews.contains(fragPlaybackBtnsView) {
-        miniPlayer.playbackBtnsWrapperView.addSubview(fragPlaybackBtnsView)
-        miniPlayer.playbackBtnsWrapperView.centerXAnchor.constraint(equalTo: fragPlaybackBtnsView.centerXAnchor).isActive = true
-        miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: -1)
+        seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
+        seekTimeHoverLabel.font = NSFont.systemFont(ofSize: 9)
+
+        // Decrease font size of time labels
+        leftLabel.font = NSFont.labelFont(ofSize: 9)
+        rightLabel.font = NSFont.labelFont(ofSize: 9)
+
+        // Update music mode UI
+        updateTitle()
+        applyThemeMaterial()
+
+        if !miniPlayer.isVideoVisible, pipStatus == .notInPIP {
+          player.setVideoTrackEnabled(false)
+        }
       }
+    }
 
-      seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: -1)
-      seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
-      seekTimeHoverLabel.font = NSFont.systemFont(ofSize: 9)
+    // Leading Sidebar
+    if transition.isHidingLeadingSidebar,
+        let visibleTab = transition.inputLayout.leadingSidebar.visibleTab {
+      /// Finish closing (if closing).
+      /// Remove `tabGroupView` from its parent (also removes constraints):
+      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
+      viewController.view.removeFromSuperview()
+    } else if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab {  // Opening
+      if transition.isShowingLeadingSidebar {
+        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar,
+                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      } else if transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
+        // Tab group is already showing, but just need to switch tab
+        switchToTabInTabGroup(tab: tabToShow)
+      }
+    }
 
-      // Decrease font size of time labels
-      leftLabel.font = NSFont.labelFont(ofSize: 9)
-      rightLabel.font = NSFont.labelFont(ofSize: 9)
-
-      // Update music mode UI
-      updateTitle()
-      applyThemeMaterial()
-
-      if !miniPlayer.isVideoVisible, pipStatus == .notInPIP {
-        player.setVideoTrackEnabled(false)
+    // Trailing Sidebar
+    if transition.isHidingTrailingSidebar,
+        let visibleTab = transition.inputLayout.trailingSidebar.visibleTab {
+      /// Finish closing (if closing).
+      /// Remove `tabGroupView` from its parent (also removes constraints):
+      let viewController = (visibleTab.group == .playlist) ? playlistView : quickSettingView
+      viewController.view.removeFromSuperview()
+    } else if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab {  // Opening
+      if transition.isShowingTrailingSidebar {
+        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
+                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
+      } else if transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
+        // Tab group is already showing, but just need to switch tab
+        switchToTabInTabGroup(tab: tabToShow)
       }
     }
 
@@ -703,26 +723,6 @@ extension PlayerWindowController {
           cropController.view.removeFromSuperview()
           self.cropSettingsView = nil
         }
-      }
-    }
-
-    // Sidebars: if (re)opening
-    if let tabToShow = transition.outputLayout.leadingSidebar.visibleTab {
-      if transition.isShowingLeadingSidebar {
-        prepareLayoutForOpening(leadingSidebar: transition.outputLayout.leadingSidebar, 
-                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      } else if transition.inputLayout.leadingSidebar.visibleTabGroup == transition.outputLayout.leadingSidebar.visibleTabGroup {
-        // Tab group is already showing, but just need to switch tab
-        switchToTabInTabGroup(tab: tabToShow)
-      }
-    }
-    if let tabToShow = transition.outputLayout.trailingSidebar.visibleTab {
-      if transition.isShowingTrailingSidebar {
-        prepareLayoutForOpening(trailingSidebar: transition.outputLayout.trailingSidebar,
-                                parentLayout: transition.outputLayout, ΔWindowWidth: transition.ΔWindowWidth)
-      } else if transition.inputLayout.trailingSidebar.visibleTabGroup == transition.outputLayout.trailingSidebar.visibleTabGroup {
-        // Tab group is already showing, but just need to switch tab
-        switchToTabInTabGroup(tab: tabToShow)
       }
     }
 
