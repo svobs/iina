@@ -296,7 +296,7 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
 
   /// Special case when exiting PiP
   func applyVideoTrackFromVideoVisibility() {
-    if !isVideoVisible && windowController.pipStatus == .notInPIP {
+    if !isVideoVisible && windowController.pip.status == .notInPIP {
       player.setVideoTrackEnabled(false)
     } else {
       player.setVideoTrackEnabled(true)

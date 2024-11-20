@@ -1244,8 +1244,8 @@ class PlayerCore: NSObject {
       } else {  // resume
         videoView.displayActive()
       }
-      if windowController.pipStatus == .inPIP {
-        windowController.pip.playing = !paused
+      if windowController.pip.status == .inPIP {
+        windowController.pip.controller.playing = !paused
       }
 
       if windowController.loaded, !isFullScreen && Preference.bool(for: .alwaysFloatOnTop) {

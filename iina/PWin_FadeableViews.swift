@@ -162,7 +162,7 @@ extension PlayerWindowController {
 
   @discardableResult
   func hideFadeableViews() -> Bool {
-    guard pipStatus == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
+    guard pip.status == .notInPIP, (!(window?.isMiniaturized ?? false)), fadeableViewsAnimationState == .shown else {
       return false
     }
 

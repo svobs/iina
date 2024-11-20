@@ -224,7 +224,7 @@ struct PlayerSaveState: CustomStringConvertible {
     props[PropName.miscWindowBools.rawValue] = [
       wc.isWindowMiniturized.yn,
       wc.isWindowHidden.yn,
-      (wc.pipStatus == .inPIP).yn,
+      (wc.pip.status == .inPIP).yn,
       wc.isWindowMiniaturizedDueToPip.yn,
       wc.isPausedPriorToInteractiveMode.yn
     ].joined(separator: ",")

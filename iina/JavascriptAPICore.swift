@@ -231,7 +231,7 @@ fileprivate class WindowAPI: JavascriptAPI, CoreSubAPIExportable {
     case "fullscreen":
       return window.isFullScreen
     case "pip":
-      return window.pipStatus == .inPIP
+      return window.pip.status == .inPIP
     case "ontop":
       return window.isOnTop
     case "visible":

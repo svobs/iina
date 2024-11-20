@@ -103,13 +103,17 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     }
   }
 
-  var isOnTop: Bool = false
+  // - Mutually exclusive state bools:
 
-  // TODO: replace these vars with window state var: .notYetLoaded, .loadedButClosed, .willOpen, .openVisible, .openDragging,
-  // .openMagnifying, .openLiveResizingWidth, .openLiveResizingHeight, .openHidden, .openMiniturized, .openInFullScreen, .closing
+  // TODO: replace these vars with window state var:
+  /// WindowState enum cases: [.notYetLoaded, .loadedButClosed, .willOpen, .openVisible, .openDragging, .openMagnifying,
+  /// .openLiveResizingWidth, .openLiveResizingHeight, .openDragging, .openHidden, .openMiniturized, .openMiniturizedPiP,
+  /// .openInFullScreen, .closing]
   var loaded = false  // TODO: -> .isAtLeast(.loadedButClosed)
   var isInitialSizeDone = false // TODO: -> willOpen
   var isWindowMiniturized = false
+  var isWindowMiniaturizedDueToPip = false
+  var isWindowPipDueToInactiveSpace = false
   /// Set only for PiP
   var isWindowHidden = false
   var isDragging: Bool = false
@@ -117,6 +121,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   var isLiveResizingWidth: Bool? = nil
   var isMagnifying = false
 
+  // - Non-exclusive state bools:
+
+  var isOnTop: Bool = false
   var isShowingFadeableViewsForSeek = false
 
   /// True if window is either visible, hidden, or minimized. False if window is closed.
@@ -141,9 +148,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     return player.state.isAtLeast(.stopping)
   }
 
-  var isWindowMiniaturizedDueToPip = false
-  var isWindowPipDueToInactiveSpace = false
-
   var denyNextWindowResize = false
   var modeToSetAfterExitingFullScreen: PlayerWindowMode? = nil
 
@@ -156,7 +160,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // - Mouse
 
-  var mousePosRelatedToWindow: CGPoint?
+  var mouseDownLocationInWindow: CGPoint?
 
   // might use another obj to handle slider?
   var isMouseInWindow: Bool = false
@@ -211,13 +215,11 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var osd: OSDState
 
-  // - Window Layout State
+  // - PiP
 
-  var pipStatus = PIPStatus.notInPIP {
-    didSet {
-      log.verbose("Updated pipStatus to: \(pipStatus)")
-    }
-  }
+  var pip: PIPState
+
+  // - Window Layout State
 
   var currentLayout: LayoutState = LayoutState(spec: LayoutSpec.defaultLayout()) {
     didSet {
@@ -597,28 +599,15 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   lazy var subPopoverView = playlistView.subPopover?.contentViewController?.view
 
-  // PIP
-
-  lazy var _pip: PIPViewController = {
-    let pip = VideoPIPViewController()
-    pip.delegate = self
-    return pip
-  }()
-
-  var pip: PIPViewController {
-    _pip
-  }
-
-  var pipVideo: NSViewController!
-
   // MARK: - Initialization
 
-  init(playerCore: PlayerCore) {
-    self.player = playerCore
-    self.osd = OSDState(log: playerCore.log)
+  init(playerCore player: PlayerCore) {
+    self.player = player
+    self.osd = OSDState(log: player.log)
+    self.pip = PIPState(player)
     self.geo = GeometrySet(windowed: PlayerWindowController.windowedModeGeoLastClosed,
                            musicMode: PlayerWindowController.musicModeGeoLastClosed,
-                           video: VideoGeometry.defaultGeometry(playerCore.log))
+                           video: VideoGeometry.defaultGeometry(player.log))
     super.init(window: nil)
     log.verbose("PlayerWindowController init")
   }
@@ -900,7 +889,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     co.removeAllObservers()
 
     // Close PIP
-    if pipStatus == .inPIP {
+    if pip.status == .inPIP {
       exitPIP()
     }
 
@@ -2305,9 +2294,9 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     case .musicMode:
       player.enterMusicMode()
     case .pip:
-      if pipStatus == .inPIP {
+      if pip.status == .inPIP {
         exitPIP()
-      } else if pipStatus == .notInPIP {
+      } else if pip.status == .notInPIP {
         enterPIP()
       }
     case .playlist:

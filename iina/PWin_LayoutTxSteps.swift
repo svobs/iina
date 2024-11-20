@@ -629,7 +629,7 @@ extension PlayerWindowController {
         updateTitle()
         applyThemeMaterial()
 
-        if !miniPlayer.isVideoVisible, pipStatus == .notInPIP {
+        if !miniPlayer.isVideoVisible, pip.status == .notInPIP {
           player.setVideoTrackEnabled(false)
         }
       }
@@ -1064,7 +1064,7 @@ extension PlayerWindowController {
       player.touchBarSupport.toggleTouchBarEsc(enteringFullScr: true)
 
       // Exit PIP when entering full screen
-      if pipStatus == .inPIP {
+      if pip.status == .inPIP {
         exitPIP()
       }
 
@@ -1127,7 +1127,7 @@ extension PlayerWindowController {
     }
 
     if transition.isTogglingFullScreen || transition.isTogglingMusicMode {
-      if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pipStatus == .notInPIP {
+      if transition.outputLayout.isMusicMode && !musicModeGeo.isVideoVisible && pip.status == .notInPIP {
         player.setVideoTrackEnabled(false)
       } else {
         player.updateMPVWindowScale(using: transition.outputGeometry)

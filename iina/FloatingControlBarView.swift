@@ -23,7 +23,7 @@ class FloatingControlBarView: NSVisualEffectView {
   weak var bottomMarginConstraint: NSLayoutConstraint!
 
   var mousePosRelatedToView: CGPoint?
-  var mousePosRelatedToWindow: CGPoint?
+  var mouseDownLocationInWindow: CGPoint?
 
   var isDragging: Bool {
     return playerWindowController?.currentDragObject == self
@@ -127,21 +127,21 @@ class FloatingControlBarView: NSVisualEffectView {
     guard let viewportView = playerWindowController?.viewportView else { return }
 
     mousePosRelatedToView = self.convert(event.locationInWindow, from: nil)
-    mousePosRelatedToWindow = event.locationInWindow
+    mouseDownLocationInWindow = event.locationInWindow
     let originInViewport = viewportView.convert(frame.origin, from: nil)
     isAlignFeedbackSent = abs(originInViewport.x - (viewportView.frame.width - frame.width) / 2) <= Constants.Distance.floatingControllerSnapToCenterThreshold
   }
 
   override func mouseDragged(with event: NSEvent) {
     guard let mousePosRelatedToView,
-          let mousePosRelatedToWindow,
+          let mouseDownLocationInWindow,
           let playerWindowController,
           let viewportView = playerWindowController.viewportView else {
       return
     }
 
     if !isDragging {
-      if mousePosRelatedToWindow.distance(to: event.locationInWindow) <= Constants.Distance.windowControllerMinInitialDragThreshold {
+      if mouseDownLocationInWindow.distance(to: event.locationInWindow) <= Constants.Distance.windowControllerMinInitialDragThreshold {
         return
       }
       if Logger.enabled && Logger.Level.preferred >= .verbose {

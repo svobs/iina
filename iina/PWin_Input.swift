@@ -176,7 +176,7 @@ extension PlayerWindowController {
       return
     }
     // record current mouse pos
-    mousePosRelatedToWindow = event.locationInWindow
+    mouseDownLocationInWindow = event.locationInWindow
     // Start resize if applicable
     let wasHandled = startResizingSidebar(with: event)
     guard !wasHandled else { return }
@@ -207,13 +207,13 @@ extension PlayerWindowController {
       return
     }
 
-    if !isFullScreen, let mousePosRelatedToWindow {
+    if !isFullScreen, let mouseDownLocationInWindow {
       if !isDragging {
         /// Require that the user must drag the cursor at least a small distance for it to start a "drag" (`isDragging==true`)
         /// The user's action will only be counted as a click if `isDragging==false` when `mouseUp` is called.
         /// (Apple's trackpad in particular is very sensitive and tends to call `mouseDragged()` if there is even the slightest
         /// roll of the finger during a click, and the distance of the "drag" may be less than `minimumInitialDragDistance`)
-        let dragDistance = mousePosRelatedToWindow.distance(to: event.locationInWindow)
+        let dragDistance = mouseDownLocationInWindow.distance(to: event.locationInWindow)
         guard dragDistance > Constants.Distance.windowControllerMinInitialDragThreshold else { return }
         log.verbose("PlayerWindow mouseDrag: minimum dragging distance was met")
         isDragging = true
@@ -236,7 +236,7 @@ extension PlayerWindowController {
     }
 
     restartHideCursorTimer()
-    mousePosRelatedToWindow = nil
+    mouseDownLocationInWindow = nil
 
     if isDragging {
       // if it's a mouseup after dragging window

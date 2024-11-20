@@ -8,7 +8,41 @@
 
 import Foundation
 
-// MARK: - Picture in Picture
+enum PIPStatus {
+  case notInPIP
+  case inPIP
+  case intermediate
+}
+
+/// Picture in Picture handling for a single player window
+extension PlayerWindowController {
+
+  /// `PIPState`: Encapsulates all state for PiP.
+  class PIPState {
+    unowned var player: PlayerCore
+    var log: Logger.Subsystem { player.log }
+
+    var status = PIPStatus.notInPIP {
+      didSet {
+        log.verbose("Updated pip.status to: \(status)")
+      }
+    }
+
+    /// Needs to be retained during PiP, but cannot be reused
+    var videoController: NSViewController!
+
+    var controller: PIPViewController { _pip }
+    lazy var _pip: PIPViewController = {
+      let pip = VideoPIPViewController()
+      pip.delegate = player.windowController
+      return pip
+    }()
+
+    init(_ player: PlayerCore) {
+      self.player = player
+    }
+  }
+}
 
 extension PlayerWindowController: PIPViewControllerDelegate {
 
@@ -16,15 +50,15 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     assert(DispatchQueue.isExecutingIn(.main))
 
     // Must not try to enter PiP if already in PiP - will crash!
-    guard pipStatus == .notInPIP else { return }
-    pipStatus = .intermediate
+    guard pip.status == .notInPIP else { return }
+    pip.status = .intermediate
 
     exitInteractiveMode(then: { [self] in
       log.verbose("About to enter PIP")
 
       guard player.info.isVideoTrackSelected else {
         log.debug("Aborting request for PIP entry: no video track selected!")
-        pipStatus = .notInPIP
+        pip.status = .notInPIP
         return
       }
       // Special case if in music mode
@@ -43,7 +77,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
   func showOrHidePipOverlayView() {
     let mustHide: Bool
-    if pipStatus == .inPIP {
+    if pip.status == .inPIP {
       mustHide = isInMiniPlayer && !musicModeGeo.isVideoVisible
     } else {
       mustHide = true
@@ -55,28 +89,29 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   private func doPIPEntry(usePipBehavior: Preference.WindowBehaviorWhenPip? = nil,
                           then doAfter: (() -> Void)? = nil) {
     guard let window else { return }
-    pipStatus = .inPIP
+    pip.status = .inPIP
     showFadeableViews()
 
     do {
       videoView.player.mpv.lockAndSetOpenGLContext()
       defer { videoView.player.mpv.unlockOpenGLContext() }
-      
-      pipVideo = NSViewController()
+
       // Remove these. They screw up PIP drag
       videoView.apply(nil)
-      pipVideo.view = videoView
+
+      pip.videoController = NSViewController()
+      pip.videoController.view = videoView
       // Remove remaining constraints. The PiP superview will manage videoView's layout.
       videoView.removeConstraints(videoView.constraints)
-      pip.playing = player.info.isPlaying
-      pip.title = window.title
+      pip.controller.playing = player.info.isPlaying
+      pip.controller.title = window.title
 
-      pip.presentAsPicture(inPicture: pipVideo)
+      pip.controller.presentAsPicture(inPicture: pip.videoController)
       showOrHidePipOverlayView()
 
       let aspectRatioSize = player.videoGeo.videoSizeCAR
       log.verbose("Setting PiP aspect to \(aspectRatioSize.aspect)")
-      pip.aspectRatio = aspectRatioSize
+      pip.controller.aspectRatio = aspectRatioSize
     }
 
     if !window.styleMask.contains(.fullScreen) && !window.isMiniaturized {
@@ -107,24 +142,24 @@ extension PlayerWindowController: PIPViewControllerDelegate {
   }
 
   func exitPIP() {
-    guard pipStatus == .inPIP else { return }
+    guard pip.status == .inPIP else { return }
     log.verbose("Exiting PIP")
-    if pipShouldClose(pip) {
+    if pipShouldClose(pip.controller) {
       // Prod Swift to pick the dismiss(_ viewController: NSViewController)
       // overload over dismiss(_ sender: Any?). A change in the way implicitly
       // unwrapped optionals are handled in Swift means that the wrong method
       // is chosen in this case. See https://bugs.swift.org/browse/SR-8956.
-      pip.dismiss(pipVideo!)
+      pip.controller.dismiss(pip.videoController!)
     }
     player.events.emit(.pipChanged, data: false)
   }
 
-  func prepareForPIPClosure(_ pip: PIPViewController) {
-    guard pipStatus == .inPIP else { return }
+  func prepareForPIPClosure(_ pipController: PIPViewController) {
+    guard pip.status == .inPIP else { return }
     guard let window = window else { return }
     log.verbose("Preparing for PIP closure")
     // This is called right before we're about to close the PIP
-    pipStatus = .intermediate
+    pip.status = .intermediate
 
     // Hide the overlay view preemptively, to prevent any issues where it does
     // not hide in time and ends up covering the video view (which will be added
@@ -138,13 +173,13 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     // Set frame to animate back to
     let geo = currentLayout.mode == .musicMode ? musicModeGeo.toPWinGeometry() : windowedModeGeo
-    pip.replacementRect = geo.videoFrameInWindowCoords
-    pip.replacementWindow = window
+    pipController.replacementRect = geo.videoFrameInWindowCoords
+    pipController.replacementWindow = window
 
     // Bring the window to the front and deminiaturize it
     NSApp.activate(ignoringOtherApps: true)
     if isWindowMiniturized {
-      window.deminiaturize(pip)
+      window.deminiaturize(pipController)
     }
   }
 
@@ -157,7 +192,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     return true
   }
 
-  func pipDidClose(_ pip: PIPViewController) {
+  func pipDidClose(_ pipController: PIPViewController) {
     guard !AppDelegate.shared.isTerminating else { return }
 
     // seems to require separate animation blocks to work properly
@@ -177,7 +212,7 @@ extension PlayerWindowController: PIPViewControllerDelegate {
 
     tasks.append(.instantTask { [self] in
       /// Must set this before calling `addVideoViewToWindow()`
-      pipStatus = .notInPIP
+      pip.status = .notInPIP
 
       addVideoViewToWindow()
 
@@ -206,15 +241,15 @@ extension PlayerWindowController: PIPViewControllerDelegate {
     animationPipeline.submit(tasks)
   }
 
-  func pipActionPlay(_ pip: PIPViewController) {
+  func pipActionPlay(_ pipController: PIPViewController) {
     player.resume()
   }
 
-  func pipActionPause(_ pip: PIPViewController) {
+  func pipActionPause(_ pipController: PIPViewController) {
     player.pause()
   }
 
-  func pipActionStop(_ pip: PIPViewController) {
+  func pipActionStop(_ pipController: PIPViewController) {
     // Stopping PIP pauses playback
     player.pause()
   }

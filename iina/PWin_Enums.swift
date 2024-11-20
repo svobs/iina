@@ -17,12 +17,6 @@ extension PlayerWindowController {
     case customTitleBar
   }
 
-  enum PIPStatus {
-    case notInPIP
-    case inPIP
-    case intermediate
-  }
-
   /// Animation state. Used for fadeable views, OSD.
   enum UIAnimationState {
     case shown, hidden, willShow, willHide

@@ -213,7 +213,7 @@ class VideoView: NSView {
   func apply(_ geometry: PWinGeometry?) {
     assert(DispatchQueue.isExecutingIn(.main))
 
-    guard player.windowController.pipStatus == .notInPIP else {
+    guard player.windowController.pip.status == .notInPIP else {
       log.verbose("VideoView: currently in PiP; ignoring request to set viewportMargin constraints")
       return
     }

@@ -402,7 +402,7 @@ extension PlayerWindowController {
 
     /// See also: `doPIPEntry`
     // TODO: find place for this in tasks
-    pip.aspectRatio = newVidGeo.videoSizeCAR
+    pip.controller.aspectRatio = newVidGeo.videoSizeCAR
 
     switch newLayout.mode {
     case .windowedNormal:
@@ -481,7 +481,7 @@ extension PlayerWindowController {
   }
 
   private func resetRotationPreview() {
-    guard pipStatus == .notInPIP else { return }
+    guard pip.status == .notInPIP else { return }
 
     // Seems that this looks better if done before updating the window frame...
     // FIXME: this isn't perfect - a bad frame briefly appears during transition
@@ -864,7 +864,7 @@ extension PlayerWindowController {
       updateDefaultArtVisibility(to: showDefaultArt)
 
       if isTogglingVideoView && !outputGeo.isVideoVisible {  // Hiding video
-        if pipStatus == .notInPIP {
+        if pip.status == .notInPIP {
           player.setVideoTrackEnabled(false)
         }
 

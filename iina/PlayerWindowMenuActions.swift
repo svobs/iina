@@ -496,7 +496,7 @@ extension PlayerWindowController {
   }
 
   @objc func menuTogglePIP(_ sender: NSMenuItem) {
-    switch pipStatus {
+    switch pip.status {
     case .notInPIP:
       enterPIP()
     case .inPIP:
