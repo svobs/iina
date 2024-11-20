@@ -408,8 +408,9 @@ struct Images {
   static let stepBackward10: NSImage = makeSymbol(named: "gobackward.10", fallbackName: "speedl", desc: "Step Backward 10s")
   static let onTopOn = NSImage(imageLiteralResourceName: "ontop")
   static let onTopOff = NSImage(imageLiteralResourceName: "ontop_off")
-  static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill") // 􀣌
-
+  static let settingsFill = NSImage(imageLiteralResourceName: "gearshape.fill")
+  static let sidebarLeading = NSImage(imageLiteralResourceName: "sidebar.leading")
+  static let sidebarTrailing = NSImage(imageLiteralResourceName: "sidebar.trailing")
 
 //  static let mute = makeSymbol(named: "speaker.slash.fill", fallbackName: "mute", desc: "Mute")
   static let mute = NSImage(named: "mute")!

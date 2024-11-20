@@ -41,7 +41,7 @@ class CustomTitleBarViewController: NSViewController {
     let btnTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
     trafficLightButtons = btnTypes.compactMap{ NSWindow.standardWindowButton($0, for: .titled) }
 
-    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading",
+    leadingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarLeading,
                                                             identifier: "leadingSidebarToggleButton",
                                                             target: windowController,
                                                             action: #selector(windowController.toggleLeadingSidebarVisibility(_:)))
@@ -103,13 +103,13 @@ class CustomTitleBarViewController: NSViewController {
 
     // - Trailing views
 
-    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off",
+    onTopButton = builder.makeTitleBarButton(Images.onTopOff,
                                              identifier: "onTopButton",
                                              target: windowController,
                                              action: #selector(windowController.toggleOnTop(_:)))
-    onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
+    onTopButton.alternateImage = Images.onTopOn
 
-    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing",
+    trailingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarTrailing,
                                                              identifier: "trailingSidebarToggleButton",
                                                              target: windowController,
                                                              action: #selector(windowController.toggleTrailingSidebarVisibility(_:)))
@@ -259,9 +259,8 @@ class TitleTextView: NSTextView {
 class CustomTitleBar {
   static let shared = CustomTitleBar()
 
-  func makeTitleBarButton(imgName: String, identifier: String, target: AnyObject, action: Selector) -> NSButton {
-    let btnImage = NSImage(imageLiteralResourceName: imgName)
-    let button = NSButton(image: btnImage, target: target, action: action)
+  func makeTitleBarButton(_ image: NSImage, identifier: String, target: AnyObject, action: Selector) -> NSButton {
+    let button = NSButton(image: image, target: target, action: action)
     button.identifier = .init(identifier)
     button.setButtonType(.momentaryPushIn)
     button.bezelStyle = .smallSquare

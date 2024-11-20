@@ -182,6 +182,7 @@ extension PlayerWindowController {
     // - LEADING
 
     let leadingTB = leadingTitleBarAccessoryView
+    leadingTB.idString = "leadingTitleBarAccessoryView"
     leadingTB.translatesAutoresizingMaskIntoConstraints = false
 
     leadingTB.heightAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
@@ -191,7 +192,7 @@ extension PlayerWindowController {
     leadingTitleBarLeadingSpaceConstraint = leadingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
     leadingTitleBarLeadingSpaceConstraint?.isActive = true
 
-    leadingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.leading",
+    leadingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarLeading,
                                                             identifier: "leadingSidebarToggleButton",
                                                             target: self,
                                                             action: #selector(toggleLeadingSidebarVisibility(_:)))
@@ -215,6 +216,7 @@ extension PlayerWindowController {
     // - TRAILING
 
     let trailingTB = trailingTitleBarAccessoryView
+    trailingTB.idString = "trailingTitleBarAccessoryView"
 
     let trailingSpacerLeading = NSView()
     trailingSpacerLeading.identifier = .init("trailingTitleBarLeadingSpacer")
@@ -222,13 +224,13 @@ extension PlayerWindowController {
     trailingTitleBarLeadingSpaceConstraint = trailingSpacerLeading.widthAnchor.constraint(equalToConstant: 0)
     trailingTitleBarLeadingSpaceConstraint?.isActive = true
 
-    onTopButton = builder.makeTitleBarButton(imgName: "ontop_off",
+    onTopButton = builder.makeTitleBarButton(Images.onTopOff,
                                              identifier: "onTopButton",
                                              target: self, action: #selector(toggleOnTop(_:)))
-    onTopButton.alternateImage = NSImage(imageLiteralResourceName: "ontop")
+    onTopButton.alternateImage = Images.onTopOn
     onTopButton.widthAnchor.constraint(equalToConstant: PlayerWindowController.standardTitleBarHeight).isActive = true
 
-    trailingSidebarToggleButton = builder.makeTitleBarButton(imgName: "sidebar.trailing",
+    trailingSidebarToggleButton = builder.makeTitleBarButton(Images.sidebarTrailing,
                                                              identifier: "trailingSidebarToggleButton",
                                                              target: self,
                                                              action: #selector(toggleTrailingSidebarVisibility(_:)))

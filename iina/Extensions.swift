@@ -1887,6 +1887,15 @@ extension NSView {
     return (window?.windowController as? PlayerWindowController)?.player
   }
 
+  var idString: String {
+    get {
+      return self.identifier?.rawValue ?? ""
+    }
+    set {
+      self.identifier = .init(newValue)
+    }
+  }
+
   func suggestedRoundedCornerRadius() -> CGFloat {
     // Set corner radius to betwen 10 and 20
     return 10 + min(10, max(0, (frame.height - 400) * 0.01))
