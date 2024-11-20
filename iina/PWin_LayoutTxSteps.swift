@@ -563,13 +563,6 @@ extension PlayerWindowController {
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
 
-      if !outputLayout.hasFloatingOSC {  // floating case will be handled in later step
-        // Yes, left, not leading!
-        seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-        seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-        seekTimeLabelHorizontalCenterConstraint.isActive = true
-      }
-
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
         playButton.contentTintColor = contentTintColor
@@ -585,12 +578,19 @@ extension PlayerWindowController {
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
       }
-
+      
+      if !outputLayout.hasFloatingOSC {  // floating case will be handled in later step
+                                         // Yes, left, not leading!
+        seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+        seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+        seekTimeLabelHorizontalCenterConstraint.isActive = true
+      }
+      
       if transition.isEnteringMusicMode {
         // Entering music mode
         bottomBarView.addSubview(miniPlayer.view, positioned: .below, relativeTo: bottomBarTopBorder)
         miniPlayer.view.addConstraintsToFillSuperview(top: 0, leading: 0, trailing: 0)
-
+        
         let bottomConstraint = miniPlayer.view.superview!.bottomAnchor.constraint(equalTo: miniPlayer.view.bottomAnchor, constant: 0)
         bottomConstraint.priority = .defaultHigh
         bottomConstraint.isActive = true
@@ -1148,7 +1148,7 @@ extension PlayerWindowController {
 
       // Do not run sanity checks for initial layout, because in that case all task funcs combined into a single
       // animation task, which means that frames will not be updated yet & can't be measured correctly
-      if Logger.isEnabled(.error) {
+      if Logger.isEnabled(.error) && pip.status == .notInPIP && player.state.isNotYet(.stopping) {
         let vidSizeA = videoView.frame.size
         let vidSizeE = transition.outputGeometry.videoSize
         let viewportSizeA = viewportView.frame.size

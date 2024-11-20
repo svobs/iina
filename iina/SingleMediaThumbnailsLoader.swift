@@ -161,6 +161,10 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     return tb
   }
 
+  func invalidateDisplayedThumbnail() {
+    currentDisplayedThumbFFTimestamp = -1
+  }
+
   // MARK: - FFmpegControllerDelegate implementation
 
   func didUpdate(_ thumbnails: [FFThumbnail]?, forFile filename: String, thumbWidth width: Int32, withProgress progress: Int) {

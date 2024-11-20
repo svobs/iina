@@ -8,9 +8,6 @@
 
 import Cocoa
 
-fileprivate let thumbnailExtraOffsetX = Constants.Distance.Thumbnail.extraOffsetX
-fileprivate let thumbnailExtraOffsetY = Constants.Distance.Thumbnail.extraOffsetY
-
 fileprivate let outlineBorderWidth: CGFloat = 1
 
 class ThumbnailPeekView: NSImageView {
@@ -110,7 +107,8 @@ class ThumbnailPeekView: NSImageView {
 
   func displayThumbnail(forTime previewTimeSec: Double, originalPosX: CGFloat, _ player: PlayerCore,
                         _ currentLayout: LayoutState, currentControlBar: NSView,
-                        _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool) -> Bool {
+                        _ videoGeo: VideoGeometry, viewportSize: NSSize, isRightToLeft: Bool,
+                        margins: MarginQuad) -> Bool {
 
     guard let thumbnails = player.info.currentPlayback?.thumbnails,
           let ffThumbnail = thumbnails.getThumbnail(forSecond: previewTimeSec) else {
@@ -124,57 +122,55 @@ class ThumbnailPeekView: NSImageView {
     var thumbHeight: Double = rotatedImage.size.height
     let videoAspectCAR = videoGeo.videoAspectCAR
 
-    guard thumbWidth > 0, thumbHeight > 0 else {
-      log.error("Cannot display thumbnail: thumbnail width or height is not positive!")
-      isHidden = true
-      return false
-    }
-    var thumbAspect = thumbWidth / thumbHeight
-
-    // The aspect ratio of some videos is different at display time. May need to resize these videos
-    // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
-    // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
-    if thumbAspect != videoAspectCAR {
-      thumbHeight = (thumbWidth / videoAspectCAR).rounded()
-      /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
-      thumbAspect = thumbWidth / thumbHeight
-    }
-
-    /// Calculate `availableHeight` (viewport height, minus top & bottom bars)
-    let availableHeight = viewportSize.height - currentLayout.insideTopBarHeight - currentLayout.insideBottomBarHeight - thumbnailExtraOffsetY - thumbnailExtraOffsetY
-
-    let sizeOption: Preference.ThumbnailSizeOption = Preference.enum(for: .thumbnailSizeOption)
-    switch sizeOption {
-    case .fixedSize:
-      // Stored thumb size should be correct (but may need to be scaled down)
-      break
-    case .scaleWithViewport:
-      // Scale thumbnail as percentage of available height
-      let percentage = min(1, max(0, Preference.double(for: .thumbnailDisplayedSizePercentage) / 100.0))
-      thumbHeight = availableHeight * percentage
-    }
-
-    // Thumb too small?
-    if thumbHeight < Constants.Distance.Thumbnail.minHeight {
-      thumbHeight = Constants.Distance.Thumbnail.minHeight
-    }
-
-    // Thumb too tall?
-    if thumbHeight > availableHeight {
-      // Scale down thumbnail so it doesn't overlap top or bottom bars
-      thumbHeight = availableHeight
-    }
-    thumbWidth = thumbHeight * thumbAspect
-
-    // Also scale down thumbnail if it's wider than the viewport
-    let availableWidth = viewportSize.width - thumbnailExtraOffsetX - thumbnailExtraOffsetX
-    if thumbWidth > availableWidth {
-      thumbWidth = availableWidth
-      thumbHeight = thumbWidth / thumbAspect
-    }
-
+    /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
+    let availableHeight = viewportSize.height - currentLayout.insideTopBarHeight - currentLayout.insideBottomBarHeight - margins.totalHeight
+    /// `availableWidth`: viewport width, minus extra space
+    let availableWidth = viewportSize.width - margins.totalWidth
     let oscOriginInWindowY = currentControlBar.superview!.convert(currentControlBar.frame.origin, to: nil).y
     let oscHeight = currentControlBar.frame.size.height
+
+    let hasThumbnail = thumbWidth > 0 && thumbHeight > 0
+    var thumbAspect = hasThumbnail ? (thumbWidth / thumbHeight) : 0
+
+    if hasThumbnail {
+      // The aspect ratio of some videos is different at display time. May need to resize these videos
+      // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
+      // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
+      if thumbAspect != videoAspectCAR {
+        thumbHeight = (thumbWidth / videoAspectCAR).rounded()
+        /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
+        thumbAspect = thumbWidth / thumbHeight
+      }
+
+      let sizeOption: Preference.ThumbnailSizeOption = Preference.enum(for: .thumbnailSizeOption)
+      switch sizeOption {
+      case .fixedSize:
+        // Stored thumb size should be correct (but may need to be scaled down)
+        break
+      case .scaleWithViewport:
+        // Scale thumbnail as percentage of available height
+        let percentage = min(1, max(0, Preference.double(for: .thumbnailDisplayedSizePercentage) / 100.0))
+        thumbHeight = availableHeight * percentage
+      }
+
+      // Thumb too small?
+      if thumbHeight < Constants.Distance.Thumbnail.minHeight {
+        thumbHeight = Constants.Distance.Thumbnail.minHeight
+      }
+
+      // Thumb too tall?
+      if thumbHeight > availableHeight {
+        // Scale down thumbnail so it doesn't overlap top or bottom bars
+        thumbHeight = availableHeight
+      }
+      thumbWidth = thumbHeight * thumbAspect
+
+      // Also scale down thumbnail if it's wider than the viewport
+      if thumbWidth > availableWidth {
+        thumbWidth = availableWidth
+        thumbHeight = thumbWidth / thumbAspect
+      }
+    }
 
     let showAbove: Bool
     if currentLayout.isMusicMode {
@@ -186,7 +182,7 @@ class ThumbnailPeekView: NSImageView {
       case .bottom:
         showAbove = true
       case .floating:
-        let totalMargin = thumbnailExtraOffsetY + thumbnailExtraOffsetY
+        let totalMargin = margins.totalHeight
         let availableHeightBelow = max(0, oscOriginInWindowY - currentLayout.insideBottomBarHeight - totalMargin)
         if availableHeightBelow > thumbHeight {
           // Show below by default, if there is space for the desired size
@@ -195,14 +191,14 @@ class ThumbnailPeekView: NSImageView {
           // If not enough space to show the full-size thumb below, then show above if it has more space
           let availableHeightAbove = max(0, viewportSize.height - (oscOriginInWindowY + oscHeight + totalMargin + currentLayout.insideTopBarHeight))
           showAbove = availableHeightAbove > availableHeightBelow
-          if showAbove, thumbHeight > availableHeightAbove {
+          if hasThumbnail, showAbove, thumbHeight > availableHeightAbove {
             // Scale down thumbnail so it doesn't get clipped by the side of the window
             thumbHeight = availableHeightAbove
             thumbWidth = thumbHeight * thumbAspect
           }
         }
 
-        if !showAbove, thumbHeight > availableHeightBelow {
+        if hasThumbnail, !showAbove, thumbHeight > availableHeightBelow {
           thumbHeight = availableHeightBelow
           thumbWidth = thumbHeight * thumbAspect
         }
@@ -213,6 +209,21 @@ class ThumbnailPeekView: NSImageView {
     thumbWidth = round(thumbWidth)
     thumbHeight = round(thumbHeight)
 
+    let thumbOriginY: CGFloat
+    if showAbove {
+      // Show thumbnail above seek time, which is above slider
+      thumbOriginY = oscOriginInWindowY + oscHeight + margins.bottom
+    } else {
+      // Show thumbnail below slider
+      thumbOriginY = max(margins.top, oscOriginInWindowY - thumbHeight - margins.top)
+    }
+    // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
+    let minX = isRightToLeft ? currentLayout.outsideTrailingBarWidth + margins.trailing : currentLayout.outsideLeadingBarWidth + margins.leading
+    let maxX = minX + availableWidth
+    let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
+
+    let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
+
     guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
           thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
       log.verbose("Not enough space to display thumbnail")
@@ -220,10 +231,9 @@ class ThumbnailPeekView: NSImageView {
       return false
     }
 
-    let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
-
     // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-    if thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp {
+    let somethingChanged = thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || widthConstraint.constant != thumbWidth || heightConstraint.constant != thumbHeight
+    if somethingChanged {
       thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
 
       let finalImage: NSImage
@@ -234,27 +244,15 @@ class ThumbnailPeekView: NSImageView {
       } else {
         croppedImage = rotatedImage
       }
+      let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
       finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
       self.image = finalImage
       widthConstraint.constant = finalImage.size.width
       heightConstraint.constant = finalImage.size.height
     }
 
-    let thumbOriginY: CGFloat
-    if showAbove {
-      // Show thumbnail above seek time, which is above slider
-      thumbOriginY = oscOriginInWindowY + oscHeight + thumbnailExtraOffsetY
-    } else {
-      // Show thumbnail below slider
-      thumbOriginY = max(thumbnailExtraOffsetY, oscOriginInWindowY - thumbHeight - thumbnailExtraOffsetY)
-    }
-    // Constrain X origin so that it stays entirely inside the viewport (and not inside the outside sidebars)
-    let minX = (isRightToLeft ? currentLayout.outsideTrailingBarWidth : currentLayout.outsideLeadingBarWidth) + thumbnailExtraOffsetX
-    let maxX = minX + availableWidth
-    let thumbOriginX = min(max(minX, round(originalPosX - thumbWidth / 2)), maxX - thumbWidth)
-    frame.origin = NSPoint(x: thumbOriginX, y: thumbOriginY)
-
-    log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, size \(frame.size)"}
+    frame.origin = thumbFrame.origin
+    log.trace{"Displaying thumbnail \(showAbove ? "above" : "below") OSC, frame=\(thumbFrame)"}
     alphaValue = 1.0
     isHidden = false
     return true

@@ -133,6 +133,8 @@ extension PlayerWindowController {
         updateWindowBorderAndOpacity()
         // may need to hide cropbox label and other advanced stuff
         quickSettingView.reload()
+        /// may need to reload border style (`thumbnailBorderStyle`):
+        player.info.currentPlayback?.thumbnails?.invalidateDisplayedThumbnail()
       })
     case .enableToneMapping,
         .toneMappingTargetPeak,
@@ -202,6 +204,8 @@ extension PlayerWindowController {
       animationPipeline.submitInstantTask({ [self] in
         refreshHidesOnDeactivateStatus()
       })
+    case .thumbnailBorderStyle:
+      player.info.currentPlayback?.thumbnails?.invalidateDisplayedThumbnail()
 
     case .thumbnailSizeOption,
         .thumbnailFixedLength,

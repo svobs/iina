@@ -398,7 +398,7 @@ extension PlayerWindowController {
 
   /// Should only be called by `refreshSeekPreviewAsync`
   private func showSeekPreview(forPointInWindow pointInWindow: NSPoint, mediaDuration: CGFloat) {
-    // - 1. Time Hover Label
+    // - 1. Seek Time Label
 
     let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
@@ -446,10 +446,14 @@ extension PlayerWindowController {
       return
     }
 
+    let thumbMargins = MarginQuad(top: Constants.Distance.Thumbnail.extraOffsetY, trailing: Constants.Distance.Thumbnail.extraOffsetX,
+                                  bottom: Constants.Distance.Thumbnail.extraOffsetY, leading: Constants.Distance.Thumbnail.extraOffsetX)
+
     let didShow = thumbnailPeekView.displayThumbnail(forTime: previewTimeSec, originalPosX: pointInWindow.x, player, currentLayout,
                                                      currentControlBar: currentControlBar, geo.video,
                                                      viewportSize: viewportView.frame.size,
-                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft)
+                                                     isRightToLeft: videoView.userInterfaceLayoutDirection == .rightToLeft,
+                                                     margins: thumbMargins)
     guard didShow else { return }
     seekPreviewAnimationState = .shown
     // Start timer (or reset it), even if just hovering over the play slider. The Cocoa "mouseExited" event doesn't fire
