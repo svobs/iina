@@ -402,7 +402,7 @@ extension PlayerWindowController {
 
     let knobCenterOffsetInPlaySlider = playSlider.computeCenterOfKnobInSliderCoordXGiven(pointInWindow: pointInWindow)
 
-    seekTimeHoverLabelHorizontalCenterConstraint.constant = knobCenterOffsetInPlaySlider
+    seekTimeHoverLabelHorizontalCenterConstraint?.constant = knobCenterOffsetInPlaySlider
 
     let playbackPositionRatio = playSlider.computeProgressRatioGiven(centerOfKnobInSliderCoordX:
                                                                       knobCenterOffsetInPlaySlider)

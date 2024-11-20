@@ -457,6 +457,7 @@ extension PlayerWindowController {
     playSliderHeightConstraint?.isActive = false
 
     seekTimeHoverLabelVerticalSpaceConstraint?.isActive = false
+    seekTimeHoverLabelHorizontalCenterConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -481,9 +482,7 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
-        // Subtract height of slider bar (4), then divide by 2 to get total bottom space, then subtract time label height to get total margin
-        let timeLabelOffset = max(0, (((oscGeo.barHeight - 4) / 2) - seekTimeHoverLabel.frame.height) / 4)
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.bottomAnchor, constant: -timeLabelOffset)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
 
       case .bottom:
         currentControlBar = bottomBarView
@@ -496,15 +495,16 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
 
-        let timeLabelOffset = max(-1, (((oscGeo.barHeight - 4) / 2) - seekTimeHoverLabel.frame.height) / 4 - 2)
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: timeLabelOffset)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
 
       case .floating:
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.bottomAnchor, constant: -2)
+        // same as `.bottom`:
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
 
-        let toolbarView = rebuildToolbar(transition)
-        oscFloatingUpperView.addView(toolbarView, in: .trailing)
-        oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+        if let toolbarView = rebuildToolbar(transition) {
+          oscFloatingUpperView.addView(toolbarView, in: .trailing)
+          oscFloatingUpperView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+        }
       }
 
       let timeLabelFontSize: CGFloat
@@ -564,6 +564,11 @@ extension PlayerWindowController {
       updateArrowButtons(oscGeo: outputLayout.controlBarGeo)
       playSlider.customCell.updateColorsFromPrefs()
 
+      // Yes, left, not leading!
+      seekTimeHoverLabelHorizontalCenterConstraint = seekTimeHoverLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+      seekTimeHoverLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+      seekTimeHoverLabelHorizontalCenterConstraint.isActive = true
+
       if transition.isWindowInitialLayout || (transition.inputLayout.contentTintColor != transition.outputLayout.contentTintColor) {
         let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
         playButton.contentTintColor = contentTintColor
@@ -610,7 +615,8 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
-        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: seekTimeHoverLabel.superview!.topAnchor, constant: -1)
+        seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+
         seekTimeHoverLabelVerticalSpaceConstraint?.isActive = true
         seekTimeHoverLabel.font = NSFont.systemFont(ofSize: 9)
 
@@ -1405,13 +1411,14 @@ extension PlayerWindowController {
     containerView.addView(fragPositionSliderView, in: .leading)
     containerView.addView(fragVolumeView, in: .leading)
 
-    let toolbarView = rebuildToolbar(transition)
-    containerView.addView(toolbarView, in: .leading)
-
     containerView.setClippingResistancePriority(.defaultLow, for: .horizontal)
     containerView.setVisibilityPriority(.mustHold, for: fragPositionSliderView)
     containerView.setVisibilityPriority(.detachEarly, for: fragVolumeView)
-    containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+
+    if let toolbarView = rebuildToolbar(transition) {
+      containerView.addView(toolbarView, in: .leading)
+      containerView.setVisibilityPriority(.detachEarlier, for: toolbarView)
+    }
   }
 
   private func updateArrowButtons(oscGeo: ControlBarGeometry) {
@@ -1433,11 +1440,18 @@ extension PlayerWindowController {
   }
 
   /// Recreates the toolbar with the latest icons with the latest sizes & padding from prefs
-  private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView {
+  private func rebuildToolbar(_ transition: LayoutTransition) -> NSStackView? {
     let oscGeo = transition.outputLayout.controlBarGeo
     let buttonTypes = oscGeo.toolbarItems
-    let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
 
+    removeToolBar()
+
+    guard !buttonTypes.isEmpty else {
+      log.verbose("[\(transition.name)] Omitting OSC toolbar; no toolbarItems configured")
+      return nil
+    }
+
+    let contentTintColor: NSColor? = transition.outputLayout.contentTintColor
     log.verbose("[\(transition.name)] Setting OSC toolbarItems to: [\(buttonTypes.map({$0.keyString}).joined(separator: ", "))]")
 
     var toolButtons: [OSCToolbarButton] = []
@@ -1448,10 +1462,9 @@ extension PlayerWindowController {
       button.action = #selector(self.toolBarButtonAction(_:))
       toolButtons.append(button)
     }
-    
-    removeToolBar()
 
     let toolbarView = ClickThroughStackView()
+    toolbarView.identifier = .init("OSC-ToolBarView")
     toolbarView.orientation = .horizontal
     toolbarView.distribution = .gravityAreas
     for button in toolButtons {
@@ -1462,13 +1475,11 @@ extension PlayerWindowController {
 
     // It's not possible to control the icon padding from inside the buttons in all cases.
     // Instead we can get the same effect with a little more work, by controlling the stack view:
-    if !toolButtons.isEmpty {
-      let button = toolButtons[0]
-      toolbarView.spacing = 2 * button.iconSpacing
-      toolbarView.edgeInsets = .init(top: button.iconSpacing, left: max(0, button.iconSpacing - 4),
-                                     bottom: button.iconSpacing, right: 0)
-      log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
-    }
+    let button = toolButtons[0]
+    toolbarView.spacing = 2 * button.iconSpacing
+    toolbarView.edgeInsets = .init(top: button.iconSpacing, left: max(0, button.iconSpacing - 4),
+                                   bottom: button.iconSpacing, right: 0)
+    log.verbose("[\(transition.name)] Toolbar spacing=\(toolbarView.spacing) edgeInsets=\(toolbarView.edgeInsets)")
     return toolbarView
   }
 

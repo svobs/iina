@@ -46,9 +46,6 @@ extension PlayerWindowController {
     leftLabel.mode = .current
     rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
-    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    seekTimeHoverLabel.nextResponder = playSlider
-
     // gesture recognizers
     rotationHandler.windowController = self
     magnificationHandler.windowController = self
@@ -162,8 +159,7 @@ extension PlayerWindowController {
 
     seekTimeHoverLabel.identifier = .init("SeekTimeHoverLabel")
     seekTimeHoverLabel.controlSize = .large
-    fragPositionSliderView.addSubview(seekTimeHoverLabel)
-//    contentView.addSubview(seekTimeHoverLabel, positioned: .below, relativeTo: thumbnailPeekView)
+    contentView.addSubview(seekTimeHoverLabel, positioned: .below, relativeTo: thumbnailPeekView)
     seekTimeHoverLabel.translatesAutoresizingMaskIntoConstraints = false
     seekTimeHoverLabel.isBordered = false
     seekTimeHoverLabel.drawsBackground = false
@@ -175,16 +171,8 @@ extension PlayerWindowController {
     seekTimeHoverLabel.alignment = .center
     seekTimeHoverLabel.setContentHuggingPriority(.required, for: .horizontal)
     seekTimeHoverLabel.setContentHuggingPriority(.required, for: .vertical)
-
-
-    seekTimeHoverLabelVerticalSpaceConstraint = seekTimeHoverLabel.topAnchor.constraint(equalTo: fragPositionSliderView.topAnchor, constant: 2)
-    seekTimeHoverLabelVerticalSpaceConstraint.isActive = true
-    seekTimeHoverLabelVerticalSpaceConstraint.identifier = .init("SeekTimeHoverLabelVSpaceConstraint")
-
-    // Yes, left, not leading!
-    seekTimeHoverLabelHorizontalCenterConstraint = seekTimeHoverLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-    seekTimeHoverLabelHorizontalCenterConstraint.isActive = true
-    seekTimeHoverLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+    seekTimeHoverLabel.nextResponder = playSlider
 
     seekTimeHoverLabel.isHidden = true
   }
