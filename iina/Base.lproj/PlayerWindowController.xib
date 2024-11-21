@@ -35,7 +35,7 @@
                 <outlet property="leadingSidebarToOSDSpaceConstraint" destination="LBY-By-mfi" id="bna-VC-p0r"/>
                 <outlet property="leadingSidebarTrailingBorder" destination="b0r-Lt-vGM" id="XL3-cZ-Idp"/>
                 <outlet property="leadingSidebarView" destination="XBs-34-TIm" id="Jqt-cB-r2i"/>
-                <outlet property="leftLabel" destination="NBD-MV-OuG" id="7xb-a1-6NR"/>
+                <outlet property="leftTimeLabel" destination="NBD-MV-OuG" id="7xb-a1-6NR"/>
                 <outlet property="oscFloatingLowerView" destination="hb6-oe-rHm" id="ZKe-zm-evE"/>
                 <outlet property="oscFloatingPlayButtonsContainerView" destination="hDm-KI-3o4" id="ITm-fa-cWL"/>
                 <outlet property="oscFloatingUpperView" destination="Unr-Y6-JoM" id="URb-3v-Gzc"/>
@@ -58,7 +58,7 @@
                 <outlet property="pipOverlayView" destination="Nrz-jZ-Luf" id="EU7-oY-Bwp"/>
                 <outlet property="playSlider" destination="eBP-6g-bAT" id="lGv-18-YeQ"/>
                 <outlet property="playSliderHeightConstraint" destination="VU5-c1-ivd" id="NEQ-Hc-xay"/>
-                <outlet property="rightLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
+                <outlet property="rightTimeLabel" destination="GgV-Cc-sk0" id="fnx-gO-YPl"/>
                 <outlet property="titleBarHeightConstraint" destination="fcC-MX-fmN" id="3FJ-wZ-oVK"/>
                 <outlet property="titleBarView" destination="WaC-08-utU" id="Ahh-93-k7q"/>
                 <outlet property="topBarBottomBorder" destination="iA3-pt-6Jm" id="RD4-8v-bHB"/>

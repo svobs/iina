@@ -400,8 +400,8 @@ class MiniPlayerViewController: NSViewController, NSPopoverDelegate {
     updateVideoViewHeightConstraint(isVideoVisible: true)
     windowController.viewportBtmOffsetFromContentViewBtmConstraint.priority = .required
 
-    windowController.leftLabel.font = NSFont.messageFont(ofSize: 11)
-    windowController.rightLabel.font = NSFont.messageFont(ofSize: 11)
+    windowController.leftTimeLabel.font = NSFont.messageFont(ofSize: 11)
+    windowController.rightTimeLabel.font = NSFont.messageFont(ofSize: 11)
     windowController.fragPositionSliderView.removeFromSuperview()
 
     // Make sure to reset constraints for OSD

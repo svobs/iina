@@ -147,7 +147,7 @@ extension PlayerWindowController {
       })
     case .showRemainingTime:
       if let newValue = newValue as? Bool {
-        rightLabel.mode = newValue ? .remaining : .duration
+        rightTimeLabel.mode = newValue ? .remaining : .duration
       }
     case .maxVolume:
       if let newValue = newValue as? Int {

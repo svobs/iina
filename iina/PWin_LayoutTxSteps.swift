@@ -572,8 +572,8 @@ extension PlayerWindowController {
 
         // Default alpha for these is 0.5. They don't change their text color.
         let textAlpha: CGFloat = contentTintColor == nil ? 0.5 : 1.0
-        leftLabel.alphaValue = textAlpha
-        rightLabel.alphaValue = textAlpha
+        leftTimeLabel.alphaValue = textAlpha
+        rightTimeLabel.alphaValue = textAlpha
         RenderCache.shared.mainKnobColor = transition.outputLayout.spec.oscBackgroundIsClear ? NSColor.controlForClearBG : NSColor.mainSliderKnob
         // invalidate all cached knob images
         RenderCache.shared.invalidateCachedKnobs()
@@ -622,8 +622,8 @@ extension PlayerWindowController {
         seekTimeLabel.font = NSFont.systemFont(ofSize: 9)
 
         // Decrease font size of time labels
-        leftLabel.font = NSFont.labelFont(ofSize: 9)
-        rightLabel.font = NSFont.labelFont(ofSize: 9)
+        leftTimeLabel.font = NSFont.labelFont(ofSize: 9)
+        rightTimeLabel.font = NSFont.labelFont(ofSize: 9)
 
         // Update music mode UI
         updateTitle()

@@ -43,8 +43,8 @@ extension PlayerWindowController {
     // Registers this window for didChangeScreenProfileNotification
     window.displaysWhenScreenProfileChanges = true
 
-    leftLabel.mode = .current
-    rightLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
+    leftTimeLabel.mode = .current
+    rightTimeLabel.mode = Preference.bool(for: .showRemainingTime) ? .remaining : .duration
 
     // gesture recognizers
     rotationHandler.windowController = self

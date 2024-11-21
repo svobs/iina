@@ -508,8 +508,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Container for play slider & time indicator labels
   @IBOutlet var fragPositionSliderView: NSView!
   @IBOutlet weak var playSlider: PlaySlider!
-  @IBOutlet weak var rightLabel: DurationDisplayTextField!
-  @IBOutlet weak var leftLabel: DurationDisplayTextField!
+  @IBOutlet weak var rightTimeLabel: DurationDisplayTextField!
+  @IBOutlet weak var leftTimeLabel: DurationDisplayTextField!
 
   /// Differentiate between single clicks and double clicks.
   var singleClickTimer: Timer?
@@ -1890,7 +1890,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     setOSDViews()
 
     // Update playback position slider in OSC:
-    for label in [leftLabel, rightLabel] {
+    for label in [leftTimeLabel, rightTimeLabel] {
       label?.updateText(with: duration, given: position)
     }
     let percentage = (position / duration) * 100
