@@ -177,7 +177,7 @@ extension PlayerWindowController {
 
     if mustHideSeekPreview {
       // Cancel timer now. Hide thumbnail with other views (below)
-      hideSeekPreviewTimer?.invalidate()
+      seekPreview.hideTimer?.invalidate()
     }
 
     tasks.append(IINAAnimation.Task(duration: IINAAnimation.DefaultDuration) { [self] in
@@ -207,7 +207,7 @@ extension PlayerWindowController {
       }
 
       if mustHideSeekPreview {
-        seekPreviewAnimationState = .willHide
+        seekPreview.animationState = .willHide
         seekPreview.thumbnailPeekView.animator().alphaValue = 0
         seekPreview.timeLabel.isHidden = true
       }
@@ -234,8 +234,8 @@ extension PlayerWindowController {
         }
       }
 
-      if mustHideSeekPreview, seekPreviewAnimationState == .willHide {
-        seekPreviewAnimationState = .hidden
+      if mustHideSeekPreview, seekPreview.animationState == .willHide {
+        seekPreview.animationState = .hidden
         seekPreview.thumbnailPeekView.isHidden = true
         seekPreview.timeLabel.isHidden = true
       }

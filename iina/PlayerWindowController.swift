@@ -207,9 +207,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Other visibility
   var hideCursorTimer: Timer?
-  var seekPreviewAnimationState: UIAnimationState = .shown
-  /// For auto hiding seek time & thumbnail after a timeout.
-  var hideSeekPreviewTimer: Timer?
 
   // - OSD
 
