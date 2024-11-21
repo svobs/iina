@@ -1347,9 +1347,18 @@ extension NSImage {
     return self
   }
 
-  func cropped(normalizedCropRect: NSRect) -> NSImage {
-    if let croppedImage = cgImage?.cropping(to: normalizedCropRect) {
-      return NSImage(cgImage: croppedImage, size: normalizedCropRect.size)
+  func cropped(normalizedCropRect nRect: NSRect) -> NSImage {
+    assert((nRect.width.clamped(to: 0.0...1.0) == nRect.width) && (nRect.height.clamped(to: 0.0...1.0) == nRect.height)
+           && (nRect.origin.x.clamped(to: 0.0...1.0) == nRect.origin.x) && (nRect.origin.y.clamped(to: 0.0...1.0) == nRect.origin.y),
+           "normalizedCropRect must be between 0 and 1 in all dimensions (found \(nRect))")
+    // Scale cropRect to handle images larger than shown-on-screen size
+    let cropRect = CGRect(x: nRect.origin.x * size.width,
+                          y: nRect.origin.y * size.height,
+                          width: nRect.size.width * size.width,
+                          height: nRect.size.height * size.height)
+
+    if let croppedImage: CGImage = cgImage?.cropping(to:cropRect) {
+      return NSImage(cgImage: croppedImage, size: NSSize(width: croppedImage.width, height: croppedImage.height))
     }
     return self
   }

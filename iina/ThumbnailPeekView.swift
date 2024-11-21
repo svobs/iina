@@ -120,7 +120,6 @@ class ThumbnailPeekView: NSImageView {
     let rotatedImage = ffThumbnail.image
     var thumbWidth: Double = rotatedImage.size.width
     var thumbHeight: Double = rotatedImage.size.height
-    let videoAspectCAR = videoGeo.videoAspectCAR
 
     /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
     let availableHeight = viewportSize.height - currentLayout.insideTopBarHeight - currentLayout.insideBottomBarHeight - margins.totalHeight
@@ -136,6 +135,7 @@ class ThumbnailPeekView: NSImageView {
       // The aspect ratio of some videos is different at display time. May need to resize these videos
       // once the actual aspect ratio is known. (Should they be resized before being stored on disk? Doing so
       // would increase the file size without improving the quality, whereas resizing on the fly seems fast enough).
+      let videoAspectCAR = videoGeo.videoAspectCAR
       if thumbAspect != videoAspectCAR {
         thumbHeight = (thumbWidth / videoAspectCAR).rounded()
         /// Recalculate this for later use (will use it and `thumbHeight`, and derive width)
@@ -224,31 +224,34 @@ class ThumbnailPeekView: NSImageView {
 
     let thumbFrame = NSRect(x: thumbOriginX, y: thumbOriginY, width: thumbWidth, height: thumbHeight)
 
-    guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
-          thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
-      log.verbose("Not enough space to display thumbnail")
-      isHidden = true
-      return false
-    }
-
-    // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
-    let somethingChanged = thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || widthConstraint.constant != thumbWidth || heightConstraint.constant != thumbHeight
-    if somethingChanged {
-      thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
-
-      let finalImage: NSImage
-      // Apply crop first. Then aspect
-      let croppedImage: NSImage
-      if let normalizedCropRect = videoGeo.cropRectNormalized {
-        croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
-      } else {
-        croppedImage = rotatedImage
+    if hasThumbnail {
+      guard thumbWidth >= Constants.Distance.Thumbnail.minHeight,
+            thumbHeight >= Constants.Distance.Thumbnail.minHeight else {
+        log.verbose("Not enough space to display thumbnail")
+        isHidden = true
+        return false
       }
-      let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
-      finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
-      self.image = finalImage
-      widthConstraint.constant = finalImage.size.width
-      heightConstraint.constant = finalImage.size.height
+
+      // Scaling is a potentially expensive operation, so do not change the last image if no change is needed
+      let somethingChanged = thumbnails.currentDisplayedThumbFFTimestamp != ffThumbnail.timestamp || widthConstraint.constant != thumbWidth || heightConstraint.constant != thumbHeight
+      if somethingChanged {
+        thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
+
+        let finalImage: NSImage
+        // Apply crop first. Then aspect
+        // FIXME: Cropped+Rotated is broken! Need to rotate crop box coordinates to match image rotation!
+        let croppedImage: NSImage
+        if let normalizedCropRect = videoGeo.cropRectNormalized {
+          croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
+        } else {
+          croppedImage = rotatedImage
+        }
+        let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
+        finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
+        self.image = finalImage
+        widthConstraint.constant = finalImage.size.width
+        heightConstraint.constant = finalImage.size.height
+      }
     }
 
     frame.origin = thumbFrame.origin
