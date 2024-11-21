@@ -9,8 +9,12 @@
 import Foundation
 
 struct Thumbnail {
-  let image: NSImage
+  let image: CGImage
   let timestamp: Double
+
+  var nsImage: NSImage {
+    NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+  }
 }
 
 class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
@@ -127,9 +131,9 @@ class SingleMediaThumbnailsLoader: NSObject, FFmpegControllerDelegate {
     var addedCount: Int = 0
     for ffThumbnail in ffThumbnails {
       guard !existingTimestamps.contains(ffThumbnail.realTime) else { continue }
-      guard let rawImage = ffThumbnail.image else { continue }
+      guard let rawImage = ffThumbnail.image?.cgImage else { continue }
 
-      let image: NSImage
+      let image: CGImage
       if rotationDegrees != 0 {
         // Rotation is an expensive procedure. Do it up front so that thumbnail display is snappier.
         // Reverse the rotation direction because mpv is opposite direction of Core Graphics

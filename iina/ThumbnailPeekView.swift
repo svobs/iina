@@ -118,8 +118,8 @@ class ThumbnailPeekView: NSImageView {
 
     let log = player.log
     let rotatedImage = ffThumbnail.image
-    var thumbWidth: Double = rotatedImage.size.width
-    var thumbHeight: Double = rotatedImage.size.height
+    var thumbWidth: Double = Double(rotatedImage.width)
+    var thumbHeight: Double = Double(rotatedImage.height)
 
     /// Calculate `availableHeight`: viewport height, minus top & bottom bars, minus extra space
     let availableHeight = viewportSize.height - currentLayout.insideTopBarHeight - currentLayout.insideBottomBarHeight - margins.totalHeight
@@ -129,7 +129,7 @@ class ThumbnailPeekView: NSImageView {
     let oscHeight = currentControlBar.frame.size.height
 
     let hasThumbnail = thumbWidth > 0 && thumbHeight > 0
-    var thumbAspect = hasThumbnail ? (thumbWidth / thumbHeight) : 0
+    var thumbAspect = hasThumbnail ? (thumbWidth / thumbHeight) : 1.0
 
     if hasThumbnail {
       // The aspect ratio of some videos is different at display time. May need to resize these videos
@@ -237,20 +237,20 @@ class ThumbnailPeekView: NSImageView {
       if somethingChanged {
         thumbnails.currentDisplayedThumbFFTimestamp = ffThumbnail.timestamp
 
-        let finalImage: NSImage
+        let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
+
         // Apply crop first. Then aspect
         // FIXME: Cropped+Rotated is broken! Need to rotate crop box coordinates to match image rotation!
-        let croppedImage: NSImage
+        let croppedImage: CGImage
         if let normalizedCropRect = videoGeo.cropRectNormalized {
           croppedImage = rotatedImage.cropped(normalizedCropRect: normalizedCropRect)
         } else {
           croppedImage = rotatedImage
         }
-        let cornerRadius = updateBorderStyle(thumbWidth: thumbWidth, thumbHeight: thumbHeight)
-        finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
-        self.image = finalImage
-        widthConstraint.constant = finalImage.size.width
-        heightConstraint.constant = finalImage.size.height
+        let finalImage = croppedImage.resized(newWidth: Int(thumbWidth), newHeight: Int(thumbHeight), cornerRadius: cornerRadius)
+        image = NSImage(cgImage: finalImage, size: NSSize(width: finalImage.width, height: finalImage.height))
+        widthConstraint.constant = thumbFrame.width
+        heightConstraint.constant = thumbFrame.height
       }
     }
 

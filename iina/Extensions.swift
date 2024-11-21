@@ -1231,6 +1231,25 @@ extension CGImage {
     return newImage
   }
 
+  func cropped(normalizedCropRect nRect: CGRect) -> CGImage {
+    assert((nRect.width.clamped(to: 0.0...1.0) == nRect.width) && (nRect.height.clamped(to: 0.0...1.0) == nRect.height)
+           && (nRect.origin.x.clamped(to: 0.0...1.0) == nRect.origin.x) && (nRect.origin.y.clamped(to: 0.0...1.0) == nRect.origin.y),
+           "normalizedCropRect must be between 0 and 1 in all dimensions (found \(nRect))")
+    // Scale cropRect to handle images larger than shown-on-screen size
+    let w = Double(width)
+    let h = Double(height)
+    let cropRect = CGRect(x: nRect.origin.x * w,
+                          y: nRect.origin.y * h,
+                          width: nRect.size.width * w,
+                          height: nRect.size.height * h)
+
+    if let croppedImage: CGImage = cropping(to:cropRect) {
+      return croppedImage
+    }
+    return self
+  }
+
+
   /// Builds a bitmap image efficiently using CoreGraphics APIs.
   ///
   /// If it's found useful for any more situations, should put in its own class
@@ -1348,19 +1367,8 @@ extension NSImage {
   }
 
   func cropped(normalizedCropRect nRect: NSRect) -> NSImage {
-    assert((nRect.width.clamped(to: 0.0...1.0) == nRect.width) && (nRect.height.clamped(to: 0.0...1.0) == nRect.height)
-           && (nRect.origin.x.clamped(to: 0.0...1.0) == nRect.origin.x) && (nRect.origin.y.clamped(to: 0.0...1.0) == nRect.origin.y),
-           "normalizedCropRect must be between 0 and 1 in all dimensions (found \(nRect))")
-    // Scale cropRect to handle images larger than shown-on-screen size
-    let cropRect = CGRect(x: nRect.origin.x * size.width,
-                          y: nRect.origin.y * size.height,
-                          width: nRect.size.width * size.width,
-                          height: nRect.size.height * size.height)
-
-    if let croppedImage: CGImage = cgImage?.cropping(to:cropRect) {
-      return NSImage(cgImage: croppedImage, size: NSSize(width: croppedImage.width, height: croppedImage.height))
-    }
-    return self
+    let croppedImage = cgImage!.cropped(normalizedCropRect: nRect)
+    return NSImage(cgImage: croppedImage, size: NSSize(width: croppedImage.width, height: croppedImage.height))
   }
 
   /// `cornerRadius`: if greater than 0, round the corners by this radius

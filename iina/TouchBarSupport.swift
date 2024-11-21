@@ -361,7 +361,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
     guard !info.isIdle else { return }
     if isTouching, let dur = info.playbackDurationSec,
         let tb = info.currentPlayback?.thumbnails?.getThumbnail(forSecond: (doubleValue / 100) * dur) {
-      let image = tb.image
+      let image = tb.nsImage
       NSGraphicsContext.saveGraphicsState()
       NSBezierPath(roundedRect: knobRect, xRadius: 3, yRadius: 3).setClip()
       let origSize = image.size.crop(withAspect: Aspect(size: knobRect.size))
@@ -410,7 +410,7 @@ class TouchBarPlaySliderCell: NSSliderCell {
         let dest = NSRect(x: i, y: 0, width: 2, height: imageRect.height)
         if let dur = info.playbackDurationSec,
            let currentMedaiThumbs = info.currentPlayback?.thumbnails,
-          let image = currentMedaiThumbs.getThumbnail(forSecond: percent * dur)?.image,
+          let image = currentMedaiThumbs.getThumbnail(forSecond: percent * dur)?.nsImage,
            currentMedaiThumbs.thumbnailsProgress >= percent {
           let orig = NSRect(origin: .zero, size: image.size)
           image.draw(in: dest, from: orig, operation: .copy, fraction: 1, respectFlipped: true, hints: nil)
