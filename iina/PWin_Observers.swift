@@ -26,8 +26,6 @@ extension PlayerWindowController {
       .playerWindowOpacity,
       .showRemainingTime,
       .maxVolume,
-      .singleClickAction,
-      .doubleClickAction,
       .playlistShowMetadata,
       .playlistShowMetadataInMusicMode,
       .shortenFileGroupsInPlaylist,
@@ -158,14 +156,6 @@ extension PlayerWindowController {
         } else {
           updateVolumeUI()
         }
-      }
-    case .singleClickAction:
-      if let newValue = newValue as? Int {
-        singleClickAction = Preference.MouseClickAction(rawValue: newValue)!
-      }
-    case .doubleClickAction:
-      if let newValue = newValue as? Int {
-        doubleClickAction = Preference.MouseClickAction(rawValue: newValue)!
       }
     case .playlistShowMetadata, .playlistShowMetadataInMusicMode, .shortenFileGroupsInPlaylist:
       // Reload now, even if not visible. Don't nitpick.

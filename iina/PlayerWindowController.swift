@@ -318,8 +318,6 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   // Cached user defaults values
   internal lazy var followGlobalSeekTypeWhenAdjustSlider: Bool = Preference.bool(for: .followGlobalSeekTypeWhenAdjustSlider)
-  internal lazy var singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
-  internal lazy var doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
 
   // MARK: - Outlets
 

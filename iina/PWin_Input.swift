@@ -283,6 +283,8 @@ extension PlayerWindowController {
       PluginInputManager.handle(
         input: PluginInputManager.Input.mouse, event: .mouseUp, player: player,
         arguments: mouseEventArgs(event), defaultHandler: { [self] in
+          let singleClickAction: Preference.MouseClickAction = Preference.enum(for: .singleClickAction)
+          let doubleClickAction: Preference.MouseClickAction = Preference.enum(for: .doubleClickAction)
           // default handler
           if event.clickCount == 1 {
             if doubleClickAction == .none {
