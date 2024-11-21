@@ -357,7 +357,7 @@ extension PlayerWindowController {
         /// Shift next icon into current icon, which will be used until the next call to `displayOSD()`
         /// (although note that there can be subsequent calls to `setOSDViews()` to update the OSD's displayed time while playing,
         /// but those do not count as "new" OSD messages, and thus will continue to use `osd.currentSeekIcon`).
-        if isInScrollWheelSeek {
+        if isScrollingOrDraggingPlaySlider {
           // give up on fancy OSD for scroll wheel seek (for now)
           osd.currentSeekIcon = nil
           osd.nextSeekIcon = nil

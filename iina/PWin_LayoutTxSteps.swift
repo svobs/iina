@@ -456,8 +456,8 @@ extension PlayerWindowController {
 
     playSliderHeightConstraint?.isActive = false
 
-    seekTimeLabelVerticalSpaceConstraint?.isActive = false
-    seekTimeLabelHorizontalCenterConstraint?.isActive = false
+    seekPreview.timeLabelVerticalSpaceConstraint?.isActive = false
+    seekPreview.timeLabelHorizontalCenterConstraint?.isActive = false
 
     if transition.isTogglingMusicMode {
       miniPlayer.loadIfNeeded()
@@ -482,8 +482,8 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscTopMainView, oscGeo, transition)
 
-        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
-        seekTimeLabelVerticalSpaceConstraint?.isActive = true
+        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.topAnchor.constraint(equalTo: playSlider.bottomAnchor, constant: -4)
+        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
       case .bottom:
         currentControlBar = bottomBarView
@@ -496,8 +496,8 @@ extension PlayerWindowController {
 
         addControlBarViews(to: oscBottomMainView, oscGeo, transition)
 
-        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
-        seekTimeLabelVerticalSpaceConstraint?.isActive = true
+        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
       case .floating:
 
@@ -534,7 +534,7 @@ extension PlayerWindowController {
       }
       playSlider.customCell.knobHeight = knobHeight
       (volumeSlider.cell as? VolumeSliderCell)?.knobHeight = knobHeight
-      seekTimeLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
+      seekPreview.timeLabel.font = NSFont.systemFont(ofSize: timeLabelFontSize)
 
     } else if outputLayout.isMusicMode {
 
@@ -581,9 +581,9 @@ extension PlayerWindowController {
 
       if !outputLayout.hasFloatingOSC {  // floating case will be handled in later step
                                          // Yes, left, not leading!
-        seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-        seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-        seekTimeLabelHorizontalCenterConstraint.isActive = true
+        seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+        seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+        seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
       }
 
       if transition.isEnteringMusicMode {
@@ -616,10 +616,10 @@ extension PlayerWindowController {
           miniPlayer.playbackBtnsWrapperView.centerYAnchor.constraint(equalTo: fragPlaybackBtnsView.centerYAnchor).isActive = true
         }
 
-        seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 2)
-        seekTimeLabelVerticalSpaceConstraint?.isActive = true
+        seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 2)
+        seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
-        seekTimeLabel.font = NSFont.systemFont(ofSize: 9)
+        seekPreview.timeLabel.font = NSFont.systemFont(ofSize: 9)
 
         // Decrease font size of time labels
         leftTimeLabel.font = NSFont.labelFont(ofSize: 9)
@@ -869,13 +869,13 @@ extension PlayerWindowController {
       addSpeedLabelToControlBar(transition)
 
       // same as `.bottom`:
-      seekTimeLabelVerticalSpaceConstraint = seekTimeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
-      seekTimeLabelVerticalSpaceConstraint?.isActive = true
+      seekPreview.timeLabelVerticalSpaceConstraint = seekPreview.timeLabel.bottomAnchor.constraint(equalTo: playSlider.topAnchor, constant: 4)
+      seekPreview.timeLabelVerticalSpaceConstraint?.isActive = true
 
       // Yes, left, not leading!
-      seekTimeLabelHorizontalCenterConstraint = seekTimeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
-      seekTimeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
-      seekTimeLabelHorizontalCenterConstraint.isActive = true
+      seekPreview.timeLabelHorizontalCenterConstraint = seekPreview.timeLabel.centerXAnchor.constraint(equalTo: playSlider.leftAnchor, constant: 200)
+      seekPreview.timeLabelHorizontalCenterConstraint.identifier = .init("SeekTimeHoverLabelHSpaceConstraint")
+      seekPreview.timeLabelHorizontalCenterConstraint.isActive = true
 
       // Update floating control bar position
       controlBarFloating.moveTo(centerRatioH: floatingOSCCenterRatioH, originRatioV: floatingOSCOriginRatioV,

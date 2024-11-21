@@ -317,6 +317,7 @@
 		D1347A2D2B04879C00B37B0E /* VideoGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */; };
 		D13E807E2C026A2700537954 /* PWin_GeoSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13E807D2C026A2700537954 /* PWin_GeoSet.swift */; };
 		D140E81C285A0BEF00067094 /* LinkedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = D140E81B285A0BEF00067094 /* LinkedList.swift */; };
+		D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1491F872CEF543900DB0A06 /* SeekPreview.swift */; };
 		D15CABE62B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */; };
 		D16A434D2CDDB75B0012D66F /* RenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16A434C2CDDB7570012D66F /* RenderCache.swift */; };
 		D1724A692BF80C9A00BCE335 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */; };
@@ -1835,6 +1836,7 @@
 		D1347A2C2B04879C00B37B0E /* VideoGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoGeometry.swift; sourceTree = "<group>"; };
 		D13E807D2C026A2700537954 /* PWin_GeoSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PWin_GeoSet.swift; sourceTree = "<group>"; };
 		D140E81B285A0BEF00067094 /* LinkedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedList.swift; sourceTree = "<group>"; };
+		D1491F872CEF543900DB0A06 /* SeekPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekPreview.swift; sourceTree = "<group>"; };
 		D15CABE52B1EECFD004A8985 /* SingleMediaThumbnailsLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleMediaThumbnailsLoader.swift; sourceTree = "<group>"; };
 		D16A434C2CDDB7570012D66F /* RenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderCache.swift; sourceTree = "<group>"; };
 		D1724A682BF80C9A00BCE335 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
@@ -2877,6 +2879,7 @@
 				8460FBA71D6497490081841B /* PlaylistViewController.swift */,
 				8400D5CE1E1AB2FF006785F5 /* PlaylistViewController.xib */,
 				845FB0C61D39462E00C011E0 /* FloatingControlBarView.swift */,
+				D1491F872CEF543900DB0A06 /* SeekPreview.swift */,
 				846352571EEEE11A0043F0CC /* ThumbnailPeekView.swift */,
 				D1D29A272ADE2E8000D8660F /* CustomTitleBar.swift */,
 			);
@@ -3378,6 +3381,7 @@
 				8488D6DF1E11791300D5B952 /* PrefCodecViewController.swift in Sources */,
 				8487BEC11D744FA800FD17B0 /* FlippedView.swift in Sources */,
 				D188CB2228D6DE1900F166FD /* InputBinding.swift in Sources */,
+				D1491F882CEF544400DB0A06 /* SeekPreview.swift in Sources */,
 				E35306EF2147A8CE008FE492 /* JavascriptPlugin.swift in Sources */,
 				845ABEAC1D4D19C000BFB15B /* MPVTrack.swift in Sources */,
 				513A4FFA29B53F8100A8EA7D /* Atomic.swift in Sources */,

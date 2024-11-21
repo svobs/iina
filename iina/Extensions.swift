@@ -1323,6 +1323,10 @@ extension NSImage {
     return image
   }
 
+  static func from(_ cgi: CGImage) -> NSImage {
+    return NSImage(cgImage: cgi, size: NSSize(width: cgi.width, height: cgi.height))
+  }
+
   var cgImage: CGImage? {
     var rect = CGRect.init(origin: .zero, size: self.size)
     return self.cgImage(forProposedRect: &rect, context: nil, hints: nil)

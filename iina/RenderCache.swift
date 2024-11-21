@@ -9,6 +9,8 @@
 
 class RenderCache {
   static let shared = RenderCache()
+  /// This should match `backingScaleFactor` from the current screen. At present
+  /// (MacOS 15.1), this will always be `2.0`.
   static let scaleFactor: CGFloat = 2.0
   static let imgMarginRadius: CGFloat = 1.0
 

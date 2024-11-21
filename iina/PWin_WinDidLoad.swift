@@ -107,9 +107,12 @@ extension PlayerWindowController {
         view.layer?.backgroundColor = Constants.Color.defaultWindowBackgroundColor
         view.layer?.opacity = 0.01
         contentView.addSubview(view)
-      }
+    }
 
-      initSeekPreview(in: contentView)
+      // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
+      seekPreview.timeLabel.nextResponder = playSlider
+      contentView.addSubview(seekPreview.timeLabel, positioned: .below, relativeTo: osdVisualEffectView)
+      contentView.addSubview(seekPreview.thumbnailPeekView, positioned: .below, relativeTo: seekPreview.timeLabel)
       initTitleBarAccessories()
       initBottomBarView(in: contentView)
       initSpeedLabel()
@@ -150,31 +153,6 @@ extension PlayerWindowController {
       log.verbose("PlayerWindow windowDidLoad done")
       player.events.emit(.windowLoaded)
     }
-  }
-
-  private func initSeekPreview(in contentView: NSView) {
-    seekTimeLabel.identifier = .init("SeekTimeLabel")
-    seekTimeLabel.controlSize = .large
-    contentView.addSubview(seekTimeLabel, positioned: .below, relativeTo: osdVisualEffectView)
-    seekTimeLabel.translatesAutoresizingMaskIntoConstraints = false
-    seekTimeLabel.isBordered = false
-    seekTimeLabel.drawsBackground = false
-    seekTimeLabel.isBezeled = false
-    seekTimeLabel.isEditable = false
-    seekTimeLabel.isSelectable = false
-    seekTimeLabel.isEnabled = true
-    seekTimeLabel.refusesFirstResponder = true
-    seekTimeLabel.alignment = .center
-    seekTimeLabel.setContentHuggingPriority(.required, for: .horizontal)
-    seekTimeLabel.setContentHuggingPriority(.required, for: .vertical)
-    // This is above the play slider and by default, will swallow clicks. Send events to play slider instead
-    seekTimeLabel.nextResponder = playSlider
-
-    contentView.addSubview(thumbnailPeekView, positioned: .below, relativeTo: seekTimeLabel)
-    thumbnailPeekView.identifier = .init("ThumbnailPeekView")
-    thumbnailPeekView.isHidden = true
-
-    seekTimeLabel.isHidden = true
   }
 
   private func initTitleBarAccessories() {

@@ -445,12 +445,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
   /// Top border of `bottomBarView`.
   let bottomBarTopBorder = NSBox()
 
-  /// Seek Preview: time label
-  let seekTimeLabel = NSTextField()
-  var seekTimeLabelHorizontalCenterConstraint: NSLayoutConstraint!
-  var seekTimeLabelVerticalSpaceConstraint: NSLayoutConstraint!
-  /// Seek Preview: thumbnail
-  let thumbnailPeekView = ThumbnailPeekView()
+  let seekPreview = SeekPreview()
 
   @IBOutlet weak var leadingSidebarView: NSVisualEffectView!
   @IBOutlet weak var leadingSidebarTrailingBorder: NSBox!  // shown if leading sidebar is "outside"
@@ -525,12 +520,8 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
 
   var isDraggingPlaySlider = false
 
-  var isInPreviewEligibleSeek: Bool {
-    isInScrollWheelSeek || isDraggingPlaySlider
-  }
-
-  var isInScrollWheelSeek: Bool {
-    return windowScrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
+  var isScrollingOrDraggingPlaySlider: Bool {
+    return isDraggingPlaySlider || windowScrollWheel.isScrolling() || playSliderScrollWheel.isScrolling() || volumeSliderScrollWheel.isScrolling()
   }
 
   // Other state
@@ -682,7 +673,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     // Change to appearance above does not take effect until this task completes. Enqueue a new task to run after this one.
     DispatchQueue.main.async { [self] in
       (newAppearance ?? window.effectiveAppearance).applyAppearanceFor {
-        thumbnailPeekView.updateColors()
+        seekPreview.thumbnailPeekView.updateColors()
       }
     }
   }
@@ -1841,7 +1832,7 @@ class PlayerWindowController: IINAWindowController, NSWindowDelegate {
     guard player.state.isNotYet(.shuttingDown) else { return }
 
     // scroll wheel will set newer value; do not overwrite it until it is done
-    if !isInScrollWheelSeek && !isDraggingPlaySlider {
+    if !isScrollingOrDraggingPlaySlider {
       player.updatePlaybackTimeInfo()
     }
 
